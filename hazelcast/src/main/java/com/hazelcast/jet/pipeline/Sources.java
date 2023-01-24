@@ -660,52 +660,37 @@ public final class Sources {
     }
 
     /**
-     * Returns a source that will stream the {@link EventJournalMapEvent}
-     * events of the Hazelcast {@code IMap} with the specified name from a
-     * remote cluster. By supplying a {@code predicate} and {@code projection}
-     * here instead of in separate {@code map/filter} transforms you allow the
-     * source to apply these functions early, before generating any output,
-     * with the potential of significantly reducing data traffic.
-     * <p>
-     * To use an {@code IMap} as a streaming source, you must {@link EventJournalConfig
-     * configure the event journal} for it. The journal has fixed capacity and
-     * will drop events if it overflows.
-     * <p>
-     * The source saves the journal offsets to the snapshot. If the job
-     * restarts, it starts emitting from the saved offsets with an exactly-once
-     * guarantee (unless the journal has overflowed).
-     * <p>
-     * If you start a new job from an exported state, you can change the source
-     * parameters as needed. If you connect to another cluster, keep in mind
-     * that the same offsets will be used. To avoid this, give different
-     * {@linkplain Stage#setName name} to this source.
-     * <p>
-     * The default local parallelism for this processor is 1.
+     * The same as the {@link #remoteMapJournal(String, ClientConfig, JournalInitialPosition, FunctionEx, PredicateEx)}
+     * method. The only difference is instead of a ClientConfig parameter that is used to connect to remote cluster,
+     * this method receives an ExternalDataStoreRef.
+     * The ExternalDataStoreRef caches the connection to remote cluster, so that it can be re-used
+     *  * <p>
+     *      * (Prerequisite) External dataStore configuration:
+     *      * <pre>{@code
+     *      *      Config config = ...;
+     *      *      String xmlString = ...;
+     *      *      ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
+     *      *              .setName("my-hzclient-store")
+     *      *              .setClassName(HzClientDataStoreFactory.class.getName())
+     *      *              .setProperty(HzClientDataStoreFactory.CLIENT_XML, xmlString);
+     *      *      config.addExternalDataStoreConfig(externalDataStoreConfig);
+     *      * }</pre>
+     *      * </p>
+     *       * </p>
+     *      * <p>Pipeline configuration
+     *      * <pre>{@code
+     *      *     PredicateEx<EventJournalMapEvent<String, Integer>> predicate = ...;
+     *      *     p.readFrom(Sources.remoteMapJournal(
+     *      *         mapName,
+     *      *         ExternalDataStoreRef.externalDataStoreRef("my-hzclient-store"),
+     *      *         JournalInitialPosition.START_FROM_OLDEST,
+     *      *         EventJournalMapEvent::getNewValue,
+     *      *         predicate
+     *      *      ));
+     *      * }</pre>
+     *      * </p>
      *
-     * <h4>Predicate/projection class requirements</h4>
-     *
-     * The classes implementing {@code predicateFn} and {@code projectionFn}
-     * need to be available on the remote cluster's classpath or loaded using
-     * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
-     * the job classpath in {@link JobConfig}. The same is true for the class
-     * of the objects stored in the map itself. If you cannot meet these
-     * requirements, use {@link #remoteMapJournal(String, ClientConfig, JournalInitialPosition)}
-     * and add a subsequent {@link GeneralStage#map map} or
-     * {@link GeneralStage#filter filter} stage.
-     *  @param <K> type of key
-     * @param <V> type of value
-     * @param <T> type of emitted item
-     * @param mapName the name of the map
-     * @param externalDataStoreRef the cached configuration for the client to connect to the remote cluster
-     * @param initialPos describes which event to start receiving from
-     * @param projectionFn the projection to map the events. If the projection returns a {@code
-     *                     null} for an item, that item will be filtered out. You may use {@link
-     *                     Util#mapEventToEntry()} to extract just the key and the new value. It
-     *                     must be stateless and {@linkplain Processor#isCooperative() cooperative}.
-     * @param predicateFn the predicate to filter the events. You may use {@link
-     *                    Util#mapPutEvents} to pass only {@link EntryEventType#ADDED ADDED} and
-     *                    {@link EntryEventType#UPDATED UPDATED} events. It must be stateless and
-     *                    {@linkplain Processor#isCooperative() cooperative}.
+     * @since 5.3
      */
     @Nonnull
     public static <T, K, V> StreamSource<T> remoteMapJournal(
@@ -737,6 +722,22 @@ public final class Sources {
             @Nonnull JournalInitialPosition initialPos
     ) {
         return remoteMapJournal(mapName, clientConfig, initialPos, mapEventToEntry(), mapPutEvents());
+    }
+
+    /**
+     * Convenience for {@link #remoteMapJournal(String, ExternalDataStoreRef, JournalInitialPosition, FunctionEx, PredicateEx)}
+     * which will pass only {@link EntryEventType#ADDED ADDED}
+     * and {@link EntryEventType#UPDATED UPDATED} events and will
+     * project the event's key and new value into a {@code Map.Entry}.
+     * @since 5.3
+     */
+    @Nonnull
+    public static <K, V> StreamSource<Entry<K, V>> remoteMapJournal(
+            @Nonnull String mapName,
+            @Nonnull ExternalDataStoreRef externalDataStoreRef,
+            @Nonnull JournalInitialPosition initialPos
+    ) {
+        return remoteMapJournal(mapName, externalDataStoreRef, initialPos, mapEventToEntry(), mapPutEvents());
     }
 
     /**

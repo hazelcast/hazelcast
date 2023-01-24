@@ -120,6 +120,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         testMapJournal(map, source);
     }
 
+    // Test with ClientConfig
     @Test
     public void remoteMapJournal() {
         // Given
@@ -129,6 +130,22 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         // When
         StreamSource<Entry<String, Integer>> source = Sources.remoteMapJournal(
                 mapName, clientConfig, START_FROM_OLDEST);
+
+        // Then
+        testMapJournal(map, source);
+    }
+
+    // Test remoteMapJournal() using default parameters with ExternalDataStoreRef
+    @Test
+    public void remoteMapJournal_withExternalConfig() {
+        // Given
+        String mapName = JOURNALED_MAP_PREFIX + randomName();
+        IMap<String, Integer> map = remoteHz.getMap(mapName);
+
+        // When
+        ExternalDataStoreRef externalDataStoreRef = ExternalDataStoreRef.externalDataStoreRef(HZ_CLIENT_EXTERNAL_REF);
+        StreamSource<Entry<String, Integer>> source = Sources.remoteMapJournal(
+                mapName, externalDataStoreRef, START_FROM_OLDEST);
 
         // Then
         testMapJournal(map, source);
@@ -316,7 +333,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         testMapJournal_withPredicateAndProjection(map, source);
     }
 
-    // Test with ExternalDataStoreRef
+    // Test remoteMapJournal() using all  parameters with ExternalDataStoreRef
     @Test
     public void remoteMapJournal_withExternalConfigPredicateAndProjectionFn() {
         // Given
