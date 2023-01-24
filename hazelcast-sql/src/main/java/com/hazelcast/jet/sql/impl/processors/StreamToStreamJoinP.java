@@ -424,7 +424,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         if (value instanceof BufferSnapshotValue) {
             BufferSnapshotValue bsv = (BufferSnapshotValue) value;
-            System.err.println(key + " -> " + bsv);
             buffer[bsv.bufferOrdinal()].add(bsv.row());
             if (bsv.unused()) {
                 unusedEventsTracker.add(bsv.row());

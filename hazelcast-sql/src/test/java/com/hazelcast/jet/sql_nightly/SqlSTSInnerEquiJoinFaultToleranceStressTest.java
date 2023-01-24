@@ -1,0 +1,262 @@
+/*
+ * Copyright 2023 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.jet.sql_nightly;
+
+import com.hazelcast.jet.JetService;
+import com.hazelcast.jet.impl.AbstractJobProxy;
+import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
+import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.sql.impl.connector.kafka.KafkaSqlConnector;
+import com.hazelcast.map.IMap;
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.SqlStatement;
+import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
+import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category({NightlyTest.class, ParallelJVMTest.class})
+public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport {
+    private static final int INITIAL_PARTITION_COUNT = 1;
+    private static final int EVENTS_PER_SINK = 25_000;
+    private static final int SINK_ATTEMPTS = 10;
+    private static final int EVENTS_TO_PROCESS = EVENTS_PER_SINK * SINK_ATTEMPTS;
+    private static KafkaTestSupport kafkaTestSupport;
+
+    private SqlService sqlService;
+    private Thread kafkaFeedThread;
+    protected String resultMapName;
+    private String topicName;
+    private IMap<Integer, String> resultMap;
+
+    private String query;
+
+    @Parameter(value = 0)
+    public String processingGuarantee;
+
+    @Parameter(value = 1)
+    public boolean restartGraceful;
+
+    @Parameterized.Parameters(name = "processingGuarantee:{0}, restartGraceful:{1}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {"atLeastOnce", true},
+                {"atLeastOnce", false},
+                {"exactlyOnce", true},
+                {"exactlyOnce", false}
+        });
+    }
+
+    @BeforeClass
+    public static void beforeClass() throws IOException {
+        initialize(5, null);
+        kafkaTestSupport = KafkaTestSupport.create();
+        kafkaTestSupport.createKafkaCluster();
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        kafkaTestSupport.shutdownKafkaCluster();
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        sqlService = instance().getSql();
+        resultMapName = randomName();
+        resultMap = instance().getMap(resultMapName);
+        createMapping(resultMapName, Integer.class, String.class);
+
+        topicName = createRandomTopic();
+        sqlService.execute("CREATE MAPPING " + topicName + ' '
+                + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ( "
+                + '\'' + OPTION_KEY_FORMAT + "'='int'"
+                + ", '" + OPTION_VALUE_FORMAT + "'='varchar'"
+                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
+                + ", 'auto.offset.reset'='earliest'"
+                + ")");
+
+        kafkaFeedThread = new Thread(() -> createTopicData(sqlService, topicName));
+        kafkaFeedThread.start();
+
+        sqlService.execute("CREATE VIEW s1 AS " +
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + topicName + " , DESCRIPTOR(__key), 10))");
+        sqlService.execute("CREATE VIEW s2 AS " +
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + topicName + " , DESCRIPTOR(__key), 5))");
+
+        query = setupQuery();
+
+        Thread.sleep(60_000L); // time to feed Kafka
+    }
+
+    @Override
+    @After
+    public void tearDown() {
+        try {
+            Thread.sleep(2000L);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test(timeout = 600_000L)
+    public void stressTest() {
+        JobRestarter jobRestarter = new JobRestarter(instance().getJet());
+        jobRestarter.start();
+
+        assertQueryFinished(query, resultMap, EVENTS_TO_PROCESS);
+        jobRestarter.finish();
+        assertEquals(EVENTS_TO_PROCESS, resultMap.size());
+
+        for (int i = 1; i <= EVENTS_TO_PROCESS; ++i) {
+            assertEquals("value-" + i, resultMap.remove(i));
+        }
+        assertEquals(0, resultMap.size());
+
+        try {
+            kafkaFeedThread.join();
+            jobRestarter.join();
+        } catch (AssertionError e) {
+            Assert.fail(e.getMessage());
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected String setupQuery() {
+        return "CREATE JOB job OPTIONS ('processingGuarantee'='" + processingGuarantee + "') AS " +
+                " SINK INTO " + resultMapName +
+                " SELECT s1.__key, s2.this FROM s1 JOIN s2 ON s1.__key = s2.__key";
+    }
+
+    class JobRestarter extends Thread {
+        private final JetService jetService;
+        private volatile boolean finish;
+
+        JobRestarter(JetService jetService) {
+            this.jetService = jetService;
+        }
+
+        @Override
+        public void run() {
+            for (; ; ) {
+                try {
+                    if (finish) {
+                        return;
+                    }
+                    Thread.sleep(250L);
+                    assert jetService.getJobs().size() == 1 : "Jobs active " + jetService.getJobs().size();
+                    AbstractJobProxy job = (AbstractJobProxy) jetService.getJobs().get(0);
+                    assertNotNull(job);
+                    assertJobStatusEventually(job, RUNNING);
+                    job.restart(restartGraceful);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        public void finish() {
+            this.finish = true;
+        }
+    }
+
+    private static String createRandomTopic() {
+        String topicName = randomName();
+        kafkaTestSupport.createTopic(topicName, INITIAL_PARTITION_COUNT);
+        return topicName;
+    }
+
+    private static void createTopicData(SqlService sqlService, String topicName) {
+        int itemsSank = 0;
+        for (int sink = 1; sink <= SINK_ATTEMPTS; sink++) {
+            StringBuilder queryBuilder = new StringBuilder("INSERT INTO " + topicName + " VALUES ");
+            for (int i = 1; i <= EVENTS_PER_SINK; ++i) {
+                ++itemsSank;
+                queryBuilder.append("(").append(itemsSank).append(", 'value-").append(itemsSank).append("'), ");
+            }
+            queryBuilder.append("(").append(itemsSank).append(", 'value-").append(itemsSank).append("')");
+
+            assertEquals(itemsSank, EVENTS_PER_SINK * sink);
+            sqlService.execute(queryBuilder.toString());
+            System.err.println("Items sank " + itemsSank);
+        }
+    }
+
+    private static void assertQueryFinished(String sql, IMap map, int elements) {
+        SqlService sqlService = instance().getSql();
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
+        Thread thread = new Thread(() -> {
+            SqlStatement statement = new SqlStatement(sql);
+
+            try (SqlResult result = sqlService.execute(statement)) {
+                while (map.size() < elements) {
+                    Thread.sleep(500L);
+                }
+                future.complete(null);
+            } catch (Throwable e) {
+                e.printStackTrace();
+                future.completeExceptionally(e);
+            }
+        });
+
+        thread.start();
+
+        try {
+            try {
+                future.get(5, TimeUnit.MINUTES);
+            } catch (TimeoutException e) {
+                thread.interrupt();
+                thread.join();
+            }
+        } catch (Exception e) {
+            throw sneakyThrow(e);
+        }
+
+        assertThat(map.size()).isEqualTo(elements);
+    }
+}
