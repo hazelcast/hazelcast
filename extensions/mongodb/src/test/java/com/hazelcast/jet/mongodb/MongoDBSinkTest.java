@@ -39,6 +39,7 @@ import org.bson.Document;
 import org.bson.codecs.pojo.annotations.BsonProperty;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -58,6 +59,7 @@ import static com.hazelcast.jet.mongodb.MongoDBSinks.mongodb;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.pipeline.Sources.mapJournal;
 import static com.hazelcast.jet.pipeline.test.TestSources.items;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.gte;
 import static java.util.Arrays.asList;
@@ -78,6 +80,11 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
     @Parameters(name = "processing guarantee: {0}")
     public static Object[] guarantees() {
         return ProcessingGuarantee.values();
+    }
+
+    @BeforeClass
+    public static void beforeClass() {
+        assumeDockerEnabled();
     }
 
     @Test

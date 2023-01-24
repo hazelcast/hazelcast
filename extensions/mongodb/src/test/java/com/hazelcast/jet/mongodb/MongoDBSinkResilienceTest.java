@@ -39,6 +39,7 @@ import com.mongodb.client.MongoCollection;
 import eu.rekawek.toxiproxy.Proxy;
 import eu.rekawek.toxiproxy.ToxiproxyClient;
 import org.bson.Document;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -58,6 +59,7 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.mongodb.AbstractMongoDBTest.TEST_MONGO_VERSION;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static eu.rekawek.toxiproxy.model.ToxicDirection.DOWNSTREAM;
 import static eu.rekawek.toxiproxy.model.ToxicDirection.UPSTREAM;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -85,6 +87,11 @@ public class MongoDBSinkResilienceTest extends SimpleTestInClusterSupport {
     public TestName testName = new TestName();
 
     private final Random random = new Random();
+
+    @BeforeClass
+    public static void beforeClass() {
+        assumeDockerEnabled();
+    }
 
     @Test(timeout = 2 * 60_000)
     public void testWhenServerDown_graceful() {
