@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.util;
 
-import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Properties;
@@ -379,7 +378,7 @@ public final class Preconditions {
      * @return the value of the property that was tested.
      * @throws java.lang.IllegalArgumentException if properties are null or specified key value is null or empty
      */
-    public static String checkRequiredProperty(@Nonnull Properties properties, String key) {
+    public static String checkRequiredProperty(Properties properties, String key) {
         if (properties == null) {
             throw new IllegalArgumentException("Properties are required");
         }
