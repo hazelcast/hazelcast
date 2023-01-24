@@ -17,13 +17,18 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.cache.EventJournalCacheEvent;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.datastore.ExternalDataStoreFactory;
+import com.hazelcast.datastore.ExternalDataStoreService;
+import com.hazelcast.datastore.HzClientDataStoreFactory;
+import com.hazelcast.datastore.JdbcDataStoreFactory;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
-import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
@@ -42,14 +47,17 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.pipeline.ExternalDataStoreRef;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.security.PermissionsUtil;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -75,10 +83,10 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
 import static com.hazelcast.jet.impl.util.ImdgUtil.maybeUnwrapImdgFunction;
 import static com.hazelcast.jet.impl.util.ImdgUtil.maybeUnwrapImdgPredicate;
-import static com.hazelcast.jet.impl.util.Util.distributeObjects;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.jet.impl.util.Util.distributeObjects;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_CURRENT;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
@@ -344,39 +352,40 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
                                  .toCompletableFuture();
     }
 
+    public static HzClientDataStoreFactory getDataStoreFactory(HazelcastInstance hazelcastInstance, String name) {
+        NodeEngineImpl nodeEngine = Util.getNodeEngine(hazelcastInstance);
+        ExternalDataStoreService externalDataStoreService = nodeEngine.getExternalDataStoreService();
+        ExternalDataStoreFactory<?> dataStoreFactory = externalDataStoreService.getExternalDataStoreFactory(name);
+
+        if (!(dataStoreFactory instanceof HzClientDataStoreFactory)) {
+            String className = JdbcDataStoreFactory.class.getSimpleName();
+            throw new HazelcastException("Data store factory '" + name + "' must be an instance of " + className);
+        }
+        return (HzClientDataStoreFactory) dataStoreFactory;
+    }
+
     private static class ClusterMetaSupplier<E, T> implements ProcessorMetaSupplier {
 
         static final long serialVersionUID = 1L;
 
+        private ClusterMetaSupplierParams clusterMetaSupplierParams;
         private final String clientXml;
+
+        private ExternalDataStoreRef externalDataStoreRef;
+
         private final FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<E>>
                 eventJournalReaderSupplier;
-        private final PredicateEx<? super E> predicate;
-        private final FunctionEx<? super E, ? extends T> projection;
-        private final JournalInitialPosition initialPos;
-        private final EventTimePolicy<? super T> eventTimePolicy;
-        private final SupplierEx<Permission> permissionFn;
 
         private transient int remotePartitionCount;
         private transient Map<Address, List<Integer>> addrToPartitions;
 
-        ClusterMetaSupplier(
-                @Nullable String clientXml,
-                @Nonnull FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<E>>
-                        eventJournalReaderSupplier,
-                @Nonnull PredicateEx<? super E> predicate,
-                @Nonnull FunctionEx<? super E, ? extends T> projection,
-                @Nonnull JournalInitialPosition initialPos,
-                @Nonnull EventTimePolicy<? super T> eventTimePolicy,
-                @Nonnull SupplierEx<Permission> permissionFn
-                ) {
-            this.clientXml = clientXml;
-            this.eventJournalReaderSupplier = eventJournalReaderSupplier;
-            this.predicate = predicate;
-            this.projection = projection;
-            this.initialPos = initialPos;
-            this.eventTimePolicy = eventTimePolicy;
-            this.permissionFn = permissionFn;
+        ClusterMetaSupplier(ClusterMetaSupplierParams clusterMetaSupplierParams) {
+            this.clusterMetaSupplierParams = clusterMetaSupplierParams;
+
+            clientXml = clusterMetaSupplierParams.getClientXml();
+            eventJournalReaderSupplier = clusterMetaSupplierParams.getEventJournalReaderSupplier();
+            externalDataStoreRef = clusterMetaSupplierParams.getExternalDataStoreRef();
+
         }
 
         @Override
@@ -386,7 +395,13 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         @Override
         public void init(@Nonnull Context context) {
-            if (clientXml != null) {
+            // If externalDataStoreRef is specified use the cached HazelcastInstance
+            if (externalDataStoreRef != null) {
+                HzClientDataStoreFactory hzClientDataStoreFactory = getDataStoreFactory(context.hazelcastInstance(),
+                        externalDataStoreRef.getName());
+                HazelcastInstance client = hzClientDataStoreFactory.getDataStore();
+                initRemote(client);
+            } else if (clientXml != null) {
                 initRemote();
             } else {
                 PermissionsUtil.checkPermission(eventJournalReaderSupplier, context);
@@ -402,6 +417,11 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             } finally {
                 client.shutdown();
             }
+        }
+
+        private void initRemote(HazelcastInstance client) {
+            HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
+            remotePartitionCount = clientProxy.client.getClientPartitionService().getPartitionCount();
         }
 
         private void initLocal(Set<Partition> partitions) {
@@ -420,16 +440,19 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
                         .collect(groupingBy(partition -> addresses.get(partition % addresses.size())));
             }
 
-            return address -> new ClusterProcessorSupplier<>(addrToPartitions.get(address),
-                    clientXml, eventJournalReaderSupplier, predicate, projection, initialPos,
-                    eventTimePolicy);
+
+            return address -> new ClusterProcessorSupplier<>(addrToPartitions.get(address), clusterMetaSupplierParams);
         }
 
         @Override
         public Permission getRequiredPermission() {
+            if (externalDataStoreRef != null) {
+                return null;
+            }
             if (clientXml != null) {
                 return null;
             }
+            SupplierEx<Permission> permissionFn = clusterMetaSupplierParams.getPermissionFn();
             return permissionFn.get();
         }
     }
@@ -442,6 +465,10 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         private final List<Integer> ownedPartitions;
         @Nullable
         private final String clientXml;
+
+        @Nullable
+        private final ExternalDataStoreRef externalDataStoreRef;
+
         @Nonnull
         private final FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<E>>
                 eventJournalReaderSupplier;
@@ -459,28 +486,34 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         ClusterProcessorSupplier(
                 @Nonnull List<Integer> ownedPartitions,
-                @Nullable String clientXml,
-                @Nonnull FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<E>>
-                        eventJournalReaderSupplier,
-                @Nonnull PredicateEx<? super E> predicate,
-                @Nonnull FunctionEx<? super E, ? extends T> projection,
-                @Nonnull JournalInitialPosition initialPos,
-                @Nonnull EventTimePolicy<? super T> eventTimePolicy
+                @Nonnull ClusterMetaSupplierParams clusterMetaSupplierParams
         ) {
             this.ownedPartitions = ownedPartitions;
-            this.clientXml = clientXml;
-            this.eventJournalReaderSupplier = eventJournalReaderSupplier;
-            this.predicate = predicate;
-            this.projection = projection;
-            this.initialPos = initialPos;
-            this.eventTimePolicy = eventTimePolicy;
+
+            clientXml = clusterMetaSupplierParams.getClientXml();
+            eventJournalReaderSupplier = clusterMetaSupplierParams.getEventJournalReaderSupplier();
+            predicate = clusterMetaSupplierParams.getPredicate();
+            projection = clusterMetaSupplierParams.getProjection();
+            initialPos = clusterMetaSupplierParams.getInitialPos();
+            eventTimePolicy = clusterMetaSupplierParams.getEventTimePolicy();
+            externalDataStoreRef = clusterMetaSupplierParams.getExternalDataStoreRef();
+
         }
 
         @Override
         public void init(@Nonnull Context context) {
+            // Default is HazelcastInstance for member
             HazelcastInstance instance = context.hazelcastInstance();
-            if (clientXml != null) {
-                client = newHazelcastClient(asClientConfig(clientXml));
+
+            if (externalDataStoreRef != null) {
+                // Use cached HazelcastInstance for client
+                HzClientDataStoreFactory hzClientDataStoreFactory = getDataStoreFactory(context.hazelcastInstance(),
+                        externalDataStoreRef.getName());
+                instance = hzClientDataStoreFactory.getDataStore();
+            } else if (clientXml != null) {
+                // Use new HazelcastInstance for client
+                ClientConfig clientConfig = asClientConfig(clientXml);
+                client = newHazelcastClient(clientConfig);
                 instance = client;
             }
             eventJournalReader = eventJournalReaderSupplier.apply(instance);
@@ -510,70 +543,122 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public static <K, V, T> ProcessorMetaSupplier streamMapSupplier(
+    public static <K, V, R> ProcessorMetaSupplier streamMapSupplier(
             @Nonnull String mapName,
             @Nonnull PredicateEx<? super EventJournalMapEvent<K, V>> predicate,
-            @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends T> projection,
+            @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends R> projection,
             @Nonnull JournalInitialPosition initialPos,
-            @Nonnull EventTimePolicy<? super T> eventTimePolicy
+            @Nonnull EventTimePolicy<? super R> eventTimePolicy
     ) {
         checkSerializable(predicate, "predicate");
         checkSerializable(projection, "projection");
 
-        return new ClusterMetaSupplier<>(null,
-                SecuredFunctions.mapEventJournalReaderFn(mapName),
-                predicate, projection, initialPos, eventTimePolicy,
-                () -> new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
+        ClusterMetaSupplierParams<EventJournalMapEvent<K, V>, R> params = ClusterMetaSupplierParams
+                .fromXML(null);
+
+        params.setEventJournalReaderSupplier(SecuredFunctions.mapEventJournalReaderFn(mapName));
+        params.setPredicate(predicate);
+        params.setProjection(projection);
+        params.setInitialPos(initialPos);
+        params.setEventTimePolicy(eventTimePolicy);
+        params.setPermissionFn(() -> new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
+
+        return new ClusterMetaSupplier<>(params);
     }
 
-    @SuppressWarnings("unchecked")
-    public static <K, V, T> ProcessorMetaSupplier streamRemoteMapSupplier(
+    // RemoteMap processor that uses the given clientXml
+    public static <K, V, R> ProcessorMetaSupplier streamRemoteMapSupplier(
             @Nonnull String mapName,
             @Nonnull String clientXml,
             @Nonnull PredicateEx<? super EventJournalMapEvent<K, V>> predicate,
-            @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends T> projection,
+            @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends R> projection,
             @Nonnull JournalInitialPosition initialPos,
-            @Nonnull EventTimePolicy<? super T> eventTimePolicy) {
+            @Nonnull EventTimePolicy<? super R> eventTimePolicy) {
         checkSerializable(predicate, "predicate");
         checkSerializable(projection, "projection");
 
-        return new ClusterMetaSupplier<>(clientXml,
-                SecuredFunctions.mapEventJournalReaderFn(mapName),
-                predicate, projection, initialPos, eventTimePolicy,
-                () -> new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
+        ClusterMetaSupplierParams<EventJournalMapEvent<K, V>, R> params = ClusterMetaSupplierParams
+                .fromXML(clientXml);
+
+        params.setEventJournalReaderSupplier(SecuredFunctions.mapEventJournalReaderFn(mapName));
+        params.setPredicate(predicate);
+        params.setProjection(projection);
+        params.setInitialPos(initialPos);
+        params.setEventTimePolicy(eventTimePolicy);
+        params.setPermissionFn(() -> new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
+
+        return new ClusterMetaSupplier<EventJournalMapEvent<K, V>, R>(params);
+
     }
 
-    @SuppressWarnings("unchecked")
-    public static <K, V, T> ProcessorMetaSupplier streamCacheSupplier(
+    // RemoteMap processor that uses the given ExternalDataStoreRef
+    // K,V is input type
+    // R is return type
+    public static <K, V, R> ProcessorMetaSupplier streamRemoteMapSupplier(
+            @Nonnull String mapName,
+            @Nonnull ExternalDataStoreRef externalDataStoreRef,
+            @Nonnull PredicateEx<? super EventJournalMapEvent<K, V>> predicate,
+            @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends R> projection,
+            @Nonnull JournalInitialPosition initialPos,
+            @Nonnull EventTimePolicy<? super R> eventTimePolicy) {
+        checkSerializable(predicate, "predicate");
+        checkSerializable(projection, "projection");
+
+        ClusterMetaSupplierParams<EventJournalMapEvent<K, V>, R> params = ClusterMetaSupplierParams
+                .fromExternalDataStoreRef(externalDataStoreRef);
+
+        params.setEventJournalReaderSupplier(SecuredFunctions.mapEventJournalReaderFn(mapName));
+        params.setPredicate(predicate);
+        params.setProjection(projection);
+        params.setInitialPos(initialPos);
+        params.setEventTimePolicy(eventTimePolicy);
+        params.setPermissionFn(() -> new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
+
+        return new ClusterMetaSupplier<>(params);
+    }
+
+    public static <K, V, R> ProcessorMetaSupplier streamCacheSupplier(
             @Nonnull String cacheName,
             @Nonnull PredicateEx<? super EventJournalCacheEvent<K, V>> predicate,
-            @Nonnull FunctionEx<? super EventJournalCacheEvent<K, V>, ? extends T> projection,
+            @Nonnull FunctionEx<? super EventJournalCacheEvent<K, V>, ? extends R> projection,
             @Nonnull JournalInitialPosition initialPos,
-            @Nonnull EventTimePolicy<? super T> eventTimePolicy) {
+            @Nonnull EventTimePolicy<? super R> eventTimePolicy) {
         checkSerializable(predicate, "predicate");
         checkSerializable(projection, "projection");
 
-        return new ClusterMetaSupplier<>(null,
-                SecuredFunctions.cacheEventJournalReaderFn(cacheName),
-                predicate, projection, initialPos, eventTimePolicy,
-                () -> new CachePermission(cacheName, ACTION_CREATE, ACTION_READ));
+        ClusterMetaSupplierParams<EventJournalCacheEvent<K, V>, R> params = ClusterMetaSupplierParams
+                .fromXML(null);
+
+        params.setEventJournalReaderSupplier(SecuredFunctions.cacheEventJournalReaderFn(cacheName));
+        params.setPredicate(predicate);
+        params.setProjection(projection);
+        params.setInitialPos(initialPos);
+        params.setEventTimePolicy(eventTimePolicy);
+        params.setPermissionFn(() -> new CachePermission(cacheName, ACTION_CREATE, ACTION_READ));
+
+        return new ClusterMetaSupplier<>(params);
     }
 
-    @SuppressWarnings("unchecked")
-    public static <K, V, T> ProcessorMetaSupplier streamRemoteCacheSupplier(
+    public static <K, V, R> ProcessorMetaSupplier streamRemoteCacheSupplier(
             @Nonnull String cacheName,
             @Nonnull String clientXml,
             @Nonnull PredicateEx<? super EventJournalCacheEvent<K, V>> predicate,
-            @Nonnull FunctionEx<? super EventJournalCacheEvent<K, V>, ? extends T> projection,
+            @Nonnull FunctionEx<? super EventJournalCacheEvent<K, V>, ? extends R> projection,
             @Nonnull JournalInitialPosition initialPos,
-            @Nonnull EventTimePolicy<? super T> eventTimePolicy) {
+            @Nonnull EventTimePolicy<? super R> eventTimePolicy) {
         checkSerializable(predicate, "predicate");
         checkSerializable(projection, "projection");
 
-        return new ClusterMetaSupplier<>(clientXml,
-                SecuredFunctions.cacheEventJournalReaderFn(cacheName),
-                predicate, projection, initialPos, eventTimePolicy,
-                () -> new CachePermission(cacheName, ACTION_CREATE, ACTION_READ));
+        ClusterMetaSupplierParams<EventJournalCacheEvent<K, V>, R> params = ClusterMetaSupplierParams
+                .fromXML(clientXml);
+
+        params.setEventJournalReaderSupplier(SecuredFunctions.cacheEventJournalReaderFn(cacheName));
+        params.setPredicate(predicate);
+        params.setProjection(projection);
+        params.setInitialPos(initialPos);
+        params.setEventTimePolicy(eventTimePolicy);
+        params.setPermissionFn(() -> new CachePermission(cacheName, ACTION_CREATE, ACTION_READ));
+
+        return new ClusterMetaSupplier<>(params);
     }
 }

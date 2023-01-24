@@ -66,7 +66,8 @@ public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
 
     @Override
     public <DS> ExternalDataStoreFactory<DS> getExternalDataStoreFactory(String name) {
-        ExternalDataStoreConfig externalDataStoreConfig = node.getConfig().getExternalDataStoreConfigs().get(name);
+        Map<String, ExternalDataStoreConfig> externalDataStoreConfigs = node.getConfig().getExternalDataStoreConfigs();
+        ExternalDataStoreConfig externalDataStoreConfig = externalDataStoreConfigs.get(name);
         if (externalDataStoreConfig == null) {
             throw new HazelcastException("External data store factory '" + name + "' not found");
         }

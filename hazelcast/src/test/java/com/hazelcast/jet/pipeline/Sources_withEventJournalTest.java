@@ -22,7 +22,9 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.datastore.HzClientDataStoreFactory;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.jet.Job;
@@ -35,8 +37,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -58,16 +62,31 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     private static HazelcastInstance remoteHz;
     private static ClientConfig clientConfig;
 
+    private static final String HZ_CLIENT_EXTERNAL_REF = "hzclientexternalref";
+
     @BeforeClass
-    public static void setUp() {
+    public static void setUp() throws IOException {
         Config config = new Config();
-        config.setClusterName(randomName());
+        config.setClusterName("dev");
         config.addCacheConfig(new CacheSimpleConfig().setName("*"));
         config.getMapConfig(JOURNALED_MAP_PREFIX + '*').getEventJournalConfig().setEnabled(true);
         config.getCacheConfig(JOURNALED_CACHE_PREFIX + '*').getEventJournalConfig().setEnabled(true);
 
+        // Read XML and set as ExternalDataStoreConfig
+        ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig(HZ_CLIENT_EXTERNAL_REF);
+        externalDataStoreConfig.setClassName(HzClientDataStoreFactory.class.getName());
+
+        byte[] bytes = java.nio.file.Files.readAllBytes(Paths.get("src", "test", "resources",
+                "hazelcast-client-test-external.xml"));
+        String xmlString = new String(bytes);
+        externalDataStoreConfig.setProperty(HzClientDataStoreFactory.CLIENT_XML, xmlString);
+
         remoteHz = createRemoteCluster(config, 2).get(0);
         clientConfig = getClientConfigForRemoteCluster(remoteHz);
+
+        for (HazelcastInstance allHazelcastInstance : allHazelcastInstances()) {
+            allHazelcastInstance.getConfig().addExternalDataStoreConfig(externalDataStoreConfig);
+        }
     }
 
     @AfterClass
@@ -281,6 +300,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         testMapJournal_withPredicateAndProjection(map, source);
     }
 
+    // Test with ClientConfig
     @Test
     public void remoteMapJournal_withPredicateAndProjectionFn() {
         // Given
@@ -294,6 +314,24 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // Then
         testMapJournal_withPredicateAndProjection(map, source);
+    }
+
+    // Test with ExternalDataStoreRef
+    @Test
+    public void remoteMapJournal_withExternalConfigPredicateAndProjectionFn() {
+        // Given
+        String mapName = JOURNALED_MAP_PREFIX + randomName();
+        IMap<String, Integer> map = remoteHz.getMap(mapName);
+        PredicateEx<EventJournalMapEvent<String, Integer>> p = e -> e.getNewValue() % 2 == 0;
+
+        // When
+        ExternalDataStoreRef externalDataStoreRef = ExternalDataStoreRef.externalDataStoreRef(HZ_CLIENT_EXTERNAL_REF);
+        StreamSource<Integer> source = Sources.remoteMapJournal(
+                mapName, externalDataStoreRef, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, p);
+
+        // Then
+        testMapJournal_withPredicateAndProjection(map, source);
+
     }
 
     private void testMapJournal_withPredicateAndProjection(IMap<String, Integer> srcMap, StreamSource<Integer> source) {

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<hazelcast-client xmlns="http://www.hazelcast.com/schema/client-config"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.hazelcast.com/schema/client-config http://www.hazelcast.com/schema/client-config/hazelcast-client-config-5.3.xsd">
+    <cluster-name>dev</cluster-name>
+    <network>
+        <smart-routing>true</smart-routing>
+        <redo-operation>false</redo-operation>
+        <connection-timeout>5000</connection-timeout>
+        <cluster-members>
+            <address>127.0.0.1:5701</address>
+        </cluster-members>
+        <socket-options>
+            <tcp-no-delay>true</tcp-no-delay>
+            <keep-alive>true</keep-alive>
+            <reuse-address>true</reuse-address>
+            <linger-seconds>3</linger-seconds>
+            <buffer-size>128</buffer-size>
+        </socket-options>
+        <socket-interceptor enabled="false"></socket-interceptor>
+        <aws enabled="false"></aws>
+        <gcp enabled="false"></gcp>
+        <azure enabled="false"></azure>
+        <kubernetes enabled="false"></kubernetes>
+        <eureka enabled="false"></eureka>
+        <auto-detection enabled="true"></auto-detection>
+        <icmp-ping enabled="false">
+            <timeout-milliseconds>1000</timeout-milliseconds>
+            <interval-milliseconds>1000</interval-milliseconds>
+            <ttl>255</ttl>
+            <max-attempts>2</max-attempts>
+            <echo-fail-fast-on-startup>true</echo-fail-fast-on-startup>
+        </icmp-ping>
+    </network>
+    <backup-ack-to-client-enabled>true</backup-ack-to-client-enabled>
+    <security></security>
+    <serialization>
+        <portable-version>0</portable-version>
+        <use-native-byte-order>false</use-native-byte-order>
+        <byte-order>BIG_ENDIAN</byte-order>
+        <enable-compression>false</enable-compression>
+        <enable-shared-object>true</enable-shared-object>
+        <allow-unsafe>false</allow-unsafe>
+        <allow-override-default-serializers>false</allow-override-default-serializers>
+        <check-class-def-errors>true</check-class-def-errors>
+        <compact-serialization></compact-serialization>
+    </serialization>
+    <native-memory enabled="false" allocator-type="POOLED">
+        <capacity value="512" unit="MEGABYTES"/>
+        <min-block-size>16</min-block-size>
+        <page-size>4194304</page-size>
+        <metadata-space-percentage>12.5</metadata-space-percentage>
+        <persistent-memory enabled="false" mode="MOUNTED"></persistent-memory>
+    </native-memory>
+    <connection-strategy async-start="false" reconnect-mode="ON">
+        <connection-retry>
+            <initial-backoff-millis>1000</initial-backoff-millis>
+            <max-backoff-millis>30000</max-backoff-millis>
+            <multiplier>1.05</multiplier>
+            <cluster-connect-timeout-millis>-1</cluster-connect-timeout-millis>
+            <jitter>0.0</jitter>
+        </connection-retry>
+    </connection-strategy>
+    <user-code-deployment enabled="false"></user-code-deployment>
+    <metrics enabled="true">
+        <jmx enabled="true"></jmx>
+        <collection-frequency-seconds>5</collection-frequency-seconds>
+    </metrics>
+    <instance-tracking enabled="false"></instance-tracking>
+    <sql>
+        <resubmission-mode>NEVER</resubmission-mode>
+    </sql>
+</hazelcast-client>
