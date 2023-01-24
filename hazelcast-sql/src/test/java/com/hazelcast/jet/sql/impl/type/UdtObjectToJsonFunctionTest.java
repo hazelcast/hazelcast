@@ -97,6 +97,21 @@ public class UdtObjectToJsonFunctionTest extends SqlJsonTestSupport {
                 .hasFieldOrPropertyWithValue("code", SqlErrorCode.PARSING);
     }
 
+    @Test
+    public void test_disabledQueries() {
+        assertThatThrownBy(() -> client().getSql().execute("SELECT CAST(? as JSON)", new User()))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Cannot convert OBJECT to JSON");
+
+        assertThatThrownBy(() -> client().getSql().execute("SELECT CAST((2, 'user', null) as JSON)"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Cannot convert ROW to JSON");
+
+        assertThatThrownBy(() -> instance().getSql().execute("SELECT CAST(CAST((2, 'user', null) AS UserType) as JSON)"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Complex type specifications are not supported");
+    }
+
     private void initDefault() {
         client().getSql().execute(format("CREATE TYPE UserType (id BIGINT, name VARCHAR, organization OrganizationType) "
                 + "OPTIONS ('format'='java', 'javaClass'='%s')", User.class.getName()));
