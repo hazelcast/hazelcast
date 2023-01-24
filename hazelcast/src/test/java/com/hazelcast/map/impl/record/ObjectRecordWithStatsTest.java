@@ -80,8 +80,8 @@ public class ObjectRecordWithStatsTest {
         assertEquals(record, record);
         assertEquals(record, recordSameAttributes);
 
-        assertNotEquals(record, null);
-        assertNotEquals(record, new Object());
+        assertNotEquals(null, record);
+        assertNotEquals(new Object(), record);
 
         assertNotEquals(record, dataRecord);
         assertNotEquals(record, recordOtherLastStoredTime);

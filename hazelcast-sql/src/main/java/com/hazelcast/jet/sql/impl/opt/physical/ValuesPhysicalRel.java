@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -57,7 +56,7 @@ public class ValuesPhysicalRel extends AbstractRelNode implements PhysicalRel {
     }
 
     @Override
-    public Vertex accept(CreateDagVisitor visitor) {
+    public <V> V accept(CreateDagVisitor<V> visitor) {
         return visitor.onValues(this);
     }
 

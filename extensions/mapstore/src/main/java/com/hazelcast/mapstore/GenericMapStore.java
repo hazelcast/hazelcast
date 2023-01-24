@@ -291,8 +291,14 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
     @Override
     public void destroy() {
-        awaitInitFinished();
-        dropMapping(mapping);
+        ManagedExecutorService asyncExecutor = nodeEngine()
+                .getExecutionService()
+                .getExecutor(ExecutionService.MAP_STORE_OFFLOADABLE_EXECUTOR);
+
+        asyncExecutor.submit(() -> {
+            awaitInitFinished();
+            dropMapping(mapping);
+        });
     }
 
     @Override

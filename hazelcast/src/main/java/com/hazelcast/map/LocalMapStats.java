@@ -95,15 +95,28 @@ public interface LocalMapStats extends LocalInstanceStats {
     long getLastUpdateTime();
 
     /**
-     * Returns the number of hits (reads) of locally owned entries, including those
-     * which are no longer in the map (for example, may have been evicted).
+     * Returns the number of hits (reads) of locally
+     * owned entries, including those which are no longer
+     * in the map (for example, may have been evicted).
      * <p>
-     * The number of hits may be inaccurate after a partition is migrated to a new
-     * owner member.
+     * The number of hits may be inaccurate after a
+     * partition is migrated to a new owner member.
      *
      * @return number of hits (reads) of the locally owned entries.
      */
     long getHits();
+
+    /**
+     * @return number of evictions happened on locally
+     * owned entries, backups are not included.
+     */
+    long getEvictionCount();
+
+    /**
+     * @return number of expirations happened on locally
+     * owned entries, backups are not included.
+     */
+    long getExpirationCount();
 
     /**
      * Returns the number of currently locked keys. The returned count

@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -71,7 +70,7 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
     }
 
     @Override
-    public Vertex accept(CreateDagVisitor visitor) {
+    public <V> V accept(CreateDagVisitor<V> visitor) {
         return visitor.onUpdate(this);
     }
 

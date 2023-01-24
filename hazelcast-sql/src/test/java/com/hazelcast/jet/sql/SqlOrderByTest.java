@@ -722,7 +722,7 @@ public class SqlOrderByTest extends HazelcastTestSupport {
         executor.shutdown();
     }
 
-        private void addIndex(List<String> fieldNames, IndexType type) {
+    private void addIndex(List<String> fieldNames, IndexType type) {
         addIndex(fieldNames, type, mapName());
     }
 

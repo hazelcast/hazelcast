@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.map.index;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.sql.impl.opt.physical.CreateTopLevelDagVisitor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,7 +34,7 @@ import java.util.List;
 /**
  * Test of merge-sort correctness on DAG level (ordered edge).
  *
- * @see com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor#onMapIndexScan
+ * @see CreateTopLevelDagVisitor#onMapIndexScan
  */
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapSortedIndexScanIntegrationTest extends SqlTestSupport {

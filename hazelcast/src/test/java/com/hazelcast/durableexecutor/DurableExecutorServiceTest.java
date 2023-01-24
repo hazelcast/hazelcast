@@ -371,7 +371,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         Callable<String> task = new BasicTestCallable();
         DurableExecutorService executor = createSingleNodeDurableExecutorService("testBasicTask");
         Future<String> future = executor.submit(task);
-        assertEquals(future.get(), BasicTestCallable.RESULT);
+        assertEquals(BasicTestCallable.RESULT, future.get());
     }
 
     @Test
@@ -465,7 +465,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     /* ############ future ############ */
 
     private void assertResult(Future<?> future, Object expected) throws Exception {
-        assertEquals(future.get(), expected);
+        assertEquals(expected, future.get());
         assertTrue(future.isDone());
     }
 

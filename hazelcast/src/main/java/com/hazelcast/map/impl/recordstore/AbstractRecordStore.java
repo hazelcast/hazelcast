@@ -61,7 +61,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final SerializationService serializationService;
     protected final CompositeMutationObserver<Record> mutationObserver;
     protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
-
     protected Storage<Data, Record> storage;
     protected IndexingMutationObserver<Record> indexingObserver;
 
@@ -138,11 +137,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
             default:
                 throw new IllegalArgumentException("Unexpected provenance: `" + provenance + "`");
         }
-    }
-
-    @Override
-    public LocalRecordStoreStats getLocalRecordStoreStats() {
-        return stats;
     }
 
     @Override
@@ -249,12 +243,12 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     @Override
-    public LocalRecordStoreStatsImpl getStats() {
+    public LocalRecordStoreStatsImpl getLocalRecordStoreStats() {
         return stats;
     }
 
     @Override
-    public void setStats(LocalRecordStoreStats stats) {
+    public void setLocalRecordStoreStats(LocalRecordStoreStats stats) {
         this.stats.copyFrom(stats);
     }
 }

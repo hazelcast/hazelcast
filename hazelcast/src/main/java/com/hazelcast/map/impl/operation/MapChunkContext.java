@@ -137,8 +137,8 @@ public class MapChunkContext {
         return recordStore.isLoaded();
     }
 
-    public final LocalRecordStoreStatsImpl getStats() {
-        return recordStore.getStats();
+    public final LocalRecordStoreStatsImpl getLocalRecordStoreStats() {
+        return recordStore.getLocalRecordStoreStats();
     }
 
     public final MapIndexInfo createMapIndexInfo() {
