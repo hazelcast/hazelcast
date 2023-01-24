@@ -33,6 +33,7 @@ import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -102,7 +103,7 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
         for (int i = 0; i < count; i++) {
             KvRowProjector projector = projectorSupplier.get(evalContext, extractors);
             Processor processor = new StreamKafkaP<>(
-                    properties,
+                    (c) -> new KafkaConsumer<>(properties),
                     singletonList(topic),
                     record -> projector.project(record.key(), record.value()),
                     eventTimePolicy
