@@ -31,7 +31,7 @@ import org.apache.kafka.connect.data.Values;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.util.Objects;
+import java.net.URL;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
 
@@ -43,6 +43,9 @@ import static org.junit.Assert.fail;
 public class KafkaConnectRandomIntIntegrationTest extends JetTestSupport {
 
     public static final int ITEM_COUNT = 10_000;
+
+    private static final String CONNECTOR_URL = "https://hazelcast.jfrog.io/artifactory/libs-snapshot-local/" +
+            "sasakitoa/kafka/connect/random-connector/1.0-SNAPSHOT/random-connector-1.0-20230124.105259-1.jar";
 
     @Test
     public void readFromRandomSource() throws Exception {
@@ -66,11 +69,7 @@ public class KafkaConnectRandomIntIntegrationTest extends JetTestSupport {
                         list -> assertEquals(ITEM_COUNT, list.size())));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJar(Objects.requireNonNull(this.getClass()
-                        .getClassLoader()
-                        .getResource("random-connector-1.0-SNAPSHOT.jar"))
-                .getPath()
-        );
+        jobConfig.addJar(new URL(CONNECTOR_URL));
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
