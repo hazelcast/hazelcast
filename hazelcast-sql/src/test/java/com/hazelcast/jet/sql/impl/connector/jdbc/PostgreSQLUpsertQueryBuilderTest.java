@@ -60,7 +60,6 @@ public class PostgreSQLUpsertQueryBuilderTest {
 
     @Test
     public void testGetInsertClause() {
-
         PostgreSQLUpsertQueryBuilder builder = new PostgreSQLUpsertQueryBuilder(jdbcTable, sqlDialect);
         StringBuilder stringBuilder = new StringBuilder();
         builder.getInsertClause(stringBuilder);
@@ -71,7 +70,6 @@ public class PostgreSQLUpsertQueryBuilderTest {
 
     @Test
     public void testGetValuesClause() {
-
         PostgreSQLUpsertQueryBuilder builder = new PostgreSQLUpsertQueryBuilder(jdbcTable, sqlDialect);
         StringBuilder stringBuilder = new StringBuilder();
         builder.getValuesClause(stringBuilder);

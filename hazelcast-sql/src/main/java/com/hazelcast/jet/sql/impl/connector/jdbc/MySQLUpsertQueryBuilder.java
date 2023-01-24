@@ -46,7 +46,6 @@ class MySQLUpsertQueryBuilder {
     }
 
     void getInsertClause(StringBuilder stringBuilder) {
-
         stringBuilder.append("INSERT INTO ")
                 .append(quotedTableName)
                 .append(" (")
@@ -55,7 +54,6 @@ class MySQLUpsertQueryBuilder {
     }
 
     void getValuesClause(StringBuilder stringBuilder) {
-
         String values = quotedColumnNames.stream()
                 .map(dbFieldName -> "?")
                 .collect(Collectors.joining(","));

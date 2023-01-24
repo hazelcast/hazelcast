@@ -388,16 +388,16 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
 
     @Test
     public void whenStore_thenTableContainsRow() throws Exception {
-        createTable(mapName, "\"person_id\" INT PRIMARY KEY", "name VARCHAR(100)");
+        createTable(mapName, "\"person-id\" INT PRIMARY KEY", "name VARCHAR(100)");
 
         Properties properties = new Properties();
         properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
 
-        properties.setProperty(ID_COLUMN_PROPERTY, "person_id");
+        properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
         mapStore = createMapStore(properties, hz);
 
         GenericRecord person = GenericRecordBuilder.compact("Person")
-                                                   .setInt32("person_id", 0)
+                                                   .setInt32("person-id", 0)
                                                    .setString("name", "name-0")
                                                    .build();
         mapStore.store(0, person);
@@ -442,17 +442,17 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenRowAndIdColumn_whenStore_thenRowIsUpdated() throws Exception {
-        createTable(mapName, "\"person_id\" INT PRIMARY KEY", "name VARCHAR(100)");
+        createTable(mapName, "\"person-id\" INT PRIMARY KEY", "name VARCHAR(100)");
         insertItems(mapName, 1);
 
         Properties properties = new Properties();
         properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
 
-        properties.setProperty(ID_COLUMN_PROPERTY, "person_id");
+        properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
         mapStore = createMapStore(properties, hz);
 
         GenericRecord person = GenericRecordBuilder.compact("Person")
-                                                   .setInt32("person_id", 0)
+                                                   .setInt32("person-id", 0)
                                                    .setString("name", "updated")
                                                    .build();
         mapStore.store(0, person);

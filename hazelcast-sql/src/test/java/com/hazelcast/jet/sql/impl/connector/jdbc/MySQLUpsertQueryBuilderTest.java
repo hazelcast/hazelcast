@@ -39,7 +39,6 @@ public class MySQLUpsertQueryBuilderTest {
 
     @Before
     public void setUp() {
-
         MockitoAnnotations.openMocks(this);
 
         when(jdbcTable.getExternalName()).thenReturn("table1");
@@ -49,13 +48,10 @@ public class MySQLUpsertQueryBuilderTest {
             Object argument = invocation.getArguments()[0];
             return "`" + argument + "`";
         });
-
-
     }
 
     @Test
     public void testGetInsertClause() {
-
         MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, sqlDialect);
         StringBuilder stringBuilder = new StringBuilder();
         builder.getInsertClause(stringBuilder);
@@ -66,7 +62,6 @@ public class MySQLUpsertQueryBuilderTest {
 
     @Test
     public void testGetValuesClause() {
-
         MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, sqlDialect);
         StringBuilder stringBuilder = new StringBuilder();
         builder.getValuesClause(stringBuilder);
@@ -77,7 +72,6 @@ public class MySQLUpsertQueryBuilderTest {
 
     @Test
     public void testGetOnDuplicateClause() {
-
         MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, sqlDialect);
         StringBuilder stringBuilder = new StringBuilder();
         builder.getOnDuplicateClause(stringBuilder);

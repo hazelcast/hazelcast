@@ -19,36 +19,23 @@ package com.hazelcast.mapstore;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ExternalDataStoreConfig;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.datastore.JdbcDataStoreFactory;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
-import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
-import org.example.Person;
-import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-import static com.hazelcast.mapstore.GenericMapStore.EXTERNAL_REF_ID_PROPERTY;
-import static com.hazelcast.mapstore.GenericMapStore.TYPE_NAME_PROPERTY;
 import static org.assertj.core.util.Lists.newArrayList;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class GenericMapStorePostgreSQLUpsertTest extends JdbcSqlTestSupport {
+public class GenericMapStorePostgreSQLUpsertTest extends GenericMapStoreIntegrationTest {
 
-    private String tableName;
-
+    // Shadow the parent's @BeforeClass method by using the same method name
     @BeforeClass
     public static void beforeClass() {
         databaseProvider = new PostgresDatabaseProvider();
@@ -70,72 +57,4 @@ public class GenericMapStorePostgreSQLUpsertTest extends JdbcSqlTestSupport {
         initializeWithClient(2, config, clientConfig);
         sqlService = instance().getSql();
     }
-
-    @Before
-    public void setUp() throws Exception {
-        // Create a table and insert some Person objects
-        tableName = randomTableName();
-        createTable(tableName);
-        insertItems(tableName, 1);
-
-        // Add MapConfig for the table
-        MapConfig mapConfig = new MapConfig(tableName);
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setClassName(GenericMapStore.class.getName());
-        mapStoreConfig.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
-        mapStoreConfig.setProperty(TYPE_NAME_PROPERTY, "org.example.Person");
-        mapConfig.setMapStoreConfig(mapStoreConfig);
-        instance().getConfig().addMapConfig(mapConfig);
-    }
-
-    @Test
-    public void testPutWhenExists() {
-        HazelcastInstance client = client();
-        IMap<Integer, Person> map = client.getMap(tableName);
-
-        assertJdbcRowsAnyOrder(tableName,
-                new Row(0, "name-0")
-        );
-
-        map.put(0, new Person(0, "updated"));
-
-        assertJdbcRowsAnyOrder(tableName,
-                new Row(0, "updated")
-        );
-    }
-
-
-    @Test
-    public void testPutAllWhenExists() {
-        HazelcastInstance client = client();
-        IMap<Integer, Person> map = client.getMap(tableName);
-
-        Map<Integer, Person> putMap = new LinkedHashMap<>();
-        putMap.put(42, new Person(42, "name-42"));
-        putMap.put(0, new Person(0, "updated"));
-        putMap.put(44, new Person(44, "name-44"));
-        putMap.put(45, new Person(45, "name-45"));
-        map.putAll(putMap);
-
-        assertJdbcRowsAnyOrder(tableName,
-                new Row(0, "updated"),
-                new Row(42, "name-42"),
-                new Row(44, "name-44"),
-                new Row(45, "name-45")
-        );
-
-        putMap.put(42, new Person(42, "42"));
-        putMap.put(0, new Person(0, "0"));
-        putMap.put(44, new Person(44, "44"));
-        putMap.put(45, new Person(45, "45"));
-        map.putAll(putMap);
-
-        assertJdbcRowsAnyOrder(tableName,
-                new Row(0, "0"),
-                new Row(42, "42"),
-                new Row(44, "44"),
-                new Row(45, "45")
-        );
-    }
-
 }

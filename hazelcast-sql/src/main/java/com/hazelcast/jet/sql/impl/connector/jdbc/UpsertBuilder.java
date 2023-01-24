@@ -32,12 +32,10 @@ final class UpsertBuilder {
             H2SqlDialect.class);
 
     private UpsertBuilder() {
-
     }
 
     // Returns if upsert is supported for the given dialect
     static boolean isUpsertDialectSupported(JdbcTable jdbcTable) {
-
         SqlDialect dialect = jdbcTable.sqlDialect();
 
         return supportedDialects.stream().anyMatch(clazz -> clazz.isInstance(dialect));
@@ -45,7 +43,6 @@ final class UpsertBuilder {
     }
 
     static String getUpsertStatement(JdbcTable jdbcTable) {
-
         SqlDialect sqlDialect = jdbcTable.sqlDialect();
 
         String query = null;

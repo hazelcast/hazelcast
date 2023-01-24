@@ -53,7 +53,6 @@ class H2UpsertQueryBuilder {
     }
 
     void getMergeClause(StringBuilder stringBuilder) {
-
         stringBuilder.append("MERGE INTO ")
                 .append(quotedTableName)
                 .append(" (")
@@ -64,17 +63,15 @@ class H2UpsertQueryBuilder {
     void getKeyClause(StringBuilder stringBuilder) {
         stringBuilder.append("KEY (")
                 .append(String.join(",", quotedPrimaryKeys))
-                .append(" ) ");
+                .append(") ");
     }
 
     void getValuesClause(StringBuilder stringBuilder) {
-
         String values = quotedColumnNames.stream()
                 .map(dbFieldName -> "?")
                 .collect(Collectors.joining(","));
 
         stringBuilder.append("VALUES (").append(values).append(")");
-
     }
 
     String query() {
