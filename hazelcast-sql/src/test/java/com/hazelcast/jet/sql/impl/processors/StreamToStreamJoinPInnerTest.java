@@ -437,8 +437,8 @@ public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
             int leftIndex = 0;
             int rightIndex = 1;
             if (wmKeyToColumnIndex.length > 0) {
-                leftIndex = wmKeyToColumnIndexMap.get(0);
-                rightIndex = wmKeyToColumnIndexMap.get(1);
+                leftIndex = wmKeyToColumnIndex[0];
+                rightIndex = wmKeyToColumnIndex[1];
             }
             return ComparisonPredicate.create(
                     ColumnExpression.create(leftIndex, BIGINT),
