@@ -704,18 +704,16 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         Edge left = Edge.from(leftInput).to(joinVertex, 0);
         Edge right = Edge.from(rightInput).to(joinVertex, 1);
 
-        if (joinInfo.isRightOuter()) {
+        if (joinInfo.isEquiJoin()) {
+            left = left.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.leftEquiJoinIndices()));
+            right = right.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.rightEquiJoinIndices()));
+        } else if (joinInfo.isRightOuter()) {
             left = left.distributed().broadcast();
             right = right.unicast().local();
         } else {
             // this strategy applies to non-equi left and inner joins
             left = left.unicast().local();
             right = right.distributed().broadcast();
-        }
-
-        if (joinInfo.isEquiJoin()) {
-            left = left.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.leftEquiJoinIndices()));
-            right = right.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.rightEquiJoinIndices()));
         }
 
         dag.edge(left);
