@@ -29,9 +29,11 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -45,6 +47,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -55,13 +58,13 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static com.google.common.collect.Streams.mapWithIndex;
 import static com.hazelcast.internal.util.CollectionUtil.hasNonEmptyIntersection;
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
+import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
-import static com.hazelcast.jet.sql.impl.ObjectArrayKey.project;
-import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.DISTRIBUTED_EDGE_EVENTS_KEY;
 import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.LAST_RECEIVED_WM_KEY;
 import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.WM_STATE_KEY;
 import static java.util.function.Function.identity;
@@ -77,11 +80,11 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     final Object2LongHashMap<Byte> wmState = new Object2LongHashMap<>(Long.MIN_VALUE);
     final Object2LongHashMap<Byte> lastReceivedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
     final Object2LongHashMap<Byte> lastEmittedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
+    final Set<Integer> outerJoinKeys = new HashSet<>();
 
     // package-visible for tests
     final StreamToStreamJoinBuffer[] buffer;
 
-    private final int processorIndex;
     private final JetJoinInfo joinInfo;
     private final int outerJoinSide;
     private final List<Entry<Byte, ToLongFunctionEx<JetSqlRow>>> leftTimeExtractors;
@@ -91,6 +94,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private long maxProcessorAccumulatedRecords;
 
     private ExpressionEvalContext evalContext;
+    private int processorIndex;
+
     private Iterator<JetSqlRow> iterator;
     private JetSqlRow currItem;
 
@@ -104,14 +109,12 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     @SuppressWarnings("checkstyle:ExecutableStatementCount")
     public StreamToStreamJoinP(
-            final int processorIndex,
             final JetJoinInfo joinInfo,
             final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors,
             final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors,
             final Map<Byte, Map<Byte, Long>> postponeTimeMap,
             final Tuple2<Integer, Integer> columnCounts
     ) {
-        this.processorIndex = processorIndex;
         this.joinInfo = joinInfo;
         this.leftTimeExtractors = new ArrayList<>(leftTimeExtractors.entrySet());
         this.rightTimeExtractors = new ArrayList<>(rightTimeExtractors.entrySet());
@@ -171,6 +174,16 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         emptyLeftRow = new JetSqlRow(ss, new Object[columnCounts.f0()]);
         emptyRightRow = new JetSqlRow(ss, new Object[columnCounts.f1()]);
         maxProcessorAccumulatedRecords = context.maxProcessorAccumulatedRecords();
+        processorIndex = context.localProcessorIndex();
+
+        if (!joinInfo.isEquiJoin()) {
+            JetServiceBackend jsb = getNodeEngine(context.hazelcastInstance()).getService(JetServiceBackend.SERVICE_NAME);
+            int[] processorPartitions = context.processorPartitions();
+            int[] sharedPartitionKeys = jsb.getSharedPartitionKeys();
+            for (int partitionId : processorPartitions) {
+                outerJoinKeys.add(sharedPartitionKeys[partitionId]);
+            }
+        }
     }
 
     @SuppressWarnings("checkstyle:NestedIfDepth")
@@ -300,6 +313,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         return true;
     }
 
+    @SuppressWarnings("checkstyle:NestedIfDepth")
     @Override
     public boolean saveToSnapshot() {
         if (snapshotTraverser == null) {
@@ -331,38 +345,69 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                 }
             }
 
-            leftBufferStream = buffer[0].content()
-                    .stream()
-                    .map(row -> entry(
-                            joinInfo.isEquiJoin() ? project(row, joinInfo.leftEquiJoinIndices()) : row.hashCode(),
-                            new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 0)
-                    ));
+            if (joinInfo.isEquiJoin()) {
+                leftBufferStream = buffer[0].content()
+                        .stream()
+                        .map(row -> entry(
+                                ObjectArrayKey.project(row, joinInfo.leftEquiJoinIndices()),
+                                new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 0)
+                        ));
 
-            rightBufferStream = buffer[1].content()
-                    .stream()
-                    .map(row -> entry(
-                            joinInfo.isEquiJoin() ? project(row, joinInfo.rightEquiJoinIndices()) : row.hashCode(),
-                            new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 1)
-                    ));
+                rightBufferStream = buffer[1].content()
+                        .stream()
+                        .map(row -> entry(
+                                ObjectArrayKey.project(row, joinInfo.rightEquiJoinIndices()),
+                                new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 1)
+                        ));
 
-            if (!joinInfo.isEquiJoin()) {
+            } else {
+                final Iterator<Integer>[] it = new Iterator[]{outerJoinKeys.iterator()};
+
                 // Note : details are described in TDD : docs/design/sql/15-stream-to-stream-join.md
-                if (joinInfo.isRightOuter() && processorIndex == 0) {
-                    leftBufferStream = buffer[0].content()
-                            .stream()
-                            .map(row -> entry(
-                                    broadcastKey(DISTRIBUTED_EDGE_EVENTS_KEY),
-                                    new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 0)
-                            ));
-                }
-
-                if (!joinInfo.isEquiJoin() && processorIndex == 0) {
+                if (joinInfo.isRightOuter()) {
+                    if (processorIndex == 0) {
+                        leftBufferStream = mapWithIndex(
+                                buffer[0].content().stream(),
+                                (row, index) -> entry(
+                                        broadcastKey(new BufferSnapshotKey(index)),
+                                        new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 0)
+                                ));
+                    } else {
+                        leftBufferStream = Stream.empty();
+                    }
                     rightBufferStream = buffer[1].content()
                             .stream()
-                            .map(row -> entry(
-                                    broadcastKey(DISTRIBUTED_EDGE_EVENTS_KEY),
-                                    new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 1)
-                            ));
+                            .map(row -> {
+                                        if (!it[0].hasNext()) {
+                                            it[0] = outerJoinKeys.iterator();
+                                        }
+                                        return entry(
+                                                it[0].next(),
+                                                new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 1));
+                                    }
+                            );
+                } else {
+                    if (processorIndex == 0) {
+                        rightBufferStream = mapWithIndex(
+                                buffer[1].content().stream(),
+                                (row, index) -> entry(
+                                        broadcastKey(new BufferSnapshotKey(index)),
+                                        new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 1)
+                                ));
+                    } else {
+                        rightBufferStream = Stream.empty();
+                    }
+                    leftBufferStream = buffer[0].content()
+                            .stream()
+                            .map(row -> {
+                                        if (!it[0].hasNext()) {
+                                            it[0] = outerJoinKeys.iterator();
+                                        }
+                                        return entry(
+                                                it[0].next(),
+                                                new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 0));
+                                    }
+                            );
                 }
             }
 
@@ -379,6 +424,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         if (value instanceof BufferSnapshotValue) {
             BufferSnapshotValue bsv = (BufferSnapshotValue) value;
+            System.err.println(key + " -> " + bsv);
             buffer[bsv.bufferOrdinal()].add(bsv.row());
             if (bsv.unused()) {
                 unusedEventsTracker.add(bsv.row());
@@ -553,7 +599,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             for (int i = 0; i < count; i++) {
                 processors.add(
                         new StreamToStreamJoinP(
-                                i,
                                 joinInfo,
                                 leftTimeExtractors,
                                 rightTimeExtractors,
@@ -581,6 +626,52 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             postponeTimeMap = SerializationUtil.readMap(in);
             leftInputColumnCount = in.readInt();
             rightInputColumnCount = in.readInt();
+        }
+    }
+
+    private static final class BufferSnapshotKey implements DataSerializable {
+        private long id;
+
+        @SuppressWarnings("unused")
+        BufferSnapshotKey() {
+        }
+
+        BufferSnapshotKey(long id) {
+            this.id = id;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeLong(id);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            id = in.readLong();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            BufferSnapshotKey that = (BufferSnapshotKey) o;
+            return id == that.id;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(id);
+        }
+
+        @Override
+        public String toString() {
+            return "BufferSnapshotKey{" +
+                    "id=" + id +
+                    '}';
         }
     }
 

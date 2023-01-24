@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql.impl.processors;
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ToLongFunctionEx;
-import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
@@ -39,6 +39,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -70,7 +71,7 @@ import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
-public class StreamToStreamJoinPInnerTest extends JetTestSupport {
+public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
 
     /**
      * An output checker that will consider the actual and expected object lists
@@ -137,6 +138,11 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
     private final Map<Byte, Map<Byte, Long>> postponeTimeMap = new HashMap<>();
 
+    @BeforeClass
+    public static void beforeClass() {
+        initialize(1, null);
+    }
+
     @Test
     public void test_equalTimes_singleWmKeyPerInput() {
         // l.time=r.time
@@ -177,6 +183,7 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         SupplierEx<Processor> supplier = createProcessor(2, 1);
 
         TestSupport.verifyProcessor(supplier)
+                .hazelcastInstance(instance())
                 .outputChecker(SAME_ITEMS_ANY_ORDER_EQUIVALENT_WMS)
                 .expectExactOutput(
                         in(0, jetRow(12L, 9L)),
@@ -233,6 +240,7 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         SupplierEx<Processor> supplier = createProcessor(2, 2);
 
         TestSupport.verifyProcessor(supplier)
+                .hazelcastInstance(instance())
                 .outputChecker(SAME_ITEMS_ANY_ORDER_EQUIVALENT_WMS)
                 .expectExactOutput(
                         in(0, jetRow(12L, 10L)),
@@ -279,7 +287,6 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         JetJoinInfo joinInfo = new JetJoinInfo(INNER, new int[0], new int[0], condition, condition);
 
         SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
-                0,
                 joinInfo,
                 leftExtractors,
                 rightExtractors,
@@ -287,6 +294,7 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
                 Tuple2.tuple2(2, 1));
 
         TestSupport.verifyProcessor(supplier)
+                .hazelcastInstance(instance())
                 .expectExactOutput(
                         in(1, jetRow(3L)),
                         in(0, jetRow(2L, 2)), // doesn't join, field1 <= 10
@@ -330,6 +338,7 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         SupplierEx<Processor> supplier = createProcessor(1, 1);
 
         TestSupport.verifyProcessor(supplier)
+                .hazelcastInstance(instance())
                 .expectExactOutput(
                         in(0, wm(10, (byte) 0)),
                         processorAssertion((StreamToStreamJoinP p) ->
@@ -378,6 +387,7 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         SupplierEx<Processor> supplier = createProcessor(1, 1);
 
         TestSupport.verifyProcessor(supplier)
+                .hazelcastInstance(instance())
                 .outputChecker(SAME_ITEMS_ANY_ORDER_EQUIVALENT_WMS)
                 .expectExactOutput(
                         in(0, wm(10, (byte) 0)),
@@ -420,7 +430,7 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
             wmKeyToColumnIndexMap.put((byte) wmKeyToColumnIndex[i], (byte) wmKeyToColumnIndex[i + 1]);
         }
 
-        // specific case for simple equi-join : l.time == r.time
+        // specific case for simple equi-join: l.time == r.time
         if (postponeTimeMap.size() == 2
                 && postponeTimeMap.get((byte) 0).get((byte) 1) == 0L
                 && postponeTimeMap.get((byte) 1).get((byte) 0) == 0L) {
@@ -465,7 +475,6 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         }
         JetJoinInfo joinInfo = new JetJoinInfo(INNER, left, right, condition, condition);
         return () -> new StreamToStreamJoinP(
-                0,
                 joinInfo,
                 leftExtractors,
                 rightExtractors,
