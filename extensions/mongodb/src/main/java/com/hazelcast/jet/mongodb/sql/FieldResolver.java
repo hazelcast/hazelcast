@@ -2,6 +2,7 @@ package com.hazelcast.jet.mongodb.sql;
 
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
@@ -26,55 +27,58 @@ import static java.util.Objects.requireNonNull;
 public class FieldResolver {
 
     List<MappingField> resolveFields(
-            @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields,
-            @Nonnull String externalName
+            @Nonnull List<MappingField> userFields
     ) {
-        Map<String, DbField> dbFields = readFields(options);
+        Map<String, MongoField> dbFields = readFields(options);
 
         List<MappingField> resolvedFields = new ArrayList<>();
-//        if (userFields.isEmpty()) {
-//            for (DbField dbField : dbFields.values()) {
-//                try {
-//                    MappingField mappingField = new MappingField(
-//                            dbField.columnName,
-//                            resolveType(dbField.columnTypeName)
-//                    );
-//                    mappingField.setPrimaryKey(dbField.primaryKey);
-//                    resolvedFields.add(mappingField);
-//                } catch (IllegalArgumentException e) {
-//                    throw new IllegalStateException("Could not load column class " + dbField.columnTypeName, e);
-//                }
-//            }
-//        } else {
-//            for (MappingField f : userFields) {
-//                if (f.externalName() != null) {
-//                    DbField dbField = dbFields.get(f.externalName());
-//                    if (dbField == null) {
-//                        throw new IllegalStateException("Could not resolve field with external name " + f.externalName());
-//                    }
-//                    validateType(f, dbField);
-//                    MappingField mappingField = new MappingField(f.name(), f.type(), f.externalName());
-//                    mappingField.setPrimaryKey(dbField.primaryKey);
-//                    resolvedFields.add(mappingField);
-//                } else {
-//                    DbField dbField = dbFields.get(f.name());
-//                    if (dbField == null) {
-//                        throw new IllegalStateException("Could not resolve field with name " + f.name());
-//                    }
-//                    validateType(f, dbField);
-//                    MappingField mappingField = new MappingField(f.name(), f.type());
-//                    mappingField.setPrimaryKey(dbField.primaryKey);
-//                    resolvedFields.add(mappingField);
-//                }
-//            }
-//        }
+        if (userFields.isEmpty()) {
+            for (MongoField mongoField : dbFields.values()) {
+                try {
+                    MappingField mappingField = new MappingField(
+                            mongoField.columnName,
+                            resolveType(mongoField.columnType)
+                    );
+                    mappingField.setPrimaryKey(mongoField.columnName.equalsIgnoreCase("_id"));
+                    resolvedFields.add(mappingField);
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalStateException("Could not load column class " + mongoField.columnType, e);
+                }
+            }
+        } else {
+            for (MappingField f : userFields) {
+                String nameInMongo = f.externalName() == null ? f.name() : f.externalName();
+                MongoField mongoField = dbFields.get(nameInMongo);
+                if (mongoField == null) {
+                    throw new IllegalStateException("Could not resolve field with name " + nameInMongo);
+                }
+                MappingField mappingField = new MappingField(f.name(), f.type(), nameInMongo);
+                mappingField.setPrimaryKey(mongoField.columnName.equalsIgnoreCase("_id"));
+                resolvedFields.add(mappingField);
+            }
+        }
         return resolvedFields;
     }
 
-    Map<String, DbField> readFields(Map<String, String> options) {
-        Map<String, DbField> fields = new HashMap<>();
+    private QueryDataType resolveType(BsonType columnType) {
+        switch (columnType) {
+            case INT32: return QueryDataType.INT;
+            case INT64: return QueryDataType.BIGINT;
+            case DOUBLE: return QueryDataType.DOUBLE;
+            case TIMESTAMP:
+            case DATE_TIME:
+                return QueryDataType.TIMESTAMP;
+            case STRING:
+            case OBJECT_ID:
+                return QueryDataType.VARCHAR;
+            case DECIMAL128: return QueryDataType.DECIMAL;
+        }
+        throw new UnsupportedOperationException("Cannot resolve type for BSON type " + columnType);
+    }
+
+    Map<String, MongoField> readFields(Map<String, String> options) {
+        Map<String, MongoField> fields = new HashMap<>();
         try (MongoClient client = connect(options)) {
             String databaseName = requireNonNull(options.get(DATABASE_NAME_OPTION),
                     DATABASE_NAME_OPTION + " option must be provided");
@@ -95,7 +99,7 @@ public class FieldResolver {
                     String bsonTypeName = (String) props.get("bsonType");
                     BsonType bsonType = resolveTypeByName(bsonTypeName);
 
-                    fields.put(property.getKey(), new DbField(bsonType, property.getKey()));
+                    fields.put(property.getKey(), new MongoField(bsonType, property.getKey()));
                 }
             } else {
                 // fall back to sampling
@@ -110,7 +114,7 @@ public class FieldResolver {
                     if (entry.getValue() == null) {
                         continue;
                     }
-                    DbField field = new DbField(resolveTypeFromJava(entry.getValue()), entry.getKey());
+                    MongoField field = new MongoField(resolveTypeFromJava(entry.getValue()), entry.getKey());
                     fields.put(entry.getKey(), field);
                 }
             }
@@ -142,13 +146,13 @@ public class FieldResolver {
         }
     }
 
-    static class DbField {
+    static class MongoField {
 
-        final BsonType columnTypeName;
+        final BsonType columnType;
         final String columnName;
 
-        DbField(BsonType columnTypeName, String columnName) {
-            this.columnTypeName = requireNonNull(columnTypeName);
+        MongoField(BsonType columnType, String columnName) {
+            this.columnType = requireNonNull(columnType);
             this.columnName = requireNonNull(columnName);
         }
 
@@ -156,7 +160,7 @@ public class FieldResolver {
         public String toString() {
             return "DbField{" +
                     "name='" + columnName + '\'' +
-                    ", typeName='" + columnTypeName + '\'' +
+                    ", typeName='" + columnType + '\'' +
                     '}';
         }
     }
