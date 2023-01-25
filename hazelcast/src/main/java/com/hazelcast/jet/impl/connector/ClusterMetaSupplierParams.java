@@ -33,6 +33,8 @@ import java.security.Permission;
 // R is return type
 class ClusterMetaSupplierParams<T, R> implements Serializable  {
 
+    private static final long serialVersionUID = 1L;
+
     // Optional XML to create a HazelcastInstance which is client that is used to connect to cluster members
     private String clientXml;
 
