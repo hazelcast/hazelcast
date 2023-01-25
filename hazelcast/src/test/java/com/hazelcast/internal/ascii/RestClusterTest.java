@@ -336,13 +336,13 @@ public class RestClusterTest {
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
         ConnectionResponse response = communicator.headRequestToClusterHealthURI();
         assertEquals(HttpURLConnection.HTTP_OK, response.responseCode);
-        assertEquals(response.responseHeaders.get("Hazelcast-NodeState").size(), 1);
+        assertEquals(1, response.responseHeaders.get("Hazelcast-NodeState").size());
         assertContains(response.responseHeaders.get("Hazelcast-NodeState"), "ACTIVE");
-        assertEquals(response.responseHeaders.get("Hazelcast-ClusterState").size(), 1);
+        assertEquals(1, response.responseHeaders.get("Hazelcast-ClusterState").size());
         assertContains(response.responseHeaders.get("Hazelcast-ClusterState"), "ACTIVE");
-        assertEquals(response.responseHeaders.get("Hazelcast-ClusterSize").size(), 1);
+        assertEquals(1, response.responseHeaders.get("Hazelcast-ClusterSize").size());
         assertContains(response.responseHeaders.get("Hazelcast-ClusterSize"), "2");
-        assertEquals(response.responseHeaders.get("Hazelcast-MigrationQueueSize").size(), 1);
+        assertEquals(1, response.responseHeaders.get("Hazelcast-MigrationQueueSize").size());
         assertContains(response.responseHeaders.get("Hazelcast-MigrationQueueSize"), "0");
     }
 

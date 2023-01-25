@@ -165,7 +165,7 @@ public class MemberAddressProviderTest {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
 
         final InetSocketAddress inetSocketAddress = (InetSocketAddress) instance.getLocalEndpoint().getSocketAddress();
-        assertEquals(inetSocketAddress.getPort(), 9999);
+        assertEquals(9999, inetSocketAddress.getPort());
 
         final Member localMember = instance.getCluster().getLocalMember();
         assertEquals("1.2.3.4", localMember.getAddress().getHost());
@@ -195,7 +195,7 @@ public class MemberAddressProviderTest {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
 
         final InetSocketAddress inetSocketAddress = (InetSocketAddress) instance.getLocalEndpoint().getSocketAddress();
-        assertEquals(inetSocketAddress.getPort(), 9999);
+        assertEquals(9999, inetSocketAddress.getPort());
 
         final Member localMember = instance.getCluster().getLocalMember();
         assertEquals("1.2.3.4", localMember.getAddress().getHost());

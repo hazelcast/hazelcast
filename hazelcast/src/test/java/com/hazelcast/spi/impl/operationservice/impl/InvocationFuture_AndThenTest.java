@@ -38,7 +38,7 @@ import java.util.function.BiConsumer;
 
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.Accessors.getOperationService;
-import static org.mockito.Matchers.isNull;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;

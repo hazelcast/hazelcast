@@ -64,7 +64,7 @@ public class LatencyTrackingRingbufferStoreTest extends HazelcastTestSupport {
 
         String result = ringbufferStore.load(sequence);
 
-        assertEquals(result, value);
+        assertEquals(value, result);
         assertProbeCalledOnce("load");
     }
 

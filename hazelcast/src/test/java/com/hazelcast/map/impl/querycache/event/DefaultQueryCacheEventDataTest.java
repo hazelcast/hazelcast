@@ -32,7 +32,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -195,8 +195,8 @@ public class DefaultQueryCacheEventDataTest {
         assertEquals(queryCacheEventData, queryCacheEventData);
         assertEquals(queryCacheEventData, queryCacheEventDataSameAttributes);
 
-        assertNotEquals(queryCacheEventData, null);
-        assertNotEquals(queryCacheEventData, new Object());
+        assertNotEquals(null, queryCacheEventData);
+        assertNotEquals(new Object(), queryCacheEventData);
 
         assertNotEquals(queryCacheEventData, queryCacheEventDataOtherSequence);
         assertNotEquals(queryCacheEventData, queryCacheEventDataOtherEventType);

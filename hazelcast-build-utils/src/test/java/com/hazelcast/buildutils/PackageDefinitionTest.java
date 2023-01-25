@@ -104,8 +104,8 @@ public class PackageDefinitionTest {
         assertEquals(packageDefinition, packageDefinitionOtherResolutionOptional);
         assertEquals(packageDefinition, packageDefinitionOtherVersion);
 
-        assertNotEquals(packageDefinition, null);
-        assertNotEquals(packageDefinition, new Object());
+        assertNotEquals(null, packageDefinition);
+        assertNotEquals(new Object(), packageDefinition);
 
         assertNotEquals(packageDefinition, packageDefinitionOtherPackageName);
     }

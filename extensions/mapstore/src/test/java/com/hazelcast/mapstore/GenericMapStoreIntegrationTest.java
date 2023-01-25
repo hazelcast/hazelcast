@@ -34,11 +34,12 @@ import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.example.Person;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.mapstore.GenericMapStore.EXTERNAL_REF_ID_PROPERTY;
@@ -302,4 +303,18 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         assertThat(map.size()).isEqualTo(1);
     }
 
+    @Test
+    public void testDestroy() {
+        HazelcastInstance client = client();
+        IMap<Integer, Person> map = client.getMap(tableName);
+        map.loadAll(false);
+
+        map.destroy();
+
+        Row row = new Row("__map-store." + tableName);
+        List<Row> rows = Arrays.asList(row);
+        assertTrueEventually(() -> {
+            assertDoesNotContainRow(client, "SHOW MAPPINGS", rows);
+        }, 5);
+    }
 }
