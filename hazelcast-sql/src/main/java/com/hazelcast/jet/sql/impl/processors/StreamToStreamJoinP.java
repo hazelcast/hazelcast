@@ -174,7 +174,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         emptyLeftRow = new JetSqlRow(ss, new Object[columnCounts.f0()]);
         emptyRightRow = new JetSqlRow(ss, new Object[columnCounts.f1()]);
         maxProcessorAccumulatedRecords = context.maxProcessorAccumulatedRecords();
-        processorIndex = context.localProcessorIndex();
+        processorIndex = context.globalProcessorIndex();
 
         if (!joinInfo.isEquiJoin()) {
             JetServiceBackend jsb = getNodeEngine(context.hazelcastInstance()).getService(JetServiceBackend.SERVICE_NAME);
@@ -551,8 +551,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     enum StreamToStreamJoinBroadcastKeys {
         WM_STATE_KEY,
-        LAST_RECEIVED_WM_KEY,
-        DISTRIBUTED_EDGE_EVENTS_KEY
+        LAST_RECEIVED_WM_KEY
     }
 
     public static final class StreamToStreamJoinProcessorSupplier implements ProcessorSupplier, DataSerializable {
