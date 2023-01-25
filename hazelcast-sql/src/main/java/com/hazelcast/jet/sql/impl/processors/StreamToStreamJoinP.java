@@ -551,8 +551,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     enum StreamToStreamJoinBroadcastKeys {
         WM_STATE_KEY,
-        LAST_RECEIVED_WM_KEY,
-        DISTRIBUTED_EDGE_EVENTS_KEY
+        LAST_RECEIVED_WM_KEY
     }
 
     public static final class StreamToStreamJoinProcessorSupplier implements ProcessorSupplier, DataSerializable {
