@@ -32,7 +32,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 
-import static com.hazelcast.internal.util.Sha256Util.calculateSha256HexOfData;
+import static com.hazelcast.internal.util.Sha256Util.calculateSha256Hex;
 
 /**
  * Holds the details of a job that is being uploaded
@@ -251,7 +251,7 @@ public class JobUploadStatus {
     }
 
     private void validatePartChecksum(JobMultiPartParameterObject parameterObject) throws NoSuchAlgorithmException {
-        String calculatedSha256Hex = calculateSha256HexOfData(parameterObject.getPartData(), parameterObject.getPartSize());
+        String calculatedSha256Hex = calculateSha256Hex(parameterObject.getPartData(), parameterObject.getPartSize());
         String receivedSha256Hex = parameterObject.getSha256Hex();
 
         if (!calculatedSha256Hex.equals(receivedSha256Hex)) {
@@ -263,7 +263,7 @@ public class JobUploadStatus {
 
     // Validate checksum when the upload is complete
     private void validateJarChecksum() throws IOException, NoSuchAlgorithmException {
-        String calculatedSha256Hex = Sha256Util.calculateSha256HexOfPath(jobMetaDataParameterObject.getJarPath());
+        String calculatedSha256Hex = Sha256Util.calculateSha256Hex(jobMetaDataParameterObject.getJarPath());
         String receivedSha256Hex = jobMetaDataParameterObject.getSha256Hex();
 
         if (!calculatedSha256Hex.equals(receivedSha256Hex)) {

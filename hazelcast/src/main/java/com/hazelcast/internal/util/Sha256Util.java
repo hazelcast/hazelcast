@@ -26,7 +26,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * Utility class for hashing with MD5
+ * Utility class for hashing with SHA-256
  */
 public final class Sha256Util {
 
@@ -41,7 +41,7 @@ public final class Sha256Util {
      * @return SHA256 as hexadecimal string
      * @throws NoSuchAlgorithmException in case of MessageDigest error
      */
-    public static String calculateSha256HexOfData(byte[] data, int length) throws NoSuchAlgorithmException {
+    public static String calculateSha256Hex(byte[] data, int length) throws NoSuchAlgorithmException {
         MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
         messageDigest.update(data, 0, length);
 
@@ -59,7 +59,7 @@ public final class Sha256Util {
      * @throws IOException              in case of IO error
      * @throws NoSuchAlgorithmException in case of MessageDigest error
      */
-    public static String calculateSha256HexOfPath(Path jarPath) throws IOException, NoSuchAlgorithmException {
+    public static String calculateSha256Hex(Path jarPath) throws IOException, NoSuchAlgorithmException {
         MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
         try (InputStream inputStream = Files.newInputStream(jarPath);
              DigestInputStream digestInputStream = new DigestInputStream(inputStream, messageDigest)) {

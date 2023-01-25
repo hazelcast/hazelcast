@@ -56,7 +56,7 @@ public class JobUploadTest extends JetTestSupport {
     @Test
     public void sha256() throws IOException, NoSuchAlgorithmException {
         Path jarPath = getJarPath();
-        String sha256Hex = Sha256Util.calculateSha256HexOfPath(jarPath);
+        String sha256Hex = Sha256Util.calculateSha256Hex(jarPath);
         assertEquals("bba07be19c71bfe5fd51dc681f807ab212efd4d6e7c3f6380dbfcbdcb5deb073", sha256Hex);
     }
 
@@ -258,7 +258,7 @@ public class JobUploadTest extends JetTestSupport {
         JetClientInstanceImpl spyJetService = Mockito.spy(jetService);
 
         Path jarPath = getJarPath();
-        when(spyJetService.calculateSha256Hex(jarPath)).thenReturn("1");
+        when(Sha256Util.calculateSha256Hex(jarPath)).thenReturn("1");
         List<String> jobParameters = emptyList();
 
         SubmitJobParameters submitJobParameters = new SubmitJobParameters();

@@ -74,7 +74,6 @@ import com.hazelcast.transaction.TransactionalTask;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.AccessController;
@@ -101,6 +100,8 @@ import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.hazelcast.spi.properties.ClusterProperty.LOGGING_TYPE;
+import static java.lang.reflect.Modifier.isPublic;
+import static java.lang.reflect.Modifier.isStatic;
 
 /**
  * This class shouldn't be directly used, instead see {@link Hazelcast#bootstrappedInstance()}
@@ -196,12 +197,21 @@ public final class HazelcastBootstrap {
         }
     }
 
+    // Returns true is main method is both public and static
+    private static boolean isPublicAndStatic(Method mainMethod) {
+        boolean result = false;
+        int modifiers = mainMethod.getModifiers();
+        if (isPublic(modifiers) && isStatic(modifiers)) {
+            result = true;
+        }
+        return result;
+    }
+
     private static Method getMainMethod(Class<?> clazz, boolean calledByMember) throws NoSuchMethodException {
         // If main method does not exist, throws NoSuchMethodException
         Method main = clazz.getDeclaredMethod("main", String[].class);
 
-        int mods = main.getModifiers();
-        if ((mods & Modifier.PUBLIC) == 0 || (mods & Modifier.STATIC) == 0) {
+        if (!isPublicAndStatic(main)) {
             String message = "Class " + clazz.getName()
                              + " has a main(String[] args) method which is not public static";
             error(message, calledByMember);

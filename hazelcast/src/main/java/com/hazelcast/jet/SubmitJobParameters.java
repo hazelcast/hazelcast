@@ -41,7 +41,7 @@ public class SubmitJobParameters {
     private String jobName;
 
     /**
-     * Main class to be used for the job
+     * Canonical name of the main class to be used for the job. For example "org.example.Main"
      */
     private String mainClass;
 

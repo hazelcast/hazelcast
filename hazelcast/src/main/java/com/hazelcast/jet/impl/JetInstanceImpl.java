@@ -73,8 +73,6 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
     // Called by member to run a job on itself
     @Override
     public void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
-
-
         try {
             JobMetaDataParameterObject parameterObject = new JobMetaDataParameterObject();
             parameterObject.setSnapshotName(submitJobParameters.getSnapshotName());

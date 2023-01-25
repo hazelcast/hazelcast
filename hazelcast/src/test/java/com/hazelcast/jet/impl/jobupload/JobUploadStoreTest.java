@@ -44,7 +44,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -83,12 +82,8 @@ public class JobUploadStoreTest {
 
     @Test
     public void testRemove() throws Exception {
-        try {
-            UUID sessionID = UUID.randomUUID();
-            jobUploadStore.remove(sessionID);
-        } catch (Exception e) {
-            fail("Test sould not throw");
-        }
+        UUID sessionID = UUID.randomUUID();
+        jobUploadStore.remove(sessionID);
     }
 
     @Test
@@ -125,7 +120,7 @@ public class JobUploadStoreTest {
         parameterObject1.setTotalPartNumber(2);
         parameterObject1.setPartData(jarData);
         parameterObject1.setPartSize(jarData.length);
-        parameterObject1.setSha256Hex(Sha256Util.calculateSha256HexOfData(jarData, jarData.length));
+        parameterObject1.setSha256Hex(Sha256Util.calculateSha256Hex(jarData, jarData.length));
 
         JobMetaDataParameterObject result = jobUploadStore.processJobMultipart(parameterObject1);
         assertNull(result);
@@ -137,7 +132,7 @@ public class JobUploadStoreTest {
         parameterObject2.setTotalPartNumber(2);
         parameterObject2.setPartData(jarData);
         parameterObject2.setPartSize(jarData.length);
-        parameterObject2.setSha256Hex(Sha256Util.calculateSha256HexOfData(jarData, jarData.length));
+        parameterObject2.setSha256Hex(Sha256Util.calculateSha256Hex(jarData, jarData.length));
 
         result = jobUploadStore.processJobMultipart(parameterObject2);
 
