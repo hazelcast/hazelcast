@@ -43,8 +43,8 @@ import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallT
 import static com.hazelcast.test.Accessors.getClusterService;
 import static com.hazelcast.test.Accessors.getOperationService;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.same;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;

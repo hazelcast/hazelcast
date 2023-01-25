@@ -150,9 +150,9 @@ public class CachePartitionLostListenerConfigTest extends HazelcastTestSupport {
         CachePartitionLostListenerConfig listenerConfig2 = new CachePartitionLostListenerConfig();
 
         assertEquals(listenerConfig1, listenerConfig1);
-        assertEquals(listenerConfig1, new CachePartitionLostListenerConfig());
-        assertNotEquals(listenerConfig1, null);
-        assertNotEquals(listenerConfig1, new Object());
+        assertEquals(new CachePartitionLostListenerConfig(), listenerConfig1);
+        assertNotEquals(null, listenerConfig1);
+        assertNotEquals(new Object(), listenerConfig1);
 
         listenerConfig1.setImplementation(listener);
         assertNotEquals(listenerConfig1, listenerConfig2);

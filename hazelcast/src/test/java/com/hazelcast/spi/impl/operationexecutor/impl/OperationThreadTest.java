@@ -17,12 +17,12 @@
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -33,7 +33,7 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

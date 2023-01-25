@@ -110,8 +110,7 @@ public class EvictorImpl implements Evictor {
             return;
         }
 
-        ExpiryReason expiryReason
-                = recordStore.hasExpired(dataKey, now, backup);
+        ExpiryReason expiryReason = recordStore.hasExpired(dataKey, now, backup);
         Object value = recordStore.evict(dataKey, backup);
 
         if (value != null && !backup) {

@@ -120,7 +120,7 @@ public class ReliableTopicCreateTest extends HazelcastTestSupport {
         topic.publish("foo");
 
         ReliableTopicProxy proxy = assertInstanceOf(ReliableTopicProxy.class, topic);
-        assertEquals(proxy.overloadPolicy, TopicOverloadPolicy.DISCARD_NEWEST);
+        assertEquals(TopicOverloadPolicy.DISCARD_NEWEST, proxy.overloadPolicy);
 
         final ConcurrentMap<Integer, Map<ObjectNamespace, RingbufferContainer>> containers = ringbufferService.getContainers();
         assertEquals(1, containers.size());

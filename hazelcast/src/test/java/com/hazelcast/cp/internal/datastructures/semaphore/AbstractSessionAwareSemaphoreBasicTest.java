@@ -262,7 +262,7 @@ public abstract class AbstractSessionAwareSemaphoreBasicTest extends HazelcastRa
             assertEquals(permits - i, semaphore.availablePermits());
             semaphore.acquire(5);
         }
-        assertEquals(semaphore.availablePermits(), 0);
+        assertEquals(0, semaphore.availablePermits());
     }
 
     @Test
@@ -305,7 +305,7 @@ public abstract class AbstractSessionAwareSemaphoreBasicTest extends HazelcastRa
             assertEquals(i, semaphore.availablePermits());
             semaphore.release(5);
         }
-        assertEquals(semaphore.availablePermits(), permits);
+        assertEquals(permits, semaphore.availablePermits());
     }
 
     @Test
@@ -347,7 +347,7 @@ public abstract class AbstractSessionAwareSemaphoreBasicTest extends HazelcastRa
 
         int drainedPermits = semaphore.drainPermits();
 
-        assertEquals(drainedPermits, permits - 5);
+        assertEquals(permits - 5, drainedPermits);
         assertEquals(0, semaphore.availablePermits());
     }
 
@@ -367,7 +367,7 @@ public abstract class AbstractSessionAwareSemaphoreBasicTest extends HazelcastRa
             semaphore.reducePermits(5);
         }
 
-        assertEquals(semaphore.availablePermits(), 0);
+        assertEquals(0, semaphore.availablePermits());
     }
 
     @Test
@@ -401,7 +401,7 @@ public abstract class AbstractSessionAwareSemaphoreBasicTest extends HazelcastRa
             assertTrue(semaphore.tryAcquire());
         }
         assertFalse(semaphore.tryAcquire());
-        assertEquals(semaphore.availablePermits(), 0);
+        assertEquals(0, semaphore.availablePermits());
     }
 
     @Test
@@ -414,7 +414,7 @@ public abstract class AbstractSessionAwareSemaphoreBasicTest extends HazelcastRa
             assertTrue(semaphore.tryAcquire(5));
         }
 
-        assertEquals(semaphore.availablePermits(), 0);
+        assertEquals(0, semaphore.availablePermits());
     }
 
     @Test

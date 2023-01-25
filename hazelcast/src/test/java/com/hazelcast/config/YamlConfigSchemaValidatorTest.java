@@ -65,10 +65,10 @@ public class YamlConfigSchemaValidatorTest {
                     "-1 is not greater or equal to 0", "#/definitions/BackupCount",
                     "expected type: Integer, found: String"
             );
-            assertEquals(e.getErrors()
+            assertEquals(2, e.getErrors()
                     .stream().map(Exception::getMessage)
                     .filter(expectedSubErrorMessages::contains)
-                    .count(), 2);
+                    .count());
         }
     }
 

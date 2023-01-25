@@ -143,7 +143,7 @@ public class ItemCounterTest extends HazelcastTestSupport {
         long newValue = Long.MAX_VALUE;
 
         long count = counter.getAndSet(object, newValue);
-        assertEquals(count, 0);
+        assertEquals(0, count);
 
         count = counter.get(object);
         assertEquals(newValue, count);
@@ -159,7 +159,7 @@ public class ItemCounterTest extends HazelcastTestSupport {
         counter.set(object, initialValue);
 
         long count = counter.getAndSet(object, newValue);
-        assertEquals(count, initialValue);
+        assertEquals(initialValue, count);
 
         count = counter.get(object);
         assertEquals(newValue, count);

@@ -26,13 +26,13 @@ import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
-import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
-import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
-import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.memory.DefaultMemoryStats;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
+import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -45,8 +45,8 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.Collections;
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

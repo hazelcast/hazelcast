@@ -150,6 +150,17 @@ public interface Job {
     @Nonnull
     JobStatus getStatus();
 
+    /**
+     * Returns true, if the job is user-cancelled. Returns false, if it
+     * completed normally or failed due to another error. Jobs running in
+     * clusters before version 5.3 lack this information and will always return
+     * false.
+     *
+     * @throws IllegalStateException if the job is not done.
+     * @since 5.3
+     */
+    boolean isUserCancelled();
+
     // ### Methods below apply only to normal (non-light) jobs.
 
 

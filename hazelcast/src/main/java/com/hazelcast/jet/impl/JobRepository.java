@@ -379,13 +379,13 @@ public class JobRepository {
             @Nonnull MasterContext masterContext,
             @Nullable List<RawJobMetrics> terminalMetrics,
             @Nullable Throwable error,
-            long completionTime
-    ) {
+            long completionTime,
+            boolean userCancelled) {
         long jobId = masterContext.jobId();
 
         JobConfig config = masterContext.jobRecord().getConfig();
         long creationTime = masterContext.jobRecord().getCreationTime();
-        JobResult jobResult = new JobResult(jobId, config, creationTime, completionTime, toErrorMsg(error));
+        JobResult jobResult = new JobResult(jobId, config, creationTime, completionTime, toErrorMsg(error), userCancelled);
 
         if (terminalMetrics != null) {
             try {
@@ -419,8 +419,7 @@ public class JobRepository {
     }
 
     /**
-     * Performs cleanup after job completion. Deletes job record and job resources but keeps the job id
-     * so that it will not be used again for a new job submission.
+     * Performs cleanup after job completion.
      */
     void deleteJob(long jobId) {
         // delete the job record and related records

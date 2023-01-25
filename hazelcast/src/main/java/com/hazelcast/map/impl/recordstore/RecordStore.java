@@ -60,8 +60,6 @@ public interface RecordStore<R extends Record> {
 
     ExpirySystem getExpirySystem();
 
-    LocalRecordStoreStats getLocalRecordStoreStats();
-
     String getName();
 
     /**
@@ -659,9 +657,9 @@ public interface RecordStore<R extends Record> {
 
     EvictionPolicy getEvictionPolicy();
 
-    LocalRecordStoreStatsImpl getStats();
+    LocalRecordStoreStatsImpl getLocalRecordStoreStats();
 
-    void setStats(LocalRecordStoreStats stats);
+    void setLocalRecordStoreStats(LocalRecordStoreStats stats);
 
     default void beforeOperation() {
         // no-op
