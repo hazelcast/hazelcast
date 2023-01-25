@@ -202,9 +202,9 @@ public class JobResult implements IdentifiedDataSerializable, Versioned {
                 userCancelled = in.readBoolean();
             } catch (EOFException e) {
                 // ignore
-                // this probably means that MC >= 5.3 tries to read JobRecord from cluster < 5.3
-                // or EE cluster 5.3 without Rolling Upgrade license tries to read JobRecord
-                // written by previous version (before upgrade). JobRecords are deleted by default
+                // this probably means that MC >= 5.3 tries to read JobResult from cluster < 5.3
+                // or EE cluster 5.3 without Rolling Upgrade license tries to read JobResult
+                // written by previous version (before upgrade). JobResults are deleted by default
                 // after 7 days, so old records should ultimately be cleared.
             }
         }
