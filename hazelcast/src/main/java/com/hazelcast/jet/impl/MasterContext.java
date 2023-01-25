@@ -257,6 +257,9 @@ public class MasterContext {
     void writeJobExecutionRecordSafe(boolean canCreate) {
         coordinationService.assertOnCoordinatorThread();
 
+        // Note that this is not a true optimistic locking.
+        // However, there is only one instance of MasterContext for given job in cluster
+        // so there is no risk of lost updates.
         while (!coordinationService.jobRepository().writeJobExecutionRecord(jobRecord.getJobId(), jobExecutionRecord,
                     canCreate)) {
             logger.info("Repeating JobExecutionRecord update to be safe");
