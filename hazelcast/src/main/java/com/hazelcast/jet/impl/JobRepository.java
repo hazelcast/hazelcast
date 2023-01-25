@@ -202,7 +202,7 @@ public class JobRepository {
      * @param map map to configure
      * @return the same map with applied configuration
      */
-    public static <K,V> IMap<K, V> safeImap(IMap<K, V> map) {
+    public static <K, V> IMap<K, V> safeImap(IMap<K, V> map) {
         ((MapProxyImpl<K, V>) map).setFailOnIndeterminateOperationState(true);
         return map;
     }

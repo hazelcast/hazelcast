@@ -257,7 +257,7 @@ public class MasterContext {
     void writeJobExecutionRecordSafe(boolean canCreate) {
         coordinationService.assertOnCoordinatorThread();
 
-        while(!coordinationService.jobRepository().writeJobExecutionRecord(jobRecord.getJobId(), jobExecutionRecord,
+        while (!coordinationService.jobRepository().writeJobExecutionRecord(jobRecord.getJobId(), jobExecutionRecord,
                     canCreate)) {
             logger.info("Repeating JobExecutionRecord update to be safe");
         }

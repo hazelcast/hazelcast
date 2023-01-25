@@ -30,7 +30,6 @@ import com.hazelcast.jet.impl.operation.SnapshotPhase2Operation;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
@@ -316,15 +315,16 @@ class MasterSnapshotContext {
                 // the decision moment for regular snapshots: after this the snapshot is ready to be restored from
                 try {
                     mc.writeJobExecutionRecordSafe(false);
-                } catch(IndeterminateOperationStateException indeterminate) {
+                } catch (IndeterminateOperationStateException indeterminate) {
                     boolean shouldRestart = !isExported || SnapshotFlags.isTerminal(snapshotFlags);
-                    logger.warning(mc.jobIdString() + " snapshot " + snapshotId + " update of JobExecutionRecord was indeterminate." +
+                    logger.warning(mc.jobIdString() + " snapshot " + snapshotId +
+                            " update of JobExecutionRecord was indeterminate." +
                             (shouldRestart ? " Restarting job forcefully." : ""));
                     if (shouldRestart) {
                         // TODO: this should not be done like that
                         mc.unlock();
                         try {
-                            mc.jobContext().requestTermination(TerminationMode.RESTART_FORCEFUL, true);
+                            mc.jobContext().requestTermination(TerminationMode.RESTART_FORCEFUL, true, isExported);
                         } finally {
                             mc.lock();
                         }
