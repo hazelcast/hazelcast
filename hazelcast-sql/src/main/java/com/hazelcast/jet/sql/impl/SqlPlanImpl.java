@@ -196,6 +196,71 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
     }
 
+    static class CreateConnectionPlan extends SqlPlanImpl {
+        private final boolean replace;
+        private final boolean ifNotExists;
+        private final String name;
+        private final String type;
+        private final Map<String, String> options;
+        private final PlanExecutor planExecutor;
+
+        CreateConnectionPlan(
+                PlanKey planKey,
+                boolean replace,
+                boolean ifNotExists,
+                String name,
+                String type,
+                Map<String, String> options,
+                PlanExecutor planExecutor
+        ) {
+            super(planKey);
+
+            this.ifNotExists = ifNotExists;
+            this.replace = replace;
+            this.name = name;
+            this.type = type;
+            this.options = options;
+            this.planExecutor = planExecutor;
+        }
+
+        boolean ifNotExists() {
+            return ifNotExists;
+        }
+
+        public boolean isReplace() {
+            return replace;
+        }
+
+        public String name() {
+            return name;
+        }
+
+        public String type() {
+            return type;
+        }
+
+        public Map<String, String> options() {
+            return options;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            SqlPlanImpl.ensureNoArguments("CREATE CONNECTION", arguments);
+            SqlPlanImpl.ensureNoTimeout("CREATE CONNECTION", timeout);
+            return planExecutor.execute(this);
+        }
+    }
+
     static class CreateIndexPlan extends SqlPlanImpl {
         private final String name;
         private final String mapName;

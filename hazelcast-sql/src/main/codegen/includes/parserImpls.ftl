@@ -58,6 +58,41 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
     }
 }
 
+/**
+ * Parses CREATE CONNECTION statement.
+ */
+SqlCreate SqlCreateConnection(Span span, boolean replace) :
+{
+    SqlParserPos startPos = span.pos();
+    boolean ifNotExists = false;
+    SqlIdentifier name;
+    SqlIdentifier type;
+    SqlNodeList sqlOptions;
+}
+{
+    <CONNECTION>
+    [
+        <IF> <NOT> <EXISTS> { ifNotExists = true; }
+    ]
+    name = CompoundIdentifier()
+
+    <TYPE>
+    type = SimpleIdentifier()
+
+    <OPTIONS>
+    sqlOptions = SqlOptions()
+    {
+        return new SqlCreateConnection(
+            startPos.plus(getPos()),
+            replace,
+            ifNotExists,
+            name,
+            type,
+            sqlOptions
+        );
+    }
+}
+
 SqlCreate SqlCreateType(Span span, boolean replace) :
 {
     SqlParserPos startPos = span.pos();

@@ -66,6 +66,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.UpdateByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateConnection;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateIndex;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
@@ -134,6 +135,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateConnectionPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.DropIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.ExplainStatementPlan;
@@ -290,6 +292,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             return toCreateIndexPlan(planKey, (SqlCreateIndex) node);
         } else if (node instanceof SqlDropIndex) {
             return toDropIndexPlan(planKey, (SqlDropIndex) node);
+        } else if (node instanceof SqlCreateConnection) {
+            return toCreateConnectionPlan(planKey, (SqlCreateConnection) node);
         } else if (node instanceof SqlCreateJob) {
             return toCreateJobPlan(planKey, parseResult, context, task.getSql());
         } else if (node instanceof SqlAlterJob) {
@@ -342,6 +346,18 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 mapping,
                 sqlCreateMapping.getReplace(),
                 sqlCreateMapping.ifNotExists(),
+                planExecutor
+        );
+    }
+
+    private SqlPlan toCreateConnectionPlan(PlanKey planKey, SqlCreateConnection sqlCreateConnection) {
+        return new CreateConnectionPlan(
+                planKey,
+                sqlCreateConnection.getReplace(),
+                sqlCreateConnection.ifNotExists,
+                sqlCreateConnection.name(),
+                sqlCreateConnection.type(),
+                sqlCreateConnection.options(),
                 planExecutor
         );
     }

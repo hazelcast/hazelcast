@@ -105,6 +105,7 @@ import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.impl.util.Util.getSerializationService;
+import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateConnectionPlan;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
@@ -141,6 +142,12 @@ public class PlanExecutor {
     SqlResult execute(DropMappingPlan plan) {
         catalog.removeMapping(plan.name(), plan.ifExists());
         return UpdateSqlResultImpl.createUpdateCountResult(0);
+    }
+
+    SqlResult execute(CreateConnectionPlan plan) {
+        // TODO: implement.
+        throw new UnsupportedOperationException("CREATE CONNECTION is not implemented yet");
+//        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     SqlResult execute(CreateIndexPlan plan) {
