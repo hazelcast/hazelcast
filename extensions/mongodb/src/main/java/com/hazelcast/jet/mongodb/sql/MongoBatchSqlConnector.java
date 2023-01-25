@@ -17,12 +17,17 @@ package com.hazelcast.jet.mongodb.sql;
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableField;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import static com.google.common.base.MoreObjects.firstNonNull;
 
 /**
  * Batch-query MongoDB SQL Connector.
@@ -58,6 +63,22 @@ public class MongoBatchSqlConnector implements SqlConnector {
     public Table createTable(@Nonnull NodeEngine nodeEngine, @Nonnull String schemaName, @Nonnull String mappingName,
                              @Nonnull String externalName, @Nonnull Map<String, String> options,
                              @Nonnull List<MappingField> resolvedFields) {
-        return null;
+        String databaseName = options.get(Options.DATABASE_NAME_OPTION);
+        String collectionName = options.get(Options.COLLECTION_NAME_OPTION);
+        ConstantTableStatistics stats = new ConstantTableStatistics(0);
+
+        List<TableField> fields = new ArrayList<>(resolvedFields.size());
+        for (MappingField resolvedField : resolvedFields) {
+            String fieldExternalName = firstNonNull(resolvedField.externalName(), resolvedField.name());
+
+            fields.add(new MongoTableField(
+                    resolvedField.name(),
+                    resolvedField.type(),
+                    fieldExternalName,
+                    resolvedField.isPrimaryKey()
+            ));
+        }
+        return new MongoTable(schemaName, mappingName, databaseName, collectionName, options, this,
+                fields, stats);
     }
 }
