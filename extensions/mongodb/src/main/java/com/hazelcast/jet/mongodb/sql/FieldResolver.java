@@ -69,6 +69,7 @@ class FieldResolver {
                 }
                 MappingField mappingField = new MappingField(f.name(), f.type(), nameInMongo);
                 mappingField.setPrimaryKey(mongoField.columnName.equalsIgnoreCase("_id"));
+                validateType(f, mongoField);
                 resolvedFields.add(mappingField);
             }
         }
@@ -88,6 +89,14 @@ class FieldResolver {
                 return QueryDataType.VARCHAR;
             case DECIMAL128: return QueryDataType.DECIMAL;
             default:  throw new UnsupportedOperationException("Cannot resolve type for BSON type " + columnType);
+        }
+    }
+
+    private void validateType(MappingField field, MongoField mongoField) {
+        QueryDataType type = resolveType(mongoField.columnType);
+        if (!field.type().equals(type) && !type.getConverter().canConvertTo(field.type().getTypeFamily())) {
+            throw new IllegalStateException("Type " + field.type().getTypeFamily() + " of field " + field.name()
+                    + " does not match db type " + type.getTypeFamily());
         }
     }
 

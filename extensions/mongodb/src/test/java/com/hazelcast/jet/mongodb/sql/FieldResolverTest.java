@@ -35,6 +35,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.MongoDBContainer;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -142,7 +143,7 @@ public class FieldResolverTest {
     }
 
     @Test
-    public void testResolvesMappingFieldsViaSample_withExternalName() {
+    public void testResolvesMappingFieldsViaSample_withUserFields() {
         try (MongoClient client = MongoClients.create(mongoContainer.getConnectionString())) {
             String databaseName = "testDatabase";
             String collectionName = "people_3";
@@ -159,12 +160,42 @@ public class FieldResolverTest {
             readOpts.put("connectionString", mongoContainer.getConnectionString());
             readOpts.put("database", databaseName);
             readOpts.put("collection", collectionName);
-            List<MappingField> fields = resolver.resolveFields(readOpts, Collections.singletonList(
-                    new MappingField("id", QueryDataType.VARCHAR).setExternalName("_id")
+            List<MappingField> fields = resolver.resolveFields(readOpts, Arrays.asList(
+                    new MappingField("id", QueryDataType.VARCHAR).setExternalName("_id"),
+                    new MappingField("birthYear", QueryDataType.BIGINT)
             ));
             assertThat(fields).contains(
-                    new MappingField("id", QueryDataType.VARCHAR).setPrimaryKey(true).setExternalName("_id")
+                    new MappingField("id", QueryDataType.VARCHAR).setPrimaryKey(true).setExternalName("_id"),
+                    new MappingField("birthYear", QueryDataType.BIGINT).setExternalName("birthYear").setPrimaryKey(false)
             );
+        }
+    }
+
+    @Test
+    public void testResolvesMappingFieldsViaSample_wrongUserType() {
+        try (MongoClient client = MongoClients.create(mongoContainer.getConnectionString())) {
+            String databaseName = "testDatabase";
+            String collectionName = "people_3";
+            MongoDatabase testDatabase = client.getDatabase(databaseName);
+            MongoCollection<Document> collection = testDatabase.getCollection(collectionName);
+
+            collection.insertOne(new Document("firstName", "Tomasz")
+                    .append("lastName", "Gawęda")
+                    .append("birthYear", 1992));
+
+            FieldResolver resolver = new FieldResolver();
+
+            Map<String, String> readOpts = new HashMap<>();
+            readOpts.put("connectionString", mongoContainer.getConnectionString());
+            readOpts.put("database", databaseName);
+            readOpts.put("collection", collectionName);
+            try {
+                resolver.resolveFields(readOpts, Collections.singletonList(
+                        new MappingField("id", QueryDataType.MAP).setExternalName("_id")
+                ));
+            } catch (IllegalStateException e) {
+                assertThat(e.getMessage()).isEqualTo("Type MAP of field id does not match db type VARCHAR");
+            }
         }
     }
 
