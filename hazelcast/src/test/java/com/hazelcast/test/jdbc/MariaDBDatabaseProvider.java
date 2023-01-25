@@ -26,7 +26,7 @@ public class MariaDBDatabaseProvider implements TestDatabaseProvider {
 
     @Override
     public String createDatabase(String dbName) {
-        jdbcUrl = "jdbc:tc:mariadb:latest:///" + dbName + "?TC_DAEMON=true&sessionVariables=sql_mode=ANSI";;
+        jdbcUrl = "jdbc:tc:mariadb:latest:///" + dbName + "?TC_DAEMON=true&sessionVariables=sql_mode=ANSI";
         waitForDb(jdbcUrl, LOGIN_TIMEOUT);
         return jdbcUrl;
     }

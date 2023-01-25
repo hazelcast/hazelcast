@@ -33,7 +33,7 @@ import static org.assertj.core.util.Lists.newArrayList;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class GenericMapStoreMariaDBUpsertTest extends GenericMapStoreIntegrationTest {
+public class GenericMapStoreMariaDBIntegrationTest extends GenericMapStoreIntegrationTest {
 
     // Shadow the parent's @BeforeClass method by using the same method name
     @BeforeClass
