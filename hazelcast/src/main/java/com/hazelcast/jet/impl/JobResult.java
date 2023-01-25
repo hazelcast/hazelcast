@@ -29,6 +29,7 @@ import com.hazelcast.nio.serialization.impl.Versioned;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.EOFException;
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -40,6 +41,23 @@ import static com.hazelcast.jet.impl.util.Util.exceptionallyCompletedFuture;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
+/**
+ * Results of the job after the job has finished (completed or failed).
+ * <p>
+ * This class is used directly by Management Center. Objects of this class are
+ * also stored in {@link com.hazelcast.map.IMap} that is kept after cluster upgrade.
+ * {@link Versioned} support is used only for EE cluster with Rolling Upgrade license.
+ * <p>
+ * There are some limitations with regard to serialization and changes to this class
+ * to maintain backward compatibility:
+ * <ol>
+ *     <li>Serialized form of existing fields cannot be changed.
+ *         This includes in particular {@link JobConfig} class.</li>
+ *     <li>Read of new fields must be wrapped with {@link EOFException} handling</li>
+ *     <li>Object of this class must be last in the serialized stream before EOF,
+ *         no other data can follow.</li>
+ * </ol>
+ */
 public class JobResult implements IdentifiedDataSerializable, Versioned {
 
     private long jobId;
@@ -180,7 +198,15 @@ public class JobResult implements IdentifiedDataSerializable, Versioned {
         completionTime = in.readLong();
         failureText = in.readObject();
         if (in.getVersion().isGreaterOrEqual(Versions.V5_3)) {
-            userCancelled = in.readBoolean();
+            try {
+                userCancelled = in.readBoolean();
+            } catch (EOFException e) {
+                // ignore
+                // this probably means that MC >= 5.3 tries to read JobRecord from cluster < 5.3
+                // or EE cluster 5.3 without Rolling Upgrade license tries to read JobRecord
+                // written by previous version (before upgrade). JobRecords are deleted by default
+                // after 7 days, so old records should ultimately be cleared.
+            }
         }
     }
 }
