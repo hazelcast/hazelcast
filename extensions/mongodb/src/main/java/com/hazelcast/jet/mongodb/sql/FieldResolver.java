@@ -1,6 +1,20 @@
+/*
+ * Copyright 2023 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.hazelcast.jet.mongodb.sql;
 
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.mongodb.client.MongoClient;
@@ -16,15 +30,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.hazelcast.jet.mongodb.Options.COLLECTION_NAME_OPTION;
-import static com.hazelcast.jet.mongodb.Options.CONNECTION_STRING_OPTION;
-import static com.hazelcast.jet.mongodb.Options.DATABASE_NAME_OPTION;
+import static com.hazelcast.jet.mongodb.sql.Options.COLLECTION_NAME_OPTION;
+import static com.hazelcast.jet.mongodb.sql.Options.CONNECTION_STRING_OPTION;
+import static com.hazelcast.jet.mongodb.sql.Options.DATABASE_NAME_OPTION;
 import static com.hazelcast.jet.mongodb.sql.BsonTypes.resolveTypeByName;
 import static com.hazelcast.jet.mongodb.sql.BsonTypes.resolveTypeFromJava;
 import static com.mongodb.client.model.Filters.eq;
 import static java.util.Objects.requireNonNull;
 
-public class FieldResolver {
+class FieldResolver {
 
     List<MappingField> resolveFields(
             @Nonnull Map<String, String> options,
@@ -73,8 +87,8 @@ public class FieldResolver {
             case OBJECT_ID:
                 return QueryDataType.VARCHAR;
             case DECIMAL128: return QueryDataType.DECIMAL;
+            default:  throw new UnsupportedOperationException("Cannot resolve type for BSON type " + columnType);
         }
-        throw new UnsupportedOperationException("Cannot resolve type for BSON type " + columnType);
     }
 
     Map<String, MongoField> readFields(Map<String, String> options) {
@@ -86,7 +100,7 @@ public class FieldResolver {
 
             MongoDatabase database = client.getDatabase(databaseName);
             List<Document> collections = database.listCollections()
-                                                      .filter(eq("name",collectionName))
+                                                      .filter(eq("name", collectionName))
                                                     .into(new ArrayList<>());
             if (collections.isEmpty()) {
                 throw new IllegalArgumentException("collection " + collectionName + " was not found");

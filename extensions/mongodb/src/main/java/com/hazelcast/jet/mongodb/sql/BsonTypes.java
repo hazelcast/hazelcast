@@ -1,3 +1,18 @@
+/*
+ * Copyright 2023 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.hazelcast.jet.mongodb.sql;
 
 import org.bson.BsonDecimal128;
@@ -20,6 +35,9 @@ final class BsonTypes {
 
     private static final Map<String, BsonType> BSON_NAME_TO_TYPE = generateTypes();
     private static final Map<Class<?>, BsonType> JAVA_TYPE_TO_BSON_TYPE = generateTypesFromJava();
+
+    private BsonTypes() {
+    }
 
     static BsonType resolveTypeFromJava(Object value) {
         BsonType bsonType = JAVA_TYPE_TO_BSON_TYPE.get(value.getClass());
@@ -75,8 +93,5 @@ final class BsonTypes {
         result.put(ObjectId.class, BsonType.OBJECT_ID);
 
         return result;
-    }
-
-    private BsonTypes() {
     }
 }
