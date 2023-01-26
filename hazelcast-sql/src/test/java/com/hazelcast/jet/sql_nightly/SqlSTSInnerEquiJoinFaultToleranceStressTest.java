@@ -17,7 +17,9 @@
 package com.hazelcast.jet.sql_nightly;
 
 import com.hazelcast.jet.JetService;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.impl.AbstractJobProxy;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.kafka.KafkaSqlConnector;
@@ -28,7 +30,6 @@ import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -47,6 +48,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
@@ -58,12 +60,14 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({NightlyTest.class, ParallelJVMTest.class})
+@Category(NightlyTest.class)
 public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport {
     private static final int INITIAL_PARTITION_COUNT = 1;
     private static final int EVENTS_PER_SINK = 25_000;
     private static final int SINK_ATTEMPTS = 10;
     private static final int EVENTS_TO_PROCESS = EVENTS_PER_SINK * SINK_ATTEMPTS;
+    private static final int SNAPSHOT_TIMEOUT_SECONDS = 5;
+    private static final String JOB_NAME = "s2s_join";
     private static KafkaTestSupport kafkaTestSupport;
 
     private SqlService sqlService;
@@ -136,15 +140,17 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
     @After
     public void tearDown() {
         try {
-            Thread.sleep(2000L);
+            Thread.sleep(1000L);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+        super.tearDown();
     }
 
     @Test(timeout = 600_000L)
     public void stressTest() {
-        JobRestarter jobRestarter = new JobRestarter(instance().getJet());
+        JetServiceBackend jsb = getNodeEngineImpl(instance()).getService(JetServiceBackend.SERVICE_NAME);
+        JobRestarter jobRestarter = new JobRestarter(instance().getJet(), jsb);
         jobRestarter.start();
 
         assertQueryFinished(query, resultMap, EVENTS_TO_PROCESS);
@@ -166,43 +172,46 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
         }
     }
 
-    protected String setupQuery() {
-        return "CREATE JOB job OPTIONS ('processingGuarantee'='" + processingGuarantee + "') AS " +
-                " SINK INTO " + resultMapName +
-                " SELECT s1.__key, s2.this FROM s1 JOIN s2 ON s1.__key = s2.__key";
-    }
-
     class JobRestarter extends Thread {
         private final JetService jetService;
+        private final JetServiceBackend jetBackend;
         private volatile boolean finish;
 
-        JobRestarter(JetService jetService) {
+        JobRestarter(JetService jetService, JetServiceBackend jetBackend) {
             this.jetService = jetService;
+            this.jetBackend = jetBackend;
         }
 
         @Override
         public void run() {
             for (; ; ) {
-                try {
-                    if (finish) {
-                        return;
-                    }
-                    Thread.sleep(250L);
-                    assert jetService.getJobs().size() == 1 : "Jobs active " + jetService.getJobs().size();
-                    AbstractJobProxy job = (AbstractJobProxy) jetService.getJobs().get(0);
-                    assertNotNull(job);
-                    assertJobStatusEventually(job, RUNNING);
-                    job.restart(restartGraceful);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                if (finish) {
+                    return;
                 }
+                AbstractJobProxy job = (AbstractJobProxy) jetService.getJobs(JOB_NAME);
+                assertNotNull(job);
+                assertJobStatusEventually(job, RUNNING);
+                waitForNextSnapshot(jetBackend.getJobRepository(), job.getId(), SNAPSHOT_TIMEOUT_SECONDS, false);
+                job.restart(restartGraceful);
             }
         }
 
         public void finish() {
+            Job job = jetService.getJob(JOB_NAME);
+            assertNotNull(job);
+            job.cancel();
+            assertJobStatusEventually(job, FAILED);
             this.finish = true;
         }
     }
+
+    protected String setupQuery() {
+        return "CREATE JOB " + JOB_NAME +
+                " OPTIONS ('processingGuarantee'='" + processingGuarantee + "') AS " +
+                " SINK INTO " + resultMapName +
+                " SELECT s1.__key, s2.this FROM s1 JOIN s2 ON s1.__key = s2.__key";
+    }
+
 
     private static String createRandomTopic() {
         String topicName = randomName();
