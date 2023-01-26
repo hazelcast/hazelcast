@@ -22,7 +22,7 @@ import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.Assume;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -50,8 +50,10 @@ public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegra
                     .withPassword("mysqlpw")
     );
 
-    @Before
-    public void ignoreOnJdk15OrHigher() {
+    @BeforeClass
+    public static void ignoreOnArm64OrOnJdk15OrHigher() {
+        //There is no arm64 version of currently used docker image
+        assumeNoArm64Architecture();
         Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623, " +
                         "https://github.com/hazelcast/hazelcast/issues/18800",
                 System.getProperty("java.version").matches("^1[56].*"));
