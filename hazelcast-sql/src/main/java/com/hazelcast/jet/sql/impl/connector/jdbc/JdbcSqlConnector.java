@@ -392,31 +392,6 @@ public class JdbcSqlConnector implements SqlConnector {
         return result;
     }
 
-    @Nonnull
-    @Override
-    public Vertex sinkProcessor(@Nonnull DAG dag, @Nonnull Table table) {
-        JdbcTable jdbcTable = (JdbcTable) table;
-
-        // If dialect is supported
-        if (UpsertBuilder.isUpsertDialectSupported(jdbcTable)) {
-
-            // Get the upsert statement
-            String upsertStatement = UpsertBuilder.getUpsertStatement(jdbcTable);
-
-            return dag.newUniqueVertex(
-                    "sinkProcessor(" + jdbcTable.getExternalName() + ")",
-                    new UpsertProcessorSupplier(
-                            jdbcTable.getExternalDataStoreRef(),
-                            upsertStatement,
-                            jdbcTable.getBatchLimit()
-                    )
-            );
-        }
-        // Unsupported dialect. Execute the INSERT statement
-        VertexWithInputConfig vertexWithInputConfig = insertProcessor(dag, table);
-        return vertexWithInputConfig.vertex();
-    }
-
     /**
      * Using {@link ResultSetMetaData#getColumnTypeName(int)} seems more
      * reliable than {@link ResultSetMetaData#getColumnClassName(int)},
