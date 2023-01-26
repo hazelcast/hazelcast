@@ -5,8 +5,8 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 
-import static com.hazelcast.spi.properties.ClusterProperty.ALTO_ENABLED;
-import static com.hazelcast.spi.properties.ClusterProperty.ALTO_EVENTLOOP_COUNT;
+import static com.hazelcast.internal.bootstrap.TpcServerBootstrap.ALTO_ENABLED;
+import static com.hazelcast.internal.bootstrap.TpcServerBootstrap.ALTO_EVENTLOOP_COUNT;
 
 /**
  * Demo application for TPC. Will be removed in in the final release.

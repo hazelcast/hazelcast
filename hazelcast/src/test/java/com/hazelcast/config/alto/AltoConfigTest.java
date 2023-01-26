@@ -14,8 +14,8 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.config.alto.AltoConfigAccessors.getEventloopCount;
 import static com.hazelcast.config.alto.AltoConfigAccessors.isTpcEnabled;
-import static com.hazelcast.spi.properties.ClusterProperty.ALTO_ENABLED;
-import static com.hazelcast.spi.properties.ClusterProperty.ALTO_EVENTLOOP_COUNT;
+import static com.hazelcast.internal.bootstrap.TpcServerBootstrap.ALTO_ENABLED;
+import static com.hazelcast.internal.bootstrap.TpcServerBootstrap.ALTO_EVENTLOOP_COUNT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

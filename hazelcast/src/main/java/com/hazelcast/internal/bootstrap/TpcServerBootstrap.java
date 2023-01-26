@@ -34,6 +34,7 @@ import com.hazelcast.internal.tpc.TpcEngine;
 import com.hazelcast.internal.tpc.nio.NioEventloopBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.io.UncheckedIOException;
 import java.net.BindException;
@@ -47,14 +48,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
-import static com.hazelcast.spi.properties.ClusterProperty.ALTO_ENABLED;
-import static com.hazelcast.spi.properties.ClusterProperty.ALTO_EVENTLOOP_COUNT;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 @SuppressWarnings("checkstyle:MagicNumber, checkstyle:")
 public class TpcServerBootstrap {
+    public static final HazelcastProperty ALTO_ENABLED = new HazelcastProperty(
+            "hazelcast.internal.alto.enabled");
+    public static final HazelcastProperty ALTO_EVENTLOOP_COUNT = new HazelcastProperty(
+            "hazelcast.internal.alto.eventloop.count");
     private static final int TERMINATE_TIMEOUT_SECONDS = 5;
 
     public volatile boolean shutdown;

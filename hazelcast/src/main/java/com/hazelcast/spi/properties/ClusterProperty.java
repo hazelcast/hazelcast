@@ -1815,28 +1815,6 @@ public final class ClusterProperty {
     public static final HazelcastProperty PERSISTENCE_AUTO_CLUSTER_STATE_STRATEGY = new HazelcastProperty(
             "hazelcast.persistence.auto.cluster.state.strategy", ClusterState.NO_MIGRATION);
 
-    /**
-     * Enables/disables Hazelcast Alto. If present, overrides the enabled
-     * field in AltoConfig.
-     *
-     * @see com.hazelcast.config.alto.AltoConfig
-     * @since 5.3
-     */
-    @Beta
-    public static final HazelcastProperty ALTO_ENABLED = new HazelcastProperty(
-            "hazelcast.alto.enabled");
-
-    /**
-     * Sets the eventloop count in Hazelcast Alto. If present, overrides
-     * the eventloopCount field in AltoConfig.
-     *
-     * @see com.hazelcast.config.alto.AltoConfig
-     * @since 5.3
-     */
-    @Beta
-    public static final HazelcastProperty ALTO_EVENTLOOP_COUNT = new HazelcastProperty(
-            "hazelcast.alto.eventloop.count");
-
     private ClusterProperty() {
     }
 }
