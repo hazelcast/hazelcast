@@ -27,6 +27,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
@@ -93,6 +94,7 @@ public final class LightMasterContext {
     private final CompletableFuture<Void> jobCompletionFuture = new CompletableFuture<>();
     private final Set<Vertex> vertices;
     private final JobClassLoaderService jobClassLoaderService;
+    private volatile boolean userInitiatedTermination;
 
     private LightMasterContext(NodeEngine nodeEngine, long jobId, ILogger logger, String jobIdString,
                               JobConfig jobConfig, Map<MemberInfo, ExecutionPlan> executionPlanMap,
@@ -190,10 +192,13 @@ public final class LightMasterContext {
             if (fail == null) {
                 jobCompletionFuture.complete(null);
             } else {
-                // translate JobTerminateRequestedException(CANCEL_FORCEFUL) to CancellationException
+                // translate JobTerminateRequestedException(CANCEL_FORCEFUL)
+                // to CancellationException or CancellationByUserException
                 if (fail instanceof JobTerminateRequestedException
                         && ((JobTerminateRequestedException) fail).mode() == CANCEL_FORCEFUL) {
-                    CancellationException newFailure = new CancellationException();
+                    Throwable newFailure = userInitiatedTermination
+                            ? new CancellationByUserException()
+                            : new CancellationException();
                     newFailure.initCause(failure);
                     fail = newFailure;
                 }
@@ -312,7 +317,8 @@ public final class LightMasterContext {
         return result;
     }
 
-    public void requestTermination() {
+    public void requestTermination(boolean userInitiated) {
+        this.userInitiatedTermination = userInitiated;
         cancelInvocations();
     }
 
