@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.util;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -41,7 +42,7 @@ public final class Sha256Util {
      * @return SHA256 as hexadecimal string
      * @throws NoSuchAlgorithmException in case of MessageDigest error
      */
-    public static String calculateSha256Hex(byte[] data, int length) throws NoSuchAlgorithmException {
+    public static String calculateSha256Hex(@Nonnull byte[] data, int length) throws NoSuchAlgorithmException {
         MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
         messageDigest.update(data, 0, length);
 
@@ -59,7 +60,7 @@ public final class Sha256Util {
      * @throws IOException              in case of IO error
      * @throws NoSuchAlgorithmException in case of MessageDigest error
      */
-    public static String calculateSha256Hex(Path jarPath) throws IOException, NoSuchAlgorithmException {
+    public static String calculateSha256Hex(@Nonnull Path jarPath) throws IOException, NoSuchAlgorithmException {
         MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
         try (InputStream inputStream = Files.newInputStream(jarPath);
              DigestInputStream digestInputStream = new DigestInputStream(inputStream, messageDigest)) {

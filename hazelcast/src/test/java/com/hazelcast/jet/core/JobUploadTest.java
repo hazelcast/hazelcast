@@ -258,7 +258,7 @@ public class JobUploadTest extends JetTestSupport {
         JetClientInstanceImpl spyJetService = Mockito.spy(jetService);
 
         Path jarPath = getJarPath();
-        when(Sha256Util.calculateSha256Hex(jarPath)).thenReturn("1");
+        when(spyJetService.calculateSha256Hex(jarPath)).thenReturn("1");
         List<String> jobParameters = emptyList();
 
         SubmitJobParameters submitJobParameters = new SubmitJobParameters();

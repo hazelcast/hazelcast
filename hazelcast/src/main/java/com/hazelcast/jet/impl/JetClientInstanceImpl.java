@@ -29,6 +29,7 @@ import com.hazelcast.client.impl.protocol.codec.JetUploadJobMultipartCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.Sha256Util;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
@@ -53,7 +54,6 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import static com.hazelcast.client.properties.ClientProperty.JOB_UPLOAD_PART_SIZE;
-import static com.hazelcast.internal.util.Sha256Util.calculateSha256Hex;
 import static com.hazelcast.jet.impl.operation.GetJobIdsOperation.ALL_JOBS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
@@ -209,7 +209,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                 // Read data
                 int bytesRead = fileInputStream.read(data);
 
-                String sha256Hex = calculateSha256Hex(data, bytesRead);
+                String sha256Hex = Sha256Util.calculateSha256Hex(data, bytesRead);
                 //Send the part
                 ClientMessage jobDataRequest = JetUploadJobMultipartCodec.encodeRequest(sessionId, currentPartNumber,
                         totalParts, data, bytesRead, sha256Hex);
@@ -258,5 +258,12 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
     protected int calculateTotalParts(long jarSize, int partSize) {
         return (int) Math.ceil(jarSize / (double) partSize);
+    }
+
+    // This method is public for testing purposes. Currently, we can not mock static methods with Mockito because
+    // enabling "Mock Maker Inline" is breaking other tests.
+    // When it is enabled in the future, remove this method and directly mock Sha256Util
+    public String calculateSha256Hex(Path jarPath) throws IOException, NoSuchAlgorithmException {
+        return Sha256Util.calculateSha256Hex(jarPath);
     }
 }
