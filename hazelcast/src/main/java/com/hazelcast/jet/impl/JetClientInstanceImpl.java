@@ -216,7 +216,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                 boolean result = invokeRequestOnMasterAndDecodeResponse(jobDataRequest,
                         JetUploadJobMultipartCodec::decodeResponse);
                 if (result) {
-                    logFine(getLogger(), "Submitted Job Part successfully for jarPath: %s PartNumber %s",
+                    logFine(getLogger(), "Submitted Job Part successfully for jarPath: %s PartNumber %d",
                             jarPath, currentPartNumber);
                 }
 
