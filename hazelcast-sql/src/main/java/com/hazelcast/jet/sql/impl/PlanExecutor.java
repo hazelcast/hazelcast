@@ -107,6 +107,7 @@ import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.impl.util.Util.getSerializationService;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
+import static com.hazelcast.jet.sql.impl.parse.SqlCreateJob.processOptions;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
@@ -193,7 +194,9 @@ public class PlanExecutor {
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
                 .setArgument(KEY_SQL_QUERY_TEXT, plan.getQuery())
                 .setArgument(KEY_SQL_UNBOUNDED, isStreamingJob);
-        jobConfig.setSuspendOnFailure(isStreamingJob);
+        if (!jobConfig.isSuspendOnFailure()) {
+            jobConfig.setSuspendOnFailure(isStreamingJob);
+        }
         if (plan.isIfNotExists()) {
             hazelcastInstance.getJet().newJobIfAbsent(plan.getExecutionPlan().getDag(), jobConfig);
         } else {
@@ -207,20 +210,28 @@ public class PlanExecutor {
         if (job == null) {
             throw QueryException.error("The job '" + plan.getJobName() + "' doesn't exist");
         }
-        switch (plan.getOperation()) {
-            case SUSPEND:
-                job.suspend();
-                break;
-
-            case RESUME:
-                job.resume();
-                break;
-
-            case RESTART:
-                job.restart();
-                break;
-
-            default:
+        if (!plan.getOptions().isEmpty()) {
+            JobConfig jobConfig = job.getConfig();
+            processOptions(plan.getOptions(), jobConfig);
+            try {
+                job.setConfig(jobConfig);
+            } catch (IllegalStateException e) {
+                throw QueryException.error(e.getMessage(), e);
+            }
+        }
+        if (plan.getOperation() != null) {
+            switch (plan.getOperation()) {
+                case SUSPEND:
+                    job.suspend();
+                    break;
+                case RESUME:
+                    job.resume();
+                    break;
+                case RESTART:
+                    job.restart();
+                    break;
+                default:
+            }
         }
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }

@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
@@ -32,9 +33,10 @@ import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.util.ImmutableNullableList;
 
 import javax.annotation.Nonnull;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
@@ -51,7 +53,7 @@ public class SqlCreateJob extends SqlCreate {
     private final SqlNodeList options;
     private final SqlExtendedInsert sqlInsert;
 
-    private final JobConfig jobConfig = new JobConfig();
+    private Map<String, Object> parsedOptions;
 
     @SuppressWarnings("checkstyle:ExecutableStatementCount")
     public SqlCreateJob(
@@ -69,11 +71,12 @@ public class SqlCreateJob extends SqlCreate {
         this.sqlInsert = requireNonNull(sqlInsert, "A DML statement is mandatory");
 
         Preconditions.checkTrue(name.isSimple(), name.toString());
-
-        jobConfig.setName(name.toString());
     }
 
     public JobConfig jobConfig() {
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.setName(name.toString());
+        processOptions(parsedOptions, jobConfig);
         return jobConfig;
     }
 
@@ -132,13 +135,18 @@ public class SqlCreateJob extends SqlCreate {
             throw validator.newValidationError(this, RESOURCE.notSupported("OR REPLACE", "CREATE JOB"));
         }
 
-        Set<String> optionNames = new HashSet<>();
-        for (SqlNode option0 : options.getList()) {
+        parsedOptions = parseOptions(options, validator);
+        validator.validate(sqlInsert);
+    }
+
+    static Map<String, Object> parseOptions(SqlNodeList options, SqlValidator validator) {
+        Map<String, Object> parsed = new HashMap<>();
+        for (SqlNode option0 : options) {
             SqlOption option = (SqlOption) option0;
             String key = option.keyString();
             String value = option.valueString();
 
-            if (!optionNames.add(key)) {
+            if (parsed.containsKey(key)) {
                 throw validator.newValidationError(option, RESOURCE.duplicateOption(key));
             }
 
@@ -146,52 +154,80 @@ public class SqlCreateJob extends SqlCreate {
                 case "processingGuarantee":
                     switch (value) {
                         case "exactlyOnce":
-                            jobConfig.setProcessingGuarantee(EXACTLY_ONCE);
+                            parsed.put(key, EXACTLY_ONCE);
                             break;
-
                         case "atLeastOnce":
-                            jobConfig.setProcessingGuarantee(AT_LEAST_ONCE);
+                            parsed.put(key, AT_LEAST_ONCE);
                             break;
-
                         case "none":
-                            jobConfig.setProcessingGuarantee(NONE);
+                            parsed.put(key, NONE);
                             break;
-
                         default:
                             throw validator.newValidationError(option.value(),
                                     RESOURCE.processingGuaranteeBadValue(key, value));
                     }
                     break;
+                case "maxProcessorAccumulatedRecords":
                 case "snapshotIntervalMillis":
                     try {
-                        jobConfig.setSnapshotIntervalMillis(Long.parseLong(value));
+                        parsed.put(key, Long.parseLong(value));
                     } catch (NumberFormatException e) {
-                        throw validator.newValidationError(option.value(), RESOURCE.jobOptionIncorrectNumber(key, value));
+                        throw validator.newValidationError(option.value(),
+                                RESOURCE.jobOptionIncorrectNumber(key, value));
                     }
                     break;
                 case "autoScaling":
-                    jobConfig.setAutoScaling(Boolean.parseBoolean(value));
-                    break;
-                case "splitBrainProtectionEnabled":
-                    jobConfig.setSplitBrainProtection(Boolean.parseBoolean(value));
-                    break;
                 case "metricsEnabled":
-                    jobConfig.setMetricsEnabled(Boolean.parseBoolean(value));
-                    break;
+                case "splitBrainProtectionEnabled":
                 case "storeMetricsAfterJobCompletion":
-                    jobConfig.setStoreMetricsAfterJobCompletion(Boolean.parseBoolean(value));
+                case "suspendOnFailure":
+                    parsed.put(key, Boolean.parseBoolean(value));
                     break;
                 case "initialSnapshotName":
-                    jobConfig.setInitialSnapshotName(value);
-                    break;
-                case "maxProcessorAccumulatedRecords":
-                    jobConfig.setMaxProcessorAccumulatedRecords(Long.parseLong(value));
+                    parsed.put(key, value);
                     break;
                 default:
                     throw validator.newValidationError(option.key(), RESOURCE.unknownJobOption(key));
             }
         }
+        return parsed;
+    }
 
-        validator.validate(sqlInsert);
+    public static void processOptions(Map<String, Object> options, JobConfig jobConfig) {
+        for (Entry<String, Object> option : options.entrySet()) {
+            String key = option.getKey();
+            Object value = option.getValue();
+
+            switch (key) {
+                case "autoScaling":
+                    jobConfig.setAutoScaling((boolean) value);
+                    break;
+                case "initialSnapshotName":
+                    jobConfig.setInitialSnapshotName((String) value);
+                    break;
+                case "maxProcessorAccumulatedRecords":
+                    jobConfig.setMaxProcessorAccumulatedRecords((long) value);
+                    break;
+                case "metricsEnabled":
+                    jobConfig.setMetricsEnabled((boolean) value);
+                    break;
+                case "processingGuarantee":
+                    jobConfig.setProcessingGuarantee((ProcessingGuarantee) value);
+                    break;
+                case "snapshotIntervalMillis":
+                    jobConfig.setSnapshotIntervalMillis((long) value);
+                    break;
+                case "splitBrainProtectionEnabled":
+                    jobConfig.setSplitBrainProtection((boolean) value);
+                    break;
+                case "storeMetricsAfterJobCompletion":
+                    jobConfig.setStoreMetricsAfterJobCompletion((boolean) value);
+                    break;
+                case "suspendOnFailure":
+                    jobConfig.setSuspendOnFailure((boolean) value);
+                    break;
+                default:
+            }
+        }
     }
 }

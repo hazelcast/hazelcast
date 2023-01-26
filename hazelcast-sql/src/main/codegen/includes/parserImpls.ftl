@@ -486,12 +486,21 @@ SqlAlterJob SqlAlterJob() :
     SqlParserPos pos = getPos();
 
     SqlIdentifier name;
-    SqlAlterJob.AlterJobOperation operation;
+    SqlNodeList sqlOptions = SqlNodeList.EMPTY;
+    SqlAlterJob.AlterJobOperation operation = null;
 }
 {
     <ALTER> <JOB>
     name = SimpleIdentifier()
     (
+        <OPTIONS>
+        sqlOptions = SqlOptions()
+        [
+            <RESUME> {
+                operation = SqlAlterJob.AlterJobOperation.RESUME;
+            }
+        ]
+    |
         <SUSPEND> {
             operation = SqlAlterJob.AlterJobOperation.SUSPEND;
         }
@@ -505,7 +514,7 @@ SqlAlterJob SqlAlterJob() :
         }
     )
     {
-        return new SqlAlterJob(name, operation, pos.plus(getPos()));
+        return new SqlAlterJob(name, sqlOptions, operation, pos.plus(getPos()));
     }
 }
 

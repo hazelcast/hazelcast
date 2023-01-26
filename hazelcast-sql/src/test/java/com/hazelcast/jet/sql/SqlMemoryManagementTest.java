@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.sql.SqlService;
@@ -26,10 +27,14 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.util.function.Function;
+
+import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -48,6 +53,39 @@ public class SqlMemoryManagementTest extends SqlTestSupport {
 
         initialize(2, config);
         sqlService = instance().getSql();
+    }
+
+    @Test
+    public void test_changeJobConfig_singleStatement() {
+        test_changeJobConfig(name -> new String[] {
+                "ALTER JOB " + name + " OPTIONS ('maxProcessorAccumulatedRecords'='3') RESUME"
+        });
+    }
+
+    @Test
+    public void test_changeJobConfig_separateStatements() {
+        test_changeJobConfig(name -> new String[] {
+                "ALTER JOB " + name + " OPTIONS ('maxProcessorAccumulatedRecords'='3')",
+                "ALTER JOB " + name + " RESUME"
+        });
+    }
+
+    private void test_changeJobConfig(Function<String, String[]> statementsFn) {
+        String mapName = randomName();
+        createMapping(mapName, Integer.class, String.class);
+
+        String jobName = randomName();
+        sqlService.execute("CREATE JOB " + jobName + " OPTIONS ('suspendOnFailure'='true') "
+                + "AS INSERT INTO " + mapName + " VALUES (0, '0'), (1, '1'), (2, '2')");
+        Job job = instance().getJet().getJob(jobName);
+        assertJobStatusEventually(job, SUSPENDED);
+        assertThat(job.getSuspensionCause().errorCause())
+                .contains("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
+
+        for (String statement : statementsFn.apply(jobName)) {
+            sqlService.execute(statement);
+        }
+        assertEqualsEventually(instance().getMap(mapName)::size, 3);
     }
 
     @Test

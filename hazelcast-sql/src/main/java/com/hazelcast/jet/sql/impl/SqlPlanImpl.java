@@ -401,24 +401,31 @@ abstract class SqlPlanImpl extends SqlPlan {
 
     static class AlterJobPlan extends SqlPlanImpl {
         private final String jobName;
+        private final Map<String, Object> options;
         private final AlterJobOperation operation;
         private final PlanExecutor planExecutor;
 
         AlterJobPlan(
                 PlanKey planKey,
                 String jobName,
+                Map<String, Object> options,
                 AlterJobOperation operation,
                 PlanExecutor planExecutor
         ) {
             super(planKey);
 
             this.jobName = jobName;
+            this.options = options;
             this.operation = operation;
             this.planExecutor = planExecutor;
         }
 
         String getJobName() {
             return jobName;
+        }
+
+        Map<String, Object> getOptions() {
+            return options;
         }
 
         AlterJobOperation getOperation() {
