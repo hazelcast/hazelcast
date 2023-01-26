@@ -57,7 +57,7 @@ public class ServerSocketEndpointConfigTest extends HazelcastTestSupport {
                 .setPort(19000)
                 .setPublicAddress("192.168.2.1");
 
-        assertEquals(endpointConfig.getProtocolType(), ProtocolType.MEMBER);
+        assertEquals(ProtocolType.MEMBER, endpointConfig.getProtocolType());
         assertEquals("anotherName", endpointConfig.getName());
         assertEquals(19000, endpointConfig.getPort());
         assertEquals("192.168.2.1", endpointConfig.getPublicAddress());

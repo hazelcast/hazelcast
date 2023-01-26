@@ -16,11 +16,11 @@
 
 package com.hazelcast.sql.impl.expression.datetime;
 
+import com.hazelcast.internal.util.JavaVersion;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -49,13 +49,7 @@ import static org.junit.Assert.assertThrows;
 @SuppressWarnings("checkstyle:ParenPad")
 public class FormatterTest {
     private static final Locale TR = new Locale("tr", "TR");
-    private static int jdk;
-
-    @BeforeClass
-    public static void setup() {
-        String[] version = System.getProperty("java.version").split("\\.");
-        jdk = Integer.parseInt(version[version[0].equals("1") ? 1 : 0]);
-    }
+    private static final int JDK = JavaVersion.CURRENT_VERSION.getMajorVersion();
 
     @Test
     public void testDates() {
@@ -72,7 +66,7 @@ public class FormatterTest {
         f = forDates("HH12:MI A.M. TZTZH:TZM");
         check(LocalTime.of(14, 53).atOffset(ZoneOffset.ofHours(3)), f, "02:53 P.M. GMT+03:00");
 
-        if (jdk >= 11) {
+        if (JDK >= 11) {
             f = forDates("HH12:MI A.M.");
             check(LocalTime.of(14, 53), f, "02:53 Ö.S.", TR);
         }
@@ -346,9 +340,9 @@ public class FormatterTest {
     public void testLocales() {
         Formatter f = forNumbers("FM9G999D99 CR");
         check(1234.56, f, "1,234.56 $", US);
-        check(1234.56, f, "1.234,56 " + (jdk >= 11 ? "₺" : "TL"), TR);
+        check(1234.56, f, "1.234,56 " + (JDK >= 11 ? "₺" : "TL"), TR);
 
-        if (jdk >= 17) {
+        if (JDK >= 17) {
             Locale fr_CH = new Locale("fr", "CH");
             f = forNumbers("FM9G999D99");
             check(1234.56, f, "1 234,56", fr_CH);

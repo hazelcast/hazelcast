@@ -29,6 +29,7 @@ import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSubmissionTimeCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSummaryListCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSuspensionCauseCodec;
+import com.hazelcast.client.impl.protocol.codec.JetIsJobUserCancelledCodec;
 import com.hazelcast.client.impl.protocol.codec.JetJoinSubmittedJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetResumeJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
@@ -68,6 +69,8 @@ public class JetMessageTaskFactoryProvider implements MessageTaskFactoryProvider
                 toFactory(JetGetJobAndSqlSummaryListMessageTask::new));
         factories.put(JetExistsDistributedObjectCodec.REQUEST_MESSAGE_TYPE,
                 toFactory(JetExistsDistributedObjectMessageTask::new));
+        factories.put(JetIsJobUserCancelledCodec.REQUEST_MESSAGE_TYPE,
+                toFactory(JetIsJobUserCancelledMessageTask::new));
         factories.put(JetUploadJobMetaDataCodec.REQUEST_MESSAGE_TYPE, toFactory(JetUploadJobMetaDataTask::new));
         factories.put(JetUploadJobMultipartCodec.REQUEST_MESSAGE_TYPE, toFactory(JetUploadJobMultipartTask::new));
     }

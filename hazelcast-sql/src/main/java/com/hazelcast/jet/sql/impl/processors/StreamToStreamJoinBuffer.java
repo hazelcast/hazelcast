@@ -47,8 +47,7 @@ abstract class StreamToStreamJoinBuffer implements Iterable<JetSqlRow> {
     /**
      * Clears expired items in current buffer, and returns a new minimums time array.
      *
-     * @param limits              array of limits for
-     * @return a new minimums time array.
+     * @param limits array of limits for
      */
-    public abstract long[] clearExpiredItems(long[] limits, @Nonnull Consumer<JetSqlRow> clearedRowsConsumer);
+    public abstract void clearExpiredItems(long[] limits, @Nonnull Consumer<JetSqlRow> clearedRowsConsumer);
 }

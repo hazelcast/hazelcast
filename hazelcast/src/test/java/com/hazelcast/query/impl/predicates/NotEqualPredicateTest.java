@@ -31,7 +31,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -99,7 +99,7 @@ public class NotEqualPredicateTest {
         int id = predicate.getClassId();
 
         // make sure the ID has not been changed by accident
-        assertEquals(id, 9);
+        assertEquals(9, id);
     }
 
     @Test

@@ -177,7 +177,7 @@ public class SqlPredicateTest {
     @Test
     public void testEqualsNull() {
         SqlPredicate sql = new SqlPredicate("foo='bar'");
-        assertNotEquals(sql, null);
+        assertNotEquals(null, sql);
     }
 
     @Test

@@ -222,10 +222,10 @@ public class TestJCache {
 
         assertNotNull(partitionLostListenerConfigs);
         assertEquals(1, partitionLostListenerConfigs.size());
-        assertEquals(partitionLostListenerConfigs.get(0).getClassName(), "DummyCachePartitionLostListenerImpl");
+        assertEquals("DummyCachePartitionLostListenerImpl", partitionLostListenerConfigs.get(0).getClassName());
         assertNotNull(partitionLostListenerConfigs);
         assertEquals(1, partitionLostListenerConfigs.size());
-        assertEquals(partitionLostListenerConfigs.get(0).getClassName(), "DummyCachePartitionLostListenerImpl");
+        assertEquals("DummyCachePartitionLostListenerImpl", partitionLostListenerConfigs.get(0).getClassName());
     }
 
     @Test
