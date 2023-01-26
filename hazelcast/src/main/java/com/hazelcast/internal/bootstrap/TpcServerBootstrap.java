@@ -76,12 +76,12 @@ public class TpcServerBootstrap {
         this.logger = nodeEngine.getLogger(TpcServerBootstrap.class);
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
         this.config = nodeEngine.getConfig();
-        this.enabled = enabled();
+        this.enabled = loadAltoEnabled();
         this.thisAddress = nodeEngine.getThisAddress();
         this.tpcEngine = newTpcEngine();
     }
 
-    private boolean enabled() {
+    private boolean loadAltoEnabled() {
         boolean enabled;
         String enabledString = nodeEngine.getProperties().getString(ALTO_ENABLED);
         if (enabledString != null) {
@@ -119,11 +119,11 @@ public class TpcServerBootstrap {
                 "alto-eventloop"
         ) + threadId.incrementAndGet());
         configuration.setEventloopBuilder(eventloopBuilder);
-        configuration.setEventloopCount(eventloopCount());
+        configuration.setEventloopCount(loadEventloopCount());
         return new TpcEngine(configuration);
     }
 
-    private int eventloopCount() {
+    private int loadEventloopCount() {
         int eventloopCount;
         String eventloopCountString = nodeEngine.getProperties().getString(ALTO_EVENTLOOP_COUNT);
         if (eventloopCountString != null) {
