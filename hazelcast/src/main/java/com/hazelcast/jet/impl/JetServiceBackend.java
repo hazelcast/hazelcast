@@ -106,15 +106,10 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private JobCoordinationService jobCoordinationService;
     private JobClassLoaderService jobClassLoaderService;
     private JobExecutionService jobExecutionService;
-
     private final AtomicInteger numConcurrentAsyncOps = new AtomicInteger();
     private final Supplier<int[]> sharedPartitionKeys = memoizeConcurrent(this::computeSharedPartitionKeys);
-
     private final JobUploadStore jobUploadStore = new JobUploadStore();
-
     private ScheduledFuture<?> jobUploadStoreCheckerFuture;
-
-
 
     public JetServiceBackend(Node node) {
         this.logger = node.getLogger(getClass());
@@ -406,13 +401,20 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         jobCoordinationService.startScanningForJobs();
     }
 
-    // Store the metadata about the job jar that is uploaded from client side
+    /**
+     * Store the metadata about the job jar that is uploaded from client side
+     * @param parameterObject contains all the metadata about the upload operation
+     */
     public void storeJobMetaData(JobMetaDataParameterObject parameterObject) {
-        checkIfCanExecuteJar();
+        checkResourceUploadEnabled();
         jobUploadStore.processJobMetaData(parameterObject);
     }
 
-    // Store a part of job jar that is uploaded
+    /**
+     * Store a part of job jar that is uploaded
+     * @param parameterObject contains all the metadata about the upload operation
+     * @return the parameter object if upload is complete, null if upload is incomplete and more parts are expected,
+     */
     public JobMetaDataParameterObject storeJobMultiPart(JobMultiPartParameterObject parameterObject) {
         JobMetaDataParameterObject result = null;
         try {
@@ -424,7 +426,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         return result;
     }
 
-    private void checkIfCanExecuteJar() {
+    private void checkResourceUploadEnabled() {
         if (!jetConfig.isResourceUploadEnabled()) {
             throw new JetException("Resource upload is not enabled");
         }
@@ -433,9 +435,13 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     // Run the given jar as Jet job. Triggered by both client and member side job uploads
     public void executeJar(JobMetaDataParameterObject parameterObject) {
 
-        logger.info("executeJar is called for session id :" + parameterObject.getSessionId());
+        if (logger.isInfoEnabled()) {
+            String message = String.format("Try executing jar file %s for session %s", parameterObject.getJarPath(),
+                    parameterObject.getSessionId());
+            logger.info(message);
+        }
 
-        checkIfCanExecuteJar();
+        checkResourceUploadEnabled();
 
         try {
             HazelcastBootstrap.executeJar(this::getHazelcastInstance,

@@ -117,8 +117,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int WRAPPING_PROCESSOR_META_SUPPLIER = 49;
     public static final int WRAPPING_PROCESSOR_SUPPLIER = 50;
     public static final int GET_JOB_USER_CANCELLED_OP = 51;
-    public static final int UPLOAD_JOB_METADATA_OP = 51;
-    public static final int UPLOAD_JOB_MULTIPART_OP = 52;
+    public static final int UPLOAD_JOB_METADATA_OP = 52;
+    public static final int UPLOAD_JOB_MULTIPART_OP = 53;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 

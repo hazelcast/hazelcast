@@ -128,8 +128,11 @@ public class JobUploadStatus {
             outputStream.write(parameterObject.getPartData(), 0, parameterObject.getPartSize());
         }
 
-        String message = String.format("Session : %s total file size %d", parameterObject.getSessionId(), Files.size(jarPath));
-        LOGGER.info(message);
+        if (LOGGER.isInfoEnabled()) {
+            String message = String.format("Session : %s total file size %d", parameterObject.getSessionId(),
+                    Files.size(jarPath));
+            LOGGER.info(message);
+        }
 
         changeLastUpdatedTime();
 
