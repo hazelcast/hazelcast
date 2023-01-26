@@ -24,7 +24,7 @@ import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
+import com.hazelcast.test.jdbc.MSSQLDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -33,12 +33,12 @@ import static org.assertj.core.util.Lists.newArrayList;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class GenericMapStorePostgreSQLIntegrationTest extends GenericMapStoreIntegrationTest {
+public class GenericMapStoreMSSQLUpsertTest extends GenericMapStoreIntegrationTest {
 
     // Shadow the parent's @BeforeClass method by using the same method name
     @BeforeClass
     public static void beforeClass() {
-        databaseProvider = new PostgresDatabaseProvider();
+        databaseProvider = new MSSQLDatabaseProvider();
         dbConnectionUrl = databaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
 
         Config config = smallInstanceConfig();
@@ -57,4 +57,7 @@ public class GenericMapStorePostgreSQLIntegrationTest extends GenericMapStoreInt
         initializeWithClient(2, config, clientConfig);
         sqlService = instance().getSql();
     }
+
+
+
 }
