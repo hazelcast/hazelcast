@@ -27,19 +27,20 @@ import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.example.Person;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.mapstore.GenericMapStore.EXTERNAL_REF_ID_PROPERTY;
@@ -95,7 +96,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         IMap<Integer, Person> map = client.getMap(tableName);
 
         Person p = map.get(0);
-        assertThat(p.getId()).isZero();
+        assertThat(p.getId()).isEqualTo(0);
         assertThat(p.getName()).isEqualTo("name-0");
     }
 
@@ -214,7 +215,32 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
         map.destroy();
 
-        assertTrueEventually(() -> assertRowsAnyOrder(client, "SHOW MAPPINGS", newArrayList()), 5);
+        assertTrueEventually(() -> {
+            assertRowsAnyOrder(client, "SHOW MAPPINGS", newArrayList());
+        }, 5);
+    }
+
+    @Test
+    public void testPutWithColumnMismatch() {
+        HazelcastInstance client = client();
+        IMap<Integer, GenericRecord> map = client.getMap(tableName);
+
+        assertThatThrownBy(() -> {
+            map.put(42,
+                    GenericRecordBuilder.compact("org.example.Person")
+                            .setString("id", "42")
+                            .setString("name", "name-42")
+                            .build()
+            );
+        })
+                .isInstanceOf(HazelcastSerializationException.class)
+                .hasMessageContaining("Invalid field kind: 'id for Schema" +
+                        " { className = org.example.Person, numberOfComplexFields = 2," +
+                        " primitivesLength = 0, map = {name=FieldDescriptor{" +
+                        "name='name', kind=STRING, index=1, offset=-1, bitOffset=-1}," +
+                        " id=FieldDescriptor{name='id', kind=STRING, index=0, " +
+                        "offset=-1, bitOffset=-1}}}, valid field kinds : " +
+                        "[INT32, NULLABLE_INT32], found : STRING");
     }
 
     @Test
@@ -237,11 +263,11 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         map.put(42, new Person(42, "name-42"));
         map.evictAll();
 
-        assertThat(map.size()).isZero();
+        assertThat(map.size()).isEqualTo(0);
         assertThat(jdbcRowsTable(tableName)).hasSize(2);
 
         Person p = map.remove(0);
-        assertThat(p.getId()).isZero();
+        assertThat(p.getId()).isEqualTo(0);
         assertThat(p.getName()).isEqualTo("name-0");
 
         assertThat(jdbcRowsTable(tableName)).hasSize(1);
@@ -303,18 +329,4 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         assertThat(map.size()).isEqualTo(1);
     }
 
-    @Test
-    public void testDestroy() {
-        HazelcastInstance client = client();
-        IMap<Integer, Person> map = client.getMap(tableName);
-        map.loadAll(false);
-
-        map.destroy();
-
-        Row row = new Row("__map-store." + tableName);
-        List<Row> rows = Arrays.asList(row);
-        assertTrueEventually(() -> {
-            assertDoesNotContainRow(client, "SHOW MAPPINGS", rows);
-        }, 5);
-    }
 }

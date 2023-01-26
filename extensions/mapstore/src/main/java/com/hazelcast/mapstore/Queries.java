@@ -43,31 +43,34 @@ class Queries {
     private final Map<Integer, String> deleteAllQueries = new ConcurrentHashMap<>();
 
     Queries(String mapping, String idColumn, List<SqlColumnMetadata> columnMetadata) {
-        loadQuery = String.format("SELECT * FROM \"%s\" WHERE \"%s\" = ?", mapping, idColumn);
+        loadQuery = "SELECT * FROM \"" + mapping + "\" WHERE \"" + idColumn + "\" = ?";
 
-        loadAllFactory = n -> String.format("SELECT * FROM \"%s\" WHERE \"%s\" IN (%s)", mapping, idColumn,
-                queryParams(n));
+        loadAllFactory = n -> "SELECT * FROM \"" + mapping + "\" WHERE \"" + idColumn + "\" IN ("
+                + queryParams(n)
+                + ")";
 
         loadAllKeys = "SELECT \"" + idColumn + "\" FROM \"" + mapping + "\"";
 
         String columnNames = columnMetadata.stream()
-                .map(sqlColumnMetadata -> '\"' + sqlColumnMetadata.getName() + '\"')
-                .collect(joining(", "));
+                                           .map(sqlColumnMetadata -> '\"' + sqlColumnMetadata.getName() + '\"')
+                                           .collect(joining(", "));
 
-        storeInsert = String.format("SINK INTO \"%s\" (%s) VALUES (%s)", mapping, columnNames,
-                queryParams(columnMetadata.size()));
+        storeInsert = "INSERT INTO \"" + mapping + "\" ( " + columnNames + " ) VALUES (" +
+                queryParams(columnMetadata.size()) +
+                ")";
 
         String setClause = columnMetadata.stream()
-                .filter(cm -> !idColumn.equals(cm.getName()))
-                .map(cm -> '\"' + cm.getName() + "\" = ?")
-                .collect(joining(", "));
+                                         .filter(cm -> !idColumn.equals(cm.getName()))
+                                         .map(cm -> '\"' + cm.getName() + "\" = ?")
+                                         .collect(joining(", "));
 
-        storeUpdate = String.format("UPDATE \"%s\" SET %s WHERE \"%s\" = ?", mapping, setClause, idColumn);
+        storeUpdate = "UPDATE \"" + mapping + "\" SET " + setClause
+                + " WHERE \"" + idColumn + "\" = ?";
 
-        delete = String.format("DELETE FROM \"%s\" WHERE \"%s\" = ?", mapping, idColumn);
-
-        deleteAllFactory = n -> String.format("DELETE FROM \"%s\" WHERE \"%s\" IN (%s)", mapping, idColumn,
-                queryParams(n));
+        delete = "DELETE FROM \"" + mapping + "\" WHERE \"" + idColumn + "\" = ?";
+        deleteAllFactory = n -> "DELETE FROM \"" + mapping + "\" WHERE \"" + idColumn + "\" IN ("
+                + queryParams(n)
+                + ")";
     }
 
     private String queryParams(long n) {
