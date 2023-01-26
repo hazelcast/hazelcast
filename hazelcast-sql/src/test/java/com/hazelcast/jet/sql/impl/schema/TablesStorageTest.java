@@ -115,7 +115,7 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         String name = randomName();
         storage.put(name, mapping(name, "type"));
 
-        assertEquals(1, storage.newStorage().size());
+        assertEquals(1, storage.storage().size());
         assertEquals(0, storage.oldStorage().size());
     }
 
@@ -125,7 +125,7 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         storage.oldStorage().put(name, mapping(name, "type"));
 
         assertEquals(1, storage.allObjects().size());
-        assertEquals(1, storage.newStorage().size());
+        assertEquals(1, storage.storage().size());
         assertEquals(0, storage.oldStorage().size());
     }
 
@@ -153,10 +153,10 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         storage.initializeWithListener(getCountingOnClearEntryListener(clearCounter));
 
         String name = randomName();
-        storage.newStorage().put(name, mapping(name, "type"));
+        storage.storage().put(name, mapping(name, "type"));
         storage.oldStorage().put(name, mapping(name, "type"));
         storage.oldStorage().clear();
-        storage.newStorage().clear();
+        storage.storage().clear();
 
         assertTrueEventually(() -> {
             assertEquals(1, clearCounter.get());
