@@ -206,6 +206,18 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     }
 
     @Test
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/22528")
+    public void testDestroy() {
+        HazelcastInstance client = client();
+        IMap<Integer, Person> map = client.getMap(tableName);
+        map.loadAll(false);
+
+        map.destroy();
+
+        assertTrueEventually(() -> assertRowsAnyOrder(client, "SHOW MAPPINGS", newArrayList()), 5);
+    }
+
+    @Test
     public void testRemoveWhenNotExists() {
         HazelcastInstance client = client();
         IMap<Integer, Person> map = client.getMap(tableName);
