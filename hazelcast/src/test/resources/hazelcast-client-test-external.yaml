@@ -1,0 +1,48 @@
+hazelcast-client:
+  cluster-name: dev
+  network:
+    smart-routing: true
+    redo-operation: false
+    connection-timeout: 5000
+    cluster-members:
+      - 127.0.0.1:5701
+    socket-options:
+      tcp-no-delay: true
+      keep-alive: true
+      reuse-address: true
+      linger-seconds: 3
+      buffer-size: 128
+    socket-interceptor:
+      enabled: false
+    aws:
+      enabled: false
+    gcp:
+      enabled: false
+    azure:
+      enabled: false
+    kubernetes:
+      enabled: false
+    eureka:
+      enabled: false
+    auto-detection:
+      enabled: true
+    icmp-ping:
+      timeout-milliseconds: 1000
+      interval-milliseconds: 1000
+      ttl: 255
+      max-attempts: 2
+      echo-fail-fast-on-startup: true
+      enabled: false
+  backup-ack-to-client-enabled: true
+  user-code-deployment:
+    enabled: false
+  metrics:
+    jmx:
+      enabled: true
+    collection-frequency-seconds: 5
+    enabled: true
+  instance-tracking:
+    enabled: false
+  sql:
+    resubmission-mode: NEVER
+

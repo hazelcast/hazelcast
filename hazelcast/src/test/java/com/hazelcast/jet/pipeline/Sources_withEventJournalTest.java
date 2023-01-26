@@ -81,11 +81,19 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         String xmlString = new String(bytes);
         externalDataStoreConfig.setProperty(HzClientDataStoreFactory.CLIENT_XML, xmlString);
 
+        // Read YAML and set as ExternalDataStoreConfig
+        bytes = java.nio.file.Files.readAllBytes(Paths.get("src", "test", "resources",
+                "hazelcast-client-test-external.yaml"));
+        String yamlString = new String(bytes);
+        externalDataStoreConfig.setProperty(HzClientDataStoreFactory.CLIENT_YML, yamlString);
+
         remoteHz = createRemoteCluster(config, 2).get(0);
         clientConfig = getClientConfigForRemoteCluster(remoteHz);
 
-        for (HazelcastInstance allHazelcastInstance : allHazelcastInstances()) {
-            allHazelcastInstance.getConfig().addExternalDataStoreConfig(externalDataStoreConfig);
+
+        for (HazelcastInstance hazelcastInstance : allHazelcastInstances()) {
+            Config hazelcastInstanceConfig = hazelcastInstance.getConfig();
+            hazelcastInstanceConfig.addExternalDataStoreConfig(externalDataStoreConfig);
         }
     }
 
@@ -138,6 +146,30 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     // Test remoteMapJournal() using default parameters with ExternalDataStoreRef
     @Test
     public void remoteMapJournal_withExternalConfig() {
+        // Given
+        String mapName = JOURNALED_MAP_PREFIX + randomName();
+        IMap<String, Integer> map = remoteHz.getMap(mapName);
+
+        // When
+        ExternalDataStoreRef externalDataStoreRef = ExternalDataStoreRef.externalDataStoreRef(HZ_CLIENT_EXTERNAL_REF);
+        StreamSource<Entry<String, Integer>> source = Sources.remoteMapJournal(
+                mapName, externalDataStoreRef, START_FROM_OLDEST);
+
+        // Then
+        testMapJournal(map, source);
+    }
+
+    // Test remoteMapJournal() using default parameters with ExternalDataStoreRef
+    @Test
+    public void remoteMapJournal_withExternalConfigYaml() {
+
+        for (HazelcastInstance hazelcastInstance : allHazelcastInstances()) {
+            Config config = hazelcastInstance.getConfig();
+            ExternalDataStoreConfig externalDataStoreConfig = config
+                    .getExternalDataStoreConfig(HZ_CLIENT_EXTERNAL_REF);
+            // Make XML empty, so that we use yaml in the test
+            externalDataStoreConfig.setProperty(HzClientDataStoreFactory.CLIENT_XML, "");
+        }
         // Given
         String mapName = JOURNALED_MAP_PREFIX + randomName();
         IMap<String, Integer> map = remoteHz.getMap(mapName);

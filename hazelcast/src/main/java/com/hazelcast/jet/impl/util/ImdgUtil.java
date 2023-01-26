@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.util;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConfigXmlGenerator;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
+import com.hazelcast.client.config.YamlClientConfigBuilder;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
@@ -87,6 +88,15 @@ public final class ImdgUtil {
     public static ClientConfig asClientConfig(String xml) {
         ByteArrayInputStream inputStream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
         return new XmlClientConfigBuilder(inputStream).build();
+    }
+
+    /**
+     * Converts client-config yaml string to {@link ClientConfig} using {@link
+     * YamlClientConfigBuilder}.
+     */
+    public static ClientConfig asClientConfigFromYaml(String yaml) {
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8));
+        return new YamlClientConfigBuilder(inputStream).build();
     }
 
     public static <T> PredicateEx<T> wrapImdgPredicate(Predicate<T> predicate) {

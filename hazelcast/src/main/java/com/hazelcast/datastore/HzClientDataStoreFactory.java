@@ -21,21 +21,28 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.StringUtil;
 
 import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
+import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfigFromYaml;
 
 /**
  * Creates a HazelcastInstance data store.
  * <p>
- * Set the client XML as property using {@link HzClientDataStoreFactory#CLIENT_XML} as property key
- *
+ * Set the client XML as property using {@link HzClientDataStoreFactory#CLIENT_XML} as property key or
+ * Set the client YAML as property using {@link HzClientDataStoreFactory#CLIENT_YML} as property key
  */
 public class HzClientDataStoreFactory implements ExternalDataStoreFactory<HazelcastInstance> {
 
     /**
-     * The constant to be used as property key
+     * The constant to be used as property key for XML
      */
     public static final String CLIENT_XML = "client_xml";
+
+    /**
+     * The constant to be used as property key for YAML
+     */
+    public static final String CLIENT_YML = "client_yml";
 
     // Reference to configuration
     private ExternalDataStoreConfig externalDataStoreConfig;
@@ -47,13 +54,13 @@ public class HzClientDataStoreFactory implements ExternalDataStoreFactory<Hazelc
     public synchronized HazelcastInstance getDataStore() {
         if (hazelcastInstance == null) {
 
-            String clientXml = externalDataStoreConfig.getProperty(CLIENT_XML);
-            if (clientXml == null) {
-                throw new HazelcastException("XML in HzClientDataStoreFactory is null");
+            ClientConfig clientConfig = buildClientConfig();
+
+            if (clientConfig != null) {
+                hazelcastInstance = HazelcastClient.newHazelcastClient(clientConfig);
+                return hazelcastInstance;
             }
-            // Create a client instance
-            ClientConfig clientConfig = asClientConfig(clientXml);
-            hazelcastInstance = HazelcastClient.newHazelcastClient(clientConfig);
+            throw new HazelcastException("XML or YAML in HzClientDataStoreFactory is null");
         }
         return hazelcastInstance;
     }
@@ -70,5 +77,21 @@ public class HzClientDataStoreFactory implements ExternalDataStoreFactory<Hazelc
             // Assign to null, so that we don't shut it down again
             hazelcastInstance = null;
         }
+    }
+
+    private ClientConfig buildClientConfig() {
+        ClientConfig clientConfig = null;
+        String clientXml = externalDataStoreConfig.getProperty(CLIENT_XML);
+        if (!StringUtil.isNullOrEmpty(clientXml)) {
+            // Read ClientConfig from XML
+            clientConfig = asClientConfig(clientXml);
+        }
+
+        String clientYaml = externalDataStoreConfig.getProperty(CLIENT_YML);
+        if (!StringUtil.isNullOrEmpty(clientYaml)) {
+            // Read ClientConfig from Yaml
+            clientConfig = asClientConfigFromYaml(clientYaml);
+        }
+        return clientConfig;
     }
 }

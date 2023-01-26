@@ -664,32 +664,33 @@ public final class Sources {
      * method. The only difference is instead of a ClientConfig parameter that is used to connect to remote cluster,
      * this method receives an ExternalDataStoreRef.
      * The ExternalDataStoreRef caches the connection to remote cluster, so that it can be re-used
-     *  * <p>
-     *      * (Prerequisite) External dataStore configuration:
-     *      * <pre>{@code
-     *      *      Config config = ...;
-     *      *      String xmlString = ...;
-     *      *      ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
-     *      *              .setName("my-hzclient-store")
-     *      *              .setClassName(HzClientDataStoreFactory.class.getName())
-     *      *              .setProperty(HzClientDataStoreFactory.CLIENT_XML, xmlString);
-     *      *      config.addExternalDataStoreConfig(externalDataStoreConfig);
-     *      * }</pre>
-     *      * </p>
-     *       * </p>
-     *      * <p>Pipeline configuration
-     *      * <pre>{@code
-     *      *     PredicateEx<EventJournalMapEvent<String, Integer>> predicate = ...;
-     *      *     p.readFrom(Sources.remoteMapJournal(
-     *      *         mapName,
-     *      *         ExternalDataStoreRef.externalDataStoreRef("my-hzclient-store"),
-     *      *         JournalInitialPosition.START_FROM_OLDEST,
-     *      *         EventJournalMapEvent::getNewValue,
-     *      *         predicate
-     *      *      ));
-     *      * }</pre>
-     *      * </p>
-     *
+     *  <p>
+     *      (Prerequisite) External dataStore configuration: <br/>
+     *      Use {@link com.hazelcast.datastore.HzClientDataStoreFactory#CLIENT_XML} for XML or <br/>
+     *      use {@link com.hazelcast.datastore.HzClientDataStoreFactory#CLIENT_YML} for YAML string
+     *      <pre>{@code
+     *            Config config = ...;
+     *            String xmlString = ...;
+     *            ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
+     *                    .setName("my-hzclient-store")
+     *                    .setClassName(HzClientDataStoreFactory.class.getName())
+     *                    .setProperty(HzClientDataStoreFactory.CLIENT_XML, xmlString);
+     *            config.addExternalDataStoreConfig(externalDataStoreConfig);
+     *       }</pre>
+     *      </p>
+     *      </p>
+     *      <p>Pipeline configuration
+     *      <pre>{@code
+     *           PredicateEx<EventJournalMapEvent<String, Integer>> predicate = ...;
+     *           p.readFrom(Sources.remoteMapJournal(
+     *               mapName,
+     *               ExternalDataStoreRef.externalDataStoreRef("my-hzclient-store"),
+     *               JournalInitialPosition.START_FROM_OLDEST,
+     *               EventJournalMapEvent::getNewValue,
+     *               predicate
+     *            ));
+     *       }</pre>
+     *      </p>
      * @since 5.3
      */
     @Nonnull
