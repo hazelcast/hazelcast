@@ -35,12 +35,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("2a6487db39a9bbd8320968a72a4192b6")
+@Generated("1fcdac31b083c6818a2985c268ab8193")
 public final class JetUploadJobMetaDataCodec {
-    //hex: 0xFE1000
-    public static final int REQUEST_MESSAGE_TYPE = 16650240;
-    //hex: 0xFE1001
-    public static final int RESPONSE_MESSAGE_TYPE = 16650241;
+    //hex: 0xFE1100
+    public static final int REQUEST_MESSAGE_TYPE = 16650496;
+    //hex: 0xFE1101
+    public static final int RESPONSE_MESSAGE_TYPE = 16650497;
     private static final int REQUEST_SESSION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_SESSION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;

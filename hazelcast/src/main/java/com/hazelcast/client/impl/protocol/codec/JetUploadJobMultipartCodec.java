@@ -35,12 +35,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("2792b853a8056a0dbaef5ccec327b0c1")
+@Generated("118fd062b7bfb2ff978c0235d487072a")
 public final class JetUploadJobMultipartCodec {
-    //hex: 0xFE1100
-    public static final int REQUEST_MESSAGE_TYPE = 16650496;
-    //hex: 0xFE1101
-    public static final int RESPONSE_MESSAGE_TYPE = 16650497;
+    //hex: 0xFE1200
+    public static final int REQUEST_MESSAGE_TYPE = 16650752;
+    //hex: 0xFE1201
+    public static final int RESPONSE_MESSAGE_TYPE = 16650753;
     private static final int REQUEST_SESSION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_CURRENT_PART_NUMBER_FIELD_OFFSET = REQUEST_SESSION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_TOTAL_PART_NUMBER_FIELD_OFFSET = REQUEST_CURRENT_PART_NUMBER_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -81,7 +81,7 @@ public final class JetUploadJobMultipartCodec {
         public int partSize;
 
         /**
-         * Hexadecimal SHA256 of the part data
+         * Hexadecimal SHA256 of the message part
          */
         public java.lang.String sha256Hex;
     }
