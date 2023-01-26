@@ -273,7 +273,6 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                 RexNode rexNode = call.getOperands().get(0);
                 return addAddends(rexNode, positiveField, negativeField, constantsSum, inverse);
             }
-            return false;
         }
 
         if (expr instanceof RexLiteral) {

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql_nightly;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.impl.AbstractJobProxy;
@@ -30,7 +31,6 @@ import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
@@ -49,13 +49,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.jet.core.JobStatus.FAILED;
-import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -65,18 +65,19 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
     private static final int INITIAL_PARTITION_COUNT = 1;
     private static final int EVENTS_PER_SINK = 25_000;
     private static final int SINK_ATTEMPTS = 10;
-    private static final int EVENTS_TO_PROCESS = EVENTS_PER_SINK * SINK_ATTEMPTS;
-    private static final int SNAPSHOT_TIMEOUT_SECONDS = 5;
-    private static final String JOB_NAME = "s2s_join";
+    protected static final int EVENTS_TO_PROCESS = EVENTS_PER_SINK * SINK_ATTEMPTS;
+    protected static final int SNAPSHOT_TIMEOUT_SECONDS = 30;
+    protected static final String JOB_NAME = "s2s_join";
     private static KafkaTestSupport kafkaTestSupport;
+    private Throwable ex;
 
     private SqlService sqlService;
     private Thread kafkaFeedThread;
-    protected String resultMapName;
     private String topicName;
-    private IMap<Integer, String> resultMap;
+    protected String resultMapName;
+    protected IMap<Integer, String> resultMap;
 
-    private String query;
+    protected String query;
 
     @Parameter(value = 0)
     public String processingGuarantee;
@@ -133,34 +134,15 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
 
         query = setupQuery();
 
-        Thread.sleep(60_000L); // time to feed Kafka
-    }
-
-    @Override
-    @After
-    public void tearDown() {
-        try {
-            Thread.sleep(1000L);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        super.tearDown();
+        Thread.sleep(30_000L); // time to feed Kafka
     }
 
     @Test(timeout = 600_000L)
     public void stressTest() {
-        JetServiceBackend jsb = getNodeEngineImpl(instance()).getService(JetServiceBackend.SERVICE_NAME);
-        JobRestarter jobRestarter = new JobRestarter(instance().getJet(), jsb);
+        JobRestarter jobRestarter = new JobRestarter(instance());
         jobRestarter.start();
 
-        assertQueryFinished(query, resultMap, EVENTS_TO_PROCESS);
-        jobRestarter.finish();
-        assertEquals(EVENTS_TO_PROCESS, resultMap.size());
-
-        for (int i = 1; i <= EVENTS_TO_PROCESS; ++i) {
-            assertEquals("value-" + i, resultMap.remove(i));
-        }
-        assertEquals(0, resultMap.size());
+        processAndCheckResults(jobRestarter);
 
         try {
             kafkaFeedThread.join();
@@ -172,54 +154,19 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
         }
     }
 
-    class JobRestarter extends Thread {
-        private final JetService jetService;
-        private final JetServiceBackend jetBackend;
-        private volatile boolean finish;
+    protected void processAndCheckResults(JobRestarter jobRestarter) {
+        CompletableFuture<Void> queryFinished = assertQueryCompleted(query, resultMap, EVENTS_TO_PROCESS);
+        assertFalse(queryFinished.isCompletedExceptionally());
+        jobRestarter.finish();
+        assertEquals(EVENTS_TO_PROCESS, resultMap.size());
 
-        JobRestarter(JetService jetService, JetServiceBackend jetBackend) {
-            this.jetService = jetService;
-            this.jetBackend = jetBackend;
+        for (int i = 1; i <= EVENTS_TO_PROCESS; ++i) {
+            assertEquals("value-" + i, resultMap.remove(i));
         }
-
-        @Override
-        public void run() {
-            for (; ; ) {
-                if (finish) {
-                    return;
-                }
-                AbstractJobProxy job = (AbstractJobProxy) jetService.getJobs(JOB_NAME);
-                assertNotNull(job);
-                assertJobStatusEventually(job, RUNNING);
-                waitForNextSnapshot(jetBackend.getJobRepository(), job.getId(), SNAPSHOT_TIMEOUT_SECONDS, false);
-                job.restart(restartGraceful);
-            }
-        }
-
-        public void finish() {
-            Job job = jetService.getJob(JOB_NAME);
-            assertNotNull(job);
-            job.cancel();
-            assertJobStatusEventually(job, FAILED);
-            this.finish = true;
-        }
+        assertEquals(0, resultMap.size());
     }
 
-    protected String setupQuery() {
-        return "CREATE JOB " + JOB_NAME +
-                " OPTIONS ('processingGuarantee'='" + processingGuarantee + "') AS " +
-                " SINK INTO " + resultMapName +
-                " SELECT s1.__key, s2.this FROM s1 JOIN s2 ON s1.__key = s2.__key";
-    }
-
-
-    private static String createRandomTopic() {
-        String topicName = randomName();
-        kafkaTestSupport.createTopic(topicName, INITIAL_PARTITION_COUNT);
-        return topicName;
-    }
-
-    private static void createTopicData(SqlService sqlService, String topicName) {
+    private void createTopicData(SqlService sqlService, String topicName) {
         int itemsSank = 0;
         for (int sink = 1; sink <= SINK_ATTEMPTS; sink++) {
             StringBuilder queryBuilder = new StringBuilder("INSERT INTO " + topicName + " VALUES ");
@@ -235,7 +182,14 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
         }
     }
 
-    private static void assertQueryFinished(String sql, IMap map, int elements) {
+    protected String setupQuery() {
+        return "CREATE JOB " + JOB_NAME +
+                " OPTIONS ('processingGuarantee'='" + processingGuarantee + "', 'snapshotIntervalMillis' = '1000')" +
+                " AS SINK INTO " + resultMapName +
+                " SELECT s1.__key, s2.this FROM s1 JOIN s2 ON s1.__key = s2.__key";
+    }
+
+    protected CompletableFuture<Void> assertQueryCompleted(String sql, IMap map, int elements) {
         SqlService sqlService = instance().getSql();
         CompletableFuture<Void> future = new CompletableFuture<>();
 
@@ -244,7 +198,10 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
 
             try (SqlResult result = sqlService.execute(statement)) {
                 while (map.size() < elements) {
-                    Thread.sleep(500L);
+                    if (ex != null) {
+                        throw ex;
+                    }
+                    Thread.sleep(200L);
                 }
                 future.complete(null);
             } catch (Throwable e) {
@@ -267,5 +224,51 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
         }
 
         assertThat(map.size()).isEqualTo(elements);
+        return future;
+    }
+
+    private static String createRandomTopic() {
+        String topicName = randomName();
+        kafkaTestSupport.createTopic(topicName, INITIAL_PARTITION_COUNT);
+        return topicName;
+    }
+
+    class JobRestarter extends Thread {
+        private final JetService jetService;
+        private final JetServiceBackend jetBackend;
+        private volatile boolean finish;
+
+        JobRestarter(HazelcastInstance hazelcastInstance) {
+            this.jetService = hazelcastInstance.getJet();
+            this.jetBackend = getJetServiceBackend(hazelcastInstance);
+        }
+
+        @Override
+        public void run() {
+            while (jetService.getJob(JOB_NAME) == null) {
+                try {
+                    Thread.sleep(100L); // wait for query start
+                } catch (InterruptedException e) {
+                    ex = e;
+                }
+            }
+
+            for (; ; ) {
+                if (finish) {
+                    return;
+                }
+                AbstractJobProxy job = (AbstractJobProxy) jetService.getJob(JOB_NAME);
+                waitForNextSnapshot(jetBackend.getJobRepository(), job.getId(), SNAPSHOT_TIMEOUT_SECONDS, false);
+                job.restart(restartGraceful);
+            }
+        }
+
+        public void finish() {
+            Job job = jetService.getJob(JOB_NAME);
+            assertNotNull(job);
+            job.cancel();
+            assertJobStatusEventually(job, FAILED);
+            this.finish = true;
+        }
     }
 }
