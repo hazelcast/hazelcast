@@ -211,9 +211,15 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
                 String sha256Hex = calculateSha256Hex(data, bytesRead);
                 //Send the part
-                ClientMessage jobDataRequest = JetUploadJobMultipartCodec.encodeRequest(sessionId, currentPartNumber, totalParts,
-                        data, bytesRead, sha256Hex);
-                invokeRequestOnMasterAndDecodeResponse(jobDataRequest, JetUploadJobMultipartCodec::decodeResponse);
+                ClientMessage jobDataRequest = JetUploadJobMultipartCodec.encodeRequest(sessionId, currentPartNumber,
+                        totalParts, data, bytesRead, sha256Hex);
+                boolean result = invokeRequestOnMasterAndDecodeResponse(jobDataRequest,
+                        JetUploadJobMultipartCodec::decodeResponse);
+                if (result) {
+                    logFine(getLogger(), "Submitted Job Part successfully for jarPath: %s PartNumber %s",
+                            jarPath, currentPartNumber);
+                }
+
             }
         }
     }
