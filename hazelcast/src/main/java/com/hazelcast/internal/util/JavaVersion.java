@@ -28,6 +28,7 @@ import java.util.Arrays;
  * version comparisons can be done safely even with versions that didn't
  * exist at the time the given Hazelcast version was released.
  *
+ * @see UnknownVersion
  * @see FutureJavaVersion
  */
 public enum JavaVersion implements JavaMajorVersion {
@@ -46,6 +47,7 @@ public enum JavaVersion implements JavaMajorVersion {
     JAVA_20(20)
     ;
 
+    public static final JavaMajorVersion UNKNOWN_VERSION = new UnknownVersion();
     public static final JavaMajorVersion CURRENT_VERSION = detectCurrentVersion();
 
     private final int majorVersion;
@@ -55,12 +57,13 @@ public enum JavaVersion implements JavaMajorVersion {
     }
 
     @Override
-    public int getMajorVersion() {
+    public Integer getMajorVersion() {
         return majorVersion;
     }
 
     /**
      * Check if the current runtime version is greater than or equal to the given version.
+     * Returns false if the given version is UNKNOWN.
      */
     public static boolean isAtLeast(JavaVersion version) {
         return isAtLeast(CURRENT_VERSION, version);
@@ -68,17 +71,20 @@ public enum JavaVersion implements JavaMajorVersion {
 
     /**
      * Check if the current runtime version is less than or equal to the given version.
+     * Returns false if the given version is UNKNOWN.
      */
     public static boolean isAtMost(JavaVersion version) {
         return isAtMost(CURRENT_VERSION, version);
     }
 
     static boolean isAtLeast(JavaMajorVersion currentVersion, JavaMajorVersion minVersion) {
-        return currentVersion.getMajorVersion() >= minVersion.getMajorVersion();
+        return currentVersion != UNKNOWN_VERSION && minVersion != UNKNOWN_VERSION
+                && currentVersion.getMajorVersion() >= minVersion.getMajorVersion();
     }
 
     static boolean isAtMost(JavaMajorVersion currentVersion, JavaMajorVersion maxVersion) {
-        return currentVersion.getMajorVersion() <= maxVersion.getMajorVersion();
+        return currentVersion != UNKNOWN_VERSION && maxVersion != UNKNOWN_VERSION
+                && currentVersion.getMajorVersion() <= maxVersion.getMajorVersion();
     }
 
     /**
@@ -103,11 +109,24 @@ public enum JavaVersion implements JavaMajorVersion {
      * @see <a href="https://openjdk.org/jeps/223">
      *      JEP 223: New Version-String Scheme (>= JDK 9)
      */
-    private static JavaMajorVersion detectCurrentVersion() {
-        String[] version = System.getProperty("java.version").split("[-+.]");
-        int major = Integer.parseInt(version[version[0].equals("1") ? 1 : 0]);
-
+    static JavaMajorVersion detectCurrentVersion() {
         ILogger logger = Logger.getLogger(JavaVersion.class);
+
+        String version = System.getProperty("java.version");
+        if (version == null) {
+            warn(logger, "java.version property is not set");
+            return UNKNOWN_VERSION;
+        }
+
+        int major;
+        try {
+            String[] components = version.split("[-+.]");
+            major = Integer.parseInt(components[components[0].equals("1") ? 1 : 0]);
+        } catch (ArrayIndexOutOfBoundsException | NumberFormatException e) {
+            warn(logger, "java.version property is in unknown format: " + version);
+            return UNKNOWN_VERSION;
+        }
+
         if (logger.isFineEnabled()) {
             logger.fine("Detected runtime version: Java " + major);
         }
@@ -115,6 +134,24 @@ public enum JavaVersion implements JavaMajorVersion {
         return Arrays.<JavaMajorVersion>stream(values())
                 .filter(v -> v.getMajorVersion() == major).findFirst()
                 .orElseGet(() -> new FutureJavaVersion(major));
+    }
+
+    private static void warn(ILogger logger, String message) {
+        logger.warning(message + ". You can specify argument -Djava.version=<version> "
+                + "to set the Java version when starting JVM.");
+    }
+
+    /**
+     * Represents an unknown Java version, which could not be parsed from system property
+     * {@code java.version}. Comparisons involving unknown versions always return false.
+     * This usually simplifies comparisons, but does not satisfy property:
+     * {@code isAtLeast(v1, v2) == !isAtMost(v2, v1)}
+     */
+    static class UnknownVersion implements JavaMajorVersion {
+        @Override
+        public Integer getMajorVersion() {
+            return null;
+        }
     }
 
     /**
@@ -131,7 +168,7 @@ public enum JavaVersion implements JavaMajorVersion {
         }
 
         @Override
-        public int getMajorVersion() {
+        public Integer getMajorVersion() {
             return majorVersion;
         }
     }
