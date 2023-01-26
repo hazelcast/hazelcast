@@ -149,11 +149,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
 
         // Run periodically to clean expired jar uploads
         this.jobUploadStoreCheckerFuture = nodeEngine.getExecutionService().scheduleWithRepetition(
-                this::checkJobUploadStore, 0, JOB_UPLOAD_STORE_PERIOD, SECONDS);
-    }
-
-    private void checkJobUploadStore() {
-        jobUploadStore.cleanExpiredUploads();
+                jobUploadStore::cleanExpiredUploads, 0, JOB_UPLOAD_STORE_PERIOD, SECONDS);
     }
 
     public void configureJetInternalObjects(Config config, HazelcastProperties properties) {
