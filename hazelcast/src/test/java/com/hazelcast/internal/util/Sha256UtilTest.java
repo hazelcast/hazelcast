@@ -33,7 +33,7 @@ public class Sha256UtilTest {
     }
 
     @Test
-    public void testCalculateSha256Hex2() throws Exception {
+    public void test_exception_whenDirectory() {
         Path path = Paths.get("src", "test", "resources");
         Assert.assertThrows(IOException.class, () -> Sha256Util.calculateSha256Hex(path));
     }
