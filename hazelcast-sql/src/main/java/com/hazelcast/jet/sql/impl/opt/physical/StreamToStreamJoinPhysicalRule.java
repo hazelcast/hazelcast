@@ -266,6 +266,16 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             long[] constantsSum,
             boolean inverse
     ) {
+        if (expr instanceof RexCall) {
+            RexCall call = (RexCall) expr;
+            if (call.getKind() == SqlKind.CAST) {
+                assert call.getOperands().size() == 1;
+                RexNode rexNode = call.getOperands().get(0);
+                return addAddends(rexNode, positiveField, negativeField, constantsSum, inverse);
+            }
+            return false;
+        }
+
         if (expr instanceof RexLiteral) {
             RexLiteral literal = (RexLiteral) expr;
             if (!SqlTypeName.DAY_INTERVAL_TYPES.contains(literal.getType().getSqlTypeName())
