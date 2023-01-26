@@ -3239,7 +3239,7 @@ public class Config {
      *
      * @param altoConfig Alto configuration to be set
      * @return this config
-     * @throws IllegalArgumentException if altoConfig is null
+     * @throws NullPointerException if altoConfig is null
      * @since 5.3
      */
     @Beta
