@@ -40,8 +40,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -102,18 +104,23 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
         for (int i = 0; i < 30; i++) {
             map.put(i, i);
         }
+        final Set<Object> keys = Collections.newSetFromMap(new ConcurrentHashMap<>());
         final AtomicInteger countAddEvent = new AtomicInteger();
         final AtomicInteger countRemoveEvent = new AtomicInteger();
 
         final QueryCache<Integer, Integer> queryCache = map.getQueryCache(cacheName, new EntryAdapter() {
             @Override
             public void entryAdded(EntryEvent event) {
-                countAddEvent.incrementAndGet();
+                if (keys.add(event.getKey())) {
+                    countAddEvent.incrementAndGet();
+                }
             }
 
             @Override
             public void entryRemoved(EntryEvent event) {
-                countRemoveEvent.incrementAndGet();
+                if (keys.remove(event.getKey())) {
+                    countRemoveEvent.incrementAndGet();
+                }
             }
         }, SQL_PREDICATE, true);
 
