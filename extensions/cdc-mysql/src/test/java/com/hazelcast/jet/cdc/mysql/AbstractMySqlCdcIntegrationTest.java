@@ -39,7 +39,7 @@ import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 @RunWith(HazelcastSerialClassRunner.class)
 public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
-    public static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-mysql:1.9.5.Final")
+    public static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-mysql:1.9.6.Final")
             .asCompatibleSubstituteFor("mysql");
 
     @Rule
@@ -53,7 +53,6 @@ public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegra
     @BeforeClass
     public static void ignoreOnArm64OrOnJdk15OrHigher() {
         //There is no arm64 version of currently used docker image
-        assumeNoArm64Architecture();
         Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623, " +
                         "https://github.com/hazelcast/hazelcast/issues/18800",
                 System.getProperty("java.version").matches("^1[56].*"));
