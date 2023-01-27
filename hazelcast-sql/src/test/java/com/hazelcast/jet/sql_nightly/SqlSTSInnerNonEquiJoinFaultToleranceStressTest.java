@@ -34,7 +34,7 @@ public class SqlSTSInnerNonEquiJoinFaultToleranceStressTest extends SqlSTSInnerE
         return "CREATE JOB " + JOB_NAME +
                 " OPTIONS (" +
                 " 'processingGuarantee'='" + processingGuarantee + "', 'snapshotIntervalMillis' = '500') " +
-                " AS SINK INTO " + resultFileName +
+                " AS SINK INTO " + sinkTopic +
                 " SELECT s1.__key, s2.this FROM s1 JOIN s2 ON s2.__key " +
                 " BETWEEN s1.__key AND s1.__key + 1" +
                 " WHERE s1.__key != s2.__key";
