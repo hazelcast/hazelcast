@@ -53,23 +53,20 @@ import static com.hazelcast.internal.tpc.util.BitUtil.nextPowerOfTwo;
  * E.g. in case of the buffer pool (application specific page cache) we just want to take a pointer to
  * some memory in the bufferpool and pass it to the IOBuffer for reading/writing that page to disk.
  */
-@SuppressWarnings({
-        "checkstyle:VisibilityModifier",
-        "checkstyle:declarationorder",
-        "checkstyle:MagicNumber",
-        "checkstyle:methodcount",
-        "checkstyle:NestedIfDepth"})
+@SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:MethodCount"})
 public class IOBuffer {
 
     public IOBuffer next;
     public AsyncSocket socket;
 
     public boolean trackRelease;
-    private ByteBuffer buff;
     public IOBufferAllocator allocator;
     public boolean concurrent;
+
     // make field?
     protected AtomicInteger refCount = new AtomicInteger();
+
+    private ByteBuffer buff;
 
     public IOBuffer(int size) {
         this(size, false);
@@ -163,6 +160,7 @@ public class IOBuffer {
         buff.putChar(value);
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     public void writeShortL(short v) {
         ensureRemaining(SIZEOF_INT);
         buff.put((byte) ((v) & 0xFF));
@@ -186,6 +184,7 @@ public class IOBuffer {
         buff.putInt(value);
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     public void writeIntL(int v) {
         ensureRemaining(SIZEOF_INT);
         buff.put((byte) ((v) & 0xFF));
@@ -249,7 +248,7 @@ public class IOBuffer {
     }
 
     public String readString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         int size = buff.getInt();
         for (int k = 0; k < size; k++) {
             sb.append(buff.getChar());
@@ -282,6 +281,7 @@ public class IOBuffer {
         return refCount.get();
     }
 
+    @SuppressWarnings("checkstyle:NestedIfDepth")
     public void release() {
         if (allocator == null) {
             return;
