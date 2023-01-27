@@ -30,10 +30,12 @@ public class SqlSTSInnerNonEquiJoinFaultToleranceStressTest extends SqlSTSInnerE
 
     @Override
     protected String setupFetchingQuery() {
-        expectedEventsCount = EVENTS_TO_PROCESS - 1; // we do expected less items for query below
+        expectedEventsCount = EVENTS_TO_PROCESS - 1; // we do expected fewer items for query below
+        firstItemId = 2;                              // we do expect first item to be [1, value-2]
+        lastItemId = EVENTS_TO_PROCESS;
         return "CREATE JOB " + JOB_NAME +
                 " OPTIONS (" +
-                " 'processingGuarantee'='" + processingGuarantee + "', 'snapshotIntervalMillis' = '500') " +
+                " 'processingGuarantee'='" + processingGuarantee + "', 'snapshotIntervalMillis' = '1000') " +
                 " AS SINK INTO " + sinkTopic +
                 " SELECT s1.__key, s2.this FROM s1 JOIN s2 ON s2.__key " +
                 " BETWEEN s1.__key AND s1.__key + 1" +

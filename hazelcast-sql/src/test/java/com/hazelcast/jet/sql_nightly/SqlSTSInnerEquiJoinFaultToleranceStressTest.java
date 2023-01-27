@@ -56,14 +56,15 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(NightlyTest.class)
 public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport {
     private static final int INITIAL_PARTITION_COUNT = 1;
-    private static final int EVENTS_PER_SINK = 10000;
-    private static final int SINK_ATTEMPTS = 25;
+    private static final int EVENTS_PER_SINK = 2000;
+    private static final int SINK_ATTEMPTS = 50;
     protected static final int EVENTS_TO_PROCESS = EVENTS_PER_SINK * SINK_ATTEMPTS;
     protected static final int SNAPSHOT_TIMEOUT_SECONDS = 30;
 
@@ -73,15 +74,16 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
     private static KafkaTestSupport kafkaTestSupport;
     private Throwable ex;
 
+    private final Map<String, Integer> resultSet = new HashMap<>();
     private SqlService sqlService;
     private Thread kafkaFeedThread;
     private String sourceTopicName;
+    private String fetchingQuery;
     protected String sinkTopic;
 
-    protected String fetchingQuery;
-
-    protected Map<String, Integer> resultSet = new HashMap<>();
     protected int expectedEventsCount = EVENTS_TO_PROCESS;
+    protected int firstItemId = 1;
+    protected int lastItemId = EVENTS_TO_PROCESS;
 
     @Parameter(value = 0)
     public String processingGuarantee;
@@ -184,7 +186,7 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
             for (SqlRow sqlRow : result) {
                 String s = sqlRow.getObject(1);
                 resultSet.compute(s, (str, i) -> i == null ? 0 : i + 1);
-                if (resultSet.size() >= EVENTS_TO_PROCESS) {
+                if (resultSet.size() >= expectedEventsCount) {
                     break;
                 }
             }
@@ -196,20 +198,22 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
             throw new RuntimeException(e);
         }
 
-        assertThat(resultSet.size()).isGreaterThanOrEqualTo(EVENTS_TO_PROCESS);
+        assertThat(resultSet.size()).isGreaterThanOrEqualTo(expectedEventsCount);
         jobRestarter.finish();
 
         if (processingGuarantee.equals(EXACTLY_ONCE)) {
             List<String> dups = resultSet.entrySet()
                     .stream()
                     .filter(entry -> entry.getValue() > 1)
-                    .map(entry -> entry.getKey())
+                    .map(Map.Entry::getKey)
                     .collect(Collectors.toList());
-            for (String str : dups) {
-                System.err.println(str);
-            }
             assertThat(dups.size()).isZero();
         }
+
+        for (int i = firstItemId; i <= lastItemId; ++i) {
+            assertThat(resultSet.remove("value-" + i)).isNotNull();
+        }
+        assertTrue("Result set is not empty : " + resultSet.size(), resultSet.isEmpty());
     }
 
     protected String setupFetchingQuery() {
