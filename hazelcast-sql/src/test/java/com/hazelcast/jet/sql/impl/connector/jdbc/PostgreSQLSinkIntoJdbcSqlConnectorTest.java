@@ -23,7 +23,7 @@ import org.junit.Test;
 
 import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_EXTERNAL_DATASTORE_REF;
 
-public class PostgresSQLSinkIntoJdbcSqlConnectorTest extends JdbcSqlTestSupport {
+public class PostgreSQLSinkIntoJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     private String tableName;
 
