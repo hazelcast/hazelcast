@@ -130,8 +130,8 @@ public final class ClientMessage implements OutboundFrame {
 
     private static final long serialVersionUID = 1L;
 
-    public transient Frame startFrame;
-    public Frame endFrame;
+    private transient Frame startFrame;
+    private Frame endFrame;
 
     private transient boolean isRetryable;
     private transient String operationName;
@@ -141,7 +141,6 @@ public final class ClientMessage implements OutboundFrame {
     private AsyncSocket asyncSocket;
 
     private ClientMessage() {
-
     }
 
     //Constructs client message with single frame. StartFrame.next must be null.
@@ -166,6 +165,18 @@ public final class ClientMessage implements OutboundFrame {
 
     public Frame getStartFrame() {
         return startFrame;
+    }
+
+    public void setStartFrame(Frame startFrame) {
+        this.startFrame = startFrame;
+    }
+
+    public Frame getEndFrame() {
+        return endFrame;
+    }
+
+    public void setEndFrame(Frame endFrame) {
+        this.endFrame = endFrame;
     }
 
     public ClientMessage add(Frame frame) {

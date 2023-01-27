@@ -15,14 +15,6 @@
  */
 
 /**
- * <p>Contains the Thread Per Core engine<br>
- * <p>
- * This whole package is internal and no compatibility will be provided.
- * <p>
- * Network/Kernel tuning references:
- * <ol>
- *     <li>https://talawah.io/blog/linux-kernel-vs-dpdk-http-performance-showdown/</li>
- *     <li>https://talawah.io/blog/extreme-http-performance-tuning-one-point-two-million</li>
- * </ol>>
+ * <p>This package containsa alto functionality for Hazelcast.<br>
  */
-package com.hazelcast.internal.tpc;
+package com.hazelcast.internal.bootstrap;

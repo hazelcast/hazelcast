@@ -99,7 +99,7 @@ public final class CircularQueue<E> {
      * Adds an item to this CircularQueue.
      *
      * @param item the item to add.
-     * @throws NullPointerException if item is null.
+     * @throws NullPointerException  if item is null.
      * @throws IllegalStateException when there is no more space on this CircularQueue.
      */
     public void add(E item) {

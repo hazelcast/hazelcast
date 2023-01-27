@@ -17,7 +17,6 @@
 package com.hazelcast.internal.tpc;
 
 import com.hazelcast.internal.tpc.nio.NioEventloop;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

@@ -24,13 +24,13 @@ import static org.junit.Assert.assertFalse;
 public class NopSchedulerTest {
 
     @Test
-    public void test(){
+    public void test() {
         NopScheduler scheduler = new NopScheduler();
         scheduler.schedule(new IOBuffer(64));
     }
 
     @Test
-    public void test_tick(){
+    public void test_tick() {
         NopScheduler scheduler = new NopScheduler();
         assertFalse(scheduler.tick());
     }

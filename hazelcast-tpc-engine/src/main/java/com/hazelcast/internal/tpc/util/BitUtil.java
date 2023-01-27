@@ -16,13 +16,16 @@
 
 package com.hazelcast.internal.tpc.util;
 
-public class BitUtil {
+public final class BitUtil {
     public static final int SIZEOF_BYTE = Byte.BYTES;
     public static final int SIZEOF_CHAR = Character.BYTES;
     public static final int SIZEOF_INT = Integer.BYTES;
     public static final int SIZEOF_LONG = Long.BYTES;
     public static final int SIZEOF_FLOAT = Float.BYTES;
     public static final int SIZEOF_DOUBLE = Double.BYTES;
+
+    private BitUtil() {
+    }
 
     /**
      * Fast method of finding the next power of 2 greater than or equal to the supplied value.
@@ -34,10 +37,9 @@ public class BitUtil {
      * @param value from which to search for next power of 2
      * @return The next power of 2 or the value itself if it is a power of 2
      */
+    @SuppressWarnings("checkstyle:MagicNumber")
     public static int nextPowerOfTwo(final int value) {
         return 1 << (32 - Integer.numberOfLeadingZeros(value - 1));
     }
 
-    private BitUtil() {
-    }
 }

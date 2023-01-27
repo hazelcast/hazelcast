@@ -58,18 +58,6 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     private final NioEventloop eventloop;
     private final Thread eventloopThread;
 
-    /**
-     * Opens a TCP/IP (stream) based IPv4 NioAsyncServerSocket.
-     * <p/>
-     * To prevent coupling to Nio, it is better to use the {@link Eventloop#openTcpAsyncServerSocket()}.
-     *
-     * @param eventloop the eventloop the opened socket will be processed by.
-     * @return the opened NioAsyncServerSocket.
-     */
-    public static NioAsyncServerSocket openTcpServerSocket(NioEventloop eventloop) {
-        return new NioAsyncServerSocket(eventloop);
-    }
-
     private NioAsyncServerSocket(NioEventloop eventloop) {
         try {
             this.serverSocketChannel = ServerSocketChannel.open();
@@ -80,6 +68,18 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    /**
+     * Opens a TCP/IP (stream) based IPv4 NioAsyncServerSocket.
+     * <p/>
+     * To prevent coupling to Nio, it is better to use the {@link Eventloop#openTcpAsyncServerSocket()}.
+     *
+     * @param eventloop the eventloop the opened socket will be processed by.
+     * @return the opened NioAsyncServerSocket.
+     */
+    public static NioAsyncServerSocket openTcpServerSocket(NioEventloop eventloop) {
+        return new NioAsyncServerSocket(eventloop);
     }
 
     @Override
@@ -114,8 +114,8 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     public void setReusePort(boolean reusePort) {
         if (SO_REUSEPORT == null) {
             if (SO_REUSE_PORT_PRINTED.compareAndSet(false, true)) {
-                logger.warning("Ignoring NioAsyncServerSocket.reusePort." +
-                        "Please upgrade to Java 9+ to enable the SO_REUSEPORT option.");
+                logger.warning("Ignoring NioAsyncServerSocket.reusePort."
+                        + "Please upgrade to Java 9+ to enable the SO_REUSEPORT option.");
             }
         } else {
             try {
@@ -206,7 +206,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
                 serverSocketChannel.register(selector, OP_ACCEPT, new AcceptHandler(consumer));
 
                 if (logger.isInfoEnabled()) {
-                    logger.info(getLocalAddress()+" started accepting");
+                    logger.info(getLocalAddress() + " started accepting");
                 }
 
                 future.complete(null);
@@ -248,7 +248,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             consumer.accept(socket);
 
             if (logger.isInfoEnabled()) {
-                logger.info(NioAsyncServerSocket.this +" accepted: " + socketChannel.getRemoteAddress()
+                logger.info(NioAsyncServerSocket.this + " accepted: " + socketChannel.getRemoteAddress()
                         + "->" + socketChannel.getLocalAddress());
             }
         }
