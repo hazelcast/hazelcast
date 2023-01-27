@@ -23,32 +23,20 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import static org.junit.Assert.assertEquals;
-
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(NightlyTest.class)
 public class SqlSTSInnerNonEquiJoinFaultToleranceStressTest extends SqlSTSInnerEquiJoinFaultToleranceStressTest {
+
     @Override
-    protected String setupQuery() {
+    protected String setupFetchingQuery() {
+        expectedEventsCount = EVENTS_TO_PROCESS - 1; // we do expected less items for query below
         return "CREATE JOB " + JOB_NAME +
                 " OPTIONS (" +
                 " 'processingGuarantee'='" + processingGuarantee + "', 'snapshotIntervalMillis' = '500') " +
-                " AS SINK INTO " + resultMapName +
+                " AS SINK INTO " + resultFileName +
                 " SELECT s1.__key, s2.this FROM s1 JOIN s2 ON s2.__key " +
                 " BETWEEN s1.__key AND s1.__key + 1" +
                 " WHERE s1.__key != s2.__key";
-    }
-
-    @Override
-    protected void processAndCheckResults(JobRestarter jobRestarter) {
-        assertQueryCompleted(query, resultMap, EVENTS_TO_PROCESS - 1);
-        jobRestarter.finish();
-        assertEquals(EVENTS_TO_PROCESS - 1, resultMap.size());
-
-        for (int i = 1; i <= EVENTS_TO_PROCESS - 1; ++i) {
-            assertEquals("value-" + (i + 1), resultMap.remove(i));
-        }
-        assertEquals(0, resultMap.size());
     }
 }
