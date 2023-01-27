@@ -26,16 +26,18 @@ which from the point of view of snapshot data consistency can be summarized as f
 ### Snapshot taking procedure
 
 1. Initiate snapshot: generate new `ongoingSnapshotId`, notify all processors
-2. 1st snapshot phase (`saveSnapshot` + `snapshotCommitPrepare`):
+2. Write `JobExecutionRecord`
+3. Clear ongoing snapshot map.
+4. 1st snapshot phase (`saveSnapshot` + `snapshotCommitPrepare`):
    Each processor instance writes its state to `IMap` as "chunk"
-3. Make decision: if all processors succeeded in 1st phase then the snapshot will be committed in 2nd phase,
+5. Make decision: if all processors succeeded in 1st phase then the snapshot will be committed in 2nd phase,
    otherwise it will be rolled back.
-4. Save decision to `IMap` as `SnapshotVerificationRecord` and in `JobExecutionRecord`. 
+6. Save decision to `IMap` as `SnapshotVerificationRecord` and in `JobExecutionRecord`. 
    `JobExecutionRecord` contains also updated `snapshotId`. 
-5. Delete previous snapshot data.
-6. 2nd snapshot phase (`snapshotCommitFinish`) with decision made earlier. 
+7. Delete previous snapshot data.
+8. 2nd snapshot phase (`snapshotCommitFinish`) with decision made earlier. 
    This step can be performed concurrently with processing of next items and must ultimately succeed.
-7. Schedule next snapshot
+9. Schedule next snapshot
 
 Snapshotting uses alternating pair of maps `__jet.snapshot.<jobId>.<0 or 1>`:
 one contains the last successful snapshot, the other one contains the snapshot currently being performed (if any).
@@ -147,8 +149,8 @@ This is also more complicated in implementation and may be considered later if n
    This is also necessary if `JobExecutionRecord` loaded from `IMap` indicates that there was no completed snapshot yet 
    (there could one with indeterminate result).
    In case of indeterminate result or other failure (in particular network problem, timeout) - do not start job now, schedule restart later.
-3. Read last good snapshot id from `JobExecutionRecord`. 
-   `JobExecutionRecord` contains also last snapshot id that could have written something to snapshot data `IMap`. 
+3. Read last good snapshot id from `JobExecutionRecord.snapshotId`. 
+   `JobExecutionRecord` contains also last snapshot id that could have written something to snapshot data `IMap` - `ongoingSnapshotId`. 
 4. Check consistency of the indicated snapshot using data in snapshot `IMap` and `SnapshotVerificationRecord`.
    If inconsistent, job fails permanently.
 5. If restoring from exported snapshot, 
@@ -247,8 +249,9 @@ Most important for performance is snapshot taking as it occurs regularly.
 Other processes are either manual or occur after error or topology changes
 so are rare with little impact for overall performance.
 
-In happy-path, when the cluster is stable, there is 1 additional `JobExecutionRecord` update in the `IMap`.
-Other than that, nothing changes.
+In happy-path, when the cluster is stable, there are not additional `IMap` operations when taking snapshot.
+Only in case of concurrent modification of `JobExecutionRecord` the `IMap` update can be repeated.
+Other than that, there are no additional operations.
 Jet already uses 1 sync backup for snapshot and other `IMap`s by default
 and operations wait for backup ack before completing.
 
@@ -256,7 +259,8 @@ When the cluster is unstable, snapshot will take almost the same time
 but may fail instead silently being successful with risk of corruption.
 
 Snapshot restore has to ensure that `JobExecutionRecord` or `SnapshotVerificationRecord` is safe.
-This is 1 or 2 additional `IMap` updates.
+This is piggybacked on `JobExecutionRecord` update already made when job starts/restarts.
+This update will be changed to safe version.
 
-`writeJobExecutionRecordSafe` can be invoked a few times in case of concurrent `JobExecutionRecord` updates.
-This increases number of additional `IMap` updates but is unlikely.
+`writeJobExecutionRecordSafe` can invoke `IMap` update a few times in case of concurrent `JobExecutionRecord` updates.
+This increases number of `IMap` operations but is unlikely.

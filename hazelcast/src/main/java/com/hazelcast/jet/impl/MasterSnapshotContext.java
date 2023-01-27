@@ -118,6 +118,20 @@ class MasterSnapshotContext {
             return isExport() ? exportedSnapshotMapName(snapshotMapName)
                     : snapshotDataMapName(mc.jobId(), mc.jobExecutionRecord().ongoingDataMapIndex());
         }
+
+        /**
+         * Complete snapshot future if any.
+         * @param error Error or null for successful completion.
+         */
+        public void completeFuture(@Nullable Throwable error) {
+            if (future != null) {
+                if (error == null) {
+                    future.complete(null);
+                } else {
+                    future.completeExceptionally(error);
+                }
+            }
+        }
     }
 
     /**
@@ -169,7 +183,7 @@ class MasterSnapshotContext {
 
     void tryBeginSnapshot() {
         mc.coordinationService().submitToCoordinatorThread(() -> {
-            SnapshotRequest requestedSnapshot;
+            final SnapshotRequest requestedSnapshot;
             mc.lock();
             long localExecutionId;
             try {
@@ -197,11 +211,21 @@ class MasterSnapshotContext {
                 mc.unlock();
             }
 
-            mc.writeJobExecutionRecordSafe(false);
             long newSnapshotId = mc.jobExecutionRecord().ongoingSnapshotId();
             int snapshotFlags = requestedSnapshot.snapshotFlags();
             String finalMapName = requestedSnapshot.finalMapName();
-            mc.nodeEngine().getHazelcastInstance().getMap(finalMapName).clear();
+
+            try {
+                mc.writeJobExecutionRecordSafe(false);
+                mc.nodeEngine().getHazelcastInstance().getMap(finalMapName).clear();
+            } catch (Exception e) {
+                logger.warning(String.format("Failed to start snapshot %d for %s",
+                        newSnapshotId, jobNameAndExecutionId(mc.jobName(), localExecutionId)),
+                        e);
+                requestedSnapshot.completeFuture(e);
+                return;
+            }
+
             logFine(logger, "Starting snapshot %d for %s, flags: %s, writing to: %s",
                     newSnapshotId, jobNameAndExecutionId(mc.jobName(), localExecutionId),
                     SnapshotFlags.toString(snapshotFlags), requestedSnapshot.snapshotMapName);
@@ -275,12 +299,13 @@ class MasterSnapshotContext {
         mc.coordinationService().submitToCoordinatorThread(() -> {
             mc.lock();
 
-            boolean isSuccess;
+            final boolean isSuccess;
+            boolean shouldRestart;
             SnapshotStats stats;
             try {
                 if (!missingResponses.isEmpty()) {
                     LoggingUtil.logFine(logger, "%s all awaited responses to StartExecutionOperation received or " +
-                                    "were already received", mc.jobIdString());
+                            "were already received", mc.jobIdString());
                 }
                 // Note: this method can be called after finalizeJob() is called or even after new execution started.
                 // Check the execution ID to check if a new execution didn't start yet.
@@ -313,11 +338,17 @@ class MasterSnapshotContext {
                             mc.jobExecutionRecord().ongoingSnapshotStartTime(), mc.jobId(), mc.jobName(),
                             mc.jobRecord().getDagJson());
 
-                    // The decision moment for exported snapshots: after this the snapshot is valid to be restored
+                    // The decision moment for _exported_ snapshots: after this the snapshot is valid to be restored
                     // from, however it will be not listed by JetInstance.getJobStateSnapshots unless the validation
-                    // record is inserted into the cache below
+                    // record is inserted into the cache below.
+                    //
+                    // Error during update for JobExecutionRecord does not invalidate the _exported_ snapshot.
+                    // JobExecutionRecord data in IMap become stale (indicate that the exported snapshot is in progress)
+                    // but it should not cause problems. They may be overwritten later (in memory values will be correct)
+                    // or ignored when JobExecutionRecord is loaded from IMap.
                     Object oldValue = snapshotMap.put(SnapshotValidationRecord.KEY, validationRecord);
 
+                    // TODO: we do we save SVR and cacheValidationRecord for failed snapshots?
                     if (requestedSnapshot.isExport()) {
                         mc.jobRepository().cacheValidationRecord(requestedSnapshot.snapshotMapName, validationRecord);
                     }
@@ -330,6 +361,7 @@ class MasterSnapshotContext {
                 }
 
                 isSuccess = mergedResult.getError() == null;
+                // update snapshot state in memory after success or failure
                 stats = mc.jobExecutionRecord().ongoingSnapshotDone(
                         mergedResult.getNumBytes(), mergedResult.getNumKeys(), mergedResult.getNumChunks(),
                         mergedResult.getError());
@@ -337,55 +369,65 @@ class MasterSnapshotContext {
                 // the decision moment for regular snapshots: after this the snapshot is ready to be restored from
                 try {
                     mc.writeJobExecutionRecordSafe(false);
+                    // can proceed to 2nd phase immediately
+                    shouldRestart = false;
                 } catch (IndeterminateOperationStateException indeterminate) {
-                    boolean shouldRestart = !requestedSnapshot.isExportOnly();
+                    // TODO: condition?
+                    // maybe only for success? but have keep snapshotId unique
+                    // as long as there is MSC (the same coordinator) we have these data and id
+                    shouldRestart = !requestedSnapshot.isExportOnly();
                     logger.warning(mc.jobIdString() + " snapshot " + snapshotId +
                             " update of JobExecutionRecord was indeterminate." +
-                            (shouldRestart ? " Restarting job forcefully." : ""));
-                    if (shouldRestart) {
-                        // TODO: this should not be done like that
-                        mc.unlock();
-                        try {
-                            mc.jobContext().requestTermination(TerminationMode.RESTART_FORCEFUL, true,
-                                    requestedSnapshot.isExport());
-                        } finally {
-                            mc.lock();
-                        }
-                        return;
-                    }
+                            (shouldRestart ? " Will restart job forcefully." : ""));
                 }
 
                 if (logger.isFineEnabled()) {
                     logger.fine(String.format("Snapshot %d phase 1 for %s completed with status %s in %dms, " +
                                     "%,d bytes, %,d keys in %,d chunks, stored in '%s', proceeding to phase 2",
-                            snapshotId, mc.jobIdString(), isSuccess ? "SUCCESS" : "FAILURE",
+                            snapshotId, mc.jobIdString(),
+                            (shouldRestart ? "INDETERMINATE/" : "") + (isSuccess ? "SUCCESS" : "FAILURE"),
                             stats.duration(), stats.numBytes(), stats.numKeys(), stats.numChunks(),
                             requestedSnapshot.finalMapName()));
                 }
+
                 if (!isSuccess) {
                     logger.warning(mc.jobIdString() + " snapshot " + snapshotId + " phase 1 failed on some " +
                             "member(s), one of the failures: " + mergedResult.getError());
                     try {
+                        // Clear data of failed snapshot (automatic or export) to decrease memory usage.
+                        // This can be done regardless of shouldRestart because failed snapshot
+                        // can never be used for restore.
                         snapshotMap.clear();
                     } catch (Exception e) {
                         logger.warning(mc.jobIdString() + ": failed to clear snapshot map '" + requestedSnapshot.finalMapName()
                                 + "' after a failure", e);
                     }
                 }
-                if (!requestedSnapshot.isExport()) {
+
+                // Do not clear snapshot data when JobExecutionRecord update was indeterminate.
+                // It may turn out that this will be a correct snapshot after all.
+                if (!shouldRestart && isSuccess && !requestedSnapshot.isExport()) {
+                    // clear IMap for next automatic snapshot early to decrease memory usage
                     mc.jobRepository().clearSnapshotData(mc.jobId(), mc.jobExecutionRecord().ongoingDataMapIndex());
                 }
             } finally {
                 mc.unlock();
             }
 
-            // start the phase 2
-            Function<ExecutionPlan, Operation> factory = plan -> new SnapshotPhase2Operation(
-                    mc.jobId(), executionId, snapshotId, isSuccess && !requestedSnapshot.isExportOnly());
-            mc.invokeOnParticipants(factory,
-                    responses2 -> onSnapshotPhase2Complete(mergedResult.getError(), responses2, executionId,
-                            snapshotId, requestedSnapshot, stats.startTime()),
-                    null, true);
+            if (shouldRestart) {
+                // restart job without performing phase 2 now
+                // commit/rollback will be performed during restore from snapshot
+                mc.jobContext().requestTermination(TerminationMode.RESTART_FORCEFUL, true,
+                        requestedSnapshot.isExport());
+            } else {
+                // start the phase 2
+                Function<ExecutionPlan, Operation> factory = plan -> new SnapshotPhase2Operation(
+                        mc.jobId(), executionId, snapshotId, isSuccess && !requestedSnapshot.isExportOnly());
+                mc.invokeOnParticipants(factory,
+                        responses2 -> onSnapshotPhase2Complete(mergedResult.getError(), responses2, executionId,
+                                snapshotId, requestedSnapshot, stats.startTime()),
+                        null, true);
+            }
         });
     }
 
@@ -419,13 +461,7 @@ class MasterSnapshotContext {
                 }
             }
 
-            if (requestedSnapshot.future != null) {
-                if (phase1Error == null) {
-                    requestedSnapshot.future.complete(null);
-                } else {
-                    requestedSnapshot.future.completeExceptionally(new JetException(phase1Error));
-                }
-            }
+            requestedSnapshot.completeFuture(phase1Error == null ? null : new JetException(phase1Error));
 
             mc.lock();
             try {
@@ -475,11 +511,8 @@ class MasterSnapshotContext {
     }
 
     void onExecutionTerminated() {
-        for (SnapshotRequest snapshotTuple : snapshotQueue) {
-            if (snapshotTuple.future != null) {
-                snapshotTuple.future.completeExceptionally(
-                        new JetException("Execution completed before snapshot executed"));
-            }
+        for (SnapshotRequest snapshotRequest : snapshotQueue) {
+            snapshotRequest.completeFuture(new JetException("Execution completed before snapshot executed"));
         }
         snapshotQueue.clear();
     }

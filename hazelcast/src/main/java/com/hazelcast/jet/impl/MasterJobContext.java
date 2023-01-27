@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MembersView;
@@ -104,6 +105,7 @@ import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.RESTAR
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.SUSPEND;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_GRACEFUL;
+import static com.hazelcast.jet.impl.TerminationMode.RESTART_FORCEFUL;
 import static com.hazelcast.jet.impl.TerminationMode.RESTART_GRACEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
@@ -231,7 +233,6 @@ public class MasterJobContext {
      * If there was a membership change and the partition table is not completely
      * fixed yet, reschedules the job restart.
      */
-
     void tryStartJob(Supplier<Long> executionIdSupplier) {
         JobCoordinationService coordinator = mc.coordinationService();
         MembersView membersView = Util.getMembersView(mc.nodeEngine());
@@ -248,6 +249,7 @@ public class MasterJobContext {
                   }
                   // must call this before rewriteDagWithSnapshotRestore()
                   String dotRepresentation = dag.toDotString(defaultParallelism, defaultQueueSize);
+                  // we ensured that JobExecutionRecord is safe in resolveDag
                   long snapshotId = jobExecRec.snapshotId();
                   String snapshotName = mc.jobConfig().getInitialSnapshotName();
                   String mapName =
@@ -328,7 +330,17 @@ public class MasterJobContext {
             mc.setJobStatus(STARTING);
 
             // ensure JobExecutionRecord exists
-            mc.writeJobExecutionRecord(true);
+            // we do it in a safe way here, so this does not have to repeated when there is snapshot to restore
+            try {
+                mc.writeJobExecutionRecordSafe(true);
+            } catch (IndeterminateOperationStateException e) {
+                // JobExecutionRecord is not safe, so we cannot restore from snapshot if it will be needed.
+                // But even it there is no snapshot, the cluster probably is in unsafe state
+                // so it is better to wait with starting the job anyway.
+                // trigger restart via exception, ordinary exception would cause job failure
+                // TODO: this restart immediately, it would be better to wait/schedule restart in safe state
+                throw new JobTerminateRequestedException(RESTART_FORCEFUL);
+            }
 
             if (terminationRequest != null) {
                 if (terminationRequest.mode.actionAfterTerminate() != RESTART) {
