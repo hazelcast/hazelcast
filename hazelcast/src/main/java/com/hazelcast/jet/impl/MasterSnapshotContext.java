@@ -383,11 +383,12 @@ class MasterSnapshotContext {
 
                 if (logger.isFineEnabled()) {
                     logger.fine(String.format("Snapshot %d phase 1 for %s completed with status %s in %dms, " +
-                                    "%,d bytes, %,d keys in %,d chunks, stored in '%s', proceeding to phase 2",
+                                    "%,d bytes, %,d keys in %,d chunks, stored in '%s'%s",
                             snapshotId, mc.jobIdString(),
                             (shouldRestart ? "INDETERMINATE/" : "") + (isSuccess ? "SUCCESS" : "FAILURE"),
                             stats.duration(), stats.numBytes(), stats.numKeys(), stats.numChunks(),
-                            requestedSnapshot.finalMapName()));
+                            requestedSnapshot.finalMapName(),
+                            shouldRestart ? "" : ", proceeding to phase 2"));
                 }
 
                 if (!isSuccess) {

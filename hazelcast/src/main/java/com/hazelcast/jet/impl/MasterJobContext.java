@@ -338,7 +338,11 @@ public class MasterJobContext {
                 // But even it there is no snapshot, the cluster probably is in unsafe state
                 // so it is better to wait with starting the job anyway.
                 // trigger restart via exception, ordinary exception would cause job failure
-                // TODO: this restart immediately, it would be better to wait/schedule restart in safe state
+                logger.warning("Job " + mc.jobName() +
+                        " initial update of JobExecutionRecord was indeterminate." +
+                        " Failed to start job. Will retry.");
+                // TODO: this restarts immediately, it would be better to wait/schedule restart in safe state
+                // the backup ack timeout provides some delay, but blocks coordinator thread.
                 throw new JobTerminateRequestedException(RESTART_FORCEFUL);
             }
 
@@ -882,6 +886,9 @@ public class MasterJobContext {
                 Executor executor = processorMetaSupplier.closeIsCooperative() ? CALLER_RUNS : offloadExecutor;
                 futures.add(runAsync(closeAction, executor));
             }
+            // clear vertices because we may be restarting job and after restart it may fail
+            // before vertices are created. completeVertices should not be executed twice.
+            vertices = null;
             return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
         }
         return completedFuture(null);

@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartition;
@@ -35,6 +36,7 @@ import com.hazelcast.jet.impl.SnapshotValidationRecord;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.Accessors;
@@ -47,6 +49,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.mockito.internal.stubbing.answers.ThrowsException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -62,6 +66,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -71,6 +76,7 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.TestUtil.throttle;
+import static com.hazelcast.jet.impl.JobRepository.JOB_EXECUTION_RECORDS_MAP_NAME;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
@@ -79,6 +85,12 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.AdditionalAnswers.answersWithDelay;
+import static org.mockito.AdditionalAnswers.returnsSecondArg;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 // TODO: make this SlowTest? This test needs mock network
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -101,6 +113,10 @@ public class ForcefulShutdownTest extends JetTestSupport {
     private Integer backupJobPartitionInstanceIdx;
 
     private CompletableFuture<Integer> failingInstanceFuture;
+
+    // fixes problem with mock deserialization on cluster side.
+    // probably registers generated mockito classes in classloader that is shared with the HZ instances.
+    private MapInterceptor registerMockInClassloader = mock(MapInterceptor.class, withSettings().serializable());
 
     @Override
     public Config getConfig() {
@@ -308,19 +324,8 @@ public class ForcefulShutdownTest extends JetTestSupport {
         // - job should be restarted, but should not use broken snapshot
         final int numItems = allowedSnapshotsCount + 5;
 
-        AtomicBoolean networkBroken = new AtomicBoolean(false);
-        SnapshotInstrumentationP.saveSnapshotConsumer = (idx) -> {
-            // synchronize so all snapshot chunk operations have broken replication
-            synchronized (networkBroken) {
-                if (networkBroken.compareAndSet(false, true)) {
-                    logger.info("Breaking replication in snapshot for " + idx);
-                    breakFailingInstance();
-                    logger.finest("Proceeding with snapshot idx " + idx + " after breaking replication");
-                } else {
-                    logger.finest("Proceeding with snapshot idx " + idx);
-                }
-            }
-        };
+        SnapshotInstrumentationP.saveSnapshotConsumer =
+                breakSnapshotConsumer("snapshot", this::breakFailingInstance);
 
         // dummy job
         // start job after SnapshotInstrumentationP setup to avoid race
@@ -350,26 +355,28 @@ public class ForcefulShutdownTest extends JetTestSupport {
 //                .hasMessageContainingAll("State for job", "is corrupted: it should have");
         logger.info("Joined");
 
-        if (allowedSnapshotsCount > 0) {
-            assertTrue("Should be restored from snapshot", SnapshotInstrumentationP.restoredFromSnapshot);
-            assertThat(SnapshotInstrumentationP.restoredCounters.values())
-                    .as("Should restore from last known good snapshot")
-                    .containsOnly(allowedSnapshotsCount - 1);
-        } else {
-            assertFalse("Should not be restored from snapshot", SnapshotInstrumentationP.restoredFromSnapshot);
-        }
+        assertRestoredFromSnapshot(allowedSnapshotsCount - 1);
     }
+
+    // repeat test to first success. @Repeat does not recreate test class instance.
+    private boolean test1Succeeded;
 
     @Test
     @Repeat(5)
     public void whenFirstSnapshotPossiblyCorruptedAfter1stPhase_thenRestartWithoutSnapshot() throws InterruptedException {
+        assumeThat(test1Succeeded).as("Test already succeeded").isFalse();
         when_shutDownAfter1stPhase(true, 0);
+        test1Succeeded = true;
     }
+
+    private boolean test2Succeeded;
 
     @Test
     @Repeat(5)
     public void whenNextSnapshotPossiblyCorruptedAfter1stPhase_thenRestartFromLastGoodSnapshot() throws InterruptedException {
+        assumeThat(test2Succeeded).as("Test already succeeded").isFalse();
         when_shutDownAfter1stPhase(true, 3);
+        test2Succeeded = true;
     }
 
     private void when_shutDownAfter1stPhase(boolean snapshotted, int allowedSnapshotsCount) throws InterruptedException {
@@ -387,16 +394,8 @@ public class ForcefulShutdownTest extends JetTestSupport {
         // - job should be restarted, but should not use broken snapshot
         final int numItems = allowedSnapshotsCount + 5;
 
-        AtomicBoolean networkBroken = new AtomicBoolean(false);
-        SnapshotInstrumentationP.snapshotCommitPrepareConsumer = (idx) -> {
-            if (networkBroken.compareAndSet(false, true)) {
-                logger.info("Breaking replication in snapshot commit prepare for " + idx);
-                breakFailingInstance();
-                logger.finest("Proceeding with snapshot commit prepare idx " + idx + " after breaking replication");
-            } else {
-                logger.finest("Proceeding with snapshot commit prepare idx " + idx);
-            }
-        };
+        SnapshotInstrumentationP.snapshotCommitPrepareConsumer =
+                breakSnapshotConsumer("commit prepare", this::breakFailingInstance);
 
         // dummy job
         // start job after SnapshotInstrumentationP setup to avoid race
@@ -435,11 +434,107 @@ public class ForcefulShutdownTest extends JetTestSupport {
 //                .hasMessageContainingAll("snapshot with ID", "is damaged. Unable to restore the state for job");
         logger.info("Joined");
 
-        if (allowedSnapshotsCount > 0) {
+        assertRestoredFromSnapshot(allowedSnapshotsCount - 1);
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Tests below use simplified approach to simulating IMap failure.
+    // Instead of trying to terminate appropriate node on given time
+    // they inject erroneous IMap operation responses. This is much simpler
+    // and allows to test more scenarios. However, tests terminating nodes
+    // are also useful as more resembling reality.
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    public void whenFirstSnapshotPossiblyCorruptedAfter1stPhaseLostUpdate_thenRestartFromFirstSnapshot() {
+        when_shutDownAfter1stPhaseLostUpdate(true, 0);
+    }
+
+    @Test
+    public void whenNextSnapshotPossiblyCorruptedAfter1stPhaseLostUpdate_thenRestartFromLastGoodSnapshot() {
+        when_shutDownAfter1stPhaseLostUpdate(true, 3);
+    }
+
+    private void when_shutDownAfter1stPhaseLostUpdate(boolean snapshotted, int allowedSnapshotsCount) {
+        // JobExecutionRecord update during snapshot commit is indeterminate and lost,
+        // but succeeds after job restart on the same coordinator.
+        // Indeterminate snapshot turns out to be correct.
+        setupJetTests(allowedSnapshotsCount);
+
+        SnapshotInstrumentationP.snapshotCommitPrepareConsumer =
+                breakSnapshotConsumer("snapshot commit prepare", this::singleIndeterminatePutLost);
+
+        Job job = createJob(snapshotted, allowedSnapshotsCount + 5);
+
+        logger.info("Joining job...");
+        instances[0].getJet().getJob(job.getId()).join();
+        logger.info("Joined");
+
+        assertRestoredFromSnapshot(allowedSnapshotsCount);
+    }
+
+    @Test
+    public void whenFirstSnapshotPossiblyCorruptedAfter1stPhaseLostUpdateChangedCoordinator_thenRestartWithoutSnapshot() throws InterruptedException {
+        when_shutDownAfter1stPhaseLostUpdateChangedCoordinator(true, 0);
+    }
+
+    @Test
+    public void whenNextSnapshotPossiblyCorruptedAfter1stPhaseLostUpdateChangedCoordinator_thenRestartFromLastGoodSnapshot() throws InterruptedException {
+        when_shutDownAfter1stPhaseLostUpdateChangedCoordinator(true, 3);
+    }
+    private void when_shutDownAfter1stPhaseLostUpdateChangedCoordinator(boolean snapshotted, int allowedSnapshotsCount) throws InterruptedException {
+        // JobExecutionRecord update during snapshot commit is indeterminate and lost,
+        // and is indeterminate until original coordinator is terminated.
+        // Job is restart on different coordinator and indeterminate snapshot turns out to be lost.
+        setupJetTests(allowedSnapshotsCount);
+
+        AtomicReference<String> interceptorRegistration = new AtomicReference<>();
+        CountDownLatch prepared = new CountDownLatch(1);
+
+        SnapshotInstrumentationP.snapshotCommitPrepareConsumer =
+                breakSnapshotConsumer("snapshot commit prepare", () -> {
+                    interceptorRegistration.set(allIndeterminatePutsLost());
+                    prepared.countDown();
+                });
+
+        Job job = createJob(snapshotted, allowedSnapshotsCount + 5);
+
+        logger.info("Waiting for snapshot...");
+        prepared.await();
+        // wait for job restart
+        logger.info("Waiting for job restart...");
+        assertJobStatusEventually(job, JobStatus.STARTING);
+        assertThat(snapshotDone.getCount())
+                .as("Snapshot must not be committed when indeterminate")
+                .isEqualTo(NODE_COUNT * LOCAL_PARALLELISM);
+
+        // terminate coordinator
+        logger.info("Terminating coordinator...");
+        instances[0].getLifecycleService().terminate();
+        logger.info("Fixing IMap...");
+        getJobExecutionRecordIMap().removeInterceptor(interceptorRegistration.get());
+
+        logger.info("Joining job...");
+        instances[1].getJet().getJob(job.getId()).join();
+        logger.info("Joined");
+
+        assertThat(snapshotDone.getCount())
+                .as("Snapshot should be ultimately committed")
+                .isZero();
+        assertRestoredFromSnapshot(allowedSnapshotsCount - 1);
+    }
+
+    /**
+     * @param allowedSnapshotsCount snapshot id that should be used to restore
+     * or -1 if the job should not be restored
+     */
+    private static void assertRestoredFromSnapshot(int allowedSnapshotsCount) {
+        if (allowedSnapshotsCount >= 0) {
             assertTrue("Should be restored from snapshot", SnapshotInstrumentationP.restoredFromSnapshot);
             assertThat(SnapshotInstrumentationP.restoredCounters.values())
                     .as("Should restore from last known good snapshot")
-                    .containsOnly(allowedSnapshotsCount - 1);
+                    .containsOnly(allowedSnapshotsCount);
         } else {
             assertFalse("Should not be restored from snapshot", SnapshotInstrumentationP.restoredFromSnapshot);
         }
@@ -491,6 +586,25 @@ public class ForcefulShutdownTest extends JetTestSupport {
     }
 
     /**
+     * Executes given action once when invoked multiple times from many instances of processor.
+     */
+    private Consumer<Integer> breakSnapshotConsumer(String message, Runnable snapshotAction) {
+        AtomicBoolean networkBroken = new AtomicBoolean(false);
+        return (idx) -> {
+            // synchronize so all snapshot chunk operations have broken replication
+            synchronized (networkBroken) {
+                if (networkBroken.compareAndSet(false, true)) {
+                    logger.info("Breaking replication in " + message + " for " + idx);
+                    snapshotAction.run();
+                    logger.finest("Proceeding with " + message + " " + idx + " after breaking replication");
+                } else {
+                    logger.finest("Proceeding with " + message + " " + idx);
+                }
+            }
+        };
+    }
+
+    /**
      * Breaks backups that should be stored on failing instance.
      */
     private void breakFailingInstance() {
@@ -522,6 +636,31 @@ public class ForcefulShutdownTest extends JetTestSupport {
         logger.info("Waiting for corrupted snapshot");
         assertTrue(snapshotDone.await(30, TimeUnit.SECONDS));
         logger.info("Got corrupted snapshot");
+    }
+
+    @Nonnull
+    private IMap<Object, Object> getJobExecutionRecordIMap() {
+        // use last instance, 0 is master, 1 non-master - may be terminated during the test
+        return instances[NODE_COUNT - 1].getMap(JOB_EXECUTION_RECORDS_MAP_NAME);
+    }
+
+    private void singleIndeterminatePutLost() {
+        // affects put and also executeOnKey
+        MapInterceptor mockInt = mock(MapInterceptor.class, withSettings().serializable());
+        when(mockInt.interceptPut(any(), any()))
+                .thenThrow(new IndeterminateOperationStateException("Simulated lost IMap update"))
+                .thenAnswer(returnsSecondArg());
+        getJobExecutionRecordIMap().addInterceptor(mockInt);
+    }
+
+    private String allIndeterminatePutsLost() {
+        // affects put and also executeOnKey
+        MapInterceptor mockInt = mock(MapInterceptor.class, withSettings().serializable());
+        when(mockInt.interceptPut(any(), any()))
+                // delay to prevent to many retries
+                .thenAnswer(answersWithDelay(1000,
+                        new ThrowsException(new IndeterminateOperationStateException("Simulated lost IMap update"))));
+        return getJobExecutionRecordIMap().addInterceptor(mockInt);
     }
 
     public static void setBackupPacketDropFilter(HazelcastInstance instance, float blockRatio, HazelcastInstance... blockSync) {
@@ -660,7 +799,6 @@ public class ForcefulShutdownTest extends JetTestSupport {
                 restoredCounters.put(globalIndex, (Integer) value);
                 snapshotCounter = (int) value;
             }
-            getLogger().info("EmitIntegersP got from snapshot: " + value + " for " + key);
             restoredFromSnapshot = true;
         }
     }
