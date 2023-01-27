@@ -166,4 +166,23 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         );
     }
 
+    @Test
+    public void sinkIntoTableWithColumns() throws Exception {
+        createTable(tableName);
+        createMapping(tableName);
+
+        execute("INSERT INTO " + tableName + " (name, id) VALUES ('name-0', 0), ('name-1', 1)");
+
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(0, "name-0"),
+                new Row(1, "name-1")
+        );
+
+        execute("SINK INTO " + tableName + " (name, id) VALUES ('name-2', 0), ('name-3', 1)");
+
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(0, "name-2"),
+                new Row(1, "name-3")
+        );
+    }
 }
