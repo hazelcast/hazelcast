@@ -77,7 +77,6 @@
             <version>${h2.version}</version>
             <scope>test</scope>
         </dependency>
-        <!--Postgres-->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
@@ -90,7 +89,6 @@
             <version>${postgresql.version}</version>
             <scope>test</scope>
         </dependency>
-        <!--MySQL-->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>mysql</artifactId>

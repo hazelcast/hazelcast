@@ -330,5 +330,4 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
             assertDoesNotContainRow(client, "SHOW MAPPINGS", rows);
         }, 5);
     }
-
 }
