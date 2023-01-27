@@ -53,6 +53,11 @@ public final class Mappers {
                 new BsonDocumentReader(doc.toBsonDocument()), INSTANCE.decoderContext);
     }
 
+    /**
+     * Returns default codec registry used by the connector, which includes
+     * {@linkplain MongoClientSettings#getDefaultCodecRegistry} and {@link PojoCodecProvider}
+     * for out-of-the-box POJO support.
+     */
     @Nonnull
     public static CodecRegistry defaultCodecRegistry() {
         return INSTANCE.pojoCodecRegistry;

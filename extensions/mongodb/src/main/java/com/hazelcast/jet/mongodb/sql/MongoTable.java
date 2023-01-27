@@ -33,14 +33,14 @@ import java.util.Objects;
 
 import static java.util.stream.Collectors.toList;
 
-public class MongoTable extends JetTable {
+class MongoTable extends JetTable {
 
     final String databaseName;
     final String collectionName;
-    private final Map<String, String> options;
     final String connectionString;
+    private final Map<String, String> options;
 
-    public MongoTable(
+    MongoTable(
             @Nonnull String schemaName,
             @Nonnull String name,
             @Nonnull String databaseName,

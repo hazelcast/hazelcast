@@ -40,12 +40,12 @@ import java.util.List;
 /**
  * Visitor that converts REX nodes to Mongo expressions.
  */
-public final class RexToMongoVisitor implements RexVisitor<Object> {
+final class RexToMongoVisitor implements RexVisitor<Object> {
 
     private static final Object[] EMPTY_EXPRESSION_OPERANDS = new Object[0];
 
     private final MongoTable table;
-    public RexToMongoVisitor(MongoTable table) {
+    RexToMongoVisitor(MongoTable table) {
         this.table = table;
     }
 

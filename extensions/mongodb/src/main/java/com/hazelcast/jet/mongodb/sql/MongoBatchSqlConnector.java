@@ -149,7 +149,8 @@ public class MongoBatchSqlConnector implements SqlConnector {
         return r;
     }
 
-    private static TranslationResult<List<String>> translateProjections(HazelcastTable hzTable, RexToMongoVisitor visitor) {
+    private static TranslationResult<List<String>> translateProjections(HazelcastTable hzTable,
+                                                                        RexToMongoVisitor visitor) {
         try {
             List<String> fields = hzTable.getProjects().stream()
                                           .map(proj -> proj.accept(visitor))
@@ -167,7 +168,7 @@ public class MongoBatchSqlConnector implements SqlConnector {
         }
     }
 
-    private static final class TranslationResult <T> {
+    private static final class TranslationResult<T> {
         final T result;
         final boolean allProceeded;
 

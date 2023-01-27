@@ -20,10 +20,10 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.Objects;
 
-public class MongoTableField extends TableField {
+class MongoTableField extends TableField {
     final String externalName;
 
-    public MongoTableField(String name, QueryDataType type, String externalName, boolean hidden) {
+    MongoTableField(String name, QueryDataType type, String externalName, boolean hidden) {
         super(name, type, hidden);
         this.externalName = externalName;
     }
