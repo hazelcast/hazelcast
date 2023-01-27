@@ -30,7 +30,8 @@ class PostgreSQLUpsertQueryBuilder {
 
     private final List<String> quotedPrimaryKeys;
 
-    PostgreSQLUpsertQueryBuilder(JdbcTable jdbcTable, SqlDialect sqlDialect) {
+    PostgreSQLUpsertQueryBuilder(JdbcTable jdbcTable) {
+        SqlDialect sqlDialect = jdbcTable.sqlDialect();
         // Quote identifiers
         quotedTableName = sqlDialect.quoteIdentifier(jdbcTable.getExternalName());
         quotedColumnNames = jdbcTable.dbFieldNames()

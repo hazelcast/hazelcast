@@ -30,16 +30,18 @@ class H2UpsertQueryBuilder {
 
     private final List<String> quotedPrimaryKeys;
 
-    H2UpsertQueryBuilder(JdbcTable jdbcTable, SqlDialect dialect) {
+    H2UpsertQueryBuilder(JdbcTable jdbcTable) {
+        SqlDialect sqlDialect = jdbcTable.sqlDialect();
+
         // Quote identifiers
-        quotedTableName = dialect.quoteIdentifier(jdbcTable.getExternalName());
+        quotedTableName = sqlDialect.quoteIdentifier(jdbcTable.getExternalName());
         quotedColumnNames = jdbcTable.dbFieldNames()
                 .stream()
-                .map(dialect::quoteIdentifier)
+                .map(sqlDialect::quoteIdentifier)
                 .collect(Collectors.toList());
         quotedPrimaryKeys = jdbcTable.getPrimaryKeyList()
                 .stream()
-                .map(dialect::quoteIdentifier)
+                .map(sqlDialect::quoteIdentifier)
                 .collect(Collectors.toList());
 
 

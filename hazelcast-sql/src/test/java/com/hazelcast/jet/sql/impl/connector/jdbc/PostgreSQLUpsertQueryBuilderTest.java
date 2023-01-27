@@ -51,6 +51,7 @@ public class PostgreSQLUpsertQueryBuilderTest {
         when(jdbcTable.getExternalName()).thenReturn("table1");
         when(jdbcTable.getPrimaryKeyList()).thenReturn(Arrays.asList("pk1", "pk2"));
         when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
+        when(jdbcTable.sqlDialect()).thenReturn(sqlDialect);
 
         when(sqlDialect.quoteIdentifier(anyString())).thenAnswer((InvocationOnMock invocation) -> {
             Object argument = invocation.getArguments()[0];
@@ -60,7 +61,7 @@ public class PostgreSQLUpsertQueryBuilderTest {
 
     @Test
     public void testGetInsertClause() {
-        PostgreSQLUpsertQueryBuilder builder = new PostgreSQLUpsertQueryBuilder(jdbcTable, sqlDialect);
+        PostgreSQLUpsertQueryBuilder builder = new PostgreSQLUpsertQueryBuilder(jdbcTable);
         StringBuilder stringBuilder = new StringBuilder();
         builder.getInsertClause(stringBuilder);
 
@@ -70,7 +71,7 @@ public class PostgreSQLUpsertQueryBuilderTest {
 
     @Test
     public void testGetValuesClause() {
-        PostgreSQLUpsertQueryBuilder builder = new PostgreSQLUpsertQueryBuilder(jdbcTable, sqlDialect);
+        PostgreSQLUpsertQueryBuilder builder = new PostgreSQLUpsertQueryBuilder(jdbcTable);
         StringBuilder stringBuilder = new StringBuilder();
         builder.getValuesClause(stringBuilder);
 
@@ -80,7 +81,7 @@ public class PostgreSQLUpsertQueryBuilderTest {
 
     @Test
     public void testGetOnConflictClause() {
-        PostgreSQLUpsertQueryBuilder builder = new PostgreSQLUpsertQueryBuilder(jdbcTable, sqlDialect);
+        PostgreSQLUpsertQueryBuilder builder = new PostgreSQLUpsertQueryBuilder(jdbcTable);
         StringBuilder stringBuilder = new StringBuilder();
         builder.getOnConflictClause(stringBuilder);
 
@@ -91,7 +92,7 @@ public class PostgreSQLUpsertQueryBuilderTest {
 
     @Test
     public void testQuery() {
-        PostgreSQLUpsertQueryBuilder builder = new PostgreSQLUpsertQueryBuilder(jdbcTable, sqlDialect);
+        PostgreSQLUpsertQueryBuilder builder = new PostgreSQLUpsertQueryBuilder(jdbcTable);
         String result = builder.query();
         String expected = "INSERT INTO \"table1\" (\"field1\",\"field2\") VALUES (?,?) ON CONFLICT (\"pk1\",\"pk2\") " +
                           "DO UPDATE SET \"field1\" = EXCLUDED.\"field1\",\"field2\" = EXCLUDED.\"field2\"";

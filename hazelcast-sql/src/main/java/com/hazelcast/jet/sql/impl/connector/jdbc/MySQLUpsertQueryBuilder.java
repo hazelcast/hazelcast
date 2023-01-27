@@ -28,7 +28,9 @@ class MySQLUpsertQueryBuilder {
     private final String quotedTableName;
     private final List<String> quotedColumnNames;
 
-    MySQLUpsertQueryBuilder(JdbcTable jdbcTable, SqlDialect sqlDialect) {
+    MySQLUpsertQueryBuilder(JdbcTable jdbcTable) {
+        SqlDialect sqlDialect = jdbcTable.sqlDialect();
+
         // Quote identifiers
         quotedTableName = sqlDialect.quoteIdentifier(jdbcTable.getExternalName());
         quotedColumnNames = jdbcTable.dbFieldNames()

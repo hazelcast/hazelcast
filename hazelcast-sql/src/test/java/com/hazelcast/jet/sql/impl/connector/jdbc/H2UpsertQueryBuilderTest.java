@@ -43,6 +43,7 @@ public class H2UpsertQueryBuilderTest {
         when(jdbcTable.getExternalName()).thenReturn("table1");
         when(jdbcTable.getPrimaryKeyList()).thenReturn(Arrays.asList("pk1", "pk2"));
         when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
+        when(jdbcTable.sqlDialect()).thenReturn(sqlDialect);
 
         when(sqlDialect.quoteIdentifier(anyString())).thenAnswer((InvocationOnMock invocation) -> {
             Object argument = invocation.getArguments()[0];
@@ -52,7 +53,7 @@ public class H2UpsertQueryBuilderTest {
 
     @Test
     public void testGetMergeClause() {
-        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(jdbcTable, sqlDialect);
+        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(jdbcTable);
         StringBuilder stringBuilder = new StringBuilder();
         builder.getMergeClause(stringBuilder);
 
@@ -66,7 +67,7 @@ public class H2UpsertQueryBuilderTest {
         when(jdbcTable.getPrimaryKeyList()).thenReturn(Arrays.asList("pk1", "pk2"));
         when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
 
-        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(jdbcTable, sqlDialect);
+        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(jdbcTable);
         StringBuilder stringBuilder = new StringBuilder();
         builder.getKeyClause(stringBuilder);
 
@@ -76,7 +77,7 @@ public class H2UpsertQueryBuilderTest {
 
     @Test
     public void testGetValuesClause() {
-        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(jdbcTable, sqlDialect);
+        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(jdbcTable);
         StringBuilder stringBuilder = new StringBuilder();
         builder.getValuesClause(stringBuilder);
 
@@ -86,7 +87,7 @@ public class H2UpsertQueryBuilderTest {
 
     @Test
     public void testQuery() {
-        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(jdbcTable, sqlDialect);
+        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(jdbcTable);
 
         String query = builder.query();
         assertEquals("MERGE INTO \"table1\" (\"field1\",\"field2\") KEY (\"pk1\",\"pk2\") VALUES (?,?)", query);

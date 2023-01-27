@@ -43,6 +43,7 @@ public class MySQLUpsertQueryBuilderTest {
 
         when(jdbcTable.getExternalName()).thenReturn("table1");
         when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
+        when(jdbcTable.sqlDialect()).thenReturn(sqlDialect);
 
         when(sqlDialect.quoteIdentifier(anyString())).thenAnswer((InvocationOnMock invocation) -> {
             Object argument = invocation.getArguments()[0];
@@ -52,7 +53,7 @@ public class MySQLUpsertQueryBuilderTest {
 
     @Test
     public void testGetInsertClause() {
-        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, sqlDialect);
+        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
         StringBuilder stringBuilder = new StringBuilder();
         builder.getInsertClause(stringBuilder);
 
@@ -62,7 +63,7 @@ public class MySQLUpsertQueryBuilderTest {
 
     @Test
     public void testGetValuesClause() {
-        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, sqlDialect);
+        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
         StringBuilder stringBuilder = new StringBuilder();
         builder.getValuesClause(stringBuilder);
 
@@ -72,7 +73,7 @@ public class MySQLUpsertQueryBuilderTest {
 
     @Test
     public void testGetOnDuplicateClause() {
-        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, sqlDialect);
+        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
         StringBuilder stringBuilder = new StringBuilder();
         builder.getOnDuplicateClause(stringBuilder);
 
@@ -83,7 +84,7 @@ public class MySQLUpsertQueryBuilderTest {
 
     @Test
     public void testQuery() {
-        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, sqlDialect);
+        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
         String result = builder.query();
         assertEquals("INSERT INTO `table1` (`field1`,`field2`) VALUES (?,?) " +
                      "ON DUPLICATE KEY UPDATE `field1` = VALUES(`field1`),`field2` = VALUES(`field2`)", result);

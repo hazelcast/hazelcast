@@ -39,15 +39,15 @@ final class UpsertBuilder {
 
         String query = null;
         if (sqlDialect instanceof MysqlSqlDialect) {
-            MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, sqlDialect);
+            MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
             query = builder.query();
 
         } else if (sqlDialect instanceof PostgresqlSqlDialect) {
-            PostgreSQLUpsertQueryBuilder builder = new PostgreSQLUpsertQueryBuilder(jdbcTable, sqlDialect);
+            PostgreSQLUpsertQueryBuilder builder = new PostgreSQLUpsertQueryBuilder(jdbcTable);
             query = builder.query();
 
         } else if (sqlDialect instanceof H2SqlDialect) {
-            H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(jdbcTable, sqlDialect);
+            H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(jdbcTable);
             query = builder.query();
         }
         return query;
