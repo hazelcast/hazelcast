@@ -148,7 +148,7 @@ public class SinkIntoJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void upsertTableWithColumns() throws Exception {
+    public void updateTableWithColumns() throws Exception {
         createTable(tableName);
         createMapping(tableName);
 
