@@ -19,13 +19,16 @@ package com.hazelcast.internal.tpc.nio;
 import com.hazelcast.internal.tpc.AsyncServerSocket;
 import com.hazelcast.internal.tpc.AsyncSocket;
 import com.hazelcast.internal.tpc.Eventloop;
+import com.hazelcast.internal.tpc.Scheduler;
 import com.hazelcast.internal.tpc.Unsafe;
 import com.hazelcast.internal.tpc.util.NanoClock;
+import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -73,8 +76,14 @@ public final class NioEventloop extends Eventloop {
 
     @Override
     protected void eventLoop() throws Exception {
+        final NanoClock nanoClock = unsafe.nanoClock();
+        final boolean spin = this.spin;
+        final Selector selector = this.selector;
+        final AtomicBoolean wakeupNeeded = this.wakeupNeeded;
+        final MpmcArrayQueue concurrentTaskQueue = this.concurrentTaskQueue;
+        final Scheduler scheduler = this.scheduler;
+
         boolean moreWork = false;
-        NanoClock nanoClock = unsafe.nanoClock();
         do {
             int keyCount;
             if (spin || moreWork) {
