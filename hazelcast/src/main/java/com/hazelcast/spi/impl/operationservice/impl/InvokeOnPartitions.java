@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.BiConsumer;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareFactoryAccessor.extractPartitionAware;
 import static com.hazelcast.internal.util.CollectionUtil.toIntArray;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -118,7 +119,7 @@ final class InvokeOnPartitions {
                     .setTryCount(TRY_COUNT)
                     .setTryPauseMillis(TRY_PAUSE_MILLIS)
                     .invoke()
-                    .whenCompleteAsync(new FirstAttemptExecutionCallback(partitions));
+                    .whenCompleteAsync(new FirstAttemptExecutionCallback(partitions), CALLER_RUNS);
         }
     }
 
@@ -141,7 +142,7 @@ final class InvokeOnPartitions {
                                 setPartitionResult(partitionId, throwable);
                                 decrementLatchAndHandle(1);
                             }
-                        });
+                        }, CALLER_RUNS);
     }
 
     private void decrementLatchAndHandle(int count) {

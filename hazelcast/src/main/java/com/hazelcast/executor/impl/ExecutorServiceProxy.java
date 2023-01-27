@@ -36,6 +36,7 @@ import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
@@ -54,6 +55,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -92,12 +94,14 @@ public class ExecutorServiceProxy
     private final Random random = new Random(-System.currentTimeMillis());
     private final int partitionCount;
     private final ILogger logger;
+    private final Executor internalAsyncExecutor;
 
     public ExecutorServiceProxy(String name, NodeEngine nodeEngine, DistributedExecutorService service) {
         super(nodeEngine, service);
         this.name = name;
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.logger = nodeEngine.getLogger(ExecutorServiceProxy.class);
+        this.internalAsyncExecutor = nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
         getLocalExecutorStats();
     }
 
@@ -372,12 +376,12 @@ public class ExecutorServiceProxy
                 .createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, partitionId)
                 .invoke();
         if (callback != null) {
-            future.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback))
+            future.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback), internalAsyncExecutor)
                     .whenCompleteAsync((v, t) -> {
                         if (t instanceof RejectedExecutionException) {
                             callback.onFailure(t);
                         }
-                    });
+                    }, internalAsyncExecutor);
         }
     }
 
@@ -414,12 +418,12 @@ public class ExecutorServiceProxy
                 .createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, address)
                 .invoke();
         if (callback != null) {
-            future.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback))
+            future.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback), internalAsyncExecutor)
                     .whenCompleteAsync((v, t) -> {
                         if (t instanceof RejectedExecutionException) {
                             callback.onFailure(t);
                         }
-                    });
+                    }, internalAsyncExecutor);
         }
     }
 
