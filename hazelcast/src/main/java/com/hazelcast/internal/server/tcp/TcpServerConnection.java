@@ -60,7 +60,7 @@ import static com.hazelcast.internal.nio.ConnectionType.NONE;
 @SuppressWarnings("checkstyle:methodcount")
 public class TcpServerConnection implements ServerConnection {
 
-    public volatile AsyncSocket[] sockets;
+    private volatile AsyncSocket[] sockets;
 
     private final Channel channel;
     private final ConcurrentMap attributeMap;
@@ -112,6 +112,14 @@ public class TcpServerConnection implements ServerConnection {
         this.acceptorSide = acceptorSide;
         this.attributeMap = channel.attributeMap();
         attributeMap.put(ServerConnection.class, this);
+    }
+
+    public AsyncSocket[] getSockets() {
+        return sockets;
+    }
+
+    public void setSockets(AsyncSocket[] sockets) {
+        this.sockets = sockets;
     }
 
     @Override

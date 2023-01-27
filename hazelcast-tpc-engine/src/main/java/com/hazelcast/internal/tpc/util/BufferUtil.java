@@ -19,7 +19,10 @@ package com.hazelcast.internal.tpc.util;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
-public class BufferUtil {
+public final class BufferUtil {
+
+    private BufferUtil() {
+    }
     /**
      * Compacts or clears the buffer depending if bytes are remaining in the byte-buffer.
      *
@@ -77,6 +80,4 @@ public class BufferUtil {
         }
     }
 
-    private BufferUtil() {
-    }
 }

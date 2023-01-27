@@ -60,8 +60,8 @@ public class TpcServerBootstrap {
             "hazelcast.internal.alto.eventloop.count");
     private static final int TERMINATE_TIMEOUT_SECONDS = 5;
 
-    public volatile boolean shutdown;
-
+    // todo: nothing is done with this.
+    private volatile boolean shutdown;
     private final NodeEngineImpl nodeEngine;
     private final InternalSerializationService ss;
     private final ILogger logger;

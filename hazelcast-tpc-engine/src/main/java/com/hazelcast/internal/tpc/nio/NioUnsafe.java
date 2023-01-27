@@ -16,27 +16,11 @@
 
 package com.hazelcast.internal.tpc.nio;
 
-import java.io.IOException;
-import java.nio.channels.SelectionKey;
+import com.hazelcast.internal.tpc.Unsafe;
 
-/**
- * A callback interface when something interesting happened on a {@link SelectionKey}.
- */
-public interface SelectionKeyListener {
+class NioUnsafe extends Unsafe {
 
-    /**
-     * Signals the listener that socket should be closed.
-     *
-     * @param reason the reason (can be null).
-     * @param cause  the cause (can be null).
-     */
-    void close(String reason, Exception cause);
-
-    /**
-     * Signals that something interesting happened on a SelectionKey.
-     *
-     * @param key the SelectionKey
-     * @throws IOException if handling lead to problems.
-     */
-    void handle(SelectionKey key) throws IOException;
+    NioUnsafe(NioEventloop eventloop) {
+        super(eventloop);
+    }
 }

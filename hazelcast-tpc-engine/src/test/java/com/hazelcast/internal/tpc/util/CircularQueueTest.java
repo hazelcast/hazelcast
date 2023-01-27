@@ -125,7 +125,7 @@ public class CircularQueueTest {
             queue.add(k);
         }
 
-        assertThrows(IllegalStateException.class, ()->queue.add(1234));
+        assertThrows(IllegalStateException.class, () -> queue.add(1234));
     }
 
     @Test(expected = NullPointerException.class)

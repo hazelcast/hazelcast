@@ -18,12 +18,16 @@ package com.hazelcast.internal.tpc.util;
 
 public final class Preconditions {
 
+    private Preconditions() {
+    }
+
     public static <E> E checkInstanceOf(Class<E> type, Object object, String paramName) {
         checkNotNull(type, "type");
         checkNotNull(object, paramName);
 
         if (!type.isInstance(object)) {
-            throw new IllegalArgumentException("object "+object+" of type "+object.getClass()+" is not an instanceof "+type);
+            throw new IllegalArgumentException("object " + object + " of type " + object.getClass()
+                    + " is not an instanceof " + type);
         }
         return (E) object;
     }
@@ -103,6 +107,4 @@ public final class Preconditions {
         return argument;
     }
 
-    private Preconditions() {
-    }
 }

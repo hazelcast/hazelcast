@@ -20,7 +20,6 @@ package com.hazelcast.internal.tpc;
 import org.junit.After;
 import org.junit.Test;
 
-
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.tpc.TpcEngine.State.SHUTDOWN;
@@ -38,7 +37,7 @@ public class TpcEngineTest {
     public void after() throws InterruptedException {
         if (engine != null) {
             engine.shutdown();
-            if(!engine.awaitTermination(10, TimeUnit.SECONDS)){
+            if (!engine.awaitTermination(10, TimeUnit.SECONDS)) {
                 throw new RuntimeException("Failed to await termination due to timeout");
             }
         }

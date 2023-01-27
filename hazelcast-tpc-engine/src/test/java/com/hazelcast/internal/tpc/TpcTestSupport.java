@@ -39,8 +39,8 @@ public class TpcTestSupport {
         assertTrueEventually(() -> assertTrue("Future has not completed", future.isDone()));
     }
 
-    public static void terminateAll(Collection<? extends Eventloop> eventloops)  {
-        if(eventloops==null){
+    public static void terminateAll(Collection<? extends Eventloop> eventloops) {
+        if (eventloops == null) {
             return;
         }
 
@@ -65,7 +65,7 @@ public class TpcTestSupport {
         }
     }
 
-    public static void terminate(Eventloop eventloop)  {
+    public static void terminate(Eventloop eventloop) {
         if (eventloop == null) {
             return;
         }
