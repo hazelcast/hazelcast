@@ -348,6 +348,8 @@ public abstract class Eventloop implements Executor {
     }
 
     protected final boolean runScheduledTasks() {
+        final PriorityQueue<ScheduledTask> scheduledTaskQueue = this.scheduledTaskQueue;
+        final int batchSize = this.batchSize;
         for (int k = 0; k < batchSize; k++) {
             ScheduledTask scheduledTask = scheduledTaskQueue.peek();
             if (scheduledTask == null) {
@@ -374,6 +376,8 @@ public abstract class Eventloop implements Executor {
     }
 
     protected final boolean runLocalTasks() {
+        final int batchSize = this.batchSize;
+        final CircularQueue<Runnable> localTaskQueue = this.localTaskQueue;
         for (int k = 0; k < batchSize; k++) {
             Runnable task = localTaskQueue.poll();
             if (task == null) {
@@ -393,6 +397,9 @@ public abstract class Eventloop implements Executor {
     }
 
     protected boolean runConcurrentTasks() {
+        final int batchSize = this.batchSize;
+        final MpmcArrayQueue concurrentTaskQueue = this.concurrentTaskQueue;
+        final Scheduler scheduler = this.scheduler;
         for (int k = 0; k < batchSize; k++) {
             Object task = concurrentTaskQueue.poll();
             if (task == null) {
@@ -406,7 +413,7 @@ public abstract class Eventloop implements Executor {
                     logger.warning(e);
                 }
             } else if (task instanceof IOBuffer) {
-                scheduler.schedule((IOBuffer) task);
+                 scheduler.schedule((IOBuffer) task);
             } else {
                 throw new RuntimeException("Unrecognized type:" + task.getClass());
             }
