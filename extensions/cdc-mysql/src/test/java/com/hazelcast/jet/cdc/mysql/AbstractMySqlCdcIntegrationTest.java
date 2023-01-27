@@ -52,7 +52,6 @@ public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegra
 
     @BeforeClass
     public static void ignoreOnArm64OrOnJdk15OrHigher() {
-        //There is no arm64 version of currently used docker image
         Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623, " +
                         "https://github.com/hazelcast/hazelcast/issues/18800",
                 System.getProperty("java.version").matches("^1[56].*"));
