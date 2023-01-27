@@ -22,7 +22,8 @@ public class AltoSocketConfig {
     private int sendBufferSizeKB = 128;
 
     /**
-     * Gets the possible port range for Alto sockets to bind.
+     * Gets the possible port range for Alto sockets to bind. Can't return
+     * null.
      *
      * @return the port range string
      */
@@ -32,13 +33,14 @@ public class AltoSocketConfig {
     }
 
     /**
-     * Sets the possible port range for Alto sockets to bind.
+     * Sets the possible port range for Alto sockets to bind. Can't return
+     * null.
      *
      * @param portRange the port range to set
      * @return this Alto socket config
      * @throws IllegalArgumentException if portRange doesn't match {@code
      *                                  \d{1,5}-\d{1,5}} regular expression
-     *                                  or null
+     * @throws NullPointerException     if portRange is null
      */
     @Nonnull
     public AltoSocketConfig setPortRange(@Nonnull String portRange) {
@@ -62,7 +64,8 @@ public class AltoSocketConfig {
     }
 
     /**
-     * Sets the receive-buffer size of the Alto sockets in kilobytes.
+     * Sets the receive-buffer size of the Alto sockets in kilobytes. Can't
+     * return null.
      *
      * @param receiveBufferSizeKB the receive-buffer size of the Alto sockets in kilobytes
      * @return this Alto socket config
@@ -86,7 +89,8 @@ public class AltoSocketConfig {
     }
 
     /**
-     * Sets the send-buffer size of the Alto sockets in kilobytes.
+     * Sets the send-buffer size of the Alto sockets in kilobytes. Can't
+     * return null.
      *
      * @param sendBufferSizeKB the send-buffer size of the Alto sockets in kilobytes
      * @return this Alto socket config

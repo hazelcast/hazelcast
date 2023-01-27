@@ -3223,7 +3223,7 @@ public class Config {
     }
 
     /**
-     * Gets the Alto config.
+     * Gets the Alto config. Can't return null.
      *
      * @return the Alto configuration
      * @since 5.3
@@ -3235,7 +3235,7 @@ public class Config {
     }
 
     /**
-     * Sets the Alto config.
+     * Sets the Alto config. Can't return null.
      *
      * @param altoConfig Alto configuration to be set
      * @return this config

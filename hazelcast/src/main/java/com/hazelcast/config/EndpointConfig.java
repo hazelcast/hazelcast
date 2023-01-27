@@ -279,7 +279,7 @@ public class EndpointConfig implements NamedConfig {
     }
 
     /**
-     * Gets the Alto socket config.
+     * Gets the Alto socket config. Can't return null.
      *
      * @return the Alto socket config
      * @see com.hazelcast.config.alto.AltoConfig
@@ -292,7 +292,7 @@ public class EndpointConfig implements NamedConfig {
     }
 
     /**
-     * Sets the Alto socket config.
+     * Sets the Alto socket config. Can't return null.
      *
      * @param altoSocketConfig Alto socket config to set
      * @return this endpoint config

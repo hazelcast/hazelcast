@@ -29,7 +29,8 @@ public class AltoConfig {
     }
 
     /**
-     * Sets the enabled flag which defines Alto is enabled or not.
+     * Sets the enabled flag which defines Alto is enabled or not. Can't
+     * return null.
      *
      * @param enabled a boolean to enable or disable alto
      * @return this Alto configuration
@@ -54,7 +55,7 @@ public class AltoConfig {
     /**
      * In Alto, everything is done in eventloops. This method sets the
      * number eventloops. By default, it's equal to the number of
-     * available processors.
+     * available processors. Can't return null.
      *
      * @param eventloopCount the number of eventloops
      * @return this Alto configuration
