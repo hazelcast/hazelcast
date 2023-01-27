@@ -16,37 +16,71 @@
 
 package com.hazelcast.config.alto;
 
-import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.spi.annotation.Beta;
 
+import javax.annotation.Nonnull;
 import java.util.Objects;
 
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
+
+/**
+ * Hazelcast Alto is the next generation of Hazelcast built with thread
+ * per core architecture. It's still being developed and everything is
+ * subject to change. Alto is disabled by default.
+ *
+ * @since 5.3
+ */
+@Beta
 public class AltoConfig {
-    private static final boolean DEFAULT_ENABLED = false;
-    private static final int DEFAULT_EVENTLOOP_COUNT = Runtime.getRuntime().availableProcessors();
+    private boolean enabled;
+    private int eventloopCount = Runtime.getRuntime().availableProcessors();
 
-    private boolean enabled = DEFAULT_ENABLED;
-    private int eventloopCount = DEFAULT_EVENTLOOP_COUNT;
-
+    /**
+     * Gets the enabled flag which defines Alto is enabled or not.
+     *
+     * @return true if Alto is enabled
+     */
     public boolean isEnabled() {
         return enabled;
     }
 
+    /**
+     * Sets the enabled flag which defines Alto is enabled or not. Can't
+     * return null.
+     *
+     * @param enabled a boolean to enable or disable alto
+     * @return this Alto configuration
+     */
+    @Nonnull
     public AltoConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
         return this;
     }
 
+    /**
+     * Gets the number of eventloops.
+     *
+     * @return the number of eventloops
+     * @see Runtime#availableProcessors()
+     * @see AltoConfig#setEventloopCount(int)
+     */
     public int getEventloopCount() {
         return eventloopCount;
     }
 
+    /**
+     * In Alto, everything is done in eventloops. This method sets the
+     * number eventloops. By default, it's equal to the number of
+     * available processors. Can't return null.
+     *
+     * @param eventloopCount the number of eventloops
+     * @return this Alto configuration
+     * @throws IllegalArgumentException if eventloopCount isn't positive
+     * @see Runtime#availableProcessors()
+     */
+    @Nonnull
     public AltoConfig setEventloopCount(int eventloopCount) {
-        if (eventloopCount < Bounds.MIN_EVENTLOOP_COUNT || eventloopCount > Bounds.MAX_EVENTLOOP_COUNT) {
-            throw new InvalidConfigurationException("Buffer size should be between "
-                    + Bounds.MIN_EVENTLOOP_COUNT + " and " + Bounds.MAX_EVENTLOOP_COUNT);
-        }
-
-        this.eventloopCount = eventloopCount;
+        this.eventloopCount = checkPositive("eventloopCount", eventloopCount);
         return this;
     }
 
@@ -74,10 +108,5 @@ public class AltoConfig {
                 + "enabled=" + enabled
                 + ", eventloopCount=" + eventloopCount
                 + '}';
-    }
-
-    private static class Bounds {
-        private static final int MIN_EVENTLOOP_COUNT = 1;
-        private static final int MAX_EVENTLOOP_COUNT = 256;
     }
 }

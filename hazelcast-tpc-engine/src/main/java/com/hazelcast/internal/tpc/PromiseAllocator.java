@@ -20,36 +20,36 @@ package com.hazelcast.internal.tpc;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 
 @SuppressWarnings("rawtypes")
-public final class FutAllocator {
+public final class PromiseAllocator {
 
     private final Eventloop eventloop;
-    private final Fut[] array;
+    private final Promise[] array;
     private int index = -1;
 
-    public FutAllocator(Eventloop eventloop, int capacity) {
+    public PromiseAllocator(Eventloop eventloop, int capacity) {
         this.eventloop = checkNotNull(eventloop);
-        this.array = new Fut[capacity];
+        this.array = new Promise[capacity];
     }
 
     public int size() {
         return index + 1;
     }
 
-    Fut allocate() {
+    Promise allocate() {
         if (index == -1) {
-            Fut fut = new Fut(eventloop);
-            fut.allocator = this;
-            return fut;
+            Promise promise = new Promise(eventloop);
+            promise.allocator = this;
+            return promise;
         }
 
-        Fut fut = array[index];
+        Promise promise = array[index];
         array[index] = null;
         index--;
-        fut.refCount = 1;
-        return fut;
+        promise.refCount = 1;
+        return promise;
     }
 
-    void free(Fut e) {
+    void free(Promise e) {
         checkNotNull(e);
 
         if (index <= array.length - 1) {

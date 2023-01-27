@@ -17,7 +17,6 @@
 package com.hazelcast.config.alto;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -31,6 +30,8 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.config.alto.AltoConfigAccessors.getEventloopCount;
 import static com.hazelcast.config.alto.AltoConfigAccessors.isTpcEnabled;
+import static com.hazelcast.internal.bootstrap.TpcServerBootstrap.ALTO_ENABLED;
+import static com.hazelcast.internal.bootstrap.TpcServerBootstrap.ALTO_EVENTLOOP_COUNT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -42,7 +43,7 @@ public class AltoConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testTPCDisabledByDefault() {
-        assertFalse(isTpcEnabled(createHazelcastInstance()));
+        assertFalse(isTpcEnabled(createHazelcastInstance(config)));
     }
 
     @Test
@@ -62,10 +63,29 @@ public class AltoConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testConfigBounds() {
+    public void testConfigValidation() {
         AltoConfig altoConfig = config.getAltoConfig();
-        assertThrows(InvalidConfigurationException.class, () -> altoConfig.setEventloopCount(0));
-        assertThrows(InvalidConfigurationException.class, () -> altoConfig.setEventloopCount(256 + 1));
+        assertThrows(IllegalArgumentException.class, () -> altoConfig.setEventloopCount(0));
+    }
+
+    @Test
+    public void testSystemProperties() {
+        config.getAltoConfig().setEnabled(false).setEventloopCount(7);
+        System.setProperty(ALTO_ENABLED.getName(), "true");
+        System.setProperty(ALTO_EVENTLOOP_COUNT.getName(), "3");
+        HazelcastInstance hz = createHazelcastInstance(config);
+        assertTrue(isTpcEnabled(hz));
+        assertEquals(3, getEventloopCount(hz));
+    }
+
+    @Test
+    public void testConfigProperties() {
+        config.getAltoConfig().setEnabled(false).setEventloopCount(7);
+        config.setProperty(ALTO_ENABLED.getName(), "true");
+        config.setProperty(ALTO_EVENTLOOP_COUNT.getName(), "3");
+        HazelcastInstance hz = createHazelcastInstance(config);
+        assertTrue(isTpcEnabled(hz));
+        assertEquals(3, getEventloopCount(hz));
     }
 
     @Test

@@ -89,7 +89,7 @@ public abstract class Eventloop implements Executor {
     @SuppressWarnings("checkstyle:DeclarationOrder")
     TpcEngine engine;
 
-    private final FutAllocator futAllocator;
+    final PromiseAllocator promiseAllocator;
     private final EventloopType type;
     private final BitSet allowedCpus;
     private final CountDownLatch terminationLatch = new CountDownLatch(1);
@@ -118,7 +118,7 @@ public abstract class Eventloop implements Executor {
         }
 
         this.allowedCpus = eventloopBuilder.threadAffinity == null ? null : eventloopBuilder.threadAffinity.nextAllowedCpus();
-        this.futAllocator = new FutAllocator(this, INITIAL_ALLOCATOR_CAPACITY);
+        this.promiseAllocator = new PromiseAllocator(this, INITIAL_ALLOCATOR_CAPACITY);
     }
 
     /**
