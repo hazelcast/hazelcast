@@ -31,6 +31,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  * @see AltoConfig
  * @since 5.3
  */
+@SuppressWarnings("checkstyle:JavadocVariable")
 @Beta
 public class AltoSocketConfig {
     public static final int DEFAULT_RECEIVE_BUFFER_SIZE_KB = 128;

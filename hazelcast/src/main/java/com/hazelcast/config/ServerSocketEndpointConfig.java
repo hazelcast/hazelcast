@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.spi.annotation.Beta;
@@ -89,7 +90,7 @@ public class ServerSocketEndpointConfig
 
     /**
      * Sets the port the Hazelcast member will try to bind on.
-     *
+     * <p>
      * A valid port value is between 0 and 65535.
      * A port number of 0 will let the system pick up an ephemeral port.
      *
@@ -121,8 +122,8 @@ public class ServerSocketEndpointConfig
      * The maximum number of ports allowed to use.
      *
      * @param portCount the maximum number of ports allowed to use
-     * @see #setPortAutoIncrement(boolean) for more information
      * @return this configuration
+     * @see #setPortAutoIncrement(boolean) for more information
      */
     public ServerSocketEndpointConfig setPortCount(int portCount) {
         if (portCount < 1) {
