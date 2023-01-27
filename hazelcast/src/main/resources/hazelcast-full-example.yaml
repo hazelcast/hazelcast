@@ -611,6 +611,14 @@ hazelcast:
   #       all Hazelcast cluster members would be within one network switch/router therefore
   #       default of 0 is usually sufficient.
   #
+  # - "alto-socket":
+  #   Socket configuration for Alto. In Alto, each eventloop has its own socket.
+  #   - "port-range":
+  #       Configures the port range available for Alto sockets.
+  #   - "receive-buffer-size-kb":
+  #       Configures SO_RCVBUF socket option for Alto sockets.
+  #   - "send-buffer-size-kb":
+  #       Configures SO_SNDBUF socket option for Alto sockets.
   network:
     public-address: 11.22.33.44:5555
     port:
@@ -773,6 +781,12 @@ hazelcast:
     #
     memcache-protocol:
       enabled: false
+
+    alto-socket:
+      port-range: 14000-16000
+      receive-buffer-size-kb: 256
+      send-buffer-size-kb: 256
+
   #
   # ===== PARTITION GROUPING CONFIGURATION =====
   #
@@ -3090,6 +3104,15 @@ hazelcast:
   #          * "linger-seconds":
   #              Specifies the TCP linger seconds. The default value is 0.
   #
+  #      - "alto-socket":
+  #        Socket configuration for Alto. In Alto, each eventloop has its own socket.
+  #        - "port-range":
+  #            Configures the port range available for Alto sockets.
+  #        - "receive-buffer-size-kb":
+  #            Configures SO_RCVBUF socket option for Alto sockets.
+  #        - "send-buffer-size-kb":
+  #            Configures SO_SNDBUF socket option for Alto sockets.
+  #
   #  * "rest-server-socket-endpoint-config":
   #      Controls access to Hazelcast HTTP REST API.
   #      The methods available through REST API are grouped to several REST endpoint groups, which can be specified
@@ -3260,6 +3283,10 @@ hazelcast:
       public-address: dummy
       # If the address should be reused. See NetworkConfig.setReuseAddress for more information.
       reuse-address: true
+      alto-socket:
+        port-range: 14000-16000
+        receive-buffer-size-kb: 256
+        send-buffer-size-kb: 256
     client-server-socket-endpoint-config:
       outbound-ports:
         - 38000,38500-38600
@@ -3283,12 +3310,20 @@ hazelcast:
         port: 9999
       public-address: 10.10.0.10
       reuse-address: true
+      alto-socket:
+        port-range: 14000-16000
+        receive-buffer-size-kb: 256
+        send-buffer-size-kb: 256
     rest-server-socket-endpoint-config:
       name: internal-server-socket
       interfaces:
         enabled: false
         interfaces:
           - 10.10.1.*
+      alto-socket:
+        port-range: 14000-16000
+        receive-buffer-size-kb: 256
+        send-buffer-size-kb: 256
       port:
         auto-increment: false
         port: 8080
@@ -3310,6 +3345,10 @@ hazelcast:
           factory-class-name: com.hazelcast.examples.MySSLContextFactory
           properties:
             foo: bar
+        alto-socket:
+          port-range: 14000-16000
+          receive-buffer-size-kb: 256
+          send-buffer-size-kb: 256
       endpoint-london:
         symmetric-encryption:
           enabled: true
@@ -3318,18 +3357,25 @@ hazelcast:
           password: thepassword
           iteration-count: 1000
     wan-server-socket-endpoint-config:
-      wan-server-socket-config:
+      interfaces:
+        enabled: false
         interfaces:
-          enabled: false
-          interfaces:
-            - 192.168.8.101
-            - 10.20.10.100
+          - 192.168.8.101
+          - 10.20.10.100
+      alto-socket:
+        port-range: 14000-16000
+        receive-buffer-size-kb: 256
+        send-buffer-size-kb: 256
     memcache-server-socket-endpoint-config:
       name: memcache
       port:
         auto-increment: false
         port-count: 10
         port: 6000
+      alto-socket:
+        port-range: 14000-16000
+        receive-buffer-size-kb: 256
+        send-buffer-size-kb: 256
 
   #
   # ===== HAZELCAST CP SUBSYSTEM CONFIGURATION =====
@@ -3815,3 +3861,12 @@ hazelcast:
       shared: false
     other-database:
       class-name: com.hazelcast.datalink.OtherDataLink
+
+  #    ===== HAZELCAST ALTO CONFIGURATION =====
+  #
+  #    Hazelcast Alto is the next generation of Hazelcast built with thread per core architecture.
+  #    It's still being developed and everything is subject to change. Alto is disabled by default.
+  alto:
+    enabled: true
+    # Configures the number of eventloops. It's equal to available processor count by default.
+    eventloop-count: 12

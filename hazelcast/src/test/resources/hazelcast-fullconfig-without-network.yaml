@@ -1021,3 +1021,7 @@ hazelcast:
       properties:
         jdbcUrl: jdbc:mysql://dummy:3306
       shared: false
+
+  alto:
+    enabled: true
+    eventloop-count: 12

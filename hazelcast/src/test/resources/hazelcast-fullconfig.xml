@@ -176,6 +176,11 @@
             <endpoint-group name="DATA" enabled="true"/>
         </rest-api>
         <memcache-protocol enabled="true"/>
+        <alto-socket>
+            <port-range>14000-16000</port-range>
+            <receive-buffer-size-kb>256</receive-buffer-size-kb>
+            <send-buffer-size-kb>256</send-buffer-size-kb>
+        </alto-socket>
     </network>
 
 </hazelcast>

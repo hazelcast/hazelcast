@@ -21,6 +21,9 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 
+import static com.hazelcast.internal.bootstrap.TpcServerBootstrap.ALTO_ENABLED;
+import static com.hazelcast.internal.bootstrap.TpcServerBootstrap.ALTO_EVENTLOOP_COUNT;
+
 /**
  * Demo application for TPC. Will be removed in in the final release.
  */
@@ -28,8 +31,8 @@ import com.hazelcast.map.IMap;
 public class ClientMain {
 
     public static void main(String[] args) {
-        System.setProperty("hazelcast.tpc.enabled", "true");
-        System.setProperty("hazelcast.tpc.eventloop.count", "" + Runtime.getRuntime().availableProcessors());
+        System.setProperty(ALTO_ENABLED.getName(), "true");
+        System.setProperty(ALTO_EVENTLOOP_COUNT.getName(), "" + Runtime.getRuntime().availableProcessors());
         HazelcastInstance server = Hazelcast.newHazelcastInstance();
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
         System.out.println("Client created");

@@ -1096,4 +1096,8 @@
         <shared>false</shared>
     </data-link>
 
+    <alto enabled="true">
+        <eventloop-count>12</eventloop-count>
+    </alto>
+
 </hazelcast>

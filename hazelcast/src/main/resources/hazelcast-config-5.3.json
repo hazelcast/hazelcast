@@ -150,6 +150,9 @@
         },
         "data-link": {
           "$ref": "#/definitions/DataLinkConfig"
+        },
+        "alto": {
+          "$ref": "#/definitions/AltoConfig"
         }
       }
     },
@@ -762,6 +765,9 @@
         },
         "socket-interceptor": {
           "$ref": "#/definitions/SocketInterceptor"
+        },
+        "alto-socket": {
+          "$ref": "#/definitions/AltoSocketConfig"
         }
       }
     },
@@ -832,7 +838,8 @@
                   "ssl",
                   "socket-interceptor",
                   "symmetric-encryption",
-                  "socket-options"
+                  "socket-options",
+                  "alto-socket"
                 ]
               }
             }
@@ -3980,6 +3987,9 @@
         },
         "socket-options": {
           "$ref": "#/definitions/SocketOptions"
+        },
+        "alto-socket": {
+          "$ref": "#/definitions/AltoSocketConfig"
         }
       }
     },
@@ -4989,6 +4999,41 @@
           }
         }
       }
+    },
+    "AltoConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enabled Hazelcast Alto. Disabled by default."
+        },
+        "eventloop-count": {
+          "type": "integer",
+          "description": "Configures the number of eventloops. It's equal to available processor count by default."
+        }
+      },
+      "required": [
+        "enabled"
+      ],
+      "description": "Hazelcast Alto is the next generation of Hazelcast built with thread per core architecture. It's still being developed and everything is subject to change. Alto is disabled by default."
+    },
+    "AltoSocketConfig": {
+      "type": "object",
+      "properties": {
+        "port-range": {
+          "type": "string",
+          "description": "Configures the port range available for Alto sockets."
+        },
+        "receive-buffer-size-kb": {
+          "type": "integer",
+          "description": "Configures SO_RCVBUF socket option for Alto sockets."
+        },
+        "send-buffer-size-kb": {
+          "type": "integer",
+          "description": "Configures SO_SNDBUF socket option for Alto sockets."
+        }
+      },
+      "description": "Socket configuration for Alto. In Alto, each eventloop has its own socket."
     }
   }
 }

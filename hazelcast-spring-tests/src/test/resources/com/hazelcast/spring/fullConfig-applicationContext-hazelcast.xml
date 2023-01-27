@@ -226,6 +226,11 @@
                     <hz:endpoint-group name="CP" enabled="true"/>
                 </hz:rest-api>
                 <hz:memcache-protocol enabled="true"/>
+                <hz:alto-socket>
+                    <hz:port-range>14000-16000</hz:port-range>
+                    <hz:receive-buffer-size-kb>256</hz:receive-buffer-size-kb>
+                    <hz:send-buffer-size-kb>256</hz:send-buffer-size-kb>
+                </hz:alto-socket>
             </hz:network>
             <hz:partition-group enabled="false" group-type="CUSTOM">
                 <hz:member-group>
@@ -1126,6 +1131,9 @@
                 </hz:properties>
                 <hz:shared>false</hz:shared>
             </hz:data-link>
+            <hz:alto enabled="true">
+                <hz:eventloop-count>12</hz:eventloop-count>
+            </hz:alto>
         </hz:config>
     </hz:hazelcast>
 
