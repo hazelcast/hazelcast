@@ -34,15 +34,15 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.tpc.AsyncSocket;
+import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import com.hazelcast.internal.tpc.AsyncSocket;
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
-import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
 
 import java.lang.reflect.Field;
 import java.security.AccessControlException;
@@ -66,8 +66,8 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     private static final List<Class<? extends Throwable>> NON_PEELABLE_EXCEPTIONS =
             Arrays.asList(Error.class, MemberLeftException.class);
 
-    public AsyncSocket asyncSocket;
-    public IOBufferAllocator responseBufAllocator;
+    protected AsyncSocket asyncSocket;
+    protected IOBufferAllocator responseBufAllocator;
 
     protected final ClientMessage clientMessage;
     protected final ServerConnection connection;
@@ -92,6 +92,14 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         this.endpoint = initEndpoint();
     }
 
+    public void setAsyncSocket(AsyncSocket asyncSocket) {
+        this.asyncSocket = asyncSocket;
+    }
+
+    public void setResponseBufAllocator(IOBufferAllocator responseBufAllocator) {
+        this.responseBufAllocator = responseBufAllocator;
+    }
+
     @SuppressWarnings("unchecked")
     public <S> S getService(String serviceName) {
         return (S) node.getNodeEngine().getService(serviceName);
@@ -111,10 +119,6 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
     @Override
     public final void run() {
-//        if (asyncSocket != null) {
-//            System.out.println("Running " + getClass());
-//        }
-
         try {
             Address address = connection.getRemoteAddress();
             if (isManagementTask() && !clientEngine.getManagementTasksChecker().isTrusted(address)) {
@@ -275,14 +279,14 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         if (asyncSocket == null) {
             connection.write(resultClientMessage);
         } else {
-            ClientMessage.Frame frame = resultClientMessage.startFrame;
+            ClientMessage.Frame frame = resultClientMessage.getStartFrame();
             //IOBuffer buf = new IOBuffer(resultClientMessage.getBufferLength(), false);
             IOBuffer buf = responseBufAllocator.allocate(resultClientMessage.getBufferLength());
             while (frame != null) {
                 buf.writeIntL(frame.content.length + SIZE_OF_FRAME_LENGTH_AND_FLAGS);
 
                 int flags = frame.flags;
-                if (frame == resultClientMessage.endFrame) {
+                if (frame == resultClientMessage.getEndFrame()) {
                     flags = frame.flags | IS_FINAL_FLAG;
                 }
 
@@ -290,7 +294,8 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
                 buf.writeBytes(frame.content);
                 frame = frame.next;
             }
-            buf.byteBuffer().flip();//nasty
+            //nasty
+            buf.byteBuffer().flip();
             asyncSocket.writeAndFlush(buf);
         }
         //TODO framing not implemented yet, should be split into frames before writing to connection

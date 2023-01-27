@@ -58,7 +58,7 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
  *     <li>Tasks from some asynchronous eventing system that interacts with I/O. </li>>
  * </ol>
  */
-@SuppressWarnings({"checkstyle:VisibilityModifier", "rawtypes"})
+@SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:declarationorder", "rawtypes"})
 public abstract class Eventloop implements Executor {
 
     protected static final AtomicReferenceFieldUpdater<Eventloop, State> STATE
@@ -444,7 +444,7 @@ public abstract class Eventloop implements Executor {
                 }
 
                 if (!scheduledTaskQueue.offer(this)) {
-                    //todo: some log message
+                    logger.warning("Failed schedule task: " + this + " because there is no space in scheduledTaskQueue");
                 }
             } else {
                 if (fut != null) {
@@ -460,6 +460,17 @@ public abstract class Eventloop implements Executor {
             }
 
             return this.deadlineNanos > that.deadlineNanos ? 1 : -1;
+        }
+
+        @Override
+        public String toString() {
+            return "ScheduledTask{"
+                    + "fut=" + fut
+                    + ", deadlineNanos=" + deadlineNanos
+                    + ", task=" + task
+                    + ", periodNanos=" + periodNanos
+                    + ", delayNanos=" + delayNanos
+                    + '}';
         }
     }
 

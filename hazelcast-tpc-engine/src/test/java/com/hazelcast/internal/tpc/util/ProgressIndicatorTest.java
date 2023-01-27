@@ -23,7 +23,7 @@ import static org.junit.Assert.assertEquals;
 public class ProgressIndicatorTest {
 
     @Test
-    public void test(){
+    public void test() {
         ProgressIndicator progressIndicator = new ProgressIndicator();
         assertEquals(0, progressIndicator.get());
 
@@ -44,7 +44,7 @@ public class ProgressIndicatorTest {
     }
 
     @Test
-    public void test_toString(){
+    public void test_toString() {
         ProgressIndicator progressIndicator = new ProgressIndicator();
         progressIndicator.inc(100);
 

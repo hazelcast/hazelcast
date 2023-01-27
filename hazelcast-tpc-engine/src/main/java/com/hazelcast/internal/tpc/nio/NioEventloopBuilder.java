@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.EventloopBuilder;
 import com.hazelcast.internal.tpc.Eventloop;
+import com.hazelcast.internal.tpc.EventloopBuilder;
 import com.hazelcast.internal.tpc.EventloopType;
 
 /**

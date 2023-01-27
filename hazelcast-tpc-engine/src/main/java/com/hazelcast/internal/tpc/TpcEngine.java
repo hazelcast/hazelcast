@@ -27,7 +27,6 @@ import static com.hazelcast.internal.tpc.TpcEngine.State.NEW;
 import static com.hazelcast.internal.tpc.TpcEngine.State.RUNNING;
 import static com.hazelcast.internal.tpc.TpcEngine.State.SHUTDOWN;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
-import static java.lang.System.getProperty;
 
 /**
  * The TpcEngine is effectively an array of eventloops.
