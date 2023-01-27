@@ -469,7 +469,7 @@ public final class TPCOperationExecutor implements OperationExecutor, StaticMetr
     @Override
     public void start() {
         if (logger.isFineEnabled()) {
-            logger.fine("Starting  " + genericThreads.length + " generic threads (" + priorityThreadCount
+            logger.fine("Starting " + genericThreads.length + " generic threads (" + priorityThreadCount
                     + " dedicated for priority tasks)");
         }
         startAll(genericThreads);
