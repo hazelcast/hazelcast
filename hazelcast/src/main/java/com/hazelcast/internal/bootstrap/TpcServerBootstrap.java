@@ -239,7 +239,7 @@ public class TpcServerBootstrap {
             }
         }
 
-        throw new HazelcastException("Could not find a free port in the alto socket port range.");
+        throw new HazelcastException("Could not find a free port in the Alto socket port range.");
     }
 
     public void shutdown() {
