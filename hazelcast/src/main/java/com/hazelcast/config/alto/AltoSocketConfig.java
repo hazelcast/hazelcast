@@ -33,9 +33,12 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  */
 @Beta
 public class AltoSocketConfig {
+    public static final int DEFAULT_RECEIVE_BUFFER_SIZE_KB = 128;
+    public static final int DEFAULT_SEND_BUFFER_SIZE_KB = 128;
+
     private String portRange = "11000-21000";
-    private int receiveBufferSizeKB = 128;
-    private int sendBufferSizeKB = 128;
+    private int receiveBufferSizeKB = DEFAULT_RECEIVE_BUFFER_SIZE_KB;
+    private int sendBufferSizeKB = DEFAULT_SEND_BUFFER_SIZE_KB;
 
     /**
      * Gets the possible port range for Alto sockets to bind. Can't return

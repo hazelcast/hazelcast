@@ -32,7 +32,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  */
 @Beta
 public class AltoConfig {
-    private boolean enabled = false;
+    private boolean enabled;
     private int eventloopCount = Runtime.getRuntime().availableProcessors();
 
     /**
