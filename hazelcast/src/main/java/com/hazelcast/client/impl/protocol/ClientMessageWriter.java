@@ -32,7 +32,7 @@ public class ClientMessageWriter {
 
     public boolean writeTo(ByteBuffer dst, ClientMessage clientMessage) {
         if (currentFrame == null) {
-            currentFrame = clientMessage.startFrame;
+            currentFrame = clientMessage.getStartFrame();
         }
         for (; ; ) {
             boolean isLastFrame = currentFrame.next == null;

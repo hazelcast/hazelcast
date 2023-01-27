@@ -23,7 +23,7 @@ import static org.junit.Assert.assertEquals;
 public class EventloopTypeTest {
 
     @Test
-    public void test_fromString(){
+    public void test_fromString() {
         assertEquals(EventloopType.NIO, EventloopType.fromString("nio"));
         assertEquals(EventloopType.NIO, EventloopType.fromString("NIO"));
         assertEquals(EventloopType.IOURING, EventloopType.fromString("iouring"));
@@ -32,12 +32,12 @@ public class EventloopTypeTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void test_fromString_whenNull(){
-       EventloopType.fromString(null);
+    public void test_fromString_whenNull() {
+        EventloopType.fromString(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void test_fromString_whenBogusString(){
+    public void test_fromString_whenBogusString() {
         EventloopType.fromString("bogus");
     }
 }

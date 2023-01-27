@@ -34,7 +34,7 @@ public abstract class EventloopBuilderTest {
     @Test
     public void test_setThreadFactory_whenNull() {
         EventloopBuilder builder = newBuilder();
-        assertThrows(NullPointerException.class, ()->builder.setThreadFactory(null));
+        assertThrows(NullPointerException.class, () -> builder.setThreadFactory(null));
     }
 
     @Test
@@ -128,7 +128,7 @@ public abstract class EventloopBuilderTest {
     }
 
     @Test
-    public void test_setThreadAffinity_nullAffinityIsAllowed(){
+    public void test_setThreadAffinity_nullAffinityIsAllowed() {
         EventloopBuilder builder = newBuilder();
         builder.setThreadAffinity(null);
 
@@ -137,7 +137,7 @@ public abstract class EventloopBuilderTest {
 
 
     @Test
-    public void test_setThreadAffinity(){
+    public void test_setThreadAffinity() {
         EventloopBuilder builder = newBuilder();
         ThreadAffinity affinity = new ThreadAffinity("1-5");
         builder.setThreadAffinity(affinity);
@@ -146,7 +146,7 @@ public abstract class EventloopBuilderTest {
     }
 
     @Test
-    public void test_setSpin(){
+    public void test_setSpin() {
         EventloopBuilder builder = newBuilder();
         builder.setSpin(true);
 

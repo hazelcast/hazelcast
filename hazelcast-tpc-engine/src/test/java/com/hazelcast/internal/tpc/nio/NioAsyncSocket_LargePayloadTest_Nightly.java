@@ -20,9 +20,9 @@ import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.experimental.categories.Category;
 
 @Category(NightlyTest.class)
-public class NioAsyncSocket_LargePayloadTest_Nightly extends NioAsyncSocket_LargePayloadTest{
+public class NioAsyncSocket_LargePayloadTest_Nightly extends NioAsyncSocket_LargePayloadTest {
 
-    public NioAsyncSocket_LargePayloadTest_Nightly(){
+    public NioAsyncSocket_LargePayloadTest_Nightly() {
         iterations = 20000;
     }
 }

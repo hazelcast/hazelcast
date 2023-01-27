@@ -23,10 +23,13 @@ import static java.lang.Runtime.getRuntime;
 /**
  * Various JVM utility functions.
  */
-public class JVM {
+public final class JVM {
 
-    private final static int MAJOR_VERSION = getMajorVersion0();
-    private final static boolean IS_32_BIT = is32bit0();
+    private static final int MAJOR_VERSION = getMajorVersion0();
+    private static final boolean IS_32_BIT = is32bit0();
+
+    private JVM() {
+    }
 
     /**
      * Gets the Major version of the JVM. So for e.g. Java '1.8' that would be '8' and for '17.1' that would be '17'.
@@ -99,6 +102,4 @@ public class JVM {
         return !IS_32_BIT;
     }
 
-    private JVM() {
-    }
 }

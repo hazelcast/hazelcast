@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.spi.annotation.PrivateApi;

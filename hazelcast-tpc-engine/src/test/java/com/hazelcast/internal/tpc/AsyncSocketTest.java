@@ -146,7 +146,7 @@ public abstract class AsyncSocketTest {
     }
 
     @Test
-    public void test_connect()  {
+    public void test_connect() {
         Eventloop eventloop = createEventloop();
         AsyncServerSocket serverSocket = eventloop.openTcpAsyncServerSocket();
 

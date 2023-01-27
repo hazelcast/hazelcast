@@ -59,6 +59,7 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
     }
 
     @Override
+    @SuppressWarnings("checkstyle:ParameterNumber")
     protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, byte version,
                                        int partitionCount, UUID clusterId, boolean clientFailoverSupported,
                                        boolean isAuthenticated, List<Integer> tpcPorts) {
