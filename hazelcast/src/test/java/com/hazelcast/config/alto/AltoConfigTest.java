@@ -54,6 +54,7 @@ public class AltoConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testSystemProperties() {
+        config.getAltoConfig().setEnabled(false).setEventloopCount(7);
         System.setProperty(ALTO_ENABLED.getName(), "true");
         System.setProperty(ALTO_EVENTLOOP_COUNT.getName(), "3");
         HazelcastInstance hz = createHazelcastInstance(config);
@@ -63,6 +64,7 @@ public class AltoConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testConfigProperties() {
+        config.getAltoConfig().setEnabled(false).setEventloopCount(7);
         config.setProperty(ALTO_ENABLED.getName(), "true");
         config.setProperty(ALTO_EVENTLOOP_COUNT.getName(), "3");
         HazelcastInstance hz = createHazelcastInstance(config);
