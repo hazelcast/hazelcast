@@ -139,6 +139,9 @@ public enum PhoneHomeMetrics {
      *   D means it runs in docker but not on kubernetes ,
      *   N means it doesn't run in docker
      */
+
+    VIRIDIAN("vrd"),
+
     DOCKER("dck"),
 
     //JET METRICS

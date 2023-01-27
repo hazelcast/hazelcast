@@ -91,6 +91,12 @@ class CloudInfoCollector implements MetricsCollector {
         } catch (IOException e) {
             info.put(PhoneHomeMetrics.DOCKER, "N");
         }
+
+        String cloudEnv = System.getenv("HZ_CLOUD_ENVIRONMENT");
+        if (cloudEnv != null) {
+            info.put(PhoneHomeMetrics.VIRIDIAN, cloudEnv);
+        }
+
         environmentInfo = info;
         environmentInfo.forEach(metricsConsumer);
     }
