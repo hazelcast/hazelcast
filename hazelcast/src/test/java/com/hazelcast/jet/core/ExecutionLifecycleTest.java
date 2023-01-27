@@ -120,7 +120,6 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
-
     private int parallelism;
 
     @Parameters(name = "useLightJob={0}")

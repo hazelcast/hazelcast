@@ -15,6 +15,7 @@
  */
 package com.hazelcast.jet.mongodb.sql;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.mongodb.client.MongoClient;
@@ -44,32 +45,32 @@ class FieldResolver {
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields
     ) {
-        Map<String, MongoField> dbFields = readFields(options);
+        Map<String, DocumentField> dbFields = readFields(options);
 
         List<MappingField> resolvedFields = new ArrayList<>();
         if (userFields.isEmpty()) {
-            for (MongoField mongoField : dbFields.values()) {
+            for (DocumentField documentField : dbFields.values()) {
                 try {
                     MappingField mappingField = new MappingField(
-                            mongoField.columnName,
-                            resolveType(mongoField.columnType)
+                            documentField.columnName,
+                            resolveType(documentField.columnType)
                     );
-                    mappingField.setPrimaryKey(mongoField.columnName.equalsIgnoreCase("_id"));
+                    mappingField.setPrimaryKey(documentField.columnName.equalsIgnoreCase("_id"));
                     resolvedFields.add(mappingField);
                 } catch (IllegalArgumentException e) {
-                    throw new IllegalStateException("Could not load column class " + mongoField.columnType, e);
+                    throw new IllegalStateException("Could not load column class " + documentField.columnType, e);
                 }
             }
         } else {
             for (MappingField f : userFields) {
                 String nameInMongo = f.externalName() == null ? f.name() : f.externalName();
-                MongoField mongoField = dbFields.get(nameInMongo);
-                if (mongoField == null) {
+                DocumentField documentField = dbFields.get(nameInMongo);
+                if (documentField == null) {
                     throw new IllegalStateException("Could not resolve field with name " + nameInMongo);
                 }
                 MappingField mappingField = new MappingField(f.name(), f.type(), nameInMongo);
-                mappingField.setPrimaryKey(mongoField.columnName.equalsIgnoreCase("_id"));
-                validateType(f, mongoField);
+                mappingField.setPrimaryKey(documentField.columnName.equalsIgnoreCase("_id"));
+                validateType(f, documentField);
                 resolvedFields.add(mappingField);
             }
         }
@@ -81,6 +82,7 @@ class FieldResolver {
             case INT32: return QueryDataType.INT;
             case INT64: return QueryDataType.BIGINT;
             case DOUBLE: return QueryDataType.DOUBLE;
+            case BOOLEAN: return QueryDataType.BOOLEAN;
             case TIMESTAMP:
             case DATE_TIME:
                 return QueryDataType.TIMESTAMP;
@@ -92,16 +94,16 @@ class FieldResolver {
         }
     }
 
-    private void validateType(MappingField field, MongoField mongoField) {
-        QueryDataType type = resolveType(mongoField.columnType);
+    private void validateType(MappingField field, DocumentField documentField) {
+        QueryDataType type = resolveType(documentField.columnType);
         if (!field.type().equals(type) && !type.getConverter().canConvertTo(field.type().getTypeFamily())) {
             throw new IllegalStateException("Type " + field.type().getTypeFamily() + " of field " + field.name()
                     + " does not match db type " + type.getTypeFamily());
         }
     }
 
-    Map<String, MongoField> readFields(Map<String, String> options) {
-        Map<String, MongoField> fields = new HashMap<>();
+    Map<String, DocumentField> readFields(Map<String, String> options) {
+        Map<String, DocumentField> fields = new HashMap<>();
         try (MongoClient client = connect(options)) {
             String databaseName = requireNonNull(options.get(DATABASE_NAME_OPTION),
                     DATABASE_NAME_OPTION + " option must be provided");
@@ -122,7 +124,7 @@ class FieldResolver {
                     String bsonTypeName = (String) props.get("bsonType");
                     BsonType bsonType = resolveTypeByName(bsonTypeName);
 
-                    fields.put(property.getKey(), new MongoField(bsonType, property.getKey()));
+                    fields.put(property.getKey(), new DocumentField(bsonType, property.getKey()));
                 }
             } else {
                 // fall back to sampling
@@ -137,7 +139,7 @@ class FieldResolver {
                     if (entry.getValue() == null) {
                         continue;
                     }
-                    MongoField field = new MongoField(resolveTypeFromJava(entry.getValue()), entry.getKey());
+                    DocumentField field = new DocumentField(resolveTypeFromJava(entry.getValue()), entry.getKey());
                     fields.put(entry.getKey(), field);
                 }
             }
@@ -169,20 +171,21 @@ class FieldResolver {
         }
     }
 
-    static class MongoField {
+    @VisibleForTesting
+    static class DocumentField {
 
-        final BsonType columnType;
         final String columnName;
+        final BsonType columnType;
 
-        MongoField(BsonType columnType, String columnName) {
+        DocumentField(BsonType columnType, String columnName) {
             this.columnType = requireNonNull(columnType);
             this.columnName = requireNonNull(columnName);
         }
 
         @Override
         public String toString() {
-            return "DbField{" +
-                    "name='" + columnName + '\'' +
+            return "MongoField{" +
+                    "columnName='" + columnName + '\'' +
                     ", typeName='" + columnType + '\'' +
                     '}';
         }

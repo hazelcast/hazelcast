@@ -16,6 +16,7 @@
 package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.function.FunctionEx;
+import com.mongodb.MongoClientSettings;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import org.bson.BsonDocumentReader;
 import org.bson.Document;
@@ -30,7 +31,12 @@ import static com.mongodb.MongoClientSettings.getDefaultCodecRegistry;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
-final class Mappers {
+/**
+ * Defines mappers used by MongoDB connector.
+ * This includes {@linkplain MongoClientSettings#getDefaultCodecRegistry}
+ * with {@link PojoCodecProvider} added for out-of-the-box POJO support.
+ */
+public final class Mappers {
 
     private static final Mappers INSTANCE = new Mappers();
     private final CodecRegistry pojoCodecRegistry;
@@ -48,7 +54,7 @@ final class Mappers {
     }
 
     @Nonnull
-    static CodecRegistry defaultCodecRegistry() {
+    public static CodecRegistry defaultCodecRegistry() {
         return INSTANCE.pojoCodecRegistry;
     }
 

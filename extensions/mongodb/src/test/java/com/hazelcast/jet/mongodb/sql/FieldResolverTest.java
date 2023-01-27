@@ -15,7 +15,7 @@
  */
 package com.hazelcast.jet.mongodb.sql;
 
-import com.hazelcast.jet.mongodb.sql.FieldResolver.MongoField;
+import com.hazelcast.jet.mongodb.sql.FieldResolver.DocumentField;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -82,7 +82,7 @@ public class FieldResolverTest {
             readOpts.put("connectionString", mongoContainer.getConnectionString());
             readOpts.put("database", databaseName);
             readOpts.put("collection", collectionName);
-            Map<String, MongoField> fields = resolver.readFields(readOpts);
+            Map<String, DocumentField> fields = resolver.readFields(readOpts);
             assertThat(fields).containsOnlyKeys("firstName", "lastName", "birthYear");
             assertThat(fields.get("lastName").columnType).isEqualTo(BsonType.STRING);
             assertThat(fields.get("birthYear").columnType).isEqualTo(BsonType.INT32);
@@ -107,7 +107,7 @@ public class FieldResolverTest {
             readOpts.put("connectionString", mongoContainer.getConnectionString());
             readOpts.put("database", databaseName);
             readOpts.put("collection", collectionName);
-            Map<String, MongoField> fields = resolver.readFields(readOpts);
+            Map<String, DocumentField> fields = resolver.readFields(readOpts);
             assertThat(fields).containsOnlyKeys("_id", "firstName", "lastName", "birthYear");
             assertThat(fields.get("lastName").columnType).isEqualTo(BsonType.STRING);
             assertThat(fields.get("birthYear").columnType).isEqualTo(BsonType.INT32);

@@ -16,11 +16,14 @@
 package com.hazelcast.jet.mongodb.sql;
 
 
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
+import com.hazelcast.sql.impl.extract.QueryTarget;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -28,11 +31,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static java.util.stream.Collectors.toList;
+
 public class MongoTable extends JetTable {
 
-    private final String databaseName;
-    private final String collectionName;
+    final String databaseName;
+    final String collectionName;
     private final Map<String, String> options;
+    final String connectionString;
 
     public MongoTable(
             @Nonnull String schemaName,
@@ -47,6 +53,31 @@ public class MongoTable extends JetTable {
         this.databaseName = databaseName;
         this.collectionName = collectionName;
         this.options = options;
+        this.connectionString = options.get(Options.CONNECTION_STRING_OPTION);
+    }
+
+    String[] paths() {
+        return getFields().stream()
+                          .map(field -> ((MongoTableField) field).externalName)
+                          .toArray(String[]::new);
+    }
+
+    QueryDataType[] types() {
+        return getFields().stream()
+                          .map(TableField::getType)
+                          .toArray(QueryDataType[]::new);
+    }
+
+    SupplierEx<QueryTarget> queryTargetSupplier() {
+        List<String> fields = getFields().stream()
+                                          .map(TableField::getName)
+                                          .collect(toList());
+        return () -> new DocumentQueryTarget(fields);
+    }
+
+    boolean hasMappingForId() {
+        return getFields().stream()
+                          .anyMatch(f -> "_id".equalsIgnoreCase(((MongoTableField) f).externalName));
     }
 
     @Override
