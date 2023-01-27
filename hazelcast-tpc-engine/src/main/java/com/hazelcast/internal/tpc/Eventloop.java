@@ -58,7 +58,7 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
  *     <li>Tasks from some asynchronous eventing system that interacts with I/O. </li>>
  * </ol>
  */
-@SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:declarationorder", "rawtypes"})
+@SuppressWarnings({"checkstyle:VisibilityModifier", "rawtypes"})
 public abstract class Eventloop implements Executor {
 
     protected static final AtomicReferenceFieldUpdater<Eventloop, State> STATE
@@ -82,15 +82,16 @@ public abstract class Eventloop implements Executor {
     protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     protected final MpmcArrayQueue concurrentTaskQueue;
 
-    protected final Scheduler scheduler;
-    protected final boolean spin;
-    private final int clockRefreshInterval;
-
     protected Unsafe unsafe;
     protected final Thread eventloopThread;
     protected volatile State state = NEW;
     protected long earliestDeadlineNanos = -1;
 
+    protected final Scheduler scheduler;
+    protected final boolean spin;
+    private final int clockRefreshInterval;
+
+    @SuppressWarnings("checkstyle:DeclarationOrder")
     TpcEngine engine;
 
     private final FutAllocator futAllocator;
@@ -98,6 +99,7 @@ public abstract class Eventloop implements Executor {
     private final BitSet allowedCpus;
     private final CountDownLatch terminationLatch = new CountDownLatch(1);
     private final int batchSize;
+
 
     /**
      * Creates a new {@link Eventloop}.
