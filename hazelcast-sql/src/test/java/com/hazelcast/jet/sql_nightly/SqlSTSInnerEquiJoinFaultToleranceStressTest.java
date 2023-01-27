@@ -62,8 +62,8 @@ import static org.junit.Assert.assertNotNull;
 @Category(NightlyTest.class)
 public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport {
     private static final int INITIAL_PARTITION_COUNT = 1;
-    private static final int EVENTS_PER_SINK = 25_000;
-    private static final int SINK_ATTEMPTS = 10;
+    private static final int EVENTS_PER_SINK = 10000;
+    private static final int SINK_ATTEMPTS = 25;
     protected static final int EVENTS_TO_PROCESS = EVENTS_PER_SINK * SINK_ATTEMPTS;
     protected static final int SNAPSHOT_TIMEOUT_SECONDS = 30;
 
@@ -200,27 +200,15 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
         jobRestarter.finish();
 
         if (processingGuarantee.equals(EXACTLY_ONCE)) {
-            List<Integer> dups = resultSet.values().stream().filter(cnt -> cnt > 1).collect(Collectors.toList());
-            for (Integer i : dups) {
-                System.err.println(i);
+            List<String> dups = resultSet.entrySet()
+                    .stream()
+                    .filter(entry -> entry.getValue() > 1)
+                    .map(entry -> entry.getKey())
+                    .collect(Collectors.toList());
+            for (String str : dups) {
+                System.err.println(str);
             }
             assertThat(dups.size()).isZero();
-        }
-    }
-
-    private void createTopicData(SqlService sqlService, String topicName) {
-        int itemsSank = 0;
-        for (int sink = 1; sink <= SINK_ATTEMPTS; sink++) {
-            StringBuilder queryBuilder = new StringBuilder("INSERT INTO " + topicName + " VALUES ");
-            for (int i = 1; i <= EVENTS_PER_SINK; ++i) {
-                ++itemsSank;
-                queryBuilder.append("(").append(itemsSank).append(", 'value-").append(itemsSank).append("'), ");
-            }
-            queryBuilder.append("(").append(itemsSank).append(", 'value-").append(itemsSank).append("')");
-
-            assertEquals(itemsSank, EVENTS_PER_SINK * sink);
-            sqlService.execute(queryBuilder.toString());
-            System.err.println("Items sank " + itemsSank);
         }
     }
 
@@ -273,6 +261,23 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
             job.cancel();
             assertJobStatusEventually(job, FAILED);
             this.finish = true;
+        }
+    }
+
+    private void createTopicData(SqlService sqlService, String topicName) {
+        int itemsSank = 0;
+        for (int sink = 1; sink <= SINK_ATTEMPTS; sink++) {
+            StringBuilder queryBuilder = new StringBuilder("INSERT INTO " + topicName + " VALUES ");
+            for (int i = 1; i < EVENTS_PER_SINK; ++i) {
+                ++itemsSank;
+                queryBuilder.append("(").append(itemsSank).append(", 'value-").append(itemsSank).append("'), ");
+            }
+            ++itemsSank;
+            queryBuilder.append("(").append(itemsSank).append(", 'value-").append(itemsSank).append("')");
+
+            assertEquals(itemsSank, EVENTS_PER_SINK * sink);
+            sqlService.execute(queryBuilder.toString());
+            System.err.println("Items sank " + itemsSank);
         }
     }
 }
