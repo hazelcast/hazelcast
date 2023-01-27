@@ -21,10 +21,7 @@ import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpc.logging.TpcLogger;
 import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpc.util.BoundPriorityQueue;
-import com.hazelcast.internal.tpc.util.CachedNanoClock;
 import com.hazelcast.internal.tpc.util.CircularQueue;
-import com.hazelcast.internal.tpc.util.NanoClock;
-import com.hazelcast.internal.tpc.util.StandardNanoClock;
 import com.hazelcast.internal.util.ThreadAffinityHelper;
 import org.jctools.queues.MpmcArrayQueue;
 
@@ -43,8 +40,6 @@ import static com.hazelcast.internal.tpc.Eventloop.State.NEW;
 import static com.hazelcast.internal.tpc.Eventloop.State.RUNNING;
 import static com.hazelcast.internal.tpc.Eventloop.State.SHUTDOWN;
 import static com.hazelcast.internal.tpc.Eventloop.State.TERMINATED;
-import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNegative;
-import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
 /**
@@ -420,62 +415,6 @@ public abstract class Eventloop implements Executor {
         return !concurrentTaskQueue.isEmpty();
     }
 
-    protected final class ScheduledTask implements Runnable, Comparable<ScheduledTask> {
-
-        private Fut fut;
-        private long deadlineNanos;
-        private Runnable task;
-        private long periodNanos = -1;
-        private long delayNanos = -1;
-
-        @Override
-        public void run() {
-            if (task != null) {
-                task.run();
-            }
-
-            if (periodNanos != -1 || delayNanos != -1) {
-                if (periodNanos != -1) {
-                    deadlineNanos += periodNanos;
-                } else {
-                    deadlineNanos = unsafe.nanoClock.nanoTime() + delayNanos;
-                }
-
-                if (deadlineNanos < 0) {
-                    deadlineNanos = Long.MAX_VALUE;
-                }
-
-                if (!scheduledTaskQueue.offer(this)) {
-                    logger.warning("Failed schedule task: " + this + " because there is no space in scheduledTaskQueue");
-                }
-            } else {
-                if (fut != null) {
-                    fut.complete(null);
-                }
-            }
-        }
-
-        @Override
-        public int compareTo(Eventloop.ScheduledTask that) {
-            if (that.deadlineNanos == this.deadlineNanos) {
-                return 0;
-            }
-
-            return this.deadlineNanos > that.deadlineNanos ? 1 : -1;
-        }
-
-        @Override
-        public String toString() {
-            return "ScheduledTask{"
-                    + "fut=" + fut
-                    + ", deadlineNanos=" + deadlineNanos
-                    + ", task=" + task
-                    + ", periodNanos=" + periodNanos
-                    + ", delayNanos=" + delayNanos
-                    + '}';
-        }
-    }
-
     /**
      * The {@link Runnable} containing the actual eventloop logic and is executed by by the eventloop {@link Thread}.
      */
@@ -528,145 +467,6 @@ public abstract class Eventloop implements Executor {
                     }
                 }
             }
-        }
-    }
-
-    /**
-     * Exposes methods that should only be called from within the {@link Eventloop}.
-     */
-    public abstract class Unsafe {
-
-        protected final NanoClock nanoClock;
-
-        protected Unsafe() {
-            this.nanoClock = clockRefreshInterval == 0
-                    ? new StandardNanoClock()
-                    : new CachedNanoClock(clockRefreshInterval);
-        }
-
-        public NanoClock nanoClock() {
-            return nanoClock;
-        }
-
-        /**
-         * Returns the {@link Eventloop} that belongs to this {@link Unsafe} instance.
-         *
-         * @return the Eventloop.
-         */
-        public Eventloop eventloop() {
-            return Eventloop.this;
-        }
-
-        public <E> Fut<E> newFut() {
-            return futAllocator.allocate();
-        }
-
-        /**
-         * Offers a task to be scheduled on the eventloop.
-         *
-         * @param task the task to schedule.
-         * @return true if the task was successfully offered, false otherwise.
-         */
-        public boolean offer(Runnable task) {
-            return localTaskQueue.offer(task);
-        }
-
-        /**
-         * Schedules a one shot action with the given delay.
-         *
-         * @param task  the task to execute.
-         * @param delay the delay
-         * @param unit  the unit of the delay
-         * @return true if the task was successfully scheduled.
-         * @throws NullPointerException     if task or unit is null
-         * @throws IllegalArgumentException when delay smaller than 0.
-         */
-        public boolean schedule(Runnable task, long delay, TimeUnit unit) {
-            checkNotNull(task);
-            checkNotNegative(delay, "delay");
-            checkNotNull(unit);
-
-            ScheduledTask scheduledTask = new ScheduledTask();
-            scheduledTask.task = task;
-            long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(delay);
-            if (deadlineNanos < 0) {
-                // protection against overflow
-                deadlineNanos = Long.MAX_VALUE;
-            }
-            scheduledTask.deadlineNanos = deadlineNanos;
-            return scheduledTaskQueue.offer(scheduledTask);
-        }
-
-        /**
-         * Creates a periodically executing task with a fixed delay between the completion and start of
-         * the task.
-         *
-         * @param task         the task to periodically execute.
-         * @param initialDelay the initial delay
-         * @param delay        the delay between executions.
-         * @param unit         the unit of the initial delay and delay
-         * @return true if the task was successfully executed.
-         */
-        public boolean scheduleWithFixedDelay(Runnable task, long initialDelay, long delay, TimeUnit unit) {
-            checkNotNull(task);
-            checkNotNegative(initialDelay, "initialDelay");
-            checkNotNegative(delay, "delay");
-            checkNotNull(unit);
-
-            ScheduledTask scheduledTask = new ScheduledTask();
-            scheduledTask.task = task;
-            long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(initialDelay);
-            if (deadlineNanos < 0) {
-                // protection against overflow
-                deadlineNanos = Long.MAX_VALUE;
-            }
-            scheduledTask.deadlineNanos = deadlineNanos;
-            scheduledTask.delayNanos = unit.toNanos(delay);
-            return scheduledTaskQueue.offer(scheduledTask);
-        }
-
-        /**
-         * Creates a periodically executing task with a fixed delay between the start of the task.
-         *
-         * @param task         the task to periodically execute.
-         * @param initialDelay the initial delay
-         * @param period       the period between executions.
-         * @param unit         the unit of the initial delay and delay
-         * @return true if the task was successfully executed.
-         */
-        public boolean scheduleAtFixedRate(Runnable task, long initialDelay, long period, TimeUnit unit) {
-            checkNotNull(task);
-            checkNotNegative(initialDelay, "initialDelay");
-            checkNotNegative(period, "period");
-            checkNotNull(unit);
-
-            ScheduledTask scheduledTask = new ScheduledTask();
-            scheduledTask.task = task;
-            long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(initialDelay);
-            if (deadlineNanos < 0) {
-                // protection against overflow
-                deadlineNanos = Long.MAX_VALUE;
-            }
-            scheduledTask.deadlineNanos = deadlineNanos;
-            scheduledTask.periodNanos = unit.toNanos(period);
-            return scheduledTaskQueue.offer(scheduledTask);
-        }
-
-        public Fut sleep(long delay, TimeUnit unit) {
-            checkNotNegative(delay, "delay");
-            checkNotNull(unit, "unit");
-
-            Fut fut = newFut();
-            ScheduledTask scheduledTask = new ScheduledTask();
-            scheduledTask.fut = fut;
-            long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(delay);
-            if (deadlineNanos < 0) {
-                // protection against overflow
-                deadlineNanos = Long.MAX_VALUE;
-            }
-            scheduledTask.deadlineNanos = deadlineNanos;
-            scheduledTaskQueue.add(scheduledTask);
-            return fut;
         }
     }
 
