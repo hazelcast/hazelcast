@@ -21,11 +21,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
-
 import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_EXTERNAL_DATASTORE_REF;
 
 public class SinkIntoJdbcSqlConnectorTest extends JdbcSqlTestSupport {
@@ -157,6 +152,7 @@ public class SinkIntoJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         createTable(tableName);
         createMapping(tableName);
 
+        // Insert items with JDBC to make sure DB is populated without using Jet
         insertItems(tableName, 2);
 
         assertJdbcRowsAnyOrder(tableName,
@@ -170,16 +166,5 @@ public class SinkIntoJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 new Row(0, "name-2"),
                 new Row(1, "name-3")
         );
-    }
-
-    public static void insertItems(String tableName, int count) throws SQLException {
-        try (Connection connection = DriverManager.getConnection(dbConnectionUrl);
-             Statement statement = connection.createStatement()
-        ) {
-            for (int i = 0; i < count; i++) {
-                String sql = String.format("INSERT INTO " + tableName + " VALUES(%d, 'name-%d')", i, i);
-                statement.execute(sql);
-            }
-        }
     }
 }
