@@ -84,12 +84,13 @@ public abstract class Eventloop implements Executor {
 
     protected final Scheduler scheduler;
     protected final boolean spin;
-    private final int clockRefreshInterval;
-
-    @SuppressWarnings("checkstyle:DeclarationOrder")
-    TpcEngine engine;
 
     final PromiseAllocator promiseAllocator;
+
+    TpcEngine engine;
+
+    private final int clockRefreshInterval;
+
     private final EventloopType type;
     private final BitSet allowedCpus;
     private final CountDownLatch terminationLatch = new CountDownLatch(1);
