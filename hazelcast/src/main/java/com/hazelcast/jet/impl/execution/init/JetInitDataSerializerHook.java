@@ -40,6 +40,7 @@ import com.hazelcast.jet.impl.operation.GetJobSummaryListOperation;
 import com.hazelcast.jet.impl.operation.GetJobSuspensionCauseOperation;
 import com.hazelcast.jet.impl.operation.GetLocalJobMetricsOperation;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
+import com.hazelcast.jet.impl.operation.IsJobUserCancelledOperation;
 import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
@@ -113,6 +114,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int SQL_SUMMARY = 48;
     public static final int WRAPPING_PROCESSOR_META_SUPPLIER = 49;
     public static final int WRAPPING_PROCESSOR_SUPPLIER = 50;
+    public static final int GET_JOB_USER_CANCELLED_OP = 51;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
@@ -219,6 +221,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new WrappingProcessorMetaSupplier();
                 case WRAPPING_PROCESSOR_SUPPLIER:
                     return new WrappingProcessorSupplier();
+                case GET_JOB_USER_CANCELLED_OP:
+                    return new IsJobUserCancelledOperation();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }
