@@ -21,6 +21,11 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
+
 import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_EXTERNAL_DATASTORE_REF;
 
 public class SinkIntoJdbcSqlConnectorTest extends JdbcSqlTestSupport {
@@ -48,7 +53,7 @@ public class SinkIntoJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void insertIntoTableWithExternalName() throws Exception {
+    public void sinkIntoTableWithExternalName() throws Exception {
         createTable(tableName);
         String mappingName = "mapping_" + randomName();
         createMapping(tableName, mappingName);
@@ -59,7 +64,7 @@ public class SinkIntoJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void insertIntoTableColumnHasExternalName() throws Exception {
+    public void sinkIntoTableColumnHasExternalName() throws Exception {
         createTable(tableName);
         execute(
                 "CREATE MAPPING " + tableName + " ("
@@ -78,7 +83,7 @@ public class SinkIntoJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void insertIntoTableWithColumns() throws Exception {
+    public void sinkIntoTableWithColumns() throws Exception {
         createTable(tableName);
         createMapping(tableName);
 
@@ -91,7 +96,7 @@ public class SinkIntoJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void insertIntoTableWithColumnsColumnHasExternalName() throws Exception {
+    public void sinkIntoTableWithColumnsColumnHasExternalName() throws Exception {
         createTable(tableName);
         execute(
                 "CREATE MAPPING " + tableName + " ("
@@ -113,7 +118,7 @@ public class SinkIntoJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void insertIntoTableMultipleValues() throws Exception {
+    public void sinkIntoTableMultipleValues() throws Exception {
         createTable(tableName);
         createMapping(tableName);
 
@@ -130,7 +135,7 @@ public class SinkIntoJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
 
     @Test
-    public void insertIntoTableReverseColumnOrder() throws Exception {
+    public void sinkIntoTableReverseColumnOrder() throws Exception {
         createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(10)");
         execute(
                 "CREATE MAPPING " + tableName
@@ -148,11 +153,11 @@ public class SinkIntoJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void sinkIntoTableWithColumns() throws Exception {
+    public void upsertTableWithColumns() throws Exception {
         createTable(tableName);
         createMapping(tableName);
 
-        execute("INSERT INTO " + tableName + " (name, id) VALUES ('name-0', 0), ('name-1', 1)");
+        insertItems(tableName, 2);
 
         assertJdbcRowsAnyOrder(tableName,
                 new Row(0, "name-0"),
@@ -165,5 +170,16 @@ public class SinkIntoJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 new Row(0, "name-2"),
                 new Row(1, "name-3")
         );
+    }
+
+    public static void insertItems(String tableName, int count) throws SQLException {
+        try (Connection connection = DriverManager.getConnection(dbConnectionUrl);
+             Statement statement = connection.createStatement()
+        ) {
+            for (int i = 0; i < count; i++) {
+                String sql = String.format("INSERT INTO " + tableName + " VALUES(%d, 'name-%d')", i, i);
+                statement.execute(sql);
+            }
+        }
     }
 }
