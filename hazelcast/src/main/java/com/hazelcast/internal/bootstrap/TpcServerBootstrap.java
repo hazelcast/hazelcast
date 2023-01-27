@@ -17,6 +17,9 @@
 package com.hazelcast.internal.bootstrap;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.AdvancedNetworkConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.alto.AltoSocketConfig;
@@ -31,6 +34,7 @@ import com.hazelcast.internal.tpc.TpcEngine;
 import com.hazelcast.internal.tpc.nio.NioEventloopBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.io.UncheckedIOException;
 import java.net.BindException;
@@ -44,12 +48,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
-import static java.lang.System.getProperty;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 @SuppressWarnings("checkstyle:MagicNumber, checkstyle:")
 public class TpcServerBootstrap {
+    public static final HazelcastProperty ALTO_ENABLED = new HazelcastProperty(
+            "hazelcast.internal.alto.enabled");
+    public static final HazelcastProperty ALTO_EVENTLOOP_COUNT = new HazelcastProperty(
+            "hazelcast.internal.alto.eventloop.count");
     private static final int TERMINATE_TIMEOUT_SECONDS = 5;
 
     // todo: nothing is done with this.
@@ -63,17 +71,29 @@ public class TpcServerBootstrap {
     private final boolean enabled;
     private final Map<Eventloop, Supplier<? extends ReadHandler>> readHandlerSuppliers = new HashMap<>();
     private final List<AsyncServerSocket> serverSockets = new ArrayList<>();
+    private final Config config;
     private volatile List<Integer> clientPorts;
 
     public TpcServerBootstrap(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(TpcServerBootstrap.class);
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
-        this.enabled = Boolean.parseBoolean(getProperty("hazelcast.tpc.enabled", "false"))
-                || nodeEngine.getConfig().getAltoConfig().isEnabled();
-        logger.info("TPC: " + (enabled ? "enabled" : "disabled"));
+        this.config = nodeEngine.getConfig();
+        this.enabled = loadAltoEnabled();
         this.thisAddress = nodeEngine.getThisAddress();
         this.tpcEngine = newTpcEngine();
+    }
+
+    private boolean loadAltoEnabled() {
+        boolean enabled;
+        String enabledString = nodeEngine.getProperties().getString(ALTO_ENABLED);
+        if (enabledString != null) {
+            enabled = Boolean.parseBoolean(enabledString);
+        } else {
+            enabled = config.getAltoConfig().isEnabled();
+        }
+        logger.info("TPC: " + (enabled ? "enabled" : "disabled"));
+        return enabled;
     }
 
     public boolean isEnabled() {
@@ -102,8 +122,19 @@ public class TpcServerBootstrap {
                 "alto-eventloop"
         ) + threadId.incrementAndGet());
         configuration.setEventloopBuilder(eventloopBuilder);
-        configuration.setEventloopCount(nodeEngine.getConfig().getAltoConfig().getEventloopCount());
+        configuration.setEventloopCount(loadEventloopCount());
         return new TpcEngine(configuration);
+    }
+
+    private int loadEventloopCount() {
+        int eventloopCount;
+        String eventloopCountString = nodeEngine.getProperties().getString(ALTO_EVENTLOOP_COUNT);
+        if (eventloopCountString != null) {
+            eventloopCount = Integer.parseInt(eventloopCountString);
+        } else {
+            eventloopCount = config.getAltoConfig().getEventloopCount();
+        }
+        return eventloopCount;
     }
 
     public void start() {
@@ -120,14 +151,6 @@ public class TpcServerBootstrap {
     private void openServerSockets() {
         AltoSocketConfig clientSocketConfig = getClientSocketConfig();
 
-        if (clientSocketConfig == null) {
-            // Advanced network is enabled yet there is no configured server socket
-            // for clients. This means cluster will run but no client ports will be
-            // created, so no clients can connect to the cluster.
-            throw new InvalidConfigurationException("Missing client endpoint configuration. "
-                    + "If you have enabled alto and advanced networking, please configure a client server socket");
-        }
-
         String[] range = clientSocketConfig.getPortRange().split("-");
         int port = Integer.parseInt(range[0]);
         int limit = Integer.parseInt(range[1]);
@@ -141,8 +164,8 @@ public class TpcServerBootstrap {
 
             AsyncServerSocket serverSocket = eventloop.openTcpAsyncServerSocket();
             serverSockets.add(serverSocket);
-            int receiveBufferSize = clientSocketConfig.getReceiveBufferSize();
-            int sendBufferSize = clientSocketConfig.getSendBufferSize();
+            int receiveBufferSize = clientSocketConfig.getReceiveBufferSizeKB() * KILO_BYTE;
+            int sendBufferSize = clientSocketConfig.getSendBufferSizeKB() * KILO_BYTE;
             serverSocket.setReceiveBufferSize(receiveBufferSize);
             serverSocket.setReuseAddress(true);
             port = bind(serverSocket, port, limit);
@@ -159,22 +182,44 @@ public class TpcServerBootstrap {
 
     // public for testing
     public AltoSocketConfig getClientSocketConfig() {
-        if (nodeEngine.getConfig().getAdvancedNetworkConfig().isEnabled()) {
-            ServerSocketEndpointConfig endpointConfig = (ServerSocketEndpointConfig) nodeEngine
-                    .getConfig()
+        validateSocketConfig();
+
+        if (config.getAdvancedNetworkConfig().isEnabled()) {
+            ServerSocketEndpointConfig endpointConfig = (ServerSocketEndpointConfig) config
                     .getAdvancedNetworkConfig()
                     .getEndpointConfigs()
                     .get(EndpointQualifier.CLIENT);
-
-            if (endpointConfig == null) {
-                return null;
-            }
 
             return endpointConfig.getAltoSocketConfig();
         }
 
         // unified socket
-        return nodeEngine.getConfig().getNetworkConfig().getAltoSocketConfig();
+        return config.getNetworkConfig().getAltoSocketConfig();
+    }
+
+    private void validateSocketConfig() {
+        AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
+        if (advancedNetworkConfig.isEnabled()) {
+            AltoSocketConfig defaultAltoSocketConfig = new AltoSocketConfig();
+            Map<EndpointQualifier, EndpointConfig> endpointConfigs = advancedNetworkConfig.getEndpointConfigs();
+
+            endpointConfigs.forEach(((endpointQualifier, endpointConfig) -> {
+                if (endpointQualifier != EndpointQualifier.CLIENT
+                        && !endpointConfig.getAltoSocketConfig().equals(defaultAltoSocketConfig)) {
+                    throw new InvalidConfigurationException(
+                            "Alto socket configuration is only available for clients ports for now.");
+                }
+            }));
+
+            if (endpointConfigs.get(EndpointQualifier.CLIENT) == null) {
+                // Advanced network is enabled yet there is no configured server socket
+                // for clients. This means cluster will run but no client ports will be
+                // created, so no clients can connect to the cluster.
+                throw new InvalidConfigurationException("Missing client server socket configuration. "
+                        + "If you have enabled Alto and advanced networking, "
+                        + "please configure a client server socket.");
+            }
+        }
     }
 
     private int bind(AsyncServerSocket serverSocket, int port, int limit) {
@@ -194,7 +239,7 @@ public class TpcServerBootstrap {
             }
         }
 
-        throw new HazelcastException("Allowed TPC ports weren't enough.");
+        throw new HazelcastException("Could not find a free port in the Alto socket port range.");
     }
 
     public void shutdown() {

@@ -224,7 +224,7 @@ public class Config {
     private final Map<String, ExternalDataStoreConfig> externalDataStoreConfigs = new ConcurrentHashMap<>();
 
     // @since 5.3
-    private final AltoConfig altoConfig = new AltoConfig();
+    private AltoConfig altoConfig = new AltoConfig();
 
     public Config() {
     }
@@ -3222,9 +3222,30 @@ public class Config {
         return new ExternalDataStoreConfigReadOnly(getExternalDataStoreConfig("default"));
     }
 
+    /**
+     * Gets the Alto config. Can't return null.
+     *
+     * @return the Alto configuration
+     * @since 5.3
+     */
     @Beta
+    @Nonnull
     public AltoConfig getAltoConfig() {
         return altoConfig;
+    }
+
+    /**
+     * Sets the Alto config. Can't return null.
+     *
+     * @param altoConfig Alto configuration to be set
+     * @return this config
+     * @throws NullPointerException if altoConfig is null
+     * @since 5.3
+     */
+    @Beta
+    public @Nonnull Config setAltoConfig(@Nonnull AltoConfig altoConfig) {
+        this.altoConfig = checkNotNull(altoConfig);
+        return this;
     }
 
     /**

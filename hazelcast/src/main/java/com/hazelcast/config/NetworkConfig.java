@@ -19,10 +19,14 @@ package com.hazelcast.config;
 import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.security.jsm.HazelcastRuntimePermission;
+import com.hazelcast.spi.annotation.Beta;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
+
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Contains configuration for Network.
@@ -71,7 +75,7 @@ public class NetworkConfig {
 
     private MemcacheProtocolConfig memcacheProtocolConfig = new MemcacheProtocolConfig();
 
-    private final AltoSocketConfig altoSocketConfig = new AltoSocketConfig();
+    private AltoSocketConfig altoSocketConfig = new AltoSocketConfig();
 
     public NetworkConfig() {
         String os = StringUtil.lowerCaseInternal(System.getProperty("os.name"));
@@ -405,8 +409,33 @@ public class NetworkConfig {
         return this;
     }
 
+    /**
+     * Gets the Alto socket config.
+     *
+     * @return the Alto socket config
+     * @see com.hazelcast.config.alto.AltoConfig
+     * @since 5.3
+     */
+    @Beta
+    @Nonnull
     public AltoSocketConfig getAltoSocketConfig() {
         return altoSocketConfig;
+    }
+
+    /**
+     * Sets the Alto socket config.
+     *
+     * @param altoSocketConfig the Alto socket config to set
+     * @return this network config
+     * @throws IllegalArgumentException if altoSocketConfig is null
+     * @see com.hazelcast.config.alto.AltoConfig
+     * @since 5.3
+     */
+    @Beta
+    @Nonnull
+    public NetworkConfig setAltoSocketConfig(@Nonnull AltoSocketConfig altoSocketConfig) {
+        this.altoSocketConfig = checkNotNull(altoSocketConfig);
+        return this;
     }
 
     @Override

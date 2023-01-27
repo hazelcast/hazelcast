@@ -18,8 +18,10 @@ package com.hazelcast.config;
 
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.annotation.PrivateApi;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Objects;
 
@@ -270,6 +272,14 @@ public class ServerSocketEndpointConfig
     @Override
     public ServerSocketEndpointConfig setSSLConfig(SSLConfig sslConfig) {
         super.setSSLConfig(sslConfig);
+        return this;
+    }
+
+    @Beta
+    @Nonnull
+    @Override
+    public ServerSocketEndpointConfig setAltoSocketConfig(@Nonnull AltoSocketConfig altoSocketConfig) {
+        super.setAltoSocketConfig(altoSocketConfig);
         return this;
     }
 

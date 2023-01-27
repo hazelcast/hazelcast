@@ -16,59 +16,106 @@
 
 package com.hazelcast.config.alto;
 
-import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
-import java.util.regex.Pattern;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
+
+/**
+ * Socket configuration for Alto. In Alto, each eventloop has its own
+ * sockets.
+ *
+ * @see AltoConfig
+ * @since 5.3
+ */
+@Beta
 public class AltoSocketConfig {
-    private static final String DEFAULT_PORT_RANGE = "11000-21000";
-    private static final int DEFAULT_RECEIVE_BUFFER_SIZE = 128 * 1024;
-    private static final int DEFAULT_SEND_BUFFER_SIZE = 128 * 1024;
+    private String portRange = "11000-21000";
+    private int receiveBufferSizeKB = 128;
+    private int sendBufferSizeKB = 128;
 
-    private String portRange = DEFAULT_PORT_RANGE;
-    private int receiveBufferSize = DEFAULT_RECEIVE_BUFFER_SIZE;
-    private int sendBufferSize = DEFAULT_SEND_BUFFER_SIZE;
-
+    /**
+     * Gets the possible port range for Alto sockets to bind. Can't return
+     * null.
+     *
+     * @return the port range string
+     */
+    @Nonnull
     public String getPortRange() {
         return portRange;
     }
 
+    /**
+     * Sets the possible port range for Alto sockets to bind. Can't return
+     * null.
+     *
+     * @param portRange the port range to set
+     * @return this Alto socket config
+     * @throws IllegalArgumentException if portRange doesn't match {@code
+     *                                  \d{1,5}-\d{1,5}} regular expression
+     * @throws NullPointerException     if portRange is null
+     */
+    @Nonnull
     public AltoSocketConfig setPortRange(@Nonnull String portRange) {
-        if (!Bounds.PORT_RANGE_PATTERN.matcher(portRange).matches()) {
-            throw new InvalidConfigurationException("Invalid port definition");
+        checkNotNull(portRange);
+        if (!portRange.matches("\\d{1,5}-\\d{1,5}")) {
+            throw new IllegalArgumentException("Invalid port range");
         }
 
         this.portRange = portRange;
         return this;
     }
 
-    public int getReceiveBufferSize() {
-        return receiveBufferSize;
+    /**
+     * Gets the receive-buffer size of the Alto sockets in kilobytes.
+     *
+     * @return the receive-buffer size of the Alto sockets in kilobytes
+     * @see java.net.SocketOptions#SO_RCVBUF
+     */
+    public int getReceiveBufferSizeKB() {
+        return receiveBufferSizeKB;
     }
 
-    public AltoSocketConfig setReceiveBufferSize(int receiveBufferSize) {
-        if (receiveBufferSize < Bounds.MIN_BUFFER_SIZE || receiveBufferSize > Bounds.MAX_BUFFER_SIZE) {
-            throw new InvalidConfigurationException("Buffer size should be between "
-                    + Bounds.MIN_BUFFER_SIZE + " and " + Bounds.MAX_BUFFER_SIZE);
-        }
-
-        this.receiveBufferSize = receiveBufferSize;
+    /**
+     * Sets the receive-buffer size of the Alto sockets in kilobytes. Can't
+     * return null.
+     *
+     * @param receiveBufferSizeKB the receive-buffer size of the Alto sockets in kilobytes
+     * @return this Alto socket config
+     * @throws IllegalArgumentException if receiveBufferSizeKB isn't positive
+     * @see java.net.SocketOptions#SO_RCVBUF
+     */
+    @Nonnull
+    public AltoSocketConfig setReceiveBufferSizeKB(int receiveBufferSizeKB) {
+        this.receiveBufferSizeKB = checkPositive("receiveBufferSizeKB", receiveBufferSizeKB);
         return this;
     }
 
-    public int getSendBufferSize() {
-        return sendBufferSize;
+    /**
+     * Gets the send-buffer size of the Alto sockets in kilobytes.
+     *
+     * @return the send-buffer size of the Alto sockets in kilobytes
+     * @see java.net.SocketOptions#SO_SNDBUF
+     */
+    public int getSendBufferSizeKB() {
+        return sendBufferSizeKB;
     }
 
-    public AltoSocketConfig setSendBufferSize(int sendBufferSize) {
-        if (sendBufferSize < Bounds.MIN_BUFFER_SIZE || sendBufferSize > Bounds.MAX_BUFFER_SIZE) {
-            throw new InvalidConfigurationException("Buffer size should be between "
-                    + Bounds.MIN_BUFFER_SIZE + " and " + Bounds.MAX_BUFFER_SIZE);
-        }
-
-        this.sendBufferSize = sendBufferSize;
+    /**
+     * Sets the send-buffer size of the Alto sockets in kilobytes. Can't
+     * return null.
+     *
+     * @param sendBufferSizeKB the send-buffer size of the Alto sockets in kilobytes
+     * @return this Alto socket config
+     * @throws IllegalArgumentException if sendBufferSizeKB isn't positive
+     * @see java.net.SocketOptions#SO_SNDBUF
+     */
+    @Nonnull
+    public AltoSocketConfig setSendBufferSizeKB(int sendBufferSizeKB) {
+        this.sendBufferSizeKB = checkPositive("sendBufferSizeKB", sendBufferSizeKB);
         return this;
     }
 
@@ -81,28 +128,22 @@ public class AltoSocketConfig {
             return false;
         }
         AltoSocketConfig that = (AltoSocketConfig) o;
-        return receiveBufferSize == that.receiveBufferSize
-                && sendBufferSize == that.sendBufferSize
+        return receiveBufferSizeKB == that.receiveBufferSizeKB
+                && sendBufferSizeKB == that.sendBufferSizeKB
                 && portRange.equals(that.portRange);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(portRange, receiveBufferSize, sendBufferSize);
+        return Objects.hash(portRange, receiveBufferSizeKB, sendBufferSizeKB);
     }
 
     @Override
     public String toString() {
         return "AltoSocketConfig{"
                 + "portRange='" + portRange + '\''
-                + ", receiveBufferSize=" + receiveBufferSize
-                + ", sendBufferSize=" + sendBufferSize
+                + ", receiveBufferSizeKB=" + receiveBufferSizeKB
+                + ", sendBufferSizeKB=" + sendBufferSizeKB
                 + '}';
-    }
-
-    private static class Bounds {
-        private static final Pattern PORT_RANGE_PATTERN = Pattern.compile("\\d{1,5}-\\d{1,5}");
-        private static final int MIN_BUFFER_SIZE = 1 << 15;
-        private static final int MAX_BUFFER_SIZE = 1 << 30;
     }
 }

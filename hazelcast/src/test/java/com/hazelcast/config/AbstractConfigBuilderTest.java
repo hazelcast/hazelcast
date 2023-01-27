@@ -704,6 +704,15 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public abstract void testExternalDataStoreConfigs();
 
+    @Test
+    public abstract void testAltoConfig();
+
+    @Test
+    public abstract void testAltoSocketConfig();
+
+    @Test
+    public abstract void testAltoSocketConfigAdvanced();
+
     protected abstract Config buildAuditlogConfig();
 
     /**

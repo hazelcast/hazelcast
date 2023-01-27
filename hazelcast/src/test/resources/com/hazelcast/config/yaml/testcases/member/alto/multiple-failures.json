@@ -1,0 +1,30 @@
+{
+  "instance": {
+    "hazelcast": {
+      "alto": {
+        "eventloop-count": "12"
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/AltoConfig",
+    "pointerToViolation": "#/hazelcast/alto",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/AltoConfig",
+        "pointerToViolation": "#/hazelcast/alto",
+        "causingExceptions": [],
+        "keyword": "required",
+        "message": "required key [enabled] not found"
+      },
+      {
+        "schemaLocation": "#/definitions/AltoConfig/properties/eventloop-count",
+        "pointerToViolation": "#/hazelcast/alto/eventloop-count",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Integer, found: String"
+      }
+    ],
+    "message": "2 schema violations found"
+  }
+}
