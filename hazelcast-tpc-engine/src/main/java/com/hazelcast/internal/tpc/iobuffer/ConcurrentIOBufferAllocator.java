@@ -33,11 +33,10 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ConcurrentIOBufferAllocator implements IOBufferAllocator {
 
     // this is for debugging. We do not want to track these calls normally
-    private static final AtomicLong NEW_ALLOCATIONS = new AtomicLong(0);
-    private static final AtomicLong POOLED_ALLOCATIONS = new AtomicLong(0);
+    private static final AtomicLong NEW_ALLOCATIONS = new AtomicLong();
+    private static final AtomicLong POOLED_ALLOCATIONS = new AtomicLong();
     private static final AtomicLong ALLOCATE_CALLS = new AtomicLong();
     private static final AtomicLong RELEASE_CALLS = new AtomicLong();
-
 
     private static final ThreadLocal<Pool> POOL = new ThreadLocal<>();
 

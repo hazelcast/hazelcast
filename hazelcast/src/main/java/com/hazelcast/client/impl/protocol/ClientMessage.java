@@ -141,10 +141,7 @@ public final class ClientMessage implements OutboundFrame {
     private AsyncSocket asyncSocket;
 
     private ClientMessage() {
-
     }
-
-
 
     //Constructs client message with single frame. StartFrame.next must be null.
     private ClientMessage(Frame startFrame) {
