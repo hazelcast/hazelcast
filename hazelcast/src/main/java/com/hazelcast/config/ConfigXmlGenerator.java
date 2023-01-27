@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.alto.AltoConfig;
+import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -197,6 +199,7 @@ public class ConfigXmlGenerator {
         userCodeDeploymentConfig(gen, config);
         integrityCheckerXmlGenerator(gen, config);
         externalDataStoreConfiguration(gen, config);
+        altoConfiguration(gen, config);
 
         xml.append("</hazelcast>");
 
@@ -593,6 +596,7 @@ public class ConfigXmlGenerator {
         failureDetectorConfigXmlGenerator(gen, netCfg.getIcmpFailureDetectorConfig());
         restApiXmlGenerator(gen, netCfg);
         memcacheProtocolXmlGenerator(gen, netCfg);
+        altoSocketConfigXmlGenerator(gen, netCfg.getAltoSocketConfig());
         gen.close();
     }
 
@@ -671,6 +675,8 @@ public class ConfigXmlGenerator {
                     .node("public-address", serverSocketEndpointConfig.getPublicAddress())
                     .node("reuse-address", serverSocketEndpointConfig.isReuseAddress());
         }
+
+        altoSocketConfigXmlGenerator(gen, endpointConfig.getAltoSocketConfig());
         gen.close();
     }
 
@@ -1162,6 +1168,14 @@ public class ConfigXmlGenerator {
         gen.node("memcache-protocol", null, "enabled", c.isEnabled());
     }
 
+    private static void altoSocketConfigXmlGenerator(XmlGenerator gen, AltoSocketConfig altoSocketConfig) {
+        gen.open("alto-socket")
+                .node("port-range", altoSocketConfig.getPortRange())
+                .node("receive-buffer-size-kb", altoSocketConfig.getReceiveBufferSizeKB())
+                .node("send-buffer-size-kb", altoSocketConfig.getSendBufferSizeKB())
+                .close();
+    }
+
     private static void appendSerializationFactory(XmlGenerator gen, String elementName, Map<Integer, ?> factoryMap) {
         if (MapUtil.isNullOrEmpty(factoryMap)) {
             return;
@@ -1211,6 +1225,13 @@ public class ConfigXmlGenerator {
                     .appendProperties(externalDataStoreConfig.getProperties())
                     .close();
         }
+    }
+
+    private static void altoConfiguration(final XmlGenerator gen, final Config config) {
+        AltoConfig altoConfig = config.getAltoConfig();
+        gen.open("alto", "enabled", altoConfig.isEnabled())
+                .node("eventloop-count", altoConfig.getEventloopCount())
+                .close();
     }
 
     /**

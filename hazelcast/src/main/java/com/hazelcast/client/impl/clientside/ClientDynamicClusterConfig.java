@@ -1147,6 +1147,7 @@ public class ClientDynamicClusterConfig extends Config {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
+    @Nonnull
     @Override
     public AltoConfig getAltoConfig() {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);

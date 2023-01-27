@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
+import com.hazelcast.config.alto.AltoConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -142,6 +143,8 @@ public class ConfigCompatibilityChecker {
                 new NativeMemoryConfigChecker());
         checkCompatibleConfigs("external data store", c1, c2, c1.getExternalDataStoreConfigs(), c2.getExternalDataStoreConfigs(),
                 new ExternalDataStoreConfigChecker());
+        checkCompatibleConfigs("alto", c1, c2, singletonMap("", c1.getAltoConfig()),
+                singletonMap("", c2.getAltoConfig()), new AltoConfigChecker());
 
         return true;
     }
@@ -710,6 +713,13 @@ public class ConfigCompatibilityChecker {
         }
     }
 
+    private static class AltoConfigChecker extends ConfigChecker<AltoConfig> {
+        @Override
+        boolean check(AltoConfig c1, AltoConfig c2) {
+            return nullSafeEqual(c1, c2);
+        }
+    }
+
 
     public static class CPSubsystemConfigChecker extends ConfigChecker<CPSubsystemConfig> {
 
@@ -1197,7 +1207,8 @@ public class ConfigCompatibilityChecker {
                     && REST_API_CONFIG_CHECKER.check(c1.getRestApiConfig(), c2.getRestApiConfig())
                     && MEMCACHE_PROTOCOL_CONFIG_CHECKER.check(
                     c1.getMemcacheProtocolConfig(),
-                    c2.getMemcacheProtocolConfig());
+                    c2.getMemcacheProtocolConfig())
+                    && nullSafeEqual(c1.getAltoSocketConfig(), c2.getAltoSocketConfig());
         }
     }
 
@@ -1354,7 +1365,8 @@ public class ConfigCompatibilityChecker {
                     && (c1.getSocketConnectTimeoutSeconds() == c2.getSocketConnectTimeoutSeconds())
                     && (c1.getSocketLingerSeconds() == c2.getSocketLingerSeconds())
                     && (c1.getSocketRcvBufferSizeKb() == c2.getSocketRcvBufferSizeKb())
-                    && (c1.getSocketSendBufferSizeKb() == c2.getSocketSendBufferSizeKb());
+                    && (c1.getSocketSendBufferSizeKb() == c2.getSocketSendBufferSizeKb())
+                    && nullSafeEqual(c1.getAltoSocketConfig(), c2.getAltoSocketConfig());
 
             if (c1 instanceof ServerSocketEndpointConfig) {
                 ServerSocketEndpointConfig s1 = (ServerSocketEndpointConfig) c1;

@@ -17,7 +17,6 @@
 package com.hazelcast.config.alto;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -50,16 +49,16 @@ public class AltoSocketConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testReceiveSize() {
-        getAltoSocketConfig().setReceiveBufferSize(1 << 20);
+        getAltoSocketConfig().setReceiveBufferSizeKB(1024);
         HazelcastInstance hz = createHazelcastInstance(config);
-        assertEquals(1 << 20, getClientSocketConfig(hz).getReceiveBufferSize());
+        assertEquals(1024, getClientSocketConfig(hz).getReceiveBufferSizeKB());
     }
 
     @Test
     public void testSendSize() {
-        getAltoSocketConfig().setSendBufferSize(1 << 20);
+        getAltoSocketConfig().setSendBufferSizeKB(1024);
         HazelcastInstance hz = createHazelcastInstance(config);
-        assertEquals(1 << 20, getClientSocketConfig(hz).getSendBufferSize());
+        assertEquals(1024, getClientSocketConfig(hz).getSendBufferSizeKB());
     }
 
     @Test
@@ -90,6 +89,13 @@ public class AltoSocketConfigTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testCreatingHazelcastInstanceThrows_whenPortRangeMatchesButDecreasing() {
+        // 13000-12000 will match the regex in setPortRange() but should throw
+        getAltoSocketConfig().setPortRange("13000-12000");
+        assertThrows(HazelcastException.class, () -> createHazelcastInstance(config));
+    }
+
+    @Test
     public void testClientPortsWith3Members() {
         getAltoSocketConfig().setPortRange("13000-14000");
         HazelcastInstance[] hz = createHazelcastInstances(config, 3);
@@ -115,16 +121,14 @@ public class AltoSocketConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testConfigBounds() {
+    public void testConfigValidation() {
         AltoSocketConfig altoSocketConfig = getAltoSocketConfig();
-        assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setReceiveBufferSize(1 << 15 - 1));
-        assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setReceiveBufferSize(1 << 30 + 1));
-        assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setSendBufferSize(1 << 15 - 1));
-        assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setSendBufferSize(1 << 30 + 1));
+        assertThrows(IllegalArgumentException.class, () -> altoSocketConfig.setReceiveBufferSizeKB(0));
+        assertThrows(IllegalArgumentException.class, () -> altoSocketConfig.setSendBufferSizeKB(0));
 
-        assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setPortRange("alto 4ever"));
-        assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setPortRange("5701"));
-        assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setPortRange("123123-123124"));
+        assertThrows(IllegalArgumentException.class, () -> altoSocketConfig.setPortRange("alto 4ever"));
+        assertThrows(IllegalArgumentException.class, () -> altoSocketConfig.setPortRange("5701"));
+        assertThrows(IllegalArgumentException.class, () -> altoSocketConfig.setPortRange("123123-123124"));
     }
 
     @Test
