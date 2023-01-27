@@ -41,9 +41,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.SqlDialectFactoryImpl;
-import org.apache.calcite.sql.dialect.H2SqlDialect;
-import org.apache.calcite.sql.dialect.MysqlSqlDialect;
-import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -160,6 +157,19 @@ public class JdbcSqlConnector implements SqlConnector {
         }
     }
 
+    private static Set<String> readPrimaryKeyColumns(String externalTableName, DatabaseMetaData databaseMetaData) {
+        Set<String> pkColumns = new HashSet<>();
+        try (ResultSet resultSet = databaseMetaData.getPrimaryKeys(null, null, externalTableName)) {
+            while (resultSet.next()) {
+                String columnName = resultSet.getString("COLUMN_NAME");
+                pkColumns.add(columnName);
+            }
+        } catch (SQLException e) {
+            throw new HazelcastException("Could not read primary key columns for table " + externalTableName, e);
+        }
+        return pkColumns;
+    }
+
     private static Map<String, DbField> readColumns(String externalTableName, DatabaseMetaData databaseMetaData,
                                                     Set<String> pkColumns) {
         Map<String, DbField> fields = new LinkedHashMap<>();
@@ -178,19 +188,6 @@ public class JdbcSqlConnector implements SqlConnector {
             throw new HazelcastException("Could not read columns for table " + externalTableName, e);
         }
         return fields;
-    }
-
-    private static Set<String> readPrimaryKeyColumns(String externalTableName, DatabaseMetaData databaseMetaData) {
-        Set<String> pkColumns = new HashSet<>();
-        try (ResultSet resultSet = databaseMetaData.getPrimaryKeys(null, null, externalTableName)) {
-            while (resultSet.next()) {
-                String columnName = resultSet.getString("COLUMN_NAME");
-                pkColumns.add(columnName);
-            }
-        } catch (SQLException e) {
-            throw new HazelcastException("Could not read primary key columns for table " + externalTableName, e);
-        }
-        return pkColumns;
     }
 
     private void closeDataSource(DataSource dataSource) {
@@ -380,18 +377,6 @@ public class JdbcSqlConnector implements SqlConnector {
         );
     }
 
-    // Returns if upsert is supported for the given dialect
-    protected boolean isUpsertSupported(JdbcTable jdbcTable) {
-        boolean result = false;
-        SqlDialect dialect = jdbcTable.sqlDialect();
-        if (dialect instanceof MysqlSqlDialect ||
-            dialect instanceof PostgresqlSqlDialect ||
-            dialect instanceof H2SqlDialect) {
-            result = true;
-        }
-        return result;
-    }
-
     @Nonnull
     @Override
     public Vertex sinkProcessor(@Nonnull DAG dag, @Nonnull Table table) {
@@ -399,10 +384,10 @@ public class JdbcSqlConnector implements SqlConnector {
 
         // If dialect is supported
         if (UpsertBuilder.isUpsertDialectSupported(jdbcTable)) {
-
             // Get the upsert statement
             String upsertStatement = UpsertBuilder.getUpsertStatement(jdbcTable);
 
+            // Create Vertex with the UPSERT statement
             return dag.newUniqueVertex(
                     "sinkProcessor(" + jdbcTable.getExternalName() + ")",
                     new UpsertProcessorSupplier(
@@ -412,7 +397,7 @@ public class JdbcSqlConnector implements SqlConnector {
                     )
             );
         }
-        // Unsupported dialect. Execute the INSERT statement
+        // Unsupported dialect. Create Vertex with the INSERT statement
         VertexWithInputConfig vertexWithInputConfig = insertProcessor(dag, table);
         return vertexWithInputConfig.vertex();
     }
