@@ -34,7 +34,7 @@ public abstract class Unsafe {
 
     protected final NanoClock nanoClock;
     private final Eventloop eventloop;
-    private final FutAllocator futAllocator;
+    private final PromiseAllocator promiseAllocator;
     private final CircularQueue<Runnable> localTaskQueue;
     private final PriorityQueue<ScheduledTask> scheduledTaskQueue;
 
@@ -42,7 +42,7 @@ public abstract class Unsafe {
         this.eventloop = checkNotNull(eventloop, "eventloop");
         this.localTaskQueue = eventloop.localTaskQueue;
         this.scheduledTaskQueue = eventloop.scheduledTaskQueue;
-        this.futAllocator = eventloop.futAllocator;
+        this.promiseAllocator = eventloop.promiseAllocator;
         this.nanoClock = eventloop.clockRefreshInterval == 0
                 ? new StandardNanoClock()
                 : new CachedNanoClock(eventloop.clockRefreshInterval);
@@ -67,13 +67,13 @@ public abstract class Unsafe {
     }
 
     /**
-     * Returns a new Fut.
+     * Returns a new Promise.
      *
-     * @return the future.
-     * @param <E> future.
+     * @return the promise.
+     * @param <E> the type of the return value.
      */
-    public final <E> Fut<E> newFut() {
-        return futAllocator.allocate();
+    public final <E> Promise<E> newPromise() {
+        return promiseAllocator.allocate();
     }
 
     /**
@@ -167,13 +167,13 @@ public abstract class Unsafe {
         return scheduledTaskQueue.offer(scheduledTask);
     }
 
-    public final Fut sleep(long delay, TimeUnit unit) {
+    public final Promise sleep(long delay, TimeUnit unit) {
         checkNotNegative(delay, "delay");
         checkNotNull(unit, "unit");
 
-        Fut fut = newFut();
+        Promise promise = newPromise();
         ScheduledTask scheduledTask = new ScheduledTask(eventloop);
-        scheduledTask.fut = fut;
+        scheduledTask.promise = promise;
         long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(delay);
         if (deadlineNanos < 0) {
             // protection against overflow
@@ -181,6 +181,6 @@ public abstract class Unsafe {
         }
         scheduledTask.deadlineNanos = deadlineNanos;
         scheduledTaskQueue.add(scheduledTask);
-        return fut;
+        return promise;
     }
 }

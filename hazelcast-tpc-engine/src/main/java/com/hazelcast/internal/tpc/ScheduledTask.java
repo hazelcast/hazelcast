@@ -19,7 +19,7 @@ package com.hazelcast.internal.tpc;
 final class ScheduledTask implements Runnable, Comparable<ScheduledTask> {
 
     final Eventloop eventloop;
-    Fut fut;
+    Promise promise;
     long deadlineNanos;
     Runnable task;
     long periodNanos = -1;
@@ -50,8 +50,8 @@ final class ScheduledTask implements Runnable, Comparable<ScheduledTask> {
                 eventloop.logger.warning("Failed schedule task: " + this + " because there is no space in scheduledTaskQueue");
             }
         } else {
-            if (fut != null) {
-                fut.complete(null);
+            if (promise != null) {
+                promise.complete(null);
             }
         }
     }
@@ -69,7 +69,7 @@ final class ScheduledTask implements Runnable, Comparable<ScheduledTask> {
     @Override
     public String toString() {
         return "ScheduledTask{"
-                + "fut=" + fut
+                + "promise=" + promise
                 + ", deadlineNanos=" + deadlineNanos
                 + ", task=" + task
                 + ", periodNanos=" + periodNanos
