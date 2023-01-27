@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.connector.jdbc;
+package com.hazelcast.jet.sql.impl.connector.jdbc.postgres;
 
+import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcTable;
 import org.apache.calcite.sql.SqlDialect;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-class H2UpsertQueryBuilder {
+/**
+ * Builder for upsert statement
+ */
+public class PostgresUpsertQueryBuilder {
 
     private final String query;
 
@@ -30,15 +34,15 @@ class H2UpsertQueryBuilder {
 
     private final List<String> quotedPrimaryKeys;
 
-    H2UpsertQueryBuilder(JdbcTable jdbcTable) {
+    public PostgresUpsertQueryBuilder(JdbcTable jdbcTable) {
         SqlDialect sqlDialect = jdbcTable.sqlDialect();
-
         // Quote identifiers
         quotedTableName = sqlDialect.quoteIdentifier(jdbcTable.getExternalName());
         quotedColumnNames = jdbcTable.dbFieldNames()
                 .stream()
                 .map(sqlDialect::quoteIdentifier)
                 .collect(Collectors.toList());
+
         quotedPrimaryKeys = jdbcTable.getPrimaryKeyList()
                 .stream()
                 .map(sqlDialect::quoteIdentifier)
@@ -47,24 +51,18 @@ class H2UpsertQueryBuilder {
 
         StringBuilder stringBuilder = new StringBuilder();
 
-        getMergeClause(stringBuilder);
-        getKeyClause(stringBuilder);
+        getInsertClause(stringBuilder);
         getValuesClause(stringBuilder);
+        getOnConflictClause(stringBuilder);
 
         query = stringBuilder.toString();
     }
 
-    void getMergeClause(StringBuilder stringBuilder) {
-        stringBuilder.append("MERGE INTO ")
+    void getInsertClause(StringBuilder stringBuilder) {
+        stringBuilder.append("INSERT INTO ")
                 .append(quotedTableName)
                 .append(" (")
                 .append(String.join(",", quotedColumnNames))
-                .append(") ");
-    }
-
-    void getKeyClause(StringBuilder stringBuilder) {
-        stringBuilder.append("KEY (")
-                .append(String.join(",", quotedPrimaryKeys))
                 .append(") ");
     }
 
@@ -73,10 +71,23 @@ class H2UpsertQueryBuilder {
                 .map(dbFieldName -> "?")
                 .collect(Collectors.joining(","));
 
-        stringBuilder.append("VALUES (").append(values).append(")");
+        stringBuilder.append("VALUES (").append(values).append(") ");
     }
 
-    String query() {
+    void getOnConflictClause(StringBuilder stringBuilder) {
+        String primaryKeys = String.join(",", quotedPrimaryKeys);
+
+        String values = quotedColumnNames.stream()
+                .map(dbFieldName -> dbFieldName + " = EXCLUDED." + dbFieldName)
+                .collect(Collectors.joining(","));
+
+        stringBuilder.append("ON CONFLICT (").append(primaryKeys).append(") DO UPDATE SET ").append(values);
+    }
+
+    /**
+     * Returns the built upsert statement
+     */
+    public String query() {
         return query;
     }
 }

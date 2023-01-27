@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.connector.jdbc;
+package com.hazelcast.jet.sql.impl.connector.jdbc.postgres;
 
+import com.hazelcast.jet.sql.impl.connector.jdbc.SinkJdbcSqlConnectorTest;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
 @Category(NightlyTest.class)
-public class PostgreSQLSinkIntoJdbcSqlConnectorTest extends SinkIntoJdbcSqlConnectorTest {
+public class PostgreSinkJdbcSqlConnectorTest extends SinkJdbcSqlConnectorTest {
 
     @BeforeClass
     public static void beforeClass() {

@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.connector.jdbc;
+package com.hazelcast.jet.sql.impl.connector.jdbc.mysql;
 
+import com.hazelcast.jet.sql.impl.connector.jdbc.SinkJdbcSqlConnectorTest;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
 @Category(NightlyTest.class)
-public class MySQLSinkIntoJdbcSqlConnectorTest extends SinkIntoJdbcSqlConnectorTest {
+public class MySQLSinkIntoJdbcSqlConnectorTest extends SinkJdbcSqlConnectorTest {
 
     @BeforeClass
     public static void beforeClass() {

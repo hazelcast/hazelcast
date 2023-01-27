@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.connector.jdbc;
+package com.hazelcast.jet.sql.impl.connector.jdbc.h2;
 
+import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcTable;
 import org.apache.calcite.sql.SqlDialect;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-class PostgreSQLUpsertQueryBuilder {
+/**
+ * Builder for upsert statement
+ */
+public class H2UpsertQueryBuilder {
 
     private final String query;
 
@@ -30,15 +34,15 @@ class PostgreSQLUpsertQueryBuilder {
 
     private final List<String> quotedPrimaryKeys;
 
-    PostgreSQLUpsertQueryBuilder(JdbcTable jdbcTable) {
+    public H2UpsertQueryBuilder(JdbcTable jdbcTable) {
         SqlDialect sqlDialect = jdbcTable.sqlDialect();
+
         // Quote identifiers
         quotedTableName = sqlDialect.quoteIdentifier(jdbcTable.getExternalName());
         quotedColumnNames = jdbcTable.dbFieldNames()
                 .stream()
                 .map(sqlDialect::quoteIdentifier)
                 .collect(Collectors.toList());
-
         quotedPrimaryKeys = jdbcTable.getPrimaryKeyList()
                 .stream()
                 .map(sqlDialect::quoteIdentifier)
@@ -47,18 +51,24 @@ class PostgreSQLUpsertQueryBuilder {
 
         StringBuilder stringBuilder = new StringBuilder();
 
-        getInsertClause(stringBuilder);
+        getMergeClause(stringBuilder);
+        getKeyClause(stringBuilder);
         getValuesClause(stringBuilder);
-        getOnConflictClause(stringBuilder);
 
         query = stringBuilder.toString();
     }
 
-    void getInsertClause(StringBuilder stringBuilder) {
-        stringBuilder.append("INSERT INTO ")
+    void getMergeClause(StringBuilder stringBuilder) {
+        stringBuilder.append("MERGE INTO ")
                 .append(quotedTableName)
                 .append(" (")
                 .append(String.join(",", quotedColumnNames))
+                .append(") ");
+    }
+
+    void getKeyClause(StringBuilder stringBuilder) {
+        stringBuilder.append("KEY (")
+                .append(String.join(",", quotedPrimaryKeys))
                 .append(") ");
     }
 
@@ -67,20 +77,13 @@ class PostgreSQLUpsertQueryBuilder {
                 .map(dbFieldName -> "?")
                 .collect(Collectors.joining(","));
 
-        stringBuilder.append("VALUES (").append(values).append(") ");
+        stringBuilder.append("VALUES (").append(values).append(")");
     }
 
-    void getOnConflictClause(StringBuilder stringBuilder) {
-        String primaryKeys = String.join(",", quotedPrimaryKeys);
-
-        String values = quotedColumnNames.stream()
-                .map(dbFieldName -> dbFieldName + " = EXCLUDED." + dbFieldName)
-                .collect(Collectors.joining(","));
-
-        stringBuilder.append("ON CONFLICT (").append(primaryKeys).append(") DO UPDATE SET ").append(values);
-    }
-
-    String query() {
+    /**
+     * Returns the built upsert statement
+     */
+    public String query() {
         return query;
     }
 }

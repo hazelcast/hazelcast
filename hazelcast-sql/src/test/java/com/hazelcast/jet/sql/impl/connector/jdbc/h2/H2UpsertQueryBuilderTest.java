@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.connector.jdbc;
+package com.hazelcast.jet.sql.impl.connector.jdbc.h2;
 
+import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcTable;
 import org.apache.calcite.sql.SqlDialect;
 import org.junit.Before;
 import org.junit.Test;

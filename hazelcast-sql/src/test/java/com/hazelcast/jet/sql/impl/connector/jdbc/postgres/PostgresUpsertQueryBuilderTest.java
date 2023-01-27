@@ -14,11 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.connector.jdbc;
+package com.hazelcast.jet.sql.impl.connector.jdbc.postgres;
 
+import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcTable;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.sql.SqlDialect;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
@@ -29,7 +35,9 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
-public class MySQLUpsertQueryBuilderTest {
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
+public class PostgresUpsertQueryBuilderTest {
 
     @Mock
     JdbcTable jdbcTable;
@@ -42,28 +50,29 @@ public class MySQLUpsertQueryBuilderTest {
         MockitoAnnotations.openMocks(this);
 
         when(jdbcTable.getExternalName()).thenReturn("table1");
+        when(jdbcTable.getPrimaryKeyList()).thenReturn(Arrays.asList("pk1", "pk2"));
         when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
         when(jdbcTable.sqlDialect()).thenReturn(sqlDialect);
 
         when(sqlDialect.quoteIdentifier(anyString())).thenAnswer((InvocationOnMock invocation) -> {
             Object argument = invocation.getArguments()[0];
-            return "`" + argument + "`";
+            return "\"" + argument + "\"";
         });
     }
 
     @Test
     public void testGetInsertClause() {
-        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
+        PostgresUpsertQueryBuilder builder = new PostgresUpsertQueryBuilder(jdbcTable);
         StringBuilder stringBuilder = new StringBuilder();
         builder.getInsertClause(stringBuilder);
 
         String insertClause = stringBuilder.toString();
-        assertEquals("INSERT INTO `table1` (`field1`,`field2`) ", insertClause);
+        assertEquals("INSERT INTO \"table1\" (\"field1\",\"field2\") ", insertClause);
     }
 
     @Test
     public void testGetValuesClause() {
-        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
+        PostgresUpsertQueryBuilder builder = new PostgresUpsertQueryBuilder(jdbcTable);
         StringBuilder stringBuilder = new StringBuilder();
         builder.getValuesClause(stringBuilder);
 
@@ -72,21 +81,22 @@ public class MySQLUpsertQueryBuilderTest {
     }
 
     @Test
-    public void testGetOnDuplicateClause() {
-        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
+    public void testGetOnConflictClause() {
+        PostgresUpsertQueryBuilder builder = new PostgresUpsertQueryBuilder(jdbcTable);
         StringBuilder stringBuilder = new StringBuilder();
-        builder.getOnDuplicateClause(stringBuilder);
+        builder.getOnConflictClause(stringBuilder);
 
         String valuesClause = stringBuilder.toString();
-        assertEquals("ON DUPLICATE KEY UPDATE `field1` = VALUES(`field1`),`field2` = VALUES(`field2`)",
-                valuesClause);
+        assertEquals("ON CONFLICT (\"pk1\",\"pk2\") " +
+                     "DO UPDATE SET \"field1\" = EXCLUDED.\"field1\",\"field2\" = EXCLUDED.\"field2\"", valuesClause);
     }
 
     @Test
     public void testQuery() {
-        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
+        PostgresUpsertQueryBuilder builder = new PostgresUpsertQueryBuilder(jdbcTable);
         String result = builder.query();
-        assertEquals("INSERT INTO `table1` (`field1`,`field2`) VALUES (?,?) " +
-                     "ON DUPLICATE KEY UPDATE `field1` = VALUES(`field1`),`field2` = VALUES(`field2`)", result);
+        String expected = "INSERT INTO \"table1\" (\"field1\",\"field2\") VALUES (?,?) ON CONFLICT (\"pk1\",\"pk2\") " +
+                          "DO UPDATE SET \"field1\" = EXCLUDED.\"field1\",\"field2\" = EXCLUDED.\"field2\"";
+        assertEquals(expected, result);
     }
 }

@@ -14,21 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.connector.jdbc;
+package com.hazelcast.jet.sql.impl.connector.jdbc.mysql;
 
+import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcTable;
 import org.apache.calcite.sql.SqlDialect;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-class MySQLUpsertQueryBuilder {
+/**
+ * Builder for upsert statement
+ */
+public class MySQLUpsertQueryBuilder {
 
     private final String query;
 
     private final String quotedTableName;
     private final List<String> quotedColumnNames;
 
-    MySQLUpsertQueryBuilder(JdbcTable jdbcTable) {
+    public MySQLUpsertQueryBuilder(JdbcTable jdbcTable) {
         SqlDialect sqlDialect = jdbcTable.sqlDialect();
 
         // Quote identifiers
@@ -71,7 +75,10 @@ class MySQLUpsertQueryBuilder {
         stringBuilder.append("ON DUPLICATE KEY UPDATE ").append(values);
     }
 
-    String query() {
+    /**
+     * Returns the built upsert statement
+     */
+    public String query() {
         return query;
     }
 }
