@@ -31,10 +31,10 @@ package com.hazelcast.internal.tpc.util;
  */
 public interface NanoClock {
 
-     /**
-      * Returns the time in nanoseconds from when this NanoClock was created.
-      *
-      * @return the time in nanoseconds.
-      */
-     long nanoTime();
+    /**
+     * Returns the time in nanoseconds from when this NanoClock was created.
+     *
+     * @return the time in nanoseconds.
+     */
+    long nanoTime();
 }

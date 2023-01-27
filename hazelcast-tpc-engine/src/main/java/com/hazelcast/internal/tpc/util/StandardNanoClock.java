@@ -18,7 +18,7 @@ package com.hazelcast.internal.tpc.util;
 
 /**
  * A {@link NanoClock} that calls {@link System#nanoTime()} on every invocation.
- *
+ * <p>
  * This class is thread-safe.
  */
 public class StandardNanoClock implements NanoClock {

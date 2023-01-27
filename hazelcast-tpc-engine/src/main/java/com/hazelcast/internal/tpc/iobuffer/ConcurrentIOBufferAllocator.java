@@ -29,13 +29,16 @@ import java.util.concurrent.atomic.AtomicLong;
  * It also allows the {@link #allocate()} of a {@link IOBuffer} to be done by a different
  * thread than {@link #free(IOBuffer)}.
  */
+@SuppressWarnings("checkstyle:MagicNumber")
 public class ConcurrentIOBufferAllocator implements IOBufferAllocator {
 
-    private static final AtomicLong newAllocations = new AtomicLong(0);
-    private static final AtomicLong pooledAllocations = new AtomicLong(0);
-    private static final AtomicLong allocateCalls = new AtomicLong();
-    private static final AtomicLong releaseCalls = new AtomicLong();
-    private final static ThreadLocal<Pool> POOL = new ThreadLocal<>();
+    // this is for debugging. We do not want to track these calls normally
+    private static final AtomicLong NEW_ALLOCATIONS = new AtomicLong();
+    private static final AtomicLong POOLED_ALLOCATIONS = new AtomicLong();
+    private static final AtomicLong ALLOCATE_CALLS = new AtomicLong();
+    private static final AtomicLong RELEASE_CALLS = new AtomicLong();
+
+    private static final ThreadLocal<Pool> POOL = new ThreadLocal<>();
 
     private final MpmcArrayQueue<IOBuffer> queue = new MpmcArrayQueue<>(4096);
     private final boolean direct;

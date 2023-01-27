@@ -42,7 +42,7 @@ import static java.lang.System.arraycopy;
  */
 public final class SelectorOptimizer {
     static final String SELECTOR_IMPL = "sun.nio.ch.SelectorImpl";
-    private final static TpcLogger logger = TpcLoggerLocator.getLogger(SelectorOptimizer.class);
+    private static final  TpcLogger LOGGER = TpcLoggerLocator.getLogger(SelectorOptimizer.class);
 
     private SelectorOptimizer() {
     }
@@ -63,7 +63,7 @@ public final class SelectorOptimizer {
 
         boolean optimize = Boolean.parseBoolean(System.getProperty("hazelcast.io.optimizeselector", "true"));
         if (optimize) {
-            optimize(selector, logger);
+            optimize(selector, LOGGER);
         }
         return selector;
     }

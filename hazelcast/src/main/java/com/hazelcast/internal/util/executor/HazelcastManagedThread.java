@@ -83,7 +83,8 @@ public class HazelcastManagedThread extends Thread {
 
     }
 
-    protected void beforeStart(){}
+    protected void beforeStart() {
+    }
 
     @Override
     public synchronized void start() {

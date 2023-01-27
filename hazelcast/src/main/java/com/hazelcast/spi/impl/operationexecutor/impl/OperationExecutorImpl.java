@@ -167,8 +167,8 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
 
             OperationQueue operationQueue = new OperationQueueImpl(normalQueue, new ConcurrentLinkedQueue<>());
 
-            PartitionOperationThreadImpl partitionThread = new PartitionOperationThreadImpl(threadName, threadId, operationQueue, logger,
-                    nodeExtension, partitionOperationRunners, configClassLoader);
+            PartitionOperationThreadImpl partitionThread = new PartitionOperationThreadImpl(threadName, threadId,
+                    operationQueue, logger, nodeExtension, partitionOperationRunners, configClassLoader);
             partitionThread.setThreadAffinity(threadAffinity);
             threads[threadId] = partitionThread;
             normalQueue.setConsumerThread(partitionThread);

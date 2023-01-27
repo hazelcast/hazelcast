@@ -23,12 +23,12 @@ import static com.hazelcast.internal.tpc.util.ExceptionUtil.ignore;
 public class ExceptionUtilTest {
 
     @Test
-    public void test_ignore(){
+    public void test_ignore() {
         ignore(new Exception());
     }
 
     @Test
-    public void test_ignore_whenNull(){
+    public void test_ignore_whenNull() {
         ignore(null);
     }
 }
