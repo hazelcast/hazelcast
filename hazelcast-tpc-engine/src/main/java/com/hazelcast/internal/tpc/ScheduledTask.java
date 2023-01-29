@@ -39,7 +39,7 @@ final class ScheduledTask implements Runnable, Comparable<ScheduledTask> {
             if (periodNanos != -1) {
                 deadlineNanos += periodNanos;
             } else {
-                deadlineNanos = eventloop.unsafe.nanoClock.nanoTime() + delayNanos;
+                deadlineNanos = eventloop.nanoClock.nanoTime() + delayNanos;
             }
 
             if (deadlineNanos < 0) {

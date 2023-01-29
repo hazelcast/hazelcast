@@ -17,15 +17,15 @@
 package com.hazelcast.internal.tpc.nio;
 
 import com.hazelcast.internal.tpc.AsyncSocketTest;
-import com.hazelcast.internal.tpc.Eventloop;
+import com.hazelcast.internal.tpc.Reactor;
 
 public class NioAsyncSocketTest extends AsyncSocketTest {
 
     @Override
-    public Eventloop createEventloop() {
-        NioEventloop eventloop = new NioEventloop();
-        eventloops.add(eventloop);
-        eventloop.start();
-        return eventloop;
+    public Reactor newReactor() {
+        NioReactor reactor = new NioReactor();
+        reactors.add(reactor);
+        reactor.start();
+        return reactor;
     }
 }

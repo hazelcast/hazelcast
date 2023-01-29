@@ -39,26 +39,26 @@ import static org.junit.Assume.assumeTrue;
 
 public abstract class AsyncServerSocketTest {
 
-    public List<Eventloop> loops = new ArrayList<>();
+    public List<Reactor> reactors = new ArrayList<>();
 
-    public abstract Eventloop createEventloop();
+    public abstract Reactor newReactor();
 
     @After
     public void after() throws InterruptedException {
-        terminateAll(loops);
+        terminateAll(reactors);
     }
 
     @Test
     public void test_construction() {
-        Eventloop eventloop = createEventloop();
-        AsyncServerSocket socket = eventloop.openTcpAsyncServerSocket();
-        assertSame(eventloop, socket.getEventloop());
+        Reactor reactor = newReactor();
+        AsyncServerSocket socket = reactor.openTcpAsyncServerSocket();
+        assertSame(reactor, socket.getReactor());
     }
 
     @Test
     public void test_receiveBufferSize() {
-        Eventloop eventloop = createEventloop();
-        AsyncServerSocket socket = eventloop.openTcpAsyncServerSocket();
+        Reactor reactor = newReactor();
+        AsyncServerSocket socket = reactor.openTcpAsyncServerSocket();
         int size = 64 * 1024;
         socket.setReceiveBufferSize(size);
         assertTrue(socket.getReceiveBufferSize() >= size);
@@ -66,24 +66,24 @@ public abstract class AsyncServerSocketTest {
 
     @Test
     public void test_setReceiveBufferSize_whenIOException() {
-        Eventloop eventloop = createEventloop();
-        AsyncServerSocket socket = eventloop.openTcpAsyncServerSocket();
+        Reactor reactor = newReactor();
+        AsyncServerSocket socket = reactor.openTcpAsyncServerSocket();
         socket.close();
         assertThrows(UncheckedIOException.class, () -> socket.setReceiveBufferSize(64 * 1024));
     }
 
     @Test
     public void test_getReceiveBufferSize_whenIOException() {
-        Eventloop eventloop = createEventloop();
-        AsyncServerSocket socket = eventloop.openTcpAsyncServerSocket();
+        Reactor reactor = newReactor();
+        AsyncServerSocket socket = reactor.openTcpAsyncServerSocket();
         socket.close();
         assertThrows(UncheckedIOException.class, socket::getReceiveBufferSize);
     }
 
     @Test
     public void test_reuseAddress() {
-        Eventloop eventloop = createEventloop();
-        AsyncServerSocket socket = eventloop.openTcpAsyncServerSocket();
+        Reactor reactor = newReactor();
+        AsyncServerSocket socket = reactor.openTcpAsyncServerSocket();
         socket.setReuseAddress(true);
         assertTrue(socket.isReuseAddress());
 
@@ -93,16 +93,16 @@ public abstract class AsyncServerSocketTest {
 
     @Test
     public void test_setReuseAddress_whenIOException() {
-        Eventloop eventloop = createEventloop();
-        AsyncServerSocket socket = eventloop.openTcpAsyncServerSocket();
+        Reactor reactor = newReactor();
+        AsyncServerSocket socket = reactor.openTcpAsyncServerSocket();
         socket.close();
         assertThrows(UncheckedIOException.class, () -> socket.setReuseAddress(true));
     }
 
     @Test
     public void test_isReuseAddress_whenIOException() {
-        Eventloop eventloop = createEventloop();
-        AsyncServerSocket socket = eventloop.openTcpAsyncServerSocket();
+        Reactor reactor = newReactor();
+        AsyncServerSocket socket = reactor.openTcpAsyncServerSocket();
         socket.close();
         assertThrows(UncheckedIOException.class, socket::isReuseAddress);
     }
@@ -117,8 +117,8 @@ public abstract class AsyncServerSocketTest {
     public void test_reusePort() {
         assumeIfNioThenJava11Plus();
 
-        Eventloop eventloop = createEventloop();
-        AsyncServerSocket socket = eventloop.openTcpAsyncServerSocket();
+        Reactor reactor = newReactor();
+        AsyncServerSocket socket = reactor.openTcpAsyncServerSocket();
         socket.setReusePort(true);
         assertTrue(socket.isReusePort());
 
@@ -130,8 +130,8 @@ public abstract class AsyncServerSocketTest {
     public void test_setReusePort_whenException() {
         assumeIfNioThenJava11Plus();
 
-        Eventloop eventloop = createEventloop();
-        AsyncServerSocket socket = eventloop.openTcpAsyncServerSocket();
+        Reactor reactor = newReactor();
+        AsyncServerSocket socket = reactor.openTcpAsyncServerSocket();
         socket.close();
 
         assertThrows(UncheckedIOException.class, () -> socket.setReusePort(true));
@@ -141,8 +141,8 @@ public abstract class AsyncServerSocketTest {
     public void test_isReusePort_whenException() {
         assumeIfNioThenJava11Plus();
 
-        Eventloop eventloop = createEventloop();
-        AsyncServerSocket socket = eventloop.openTcpAsyncServerSocket();
+        Reactor reactor = newReactor();
+        AsyncServerSocket socket = reactor.openTcpAsyncServerSocket();
         socket.close();
 
         assertThrows(UncheckedIOException.class, socket::isReusePort);
@@ -150,8 +150,8 @@ public abstract class AsyncServerSocketTest {
 
     @Test
     public void test_getLocalPort_whenNotYetBound() {
-        Eventloop eventloop = createEventloop();
-        AsyncServerSocket socket = eventloop.openTcpAsyncServerSocket();
+        Reactor reactor = newReactor();
+        AsyncServerSocket socket = reactor.openTcpAsyncServerSocket();
 
         int localPort = socket.getLocalPort();
         assertEquals(-1, localPort);
@@ -159,8 +159,8 @@ public abstract class AsyncServerSocketTest {
 
     @Test
     public void test_bind_whenLocalAddressNull() {
-        Eventloop eventloop = createEventloop();
-        AsyncServerSocket socket = eventloop.openTcpAsyncServerSocket();
+        Reactor reactor = newReactor();
+        AsyncServerSocket socket = reactor.openTcpAsyncServerSocket();
 
         System.out.println(socket.getLocalPort());
         assertThrows(NullPointerException.class, () -> socket.bind(null));
@@ -168,15 +168,15 @@ public abstract class AsyncServerSocketTest {
 
     @Test
     public void test_getLocalAddress_whenNotBound() {
-        Eventloop eventloop = createEventloop();
-        AsyncServerSocket socket = eventloop.openTcpAsyncServerSocket();
+        Reactor reactor = newReactor();
+        AsyncServerSocket socket = reactor.openTcpAsyncServerSocket();
         assertNull(socket.getLocalAddress());
     }
 
     @Test
     public void test_accept_andNoBind() {
-        Eventloop eventloop = createEventloop();
-        AsyncServerSocket socket = eventloop.openTcpAsyncServerSocket();
+        Reactor reactor = newReactor();
+        AsyncServerSocket socket = reactor.openTcpAsyncServerSocket();
 
         socket.accept(socket1 -> {
 
@@ -185,8 +185,8 @@ public abstract class AsyncServerSocketTest {
 
     @Test
     public void test_bind_whenBacklogNegative() {
-        Eventloop eventloop = createEventloop();
-        AsyncServerSocket socket = eventloop.openTcpAsyncServerSocket();
+        Reactor reactor = newReactor();
+        AsyncServerSocket socket = reactor.openTcpAsyncServerSocket();
 
         SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
 
@@ -195,8 +195,8 @@ public abstract class AsyncServerSocketTest {
 
     @Test
     public void test_bind() {
-        Eventloop eventloop = createEventloop();
-        AsyncServerSocket socket = eventloop.openTcpAsyncServerSocket();
+        Reactor reactor = newReactor();
+        AsyncServerSocket socket = reactor.openTcpAsyncServerSocket();
 
         SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
         socket.bind(local);
@@ -205,14 +205,14 @@ public abstract class AsyncServerSocketTest {
         assertEquals(5000, socket.getLocalPort());
 
         // we need to close the socket manually only when accept is called, the AsyncSocket is part
-        // of the eventloop
+        // of the reactor
         socket.close();
     }
 
     @Test
     public void test_bind_whenAlreadyBound() {
-        Eventloop eventloop = createEventloop();
-        AsyncServerSocket socket = eventloop.openTcpAsyncServerSocket();
+        Reactor reactor = newReactor();
+        AsyncServerSocket socket = reactor.openTcpAsyncServerSocket();
 
         SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
         socket.bind(local);
@@ -223,8 +223,8 @@ public abstract class AsyncServerSocketTest {
 
     @Test
     public void test_accept_whenConsumerNull() {
-        Eventloop eventloop = createEventloop();
-        AsyncServerSocket socket = eventloop.openTcpAsyncServerSocket();
+        Reactor reactor = newReactor();
+        AsyncServerSocket socket = reactor.openTcpAsyncServerSocket();
 
         SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
         socket.bind(local);
@@ -235,12 +235,12 @@ public abstract class AsyncServerSocketTest {
     }
 
     @Test
-    public void test_createCloseLoop_withSameEventloop() {
+    public void test_createCloseLoop_withSamereactor() {
         SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
-        Eventloop eventloop = createEventloop();
+        Reactor reactor = newReactor();
         for (int k = 0; k < 1000; k++) {
             System.out.println("at:" + k);
-            AsyncServerSocket socket = eventloop.openTcpAsyncServerSocket();
+            AsyncServerSocket socket = reactor.openTcpAsyncServerSocket();
             socket.setReusePort(true);
             socket.bind(local);
             socket.accept(socket1 -> {
@@ -250,18 +250,18 @@ public abstract class AsyncServerSocketTest {
     }
 
     @Test
-    public void test_createCloseLoop_withNewEventloop() {
+    public void test_createCloseLoop_withNewreactor() {
         SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
         for (int k = 0; k < 1000; k++) {
             System.out.println("at:" + k);
-            Eventloop eventloop = createEventloop();
-            loops.remove(eventloop);
-            AsyncServerSocket socket = eventloop.openTcpAsyncServerSocket();
+            Reactor reactor = newReactor();
+            reactors.remove(reactor);
+            AsyncServerSocket socket = reactor.openTcpAsyncServerSocket();
             socket.setReusePort(true);
             socket.bind(local);
             socket.accept(socket1 -> {
             }).join();
-            terminate(eventloop);
+            terminate(reactor);
         }
     }
 }

@@ -14,15 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc.nio;
+package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.EventloopBuilder;
-import com.hazelcast.internal.tpc.EventloopBuilderTest;
+/**
+ * The Type of {@link Reactor}.
+ */
+public enum ReactorType {
 
-public class NioEventloopBuilderTest extends EventloopBuilderTest {
+    NIO, IOURING;
 
-    @Override
-    public EventloopBuilder newBuilder() {
-        return new NioEventloopBuilder();
+    public static ReactorType fromString(String type) {
+        if (type.equalsIgnoreCase("io_uring") || type.equalsIgnoreCase("iouring")) {
+            return IOURING;
+        } else if (type.equalsIgnoreCase("nio")) {
+            return NIO;
+        } else {
+            throw new IllegalArgumentException("Unrecognized reactor type [" + type + ']');
+        }
     }
 }

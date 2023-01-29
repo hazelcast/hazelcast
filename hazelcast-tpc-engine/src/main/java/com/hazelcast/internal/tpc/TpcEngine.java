@@ -29,7 +29,7 @@ import static com.hazelcast.internal.tpc.TpcEngine.State.SHUTDOWN;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 
 /**
- * The TpcEngine is effectively an array of eventloops.
+ * The TpcEngine is effectively an array of reactors.
  * <p>
  * The TpcEngine is not aware of any specific applications. E.g. it could execute operations, but it
  * can equally well run client requests or completely different applications.
@@ -38,8 +38,8 @@ public final class TpcEngine {
 
     final CountDownLatch terminationLatch;
     private final TpcLogger logger = TpcLoggerLocator.getLogger(TpcEngine.class);
-    private final int eventloopCount;
-    private final Eventloop[] eventloops;
+    private final int reactorCount;
+    private final Reactor[] reactors;
     private final AtomicReference<State> state = new AtomicReference<>(NEW);
     private final Configuration configuration;
 
@@ -58,13 +58,13 @@ public final class TpcEngine {
      */
     public TpcEngine(Configuration configuration) {
         this.configuration = checkNotNull(configuration, "configuration");
-        this.eventloopCount = configuration.eventloopCount;
-        this.eventloops = new Eventloop[eventloopCount];
-        this.terminationLatch = new CountDownLatch(eventloopCount);
+        this.reactorCount = configuration.reactorCount;
+        this.reactors = new Reactor[reactorCount];
+        this.terminationLatch = new CountDownLatch(reactorCount);
 
-        for (int idx = 0; idx < eventloopCount; idx++) {
-            eventloops[idx] = configuration.eventloopBuilder.create();
-            eventloops[idx].engine = this;
+        for (int idx = 0; idx < reactorCount; idx++) {
+            reactors[idx] = configuration.reactorBuilder.build();
+            reactors[idx].engine = this;
         }
     }
 
@@ -80,51 +80,51 @@ public final class TpcEngine {
     }
 
     /**
-     * Returns the type of Eventloop used by this TpcEngine.
+     * Returns the type of Reactor used by this TpcEngine.
      *
-     * @return the type of Eventloop.
+     * @return the type of Reactor.
      */
-    public EventloopType eventloopType() {
-        return configuration.eventloopBuilder.type;
+    public ReactorType reactorType() {
+        return configuration.reactorBuilder.type;
     }
 
     /**
-     * Returns the eventloops.
+     * Returns the reactors.
      *
-     * @return the {@link Eventloop}s.
+     * @return the {@link Reactor}s.
      */
-    public Eventloop[] eventloops() {
-        return eventloops;
+    public Reactor[] reactors() {
+        return reactors;
     }
 
     /**
-     * Returns the number of Eventloop instances in this TpcEngine.
+     * Returns the number of reactor instances in this TpcEngine.
      * <p>
      * This method is thread-safe.
      *
-     * @return the number of eventloop instances.
+     * @return the number of reactor instances.
      */
-    public int eventloopCount() {
-        return eventloopCount;
+    public int reactorCount() {
+        return reactorCount;
     }
 
     /**
-     * Gets the {@link Eventloop} at the given index.
+     * Gets the {@link Reactor} at the given index.
      *
-     * @param idx the index of the Eventloop.
-     * @return The Eventloop at the given index.
+     * @param idx the index of the reactor.
+     * @return The reactor at the given index.
      */
-    public Eventloop eventloop(int idx) {
-        return eventloops[idx];
+    public Reactor reactor(int idx) {
+        return reactors[idx];
     }
 
     /**
-     * Starts the TpcEngine by starting all the {@link Eventloop} instances.
+     * Starts the TpcEngine by starting all the {@link Reactor} instances.
      *
      * @throws IllegalStateException if
      */
     public void start() {
-        logger.info("Starting " + eventloopCount + " eventloops of type [" + eventloopType() + "]");
+        logger.info("Starting " + reactorCount + " reactors of type [" + reactorType() + "]");
 
         for (; ; ) {
             State oldState = state.get();
@@ -137,8 +137,8 @@ public final class TpcEngine {
             }
         }
 
-        for (Eventloop eventloop : eventloops) {
-            eventloop.start();
+        for (Reactor reactor : reactors) {
+            reactor.start();
         }
     }
 
@@ -164,8 +164,8 @@ public final class TpcEngine {
                     throw new IllegalStateException();
             }
 
-            for (Eventloop eventloop : eventloops) {
-                eventloop.shutdown();
+            for (Reactor reactor : reactors) {
+                reactor.shutdown();
             }
         }
     }
@@ -184,7 +184,7 @@ public final class TpcEngine {
         return terminationLatch.await(timeout, unit);
     }
 
-    void notifyEventloopTerminated() {
+    void notifyReactorTerminated() {
         synchronized (terminationLatch) {
             if (terminationLatch.getCount() == 1) {
                 state.set(State.TERMINATED);

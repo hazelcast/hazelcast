@@ -20,12 +20,13 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 
 /**
- * A callback interface when something interesting happened on a {@link SelectionKey}.
+ * A handler that gets signalled when something interesting happens on a {@link SelectionKey}
+ * for example data has arrived at a socket.
  */
-public interface SelectionKeyListener {
+public interface NioHandler {
 
     /**
-     * Signals the listener that socket should be closed.
+     * Signals the Handler that socket should be closed.
      *
      * @param reason the reason (can be null).
      * @param cause  the cause (can be null).

@@ -29,7 +29,7 @@ public class AltoConfigAccessors {
     }
 
     public static int getEventloopCount(HazelcastInstance hz) {
-        return getTpcServerBootstrap(hz).getTpcEngine().eventloopCount();
+        return getTpcServerBootstrap(hz).getTpcEngine().reactorCount();
     }
 
     public static boolean isTpcEnabled(HazelcastInstance hz) {

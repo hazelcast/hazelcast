@@ -27,109 +27,109 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
-public abstract class EventloopBuilderTest {
+public abstract class ReactorBuilderTest {
 
-    public abstract EventloopBuilder newBuilder();
+    public abstract ReactorBuilder newBuilder();
 
     @Test
     public void test_setThreadFactory_whenNull() {
-        EventloopBuilder builder = newBuilder();
+        ReactorBuilder builder = newBuilder();
         assertThrows(NullPointerException.class, () -> builder.setThreadFactory(null));
     }
 
     @Test
     public void test_setThreadFactory() {
-        EventloopBuilder builder = newBuilder();
+        ReactorBuilder builder = newBuilder();
 
         Thread thread = new Thread();
         builder.setThreadFactory(r -> thread);
 
-        Eventloop eventloop = builder.create();
-        assertEquals(thread, eventloop.eventloopThread);
+        Reactor reactor = builder.build();
+        assertEquals(thread, reactor.eventloopThread);
     }
 
     @Test
     public void test_setThreadNameSupplier() {
-        EventloopBuilder builder = newBuilder();
+        ReactorBuilder builder = newBuilder();
 
         AtomicInteger id = new AtomicInteger();
         builder.setThreadNameSupplier(() -> "thethread" + id.incrementAndGet());
 
-        Eventloop eventloop1 = builder.create();
-        Eventloop eventloop2 = builder.create();
-        assertEquals("thethread1", eventloop1.eventloopThread.getName());
-        assertEquals("thethread2", eventloop2.eventloopThread.getName());
+        Reactor reactor1 = builder.build();
+        Reactor reactor2 = builder.build();
+        assertEquals("thethread1", reactor1.eventloopThread.getName());
+        assertEquals("thethread2", reactor2.eventloopThread.getName());
     }
 
     @Test
     public void test_setScheduledTaskQueueCapacity_whenZero() {
-        EventloopBuilder builder = newBuilder();
+        ReactorBuilder builder = newBuilder();
         assertThrows(IllegalArgumentException.class, () -> builder.setScheduledTaskQueueCapacity(0));
     }
 
     @Test
     public void test_setScheduledTaskQueueCapacity_whenNegative() {
-        EventloopBuilder builder = newBuilder();
+        ReactorBuilder builder = newBuilder();
         assertThrows(IllegalArgumentException.class, () -> builder.setScheduledTaskQueueCapacity(-1));
     }
 
     @Test
     public void test_setClockRefreshPeriod_whenZero() {
-        EventloopBuilder builder = newBuilder();
+        ReactorBuilder builder = newBuilder();
         builder.setClockRefreshPeriod(0);
     }
 
     @Test
     public void test_setClockRefreshPeriod_whenNegative() {
-        EventloopBuilder builder = newBuilder();
+        ReactorBuilder builder = newBuilder();
         assertThrows(IllegalArgumentException.class, () -> builder.setClockRefreshPeriod(-1));
     }
 
     @Test
     public void test_setBatchSize_whenZero() {
-        EventloopBuilder builder = newBuilder();
+        ReactorBuilder builder = newBuilder();
         assertThrows(IllegalArgumentException.class, () -> builder.setBatchSize(0));
     }
 
     @Test
     public void test_setBatchSize_whenNegative() {
-        EventloopBuilder builder = newBuilder();
+        ReactorBuilder builder = newBuilder();
         assertThrows(IllegalArgumentException.class, () -> builder.setBatchSize(-1));
     }
 
     @Test
     public void test_setConcurrentRunQueueCapacity_whenZero() {
-        EventloopBuilder builder = newBuilder();
+        ReactorBuilder builder = newBuilder();
         assertThrows(IllegalArgumentException.class, () -> builder.setConcurrentTaskQueueCapacity(0));
     }
 
     @Test
     public void test_setConcurrentRunQueueCapacity_whenNegative() {
-        EventloopBuilder builder = newBuilder();
+        ReactorBuilder builder = newBuilder();
         assertThrows(IllegalArgumentException.class, () -> builder.setConcurrentTaskQueueCapacity(-1));
     }
 
     @Test
     public void test_setLocalRunQueueCapacity_whenZero() {
-        EventloopBuilder builder = newBuilder();
+        ReactorBuilder builder = newBuilder();
         assertThrows(IllegalArgumentException.class, () -> builder.setLocalTaskQueueCapacity(0));
     }
 
     @Test
     public void test_setLocalRunQueueCapacity_whenNegative() {
-        EventloopBuilder builder = newBuilder();
+        ReactorBuilder builder = newBuilder();
         assertThrows(IllegalArgumentException.class, () -> builder.setLocalTaskQueueCapacity(-1));
     }
 
     @Test
     public void test_setSchedulerSupplier_whenNull() {
-        EventloopBuilder builder = newBuilder();
+        ReactorBuilder builder = newBuilder();
         assertThrows(NullPointerException.class, () -> builder.setSchedulerSupplier(null));
     }
 
     @Test
     public void test_setThreadAffinity_nullAffinityIsAllowed() {
-        EventloopBuilder builder = newBuilder();
+        ReactorBuilder builder = newBuilder();
         builder.setThreadAffinity(null);
 
         assertNull(builder.threadAffinity);
@@ -138,7 +138,7 @@ public abstract class EventloopBuilderTest {
 
     @Test
     public void test_setThreadAffinity() {
-        EventloopBuilder builder = newBuilder();
+        ReactorBuilder builder = newBuilder();
         ThreadAffinity affinity = new ThreadAffinity("1-5");
         builder.setThreadAffinity(affinity);
 
@@ -147,7 +147,7 @@ public abstract class EventloopBuilderTest {
 
     @Test
     public void test_setSpin() {
-        EventloopBuilder builder = newBuilder();
+        ReactorBuilder builder = newBuilder();
         builder.setSpin(true);
 
         assertTrue(builder.spin);

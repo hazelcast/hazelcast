@@ -16,13 +16,21 @@
 
 package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.Eventloop;
-import com.hazelcast.internal.tpc.Eventloop_Unsafe_Test;
+import com.hazelcast.internal.tpc.Reactor;
+import com.hazelcast.internal.tpc.ReactorBuilder;
+import com.hazelcast.internal.tpc.ReactorType;
 
-public class NioEventloop_Unsafe_Test extends Eventloop_Unsafe_Test {
+/**
+ * A builder for a {@link NioReactor}.
+ */
+public class NioReactorBuilder extends ReactorBuilder {
+
+    public NioReactorBuilder() {
+        super(ReactorType.NIO);
+    }
 
     @Override
-    public Eventloop create() {
-        return new NioEventloop();
+    public Reactor build() {
+        return new NioReactor(this);
     }
 }
