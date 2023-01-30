@@ -16,12 +16,14 @@
 
 package com.hazelcast.internal.util;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 public class Sha256UtilTest {
 
@@ -29,12 +31,12 @@ public class Sha256UtilTest {
     public void testCalculateSha256Hex() throws Exception {
         byte[] data = {(byte) 0};
         String result = Sha256Util.calculateSha256Hex(data, data.length);
-        Assert.assertEquals("6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d", result);
+        assertEquals("6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d", result);
     }
 
     @Test
     public void test_exception_whenDirectory() {
         Path path = Paths.get("src", "test", "resources");
-        Assert.assertThrows(IOException.class, () -> Sha256Util.calculateSha256Hex(path));
+        assertThrows(IOException.class, () -> Sha256Util.calculateSha256Hex(path));
     }
 }

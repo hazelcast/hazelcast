@@ -30,6 +30,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.test.annotation.SlowTest;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mockito;
@@ -53,6 +54,11 @@ import static org.mockito.Mockito.when;
 @Category({SerialTest.class})
 public class JobUploadTest extends JetTestSupport {
 
+    @After
+    public void resetSingleton () {
+        // Reset the singleton after the test
+        HazelcastBootstrap.resetSupplier();
+    }
     @Test
     public void sha256() throws IOException, NoSuchAlgorithmException {
         Path jarPath = getJarPath();
@@ -99,9 +105,6 @@ public class JobUploadTest extends JetTestSupport {
 
     @Test
     public void test_jarUploadByClient_whenResourceUploadIsEnabled() {
-        // Reset the singleton because a new HazelcastInstance will be created for the test
-        HazelcastBootstrap.resetSupplier();
-
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
@@ -123,9 +126,6 @@ public class JobUploadTest extends JetTestSupport {
 
     @Test
     public void test_jarUploadByClient_withMainClassname() {
-        // Reset the singleton because a new HazelcastInstance will be created for the test
-        HazelcastBootstrap.resetSupplier();
-
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
@@ -148,10 +148,6 @@ public class JobUploadTest extends JetTestSupport {
 
     @Test
     public void test_jarUploadByClient_withWrongMainClassname() {
-
-        // Reset the singleton because a new HazelcastInstance will be created for the test
-        HazelcastBootstrap.resetSupplier();
-
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
@@ -173,9 +169,6 @@ public class JobUploadTest extends JetTestSupport {
 
     @Test
     public void test_jarUploadByMember_whenResourceUploadIsEnabled() {
-        // Reset the singleton because a new HazelcastInstance will be created for the test
-        HazelcastBootstrap.resetSupplier();
-
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
@@ -196,9 +189,6 @@ public class JobUploadTest extends JetTestSupport {
 
     @Test
     public void test_jarUploadByMember_withMainClassname() {
-        // Reset the singleton because a new HazelcastInstance will be created for the test
-        HazelcastBootstrap.resetSupplier();
-
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
@@ -220,9 +210,6 @@ public class JobUploadTest extends JetTestSupport {
 
     @Test
     public void test_jarUploadByMember_withWrongMainClassname() {
-        // Reset the singleton because a new HazelcastInstance will be created for the test
-        HazelcastBootstrap.resetSupplier();
-
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
@@ -243,9 +230,6 @@ public class JobUploadTest extends JetTestSupport {
 
     @Test
     public void test_jarUpload_WithIncorrectChecksum() throws IOException, NoSuchAlgorithmException {
-        // Reset the singleton because a new HazelcastInstance will be created for the test
-        HazelcastBootstrap.resetSupplier();
-
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
@@ -274,10 +258,6 @@ public class JobUploadTest extends JetTestSupport {
 
     @Test
     public void test_jarUpload_whenResourceUploadIsEnabled_withSmallBuffer() {
-
-        // Reset the singleton because a new HazelcastInstance will be created for the test
-        HazelcastBootstrap.resetSupplier();
-
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
@@ -306,10 +286,6 @@ public class JobUploadTest extends JetTestSupport {
     @Category({SlowTest.class})
     @Test
     public void test_stress_jarUpload_whenResourceUploadIsEnabled() {
-
-        // Reset the singleton because a new HazelcastInstance will be created for the test
-        HazelcastBootstrap.resetSupplier();
-
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
@@ -341,10 +317,6 @@ public class JobUploadTest extends JetTestSupport {
 
     @Test
     public void test_multipleJarUploads_whenResourceUploadIsEnabled() {
-
-        // Reset the singleton because a new HazelcastInstance will be created for the test
-        HazelcastBootstrap.resetSupplier();
-
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);

@@ -197,17 +197,13 @@ public final class HazelcastBootstrap {
         }
     }
 
-    // Returns true is main method is both public and static
-    private static boolean isPublicAndStatic(Method mainMethod) {
-        boolean result = false;
+    // Returns true if the main method is both public and static
+    static boolean isPublicAndStatic(Method mainMethod) {
         int modifiers = mainMethod.getModifiers();
-        if (isPublic(modifiers) && isStatic(modifiers)) {
-            result = true;
-        }
-        return result;
+        return isPublic(modifiers) && isStatic(modifiers);
     }
 
-    private static Method getMainMethod(Class<?> clazz, boolean calledByMember) throws NoSuchMethodException {
+    static Method getMainMethod(Class<?> clazz, boolean calledByMember) throws NoSuchMethodException {
         // If main method does not exist, throws NoSuchMethodException
         Method main = clazz.getDeclaredMethod("main", String[].class);
 
