@@ -1810,11 +1810,6 @@
                 <version>1.10.1</version>
             </dependency>
             <dependency>
-                <groupId>com.nimbusds</groupId>
-                <artifactId>nimbus-jose-jwt</artifactId>
-                <version>7.9</version>
-            </dependency>
-            <dependency>
                 <groupId>com.fasterxml.woodstox</groupId>
                 <artifactId>woodstox-core</artifactId>
                 <version>6.5.0</version>
