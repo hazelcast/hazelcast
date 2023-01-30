@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.iteration.IterationPointer;
@@ -156,7 +157,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public long getMapStoreOffloadedOperationsCount() {
-
         return mapStoreOffloadedOperationsCount.get();
     }
 
@@ -198,6 +198,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public JsonMetadataStore getOrCreateMetadataStore() {
+        if (mapContainer.getMapConfig().getMetadataPolicy() == MetadataPolicy.OFF) {
+            return JsonMetadataStore.NULL;
+        }
         if (metadataStore == null) {
             metadataStore = createMetadataStore();
         }

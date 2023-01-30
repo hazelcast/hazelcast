@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,8 +81,10 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
     /**
      * Returns a list of jobs and a summary of their details.
+     * @deprecated Since 5.3, to be removed in 6.0. Use {@link #getJobAndSqlSummaryList()} instead
      */
     @Nonnull
+    @Deprecated
     public List<JobSummary> getJobSummaryList() {
         return invokeRequestOnMasterAndDecodeResponse(JetGetJobSummaryListCodec.encodeRequest(),
                 JetGetJobSummaryListCodec::decodeResponse);

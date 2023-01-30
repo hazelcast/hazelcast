@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,11 +36,12 @@ import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.example.Person;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.mapstore.GenericMapStore.EXTERNAL_REF_ID_PROPERTY;
@@ -207,20 +208,6 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/22528")
-    public void testDestroy() {
-        HazelcastInstance client = client();
-        IMap<Integer, Person> map = client.getMap(tableName);
-        map.loadAll(false);
-
-        map.destroy();
-
-        assertTrueEventually(() -> {
-            assertRowsAnyOrder(client, "SHOW MAPPINGS", newArrayList());
-        }, 5);
-    }
-
-    @Test
     public void testPutWithColumnMismatch() {
         HazelcastInstance client = client();
         IMap<Integer, GenericRecord> map = client.getMap(tableName);
@@ -329,4 +316,18 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         assertThat(map.size()).isEqualTo(1);
     }
 
+    @Test
+    public void testDestroy() {
+        HazelcastInstance client = client();
+        IMap<Integer, Person> map = client.getMap(tableName);
+        map.loadAll(false);
+
+        map.destroy();
+
+        Row row = new Row("__map-store." + tableName);
+        List<Row> rows = Arrays.asList(row);
+        assertTrueEventually(() -> {
+            assertDoesNotContainRow(client, "SHOW MAPPINGS", rows);
+        }, 5);
+    }
 }

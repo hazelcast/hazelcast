@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ public class TagTest {
         Tag tag = new Tag(key, value);
 
         // then
-        assertEquals(tag.getKey(), key);
+        assertEquals(key, tag.getKey());
         assertNull(tag.getValue());
     }
 
@@ -47,7 +47,7 @@ public class TagTest {
 
         // then
         assertNull(tag.getKey());
-        assertEquals(tag.getValue(), value);
+        assertEquals(value, tag.getValue());
     }
 
     @Test(expected = IllegalArgumentException.class)

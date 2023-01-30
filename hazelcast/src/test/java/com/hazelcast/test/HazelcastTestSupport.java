@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1267,7 +1267,9 @@ public abstract class HazelcastTestSupport {
         int sleepMillis = 200;
         long iterations = timeoutSeconds * 5;
         long deadline = System.currentTimeMillis() + SECONDS.toMillis(timeoutSeconds);
-        for (int i = 0; i < iterations && System.currentTimeMillis() < deadline; i++) {
+        boolean passedTheDeadline = false;
+        for (int i = 0; i < iterations && !passedTheDeadline; i++) {
+            passedTheDeadline = System.currentTimeMillis() > deadline;
             try {
                 try {
                     task.run();
@@ -1278,7 +1280,9 @@ public abstract class HazelcastTestSupport {
             } catch (AssertionError e) {
                 error = e;
             }
-            sleepMillis(sleepMillis);
+            if (!passedTheDeadline) {
+                sleepMillis(sleepMillis);
+            }
         }
         if (error != null) {
             throw error;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,18 +66,12 @@ class StreamToStreamJoinHeapBuffer extends StreamToStreamJoinBuffer {
     }
 
     @Override
-    public long[] clearExpiredItems(long[] limits, @Nonnull Consumer<JetSqlRow> clearedRowsConsumer) {
+    public void clearExpiredItems(long[] limits, @Nonnull Consumer<JetSqlRow> clearedRowsConsumer) {
         assert limits.length == 1;
 
         for (JetSqlRow row; (row = buffer.peek()) != null && timeExtractor.applyAsLong(row) < limits[0]; ) {
             clearedRowsConsumer.accept(row);
             buffer.remove();
-        }
-
-        if (buffer.size() > 0) {
-            return new long[]{timeExtractor.applyAsLong(buffer.element())};
-        } else {
-            return new long[]{Long.MAX_VALUE};
         }
     }
 }

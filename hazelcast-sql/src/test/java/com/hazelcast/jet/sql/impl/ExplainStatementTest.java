@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ public class ExplainStatementTest extends SqlTestSupport {
 
         String expectedScanRes = "SelectByKeyMapPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1], " +
                 "filter==($0, ?0)]]], keyCondition=[?0], projections=[__key=[$0], this=[$1]])";
-        assertEquals(result.iterator().next().getObject(0), expectedScanRes);
+        assertEquals(expectedScanRes, result.iterator().next().getObject(0));
     }
 
     @Test

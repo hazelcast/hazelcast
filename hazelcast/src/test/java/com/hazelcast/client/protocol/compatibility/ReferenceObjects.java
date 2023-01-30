@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -922,7 +922,7 @@ public class ReferenceObjects {
     public static SqlColumnMetadata anSqlColumnMetadata = CustomTypeFactory.createSqlColumnMetadata(aString, SqlColumnType.BOOLEAN.getId(), aBoolean, aBoolean);
     public static List<SqlColumnMetadata> aListOfSqlColumnMetadata = Collections.singletonList(anSqlColumnMetadata);
     public static SqlSummary aSqlSummary = CustomTypeFactory.createSqlSummary(aString, aBoolean);
-    public static JobAndSqlSummary aJobAndSqlSummary = CustomTypeFactory.createJobAndSqlSummary(aBoolean, aLong, aLong, aString, 2, aLong, aLong, aString, aSqlSummary, true, aString);
+    public static JobAndSqlSummary aJobAndSqlSummary = CustomTypeFactory.createJobAndSqlSummary(aBoolean, aLong, aLong, aString, 2, aLong, aLong, aString, aSqlSummary, true, aString, true, false);
     public static List<JobAndSqlSummary> aListJobAndSqlSummary = Collections.singletonList(aJobAndSqlSummary);
     public static SqlError anSqlError = new SqlError(anInt, aString, aUUID, aBoolean, aString);
     public static SqlPage aSqlPage = SqlPage.fromColumns(Collections.singletonList(SqlColumnType.INTEGER), Collections.singletonList(Arrays.asList(1, 2, 3, 4)), true);

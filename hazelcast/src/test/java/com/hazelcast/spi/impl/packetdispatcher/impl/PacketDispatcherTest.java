@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.internal.nio.Packet.FLAG_OP_RESPONSE;
 import static com.hazelcast.internal.nio.Packet.FLAG_URGENT;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -78,7 +78,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
 
         verify(operationExecutor).accept(packet);
 
-        verifyZeroInteractions(responseHandler, eventService, invocationMonitor, jetService);
+        verifyNoInteractions(responseHandler, eventService, invocationMonitor, jetService);
     }
 
     @Test
@@ -89,7 +89,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
 
         verify(operationExecutor).accept(packet);
 
-        verifyZeroInteractions(responseHandler, eventService, invocationMonitor, jetService);
+        verifyNoInteractions(responseHandler, eventService, invocationMonitor, jetService);
     }
 
 
@@ -100,7 +100,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
         dispatcher.accept(packet);
 
         verify(responseHandler).accept(packet);
-        verifyZeroInteractions(operationExecutor, eventService, invocationMonitor, jetService);
+        verifyNoInteractions(operationExecutor, eventService, invocationMonitor, jetService);
     }
 
     @Test
@@ -110,7 +110,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
         dispatcher.accept(packet);
 
         verify(responseHandler).accept(packet);
-        verifyZeroInteractions(operationExecutor, eventService, invocationMonitor, jetService);
+        verifyNoInteractions(operationExecutor, eventService, invocationMonitor, jetService);
     }
 
 
@@ -122,7 +122,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
 
         verify(invocationMonitor).accept(packet);
 
-        verifyZeroInteractions(responseHandler, operationExecutor, eventService, jetService);
+        verifyNoInteractions(responseHandler, operationExecutor, eventService, jetService);
     }
 
 
@@ -133,7 +133,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
         dispatcher.accept(packet);
 
         verify(eventService).accept(packet);
-        verifyZeroInteractions(responseHandler, operationExecutor, invocationMonitor, jetService);
+        verifyNoInteractions(responseHandler, operationExecutor, invocationMonitor, jetService);
     }
 
     @Test
@@ -142,7 +142,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
         dispatcher.accept(packet);
 
         verify(jetService).accept(packet);
-        verifyZeroInteractions(responseHandler, operationExecutor, eventService, invocationMonitor);
+        verifyNoInteractions(responseHandler, operationExecutor, eventService, invocationMonitor);
     }
 
     // unrecognized packets are logged. No handlers is contacted.
@@ -152,7 +152,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
 
         dispatcher.accept(packet);
 
-        verifyZeroInteractions(responseHandler, operationExecutor, eventService, invocationMonitor, jetService);
+        verifyNoInteractions(responseHandler, operationExecutor, eventService, invocationMonitor, jetService);
     }
 
     // when one of the handlers throws an exception, the exception is logged but not rethrown

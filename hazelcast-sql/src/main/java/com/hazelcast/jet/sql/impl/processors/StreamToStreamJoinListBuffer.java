@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -61,10 +60,7 @@ class StreamToStreamJoinListBuffer extends StreamToStreamJoinBuffer {
     }
 
     @Override
-    public long[] clearExpiredItems(long[] limits, @Nonnull Consumer<JetSqlRow> clearedRowsConsumer) {
-        long[] newMinimums = new long[timeExtractors.size()];
-        Arrays.fill(newMinimums, Long.MAX_VALUE);
-
+    public void clearExpiredItems(long[] limits, @Nonnull Consumer<JetSqlRow> clearedRowsConsumer) {
         final Iterator<JetSqlRow> iterator = buffer.iterator();
         long[] times = new long[timeExtractors.size()];
         while (iterator.hasNext()) {
@@ -80,13 +76,7 @@ class StreamToStreamJoinListBuffer extends StreamToStreamJoinBuffer {
             if (remove) {
                 iterator.remove();
                 clearedRowsConsumer.accept(row);
-            } else {
-                for (int i = 0; i < times.length; i++) {
-                    newMinimums[i] = Math.min(times[i], newMinimums[i]);
-                }
             }
         }
-
-        return newMinimums;
     }
 }

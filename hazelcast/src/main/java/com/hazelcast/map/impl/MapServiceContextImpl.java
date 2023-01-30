@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask;
 import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.map.impl.journal.RingbufferMapEventJournalImpl;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
+import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.NodeWideUsedCapacityCounter;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
@@ -444,7 +445,13 @@ class MapServiceContextImpl implements MapServiceContext {
         }
 
         nodeEngine.getWanReplicationService().removeWanEventCounters(MapService.SERVICE_NAME, mapName);
-        mapContainer.getMapStoreContext().stop();
+        MapStoreContext mapStoreContext = mapContainer.getMapStoreContext();
+        mapStoreContext.stop();
+        MapStoreWrapper mapStoreWrapper = mapStoreContext.getMapStoreWrapper();
+        //If the map has a MapStore, destroy that as well
+        if (mapStoreWrapper != null) {
+            mapStoreWrapper.destroy();
+        }
 
         // Statistics are destroyed after container to prevent their leak.
         destroyPartitionsAndMapContainer(mapContainer);

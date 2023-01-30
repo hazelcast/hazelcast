@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,18 +25,20 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.test.SerialTest;
-import com.hazelcast.logging.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.ToxiproxyContainer;
 import org.testcontainers.containers.ToxiproxyContainer.ContainerProxy;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 
 import java.util.List;
 import java.util.Map;
@@ -58,7 +60,6 @@ public class KinesisFailureTest extends AbstractKinesisTest {
 
     @ClassRule
     public static final Network NETWORK = Network.newNetwork();
-
     public static LocalStackContainer localStack;
 
     public static ToxiproxyContainer toxiProxy;
@@ -67,6 +68,8 @@ public class KinesisFailureTest extends AbstractKinesisTest {
     private static AmazonKinesisAsync KINESIS;
     private static ContainerProxy PROXY;
     private static KinesisTestHelper HELPER;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(KinesisFailureTest.class);
 
     public KinesisFailureTest() {
         super(AWS_CONFIG, KINESIS, HELPER);
@@ -79,12 +82,14 @@ public class KinesisFailureTest extends AbstractKinesisTest {
         localStack = new LocalStackContainer(parse("localstack/localstack")
                 .withTag("0.12.3"))
                 .withNetwork(NETWORK)
-                .withServices(Service.KINESIS);
+                .withServices(Service.KINESIS)
+                .withLogConsumer(new Slf4jLogConsumer(LOGGER));
         localStack.start();
-        toxiProxy = new ToxiproxyContainer(parse("shopify/toxiproxy")
-                .withTag("2.1.0"))
+        toxiProxy = new ToxiproxyContainer(parse("ghcr.io/shopify/toxiproxy")
+                .withTag("2.5.0"))
                 .withNetwork(NETWORK)
-                .withNetworkAliases("toxiproxy");
+                .withNetworkAliases("toxiproxy")
+                .withLogConsumer(new Slf4jLogConsumer(LOGGER));
         toxiProxy.start();
 
         System.setProperty(SDKGlobalConfiguration.AWS_CBOR_DISABLE_SYSTEM_PROPERTY, "true");
@@ -98,7 +103,7 @@ public class KinesisFailureTest extends AbstractKinesisTest {
                 .withRegion(localStack.getRegion())
                 .withCredentials(localStack.getAccessKey(), localStack.getSecretKey());
         KINESIS = AWS_CONFIG.buildClient();
-        HELPER = new KinesisTestHelper(KINESIS, STREAM, Logger.getLogger(KinesisIntegrationTest.class));
+        HELPER = new KinesisTestHelper(KINESIS, STREAM);
     }
 
     @AfterClass

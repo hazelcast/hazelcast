@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -291,8 +291,14 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
     @Override
     public void destroy() {
-        awaitInitFinished();
-        dropMapping(mapping);
+        ManagedExecutorService asyncExecutor = nodeEngine()
+                .getExecutionService()
+                .getExecutor(ExecutionService.MAP_STORE_OFFLOADABLE_EXECUTOR);
+
+        asyncExecutor.submit(() -> {
+            awaitInitFinished();
+            dropMapping(mapping);
+        });
     }
 
     @Override

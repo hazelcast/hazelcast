@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * representing that task.EntryProcessor is not cancellable, so calling Future.cancel() method won't cancel the
  * operation of EntryProcessor.
  */
-@Generated("c39a0bce038b5b7587096ba0c6894acb")
+@Generated("6a8387fcbb8565107e1962fb4765c605")
 public final class MapSubmitToKeyCodec {
     //hex: 0x012F00
     public static final int REQUEST_MESSAGE_TYPE = 77568;

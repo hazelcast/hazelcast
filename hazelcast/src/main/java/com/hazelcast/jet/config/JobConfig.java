@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Contains the configuration specific to one Hazelcast Jet job.
+ * <p>
+ * Serialized form of this class should not be changed due to backward
+ * compatibility for {@link com.hazelcast.jet.impl.JobResult}.
  *
  * @since Jet 3.0
  */

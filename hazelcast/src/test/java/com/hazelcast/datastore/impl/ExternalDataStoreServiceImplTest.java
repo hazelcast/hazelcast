@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@ import org.junit.runner.RunWith;
 import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Properties;
 
 import static com.hazelcast.datastore.impl.HikariTestUtil.assertDataSourceClosed;
 import static com.hazelcast.datastore.impl.HikariTestUtil.assertEventuallyNoHikariThreads;
@@ -56,12 +55,10 @@ public class ExternalDataStoreServiceImplTest extends HazelcastTestSupport {
 
     @Before
     public void configure() {
-        Properties properties = new Properties();
-        properties.put("jdbcUrl", "jdbc:h2:mem:" + ExternalDataStoreServiceImplTest.class.getSimpleName());
         ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
                 .setName(TEST_CONFIG_NAME)
                 .setClassName("com.hazelcast.datastore.JdbcDataStoreFactory")
-                .setProperties(properties);
+                .setProperty("jdbcUrl", "jdbc:h2:mem:" + ExternalDataStoreServiceImplTest.class.getSimpleName());
         config.addExternalDataStoreConfig(externalDataStoreConfig);
         externalDataStoreService = getExternalDataStoreService();
     }
@@ -70,6 +67,38 @@ public class ExternalDataStoreServiceImplTest extends HazelcastTestSupport {
     public void tearDown() throws Exception {
         hazelcastInstanceFactory.shutdownAll();
         assertEventuallyNoHikariThreads(TEST_CONFIG_NAME);
+    }
+
+    @Test
+    public void test_connection_should_return_TRUE_when_datastore_exists() throws Exception {
+        ExternalDataStoreConfig externalDSConfig = config.getExternalDataStoreConfig(TEST_CONFIG_NAME);
+
+        assertThat(externalDataStoreService.testConnection(externalDSConfig)).isTrue();
+    }
+
+    @Test
+    public void test_connection_should_throw_when_no_db_is_present() {
+        ExternalDataStoreConfig externalDSConfig = new ExternalDataStoreConfig()
+                .setName(TEST_CONFIG_NAME)
+                .setClassName("com.hazelcast.datastore.JdbcDataStoreFactory")
+                .setProperty("jdbcUrl", "jdbc:h2:file:/random/path;IFEXISTS=TRUE");
+
+        assertThatThrownBy(() -> externalDataStoreService.testConnection(externalDSConfig))
+                .hasMessageContaining("Database \"/random/path\" not found");
+    }
+
+    @Test
+    public void test_connection_should_throw_when_no_suitable_driver_is_present() {
+        ExternalDataStoreConfig externalDSConfig = new ExternalDataStoreConfig()
+                .setName(TEST_CONFIG_NAME)
+                .setClassName("com.hazelcast.datastore.JdbcDataStoreFactory")
+                .setProperty("jdbcUrl", "jdbc:mysql:localhost:3306/random_db");
+
+
+        assertThatThrownBy(() -> externalDataStoreService.testConnection(externalDSConfig))
+                .isExactlyInstanceOf(RuntimeException.class)
+                .hasCauseInstanceOf(SQLException.class)
+                .hasRootCauseMessage("No suitable driver");
     }
 
     @Test
