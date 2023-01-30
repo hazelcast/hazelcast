@@ -55,10 +55,11 @@ import static org.mockito.Mockito.when;
 public class JobUploadTest extends JetTestSupport {
 
     @After
-    public void resetSingleton () {
+    public void resetSingleton() {
         // Reset the singleton after the test
         HazelcastBootstrap.resetSupplier();
     }
+
     @Test
     public void sha256() throws IOException, NoSuchAlgorithmException {
         Path jarPath = getJarPath();
