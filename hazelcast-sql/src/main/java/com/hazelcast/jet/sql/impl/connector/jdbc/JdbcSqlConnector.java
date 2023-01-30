@@ -205,7 +205,7 @@ public class JdbcSqlConnector implements SqlConnector {
         QueryDataType type = resolveType(dbField.columnTypeName);
         if (!field.type().equals(type) && !type.getConverter().canConvertTo(field.type().getTypeFamily())) {
             throw new IllegalStateException("Type " + field.type().getTypeFamily() + " of field " + field.name()
-                                            + " does not match db type " + type.getTypeFamily());
+                    + " does not match db type " + type.getTypeFamily());
         }
     }
 
@@ -268,7 +268,7 @@ public class JdbcSqlConnector implements SqlConnector {
 
         } catch (Exception e) {
             throw new HazelcastException("Could not determine dialect for externalDataStoreRef: "
-                                         + externalDataStoreRef, e);
+                    + externalDataStoreRef, e);
         } finally {
             closeDataSource(dataSource);
         }
@@ -452,10 +452,10 @@ public class JdbcSqlConnector implements SqlConnector {
         @Override
         public String toString() {
             return "DbField{" +
-                   "name='" + columnName + '\'' +
-                   ", typeName='" + columnTypeName + '\'' +
-                   ", primaryKey=" + primaryKey +
-                   '}';
+                    "name='" + columnName + '\'' +
+                    ", typeName='" + columnTypeName + '\'' +
+                    ", primaryKey=" + primaryKey +
+                    '}';
         }
     }
 }
