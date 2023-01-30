@@ -562,7 +562,7 @@ public class MasterJobContext {
         }
     }
 
-    private void handleTermination(@Nonnull TerminationMode mode) {
+    void handleTermination(@Nonnull TerminationMode mode) {
         // this method can be called multiple times to handle the termination, it must
         // be safe against it (idempotent).
         if (mode.isWithTerminalSnapshot()) {

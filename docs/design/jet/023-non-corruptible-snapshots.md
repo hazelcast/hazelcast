@@ -15,8 +15,11 @@ Snapshot should be safe in case of single node misbehavior or failure.
 ## Terminology
 
 - **automatic snapshot** - snapshot collected periodically to provide fault tolerance and processing guarantees
-- **named snapshot** - snapshot exported manually on user request 
-- **terminal snapshot** - snapshot after which the job will be cancelled
+- **named snapshot** - snapshot exported manually on user request with specific IMap name 
+- **terminal snapshot** - snapshot after which the job will be cancelled. Terminal snapshot may be named 
+  (`cancelAndExportSnapshot`) or not (`suspend()`).
+  When not named, the terminal snapshot is written in the same maps as automatic snapshot.
+- **export-only snapshot** - named snapshot that is not terminal.
 
 ## Current snapshotting algorithm
 
@@ -107,9 +110,10 @@ New algorithm uses the fact that some `IMap` operations can end with `Indetermin
 
 #### Snapshot taking procedure
 
-1. Initiate snapshot: generate new `ongoingSnapshotId` (always incremented, never reused, even for exported snapshots) in `JobExecutionRecord`
+1. Initiate snapshot: generate new `ongoingSnapshotId` in `JobExecutionRecord` (always incremented, never reused, even for exported snapshots)
 2. Write `JobExecutionRecord` using safe method
    Indeterminate result or other failure -> snapshot failed to start, there is no need to rollback or commit anything.
+   After this step new `ongoingSnapshotId` is safe and guaranteed to be unique.
 3. Clear ongoing snapshot map.
    Indeterminate result -> not possible, however operation may not be replicated to all backups.
    Stray records are not a big problem because each record in snapshot map has `snapshotId`
