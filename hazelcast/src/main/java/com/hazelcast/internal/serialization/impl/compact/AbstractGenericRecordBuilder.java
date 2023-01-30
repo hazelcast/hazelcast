@@ -93,6 +93,10 @@ abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
     @Nonnull
     @Override
     public GenericRecordBuilder setGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord value) {
+        if (value != null && !(value instanceof CompactGenericRecord)) {
+            throw new HazelcastSerializationException("You can only use compact generic records in a compact" +
+                    " generic record builder");
+        }
         return write(fieldName, value, FieldKind.COMPACT);
     }
 
@@ -129,6 +133,14 @@ abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
+        if (value != null) {
+            for (GenericRecord genericRecord : value) {
+                if (!(genericRecord instanceof CompactGenericRecord)) {
+                    throw new HazelcastSerializationException("You can only use compact generic records in a compact" +
+                            " generic record builder");
+                }
+            }
+        }
         return write(fieldName, value, FieldKind.ARRAY_OF_COMPACT);
     }
 
