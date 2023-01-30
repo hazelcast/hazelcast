@@ -18,7 +18,7 @@ package com.hazelcast.internal.tpc.nio;
 
 import com.hazelcast.internal.tpc.AsyncServerSocket;
 import com.hazelcast.internal.tpc.AsyncSocket;
-import com.hazelcast.internal.tpc.Eventloop;
+import com.hazelcast.internal.tpc.Reactor;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -55,16 +55,16 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
     private final ServerSocketChannel serverSocketChannel;
     private final Selector selector;
-    private final NioEventloop eventloop;
+    private final NioReactor reactor;
     private final Thread eventloopThread;
 
-    private NioAsyncServerSocket(NioEventloop eventloop) {
+    private NioAsyncServerSocket(NioReactor reactor) {
         try {
             this.serverSocketChannel = ServerSocketChannel.open();
             serverSocketChannel.configureBlocking(false);
-            this.eventloop = eventloop;
-            this.eventloopThread = eventloop.eventloopThread();
-            this.selector = eventloop.selector;
+            this.reactor = reactor;
+            this.eventloopThread = reactor.eventloopThread();
+            this.selector = reactor.selector;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -73,18 +73,18 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     /**
      * Opens a TCP/IP (stream) based IPv4 NioAsyncServerSocket.
      * <p/>
-     * To prevent coupling to Nio, it is better to use the {@link Eventloop#openTcpAsyncServerSocket()}.
+     * To prevent coupling to Nio, it is better to use the {@link Reactor#openTcpAsyncServerSocket()}.
      *
-     * @param eventloop the eventloop the opened socket will be processed by.
+     * @param reactor the reactor the opened socket will be processed by.
      * @return the opened NioAsyncServerSocket.
      */
-    public static NioAsyncServerSocket openTcpServerSocket(NioEventloop eventloop) {
-        return new NioAsyncServerSocket(eventloop);
+    public static NioAsyncServerSocket openTcpServerSocket(NioReactor reactor) {
+        return new NioAsyncServerSocket(reactor);
     }
 
     @Override
-    public NioEventloop getEventloop() {
-        return eventloop;
+    public NioReactor getReactor() {
+        return reactor;
     }
 
     @Override
@@ -215,14 +215,14 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             }
         };
 
-        if (!eventloop.offer(acceptTask)) {
+        if (!reactor.offer(acceptTask)) {
             future.completeExceptionally(new RuntimeException("Failed to offer accept task"));
         }
 
         return future;
     }
 
-    private final class AcceptHandler implements SelectionKeyListener {
+    private final class AcceptHandler implements NioHandler {
 
         private final Consumer<AsyncSocket> consumer;
 

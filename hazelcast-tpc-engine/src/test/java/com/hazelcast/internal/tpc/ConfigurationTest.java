@@ -22,20 +22,20 @@ import org.junit.Test;
 public class ConfigurationTest {
 
     @Test(expected = NullPointerException.class)
-    public void setEventLoopConfiguration_whenNull() {
+    public void test_setReactorBuilder_whenNull() {
         Configuration configuration = new Configuration();
-        configuration.setEventloopBuilder(null);
+        configuration.setReactorBuilder(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void setEventLoopConfiguration_whenZero() {
+    public void test_setReactorCount_whenZero() {
         Configuration configuration = new Configuration();
-        configuration.setEventloopCount(0);
+        configuration.setReactorCount(0);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void setEventLoopConfiguration_whenNegative() {
+    public void test_setReactorCount_whenNegative() {
         Configuration configuration = new Configuration();
-        configuration.setEventloopCount(-1);
+        configuration.setReactorCount(-1);
     }
 }

@@ -51,21 +51,21 @@ public abstract class AsyncSocket_RpcTest {
     public int iterations = 200;
     public final ConcurrentMap<Long, CompletableFuture> futures = new ConcurrentHashMap<>();
 
-    private Eventloop clientEventloop;
-    private Eventloop serverEventloop;
+    private Reactor clientReactor;
+    private Reactor serverReactor;
 
-    public abstract Eventloop createEventloop();
+    public abstract Reactor newReactor();
 
     @Before
     public void before() {
-        clientEventloop = createEventloop();
-        serverEventloop = createEventloop();
+        clientReactor = newReactor();
+        serverReactor = newReactor();
     }
 
     @After
     public void after() throws InterruptedException {
-        terminate(clientEventloop);
-        terminate(serverEventloop);
+        terminate(clientReactor);
+        terminate(serverReactor);
     }
 
     @Test
@@ -280,7 +280,7 @@ public abstract class AsyncSocket_RpcTest {
     }
 
     private AsyncSocket newClient(SocketAddress serverAddress) {
-        AsyncSocket clientSocket = clientEventloop.openTcpAsyncSocket();
+        AsyncSocket clientSocket = clientReactor.openTcpAsyncSocket();
         clientSocket.setTcpNoDelay(true);
         clientSocket.setSendBufferSize(SOCKET_BUFFER_SIZE);
         clientSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
@@ -318,13 +318,13 @@ public abstract class AsyncSocket_RpcTest {
                 }
             }
         });
-        clientSocket.activate(clientEventloop);
+        clientSocket.activate(clientReactor);
         clientSocket.connect(serverAddress).join();
         return clientSocket;
     }
 
     private AsyncServerSocket newServer(SocketAddress serverAddress) {
-        AsyncServerSocket serverSocket = serverEventloop.openTcpAsyncServerSocket();
+        AsyncServerSocket serverSocket = serverReactor.openTcpAsyncServerSocket();
         serverSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
         serverSocket.bind(serverAddress);
 
@@ -370,7 +370,7 @@ public abstract class AsyncSocket_RpcTest {
                     }
                 }
             });
-            socket.activate(serverEventloop);
+            socket.activate(serverReactor);
         });
 
         return serverSocket;

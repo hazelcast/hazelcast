@@ -39,25 +39,25 @@ public class TpcTestSupport {
         assertTrueEventually(() -> assertTrue("Future has not completed", future.isDone()));
     }
 
-    public static void terminateAll(Collection<? extends Eventloop> eventloops) {
-        if (eventloops == null) {
+    public static void terminateAll(Collection<? extends Reactor> reactors) {
+        if (reactors == null) {
             return;
         }
 
-        for (Eventloop eventloop : eventloops) {
-            if (eventloop == null) {
+        for (Reactor reactor : reactors) {
+            if (reactor == null) {
                 continue;
             }
-            eventloop.shutdown();
+            reactor.shutdown();
         }
 
-        for (Eventloop eventloop : eventloops) {
-            if (eventloop == null) {
+        for (Reactor reactor : reactors) {
+            if (reactor == null) {
                 continue;
             }
             try {
-                if (!eventloop.awaitTermination(TERMINATION_TIMEOUT_SECONDS, SECONDS)) {
-                    throw new RuntimeException("Eventloop failed to terminate within timeout.");
+                if (!reactor.awaitTermination(TERMINATION_TIMEOUT_SECONDS, SECONDS)) {
+                    throw new RuntimeException("Reactor failed to terminate within timeout.");
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
@@ -65,15 +65,15 @@ public class TpcTestSupport {
         }
     }
 
-    public static void terminate(Eventloop eventloop) {
-        if (eventloop == null) {
+    public static void terminate(Reactor reactor) {
+        if (reactor == null) {
             return;
         }
 
-        eventloop.shutdown();
+        reactor.shutdown();
         try {
-            if (!eventloop.awaitTermination(TERMINATION_TIMEOUT_SECONDS, SECONDS)) {
-                throw new RuntimeException("Eventloop failed to terminate within timeout.");
+            if (!reactor.awaitTermination(TERMINATION_TIMEOUT_SECONDS, SECONDS)) {
+                throw new RuntimeException("Reactor failed to terminate within timeout.");
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

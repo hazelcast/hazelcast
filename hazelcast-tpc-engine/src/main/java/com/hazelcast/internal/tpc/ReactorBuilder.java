@@ -27,15 +27,16 @@ import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
 import static java.lang.System.getProperty;
 
 /**
- * A builder for {@link Eventloop} instances.
+ * A builder for {@link Reactor} instances.
  */
-public abstract class EventloopBuilder {
+public abstract class ReactorBuilder {
     public static final String NAME_LOCAL_TASK_QUEUE_CAPACITY = "hazelcast.tpc.localTaskQueue.capacity";
     public static final String NAME_CONCURRENT_TASK_QUEUE_CAPACITY = "hazelcast.tpc.concurrentTaskQueue.capacity";
     public static final String NAME_SCHEDULED_TASK_QUEUE_CAPACITY = "hazelcast.tpc.scheduledTaskQueue.capacity";
     public static final String NAME_BATCH_SIZE = "hazelcast.tpc.batch.size";
     public static final String NAME_CLOCK_REFRESH_PERIOD = "hazelcast.tpc.clock.refreshPeriod";
-    public static final String NAME_EVENTLOOP_SPIN = "hazelcast.tpc.eventloop.spin";
+    public static final String NAME_REACTOR_SPIN = "hazelcast.tpc.reactor.spin";
+    public static final String NAME_REACTOR_AFFINITY = "hazelcast.tpc.reactor.affinity";
 
     private static final int DEFAULT_LOCAL_QUEUE_CAPACITY = 65536;
     private static final int DEFAULT_CONCURRENT_QUEUE_CAPACITY = 65536;
@@ -44,10 +45,10 @@ public abstract class EventloopBuilder {
     private static final int DEFAULT_CLOCK_REFRESH_INTERVAL = 16;
     private static final boolean DEFAULT_SPIN = false;
 
-    protected final EventloopType type;
+    protected final ReactorType type;
     Supplier<Scheduler> schedulerSupplier = NopScheduler::new;
     Supplier<String> threadNameSupplier;
-    ThreadAffinity threadAffinity = ThreadAffinity.newSystemThreadAffinity("hazelcast.tpc.eventloop.affinity");
+    ThreadAffinity threadAffinity = ThreadAffinity.newSystemThreadAffinity(NAME_REACTOR_AFFINITY);
 
     ThreadFactory threadFactory = Thread::new;
     boolean spin;
@@ -57,7 +58,7 @@ public abstract class EventloopBuilder {
     int batchSize;
     int clockRefreshPeriod;
 
-    protected EventloopBuilder(EventloopType type) {
+    protected ReactorBuilder(ReactorType type) {
         this.type = checkNotNull(type);
         this.localTaskQueueCapacity = Integer.getInteger(
                 NAME_LOCAL_TASK_QUEUE_CAPACITY, DEFAULT_LOCAL_QUEUE_CAPACITY);
@@ -67,15 +68,15 @@ public abstract class EventloopBuilder {
                 NAME_SCHEDULED_TASK_QUEUE_CAPACITY, DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY);
         this.batchSize = Integer.getInteger(NAME_BATCH_SIZE, DEFAULT_BATCH_SIZE);
         this.clockRefreshPeriod = Integer.getInteger(NAME_CLOCK_REFRESH_PERIOD, DEFAULT_CLOCK_REFRESH_INTERVAL);
-        this.spin = Boolean.parseBoolean(getProperty(NAME_EVENTLOOP_SPIN, Boolean.toString(DEFAULT_SPIN)));
+        this.spin = Boolean.parseBoolean(getProperty(NAME_REACTOR_SPIN, Boolean.toString(DEFAULT_SPIN)));
     }
 
     /**
-     * Creates an Eventloop based on the configuration of this {@link EventloopBuilder}.
+     * Builds a Reactor based on the configuration of this {@link ReactorBuilder}.
      *
-     * @return the created Eventloop.
+     * @return the created Reactor.
      */
-    public abstract Eventloop create();
+    public abstract Reactor build();
 
     /**
      * Sets the clock refresh period.
@@ -89,7 +90,7 @@ public abstract class EventloopBuilder {
     }
 
     /**
-     * Sets the ThreadFactory used to create the Thread that runs the {@link Eventloop}.
+     * Sets the ThreadFactory used to create the Thread that runs the {@link Reactor}.
      *
      * @param threadFactory the ThreadFactory
      * @throws NullPointerException if threadFactory is null.

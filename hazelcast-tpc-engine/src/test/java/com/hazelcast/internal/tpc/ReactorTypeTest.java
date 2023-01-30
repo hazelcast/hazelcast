@@ -20,24 +20,24 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class EventloopTypeTest {
+public class ReactorTypeTest {
 
     @Test
     public void test_fromString() {
-        assertEquals(EventloopType.NIO, EventloopType.fromString("nio"));
-        assertEquals(EventloopType.NIO, EventloopType.fromString("NIO"));
-        assertEquals(EventloopType.IOURING, EventloopType.fromString("iouring"));
-        assertEquals(EventloopType.IOURING, EventloopType.fromString("io_uring"));
-        assertEquals(EventloopType.IOURING, EventloopType.fromString("IOURING"));
+        assertEquals(ReactorType.NIO, ReactorType.fromString("nio"));
+        assertEquals(ReactorType.NIO, ReactorType.fromString("NIO"));
+        assertEquals(ReactorType.IOURING, ReactorType.fromString("iouring"));
+        assertEquals(ReactorType.IOURING, ReactorType.fromString("io_uring"));
+        assertEquals(ReactorType.IOURING, ReactorType.fromString("IOURING"));
     }
 
     @Test(expected = NullPointerException.class)
     public void test_fromString_whenNull() {
-        EventloopType.fromString(null);
+        ReactorType.fromString(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_fromString_whenBogusString() {
-        EventloopType.fromString("bogus");
+        ReactorType.fromString("bogus");
     }
 }
