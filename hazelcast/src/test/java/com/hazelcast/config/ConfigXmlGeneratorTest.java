@@ -343,6 +343,17 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testNetworkConfigAltoSocketConfig() {
+        Config expectedConfig = new Config();
+        expectedConfig.getNetworkConfig().getAltoSocketConfig()
+                .setPortRange("14000-16000")
+                .setReceiveBufferSizeKB(256)
+                .setSendBufferSizeKB(256);
+        Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
+        assertEquals(expectedConfig.getAltoConfig(), actualConfig.getAltoConfig());
+    }
+
+    @Test
     public void testListenerConfig() {
         Config expectedConfig = new Config();
 
@@ -1335,6 +1346,11 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         expected.setSocketTcpNoDelay(true);
         expected.setSocketBufferDirect(true);
 
+        expected.getAltoSocketConfig()
+                .setPortRange("14000-16000")
+                .setReceiveBufferSizeKB(256)
+                .setSendBufferSizeKB(256);
+
         cfg.getAdvancedNetworkConfig().setEnabled(true);
         cfg.getAdvancedNetworkConfig().addWanEndpointConfig(expected);
 
@@ -1478,6 +1494,16 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
 
         assertEquals(expectedConfig.getExternalDataStoreConfigs(), actualConfig.getExternalDataStoreConfigs());
+    }
+
+    @Test
+    public void testAltoConfig() {
+        Config expectedConfig = new Config();
+        expectedConfig.getAltoConfig()
+                .setEventloopCount(12)
+                .setEnabled(true);
+        Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
+        assertEquals(expectedConfig.getAltoConfig(), actualConfig.getAltoConfig());
     }
 
     private Config getNewConfigViaXMLGenerator(Config config) {

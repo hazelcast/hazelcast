@@ -16,9 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.spi.annotation.Beta;
 
+import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -223,6 +226,14 @@ public class RestServerEndpointConfig
     @Override
     public RestServerEndpointConfig setSSLConfig(SSLConfig sslConfig) {
         super.setSSLConfig(sslConfig);
+        return this;
+    }
+
+    @Beta
+    @Nonnull
+    @Override
+    public RestServerEndpointConfig setAltoSocketConfig(@Nonnull AltoSocketConfig altoSocketConfig) {
+        super.setAltoSocketConfig(altoSocketConfig);
         return this;
     }
 

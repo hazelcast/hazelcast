@@ -17,14 +17,14 @@
 package com.hazelcast.internal.tpc.nio;
 
 import com.hazelcast.internal.tpc.AsyncSocket_LargePayloadTest;
-import com.hazelcast.internal.tpc.Eventloop;
+import com.hazelcast.internal.tpc.Reactor;
 
 public class NioAsyncSocket_LargePayloadTest extends AsyncSocket_LargePayloadTest {
 
     @Override
-    public Eventloop createEventloop() {
-        Eventloop clientEventloop = new NioEventloop();
-        clientEventloop.start();
-        return clientEventloop;
+    public Reactor newReactor() {
+        Reactor clientReactor = new NioReactor();
+        clientReactor.start();
+        return clientReactor;
     }
 }

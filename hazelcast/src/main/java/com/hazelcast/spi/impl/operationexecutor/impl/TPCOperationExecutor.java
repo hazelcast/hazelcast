@@ -36,7 +36,7 @@ import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.internal.tpc.Eventloop;
+import com.hazelcast.internal.tpc.Reactor;
 import com.hazelcast.internal.bootstrap.AltoEventloopThread;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -283,7 +283,7 @@ public final class TPCOperationExecutor implements OperationExecutor, StaticMetr
     @Override
     @Probe(name = OPERATION_METRIC_EXECUTOR_PARTITION_THREAD_COUNT)
     public int getPartitionThreadCount() {
-        return engine.eventloopCount();
+        return engine.reactorCount();
     }
 
     @Override
@@ -294,7 +294,7 @@ public final class TPCOperationExecutor implements OperationExecutor, StaticMetr
 
     @Override
     public int getPartitionThreadId(int partitionId) {
-        return getPartitionThreadId(partitionId, engine.eventloopCount());
+        return getPartitionThreadId(partitionId, engine.reactorCount());
     }
 
     @Override
@@ -333,9 +333,8 @@ public final class TPCOperationExecutor implements OperationExecutor, StaticMetr
         if (partitionId < 0) {
             genericQueue.add(task, priority);
         } else {
-            Eventloop eventloop = engine.eventloop(toPartitionThreadIndex(partitionId));
-
-            eventloop.offer(() -> {
+            Reactor reactor = engine.reactor(toPartitionThreadIndex(partitionId));
+            reactor.offer(() -> {
                 try {
                     OperationRunner runner = partitionOperationRunners[partitionId];
                     if (task instanceof Operation) {
@@ -359,9 +358,10 @@ public final class TPCOperationExecutor implements OperationExecutor, StaticMetr
         checkNotNull(task, "task can't be null");
         boolean priority = task instanceof UrgentSystemOperation;
 
-        for (int k = 0; k < engine.eventloopCount(); k++) {
-            Eventloop eventloop = engine.eventloop(k);
-            eventloop.offer(task);
+        // todo: currently there is no priority mechanism. Needs to be addressed.
+        for (int k = 0; k < engine.reactorCount(); k++) {
+            Reactor reactor = engine.reactor(k);
+            reactor.offer(task);
         }
     }
 
@@ -463,13 +463,14 @@ public final class TPCOperationExecutor implements OperationExecutor, StaticMetr
 
     // public for testing purposes
     public int toPartitionThreadIndex(int partitionId) {
-        return partitionId % engine.eventloopCount();
+        return partitionId % engine.reactorCount();
     }
 
     @Override
     public void start() {
         if (logger.isFineEnabled()) {
-            logger.fine("Starting  " + genericThreads.length + " generic threads (" + priorityThreadCount + " dedicated for priority tasks)");
+            logger.fine("Starting " + genericThreads.length + " generic threads (" + priorityThreadCount
+                    + " dedicated for priority tasks)");
         }
         startAll(genericThreads);
     }

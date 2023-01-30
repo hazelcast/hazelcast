@@ -16,18 +16,13 @@
 
 package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.Eventloop;
+import com.hazelcast.internal.tpc.Reactor;
 import com.hazelcast.internal.tpc.EventloopTest;
 
 public class NioEventloopTest extends EventloopTest {
 
     @Override
-    public Eventloop.Type getType() {
-        return Eventloop.Type.NIO;
-    }
-
-    @Override
-    public Eventloop createEventloop() {
-        return new NioEventloop();
+    public Reactor newReactor() {
+        return new NioReactor();
     }
 }

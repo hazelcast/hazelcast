@@ -220,6 +220,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         connection.setConnectionType(getClientType());
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     protected abstract ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid,
                                                 byte serializationVersion,
                                                 int partitionCount, UUID clusterId, boolean failoverSupported,

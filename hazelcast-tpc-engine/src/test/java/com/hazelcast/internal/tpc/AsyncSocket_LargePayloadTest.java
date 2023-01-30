@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
-import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
+import com.hazelcast.internal.tpc.buffer.Buffer;
+import com.hazelcast.internal.tpc.buffer.BufferAllocator;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,47 +28,34 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.internal.tpc.TpcTestSupport.assertOpenEventually;
-import static com.hazelcast.internal.tpc.iobuffer.IOBufferAllocatorFactory.createConcurrentAllocator;
-import static com.hazelcast.internal.tpc.iobuffer.IOBufferAllocatorFactory.createGrowingThreadLocal;
-import static com.hazelcast.internal.tpc.iobuffer.IOBufferAllocatorFactory.createNotGrowingThreadLocal;
+import static com.hazelcast.internal.tpc.TpcTestSupport.terminate;
+import static com.hazelcast.internal.tpc.buffer.BufferAllocatorFactory.createConcurrentAllocator;
+import static com.hazelcast.internal.tpc.buffer.BufferAllocatorFactory.createGrowingThreadLocal;
+import static com.hazelcast.internal.tpc.buffer.BufferAllocatorFactory.createNotGrowingThreadLocal;
 import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpc.util.BufferUtil.put;
-import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 public abstract class AsyncSocket_LargePayloadTest {
     // use small buffers to cause a lot of network scheduling overhead (and shake down problems)
     public static final int SOCKET_BUFFER_SIZE = 16 * 1024;
-    public static int requestTotal = 20000;
+    public int iterations = 20;
 
-    private Eventloop clientEventloop;
-    private Eventloop serverEventloop;
-    private AsyncSocket clientSocket;
-    private AsyncServerSocket serverSocket;
+    private Reactor clientReactor;
+    private Reactor serverReactor;
 
-    public abstract Eventloop createEventloop();
+    public abstract Reactor newReactor();
 
     @Before
     public void before() {
-        clientEventloop = createEventloop();
-        serverEventloop = createEventloop();
+        clientReactor = newReactor();
+        serverReactor = newReactor();
     }
 
     @After
     public void after() throws InterruptedException {
-        closeQuietly(clientSocket);
-        closeQuietly(serverSocket);
-
-        if (clientEventloop != null) {
-            clientEventloop.shutdown();
-            clientEventloop.awaitTermination(10, SECONDS);
-        }
-
-        if (serverEventloop != null) {
-            serverEventloop.shutdown();
-            serverEventloop.awaitTermination(10, SECONDS);
-        }
+        terminate(clientReactor);
+        terminate(serverReactor);
     }
 
     @Test
@@ -211,13 +198,13 @@ public abstract class AsyncSocket_LargePayloadTest {
         AsyncSocket clientSocket = newClient(serverAddress, latch);
 
         System.out.println("Starting");
-        IOBufferAllocator allocator = createNotGrowingThreadLocal(1, null);
+        BufferAllocator allocator = createNotGrowingThreadLocal(1, null);
 
         for (int k = 0; k < concurrency; k++) {
             byte[] payload = new byte[payloadSize];
-            IOBuffer buf = allocator.allocate(SIZEOF_INT + SIZEOF_LONG + payload.length);
+            Buffer buf = allocator.allocate(SIZEOF_INT + SIZEOF_LONG + payload.length);
             buf.writeInt(payload.length);
-            buf.writeLong(requestTotal / concurrency);
+            buf.writeLong(iterations / concurrency);
             buf.writeBytes(payload);
             buf.flip();
             if (!clientSocket.write(buf)) {
@@ -230,16 +217,15 @@ public abstract class AsyncSocket_LargePayloadTest {
     }
 
     private AsyncSocket newClient(SocketAddress serverAddress, CountDownLatch latch) {
-        clientSocket = clientEventloop.openAsyncSocket();
+        AsyncSocket clientSocket = clientReactor.openTcpAsyncSocket();
         clientSocket.setTcpNoDelay(true);
-        clientSocket.setSoLinger(0);
         clientSocket.setSendBufferSize(SOCKET_BUFFER_SIZE);
         clientSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
         clientSocket.setReadHandler(new ReadHandler() {
             private ByteBuffer payloadBuffer;
             private long round;
             private int payloadSize = -1;
-            private final IOBufferAllocator responseAllocator = createGrowingThreadLocal();
+            private final BufferAllocator responseAllocator = createGrowingThreadLocal();
 
             @Override
             public void onRead(ByteBuffer receiveBuffer) {
@@ -272,7 +258,7 @@ public abstract class AsyncSocket_LargePayloadTest {
                     if (round == 0) {
                         latch.countDown();
                     } else {
-                        IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
+                        Buffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
                         responseBuf.writeInt(payloadSize);
                         responseBuf.writeLong(round);
                         responseBuf.write(payloadBuffer);
@@ -285,20 +271,18 @@ public abstract class AsyncSocket_LargePayloadTest {
                 }
             }
         });
-        clientSocket.activate(clientEventloop);
+        clientSocket.activate(clientReactor);
         clientSocket.connect(serverAddress).join();
 
         return clientSocket;
     }
 
     private AsyncServerSocket newServer(SocketAddress serverAddress) {
-        serverSocket = serverEventloop.openAsyncServerSocket();
+        AsyncServerSocket serverSocket = serverReactor.openTcpAsyncServerSocket();
         serverSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
         serverSocket.bind(serverAddress);
-        serverSocket.listen(10);
 
         serverSocket.accept(socket -> {
-            socket.setSoLinger(-1);
             socket.setTcpNoDelay(true);
             socket.setSendBufferSize(SOCKET_BUFFER_SIZE);
             socket.setReceiveBufferSize(serverSocket.getReceiveBufferSize());
@@ -306,7 +290,7 @@ public abstract class AsyncSocket_LargePayloadTest {
                 private ByteBuffer payloadBuffer;
                 private long round;
                 private int payloadSize = -1;
-                private final IOBufferAllocator responseAllocator = createConcurrentAllocator();
+                private final BufferAllocator responseAllocator = createConcurrentAllocator();
 
                 @Override
                 public void onRead(ByteBuffer receiveBuffer) {
@@ -335,7 +319,7 @@ public abstract class AsyncSocket_LargePayloadTest {
                         }
 
                         payloadBuffer.flip();
-                        IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
+                        Buffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
                         responseBuf.writeInt(payloadSize);
                         responseBuf.writeLong(round - 1);
                         responseBuf.write(payloadBuffer);
@@ -347,7 +331,7 @@ public abstract class AsyncSocket_LargePayloadTest {
                     }
                 }
             });
-            socket.activate(serverEventloop);
+            socket.activate(serverReactor);
         });
 
         return serverSocket;

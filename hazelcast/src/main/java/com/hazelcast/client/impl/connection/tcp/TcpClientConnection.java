@@ -29,10 +29,7 @@ import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.internal.server.tcp.ClientChannelInitializer;
 import com.hazelcast.internal.util.HashUtil;
-import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.logging.ILogger;
 
 import java.io.EOFException;
@@ -60,6 +57,7 @@ import static com.hazelcast.internal.util.StringUtil.timeToStringFriendly;
  * Client implementation of {@link Connection}.
  * ClientConnection is a connection between a Hazelcast Client and a Hazelcast Member.
  */
+@SuppressWarnings("checkstyle:MethodCount")
 public class TcpClientConnection implements ClientConnection {
 
     @Probe(name = CLIENT_METRIC_CONNECTION_CONNECTIONID, level = DEBUG)
@@ -86,7 +84,7 @@ public class TcpClientConnection implements ClientConnection {
     private volatile UUID remoteUuid;
     private volatile UUID clusterUuid;
     private volatile Channel[] tpcChannels;
-    public volatile ChannelInitializer channelInitializer;
+    private volatile ChannelInitializer channelInitializer;
 
     public TcpClientConnection(HazelcastClientInstanceImpl client, int connectionId, Channel channel) {
         this.client = client;
@@ -109,6 +107,14 @@ public class TcpClientConnection implements ClientConnection {
         this.channel = null;
         this.attributeMap = null;
         this.logger = client.getLoggingService().getLogger(TcpClientConnection.class);
+    }
+
+    public ChannelInitializer getChannelInitializer() {
+        return channelInitializer;
+    }
+
+    public void setChannelInitializer(ChannelInitializer channelInitializer) {
+        this.channelInitializer = channelInitializer;
     }
 
     public void setTpcChannels(Channel[] tpcChannels) {

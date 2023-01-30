@@ -16,61 +16,42 @@
 
 package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.AsyncServerSocket;
-import com.hazelcast.internal.tpc.AsyncSocket;
 import com.hazelcast.internal.tpc.Eventloop;
+import com.hazelcast.internal.tpc.Scheduler;
+import com.hazelcast.internal.tpc.util.NanoClock;
+import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.internal.tpc.util.Util.epochNanos;
+import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
- * Nio implementation of the {@link Eventloop}.
+ * Nio specific Eventloop implementation.
  */
-public final class NioEventloop extends Eventloop {
-    final Selector selector;
+class NioEventloop extends Eventloop {
 
-    public NioEventloop() {
-        this(new NioConfiguration());
-    }
+    final Selector selector = SelectorOptimizer.newSelector();
+    private final NioReactor reactor;
 
-    public NioEventloop(NioConfiguration config) {
-        super(config, Type.NIO);
-        this.selector = SelectorOptimizer.newSelector();
-    }
-
-    @Override
-    public AsyncServerSocket openAsyncServerSocket() {
-        return NioAsyncServerSocket.open(this);
+    NioEventloop(NioReactor reactor, NioReactorBuilder builder) {
+        super(reactor, builder);
+        this.reactor = reactor;
     }
 
     @Override
-    public AsyncSocket openAsyncSocket() {
-        return NioAsyncSocket.open();
-    }
+    protected void eventloop() throws Exception {
+        final NanoClock nanoClock = this.nanoClock;
+        final boolean spin = this.spin;
+        final Selector selector = this.selector;
+        final AtomicBoolean wakeupNeeded = this.wakeupNeeded;
+        final MpmcArrayQueue concurrentTaskQueue = this.concurrentTaskQueue;
+        final Scheduler scheduler = this.scheduler;
 
-    @Override
-    protected Unsafe createUnsafe() {
-        return new NioUnsafe();
-    }
-
-    @Override
-    public void wakeup() {
-        if (spin || Thread.currentThread() == eventloopThread) {
-            return;
-        }
-
-        if (wakeupNeeded.get() && wakeupNeeded.compareAndSet(true, false)) {
-            selector.wakeup();
-        }
-    }
-
-    @Override
-    protected void eventLoop() throws Exception {
         boolean moreWork = false;
         do {
             int keyCount;
@@ -78,11 +59,11 @@ public final class NioEventloop extends Eventloop {
                 keyCount = selector.selectNow();
             } else {
                 wakeupNeeded.set(true);
-                if (concurrentRunQueue.isEmpty()) {
-                    if (earliestDeadlineEpochNanos == -1) {
+                if (concurrentTaskQueue.isEmpty()) {
+                    if (earliestDeadlineNanos == -1) {
                         keyCount = selector.select();
                     } else {
-                        long timeoutMillis = NANOSECONDS.toMillis(earliestDeadlineEpochNanos - epochNanos());
+                        long timeoutMillis = NANOSECONDS.toMillis(earliestDeadlineNanos - nanoClock.nanoTime());
                         keyCount = timeoutMillis <= 0
                                 ? selector.selectNow()
                                 : selector.select(timeoutMillis);
@@ -99,37 +80,40 @@ public final class NioEventloop extends Eventloop {
                     SelectionKey key = it.next();
                     it.remove();
 
-                    NioSelectedKeyListener listener = (NioSelectedKeyListener) key.attachment();
+                    NioHandler handler = (NioHandler) key.attachment();
                     try {
-                        listener.handle(key);
+                        handler.handle(key);
                     } catch (IOException e) {
-                        listener.handleException(e);
+                        handler.close(null, e);
                     }
                 }
             }
 
-            runConcurrentTasks();
-
-            moreWork = scheduler.tick();
-
-            runLocalTasks();
-        } while (state == State.RUNNING);
+            moreWork = runConcurrentTasks();
+            moreWork |= scheduler.tick();
+            moreWork |= runScheduledTasks();
+            moreWork |= runLocalTasks();
+        } while (!stop);
     }
 
-    private class NioUnsafe extends Unsafe {
-    }
+    @Override
+    protected void afterEventloop() {
+        for (SelectionKey key : selector.keys()) {
+            NioHandler handler = (NioHandler) key.attachment();
 
-    /**
-     * Contains the configuration for the {@link NioEventloop}.
-     */
-    public static class NioConfiguration extends Configuration {
-        public NioConfiguration() {
-            super(Type.NIO);
+            if (handler == null) {
+                // There is no handler; so lets cancel the key to be sure it gets cancelled.
+                key.cancel();
+            } else {
+                // There is a handler; so it will take care of cancelling the key.
+                try {
+                    handler.close(reactor + " is terminating.", null);
+                } catch (Exception e) {
+                    logger.fine(e);
+                }
+            }
         }
 
-        @Override
-        public Eventloop create() {
-            return new NioEventloop(this);
-        }
+        closeQuietly(selector);
     }
 }

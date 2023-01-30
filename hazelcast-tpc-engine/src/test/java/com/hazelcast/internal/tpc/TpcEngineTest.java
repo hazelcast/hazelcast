@@ -20,7 +20,6 @@ package com.hazelcast.internal.tpc;
 import org.junit.After;
 import org.junit.Test;
 
-
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.tpc.TpcEngine.State.SHUTDOWN;
@@ -35,23 +34,26 @@ public class TpcEngineTest {
     private TpcEngine engine;
 
     @After
-    public void after() {
+    public void after() throws InterruptedException {
         if (engine != null) {
             engine.shutdown();
+            if (!engine.awaitTermination(10, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Failed to await termination due to timeout");
+            }
         }
     }
 
     @Test
     public void test() {
-        TpcEngine.Configuration configuration = new TpcEngine.Configuration();
-        int eventloopCount = 5;
-        configuration.setEventloopCount(eventloopCount);
+        Configuration configuration = new Configuration();
+        int reactorCount = 5;
+        configuration.setReactorCount(reactorCount);
 
         engine = new TpcEngine(configuration);
 
-        assertEquals(5, engine.eventloops().length);
-        assertEquals(eventloopCount, engine.eventloopCount());
-        assertEquals(Eventloop.Type.NIO, engine.eventloopType());
+        assertEquals(5, engine.reactors().length);
+        assertEquals(reactorCount, engine.reactorCount());
+        assertEquals(ReactorType.NIO, engine.reactorType());
     }
 
     // ===================== start =======================
@@ -83,7 +85,7 @@ public class TpcEngineTest {
     public void shutdown_whenRunning() throws InterruptedException {
         engine = new TpcEngine();
         engine.start();
-        engine.eventloop(0).offer(() -> {
+        engine.reactor(0).offer(() -> {
             sleepMillis(1000);
         });
         engine.shutdown();
@@ -96,7 +98,7 @@ public class TpcEngineTest {
     public void shutdown_whenShutdown() throws InterruptedException {
         engine = new TpcEngine();
         engine.start();
-        engine.eventloop(0).offer(() -> {
+        engine.reactor(0).offer(() -> {
             sleepMillis(1000);
         });
         engine.shutdown();

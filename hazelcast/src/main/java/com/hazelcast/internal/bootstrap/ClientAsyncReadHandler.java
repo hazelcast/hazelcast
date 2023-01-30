@@ -70,7 +70,7 @@ public class ClientAsyncReadHandler extends ReadHandler {
     }
 
     private void loadConnection(ClientMessage message) {
-        UUID clientUUID = FixedSizeTypesCodec.decodeUUID(message.startFrame.content, 0);
+        UUID clientUUID = FixedSizeTypesCodec.decodeUUID(message.getStartFrame().content, 0);
         ClientEndpoint clientEndpoint = findClientEndpoint(clientUUID);
         if (clientEndpoint == null) {
             throw new IllegalStateException("Could not find connection for client-uuid:" + clientUUID);

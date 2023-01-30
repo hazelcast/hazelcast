@@ -18,15 +18,18 @@ package com.hazelcast.internal.tpc.util;
 
 import java.lang.reflect.Field;
 
-public class ReflectionUtil {
+public final class ReflectionUtil {
+
+    private ReflectionUtil() {
+    }
 
     /**
      * Finds the value for a static field. If the field doesn't exist, null is returned.
      *
-     * @param clazz the class containing the static field.
+     * @param clazz     the class containing the static field.
      * @param fieldName the name of the static field.
-     * @return the value of the static field. If the field doesn't exist, null is returned.
      * @param <E>
+     * @return the value of the static field. If the field doesn't exist, null is returned.
      */
     public static <E> E findStaticFieldValue(Class clazz, String fieldName) {
         try {
@@ -37,5 +40,4 @@ public class ReflectionUtil {
         }
     }
 
-    private ReflectionUtil(){}
 }

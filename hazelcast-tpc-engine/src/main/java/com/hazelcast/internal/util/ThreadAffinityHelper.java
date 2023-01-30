@@ -19,7 +19,8 @@ package com.hazelcast.internal.util;
 import com.hazelcast.internal.tpc.logging.TpcLogger;
 import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpc.util.CloseUtil;
-import com.hazelcast.internal.tpc.util.Util;
+import com.hazelcast.internal.tpc.util.JVM;
+import com.hazelcast.internal.tpc.util.OS;
 import net.openhft.affinity.Affinity;
 
 import java.io.File;
@@ -28,7 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.BitSet;
 
-import static com.hazelcast.internal.tpc.util.Util.closeResource;
+import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
 
 /**
  * Affinity helper class that uses a Hazelcast developed affinity
@@ -116,7 +117,7 @@ public final class ThreadAffinityHelper {
                 throw new RuntimeException(t);
             }
         } finally {
-            closeResource(src);
+            closeQuietly(src);
         }
     }
 
@@ -129,7 +130,7 @@ public final class ThreadAffinityHelper {
             libDisabled = libDisabledString.toLowerCase().equals("true");
         }
 
-        if (!libDisabled && Util.isLinux() && !Util.is32bitJVM()) {
+        if (!libDisabled && OS.isLinux() && !JVM.is32bit()) {
             try {
                 System.load(extractBundledLib());
                 hzAffinityLibLoaded = true;

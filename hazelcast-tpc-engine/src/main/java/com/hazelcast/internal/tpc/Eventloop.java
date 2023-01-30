@@ -16,391 +16,166 @@
 
 package com.hazelcast.internal.tpc;
 
-
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpc.buffer.Buffer;
 import com.hazelcast.internal.tpc.logging.TpcLogger;
 import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
+import com.hazelcast.internal.tpc.util.BoundPriorityQueue;
+import com.hazelcast.internal.tpc.util.CachedNanoClock;
 import com.hazelcast.internal.tpc.util.CircularQueue;
-import com.hazelcast.internal.util.ThreadAffinity;
+import com.hazelcast.internal.tpc.util.NanoClock;
+import com.hazelcast.internal.tpc.util.StandardNanoClock;
 import com.hazelcast.internal.util.ThreadAffinityHelper;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.util.BitSet;
 import java.util.PriorityQueue;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-import java.util.function.Supplier;
 
-import static com.hazelcast.internal.tpc.Eventloop.State.NEW;
-import static com.hazelcast.internal.tpc.Eventloop.State.RUNNING;
-import static com.hazelcast.internal.tpc.Eventloop.State.SHUTDOWN;
-import static com.hazelcast.internal.tpc.Eventloop.State.TERMINATED;
-import static com.hazelcast.internal.tpc.util.CloseUtil.closeAllQuietly;
+import static com.hazelcast.internal.tpc.Reactor.State.TERMINATED;
+import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
-import static com.hazelcast.internal.tpc.util.Util.epochNanos;
-import static java.lang.System.getProperty;
-import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
 /**
- * A EventLoop is a thread that is an event loop.
- * <p>
- * The Eventloop infrastructure is unaware of what is being send. So it isn't aware of requests/responses.
- * <p>
- * A single eventloop can deal with many server ports.
+ * Contains the actual eventloop run by a Reactor.
+ * <p/>
+ * The Eventloop should only be touched by the Reactor-thread.
+ * <p/>
+ * External code should not rely on a particular Eventloop-type. This way the same code
+ * can be run on top of difference eventloops. So casting to a specific Eventloop type
+ * is a no-go.
  */
-@SuppressWarnings({"checkstyle:VisibilityModifier", "rawtypes"})
-public abstract class Eventloop implements Executor {
+@SuppressWarnings({"checkstyle:DeclarationOrder", "checkstyle:VisibilityModifier", "rawtypes"})
+public abstract class Eventloop implements Runnable {
+    private static final int INITIAL_ALLOCATOR_CAPACITY = 1024;
 
-    protected static final AtomicReferenceFieldUpdater<Eventloop, State> STATE
-            = newUpdater(Eventloop.class, State.class, "state");
-
-    private static final int INITIAL_ALLOCATOR_CAPACITY = 1 << 10;
-    private static final Runnable SHUTDOWN_TASK = () -> {
-    };
-
-    /**
-     * Allows for objects to be bound to this Eventloop. Useful for the lookup of services and other dependencies.
-     */
-    public final ConcurrentMap<?, ?> context = new ConcurrentHashMap<>();
-
-    public final CircularQueue<Runnable> localRunQueue;
-
-    protected final PriorityQueue<ScheduledTask> scheduledTaskQueue = new PriorityQueue<>();
-
-    protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
-    //todo: Litter; we need to come up with better solution.
-    protected final Set<AutoCloseable> closeables = new CopyOnWriteArraySet<>();
-
-    protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
-    protected final MpmcArrayQueue concurrentRunQueue;
-
-    protected final Scheduler scheduler;
+    public final Reactor reactor;
     protected final boolean spin;
+    protected final int batchSize;
+    protected final MpmcArrayQueue concurrentTaskQueue;
+    private final ReactorBuilder builder;
+    protected long earliestDeadlineNanos = -1;
+    protected final PriorityQueue<ScheduledTask> scheduledTaskQueue;
+    protected Scheduler scheduler;
+    protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
+    public final NanoClock nanoClock;
+    protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
+    protected boolean stop;
+    public final CircularQueue<Runnable> localTaskQueue;
+    public final PromiseAllocator promiseAllocator;
 
-    protected Unsafe unsafe;
-    protected final Thread eventloopThread;
-    protected volatile State state = NEW;
-    protected long earliestDeadlineEpochNanos = -1;
-
-    TpcEngine engine;
-
-    private final FutAllocator futAllocator;
-    private final Type type;
-    private final BitSet allowedCpus;
-    private final CountDownLatch terminationLatch = new CountDownLatch(1);
-
-    /**
-     * Creates a new {@link Eventloop}.
-     *
-     * @param config the {@link Configuration} uses to create this {@link Eventloop}.
-     * @throws NullPointerException if config is null.
-     */
-    public Eventloop(Configuration config, Type type) {
-        this.type = checkNotNull(type);
-        this.spin = config.spin;
-        this.scheduler = config.schedulerSupplier.get();
-        this.localRunQueue = new CircularQueue<>(config.localRunQueueCapacity);
-        this.concurrentRunQueue = new MpmcArrayQueue(config.concurrentRunQueueCapacity);
-        scheduler.init(this);
-        this.eventloopThread = config.threadFactory.newThread(new EventloopTask());
-        if (config.threadNameSupplier != null) {
-            eventloopThread.setName(config.threadNameSupplier.get());
-        }
-
-        this.allowedCpus = config.threadAffinity == null ? null : config.threadAffinity.nextAllowedCpus();
-        this.futAllocator = new FutAllocator(this, INITIAL_ALLOCATOR_CAPACITY);
+    public Eventloop(Reactor reactor, ReactorBuilder builder) {
+        this.reactor = reactor;
+        this.builder = builder;
+        this.scheduledTaskQueue = new BoundPriorityQueue<>(builder.scheduledTaskQueueCapacity);
+        this.localTaskQueue = new CircularQueue<>(builder.localTaskQueueCapacity);
+        this.concurrentTaskQueue = new MpmcArrayQueue(builder.concurrentTaskQueueCapacity);
+        this.spin = builder.spin;
+        this.batchSize = builder.batchSize;
+        this.promiseAllocator = new PromiseAllocator(this, INITIAL_ALLOCATOR_CAPACITY);
+        this.nanoClock = builder.clockRefreshPeriod == 0
+                ? new StandardNanoClock()
+                : new CachedNanoClock(builder.clockRefreshPeriod);
     }
 
     /**
-     * Returns the {@link Type} of this {@link Eventloop}.
-     * <p>
-     * This method is thread-safe.
-     *
-     * @return the {@link Type} of this {@link Eventloop}. Value will never be null.
-     */
-    public final Type type() {
-        return type;
-    }
-
-    /**
-     * Gets the Unsafe instance for this Eventloop.
-     *
-     * @return the Unsafe instance.
-     */
-    public final Unsafe unsafe() {
-        return unsafe;
-    }
-
-    /**
-     * Returns the {Scheduler} for this {@link Eventloop}.
-     * <p>
-     * This method is thread-safe.
-     *
-     * @return the {@link Scheduler}.
-     */
-    public Scheduler scheduler() {
-        return scheduler;
-    }
-
-    /**
-     * Returns the {@link Thread} that runs this {@link Eventloop}.
-     * <p>
-     * This method is thread-safe.
-     *
-     * @return the EventloopThread.
-     */
-    public Thread eventloopThread() {
-        return eventloopThread;
-    }
-
-    /**
-     * Returns the state of the Eventloop.
-     * <p>
-     * This method is thread-safe.
-     *
-     * @return the state.
-     */
-    public final State state() {
-        return state;
-    }
-
-    /**
-     * Opens an AsyncServerSocket and ties that socket to the this Eventloop instance.
-     * <p>
-     * This method is thread-safe.
-     *
-     * @return the opened AsyncServerSocket.
-     */
-    public abstract AsyncServerSocket openAsyncServerSocket();
-
-    /**
-     * Opens an AsyncSocket.
-     * <p/>
-     * This AsyncSocket isn't tied to this Eventloop. After it is opened, it needs to be assigned to a particular
-     * eventloop by calling {@link AsyncSocket#activate(Eventloop)}. The reason why this isn't done in 1 go, is
-     * that it could be that when the AsyncServerSocket accepts an AsyncSocket, we want to assign that AsyncSocket
-     * to a different Eventloop. Otherwise if there would be 1 AsyncServerSocket, connected AsyncSockets can only
-     * run on top of the Eventloop of the AsyncServerSocket instead of being distributed over multiple eventloops.
-     * <p>
-     * This method is thread-safe.
-     *
-     * @return the opened AsyncSocket.
-     */
-    public abstract AsyncSocket openAsyncSocket();
-
-    /**
-     * Creates the Eventloop specific Unsafe instance.
-     *
-     * @return the create Unsafe instance.
-     */
-    protected abstract Unsafe createUnsafe();
-
-    /**
-     * Is called before the {@link #eventLoop()} is called.
+     * Is called before the {@link #eventloop()} is called.
      * <p>
      * This method can be used to initialize resources.
      * <p>
-     * Is called from the eventloop thread.
+     * Is called from the reactor thread.
      */
     protected void beforeEventloop() throws Exception {
     }
 
     /**
      * Executes the actual eventloop.
+     * <p/>
+     * Is called from the reactor thread.
      *
      * @throws Exception
      */
-    protected abstract void eventLoop() throws Exception;
+    protected abstract void eventloop() throws Exception;
 
     /**
-     * Is called after the {@link #eventLoop()} is called.
+     * Is called after the {@link #eventloop()} is called.
      * <p>
      * This method can be used to cleanup resources.
      * <p>
-     * Is called from the eventloop thread.
+     * Is called from the reactor thread.
      */
     protected void afterEventloop() throws Exception {
     }
 
-    /**
-     * Starts the eventloop.
-     *
-     * @throws IllegalStateException if the Eventloop isn't in NEW state.
-     */
-    public void start() {
-        if (!STATE.compareAndSet(Eventloop.this, NEW, RUNNING)) {
-            throw new IllegalStateException("Can't start eventLoop, invalid state:" + state);
-        }
+    @Override
+    public void run() {
+        try {
+            try {
+                configureAffinity();
+                this.scheduler = builder.schedulerSupplier.get();
+                scheduler.init(this);
+                try {
+                    beforeEventloop();
+                    eventloop();
+                } finally {
+                    afterEventloop();
+                }
+            } catch (Throwable e) {
+                logger.severe(e);
+            } finally {
+                reactor.state = TERMINATED;
 
-        eventloopThread.start();
+                reactor.terminationLatch.countDown();
+
+                if (reactor.engine != null) {
+                    reactor.engine.notifyReactorTerminated();
+                }
+
+                if (logger.isInfoEnabled()) {
+                    logger.info(Thread.currentThread().getName() + " terminated");
+                }
+            }
+        } catch (Throwable e) {
+            // log whatever wasn't caught so that we don't swallow throwables.
+            logger.severe(e);
+        }
     }
 
-    /**
-     * Shuts down the Eventloop.
-     * <p>
-     * This call can safely be made no matter the state of the Eventloop.
-     * <p>
-     * This method is thread-safe.
-     */
-    public final void shutdown() {
-        for (; ; ) {
-            State oldState = state;
-            switch (oldState) {
-                case NEW:
-                    if (STATE.compareAndSet(this, oldState, TERMINATED)) {
-                        terminationLatch.countDown();
-                        if (engine != null) {
-                            engine.notifyEventloopTerminated();
-                        }
-                        return;
-                    }
-
-                    break;
-                case RUNNING:
-                    if (STATE.compareAndSet(this, oldState, SHUTDOWN)) {
-                        concurrentRunQueue.add(SHUTDOWN_TASK);
-                        wakeup();
-                        return;
-                    }
-                    break;
-                default:
-                    return;
+    private void configureAffinity() {
+        BitSet allowedCpus = builder.threadAffinity == null ? null : builder.threadAffinity.nextAllowedCpus();
+        if (allowedCpus != null) {
+            ThreadAffinityHelper.setAffinity(allowedCpus);
+            BitSet actualCpus = ThreadAffinityHelper.getAffinity();
+            if (!actualCpus.equals(allowedCpus)) {
+                logger.warning(Thread.currentThread().getName() + " affinity was not applied successfully. "
+                        + "Expected CPUs:" + allowedCpus + ". Actual CPUs:" + actualCpus);
+            } else {
+                if (logger.isFineEnabled()) {
+                    logger.fine(Thread.currentThread().getName() + " has affinity for CPUs:" + allowedCpus);
+                }
             }
         }
     }
 
-    /**
-     * Awaits for the termination of the Eventloop with the given timeout.
-     *
-     * @param timeout the timeout
-     * @param unit    the TimeUnit
-     * @return true if the Eventloop is terminated.
-     * @throws InterruptedException
-     */
-    public final boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-        terminationLatch.await(timeout, unit);
-        return state == TERMINATED;
-    }
-
-    /**
-     * Wakes up the {@link Eventloop} when it is blocked and needs to be woken up.
-     */
-    protected abstract void wakeup();
-
-    /**
-     * Registers an AutoCloseable on this Eventloop.
-     * <p>
-     * Registered closeable are automatically closed when the eventloop closes.
-     * Some examples: AsyncSocket and AsyncServerSocket.
-     * <p>
-     * If the Eventloop isn't in the running state, false is returned.
-     * <p>
-     * This method is thread-safe.
-     *
-     * @param closeable the AutoCloseable to register
-     * @return true if the closeable was successfully register, false otherwise.
-     * @throws NullPointerException if closeable is null.
-     */
-    public final boolean registerClosable(AutoCloseable closeable) {
-        checkNotNull(closeable, "closeable");
-
-        if (state != RUNNING) {
-            return false;
-        }
-
-        closeables.add(closeable);
-
-        if (state != RUNNING) {
-            closeables.remove(closeable);
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Deregisters an AutoCloseable from this Eventloop.
-     * <p>
-     * This method is thread-safe.
-     * <p>
-     * This method can be called no matter the state of the Eventloop.
-     *
-     * @param closeable the AutoCloseable to deregister.
-     */
-    public final void deregisterCloseable(AutoCloseable closeable) {
-        checkNotNull(closeable, "closeable");
-        closeables.remove(closeable);
-    }
-
-    @Override
-    public void execute(Runnable command) {
-        if (!offer(command)) {
-            throw new RejectedExecutionException("Task " + command.toString()
-                    + " rejected from " + this);
-        }
-    }
-
-    /**
-     * Offers a task to be executed on this {@link Eventloop}.
-     *
-     * @param task the task to execute.
-     * @return true if the task was accepted, false otherwise.
-     * @throws NullPointerException if task is null.
-     */
-    public final boolean offer(Runnable task) {
-        if (Thread.currentThread() == eventloopThread) {
-            return localRunQueue.offer(task);
-        } else if (concurrentRunQueue.offer(task)) {
-            wakeup();
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Offers an {@link IOBuffer} to be processed by this {@link Eventloop}.
-     *
-     * @param buff the {@link IOBuffer} to process.
-     * @return true if the buffer was accepted, false otherwise.
-     * @throws NullPointerException if buff is null.
-     */
-    public final boolean offer(IOBuffer buff) {
-        //todo: Don't want to add localRunQueue optimization like the offer(Runnable)?
-
-        if (concurrentRunQueue.offer(buff)) {
-            wakeup();
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    protected final void runLocalTasks() {
-        for (; ; ) {
+    protected final boolean runScheduledTasks() {
+        final PriorityQueue<ScheduledTask> scheduledTaskQueue = this.scheduledTaskQueue;
+        final NanoClock nanoClock = this.nanoClock;
+        final int batchSize = this.batchSize;
+        for (int k = 0; k < batchSize; k++) {
             ScheduledTask scheduledTask = scheduledTaskQueue.peek();
             if (scheduledTask == null) {
-                break;
+                return false;
             }
 
-            if (scheduledTask.deadlineEpochNanos > epochNanos()) {
+            if (scheduledTask.deadlineNanos > nanoClock.nanoTime()) {
                 // Task should not yet be executed.
-                earliestDeadlineEpochNanos = scheduledTask.deadlineEpochNanos;
-                break;
+                earliestDeadlineNanos = scheduledTask.deadlineNanos;
+                // we are done since all other tasks have a larger deadline.
+                return false;
             }
 
             scheduledTaskQueue.poll();
-            earliestDeadlineEpochNanos = -1;
+            earliestDeadlineNanos = -1;
             try {
                 scheduledTask.run();
             } catch (Exception e) {
@@ -408,257 +183,151 @@ public abstract class Eventloop implements Executor {
             }
         }
 
-        for (; ; ) {
-            Runnable task = localRunQueue.poll();
-            if (task == null) {
-                break;
-            }
-
-            try {
-                task.run();
-            } catch (Exception e) {
-                logger.warning(e);
-            }
-        }
+        return !scheduledTaskQueue.isEmpty();
     }
 
-    protected final void runConcurrentTasks() {
-        for (; ; ) {
-            Object task = concurrentRunQueue.poll();
+    protected final boolean runLocalTasks() {
+        final int batchSize = this.batchSize;
+        final CircularQueue<Runnable> localTaskQueue = this.localTaskQueue;
+        for (int k = 0; k < batchSize; k++) {
+            Runnable task = localTaskQueue.poll();
             if (task == null) {
-                break;
+                // there are no more tasks.
+                return false;
+            } else {
+                // there is a task, so lets execute it.
+                try {
+                    task.run();
+                } catch (Exception e) {
+                    logger.warning(e);
+                }
+            }
+        }
+
+        return !localTaskQueue.isEmpty();
+    }
+
+    protected final boolean runConcurrentTasks() {
+        final int batchSize = this.batchSize;
+        final MpmcArrayQueue concurrentTaskQueue = this.concurrentTaskQueue;
+        final Scheduler scheduler = this.scheduler;
+        for (int k = 0; k < batchSize; k++) {
+            Object task = concurrentTaskQueue.poll();
+            if (task == null) {
+                // there are no more tasks
+                return false;
             } else if (task instanceof Runnable) {
+                // there is a task, so lets execute it.
                 try {
                     ((Runnable) task).run();
                 } catch (Exception e) {
                     logger.warning(e);
                 }
-            } else if (task instanceof IOBuffer) {
-                scheduler.schedule((IOBuffer) task);
+            } else if (task instanceof Buffer) {
+                scheduler.schedule((Buffer) task);
             } else {
                 throw new RuntimeException("Unrecognized type:" + task.getClass());
             }
         }
+
+        return !concurrentTaskQueue.isEmpty();
     }
 
     /**
-     * Contains the Configuration for {@link Eventloop} instances.
-     * <p/>
-     * The configuration should not be modified after it is used to create Eventloops.
+     * Schedules a one shot action with the given delay.
+     *
+     * @param task  the task to execute.
+     * @param delay the delay
+     * @param unit  the unit of the delay
+     * @return true if the task was successfully scheduled.
+     * @throws NullPointerException     if task or unit is null
+     * @throws IllegalArgumentException when delay smaller than 0.
      */
-    public abstract static class Configuration {
-        private static final int INITIAL_LOCAL_QUEUE_CAPACITY = 1 << 10;
-        private static final int INITIAL_CONCURRENT_QUEUE_CAPACITY = 1 << 12;
-        protected final Type type;
-        private Supplier<Scheduler> schedulerSupplier = NopScheduler::new;
-        private Supplier<String> threadNameSupplier;
-        private ThreadAffinity threadAffinity;
-        private ThreadFactory threadFactory = Thread::new;
-        private boolean spin = Boolean.parseBoolean(getProperty("hazelcast.tpc.eventloop.spin", "false"));
-        private int localRunQueueCapacity = INITIAL_LOCAL_QUEUE_CAPACITY;
-        private int concurrentRunQueueCapacity = INITIAL_CONCURRENT_QUEUE_CAPACITY;
+    public final boolean schedule(Runnable task, long delay, TimeUnit unit) {
+        checkNotNull(task);
+        checkNotNegative(delay, "delay");
+        checkNotNull(unit);
 
-        protected Configuration(Type type) {
-            this.type = type;
+        ScheduledTask scheduledTask = new ScheduledTask(this);
+        scheduledTask.task = task;
+        long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(delay);
+        if (deadlineNanos < 0) {
+            // protection against overflow
+            deadlineNanos = Long.MAX_VALUE;
         }
-
-        /**
-         * Creates the Eventloop based on this Configuration.
-         *
-         * @return the created Eventloop.
-         */
-        public abstract Eventloop create();
-
-        /**
-         * Sets the ThreadFactory used to create the Thread that runs the {@link Eventloop}.
-         *
-         * @param threadFactory the ThreadFactory
-         * @throws NullPointerException if threadFactory is null.
-         */
-        public void setThreadFactory(ThreadFactory threadFactory) {
-            this.threadFactory = checkNotNull(threadFactory, "threadFactory");
-        }
-
-        /**
-         * Sets the supplier for the thread name. If configured, the thread name is set
-         * after the thread is created.
-         * <p/>
-         * If null, there is no thread name supplier and the default is used.
-         *
-         * @param threadNameSupplier the supplier for the thread name.
-         */
-        public void setThreadNameSupplier(Supplier<String> threadNameSupplier) {
-            this.threadNameSupplier = threadNameSupplier;
-        }
-
-        /**
-         * Sets the {@link ThreadAffinity}. If the threadAffinity is null, no thread affinity
-         * is applied.
-         *
-         * @param threadAffinity the ThreadAffinity.
-         */
-        public void setThreadAffinity(ThreadAffinity threadAffinity) {
-            this.threadAffinity = threadAffinity;
-        }
-
-        public void setLocalRunQueueCapacity(int localRunQueueCapacity) {
-            this.localRunQueueCapacity = checkPositive(localRunQueueCapacity, "localRunQueueCapacity");
-        }
-
-        public void setConcurrentRunQueueCapacity(int concurrentRunQueueCapacity) {
-            this.concurrentRunQueueCapacity = checkPositive(concurrentRunQueueCapacity, "concurrentRunQueueCapacity");
-        }
-
-        public final void setSpin(boolean spin) {
-            this.spin = spin;
-        }
-
-        public final void setSchedulerSupplier(Supplier<Scheduler> schedulerSupplier) {
-            this.schedulerSupplier = checkNotNull(schedulerSupplier);
-        }
-    }
-
-    protected static final class ScheduledTask implements Runnable, Comparable<ScheduledTask> {
-
-        private Fut fut;
-        private long deadlineEpochNanos;
-
-        @Override
-        public void run() {
-            fut.complete(null);
-        }
-
-        @Override
-        public int compareTo(Eventloop.ScheduledTask that) {
-            if (that.deadlineEpochNanos == this.deadlineEpochNanos) {
-                return 0;
-            }
-
-            return this.deadlineEpochNanos > that.deadlineEpochNanos ? 1 : -1;
-        }
+        scheduledTask.deadlineNanos = deadlineNanos;
+        return scheduledTaskQueue.offer(scheduledTask);
     }
 
     /**
-     * The {@link Runnable} containing the actual eventloop logic and is executed by by the eventloop {@link Thread}.
+     * Creates a periodically executing task with a fixed delay between the completion and start of
+     * the task.
+     *
+     * @param task         the task to periodically execute.
+     * @param initialDelay the initial delay
+     * @param delay        the delay between executions.
+     * @param unit         the unit of the initial delay and delay
+     * @return true if the task was successfully executed.
      */
-    private final class EventloopTask implements Runnable {
+    public final boolean scheduleWithFixedDelay(Runnable task, long initialDelay, long delay, TimeUnit unit) {
+        checkNotNull(task);
+        checkNotNegative(initialDelay, "initialDelay");
+        checkNotNegative(delay, "delay");
+        checkNotNull(unit);
 
-        @Override
-        public void run() {
-            setAffinity();
-
-            try {
-                try {
-                    unsafe = createUnsafe();
-                    beforeEventloop();
-                    eventLoop();
-                } finally {
-                    afterEventloop();
-                }
-            } catch (Throwable e) {
-                logger.severe(e);
-            } finally {
-                state = TERMINATED;
-                closeAllQuietly(closeables);
-                terminationLatch.countDown();
-                if (engine != null) {
-                    engine.notifyEventloopTerminated();
-                }
-                if (logger.isInfoEnabled()) {
-                    logger.info(Thread.currentThread().getName() + " terminated");
-                }
-            }
+        ScheduledTask scheduledTask = new ScheduledTask(this);
+        scheduledTask.task = task;
+        long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(initialDelay);
+        if (deadlineNanos < 0) {
+            // protection against overflow
+            deadlineNanos = Long.MAX_VALUE;
         }
-
-        private void setAffinity() {
-            if (allowedCpus != null) {
-                ThreadAffinityHelper.setAffinity(allowedCpus);
-                BitSet actualCpus = ThreadAffinityHelper.getAffinity();
-                if (!actualCpus.equals(allowedCpus)) {
-                    logger.warning(Thread.currentThread().getName() + " affinity was not applied successfully. "
-                            + "Expected CPUs:" + allowedCpus + ". Actual CPUs:" + actualCpus);
-                } else {
-                    if (logger.isFineEnabled()) {
-                        logger.fine(Thread.currentThread().getName() + " has affinity for CPUs:" + allowedCpus);
-                    }
-                }
-            }
-        }
+        scheduledTask.deadlineNanos = deadlineNanos;
+        scheduledTask.delayNanos = unit.toNanos(delay);
+        return scheduledTaskQueue.offer(scheduledTask);
     }
 
     /**
-     * Exposes methods that should only be called from within the {@link Eventloop}.
+     * Creates a periodically executing task with a fixed delay between the start of the task.
+     *
+     * @param task         the task to periodically execute.
+     * @param initialDelay the initial delay
+     * @param period       the period between executions.
+     * @param unit         the unit of the initial delay and delay
+     * @return true if the task was successfully executed.
      */
-    public abstract class Unsafe {
+    public final boolean scheduleAtFixedRate(Runnable task, long initialDelay, long period, TimeUnit unit) {
+        checkNotNull(task);
+        checkNotNegative(initialDelay, "initialDelay");
+        checkNotNegative(period, "period");
+        checkNotNull(unit);
 
-        /**
-         * Returns the {@link Eventloop} that belongs to this {@link Unsafe} instance.
-         *
-         * @return the Eventloop.
-         */
-        public Eventloop eventloop() {
-            return Eventloop.this;
+        ScheduledTask scheduledTask = new ScheduledTask(this);
+        scheduledTask.task = task;
+        long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(initialDelay);
+        if (deadlineNanos < 0) {
+            // protection against overflow
+            deadlineNanos = Long.MAX_VALUE;
         }
-
-        public <E> Fut<E> newFut() {
-            return futAllocator.allocate();
-        }
-
-        /**
-         * Offers a task to be scheduled on the eventloop.
-         *
-         * @param task the task to schedule.
-         * @return true if the task was successfully offered, false otherwise.
-         */
-        public boolean offer(Runnable task) {
-            return localRunQueue.offer(task);
-        }
-
-        public Fut sleep(long delay, TimeUnit unit) {
-            Fut fut = newFut();
-            ScheduledTask scheduledTask = new ScheduledTask();
-            scheduledTask.fut = fut;
-            scheduledTask.deadlineEpochNanos = epochNanos() + unit.toNanos(delay);
-            scheduledTaskQueue.add(scheduledTask);
-            return fut;
-        }
+        scheduledTask.deadlineNanos = deadlineNanos;
+        scheduledTask.periodNanos = unit.toNanos(period);
+        return scheduledTaskQueue.offer(scheduledTask);
     }
 
-    /**
-     * The state of the {@link Eventloop}.
-     */
-    public enum State {
-        NEW,
-        RUNNING,
-        SHUTDOWN,
-        TERMINATED
-    }
+    public final Promise sleep(long delay, TimeUnit unit) {
+        checkNotNegative(delay, "delay");
+        checkNotNull(unit, "unit");
 
-    public interface Scheduler {
-
-        void init(Eventloop eventloop);
-
-        boolean tick();
-
-        void schedule(IOBuffer task);
-    }
-
-    /**
-     * The Type of {@link Eventloop}.
-     */
-    public enum Type {
-
-        NIO, IOURING;
-
-        public static Type fromString(String type) {
-            String typeLowerCase = type.toLowerCase();
-            if (typeLowerCase.equals("io_uring") || typeLowerCase.equals("iouring")) {
-                return IOURING;
-            } else if (typeLowerCase.equals("nio")) {
-                return NIO;
-            } else {
-                throw new IllegalArgumentException("Unrecognized eventloop type [" + type + ']');
-            }
+        Promise promise = promiseAllocator.allocate();
+        ScheduledTask scheduledTask = new ScheduledTask(this);
+        scheduledTask.promise = promise;
+        long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(delay);
+        if (deadlineNanos < 0) {
+            // protection against overflow
+            deadlineNanos = Long.MAX_VALUE;
         }
+        scheduledTask.deadlineNanos = deadlineNanos;
+        scheduledTaskQueue.add(scheduledTask);
+        return promise;
     }
 }

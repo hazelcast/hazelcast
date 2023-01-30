@@ -19,8 +19,10 @@ package com.hazelcast.config;
 import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.annotation.PrivateApi;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Objects;
 
@@ -88,7 +90,7 @@ public class ServerSocketEndpointConfig
 
     /**
      * Sets the port the Hazelcast member will try to bind on.
-     *
+     * <p>
      * A valid port value is between 0 and 65535.
      * A port number of 0 will let the system pick up an ephemeral port.
      *
@@ -120,8 +122,8 @@ public class ServerSocketEndpointConfig
      * The maximum number of ports allowed to use.
      *
      * @param portCount the maximum number of ports allowed to use
-     * @see #setPortAutoIncrement(boolean) for more information
      * @return this configuration
+     * @see #setPortAutoIncrement(boolean) for more information
      */
     public ServerSocketEndpointConfig setPortCount(int portCount) {
         if (portCount < 1) {
@@ -271,6 +273,14 @@ public class ServerSocketEndpointConfig
     @Override
     public ServerSocketEndpointConfig setSSLConfig(SSLConfig sslConfig) {
         super.setSSLConfig(sslConfig);
+        return this;
+    }
+
+    @Beta
+    @Nonnull
+    @Override
+    public ServerSocketEndpointConfig setAltoSocketConfig(@Nonnull AltoSocketConfig altoSocketConfig) {
+        super.setAltoSocketConfig(altoSocketConfig);
         return this;
     }
 

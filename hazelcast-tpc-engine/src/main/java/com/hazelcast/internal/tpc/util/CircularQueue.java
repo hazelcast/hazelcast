@@ -27,7 +27,7 @@ import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
  * <p/>
  * This class is not thread-safe.
  *
- * @param <E>
+ * @param <E> the type of elements in this CircularQueue.
  */
 public final class CircularQueue<E> {
 
@@ -99,7 +99,7 @@ public final class CircularQueue<E> {
      * Adds an item to this CircularQueue.
      *
      * @param item the item to add.
-     * @throws NullPointerException if item is null.
+     * @throws NullPointerException  if item is null.
      * @throws IllegalStateException when there is no more space on this CircularQueue.
      */
     public void add(E item) {
@@ -109,16 +109,16 @@ public final class CircularQueue<E> {
     }
 
     /**
-     * Fills this CircularQueue with as many items as fit from the queue.
+     * Drains as many items from the src as fit into this CircularQueue.
      *
-     * @param queue the queue to drain.
-     * @return the number of items added.
+     * @param src the queue to drain.
+     * @return the number of items drained.
      */
-    public int fill(Queue<E> queue) {
+    public int drainFrom(Queue<E> src) {
         int remaining = remaining();
         int count = 0;
         for (int k = 0; k < remaining; k++) {
-            E item = queue.poll();
+            E item = src.poll();
             if (item == null) {
                 break;
             }

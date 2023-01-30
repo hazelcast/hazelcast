@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpc.buffer.Buffer;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -33,7 +33,7 @@ public final class IOVector {
 
     private static final int IOV_MAX = 1024;
 
-    private final IOBuffer[] ioBuffers = new IOBuffer[IOV_MAX];
+    private final Buffer[] buffers = new Buffer[IOV_MAX];
     private ByteBuffer[] byteBuffers = new ByteBuffer[IOV_MAX];
 
     private int ioBuffersSize = 0;
@@ -44,10 +44,10 @@ public final class IOVector {
         return ioBuffersSize == 0;
     }
 
-    public void populate(Queue<IOBuffer> queue) {
+    public void populate(Queue<Buffer> queue) {
         int count = IOV_MAX - ioBuffersSize;
         for (int k = 0; k < count; k++) {
-            IOBuffer buf = queue.poll();
+            Buffer buf = queue.poll();
             if (buf == null) {
                 break;
             }
@@ -55,7 +55,7 @@ public final class IOVector {
         }
     }
 
-    public boolean offer(IOBuffer buf) {
+    public boolean offer(Buffer buf) {
         if (ioBuffersSize == IOV_MAX) {
             return false;
         } else {
@@ -64,8 +64,8 @@ public final class IOVector {
         }
     }
 
-    private void add0(IOBuffer buf) {
-        ioBuffers[ioBuffersSize] = buf;
+    private void add0(Buffer buf) {
+        buffers[ioBuffersSize] = buf;
         ioBuffersSize++;
         ByteBuffer[] chunks = buf.getChunks();
         ensureRemaining(chunks.length);
@@ -89,8 +89,8 @@ public final class IOVector {
         if (written == pending) {
             // everything was written
             for (int i = 0; i < ioBuffersSize; i++) {
-                ioBuffers[i].release();
-                ioBuffers[i] = null;
+                buffers[i].release();
+                buffers[i] = null;
             }
             for (int i = 0; i < byteBuffersSize; i++) {
                 byteBuffers[i] = null;
@@ -118,8 +118,8 @@ public final class IOVector {
                 }
             } else {
                 byteBuffersSize--;
-                ioBuffers[chunkOwnerPos].releaseNextChunk(byteBuffers[i]);
-                if (!ioBuffers[chunkOwnerPos].hasRemainingChunks()) {
+                buffers[chunkOwnerPos].releaseNextChunk(byteBuffers[i]);
+                if (!buffers[chunkOwnerPos].hasRemainingChunks()) {
                     chunkOwnerPos++;
                 }
                 byteBuffers[i] = null;
@@ -129,19 +129,19 @@ public final class IOVector {
         int toIndexIoBuffers = 0;
         int initialIOBuffersLength = ioBuffersSize;
         for (int i = 0; i < initialIOBuffersLength; i++) {
-            if (ioBuffers[i].hasRemainingChunks()) {
+            if (buffers[i].hasRemainingChunks()) {
                 if (i == 0) {
                     // the first one is not empty, we are done
                     break;
                 } else {
-                    ioBuffers[toIndexIoBuffers] = ioBuffers[i];
-                    ioBuffers[i] = null;
+                    buffers[toIndexIoBuffers] = buffers[i];
+                    buffers[i] = null;
                     toIndexIoBuffers++;
                 }
             } else {
                 ioBuffersSize--;
-                ioBuffers[i].release();
-                ioBuffers[i] = null;
+                buffers[i].release();
+                buffers[i] = null;
             }
         }
     }
