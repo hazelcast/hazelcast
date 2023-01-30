@@ -41,9 +41,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.SqlDialectFactoryImpl;
-import org.apache.calcite.sql.dialect.H2SqlDialect;
-import org.apache.calcite.sql.dialect.MysqlSqlDialect;
-import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -378,18 +375,6 @@ public class JdbcSqlConnector implements SqlConnector {
                         table.getBatchLimit()
                 )
         );
-    }
-
-    // Returns if upsert is supported for the given dialect
-    protected boolean isUpsertSupported(JdbcTable jdbcTable) {
-        boolean result = false;
-        SqlDialect dialect = jdbcTable.sqlDialect();
-        if (dialect instanceof MysqlSqlDialect ||
-            dialect instanceof PostgresqlSqlDialect ||
-            dialect instanceof H2SqlDialect) {
-            result = true;
-        }
-        return result;
     }
 
     /**
