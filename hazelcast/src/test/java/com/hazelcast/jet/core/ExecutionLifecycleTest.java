@@ -895,7 +895,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             job.join();
             fail("Job execution should have failed");
         } catch (Throwable e) {
-            assertContains(e.getMessage(), "bum!");
+            assertContains(e.getMessage(), "boom!");
         }
     }
 
@@ -912,7 +912,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         @Nonnull @Override
         public List<Processor> get(int count) {
-            throw new JetException(new NonSerializableException("bum!"));
+            throw new JetException(new NonSerializableException("boom!"));
         }
     }
 
