@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.serialization.impl.portable;
 
-import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
@@ -173,8 +172,8 @@ public class PortableGenericRecordBuilder implements GenericRecordBuilder {
     @Override
     public GenericRecordBuilder setGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord value) {
         if (value != null && !(value instanceof PortableGenericRecord)) {
-            throw new HazelcastSerializationException("You can only use portable generic records in a portable" +
-                    " generic record builder");
+            throw new HazelcastSerializationException("You can only use portable generic records in a portable"
+                    + " generic record builder");
         }
         return set(fieldName, value, FieldType.PORTABLE);
     }
@@ -215,8 +214,8 @@ public class PortableGenericRecordBuilder implements GenericRecordBuilder {
         if (value != null) {
             for (GenericRecord genericRecord : value) {
                 if (!(genericRecord instanceof PortableGenericRecord)) {
-                    throw new HazelcastSerializationException("You can only use portable generic records in a portable" +
-                            " generic record builder");
+                    throw new HazelcastSerializationException("You can only use portable generic records in a portable"
+                            + " generic record builder");
                 }
             }
         }
