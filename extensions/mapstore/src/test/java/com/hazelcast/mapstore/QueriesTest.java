@@ -28,14 +28,13 @@ public class QueriesTest {
 
     final String mapping = "mymapping";
 
-    String idColumn = "id";
+    final String idColumn = "id";
 
     final List<SqlColumnMetadata> columnMetadata = Arrays.asList(
             new SqlColumnMetadata("id", SqlColumnType.INTEGER, false),
             new SqlColumnMetadata("name", SqlColumnType.VARCHAR, true),
             new SqlColumnMetadata("address", SqlColumnType.VARCHAR, true)
     );
-
 
     @Test
     public void testLoad() {
@@ -60,7 +59,6 @@ public class QueriesTest {
 
     @Test
     public void testStoreInsert() {
-
         Queries queries = new Queries(mapping, idColumn, columnMetadata);
         String result = queries.storeInsert();
         Assert.assertEquals("SINK INTO \"mymapping\" (\"id\", \"name\", \"address\") VALUES (?, ?, ?)", result);
