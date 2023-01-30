@@ -1165,7 +1165,7 @@
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.8</version>
+                        <version>1.6.10</version>
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>release-repository</serverId>
@@ -1898,7 +1898,7 @@
             <dependency>
                 <groupId>net.minidev</groupId>
                 <artifactId>json-smart</artifactId>
-                <version>2.4.7</version>
+                <version>2.4.8</version>
             </dependency>
             <dependency>
               <groupId>org.wildfly.openssl</groupId>
