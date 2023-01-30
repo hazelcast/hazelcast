@@ -70,6 +70,7 @@ class Queries {
                 queryParams(n));
     }
 
+    // Generate "?, ?" string for JDBC parameter binding
     private String queryParams(long n) {
         return Stream.generate(() -> "?").limit(n).collect(joining(", "));
     }
