@@ -71,6 +71,11 @@ public class HzClientDataStoreFactory implements ExternalDataStoreFactory<Hazelc
     }
 
     @Override
+    public boolean testConnection() {
+        return true;
+    }
+
+    @Override
     public synchronized void close() throws Exception {
         if (hazelcastInstance != null) {
             hazelcastInstance.shutdown();
