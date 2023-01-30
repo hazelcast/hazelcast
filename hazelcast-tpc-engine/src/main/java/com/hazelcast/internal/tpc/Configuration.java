@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.nio.NioEventloopBuilder;
+import com.hazelcast.internal.tpc.nio.NioReactorBuilder;
 
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
@@ -26,29 +26,29 @@ import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
  */
 public class Configuration {
 
-    public static final String NAME_EVENTLOOP_COUNT = "hazelcast.tpc.eventloop.count";
+    public static final String NAME_REACTOR_COUNT = "hazelcast.tpc.reactor.count";
 
-    int eventloopCount = Integer.getInteger(NAME_EVENTLOOP_COUNT, Runtime.getRuntime().availableProcessors());
+    int reactorCount = Integer.getInteger(NAME_REACTOR_COUNT, Runtime.getRuntime().availableProcessors());
 
-    EventloopBuilder eventloopBuilder = new NioEventloopBuilder();
+    ReactorBuilder reactorBuilder = new NioReactorBuilder();
 
     /**
-     * Sets the EventloopBuilder.
+     * Sets the ReactorBuilder.
      *
-     * @param eventloopBuilder the eventloopBuilder.
-     * @throws NullPointerException if eventloopBuilder is 0.
+     * @param reactorBuilder the reactorBuilder.
+     * @throws NullPointerException if reactorBuilder is null.
      */
-    public void setEventloopBuilder(EventloopBuilder eventloopBuilder) {
-        this.eventloopBuilder = checkNotNull(eventloopBuilder, "eventloopBuilder");
+    public void setReactorBuilder(ReactorBuilder reactorBuilder) {
+        this.reactorBuilder = checkNotNull(reactorBuilder, "reactorBuilder");
     }
 
     /**
-     * Sets the number of eventloops.
+     * Sets the number of reactors.
      *
-     * @param eventloopCount the number of eventloops.
-     * @throws IllegalArgumentException if eventloopCount smaller than 1.
+     * @param reactorCount the number of reactors.
+     * @throws IllegalArgumentException if reactorCount smaller than 1.
      */
-    public void setEventloopCount(int eventloopCount) {
-        this.eventloopCount = checkPositive(eventloopCount, "eventloopCount");
+    public void setReactorCount(int reactorCount) {
+        this.reactorCount = checkPositive(reactorCount, "reactorCount");
     }
 }

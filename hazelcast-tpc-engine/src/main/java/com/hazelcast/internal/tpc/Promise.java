@@ -24,7 +24,7 @@ import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 
 /**
  * This an object similar in nature to the {@link java.util.concurrent.CompletableFuture} that
- * is designed to work with the {@link Eventloop}.
+ * is designed to work with the {@link Reactor}.
  * <p>
  * This class is not thread-safe and should only be used inside the {@link Eventloop}.
  * <p>

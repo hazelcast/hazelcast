@@ -28,10 +28,10 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.tpc.AsyncServerSocket;
 import com.hazelcast.internal.tpc.Configuration;
-import com.hazelcast.internal.tpc.Eventloop;
+import com.hazelcast.internal.tpc.Reactor;
 import com.hazelcast.internal.tpc.ReadHandler;
 import com.hazelcast.internal.tpc.TpcEngine;
-import com.hazelcast.internal.tpc.nio.NioEventloopBuilder;
+import com.hazelcast.internal.tpc.nio.NioReactorBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -69,7 +69,7 @@ public class TpcServerBootstrap {
     private final TpcEngine tpcEngine;
     private final boolean tcpNoDelay = true;
     private final boolean enabled;
-    private final Map<Eventloop, Supplier<? extends ReadHandler>> readHandlerSuppliers = new HashMap<>();
+    private final Map<Reactor, Supplier<? extends ReadHandler>> readHandlerSuppliers = new HashMap<>();
     private final List<AsyncServerSocket> serverSockets = new ArrayList<>();
     private final Config config;
     private volatile List<Integer> clientPorts;
@@ -114,15 +114,15 @@ public class TpcServerBootstrap {
         }
 
         Configuration configuration = new Configuration();
-        NioEventloopBuilder eventloopBuilder = new NioEventloopBuilder();
-        eventloopBuilder.setThreadFactory(AltoEventloopThread::new);
+        NioReactorBuilder reactorBuilder = new NioReactorBuilder();
+        reactorBuilder.setThreadFactory(AltoEventloopThread::new);
         AtomicInteger threadId = new AtomicInteger();
-        eventloopBuilder.setThreadNameSupplier(() -> createThreadPoolName(
+        reactorBuilder.setThreadNameSupplier(() -> createThreadPoolName(
                 nodeEngine.getHazelcastInstance().getName(),
                 "alto-eventloop"
         ) + threadId.incrementAndGet());
-        configuration.setEventloopBuilder(eventloopBuilder);
-        configuration.setEventloopCount(loadEventloopCount());
+        configuration.setReactorBuilder(reactorBuilder);
+        configuration.setReactorCount(loadEventloopCount());
         return new TpcEngine(configuration);
     }
 
@@ -155,14 +155,14 @@ public class TpcServerBootstrap {
         int port = Integer.parseInt(range[0]);
         int limit = Integer.parseInt(range[1]);
 
-        for (int k = 0; k < tpcEngine.eventloopCount(); k++) {
-            Eventloop eventloop = tpcEngine.eventloop(k);
+        for (int k = 0; k < tpcEngine.reactorCount(); k++) {
+            Reactor reactor = tpcEngine.reactor(k);
 
             Supplier<ReadHandler> readHandlerSupplier =
                     () -> new ClientAsyncReadHandler(nodeEngine.getNode().clientEngine);
-            readHandlerSuppliers.put(eventloop, readHandlerSupplier);
+            readHandlerSuppliers.put(reactor, readHandlerSupplier);
 
-            AsyncServerSocket serverSocket = eventloop.openTcpAsyncServerSocket();
+            AsyncServerSocket serverSocket = reactor.openTcpAsyncServerSocket();
             serverSockets.add(serverSocket);
             int receiveBufferSize = clientSocketConfig.getReceiveBufferSizeKB() * KILO_BYTE;
             int sendBufferSize = clientSocketConfig.getSendBufferSizeKB() * KILO_BYTE;
@@ -170,12 +170,12 @@ public class TpcServerBootstrap {
             serverSocket.setReuseAddress(true);
             port = bind(serverSocket, port, limit);
             serverSocket.accept(socket -> {
-                socket.setReadHandler(readHandlerSuppliers.get(eventloop).get());
+                socket.setReadHandler(readHandlerSuppliers.get(reactor).get());
                 socket.setSendBufferSize(sendBufferSize);
                 socket.setReceiveBufferSize(receiveBufferSize);
                 socket.setTcpNoDelay(tcpNoDelay);
                 socket.setKeepAlive(true);
-                socket.activate(eventloop);
+                socket.activate(reactor);
             });
         }
     }
@@ -230,7 +230,7 @@ public class TpcServerBootstrap {
             } catch (UncheckedIOException e) {
                 if (e.getCause() instanceof BindException) {
                     // this port is occupied probably by another hz member, try another one
-                    port += tpcEngine.eventloopCount();
+                    port += tpcEngine.reactorCount();
                 } else {
                     throw e;
                 }

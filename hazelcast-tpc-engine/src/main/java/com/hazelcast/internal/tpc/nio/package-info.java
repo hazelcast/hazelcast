@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>Contains the Nio Eventloop<br>
+ * <p>Contains the NioReactor<br>
  */
 package com.hazelcast.internal.tpc.nio;
