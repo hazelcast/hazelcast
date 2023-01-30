@@ -395,7 +395,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         @Override
         public void init(@Nonnull Context context) {
-            // If externalDataStoreRef is specified use the cached HazelcastInstance
+            // The order is important.
+            // In the abstract factory, if externalDataStoreRef is specified prefer it to clientXml
             if (externalDataStoreRef != null) {
                 HzClientDataStoreFactory hzClientDataStoreFactory = getDataStoreFactory(context.hazelcastInstance(),
                         externalDataStoreRef.getName());
@@ -409,6 +410,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             }
         }
 
+        // Get remotePartitionCount from new HazelcastInstance
         private void initRemote() {
             HazelcastInstance client = newHazelcastClient(asClientConfig(clientXml));
             try {
@@ -419,6 +421,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             }
         }
 
+        // Get remotePartitionCount from given HazelcastInstance
         private void initRemote(HazelcastInstance client) {
             HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
             remotePartitionCount = clientProxy.client.getClientPartitionService().getPartitionCount();
@@ -433,6 +436,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         @Override
         @Nonnull
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            // If addrToPartitions is null it means that
+            // the abstract factory is connecting to remote cluster
             if (addrToPartitions == null) {
                 // assign each remote partition to a member
                 addrToPartitions = range(0, remotePartitionCount)
@@ -441,6 +446,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             }
 
 
+            // Return a new factory for processors
             return address -> new ClusterProcessorSupplier<>(addrToPartitions.get(address), clusterMetaSupplierParams);
         }
 
@@ -457,6 +463,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         }
     }
 
+    // Factory for processors
     private static class ClusterProcessorSupplier<E, T> implements ProcessorSupplier {
 
         static final long serialVersionUID = 1L;
@@ -505,22 +512,27 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             // Default is HazelcastInstance for member
             HazelcastInstance instance = context.hazelcastInstance();
 
+            // The order is important.
+            // In the processor factory, if externalDataStoreRef is specified prefer it to clientXml
             if (externalDataStoreRef != null) {
                 // Use cached HazelcastInstance for client
                 HzClientDataStoreFactory hzClientDataStoreFactory = getDataStoreFactory(context.hazelcastInstance(),
                         externalDataStoreRef.getName());
                 instance = hzClientDataStoreFactory.getDataStore();
             } else if (clientXml != null) {
-                // Use new HazelcastInstance for client
+                // Create a new HazelcastInstance for client
                 ClientConfig clientConfig = asClientConfig(clientXml);
                 client = newHazelcastClient(clientConfig);
                 instance = client;
             }
+            // Create a new EventJournalReader
             eventJournalReader = eventJournalReaderSupplier.apply(instance);
         }
 
         @Override
         public void close(Throwable error) {
+            // In the processor factory, if client is not null
+            // we need to shut it down
             if (client != null) {
                 client.shutdown();
             }
