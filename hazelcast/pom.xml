@@ -608,7 +608,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>${http.components.version}</version>
+            <version>${http.client.version}</version>
             <scope>test</scope>
         </dependency>
 

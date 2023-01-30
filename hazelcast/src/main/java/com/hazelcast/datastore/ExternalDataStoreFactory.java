@@ -22,7 +22,7 @@ import com.hazelcast.spi.annotation.Beta;
 /**
  * Creates external datastore. Configuration is provided by {@link #init(ExternalDataStoreConfig)}.
  *
- * @param <DS> - type of the data store
+ * @param <DS> type of the data store
  * @since 5.2
  */
 @Beta
@@ -40,6 +40,13 @@ public interface ExternalDataStoreFactory<DS> extends AutoCloseable {
      * @param config configuration of the given datastore
      */
     void init(ExternalDataStoreConfig config);
+
+    /**
+     * Test connection of previously initialized data store.
+     *
+     * @since 5.3
+     */
+    boolean testConnection() throws Exception;
 
     /**
      * Closes underlying resources
