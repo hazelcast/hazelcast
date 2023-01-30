@@ -27,6 +27,7 @@ final class GenericRecordUtils {
     private GenericRecordUtils() {
     }
 
+    // Get JDBC parameter values for columns from GenericRecord except for the primary key column
     static <K> JDBCParameters toJDBCParameters(K key,
                                                GenericRecord genericRecord,
                                                List<SqlColumnMetadata> columnMetadataList,
@@ -36,6 +37,8 @@ final class GenericRecordUtils {
 
         int idPos = -1;
         Object[] params = new Object[columnMetadataList.size()];
+
+        // Iterate over columns
         for (int i = 0; i < columnMetadataList.size(); i++) {
             SqlColumnMetadata columnMetadata = columnMetadataList.get(i);
 
