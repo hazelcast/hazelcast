@@ -16,11 +16,8 @@
 
 package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.AsyncServerSocket;
-import com.hazelcast.internal.tpc.AsyncSocket;
 import com.hazelcast.internal.tpc.Eventloop;
 import com.hazelcast.internal.tpc.Scheduler;
-import com.hazelcast.internal.tpc.Unsafe;
 import com.hazelcast.internal.tpc.util.NanoClock;
 import org.jctools.queues.MpmcArrayQueue;
 
@@ -34,49 +31,21 @@ import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
- * Nio implementation of the {@link Eventloop}.
+ * Nio specific Eventloop implementation.
  */
-public final class NioEventloop extends Eventloop {
+class NioEventloop extends Eventloop {
 
     final Selector selector = SelectorOptimizer.newSelector();
+    private final NioReactor reactor;
 
-    public NioEventloop() {
-        this(new NioEventloopBuilder());
-    }
-
-    public NioEventloop(NioEventloopBuilder eventloopBuilder) {
-        super(eventloopBuilder);
-    }
-
-    @Override
-    public AsyncServerSocket openTcpAsyncServerSocket() {
-        return NioAsyncServerSocket.openTcpServerSocket(this);
+    NioEventloop(NioReactor reactor, NioReactorBuilder builder) {
+        super(reactor, builder);
+        this.reactor = reactor;
     }
 
     @Override
-    public AsyncSocket openTcpAsyncSocket() {
-        return NioAsyncSocket.openTcpSocket();
-    }
-
-    @Override
-    protected Unsafe createUnsafe() {
-        return new NioUnsafe(this);
-    }
-
-    @Override
-    public void wakeup() {
-        if (spin || Thread.currentThread() == eventloopThread) {
-            return;
-        }
-
-        if (wakeupNeeded.get() && wakeupNeeded.compareAndSet(true, false)) {
-            selector.wakeup();
-        }
-    }
-
-    @Override
-    protected void eventLoop() throws Exception {
-        final NanoClock nanoClock = unsafe.nanoClock();
+    protected void eventloop() throws Exception {
+        final NanoClock nanoClock = this.nanoClock;
         final boolean spin = this.spin;
         final Selector selector = this.selector;
         final AtomicBoolean wakeupNeeded = this.wakeupNeeded;
@@ -111,11 +80,11 @@ public final class NioEventloop extends Eventloop {
                     SelectionKey key = it.next();
                     it.remove();
 
-                    SelectionKeyListener listener = (SelectionKeyListener) key.attachment();
+                    NioHandler handler = (NioHandler) key.attachment();
                     try {
-                        listener.handle(key);
+                        handler.handle(key);
                     } catch (IOException e) {
-                        listener.close(null, e);
+                        handler.close(null, e);
                     }
                 }
             }
@@ -124,21 +93,21 @@ public final class NioEventloop extends Eventloop {
             moreWork |= scheduler.tick();
             moreWork |= runScheduledTasks();
             moreWork |= runLocalTasks();
-        } while (state == State.RUNNING);
+        } while (!stop);
     }
 
     @Override
     protected void afterEventloop() {
         for (SelectionKey key : selector.keys()) {
-            SelectionKeyListener listener = (SelectionKeyListener) key.attachment();
+            NioHandler handler = (NioHandler) key.attachment();
 
-            if (listener == null) {
-                // There is no listener; so lets cancel the key to be sure it gets cancelled.
+            if (handler == null) {
+                // There is no handler; so lets cancel the key to be sure it gets cancelled.
                 key.cancel();
             } else {
-                // There is a listener; so it will take care of cancelling the key.
+                // There is a handler; so it will take care of cancelling the key.
                 try {
-                    listener.close(NioEventloop.this + " is terminating.", null);
+                    handler.close(reactor + " is terminating.", null);
                 } catch (Exception e) {
                     logger.fine(e);
                 }
@@ -147,5 +116,4 @@ public final class NioEventloop extends Eventloop {
 
         closeQuietly(selector);
     }
-
 }

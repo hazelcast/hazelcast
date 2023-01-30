@@ -46,14 +46,14 @@ public class TpcEngineTest {
     @Test
     public void test() {
         Configuration configuration = new Configuration();
-        int eventloopCount = 5;
-        configuration.setEventloopCount(eventloopCount);
+        int reactorCount = 5;
+        configuration.setReactorCount(reactorCount);
 
         engine = new TpcEngine(configuration);
 
-        assertEquals(5, engine.eventloops().length);
-        assertEquals(eventloopCount, engine.eventloopCount());
-        assertEquals(EventloopType.NIO, engine.eventloopType());
+        assertEquals(5, engine.reactors().length);
+        assertEquals(reactorCount, engine.reactorCount());
+        assertEquals(ReactorType.NIO, engine.reactorType());
     }
 
     // ===================== start =======================
@@ -85,7 +85,7 @@ public class TpcEngineTest {
     public void shutdown_whenRunning() throws InterruptedException {
         engine = new TpcEngine();
         engine.start();
-        engine.eventloop(0).offer(() -> {
+        engine.reactor(0).offer(() -> {
             sleepMillis(1000);
         });
         engine.shutdown();
@@ -98,7 +98,7 @@ public class TpcEngineTest {
     public void shutdown_whenShutdown() throws InterruptedException {
         engine = new TpcEngine();
         engine.start();
-        engine.eventloop(0).offer(() -> {
+        engine.reactor(0).offer(() -> {
             sleepMillis(1000);
         });
         engine.shutdown();

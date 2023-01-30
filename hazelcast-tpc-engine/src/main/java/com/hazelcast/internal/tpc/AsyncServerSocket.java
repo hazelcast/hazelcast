@@ -25,7 +25,7 @@ import java.util.function.Consumer;
 
 /**
  * A server socket that is asynchronous. So accepting incoming connections does not block,
- * but are executed on an {@link Eventloop}.
+ * but are executed on an {@link Reactor}.
  */
 public abstract class AsyncServerSocket extends Socket {
 
@@ -61,13 +61,13 @@ public abstract class AsyncServerSocket extends Socket {
     protected abstract SocketAddress getLocalAddress0() throws Exception;
 
     /**
-     * Gets the {@link Eventloop} this ServerSocket belongs to.
+     * Gets the {@link Reactor} this ServerSocket belongs to.
      * <p/>
      * The returned value will never be <code>null</code>
      *
-     * @return the Eventloop.
+     * @return the Reactor.
      */
-    public abstract Eventloop getEventloop();
+    public abstract Reactor getReactor();
 
     /**
      * Gets the local port of the ServerSocketChannel.
@@ -176,7 +176,7 @@ public abstract class AsyncServerSocket extends Socket {
      * Start accepting incoming sockets asynchronously.
      * <p/>
      * This method can be called from any thread, but the actual processing will happen on the
-     * eventloop-thread.
+     * reactor-thread.
      * <p/>
      * This method should only be called once and isn't threadsafe.
      * <p/>

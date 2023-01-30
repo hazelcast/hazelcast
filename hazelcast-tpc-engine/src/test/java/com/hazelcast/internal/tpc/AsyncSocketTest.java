@@ -40,21 +40,21 @@ import static org.mockito.Mockito.mock;
 
 public abstract class AsyncSocketTest {
 
-    public List<Eventloop> eventloops = new ArrayList<>();
+    public List<Reactor> reactors = new ArrayList<>();
 
-    public abstract Eventloop createEventloop();
+    public abstract Reactor newReactor();
 
     @After
     public void after() throws InterruptedException {
-        terminateAll(eventloops);
+        terminateAll(reactors);
     }
 
     @Test
     public void test_remoteAddress_whenNotConnected() {
-        Eventloop eventloop = createEventloop();
-        AsyncSocket socket = eventloop.openTcpAsyncSocket();
+        Reactor reactor = newReactor();
+        AsyncSocket socket = reactor.openTcpAsyncSocket();
         socket.setReadHandler(mock(ReadHandler.class));
-        socket.activate(eventloop);
+        socket.activate(reactor);
 
         SocketAddress remoteAddress = socket.getRemoteAddress();
         assertNull(remoteAddress);
@@ -63,10 +63,10 @@ public abstract class AsyncSocketTest {
 
     @Test
     public void test_localAddress_whenNotConnected() {
-        Eventloop eventloop = createEventloop();
-        AsyncSocket socket = eventloop.openTcpAsyncSocket();
+        Reactor reactor = newReactor();
+        AsyncSocket socket = reactor.openTcpAsyncSocket();
         socket.setReadHandler(mock(ReadHandler.class));
-        socket.activate(eventloop);
+        socket.activate(reactor);
 
         SocketAddress localAddress = socket.getLocalAddress();
         System.out.println(localAddress);
@@ -75,8 +75,8 @@ public abstract class AsyncSocketTest {
 
     @Test
     public void test_receiveBufferSize() {
-        Eventloop eventloop = createEventloop();
-        AsyncSocket socket = eventloop.openTcpAsyncSocket();
+        Reactor reactor = newReactor();
+        AsyncSocket socket = reactor.openTcpAsyncSocket();
 
         int size = 64 * 1024;
         socket.setReceiveBufferSize(size);
@@ -85,8 +85,8 @@ public abstract class AsyncSocketTest {
 
     @Test
     public void test_sendBufferSize() {
-        Eventloop eventloop = createEventloop();
-        AsyncSocket socket = eventloop.openTcpAsyncSocket();
+        Reactor reactor = newReactor();
+        AsyncSocket socket = reactor.openTcpAsyncSocket();
 
         int size = 64 * 1024;
         socket.setSendBufferSize(size);
@@ -95,8 +95,8 @@ public abstract class AsyncSocketTest {
 
     @Test
     public void test_tcpNoDelay() {
-        Eventloop eventloop = createEventloop();
-        AsyncSocket socket = eventloop.openTcpAsyncSocket();
+        Reactor reactor = newReactor();
+        AsyncSocket socket = reactor.openTcpAsyncSocket();
 
         socket.setTcpNoDelay(false);
         assertFalse(socket.isTcpNoDelay());
@@ -115,9 +115,9 @@ public abstract class AsyncSocketTest {
     public void test_TcpKeepAliveTime() {
         assumeIfNioThenJava11Plus();
 
-        Eventloop eventloop = createEventloop();
+        Reactor reactor = newReactor();
 
-        AsyncSocket socket = eventloop.openTcpAsyncSocket();
+        AsyncSocket socket = reactor.openTcpAsyncSocket();
 
         socket.setTcpKeepAliveTime(100);
         assertEquals(100, socket.getTcpKeepAliveTime());
@@ -127,8 +127,8 @@ public abstract class AsyncSocketTest {
     public void test_TcpKeepaliveIntvl() {
         assumeIfNioThenJava11Plus();
 
-        Eventloop eventloop = createEventloop();
-        AsyncSocket socket = eventloop.openTcpAsyncSocket();
+        Reactor reactor = newReactor();
+        AsyncSocket socket = reactor.openTcpAsyncSocket();
 
         socket.setTcpKeepaliveIntvl(100);
         assertEquals(100, socket.getTcpKeepaliveIntvl());
@@ -138,8 +138,8 @@ public abstract class AsyncSocketTest {
     public void test_TcpKeepAliveProbes() {
         assumeIfNioThenJava11Plus();
 
-        Eventloop eventloop = createEventloop();
-        AsyncSocket socket = eventloop.openTcpAsyncSocket();
+        Reactor reactor = newReactor();
+        AsyncSocket socket = reactor.openTcpAsyncSocket();
 
         socket.setTcpKeepAliveProbes(5);
         assertEquals(5, socket.getTcpKeepaliveProbes());
@@ -147,17 +147,17 @@ public abstract class AsyncSocketTest {
 
     @Test
     public void test_connect() {
-        Eventloop eventloop = createEventloop();
-        AsyncServerSocket serverSocket = eventloop.openTcpAsyncServerSocket();
+        Reactor reactor = newReactor();
+        AsyncServerSocket serverSocket = reactor.openTcpAsyncServerSocket();
 
         SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
         serverSocket.bind(serverAddress);
         serverSocket.accept(asyncSocket -> {
         });
 
-        AsyncSocket clientSocket = eventloop.openTcpAsyncSocket();
+        AsyncSocket clientSocket = reactor.openTcpAsyncSocket();
         clientSocket.setReadHandler(mock(ReadHandler.class));
-        clientSocket.activate(eventloop);
+        clientSocket.activate(reactor);
 
         CompletableFuture<Void> connect = clientSocket.connect(serverAddress);
 
@@ -168,8 +168,8 @@ public abstract class AsyncSocketTest {
 
     @Test
     public void test_connect_whenNotActivated() {
-        Eventloop eventloop = createEventloop();
-        AsyncSocket socket = eventloop.openTcpAsyncSocket();
+        Reactor reactor = newReactor();
+        AsyncSocket socket = reactor.openTcpAsyncSocket();
         socket.setReadHandler(mock(ReadHandler.class));
 
         SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
@@ -179,10 +179,10 @@ public abstract class AsyncSocketTest {
 
     @Test
     public void test_connect_whenNoServerRunning() {
-        Eventloop eventloop = createEventloop();
-        AsyncSocket socket = eventloop.openTcpAsyncSocket();
+        Reactor reactor = newReactor();
+        AsyncSocket socket = reactor.openTcpAsyncSocket();
         socket.setReadHandler(mock(ReadHandler.class));
-        socket.activate(eventloop);
+        socket.activate(reactor);
 
         CompletableFuture<Void> future = socket.connect(new InetSocketAddress(50000));
 
@@ -191,8 +191,8 @@ public abstract class AsyncSocketTest {
 
     @Test
     public void test_close_whenNotActivated() {
-        Eventloop eventloop = createEventloop();
-        AsyncSocket socket = eventloop.openTcpAsyncSocket();
+        Reactor reactor = newReactor();
+        AsyncSocket socket = reactor.openTcpAsyncSocket();
 
         socket.close();
 
@@ -201,8 +201,8 @@ public abstract class AsyncSocketTest {
 
     @Test
     public void test_close_whenNotActivated_andAlreadyClosed() {
-        Eventloop eventloop = createEventloop();
-        AsyncSocket socket = eventloop.openTcpAsyncSocket();
+        Reactor reactor = newReactor();
+        AsyncSocket socket = reactor.openTcpAsyncSocket();
         socket.close();
 
         socket.close();
@@ -212,8 +212,8 @@ public abstract class AsyncSocketTest {
 
     @Test
     public void test_activate_whenNull() {
-        Eventloop eventloop = createEventloop();
-        AsyncSocket socket = eventloop.openTcpAsyncSocket();
+        Reactor reactor = newReactor();
+        AsyncSocket socket = reactor.openTcpAsyncSocket();
         socket.setReadHandler(mock(ReadHandler.class));
 
         assertThrows(NullPointerException.class, () -> socket.activate(null));
@@ -221,21 +221,21 @@ public abstract class AsyncSocketTest {
 
     @Test
     public void test_activate_whenAlreadyActivated() {
-        Eventloop eventloop1 = createEventloop();
-        Eventloop eventloop2 = createEventloop();
+        Reactor reactor1 = newReactor();
+        Reactor reactor2 = newReactor();
 
-        AsyncSocket socket = eventloop1.openTcpAsyncSocket();
+        AsyncSocket socket = reactor1.openTcpAsyncSocket();
         socket.setReadHandler(mock(ReadHandler.class));
 
-        socket.activate(eventloop1);
-        assertThrows(IllegalStateException.class, () -> socket.activate(eventloop2));
+        socket.activate(reactor1);
+        assertThrows(IllegalStateException.class, () -> socket.activate(reactor2));
     }
 
     @Test
     public void test_activate_whenReadHandlerNotConfigured() {
-        Eventloop eventloop = createEventloop();
+        Reactor reactor = newReactor();
 
-        AsyncSocket socket = eventloop.openTcpAsyncSocket();
-        assertThrows(IllegalStateException.class, () -> socket.activate(eventloop));
+        AsyncSocket socket = reactor.openTcpAsyncSocket();
+        assertThrows(IllegalStateException.class, () -> socket.activate(reactor));
     }
 }

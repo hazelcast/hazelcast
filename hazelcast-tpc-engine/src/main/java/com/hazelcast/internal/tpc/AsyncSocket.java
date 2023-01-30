@@ -29,7 +29,7 @@ import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 
 /**
  * A 'client' Socket that is asynchronous. So reads and writes do not block,
- * but are executed on an {@link Eventloop}.
+ * but are executed on an {@link Reactor}.
  */
 @SuppressWarnings({"checkstyle:MethodCount", "checkstyle:VisibilityModifier"})
 public abstract class AsyncSocket extends Socket {
@@ -102,12 +102,12 @@ public abstract class AsyncSocket extends Socket {
     }
 
     /**
-     * Gets the {@link Eventloop} this {@link AsyncSocket} belongs to.
+     * Gets the {@link Reactor} this {@link AsyncSocket} belongs to.
      *
-     * @return the {@link Eventloop} this AsyncSocket belongs to or null if
+     * @return the {@link Reactor} this AsyncSocket belongs to or null if
      * the AsyncSocket has not been activated yet.
      */
-    public abstract Eventloop eventloop();
+    public abstract Reactor reactor();
 
     /**
      * Gets the remote address.
@@ -285,23 +285,23 @@ public abstract class AsyncSocket extends Socket {
     }
 
     /**
-     * Activates an AsyncSocket by hooking it up to an EventLoop.
+     * Activates an AsyncSocket by hooking it up to a Reactor.
      * <p>
      * This method should only be called once.
      * <p>
      * This method is not thread-safe.
      *
-     * @param eventloop the Eventloop this AsyncSocket belongs to.
-     * @throws NullPointerException  if eventloop is null.
+     * @param reactor the Reactor this AsyncSocket belongs to.
+     * @throws NullPointerException  if reactor is null.
      * @throws IllegalStateException if this AsyncSocket is already activated.
      */
-    public abstract void activate(Eventloop eventloop);
+    public abstract void activate(Reactor reactor);
 
     /**
      * Ensures that any scheduled IOBuffers are flushed to the socket.
      * <p>
      * What happens under the hood is that the AsyncSocket is scheduled in the
-     * {@link Eventloop} where at some point in the future the IOBuffers get written
+     * {@link Reactor} where at some point in the future the IOBuffers get written
      * to the socket.
      * <p>
      * This method is thread-safe.
@@ -312,7 +312,7 @@ public abstract class AsyncSocket extends Socket {
 
     /**
      * Writes a IOBuffer to the AsyncSocket without scheduling the AsyncSocket
-     * in the eventloop.
+     * in the reactor.
      * <p>
      * This call can be used to buffer a series of IOBuffers and then call
      * {@link #flush()} to trigger the actual writing to the socket.
@@ -347,7 +347,7 @@ public abstract class AsyncSocket extends Socket {
     /**
      * Writes a IOBuffer and ensure it gets written.
      * <p>
-     * Should only be called from within the Eventloop.
+     * Should only be called from the reactor-thread.
      */
     public abstract boolean unsafeWriteAndFlush(IOBuffer buf);
 

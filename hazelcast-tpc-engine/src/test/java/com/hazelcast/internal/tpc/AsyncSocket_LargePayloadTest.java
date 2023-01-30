@@ -39,21 +39,21 @@ public abstract class AsyncSocket_LargePayloadTest {
     public static final int SOCKET_BUFFER_SIZE = 16 * 1024;
     public int iterations = 20;
 
-    private Eventloop clientEventloop;
-    private Eventloop serverEventloop;
+    private Reactor clientReactor;
+    private Reactor serverReactor;
 
-    public abstract Eventloop createEventloop();
+    public abstract Reactor newReactor();
 
     @Before
     public void before() {
-        clientEventloop = createEventloop();
-        serverEventloop = createEventloop();
+        clientReactor = newReactor();
+        serverReactor = newReactor();
     }
 
     @After
     public void after() throws InterruptedException {
-        terminate(clientEventloop);
-        terminate(serverEventloop);
+        terminate(clientReactor);
+        terminate(serverReactor);
     }
 
     @Test
@@ -214,7 +214,7 @@ public abstract class AsyncSocket_LargePayloadTest {
     }
 
     private AsyncSocket newClient(SocketAddress serverAddress, CountDownLatch latch) {
-        AsyncSocket clientSocket = clientEventloop.openTcpAsyncSocket();
+        AsyncSocket clientSocket = clientReactor.openTcpAsyncSocket();
         clientSocket.setTcpNoDelay(true);
         clientSocket.setSendBufferSize(SOCKET_BUFFER_SIZE);
         clientSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
@@ -268,14 +268,14 @@ public abstract class AsyncSocket_LargePayloadTest {
                 }
             }
         });
-        clientSocket.activate(clientEventloop);
+        clientSocket.activate(clientReactor);
         clientSocket.connect(serverAddress).join();
 
         return clientSocket;
     }
 
     private AsyncServerSocket newServer(SocketAddress serverAddress) {
-        AsyncServerSocket serverSocket = serverEventloop.openTcpAsyncServerSocket();
+        AsyncServerSocket serverSocket = serverReactor.openTcpAsyncServerSocket();
         serverSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
         serverSocket.bind(serverAddress);
 
@@ -328,7 +328,7 @@ public abstract class AsyncSocket_LargePayloadTest {
                     }
                 }
             });
-            socket.activate(serverEventloop);
+            socket.activate(serverReactor);
         });
 
         return serverSocket;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.nio.NioEventloop;
+import com.hazelcast.internal.tpc.nio.NioReactor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,28 +35,28 @@ import static org.junit.Assert.assertTrue;
 
 public class PromiseTest {
 
-    private NioEventloop eventloop;
+    private NioReactor reactor;
     private PromiseAllocator promiseAllocator;
 
     @Before
     public void before() {
-        eventloop = new NioEventloop();
-        eventloop.start();
+        reactor = new NioReactor();
+        reactor.start();
 
-        promiseAllocator = new PromiseAllocator(eventloop, 1024);
+        promiseAllocator = new PromiseAllocator(reactor.eventloop, 1024);
     }
 
     @After
     public void after() throws InterruptedException {
-        if (eventloop != null) {
-            eventloop.shutdown();
-            assertTrue(eventloop.awaitTermination(5, TimeUnit.SECONDS));
+        if (reactor != null) {
+            reactor.shutdown();
+            assertTrue(reactor.awaitTermination(5, TimeUnit.SECONDS));
         }
     }
 
     @Test
     public void test_pooling() {
-        Promise promise = new Promise(eventloop);
+        Promise promise = new Promise(reactor.eventloop);
 
         promise.allocator = promiseAllocator;
 
@@ -78,7 +78,7 @@ public class PromiseTest {
 
     @Test
     public void test_thenOnCompletedFuture() {
-        Promise promise = new Promise(eventloop);
+        Promise promise = new Promise(reactor.eventloop);
 
         String result = "foobar";
         promise.complete(result);
@@ -100,14 +100,14 @@ public class PromiseTest {
 
     @Test(expected = NullPointerException.class)
     public void test_completeExceptionallyWhenNull() {
-        Promise promise = new Promise(eventloop);
+        Promise promise = new Promise(reactor.eventloop);
 
         promise.completeExceptionally(null);
     }
 
     @Test
     public void test_completeExceptionally() {
-        Promise promise = new Promise(eventloop);
+        Promise promise = new Promise(reactor.eventloop);
 
         CountDownLatch executed = new CountDownLatch(1);
         AtomicReference valueRef = new AtomicReference();
@@ -130,7 +130,7 @@ public class PromiseTest {
 
     @Test(expected = IllegalStateException.class)
     public void test_completeExceptionally_whenAlreadyCompleted() {
-        Promise promise = new Promise(eventloop);
+        Promise promise = new Promise(reactor.eventloop);
 
         promise.completeExceptionally(new Throwable());
         promise.completeExceptionally(new Throwable());
@@ -138,7 +138,7 @@ public class PromiseTest {
 
     @Test
     public void test_complete() {
-        Promise promise = new Promise(eventloop);
+        Promise promise = new Promise(reactor.eventloop);
 
         CountDownLatch executed = new CountDownLatch(1);
         AtomicReference valueRef = new AtomicReference();
@@ -159,7 +159,7 @@ public class PromiseTest {
 
     @Test(expected = IllegalStateException.class)
     public void test_complete_whenAlreadyCompleted() {
-        Promise promise = new Promise(eventloop);
+        Promise promise = new Promise(reactor.eventloop);
 
         promise.complete("first");
         promise.complete("second");

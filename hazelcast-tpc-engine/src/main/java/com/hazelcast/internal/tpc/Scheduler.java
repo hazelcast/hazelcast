@@ -19,9 +19,9 @@ package com.hazelcast.internal.tpc;
 import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
 
 /**
- * Every Eventloop has a scheduler. So incoming work (IOBuffers) can be scheduled
+ * Every Reactor has a scheduler. So incoming work (IOBuffers) can be scheduled
  * and it is up to the Scheduler to process these tasks. The Scheduler gets a frequent
- * tick from the {@link Eventloop} to process whatever tasks are pending.
+ * tick from the {@link Reactor} to process whatever tasks are pending.
  * <p/>
  * It is important that the scheduler does a bit of work so that other sources
  * of work like e.g. networking, storage, outside tasks etc can be processed as well;
@@ -37,7 +37,7 @@ public interface Scheduler {
     /**
      * Initializes the scheduler with the given eventloop.
      *
-     * @param eventloop
+     * @param eventloop the Eventloop.
      */
     void init(Eventloop eventloop);
 
