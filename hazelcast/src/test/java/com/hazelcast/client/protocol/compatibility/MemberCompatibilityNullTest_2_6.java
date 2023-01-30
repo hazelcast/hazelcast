@@ -7949,6 +7949,21 @@ public class MemberCompatibilityNullTest_2_6 {
         compareClientMessages(fromFile, encoded);
     }
 
+    @Test
+    public void test_JetIsJobUserCancelledCodec_decodeRequest() {
+        int fileClientMessageIndex = 899;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aLong, JetIsJobUserCancelledCodec.decodeRequest(fromFile)));
+    }
+
+    @Test
+    public void test_JetIsJobUserCancelledCodec_encodeResponse() {
+        int fileClientMessageIndex = 900;
+        ClientMessage encoded = JetIsJobUserCancelledCodec.encodeResponse(aBoolean);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 

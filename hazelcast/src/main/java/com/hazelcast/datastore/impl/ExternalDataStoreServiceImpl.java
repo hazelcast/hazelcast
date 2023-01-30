@@ -65,6 +65,13 @@ public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
     }
 
     @Override
+    public boolean testConnection(ExternalDataStoreConfig config) throws Exception {
+        try (ExternalDataStoreFactory<Object> factory = createFactory(config)) {
+            return factory.testConnection();
+        }
+    }
+
+    @Override
     public <DS> ExternalDataStoreFactory<DS> getExternalDataStoreFactory(String name) {
         Map<String, ExternalDataStoreConfig> externalDataStoreConfigs = node.getConfig().getExternalDataStoreConfigs();
         ExternalDataStoreConfig externalDataStoreConfig = externalDataStoreConfigs.get(name);
