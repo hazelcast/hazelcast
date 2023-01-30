@@ -35,26 +35,26 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Adds a JobListener to the specified job.
+ * Adds a JobStatusListener to the specified job.
  */
-@Generated("1229d6062447782da0a9b658efbbf164")
+@Generated("bf0d8bab26d197127125a7965998305d")
 public final class JetAddJobStatusListenerCodec {
-    //hex: 0xFE1100
-    public static final int REQUEST_MESSAGE_TYPE = 16650496;
-    //hex: 0xFE1101
-    public static final int RESPONSE_MESSAGE_TYPE = 16650497;
+    //hex: 0xFE1300
+    public static final int REQUEST_MESSAGE_TYPE = 16651008;
+    //hex: 0xFE1301
+    public static final int RESPONSE_MESSAGE_TYPE = 16651009;
     private static final int REQUEST_JOB_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    private static final int EVENT_JOB_JOB_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int EVENT_JOB_OLD_STATUS_FIELD_OFFSET = EVENT_JOB_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int EVENT_JOB_NEW_STATUS_FIELD_OFFSET = EVENT_JOB_OLD_STATUS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int EVENT_JOB_USER_REQUESTED_FIELD_OFFSET = EVENT_JOB_NEW_STATUS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int EVENT_JOB_INITIAL_FRAME_SIZE = EVENT_JOB_USER_REQUESTED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    //hex: 0xFE1102
-    private static final int EVENT_JOB_MESSAGE_TYPE = 16650498;
+    private static final int EVENT_JOB_STATUS_JOB_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_JOB_STATUS_PREVIOUS_STATUS_FIELD_OFFSET = EVENT_JOB_STATUS_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int EVENT_JOB_STATUS_NEW_STATUS_FIELD_OFFSET = EVENT_JOB_STATUS_PREVIOUS_STATUS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_JOB_STATUS_USER_REQUESTED_FIELD_OFFSET = EVENT_JOB_STATUS_NEW_STATUS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_JOB_STATUS_INITIAL_FRAME_SIZE = EVENT_JOB_STATUS_USER_REQUESTED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    //hex: 0xFE1302
+    private static final int EVENT_JOB_STATUS_MESSAGE_TYPE = 16651010;
 
     private JetAddJobStatusListenerCodec() {
     }
@@ -114,16 +114,16 @@ public final class JetAddJobStatusListenerCodec {
         return decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
-    public static ClientMessage encodeJobEvent(long jobId, int oldStatus, int newStatus, @Nullable java.lang.String description, boolean userRequested) {
+    public static ClientMessage encodeJobStatusEvent(long jobId, int previousStatus, int newStatus, @Nullable java.lang.String description, boolean userRequested) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
-        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_JOB_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_JOB_STATUS_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
-        encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_JOB_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_JOB_STATUS_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
-        encodeLong(initialFrame.content, EVENT_JOB_JOB_ID_FIELD_OFFSET, jobId);
-        encodeInt(initialFrame.content, EVENT_JOB_OLD_STATUS_FIELD_OFFSET, oldStatus);
-        encodeInt(initialFrame.content, EVENT_JOB_NEW_STATUS_FIELD_OFFSET, newStatus);
-        encodeBoolean(initialFrame.content, EVENT_JOB_USER_REQUESTED_FIELD_OFFSET, userRequested);
+        encodeLong(initialFrame.content, EVENT_JOB_STATUS_JOB_ID_FIELD_OFFSET, jobId);
+        encodeInt(initialFrame.content, EVENT_JOB_STATUS_PREVIOUS_STATUS_FIELD_OFFSET, previousStatus);
+        encodeInt(initialFrame.content, EVENT_JOB_STATUS_NEW_STATUS_FIELD_OFFSET, newStatus);
+        encodeBoolean(initialFrame.content, EVENT_JOB_STATUS_USER_REQUESTED_FIELD_OFFSET, userRequested);
         clientMessage.add(initialFrame);
 
         CodecUtil.encodeNullable(clientMessage, description, StringCodec::encode);
@@ -135,14 +135,14 @@ public final class JetAddJobStatusListenerCodec {
         public void handle(ClientMessage clientMessage) {
             int messageType = clientMessage.getMessageType();
             ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-            if (messageType == EVENT_JOB_MESSAGE_TYPE) {
+            if (messageType == EVENT_JOB_STATUS_MESSAGE_TYPE) {
                 ClientMessage.Frame initialFrame = iterator.next();
-                long jobId = decodeLong(initialFrame.content, EVENT_JOB_JOB_ID_FIELD_OFFSET);
-                int oldStatus = decodeInt(initialFrame.content, EVENT_JOB_OLD_STATUS_FIELD_OFFSET);
-                int newStatus = decodeInt(initialFrame.content, EVENT_JOB_NEW_STATUS_FIELD_OFFSET);
-                boolean userRequested = decodeBoolean(initialFrame.content, EVENT_JOB_USER_REQUESTED_FIELD_OFFSET);
+                long jobId = decodeLong(initialFrame.content, EVENT_JOB_STATUS_JOB_ID_FIELD_OFFSET);
+                int previousStatus = decodeInt(initialFrame.content, EVENT_JOB_STATUS_PREVIOUS_STATUS_FIELD_OFFSET);
+                int newStatus = decodeInt(initialFrame.content, EVENT_JOB_STATUS_NEW_STATUS_FIELD_OFFSET);
+                boolean userRequested = decodeBoolean(initialFrame.content, EVENT_JOB_STATUS_USER_REQUESTED_FIELD_OFFSET);
                 java.lang.String description = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-                handleJobEvent(jobId, oldStatus, newStatus, description, userRequested);
+                handleJobStatusEvent(jobId, previousStatus, newStatus, description, userRequested);
                 return;
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
@@ -150,15 +150,14 @@ public final class JetAddJobStatusListenerCodec {
 
         /**
          * @param jobId Id of job.
-         * @param oldStatus NOT_RUNNING(0)
-         *                  STARTING(1)
-         *                  RUNNING(2)
-         *                  SUSPENDED(3)
-         *                  SUSPENDED_EXPORTING_SNAPSHOT(4)
-         *                  COMPLETING(5)
-         *                  FAILED(6)
-         *                  COMPLETED(7)
-         * @param newStatus See {@code oldStatus}.
+         * @param previousStatus NOT_RUNNING(0)
+         *                       STARTING(1)
+         *                       RUNNING(2)
+         *                       SUSPENDED(3)
+         *                       SUSPENDED_EXPORTING_SNAPSHOT(4)
+         *                       FAILED(6)
+         *                       COMPLETED(7)
+         * @param newStatus See {@code previousStatus}.
          * @param description If the event is generated by the user, indicates the action, namely one
          *                    of SUSPEND, RESUME, RESTART and CANCEL; if there is a failure, indicates
          *                    the cause; otherwise, null.
@@ -166,6 +165,6 @@ public final class JetAddJobStatusListenerCodec {
          *                      {@code Job.suspend()}, {@code Job.resume()}, {@code Job.restart()} or
          *                      {@code Job.cancel()}.
          */
-        public abstract void handleJobEvent(long jobId, int oldStatus, int newStatus, @Nullable java.lang.String description, boolean userRequested);
+        public abstract void handleJobStatusEvent(long jobId, int previousStatus, int newStatus, @Nullable java.lang.String description, boolean userRequested);
     }
 }

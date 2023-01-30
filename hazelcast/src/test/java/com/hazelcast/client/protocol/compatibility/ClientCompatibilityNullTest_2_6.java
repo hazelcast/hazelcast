@@ -7090,9 +7090,9 @@ public class ClientCompatibilityNullTest_2_6 {
 
     private static class JetAddJobStatusListenerCodecHandler extends JetAddJobStatusListenerCodec.AbstractEventHandler {
         @Override
-        public void handleJobEvent(long jobId, int oldStatus, int newStatus, java.lang.String description, boolean userRequested) {
+        public void handleJobStatusEvent(long jobId, int previousStatus, int newStatus, java.lang.String description, boolean userRequested) {
             assertTrue(isEqual(aLong, jobId));
-            assertTrue(isEqual(anInt, oldStatus));
+            assertTrue(isEqual(anInt, previousStatus));
             assertTrue(isEqual(anInt, newStatus));
             assertTrue(isEqual(null, description));
             assertTrue(isEqual(aBoolean, userRequested));
@@ -7100,7 +7100,7 @@ public class ClientCompatibilityNullTest_2_6 {
     }
 
     @Test
-    public void test_JetAddJobStatusListenerCodec_handleJobEvent() {
+    public void test_JetAddJobStatusListenerCodec_handleJobStatusEvent() {
         int fileClientMessageIndex = 903;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         JetAddJobStatusListenerCodecHandler handler = new JetAddJobStatusListenerCodecHandler();

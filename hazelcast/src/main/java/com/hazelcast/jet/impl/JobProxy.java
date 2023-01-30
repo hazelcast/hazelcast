@@ -20,7 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.JobListener;
+import com.hazelcast.jet.JobStatusListener;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
@@ -226,17 +226,17 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     @Override
-    public UUID addStatusListener(@Nonnull JobListener listener) {
+    public UUID addStatusListener(@Nonnull JobStatusListener listener) {
         checkJobStatusListenerSupported(container());
-        JobService jobService = container().getService(JobService.SERVICE_NAME);
-        return jobService.addEventListener(getId(), listener);
+        JobEventService jobEventService = container().getService(JobEventService.SERVICE_NAME);
+        return jobEventService.addEventListener(getId(), listener);
     }
 
     @Override
     public boolean removeStatusListener(@Nonnull UUID id) {
         checkJobStatusListenerSupported(container());
-        JobService jobService = container().getService(JobService.SERVICE_NAME);
-        return jobService.removeEventListener(getId(), id);
+        JobEventService jobEventService = container().getService(JobEventService.SERVICE_NAME);
+        return jobEventService.removeEventListener(getId(), id);
     }
 
     public static void checkJobStatusListenerSupported(NodeEngine nodeEngine) {

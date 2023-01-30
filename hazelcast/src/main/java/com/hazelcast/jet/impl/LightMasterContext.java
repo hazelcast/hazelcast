@@ -85,7 +85,7 @@ public final class LightMasterContext {
     };
 
     private final NodeEngine nodeEngine;
-    private final JobService jobService;
+    private final JobEventService jobEventService;
     private final long jobId;
 
     private final ILogger logger;
@@ -104,7 +104,7 @@ public final class LightMasterContext {
                               JobConfig jobConfig, Map<MemberInfo, ExecutionPlan> executionPlanMap,
                               Set<Vertex> vertices) {
         this.nodeEngine = nodeEngine;
-        this.jobService = nodeEngine.getService(JobService.SERVICE_NAME);
+        this.jobEventService = nodeEngine.getService(JobEventService.SERVICE_NAME);
         this.jobId = jobId;
         this.logger = logger;
         this.jobIdString = jobIdString;
@@ -196,7 +196,7 @@ public final class LightMasterContext {
             Throwable fail = failure;
             if (fail == null) {
                 jobCompletionFuture.complete(null);
-                jobService.publishEvent(jobId, RUNNING, COMPLETED, null, false);
+                jobEventService.publishEvent(jobId, RUNNING, COMPLETED, null, false);
             } else {
                 TerminationMode requestedTerminationMode = fail instanceof JobTerminateRequestedException
                         ? ((JobTerminateRequestedException) fail).mode() : null;
@@ -210,11 +210,11 @@ public final class LightMasterContext {
                     fail = newFailure;
                 }
                 jobCompletionFuture.completeExceptionally(fail);
-                jobService.publishEvent(jobId, RUNNING, FAILED, requestedTerminationMode != null
+                jobEventService.publishEvent(jobId, RUNNING, FAILED, requestedTerminationMode != null
                             ? requestedTerminationMode.actionAfterTerminate().toString() : fail.toString(),
                         userInitiatedTermination);
             }
-            jobService.removeAllEventListeners(jobId);
+            jobEventService.removeAllEventListeners(jobId);
         });
     }
 

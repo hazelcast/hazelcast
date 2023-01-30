@@ -19,11 +19,12 @@ package com.hazelcast.jet;
 import java.util.UUID;
 
 /**
- * @see Job#addStatusListener(JobListener)
- * @see Job#removeStatusListener(UUID)
+ * Invoked upon job status change.
  *
+ * @see Job#addStatusListener(JobStatusListener)
+ * @see Job#removeStatusListener(UUID)
  * @since 5.3
  */
-public interface JobListener {
-    void jobStatusChanged(JobEvent event);
+public interface JobStatusListener {
+    void jobStatusChanged(JobStatusEvent event);
 }

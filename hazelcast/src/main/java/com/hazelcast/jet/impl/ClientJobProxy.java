@@ -40,8 +40,8 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.JobEvent;
-import com.hazelcast.jet.JobListener;
+import com.hazelcast.jet.JobStatusEvent;
+import com.hazelcast.jet.JobStatusListener;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
@@ -241,9 +241,9 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
 
     @Nonnull
     @Override
-    public UUID addStatusListener(@Nonnull JobListener listener) {
+    public UUID addStatusListener(@Nonnull JobStatusListener listener) {
         return container().getListenerService().registerListener(
-                createJobStatusListenerCodec(getId()), new ClientJobEventHandler(listener));
+                createJobStatusListenerCodec(getId()), new ClientJobStatusEventHandler(listener));
     }
 
     @Override
@@ -275,15 +275,15 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
         };
     }
 
-    private static class ClientJobEventHandler implements EventHandler<ClientMessage> {
+    private static class ClientJobStatusEventHandler implements EventHandler<ClientMessage> {
         final JetAddJobStatusListenerCodec.AbstractEventHandler handler;
 
-        ClientJobEventHandler(final JobListener listener) {
+        ClientJobStatusEventHandler(final JobStatusListener listener) {
             handler = new JetAddJobStatusListenerCodec.AbstractEventHandler() {
                 @Override
-                public void handleJobEvent(long jobId, int oldStatus, int newStatus,
-                                           @Nullable String description, boolean userRequested) {
-                    listener.jobStatusChanged(new JobEvent(jobId, JobStatus.getById(oldStatus),
+                public void handleJobStatusEvent(long jobId, int previousStatus, int newStatus,
+                                                 @Nullable String description, boolean userRequested) {
+                    listener.jobStatusChanged(new JobStatusEvent(jobId, JobStatus.getById(previousStatus),
                             JobStatus.getById(newStatus), description, userRequested));
                 }
             };

@@ -370,7 +370,7 @@ public interface Job {
      * @throws UnsupportedOperationException if the cluster version is less than 5.3
      * @since 5.3
      */
-    UUID addStatusListener(@Nonnull JobListener listener);
+    UUID addStatusListener(@Nonnull JobStatusListener listener);
 
     /**
      * Stops delivering all events to the listener with the given registration id.

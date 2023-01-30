@@ -72,7 +72,7 @@ public class MasterContext {
     private final ReentrantLock lock = new ReentrantLock();
 
     private final NodeEngineImpl nodeEngine;
-    private final JobService jobService;
+    private final JobEventService jobEventService;
     private final JobCoordinationService coordinationService;
     private final ILogger logger;
     private final long jobId;
@@ -96,7 +96,7 @@ public class MasterContext {
     MasterContext(NodeEngineImpl nodeEngine, JobCoordinationService coordinationService, @Nonnull JobRecord jobRecord,
                   @Nonnull JobExecutionRecord jobExecutionRecord) {
         this.nodeEngine = nodeEngine;
-        this.jobService = nodeEngine.getService(JobService.SERVICE_NAME);
+        this.jobEventService = nodeEngine.getService(JobEventService.SERVICE_NAME);
         this.coordinationService = coordinationService;
         this.jobRepository = coordinationService.jobRepository();
         this.logger = nodeEngine.getLogger(getClass());
@@ -152,9 +152,9 @@ public class MasterContext {
     void setJobStatus(JobStatus jobStatus, String description, boolean userRequested) {
         JobStatus oldStatus = this.jobStatus;
         this.jobStatus = jobStatus;
-        jobService.publishEvent(jobId, oldStatus, jobStatus, description, userRequested);
+        jobEventService.publishEvent(jobId, oldStatus, jobStatus, description, userRequested);
         if (jobStatus.isTerminal()) {
-            jobService.removeAllEventListeners(jobId);
+            jobEventService.removeAllEventListeners(jobId);
         }
     }
 

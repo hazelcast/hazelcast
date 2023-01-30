@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.codec.JetRemoveJobStatusListenerCodec.
 import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.jet.impl.JobService;
+import com.hazelcast.jet.impl.JobEventService;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.JobPermission;
 
@@ -42,8 +42,8 @@ public class JetRemoveJobStatusListenerMessageTask extends AbstractRemoveListene
     @Override
     protected Future<Boolean> deRegisterListener() {
         checkJobStatusListenerSupported(nodeEngine);
-        JobService jobService = getService(JobService.SERVICE_NAME);
-        return jobService.removeEventListenerAsync(parameters.jobId, parameters.registrationId);
+        JobEventService jobEventService = getService(JobEventService.SERVICE_NAME);
+        return jobEventService.removeEventListenerAsync(parameters.jobId, parameters.registrationId);
     }
 
     @Override
@@ -63,7 +63,7 @@ public class JetRemoveJobStatusListenerMessageTask extends AbstractRemoveListene
 
     @Override
     public String getServiceName() {
-        return JobService.SERVICE_NAME;
+        return JobEventService.SERVICE_NAME;
     }
 
     @Override

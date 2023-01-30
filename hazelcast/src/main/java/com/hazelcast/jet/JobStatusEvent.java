@@ -30,19 +30,19 @@ import java.io.IOException;
 import static com.hazelcast.jet.Util.idToString;
 
 @BinaryInterface
-public class JobEvent implements IdentifiedDataSerializable {
+public class JobStatusEvent implements IdentifiedDataSerializable {
     private long jobId;
-    private JobStatus oldStatus;
+    private JobStatus previousStatus;
     private JobStatus newStatus;
     private String description;
     private boolean userRequested;
 
-    public JobEvent() { }
+    public JobStatusEvent() { }
 
-    public JobEvent(long jobId, @Nonnull JobStatus oldStatus, @Nonnull JobStatus newStatus,
-                    @Nullable String description, boolean userRequested) {
+    public JobStatusEvent(long jobId, @Nonnull JobStatus previousStatus, @Nonnull JobStatus newStatus,
+                          @Nullable String description, boolean userRequested) {
         this.jobId = jobId;
-        this.oldStatus = oldStatus;
+        this.previousStatus = previousStatus;
         this.newStatus = newStatus;
         this.description = description;
         this.userRequested = userRequested;
@@ -53,8 +53,8 @@ public class JobEvent implements IdentifiedDataSerializable {
     }
 
     @Nonnull
-    public JobStatus getOldStatus() {
-        return oldStatus;
+    public JobStatus getPreviousStatus() {
+        return previousStatus;
     }
 
     @Nonnull
@@ -88,13 +88,13 @@ public class JobEvent implements IdentifiedDataSerializable {
 
     @Override
     public int getClassId() {
-        return JetInitDataSerializerHook.JOB_EVENT;
+        return JetInitDataSerializerHook.JOB_STATUS_EVENT;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(jobId);
-        out.writeObject(oldStatus);
+        out.writeObject(previousStatus);
         out.writeObject(newStatus);
         out.writeString(description);
         out.writeBoolean(userRequested);
@@ -103,7 +103,7 @@ public class JobEvent implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         jobId = in.readLong();
-        oldStatus = in.readObject();
+        previousStatus = in.readObject();
         newStatus = in.readObject();
         description = in.readString();
         userRequested = in.readBoolean();
@@ -112,7 +112,7 @@ public class JobEvent implements IdentifiedDataSerializable {
     @Override
     public String toString() {
         return "JobEvent{jobId=" + idToString(jobId)
-                + ", oldStatus=" + oldStatus
+                + ", previousStatus=" + previousStatus
                 + ", newStatus=" + newStatus
                 + ", description=" + description
                 + ", userRequested=" + userRequested + "}";

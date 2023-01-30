@@ -19,7 +19,7 @@ package com.hazelcast.jet;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.impl.JobService;
+import com.hazelcast.jet.impl.JobEventService;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -31,7 +31,6 @@ import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -66,8 +65,8 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({SlowTest.class, ParallelJVMTest.class})
-public class JobListenerTest extends SimpleTestInClusterSupport {
+@Category(SlowTest.class)
+public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     private static final Function<String, String> SIMPLIFY = log -> log.replaceAll("(?<=\\().*: ", "");
     private static final String MAP_NAME = "runCount";
 
@@ -258,7 +257,7 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
 
     static void assertHasNoListenerEventually(String jobIdString) {
         assertTrueEventually(() -> assertTrue(Arrays.stream(instances()).allMatch(hz ->
-                getEventService(hz).getRegistrations(JobService.SERVICE_NAME, jobIdString).isEmpty())));
+                getEventService(hz).getRegistrations(JobEventService.SERVICE_NAME, jobIdString).isEmpty())));
     }
 
     /**
@@ -325,7 +324,7 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
         });
     }
 
-    class JobStatusLogger implements JobListener {
+    class JobStatusLogger implements JobStatusListener {
         final List<String> log = new ArrayList<>();
         final Job job;
         final UUID registrationId;
@@ -338,9 +337,9 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
         }
 
         @Override
-        public void jobStatusChanged(JobEvent e) {
+        public void jobStatusChanged(JobStatusEvent e) {
             log.add(String.format("%s: %s -> %s%s",
-                    e.isUserRequested() ? "User" : "Jet", e.getOldStatus(), e.getNewStatus(),
+                    e.isUserRequested() ? "User" : "Jet", e.getPreviousStatus(), e.getNewStatus(),
                     e.getDescription() == null ? "" : " (" + e.getDescription() + ")"));
         }
 

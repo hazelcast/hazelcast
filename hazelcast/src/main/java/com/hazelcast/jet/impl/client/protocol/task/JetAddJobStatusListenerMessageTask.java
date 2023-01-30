@@ -22,9 +22,9 @@ import com.hazelcast.client.impl.protocol.codec.JetAddJobStatusListenerCodec.Req
 import com.hazelcast.client.impl.protocol.task.AbstractAddListenerMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.jet.JobEvent;
-import com.hazelcast.jet.JobListener;
-import com.hazelcast.jet.impl.JobService;
+import com.hazelcast.jet.JobStatusEvent;
+import com.hazelcast.jet.JobStatusListener;
+import com.hazelcast.jet.impl.JobEventService;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.JobPermission;
 
@@ -45,12 +45,12 @@ public class JetAddJobStatusListenerMessageTask extends AbstractAddListenerMessa
     @Override
     protected CompletableFuture<UUID> processInternal() {
         checkJobStatusListenerSupported(nodeEngine);
-        JobService jobService = getService(JobService.SERVICE_NAME);
+        JobEventService jobEventService = getService(JobEventService.SERVICE_NAME);
         long jobId = parameters.jobId;
-        JobListener listener = new ClientJobListener();
+        JobStatusListener listener = new ClientJobStatusListener();
         return parameters.localOnly
-                ? newCompletedFuture(jobService.addLocalEventListener(jobId, listener))
-                : jobService.addEventListenerAsync(jobId, listener);
+                ? newCompletedFuture(jobEventService.addLocalEventListener(jobId, listener))
+                : jobEventService.addEventListenerAsync(jobId, listener);
     }
 
     @Override
@@ -65,7 +65,7 @@ public class JetAddJobStatusListenerMessageTask extends AbstractAddListenerMessa
 
     @Override
     public String getServiceName() {
-        return JobService.SERVICE_NAME;
+        return JobEventService.SERVICE_NAME;
     }
 
     @Override
@@ -88,12 +88,12 @@ public class JetAddJobStatusListenerMessageTask extends AbstractAddListenerMessa
         return null;
     }
 
-    private class ClientJobListener implements JobListener {
+    private class ClientJobStatusListener implements JobStatusListener {
         @Override
-        public void jobStatusChanged(JobEvent e) {
+        public void jobStatusChanged(JobStatusEvent e) {
             if (endpoint.isAlive()) {
-                sendClientMessage(JetAddJobStatusListenerCodec.encodeJobEvent(
-                        e.getJobId(), e.getOldStatus().getId(), e.getNewStatus().getId(),
+                sendClientMessage(JetAddJobStatusListenerCodec.encodeJobStatusEvent(
+                        e.getJobId(), e.getPreviousStatus().getId(), e.getNewStatus().getId(),
                         e.getDescription(), e.isUserRequested()));
             }
         }

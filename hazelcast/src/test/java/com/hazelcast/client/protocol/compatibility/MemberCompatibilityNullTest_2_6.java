@@ -7982,10 +7982,10 @@ public class MemberCompatibilityNullTest_2_6 {
     }
 
     @Test
-    public void test_JetAddJobStatusListenerCodec_encodeJobEvent() {
+    public void test_JetAddJobStatusListenerCodec_encodeJobStatusEvent() {
         int fileClientMessageIndex = 903;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        ClientMessage encoded = JetAddJobStatusListenerCodec.encodeJobEvent(aLong, anInt, anInt, null, aBoolean);
+        ClientMessage encoded = JetAddJobStatusListenerCodec.encodeJobStatusEvent(aLong, anInt, anInt, null, aBoolean);
         compareClientMessages(fromFile, encoded);
     }
 
