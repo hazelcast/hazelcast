@@ -63,7 +63,7 @@ public abstract class AbstractPostgresCdcIntegrationTest extends AbstractCdcInte
 
     @BeforeClass
     public static void ignoreOnArm64() {
-        //There is no arm64 version of currently used docker image
+        //There is no working arm64 version of example-postgres image
         assumeNoArm64Architecture();
     }
 
