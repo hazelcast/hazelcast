@@ -21,7 +21,9 @@ import java.nio.ByteBuffer;
 public interface BufferAllocator<T extends Buffer> {
     int DEFAULT_BUFFER_SIZE = 4096;
 
-    T allocate();
+    default T allocate() {
+        return allocate(DEFAULT_BUFFER_SIZE);
+    }
 
     T allocate(int minSize);
 
