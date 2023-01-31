@@ -886,9 +886,6 @@ public class MasterJobContext {
                 Executor executor = processorMetaSupplier.closeIsCooperative() ? CALLER_RUNS : offloadExecutor;
                 futures.add(runAsync(closeAction, executor));
             }
-            // clear vertices because we may be restarting job and after restart it may fail
-            // before vertices are created. completeVertices should not be executed twice.
-            vertices = null;
             return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
         }
         return completedFuture(null);
