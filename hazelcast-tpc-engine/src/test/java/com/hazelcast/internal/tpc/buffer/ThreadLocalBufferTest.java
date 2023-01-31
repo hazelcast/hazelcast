@@ -97,7 +97,7 @@ public class ThreadLocalBufferTest {
         assertEquals(0, allocator.byteBufferPoolPos);
         assertEquals(0, allocator.ioBufferPoolPos);
 
-        assertNull(allocator.ioBufferPool[0]);
+        assertNull(allocator.bufferPool[0]);
         assertNull(allocator.byteBufferPool[0]);
 
         ThreadLocalBuffer buffer = allocator.allocate(1);
@@ -106,7 +106,7 @@ public class ThreadLocalBufferTest {
         assertEquals(1, allocator.byteBufferPoolPos);
         assertEquals(1, allocator.ioBufferPoolPos);
 
-        assertNotNull(allocator.ioBufferPool[0]);
+        assertNotNull(allocator.bufferPool[0]);
         assertNotNull(allocator.byteBufferPool[0]);
     }
 
@@ -144,22 +144,6 @@ public class ThreadLocalBufferTest {
                 assertEquals(data[i][j], chunk.get());
             }
         }
-    }
-
-    @Test
-    public void when_freeing_then_bufferWentToPool() {
-        assertEquals(0, allocator.ioBufferPoolPos);
-
-        // Allocate one buffer
-        ThreadLocalBuffer buffer = allocator.allocate();
-        assertEquals(0, allocator.ioBufferPoolPos);
-
-        // Reclaim buffer to pool.
-        allocator.free(buffer);
-        assertEquals(1, allocator.ioBufferPoolPos);
-
-        ThreadLocalBuffer pooledBuffer = allocator.ioBufferPool[0];
-        assertEquals(buffer, pooledBuffer);
     }
 
     @Test

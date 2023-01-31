@@ -24,7 +24,7 @@ public class ThreadLocalBufferAllocator implements BufferAllocator<ThreadLocalBu
     static final int BUFFER_SIZE = 16384;
 
     ByteBuffer[] byteBufferPool;
-    ThreadLocalBuffer[] ioBufferPool;
+    ThreadLocalBuffer[] bufferPool;
 
     int byteBufferPoolPos;
     int ioBufferPoolPos;
@@ -35,31 +35,31 @@ public class ThreadLocalBufferAllocator implements BufferAllocator<ThreadLocalBu
     ThreadLocalBufferAllocator(boolean growing, int initialPoolSize, ConcurrentBufferAllocator concurrentAllocator) {
         this.growing = growing;
         this.byteBufferPool = new ByteBuffer[initialPoolSize];
-        this.ioBufferPool = new ThreadLocalBuffer[initialPoolSize];
+        this.bufferPool = new ThreadLocalBuffer[initialPoolSize];
         this.concurrentAllocator = concurrentAllocator;
     }
 
     @Override
     public ThreadLocalBuffer allocate(int minSize) {
-        return getNextIOBuffer(minSize);
+        return getNextBuffer(minSize);
     }
 
     @Override
-    public void free(ThreadLocalBuffer ioBuffer) {
-        for (int i = ioBuffer.chunkToRelease(); i < ioBuffer.chunksPos(); i++) {
-            ByteBuffer chunk = ioBuffer.chunks[i];
+    public void free(ThreadLocalBuffer buffer) {
+        for (int i = buffer.chunkToRelease(); i < buffer.chunksPos(); i++) {
+            ByteBuffer chunk = buffer.chunks[i];
             reclaim(chunk);
         }
-        reclaim(ioBuffer);
+        reclaim(buffer);
     }
 
-    void freeExternalWithoutByteBuffers(ThreadLocalBuffer ioBuffer) {
-        reclaim(ioBuffer);
-        ioBuffer.overtakenBy(this);
+    void freeExternalWithoutByteBuffers(ThreadLocalBuffer buffer) {
+        reclaim(buffer);
+        buffer.overtakenBy(this);
     }
 
     boolean hasSpaceForIOBuffer() {
-        return growing || ioBufferPoolPos < ioBufferPool.length;
+        return growing || ioBufferPoolPos < bufferPool.length;
     }
 
     boolean hasSpaceForByteBuffer() {
@@ -80,11 +80,11 @@ public class ThreadLocalBufferAllocator implements BufferAllocator<ThreadLocalBu
         return byteBuffer;
     }
 
-    private ThreadLocalBuffer getNextIOBuffer(int minSize) {
+    private ThreadLocalBuffer getNextBuffer(int minSize) {
         if (ioBufferPoolPos == 0) {
             return new ThreadLocalBuffer(this, minSize, concurrentAllocator);
         }
-        ThreadLocalBuffer buffer = ioBufferPool[--ioBufferPoolPos];
+        ThreadLocalBuffer buffer = bufferPool[--ioBufferPoolPos];
         buffer.reset(minSize);
         return buffer;
     }
@@ -97,10 +97,10 @@ public class ThreadLocalBufferAllocator implements BufferAllocator<ThreadLocalBu
     }
 
     private void reclaim(ThreadLocalBuffer ioBuffer) {
-        if (!ensureRemainingIoBuffer()) {
+        if (!ensureRemainingBuffer()) {
             return;
         }
-        ioBufferPool[ioBufferPoolPos++] = ioBuffer;
+        bufferPool[ioBufferPoolPos++] = ioBuffer;
     }
 
     private boolean ensureRemainingByteBuffer() {
@@ -113,12 +113,12 @@ public class ThreadLocalBufferAllocator implements BufferAllocator<ThreadLocalBu
         return true;
     }
 
-    private boolean ensureRemainingIoBuffer() {
-        if (ioBufferPoolPos == ioBufferPool.length) {
+    private boolean ensureRemainingBuffer() {
+        if (ioBufferPoolPos == bufferPool.length) {
             if (!growing) {
                 return false;
             }
-            ioBufferPool = Arrays.copyOf(ioBufferPool, ioBufferPool.length * 2);
+            bufferPool = Arrays.copyOf(bufferPool, bufferPool.length * 2);
         }
         return true;
     }
