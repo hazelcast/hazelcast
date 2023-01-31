@@ -35,7 +35,7 @@ class Queries {
 
     private final String loadAllKeys;
 
-    private final String storeInsert;
+    private final String storeSink;
     private final String storeUpdate;
     private final String delete;
 
@@ -54,7 +54,7 @@ class Queries {
                 .map(sqlColumnMetadata -> '\"' + sqlColumnMetadata.getName() + '\"')
                 .collect(joining(", "));
 
-        storeInsert = String.format("SINK INTO \"%s\" (%s) VALUES (%s)", mapping, columnNames,
+        storeSink = String.format("SINK INTO \"%s\" (%s) VALUES (%s)", mapping, columnNames,
                 queryParams(columnMetadata.size()));
 
         String setClause = columnMetadata.stream()
@@ -87,8 +87,8 @@ class Queries {
         return loadAllKeys;
     }
 
-    String storeInsert() {
-        return storeInsert;
+    String storeSink() {
+        return storeSink;
     }
 
     String storeUpdate() {

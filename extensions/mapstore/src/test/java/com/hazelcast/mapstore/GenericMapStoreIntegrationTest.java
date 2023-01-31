@@ -28,9 +28,11 @@ import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
+import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import org.example.Person;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -54,7 +56,11 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        databaseProvider = new H2DatabaseProvider();
+        initializeBeforeClass(new H2DatabaseProvider());
+    }
+
+    protected static void initializeBeforeClass(TestDatabaseProvider testDatabaseProvider) {
+        databaseProvider = testDatabaseProvider;
         dbConnectionUrl = databaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
 
         Config config = smallInstanceConfig();
@@ -66,7 +72,6 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
                         .setClassName(JdbcDataStoreFactory.class.getName())
                         .setProperty("jdbcUrl", dbConnectionUrl)
         );
-
 
         ClientConfig clientConfig = new ClientConfig();
 
@@ -168,7 +173,6 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         assertJdbcRowsAnyOrder(randomTableName,
                 new Row(42, "some-name-42")
         );
-
     }
 
     /**
@@ -203,6 +207,24 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         map.clear();
 
         assertThat(jdbcRowsTable(tableName)).isEmpty();
+    }
+
+    @Test
+    public void testPutWithGenericRecordIdColumnIgnored() {
+        HazelcastInstance client = client();
+        IMap<Integer, GenericRecord> map = client.getMap(tableName);
+
+        map.put(400,
+                GenericRecordBuilder.compact("org.example.Person")
+                        .setString("id", "42")
+                        .setString("name", "name-400")
+                        .build()
+        );
+
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(0, "name-0"),
+                new Row(400, "name-400")
+        );
     }
 
     @Test

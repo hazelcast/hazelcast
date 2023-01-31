@@ -428,7 +428,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
                 properties.idColumn);
 
 
-        try (SqlResult ignored = sql.execute(queries.storeInsert(), jdbcParameters.getParams())) {
+        try (SqlResult ignored = sql.execute(queries.storeSink(), jdbcParameters.getParams())) {
         } catch (Exception e) {
 
             if (isIntegrityConstraintViolation(e)) {
@@ -497,28 +497,27 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         }
     }
 
-    static Throwable findSQLException(Throwable throwable) {
+    static SQLException findSQLException(Throwable throwable) {
         Throwable rootCause = throwable;
         while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
             rootCause = rootCause.getCause();
             if (rootCause instanceof SQLException) {
-                return rootCause;
+                return (SQLException) rootCause;
             }
         }
         return null;
     }
 
-    // SQLException returns SQL state in five digit number.
+    // SQLException returns SQL state in five-digit number.
     // These five-digit numbers tell about the status of the SQL statements.
     // The SQLSTATE values consists of two fields.
     // The class, which is the first two characters of the string, and
     // the subclass, which is the terminating three characters of the string.
     // See https://en.wikipedia.org/wiki/SQLSTATE for cate
-    boolean isIntegrityConstraintViolation(Exception exception) {
+    static boolean isIntegrityConstraintViolation(Exception exception) {
         boolean result = false;
-        Throwable rootSQLException = findSQLException(exception);
-        if (rootSQLException != null) {
-            SQLException sqlException = (SQLException) rootSQLException;
+        SQLException sqlException = findSQLException(exception);
+        if (sqlException != null) {
             String sqlState = sqlException.getSQLState();
             if (sqlState != null) {
                 result = sqlState.startsWith("23");
@@ -550,7 +549,8 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
             String columnsProperty = properties.getProperty(COLUMNS_PROPERTY);
             if (columnsProperty != null) {
-                this.columns = Arrays.asList(columnsProperty.split(","));
+                List<String> columnsList = Arrays.asList(columnsProperty.split(","));
+                this.columns = Collections.unmodifiableList(columnsList);
             } else {
                 columns = Collections.emptyList();
             }

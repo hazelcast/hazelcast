@@ -58,9 +58,9 @@ public class QueriesTest {
     }
 
     @Test
-    public void testStoreInsert() {
+    public void testStoreSink() {
         Queries queries = new Queries(mapping, idColumn, columnMetadata);
-        String result = queries.storeInsert();
+        String result = queries.storeSink();
         Assert.assertEquals("SINK INTO \"mymapping\" (\"id\", \"name\", \"address\") VALUES (?, ?, ?)", result);
     }
 
