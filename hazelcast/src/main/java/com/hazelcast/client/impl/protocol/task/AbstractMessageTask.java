@@ -39,6 +39,7 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 
 import java.lang.reflect.Field;
@@ -49,6 +50,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executor;
 
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 
@@ -68,6 +70,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     protected final InternalSerializationService serializationService;
     protected final ILogger logger;
     protected final ClientEngine clientEngine;
+    protected final Executor internalAsyncExecutor;
     protected P parameters;
     private final ClientEndpointManager endpointManager;
     private final Node node;
@@ -82,6 +85,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         this.clientEngine = node.getClientEngine();
         this.endpointManager = clientEngine.getEndpointManager();
         this.endpoint = initEndpoint();
+        this.internalAsyncExecutor = nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
     @SuppressWarnings("unchecked")

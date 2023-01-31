@@ -50,7 +50,7 @@ public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<Void, List
                 nodeEngine.getHazelcastInstance().getCPSubsystem().getCPSubsystemManagementService();
         ClusterService clusterService = nodeEngine.getClusterService();
         return cpService.getCPMembers().toCompletableFuture()
-                .thenApply(cpMembers -> {
+                .thenApplyAsync(cpMembers -> {
                     List<SimpleEntry<UUID, UUID>> result = new ArrayList<>(cpMembers.size());
                     for (CPMember cpMember : cpMembers) {
                         Member member = clusterService.getMember(cpMember.getAddress());
@@ -58,7 +58,7 @@ public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<Void, List
                         result.add(new SimpleEntry<>(cpMember.getUuid(), apUuid));
                     }
                     return result;
-                });
+                }, internalAsyncExecutor);
     }
 
     @Override

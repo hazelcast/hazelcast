@@ -78,6 +78,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
@@ -180,7 +181,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
             ClientMessage request = MultiMapPutAllCodec.encodeRequest(name, entry.getValue());
             new ClientInvocation(getClient(), request, getName(), partitionId)
                     .invoke()
-                    .whenCompleteAsync(callback);
+                    .whenCompleteAsync(callback, CALLER_RUNS);
         }
     }
 

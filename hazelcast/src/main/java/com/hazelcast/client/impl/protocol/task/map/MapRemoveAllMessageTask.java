@@ -65,7 +65,7 @@ public class MapRemoveAllMessageTask extends AbstractMapAllPartitionsMessageTask
             } else {
                 handleProcessingFailure(throwable);
             }
-        });
+        }, internalAsyncExecutor);
     }
 
     @Override

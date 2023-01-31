@@ -38,7 +38,7 @@ public class CreateRaftGroupMessageTask extends AbstractCPMessageTask<String> {
     @Override
     protected void processMessage() {
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        service.createRaftGroupForProxyAsync(parameters).whenCompleteAsync(this);
+        service.createRaftGroupForProxyAsync(parameters).whenCompleteAsync(this, internalAsyncExecutor);
     }
 
     @Override

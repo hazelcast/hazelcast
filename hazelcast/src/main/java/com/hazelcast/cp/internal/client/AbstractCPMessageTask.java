@@ -38,13 +38,13 @@ public abstract class AbstractCPMessageTask<P> extends AbstractMessageTask<P> im
     protected void query(CPGroupId groupId, RaftOp op, QueryPolicy policy) {
         RaftInvocationManager invocationManager = getInvocationManager();
         InternalCompletableFuture<Object> future = invocationManager.query(groupId, op, policy, false);
-        future.whenCompleteAsync(this);
+        future.whenCompleteAsync(this, internalAsyncExecutor);
     }
 
     protected void invoke(CPGroupId groupId, RaftOp op) {
         RaftInvocationManager invocationManager = getInvocationManager();
         InternalCompletableFuture<Object> future = invocationManager.invoke(groupId, op, false);
-        future.whenCompleteAsync(this);
+        future.whenCompleteAsync(this, internalAsyncExecutor);
     }
 
     private RaftInvocationManager getInvocationManager() {

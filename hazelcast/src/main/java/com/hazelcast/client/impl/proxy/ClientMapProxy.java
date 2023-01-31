@@ -166,6 +166,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.query.impl.predicates.PredicateUtils.checkDoesNotContainPagingPredicate;
 import static com.hazelcast.query.impl.predicates.PredicateUtils.containsPagingPredicate;
 import static com.hazelcast.query.impl.predicates.PredicateUtils.unwrapPagingPredicate;
@@ -1651,7 +1652,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             ClientMessage request = MapPutAllCodec.encodeRequest(name, entry.getValue(), triggerMapLoader);
             new ClientInvocation(getClient(), request, getName(), partitionId)
                     .invoke()
-                    .whenCompleteAsync(callback);
+                    .whenCompleteAsync(callback, CALLER_RUNS);
         }
         // if executing in sync mode, block for the responses
         if (future == null) {

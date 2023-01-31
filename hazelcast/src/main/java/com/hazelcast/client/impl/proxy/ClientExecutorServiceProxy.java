@@ -55,6 +55,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
@@ -453,7 +454,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
                 (T) null);
 
         if (callback != null) {
-            delegatingFuture.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback))
+            delegatingFuture.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback), CALLER_RUNS)
                     .whenCompleteAsync((v, t) -> {
                         if (t instanceof RejectedExecutionException) {
                             callback.onFailure(t);
@@ -484,7 +485,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         InternalCompletableFuture<T> delegatingFuture = (InternalCompletableFuture<T>) delegatingFuture(f, uuid, partitionId,
                 (T) null);
         if (callback != null) {
-            delegatingFuture.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback))
+            delegatingFuture.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback), CALLER_RUNS)
                     .whenCompleteAsync((v, t) -> {
                         if (t instanceof RejectedExecutionException) {
                             callback.onFailure(t);
@@ -515,7 +516,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         InternalCompletableFuture<T> delegatingFuture = (InternalCompletableFuture<T>) delegatingFuture(f, uuid, member,
                 (T) null);
         if (callback != null) {
-            delegatingFuture.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback))
+            delegatingFuture.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback), CALLER_RUNS)
                     .whenCompleteAsync((v, t) -> {
                         if (t instanceof RejectedExecutionException) {
                             callback.onFailure(t);

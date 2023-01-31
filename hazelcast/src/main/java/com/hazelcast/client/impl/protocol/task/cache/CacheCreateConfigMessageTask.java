@@ -58,7 +58,7 @@ public class CacheCreateConfigMessageTask
 
         InternalCompletableFuture future =
                 cacheService.createCacheConfigOnAllMembersAsync(PreJoinCacheConfig.of(cacheConfig));
-        future.whenCompleteAsync(this);
+        future.whenCompleteAsync(this, internalAsyncExecutor);
     }
 
     @Override

@@ -72,7 +72,7 @@ public abstract class AbstractAddConfigMessageTask<P> extends AbstractMessageTas
         ClusterWideConfigurationService service = getService(ConfigurationService.SERVICE_NAME);
         if (checkStaticConfigDoesNotExist(config)) {
             service.broadcastConfigAsync(config)
-                   .whenCompleteAsync(this);
+                   .whenCompleteAsync(this, internalAsyncExecutor);
         } else {
             sendResponse(null);
         }

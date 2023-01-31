@@ -37,6 +37,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+
 /**
  * Adds cluster listener to one of the connections. If that connection is removed,
  * it registers connection to any other connection
@@ -136,7 +138,7 @@ public class ClientClusterViewListenerService implements ConnectionListener {
             }
             //completes with exception, listener needs to be reregistered
             tryReregisterToRandomConnection(connection);
-        });
+        }, CALLER_RUNS);
     }
 
 }
