@@ -41,7 +41,7 @@ import org.apache.calcite.rex.RexVisitor;
 import java.util.List;
 
 /**
- * Visitor that converts REX nodes to Hazelcast expressions.
+ * Visitor that converts a {@link RexNode} to Hazelcast's {@link Expression}.
  */
 public final class RexToExpressionVisitor implements RexVisitor<Expression<?>> {
 

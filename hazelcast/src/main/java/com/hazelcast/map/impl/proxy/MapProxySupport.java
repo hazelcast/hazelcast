@@ -372,6 +372,20 @@ abstract class MapProxySupport<K, V>
      * This setting applies only to sync and async operations on single key
      * (e.g. {@link IMap#put(Object, Object)}. It does not affect multi-entry
      * operations (eg. {@link IMap#clear()}, {@link IMap#putAll}).
+     * <p>
+     * Caveats:
+     * <ol>
+     *     <li>This method can be invoked from different threads but results may not be visible
+     *         in other threads than the calling one.</li>
+     *     <li>The same proxy instance can be returned by multiple invocations of
+     *         {@link com.hazelcast.core.HazelcastInstance#getMap(String)}.</li>
+     * </ol>
+     * Because of that, the only safe way to use this method is:
+     * <ol>
+     *     <li>Each time when IMap proxy for given IMap is obtained, failOnIndeterminateOperationState
+     *         has to be set to the same value.</li>
+     *     <li>If the proxy object is passed between threads, visibility must be guaranteed externally.</li>
+     * </ol>
      *
      * @param failOnIndeterminateOperationState should fail with exception on backup timeout
      * @see MapConfig#setBackupCount(int)
