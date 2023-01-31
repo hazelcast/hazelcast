@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.collection.Object2LongHashMap;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.Processor;
@@ -93,6 +94,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private long maxProcessorAccumulatedRecords;
 
     private ExpressionEvalContext evalContext;
+    private ProcessingGuarantee processingGuarantee;
     private int processorIndex;
 
     private Iterator<JetSqlRow> iterator;
@@ -173,6 +175,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         emptyLeftRow = new JetSqlRow(ss, new Object[columnCounts.f0()]);
         emptyRightRow = new JetSqlRow(ss, new Object[columnCounts.f1()]);
         maxProcessorAccumulatedRecords = context.maxProcessorAccumulatedRecords();
+        processingGuarantee = context.processingGuarantee();
         processorIndex = context.globalProcessorIndex();
 
         if (!joinInfo.isEquiJoin()) {
@@ -281,7 +284,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
         Byte receivedWmKey = watermark.key();
         assert wmState.containsKey(receivedWmKey) : "unexpected watermark key: " + receivedWmKey;
-        assert lastReceivedWm.get(receivedWmKey) < watermark.timestamp() : "non-monotonic watermark: "
+        assert processingGuarantee != ProcessingGuarantee.EXACTLY_ONCE
+                || lastReceivedWm.get(receivedWmKey) < watermark.timestamp() : "non-monotonic watermark: "
                 + watermark.timestamp() + " when state is " + lastReceivedWm.get(receivedWmKey);
 
         lastReceivedWm.put(receivedWmKey, watermark.timestamp());
