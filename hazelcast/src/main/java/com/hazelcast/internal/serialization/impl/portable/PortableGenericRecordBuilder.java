@@ -172,8 +172,8 @@ public class PortableGenericRecordBuilder implements GenericRecordBuilder {
     @Override
     public GenericRecordBuilder setGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord value) {
         if (value != null && !(value instanceof PortableGenericRecord)) {
-            throw new HazelcastSerializationException("You can only use portable generic records in a portable"
-                    + " generic record builder");
+            throw new HazelcastSerializationException("You can only use Portable GenericRecords in a Portable"
+                    + " GenericRecordBuilder");
         }
         return set(fieldName, value, FieldType.PORTABLE);
     }
@@ -214,8 +214,8 @@ public class PortableGenericRecordBuilder implements GenericRecordBuilder {
         if (value != null) {
             for (GenericRecord genericRecord : value) {
                 if (!(genericRecord instanceof PortableGenericRecord)) {
-                    throw new HazelcastSerializationException("You can only use portable generic records in a portable"
-                            + " generic record builder");
+                    throw new HazelcastSerializationException("You can only use Portable GenericRecords in a Portable"
+                            + " GenericRecordBuilder");
                 }
             }
         }

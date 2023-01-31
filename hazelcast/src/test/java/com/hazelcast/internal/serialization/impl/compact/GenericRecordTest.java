@@ -289,7 +289,7 @@ public class GenericRecordTest {
     @Test
     public void testSetGenericRecordThrowsWithDifferentTypeOfGenericRecord() {
         thrown.expect(HazelcastSerializationException.class);
-        thrown.expectMessage("You can only use compact generic records in a compact");
+        thrown.expectMessage("You can only use Compact GenericRecords in a Compact");
 
         GenericRecordBuilder compactBuilder = compact("asd1");
         compactBuilder.setGenericRecord("f", portable(new ClassDefinitionBuilder(1, 1).build()).build());
@@ -298,7 +298,7 @@ public class GenericRecordTest {
     @Test
     public void testSetGenericRecordThrowsWithDifferentTypeOfGenericRecord_cloner() {
         thrown.expect(HazelcastSerializationException.class);
-        thrown.expectMessage("You can only use compact generic records in a compact");
+        thrown.expectMessage("You can only use Compact GenericRecords in a Compact");
 
         GenericRecordBuilder compactBuilder = compact("asd1");
         compactBuilder.setGenericRecord("f", null);
@@ -312,7 +312,7 @@ public class GenericRecordTest {
     @Test
     public void testSetGenericRecordThrowsWithDifferentTypeOfGenericRecord_schemaBound() {
         thrown.expect(HazelcastSerializationException.class);
-        thrown.expectMessage("You can only use compact generic records in a compact");
+        thrown.expectMessage("You can only use Compact GenericRecords in a Compact");
 
         SchemaWriter schemaWriter = new SchemaWriter("asd1");
         schemaWriter.addField(new FieldDescriptor("f", FieldKind.COMPACT));
@@ -346,7 +346,7 @@ public class GenericRecordTest {
     @Test
     public void testSetArrayOfGenericRecordThrowsWithDifferentTypeOfGenericRecord() {
         thrown.expect(HazelcastSerializationException.class);
-        thrown.expectMessage("You can only use compact generic records in a compact");
+        thrown.expectMessage("You can only use Compact GenericRecords in a Compact");
 
         GenericRecordBuilder compactBuilder = compact("asd1");
         GenericRecord aPortable = portable(new ClassDefinitionBuilder(1, 1).build()).build();
@@ -357,7 +357,7 @@ public class GenericRecordTest {
     @Test
     public void testSetArrayOfGenericRecordThrowsWithDifferentTypeOfGenericRecord_cloner() {
         thrown.expect(HazelcastSerializationException.class);
-        thrown.expectMessage("You can only use compact generic records in a compact");
+        thrown.expectMessage("You can only use Compact GenericRecords in a Compact");
 
         GenericRecordBuilder compactBuilder = compact("asd1");
         compactBuilder.setArrayOfGenericRecord("f", null);
@@ -372,7 +372,7 @@ public class GenericRecordTest {
     @Test
     public void testSetArrayOfGenericRecordThrowsWithDifferentTypeOfGenericRecord_schemaBound() {
         thrown.expect(HazelcastSerializationException.class);
-        thrown.expectMessage("You can only use compact generic records in a compact");
+        thrown.expectMessage("You can only use Compact GenericRecords in a Compact");
 
         GenericRecord aPortable = portable(new ClassDefinitionBuilder(1, 1).build()).build();
         GenericRecord aCompact = compact("asd2").build();

@@ -123,7 +123,7 @@ public class GenericRecordTest {
     @Test
     public void testSetGenericRecordThrowsWithDifferentTypeOfGenericRecord() {
         thrown.expect(HazelcastSerializationException.class);
-        thrown.expectMessage("You can only use portable generic records in a portable");
+        thrown.expectMessage("You can only use Portable GenericRecords in a Portable");
 
         GenericRecordBuilder portableBuilder = GenericRecordBuilder.portable(new ClassDefinitionBuilder(1, 1).build());
         portableBuilder.setGenericRecord("f", GenericRecordBuilder.compact("asd1").build());
@@ -144,7 +144,7 @@ public class GenericRecordTest {
     @Test
     public void testSetArrayOfGenericRecordThrowsWithDifferentTypeOfGenericRecord() {
         thrown.expect(HazelcastSerializationException.class);
-        thrown.expectMessage("You can only use portable generic records in a portable");
+        thrown.expectMessage("You can only use Portable GenericRecords in a Portable");
 
         ClassDefinitionBuilder classDefinitionBuilder = new ClassDefinitionBuilder(1, 1);
         ClassDefinition fieldClassDefinition = new ClassDefinitionBuilder(1, 2).build();
