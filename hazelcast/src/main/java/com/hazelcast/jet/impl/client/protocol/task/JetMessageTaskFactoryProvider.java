@@ -35,6 +35,8 @@ import com.hazelcast.client.impl.protocol.codec.JetRemoveJobStatusListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.JetResumeJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetTerminateJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetUploadJobMetaDataCodec;
+import com.hazelcast.client.impl.protocol.codec.JetUploadJobMultipartCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -80,6 +82,10 @@ public class JetMessageTaskFactoryProvider implements MessageTaskFactoryProvider
                 (cm, con) -> new JetExistsDistributedObjectMessageTask(cm, node, con));
         factories.put(JetIsJobUserCancelledCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new JetIsJobUserCancelledMessageTask(cm, node, con));
+        factories.put(JetUploadJobMetaDataCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new JetUploadJobMetaDataTask(cm, node, con));
+        factories.put(JetUploadJobMultipartCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new JetUploadJobMultipartTask(cm, node, con));
         factories.put(JetAddJobStatusListenerCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new JetAddJobStatusListenerMessageTask(cm, node, con));
         factories.put(JetRemoveJobStatusListenerCodec.REQUEST_MESSAGE_TYPE,
@@ -91,4 +97,3 @@ public class JetMessageTaskFactoryProvider implements MessageTaskFactoryProvider
         return factories;
     }
 }
-

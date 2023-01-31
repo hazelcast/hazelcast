@@ -265,6 +265,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
      * 0 means no sync backup.
      *
      * @param backupCount the number of synchronous backups to set for this {@link IMap}
+     * @return the updated MapConfig
      * @see #setAsyncBackupCount(int)
      */
     public MapConfig setBackupCount(final int backupCount) {
@@ -286,7 +287,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
      * Sets the number of asynchronous backups. 0 means no backups.
      *
      * @param asyncBackupCount the number of asynchronous synchronous backups to set
-     * @return the updated CacheConfig
+     * @return the updated MapConfig
      * @throws IllegalArgumentException if asyncBackupCount smaller than
      *                                  0, or larger than the maximum number of backup or the sum of the
      *                                  backups and async backups is larger than the maximum number of backups

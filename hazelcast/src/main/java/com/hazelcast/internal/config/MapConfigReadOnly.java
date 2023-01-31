@@ -18,6 +18,7 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.CacheDeserializedValues;
+import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
@@ -31,7 +32,6 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
-import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.WanReplicationRef;
