@@ -36,7 +36,6 @@
         <module>hazelcast-spring-tests</module>
         <module>hazelcast-build-utils</module>
         <module>hazelcast-sql</module>
-        <module>hazelcast-perf-tests</module>
     </modules>
 
     <properties>
@@ -475,7 +474,9 @@
                             <outputDirectory>${project.build.outputDirectory}/META-INF</outputDirectory>
                             <failOnBlacklist>true</failOnBlacklist>
                             <failOnMissing>true</failOnMissing>
-                            <fileTemplate>${main.basedir}/hazelcast-build-utils/src/main/resources/hazelcast-thirdparty-template.ftl</fileTemplate>
+                            <fileTemplate>
+                                ${main.basedir}/hazelcast-build-utils/src/main/resources/hazelcast-thirdparty-template.ftl
+                            </fileTemplate>
                             <includedLicenses>
                                 <includedLicense>CC0</includedLicense>
                                 <includedLicense>Apache License, Version 2.0</includedLicense>
@@ -494,9 +495,11 @@
                                     Apache 2|Apache 2.0|Apache-2.0|Apache License 2.0|The Apache License, Version 2.0|
                                     Apache Software License - Version 2.0|Apache License Version 2.0
                                 </licenseMerge>
-                                <licenseMerge>MIT License|MIT|The MIT License|MIT license|The MIT License (MIT)</licenseMerge>
+                                <licenseMerge>MIT License|MIT|The MIT License|MIT license|The MIT License (MIT)
+                                </licenseMerge>
                                 <licenseMerge>
-                                    BSD 3-Clause License|BSD License|BSD|BSD licence|The BSD License|3-Clause BSD License|
+                                    BSD 3-Clause License|BSD License|BSD|BSD licence|The BSD License|3-Clause BSD
+                                    License|
                                     New BSD License|New BSD license|The New BSD License|Revised BSD|BSD New license|
                                     BSD-3-Clause|BSD 3-clause
                                 </licenseMerge>
@@ -572,31 +575,31 @@
                     </execution>
                 </executions>
             </plugin>
-<!--            <plugin>-->
-<!--                <groupId>org.codehaus.mojo</groupId>-->
-<!--                <artifactId>animal-sniffer-maven-plugin</artifactId>-->
-<!--                <configuration>-->
-<!--                    <checkTestClasses>true</checkTestClasses>-->
-<!--                    <signature>-->
-<!--                        <groupId>org.codehaus.mojo.signature</groupId>-->
-<!--                        <artifactId>java18</artifactId>-->
-<!--                        <version>1.0</version>-->
-<!--                    </signature>-->
-<!--                    <ignores>-->
-<!--                        <ignore>java.lang.invoke.MethodHandle</ignore>-->
-<!--                        <ignore>sun.misc.Unsafe</ignore>-->
-<!--                    </ignores>-->
-<!--                </configuration>-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <id>source-java8-check</id>-->
-<!--                        <phase>test-compile</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>check</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--            </plugin>-->
+            <!--            <plugin>-->
+            <!--                <groupId>org.codehaus.mojo</groupId>-->
+            <!--                <artifactId>animal-sniffer-maven-plugin</artifactId>-->
+            <!--                <configuration>-->
+            <!--                    <checkTestClasses>true</checkTestClasses>-->
+            <!--                    <signature>-->
+            <!--                        <groupId>org.codehaus.mojo.signature</groupId>-->
+            <!--                        <artifactId>java18</artifactId>-->
+            <!--                        <version>1.0</version>-->
+            <!--                    </signature>-->
+            <!--                    <ignores>-->
+            <!--                        <ignore>java.lang.invoke.MethodHandle</ignore>-->
+            <!--                        <ignore>sun.misc.Unsafe</ignore>-->
+            <!--                    </ignores>-->
+            <!--                </configuration>-->
+            <!--                <executions>-->
+            <!--                    <execution>-->
+            <!--                        <id>source-java8-check</id>-->
+            <!--                        <phase>test-compile</phase>-->
+            <!--                        <goals>-->
+            <!--                            <goal>check</goal>-->
+            <!--                        </goals>-->
+            <!--                    </execution>-->
+            <!--                </executions>-->
+            <!--            </plugin>-->
         </plugins>
         <pluginManagement>
             <plugins>
@@ -679,7 +682,8 @@
                             <exclusionPattern>per-property override</exclusionPattern>
                             <exclusionPattern>^copyright notice</exclusionPattern>
                             <exclusionPattern>FAILED_PRECONDITION</exclusionPattern>
-                            <exclusionPattern>The ASF licenses this file to you under the Apache License</exclusionPattern>
+                            <exclusionPattern>The ASF licenses this file to you under the Apache License
+                            </exclusionPattern>
                             <exclusionPattern>Substitute for l, l</exclusionPattern>
                             <exclusionPattern>inside edge crossings that are between</exclusionPattern>
                         </exclusionPatterns>
@@ -1822,9 +1826,9 @@
                 <version>2.4.7</version>
             </dependency>
             <dependency>
-              <groupId>org.wildfly.openssl</groupId>
-              <artifactId>wildfly-openssl</artifactId>
-              <version>1.1.3.Final</version>
+                <groupId>org.wildfly.openssl</groupId>
+                <artifactId>wildfly-openssl</artifactId>
+                <version>1.1.3.Final</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>

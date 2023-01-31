@@ -18,6 +18,7 @@ package com.hazelcast.internal.tpc;
 
 import com.hazelcast.internal.tpc.buffer.Buffer;
 import com.hazelcast.internal.tpc.buffer.BufferAllocator;
+import com.hazelcast.internal.tpc.buffer.ThreadLocalBuffer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -225,7 +226,7 @@ public abstract class AsyncSocket_LargePayloadTest {
             private ByteBuffer payloadBuffer;
             private long round;
             private int payloadSize = -1;
-            private final BufferAllocator responseAllocator = createGrowingThreadLocal();
+            private final BufferAllocator<ThreadLocalBuffer> responseAllocator = createGrowingThreadLocal();
 
             @Override
             public void onRead(ByteBuffer receiveBuffer) {
@@ -290,7 +291,7 @@ public abstract class AsyncSocket_LargePayloadTest {
                 private ByteBuffer payloadBuffer;
                 private long round;
                 private int payloadSize = -1;
-                private final BufferAllocator responseAllocator = createConcurrentAllocator();
+                private final BufferAllocator<ThreadLocalBuffer> responseAllocator = createConcurrentAllocator();
 
                 @Override
                 public void onRead(ByteBuffer receiveBuffer) {

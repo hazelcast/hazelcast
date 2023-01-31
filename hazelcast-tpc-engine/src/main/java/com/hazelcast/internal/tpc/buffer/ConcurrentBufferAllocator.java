@@ -20,12 +20,14 @@ import org.jctools.queues.MpmcArrayQueue;
 
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.internal.tpc.buffer.ThreadLocalBufferAllocator.INITIAL_POOL_SIZE;
+
 public class ConcurrentBufferAllocator implements BufferAllocator<ThreadLocalBuffer> {
     private static final ThreadLocal<ThreadLocalBufferAllocator> THREAD_LOCAL_IO_BUFFER_ALLOCATORS
             = new ThreadLocal<>();
 
-    private static final MpmcArrayQueue<ThreadLocalBuffer> FREED_IO_BUFFERS = new MpmcArrayQueue<>(ThreadLocalBufferAllocator.INITIAL_POOL_SIZE);
-    private static final MpmcArrayQueue<ByteBuffer> FREED_BYTE_BUFFERS = new MpmcArrayQueue<>(ThreadLocalBufferAllocator.INITIAL_POOL_SIZE);
+    private static final MpmcArrayQueue<ThreadLocalBuffer> FREED_IO_BUFFERS = new MpmcArrayQueue<>(INITIAL_POOL_SIZE);
+    private static final MpmcArrayQueue<ByteBuffer> FREED_BYTE_BUFFERS = new MpmcArrayQueue<>(INITIAL_POOL_SIZE);
 
     @Override
     public ThreadLocalBuffer allocate() {
@@ -37,7 +39,7 @@ public class ConcurrentBufferAllocator implements BufferAllocator<ThreadLocalBuf
     public ThreadLocalBuffer allocate(int minSize) {
         ThreadLocalBufferAllocator allocator = THREAD_LOCAL_IO_BUFFER_ALLOCATORS.get();
         if (allocator == null) {
-            allocator = (ThreadLocalBufferAllocator) BufferAllocatorFactory.createNotGrowingThreadLocal(256, this);
+            allocator = BufferAllocatorFactory.createNotGrowingThreadLocal(INITIAL_POOL_SIZE, this);
             THREAD_LOCAL_IO_BUFFER_ALLOCATORS.set(allocator);
         }
 

@@ -18,6 +18,7 @@ package com.hazelcast.internal.tpc;
 
 import com.hazelcast.internal.tpc.buffer.Buffer;
 import com.hazelcast.internal.tpc.buffer.BufferAllocator;
+import com.hazelcast.internal.tpc.buffer.ThreadLocalBuffer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -260,7 +261,7 @@ public abstract class AsyncSocket_RpcTest {
 
         @Override
         public void run() {
-            BufferAllocator<Buffer> allocator = createNotGrowingThreadLocal(1, null);
+            BufferAllocator<ThreadLocalBuffer> allocator = createNotGrowingThreadLocal(1, null);
             for (int k = 0; k < requests; k++) {
                 Buffer buf = allocator.allocate(SIZEOF_INT + SIZEOF_LONG + payload.length);
 

@@ -18,25 +18,24 @@ package com.hazelcast.internal.tpc.buffer;
 
 import static com.hazelcast.internal.tpc.buffer.ThreadLocalBufferAllocator.INITIAL_POOL_SIZE;
 
-@SuppressWarnings("rawtypes")
 public abstract class BufferAllocatorFactory {
     private static final ConcurrentBufferAllocator CONCURRENT_IO_BUFFER_ALLOCATOR = new ConcurrentBufferAllocator();
 
     private BufferAllocatorFactory() {
     }
 
-    public static BufferAllocator createGrowingThreadLocal() {
+    public static ThreadLocalBufferAllocator createGrowingThreadLocal() {
         return new ThreadLocalBufferAllocator(true, INITIAL_POOL_SIZE, null);
     }
 
-    public static BufferAllocator createNotGrowingThreadLocal(
+    public static ThreadLocalBufferAllocator createNotGrowingThreadLocal(
             int maxPoolSize,
             ConcurrentBufferAllocator concurrentAllocator
     ) {
         return new ThreadLocalBufferAllocator(false, maxPoolSize, concurrentAllocator);
     }
 
-    public static BufferAllocator createConcurrentAllocator() {
+    public static ConcurrentBufferAllocator createConcurrentAllocator() {
         return CONCURRENT_IO_BUFFER_ALLOCATOR;
     }
 }

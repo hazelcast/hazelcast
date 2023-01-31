@@ -36,8 +36,8 @@ public final class IOVector {
     private final Buffer[] buffers = new Buffer[IOV_MAX];
     private ByteBuffer[] byteBuffers = new ByteBuffer[IOV_MAX];
 
-    private int ioBuffersSize = 0;
-    private int byteBuffersSize = 0;
+    private int ioBuffersSize;
+    private int byteBuffersSize;
     private long pending;
 
     public boolean isEmpty() {

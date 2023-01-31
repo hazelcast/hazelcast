@@ -36,7 +36,7 @@ public class ThreadLocalBuffer implements Buffer {
 
     private int limit;
 
-    /*&
+    /**
      * Position of a last chunk in.
      */
     private int chunksPos;

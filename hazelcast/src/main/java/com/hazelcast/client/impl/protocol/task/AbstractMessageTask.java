@@ -281,12 +281,12 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         if (asyncSocket == null) {
             connection.write(resultClientMessage);
         } else {
-            ClientMessage.Frame frame = resultClientMessage.startFrame;
+            ClientMessage.Frame frame = resultClientMessage.getStartFrame();
             Buffer buf = new ThreadLocalBuffer(
                     (ThreadLocalBufferAllocator) responseBufAllocator,
                     resultClientMessage.getBufferLength(),
                     null);
-//            IOBuffer buf = responseBufAllocator.allocate(resultClientMessage.getBufferLength());
+//            Buffer buf = responseBufAllocator.allocate(resultClientMessage.getBufferLength());
             while (frame != null) {
                 buf.writeIntL(frame.content.length + SIZE_OF_FRAME_LENGTH_AND_FLAGS);
 
