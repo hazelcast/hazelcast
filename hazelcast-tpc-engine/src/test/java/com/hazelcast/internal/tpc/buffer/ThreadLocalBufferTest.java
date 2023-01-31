@@ -15,8 +15,7 @@ import static org.junit.Assert.assertNull;
 public class ThreadLocalBufferTest {
     public static final int ITERATION_COUNT = 100;
     private static final int INT_SIZE_IN_BYTES = 4;
-    private final ThreadLocalBufferAllocator allocator = (ThreadLocalBufferAllocator)
-            BufferAllocatorFactory.createGrowingThreadLocal();
+    private final ThreadLocalBufferAllocator allocator = BufferAllocatorFactory.createGrowingThreadLocal();
     private final Random random = new Random();
 
     @Test
@@ -129,6 +128,22 @@ public class ThreadLocalBufferTest {
                 assertEquals(data[i][j], chunk.get());
             }
         }
+    }
+
+    @Test
+    public void when_freeing_then_bufferWentToPool() {
+        assertEquals(0, allocator.ioBufferPoolPos);
+
+        // Allocate one buffer
+        ThreadLocalBuffer buffer = allocator.allocate();
+        assertEquals(0, allocator.ioBufferPoolPos);
+
+        // Reclaim buffer to pool.
+        allocator.free(buffer);
+        assertEquals(1, allocator.ioBufferPoolPos);
+
+        ThreadLocalBuffer pooledBuffer = allocator.ioBufferPool[0];
+        assertEquals(buffer, pooledBuffer);
     }
 
     @Test
