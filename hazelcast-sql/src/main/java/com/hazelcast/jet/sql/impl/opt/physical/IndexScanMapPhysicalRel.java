@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.function.ComparatorEx;
-import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
@@ -53,7 +53,7 @@ import static java.util.stream.Collectors.toList;
 /**
  * Map index scan operator.
  */
-public class IndexScanMapPhysicalRel extends TableScan implements PhysicalRel {
+public class IndexScanMapPhysicalRel extends TableScan implements HazelcastPhysicalScan {
 
     private final MapTableIndex index;
     private final IndexFilter indexFilter;
@@ -114,11 +114,13 @@ public class IndexScanMapPhysicalRel extends TableScan implements PhysicalRel {
         return descending;
     }
 
+    @Override
     public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
         PlanNodeSchema schema = OptUtils.schema(getTable());
         return filter(schema, remainderExp, parameterMetadata);
     }
 
+    @Override
     public List<Expression<?>> projection(QueryParameterMetadata parameterMetadata) {
         PlanNodeSchema schema = OptUtils.schema(getTable());
 
@@ -137,7 +139,7 @@ public class IndexScanMapPhysicalRel extends TableScan implements PhysicalRel {
     }
 
     @Override
-    public Vertex accept(CreateDagVisitor visitor) {
+    public <V> V accept(CreateDagVisitor<V> visitor) {
         return visitor.onMapIndexScan(this);
     }
 

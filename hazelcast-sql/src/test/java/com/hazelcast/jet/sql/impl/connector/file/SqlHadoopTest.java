@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,11 @@ public class SqlHadoopTest extends SqlTestSupport {
     @BeforeClass
     public static void setUpClass() throws Exception {
         assumeThatNoWindowsOS();
+
+        // Tests might fail on some IBM JDKs with error:
+        // No LoginModule found for com.ibm.security.auth.module.JAASLoginModule
+        // see https://github.com/hazelcast/hazelcast/issues/20754
+        assumeHadoopSupportsIbmPlatform();
 
         initialize(1, null);
         sqlService = instance().getSql();

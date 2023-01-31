@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package com.hazelcast.config;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
@@ -218,35 +220,47 @@ public class JoinConfig {
      */
     @SuppressWarnings("checkstyle:npathcomplexity")
     public void verify() {
+        List<String> enabledDiscoveries = new ArrayList<>();
         int countEnabled = 0;
         if (getTcpIpConfig().isEnabled()) {
             countEnabled++;
+            enabledDiscoveries.add("TCP/IP");
         }
         if (getMulticastConfig().isEnabled()) {
             countEnabled++;
+            enabledDiscoveries.add("Multicast");
         }
         if (getAwsConfig().isEnabled()) {
             countEnabled++;
+            enabledDiscoveries.add("AWS discovery");
         }
         if (getGcpConfig().isEnabled()) {
             countEnabled++;
+            enabledDiscoveries.add("GCP discovery");
         }
         if (getAzureConfig().isEnabled()) {
             countEnabled++;
+            enabledDiscoveries.add("Azure discovery");
         }
         if (getKubernetesConfig().isEnabled()) {
             countEnabled++;
+            enabledDiscoveries.add("Kubernetes discovery");
         }
         if (getEurekaConfig().isEnabled()) {
             countEnabled++;
+            enabledDiscoveries.add("Eureka discovery");
         }
 
         Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = discoveryConfig.getDiscoveryStrategyConfigs();
-        countEnabled += discoveryStrategyConfigs.size();
+        if (!discoveryStrategyConfigs.isEmpty()) {
+            countEnabled++;
+            enabledDiscoveries.add("Discovery SPI");
+        }
 
         if (countEnabled > 1) {
-            throw new InvalidConfigurationException("Multiple join configuration cannot be enabled at the same time. Enable only "
-                    + "one of: TCP/IP, Multicast, AWS, GCP, Azure, Kubernetes, Eureka, or Discovery Strategy");
+            throw new InvalidConfigurationException("Only one discovery method can be enabled at a time. "
+                    + "Keep only one of the following method enabled by removing the others from the configuration, "
+                    + "or setting enabled to 'false': " + String.join(", ", enabledDiscoveries));
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -63,7 +63,7 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder cloneWithBuilder() {
+    public GenericRecordBuilder newBuilderWithClone() {
         return new PortableGenericRecordBuilder(classDefinition, Arrays.copyOf(objects, objects.length));
     }
 
@@ -91,7 +91,14 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
     @Override
     @Nonnull
     public FieldKind getFieldKind(@Nonnull String fieldName) {
-        return FieldTypeToFieldKind.toFieldKind(classDefinition.getFieldType(fieldName));
+        FieldType fieldType;
+        try {
+            fieldType = classDefinition.getFieldType(fieldName);
+        } catch (IllegalArgumentException ignored) {
+            // field does not exist
+            return FieldKind.NOT_AVAILABLE;
+        }
+        return FieldTypeToFieldKind.toFieldKind(fieldType);
     }
 
     @Override

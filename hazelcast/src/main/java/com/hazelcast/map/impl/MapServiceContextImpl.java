@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.internal.eviction.ExpirationManager;
-import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.DataType;
@@ -32,7 +31,6 @@ import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.internal.util.LocalRetryableExecution;
-import com.hazelcast.internal.util.Timer;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.internal.util.comparators.ValueComparatorUtil;
@@ -45,15 +43,12 @@ import com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask;
 import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.map.impl.journal.RingbufferMapEventJournalImpl;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
+import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.NodeWideUsedCapacityCounter;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
-import com.hazelcast.map.impl.operation.BasePutOperation;
-import com.hazelcast.map.impl.operation.BaseRemoveOperation;
-import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.MapOperationProviders;
 import com.hazelcast.map.impl.operation.MapPartitionDestroyOperation;
-import com.hazelcast.map.impl.operation.SetOperation;
 import com.hazelcast.map.impl.query.AccumulationExecutor;
 import com.hazelcast.map.impl.query.AggregationResult;
 import com.hazelcast.map.impl.query.AggregationResultProcessor;
@@ -84,7 +79,6 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -97,6 +91,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
@@ -150,15 +145,16 @@ class MapServiceContextImpl implements MapServiceContext {
     private final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<>();
     private final ExecutorStats offloadedExecutorStats = new ExecutorStats();
     private final EventListenerCounter eventListenerCounter = new EventListenerCounter();
+    private final AtomicReference<PartitionIdSet> cachedOwnedPartitions = new AtomicReference<>();
 
     /**
      * @see {@link MapKeyLoader#DEFAULT_LOADED_KEY_LIMIT_PER_NODE}
      */
     private final Semaphore nodeWideLoadedKeyLimiter;
+    private final boolean forceOffloadEnabled;
+    private final long maxSuccessiveOffloadedOpRunNanos;
 
     private MapService mapService;
-
-    private volatile PartitionIdSet ownedPartitions;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     MapServiceContextImpl(NodeEngine nodeEngine) {
@@ -186,8 +182,28 @@ class MapServiceContextImpl implements MapServiceContext {
         this.nodeWideLoadedKeyLimiter = new Semaphore(checkPositive(PROP_LOADED_KEY_LIMITER_PER_NODE,
                 nodeEngine.getProperties().getInteger(LOADED_KEY_LIMITER_PER_NODE)));
         this.logger = nodeEngine.getLogger(getClass());
+        this.forceOffloadEnabled = nodeEngine.getProperties()
+                .getBoolean(FORCE_OFFLOAD_ALL_OPERATIONS);
+        this.maxSuccessiveOffloadedOpRunNanos = nodeEngine.getProperties()
+                .getNanos(MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS);
+        if (this.forceOffloadEnabled) {
+            logger.info("Force offload is enabled for all maps. This "
+                    + "means all map operations will run as if they have map-store configured. "
+                    + "The intended usage for this flag is testing purposes.");
+        }
     }
 
+    @Override
+    public boolean isForceOffloadEnabled() {
+        return forceOffloadEnabled;
+    }
+
+    @Override
+    public long getMaxSuccessiveOffloadedOpRunNanos() {
+        return maxSuccessiveOffloadedOpRunNanos;
+    }
+
+    @Override
     public ExecutorStats getOffloadedEntryProcessorExecutorStats() {
         return offloadedExecutorStats;
     }
@@ -429,7 +445,13 @@ class MapServiceContextImpl implements MapServiceContext {
         }
 
         nodeEngine.getWanReplicationService().removeWanEventCounters(MapService.SERVICE_NAME, mapName);
-        mapContainer.getMapStoreContext().stop();
+        MapStoreContext mapStoreContext = mapContainer.getMapStoreContext();
+        mapStoreContext.stop();
+        MapStoreWrapper mapStoreWrapper = mapStoreContext.getMapStoreWrapper();
+        //If the map has a MapStore, destroy that as well
+        if (mapStoreWrapper != null) {
+            mapStoreWrapper.destroy();
+        }
 
         // Statistics are destroyed after container to prevent their leak.
         destroyPartitionsAndMapContainer(mapContainer);
@@ -497,28 +519,30 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public PartitionIdSet getOrInitCachedMemberPartitions() {
-        PartitionIdSet ownedPartitionIdSet = ownedPartitions;
-        if (ownedPartitionIdSet != null) {
-            return ownedPartitionIdSet;
+    public PartitionIdSet getCachedOwnedPartitions() {
+        PartitionIdSet ownedSet = cachedOwnedPartitions.get();
+        if (ownedSet == null) {
+            refreshCachedOwnedPartitions();
+            ownedSet = cachedOwnedPartitions.get();
         }
-
-        synchronized (this) {
-            ownedPartitionIdSet = ownedPartitions;
-            if (ownedPartitionIdSet != null) {
-                return ownedPartitionIdSet;
-            }
-            IPartitionService partitionService = nodeEngine.getPartitionService();
-            Collection<Integer> partitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
-            ownedPartitionIdSet = immutablePartitionIdSet(partitionService.getPartitionCount(), partitions);
-            ownedPartitions = ownedPartitionIdSet;
-        }
-        return ownedPartitionIdSet;
+        return ownedSet;
     }
 
+    private PartitionIdSet getOwnedMemberPartitions() {
+        IPartitionService partitionService = nodeEngine.getPartitionService();
+        Collection<Integer> partitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
+        return immutablePartitionIdSet(partitionService.getPartitionCount(), partitions);
+    }
+
+    @SuppressWarnings("checkstyle:multiplevariabledeclarations")
     @Override
-    public void nullifyOwnedPartitions() {
-        ownedPartitions = null;
+    // can be called concurrently
+    public void refreshCachedOwnedPartitions() {
+        PartitionIdSet expectedSet, newSet;
+        do {
+            expectedSet = cachedOwnedPartitions.get();
+            newSet = getOwnedMemberPartitions();
+        } while (!cachedOwnedPartitions.compareAndSet(expectedSet, newSet));
     }
 
     @Override
@@ -574,11 +598,6 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public Data toData(Object object) {
         return serializationService.toData(object, DataType.HEAP);
-    }
-
-    @Override
-    public Data toDataWithSchema(Object object) {
-        return serializationService.toDataWithSchema(object);
     }
 
     @Override
@@ -796,21 +815,6 @@ class MapServiceContextImpl implements MapServiceContext {
     public Extractors getExtractors(String mapName) {
         MapContainer mapContainer = getMapContainer(mapName);
         return mapContainer.getExtractors();
-    }
-
-    @Override
-    public void incrementOperationStats(long startTimeNanos, LocalMapStatsImpl localMapStats, String mapName,
-                                        Operation operation) {
-        final long durationNanos = Timer.nanosElapsed(startTimeNanos);
-        if (operation instanceof SetOperation) {
-            localMapStats.incrementSetLatencyNanos(durationNanos);
-        } else if (operation instanceof BasePutOperation) {
-            localMapStats.incrementPutLatencyNanos(durationNanos);
-        } else if (operation instanceof BaseRemoveOperation) {
-            localMapStats.incrementRemoveLatencyNanos(durationNanos);
-        } else if (operation instanceof GetOperation) {
-            localMapStats.incrementGetLatencyNanos(durationNanos);
-        }
     }
 
     @Override

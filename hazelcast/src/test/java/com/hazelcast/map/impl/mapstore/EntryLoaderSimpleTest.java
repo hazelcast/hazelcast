@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -176,7 +176,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
     @Test
     public void testGetAllLoadsEntriesWithExpiration() {
         final int entryCount = 100;
-        putEntriesExternally(testEntryLoader, "key", "val", 5000, 0, entryCount);
+        putEntriesExternally(testEntryLoader, "key", "val", 7000, 0, entryCount);
         Set<String> requestedKeys = new HashSet<>();
         for (int i = 0; i < 50; i++) {
             requestedKeys.add("key" + i);
@@ -185,7 +185,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
         for (int i = 0; i < 50; i++) {
             assertEquals("val" + i, entries.get("key" + i));
         }
-        sleepAtLeastSeconds(6);
+        sleepAtLeastSeconds(8);
         for (int i = 0; i < 50; i++) {
             assertInMemory(instances, map.getName(), "key" + i, null);
         }

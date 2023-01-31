@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,6 +71,10 @@ final class PartitionReplicaVersions {
 
     boolean isDirty(ServiceNamespace namespace) {
         return getFragmentVersions(namespace).isDirty();
+    }
+
+    void markAsSyncRequired(ServiceNamespace namespace, int replicaIndex) {
+        getFragmentVersions(namespace).markAsSyncRequired(replicaIndex);
     }
 
     void clear(ServiceNamespace namespace) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -83,7 +83,6 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
             FilteringClassLoader classLoader = new FilteringClassLoader(excludes, null);
             config.setClassLoader(classLoader);
         }
-        config.getSerializationConfig().getCompactSerializationConfig().setEnabled(true);
         return config;
     }
 
@@ -164,7 +163,6 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
             } else {
                 EmployeeDTO employeeDTO = (EmployeeDTO) map.get(i);
                 assertEquals(employeeDTO.getAge(), 1000 + i);
-
             }
         }
     }
@@ -183,28 +181,11 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
         @Override
         public Object process(Map.Entry<Integer, GenericRecord> entry) {
             GenericRecord value = entry.getValue();
-            GenericRecord newValue = value.cloneWithBuilder()
+            GenericRecord newValue = value.newBuilderWithClone()
                     .setInt32("age", value.getInt32("age") + 1000)
                     .build();
             entry.setValue(newValue);
             return null;
         }
     }
-
-    @Test
-    public void testClusterRestart() {
-        EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
-        IMap<Integer, EmployeeDTO> map = instance1.getMap("test");
-        map.put(1, employeeDTO);
-
-        restartCluster();
-
-        map.put(1, employeeDTO);
-        assertEquals(employeeDTO, map.get(1));
-        // Perform a query to make sure that the schema is available on the cluster
-        assertEquals(1, map.values(Predicates.sql("age == 30")).size());
-    }
-
-    protected abstract void restartCluster();
-
 }

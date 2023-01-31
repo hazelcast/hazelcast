@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import com.hazelcast.internal.ascii.TextCommandConstants;
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.GET;
-import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
+import static com.hazelcast.internal.nio.IOUtil.copyFromHeapBuffer;
 
 public class GetCommand extends AbstractTextCommand {
 
@@ -58,9 +58,9 @@ public class GetCommand extends AbstractTextCommand {
     @Override
     public boolean writeTo(ByteBuffer dst) {
         if (value != null) {
-            copyToHeapBuffer(value, dst);
+            copyFromHeapBuffer(value, dst);
         }
-        copyToHeapBuffer(endMarker, dst);
+        copyFromHeapBuffer(endMarker, dst);
         return !((value != null && value.hasRemaining())
                 || endMarker.hasRemaining());
     }

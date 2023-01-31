@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ public interface JetService {
      * active job with equal name, in which case it throws {@link
      * JobAlreadyExistsException}. Job is active if it is running,
      * suspended or waiting to be run; that is it has not completed or failed.
-     * Thus there can be at most one active job with a given name at a time and
+     * Thus, there can be at most one active job with a given name at a time, and
      * you can re-use the job name after the previous job completed.
      * <p>
      * See also {@link #newJobIfAbsent}.
@@ -90,7 +90,7 @@ public interface JetService {
      * active job with equal name, in which case it throws {@link
      * JobAlreadyExistsException}. Job is active if it is running,
      * suspended or waiting to be run; that is it has not completed or failed.
-     * Thus there can be at most one active job with a given name at a time and
+     * Thus, there can be at most one active job with a given name at a time, and
      * you can re-use the job name after the previous job completed.
      * <p>
      * See also {@link #newJobIfAbsent}.
@@ -113,7 +113,7 @@ public interface JetService {
      * not running multiple times in parallel.
      * <p>
      * This method is useful for microservices deployment when each package
-     * contains a jet member and the job and you want the job to run only once.
+     * contains a jet member and the job, and you want the job to run only once.
      * But if the job is a batch job and runs very quickly, it can happen that
      * it executes multiple times, because the job name can be reused after a
      * previous execution completed.
@@ -137,7 +137,7 @@ public interface JetService {
      * not running multiple times in parallel.
      * <p>
      * This method is useful for microservices deployment when each package
-     * contains a jet member and the job and you want the job to run only once.
+     * contains a jet member and the job, and you want the job to run only once.
      * But if the job is a batch job and runs very quickly, it can happen that
      * it executes multiple times, because the job name can be reused after a
      * previous execution completed.
@@ -207,6 +207,31 @@ public interface JetService {
      * See {@link #newLightJob(Pipeline, JobConfig)} for more information.
      */
     Job newLightJob(@Nonnull DAG dag, @Nonnull JobConfig config);
+
+    /**
+     * For the client side, the jar is uploaded to a member and then the member runs the main method to start the job.
+     * The jar should have a main method that submits a Pipeline with {@link #newJob(Pipeline)} or
+     * {@link #newLightJob(Pipeline)} methods
+     * <p>
+     * The upload operation is performed in parts to avoid OOM exceptions on the client and member.
+     * For Java clients the part size is controlled by {@link com.hazelcast.client.properties.ClientProperty#JOB_UPLOAD_PART_SIZE}
+     * property
+     *
+     * <p>
+     * For the member side, since the jar is already on the member there is no need to upload anything.
+     * The member only runs the main method of the jar to start the job
+     * <p>
+     * Limitations for the client side jobs:
+     * <ul>
+     *     <li>The job can only access resources on the member or cluster. This is different from the jobs submitted from
+     *     the hz-cli tool. A job submitted from hz-cli tool creates a local HazelcastInstance on the client JVM and
+     *     connects to cluster. Therefore, the job can access local resources. This is not the case for the jar
+     *     uploaded to a member.
+     *     </li>
+     * </ul>
+     *
+     */
+    void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters);
 
     /**
      * Returns all submitted jobs. The result includes completed normal jobs,

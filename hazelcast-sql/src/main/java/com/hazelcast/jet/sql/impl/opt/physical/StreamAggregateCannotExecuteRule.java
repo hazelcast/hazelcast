@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ public final class StreamAggregateCannotExecuteRule extends RelRule<Config> {
         AggregateLogicalRel aggr = call.rel(0);
         call.transformTo(
                 new ShouldNotExecuteRel(aggr.getCluster(), OptUtils.toPhysicalConvention(aggr.getTraitSet()), aggr.getRowType(),
-                        "Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
-                                "(see TUMBLE/HOP and IMPOSE_ORDER functions)"));
+                        "Streaming aggregation is supported only for window aggregation, with imposed order, " +
+                                "grouping by a window bound (see TUMBLE/HOP and IMPOSE_ORDER functions)"));
     }
 }

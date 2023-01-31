@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,23 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.clientside.ClientConnectionManagerFactory;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.HazelcastInstance;
 
 public class HazelcastClientUtil {
 
-    public static HazelcastInstance newHazelcastClient(AddressProvider addressProvider, ClientConfig clientConfig) {
-        return HazelcastClient.newHazelcastClientInternal(addressProvider, clientConfig, null);
+    public static HazelcastInstance newHazelcastClient(ClientConfig config, AddressProvider addressProvider) {
+        return HazelcastClient.newHazelcastClientInternal(config, null, null, addressProvider);
     }
 
-    public static String getInstanceName(ClientConfig config) {
-        return HazelcastClient.getInstanceName(config, null);
+    public static HazelcastInstance newHazelcastClient(
+            ClientConfig config,
+            ClientConnectionManagerFactory connectionManagerFactory,
+            AddressProvider addressProvider
+    ) {
+        return HazelcastClient.newHazelcastClientInternal(config, null, connectionManagerFactory, addressProvider);
     }
 
     public static ClientMessage.Frame fastForwardToEndFrame(ClientMessage.ForwardFrameIterator iterator) {

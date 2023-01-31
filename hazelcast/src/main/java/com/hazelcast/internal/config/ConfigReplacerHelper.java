@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,9 @@ public final class ConfigReplacerHelper {
 
     private static void traverseChildrenAndReplaceVariables(Node root, ConfigReplacer replacer, boolean failFast,
                                                             DomVariableReplacer variableReplacer) {
+        if (root == null) {
+            return;
+        }
         NamedNodeMap attributes = root.getAttributes();
         if (attributes != null) {
             for (int k = 0; k < attributes.getLength(); k++) {

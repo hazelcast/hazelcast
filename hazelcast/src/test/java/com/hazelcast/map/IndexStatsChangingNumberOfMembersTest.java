@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,12 +29,14 @@ import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
+import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -60,6 +62,9 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport {
 
+    @ClassRule
+    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-debug-index-stats.xml");
+
     private static final String INDEX_NAME = "this";
 
     @Parameterized.Parameters(name = "format:{0}")
@@ -71,6 +76,11 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
     public InMemoryFormat inMemoryFormat;
 
     protected static final int NODE_COUNT = 3;
+
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
+    }
 
     @Test
     public void testIndexStatsQueryingChangingNumberOfMembers() {
@@ -440,12 +450,27 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
                 // Double check: if we still see same partition distribution
                 assertEquals(memberToPartitions, toMemberToPartitionsMap(instances[0]));
 
-                assertEquals("MemberPartitions={size=" + expectedPartitions.size() + ", partitions=" + expectedPartitions
-                                + "}, " + index,
-                        expectedPartitions,
-                        index.getPartitionStamp().partitions);
+
+                PartitionIdSet indexed = index.getPartitionStamp().partitions;
+                assertEquals("MemberPartitions={size=" + expectedPartitions.size()
+                                + ", partitions=" + expectedPartitions
+                                + "}, " + index + ", " + diffAsString(expectedPartitions, indexed),
+                        expectedPartitions, indexed);
             }
         });
+    }
+
+    /**
+     * Get not indexed partitions by calculating diff.
+     */
+    private static String diffAsString(PartitionIdSet expected, PartitionIdSet indexed) {
+        String notIndexed = "notIndexed=";
+        for (Integer partition : indexed) {
+            if (!expected.contains(partition)) {
+                notIndexed += partition + ", ";
+            }
+        }
+        return notIndexed;
     }
 
     private Map<UUID, PartitionIdSet> toMemberToPartitionsMap(HazelcastInstance instance1) {

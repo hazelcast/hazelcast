@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import java.time.OffsetDateTime;
  * <p>
  * Java serialization is needed for Jet.
  */
-@SuppressWarnings("checkstyle:MethodCount")
+@SuppressWarnings({"checkstyle:MethodCount", "checkstyle:ExecutableStatementCount"})
 public abstract class Converter implements Serializable {
     protected static final int ID_BOOLEAN = 0;
     protected static final int ID_BYTE = 1;
@@ -66,6 +66,7 @@ public abstract class Converter implements Serializable {
     protected static final int ID_INTERVAL_DAY_SECOND = 22;
     protected static final int ID_MAP = 23;
     protected static final int ID_JSON = 24;
+    protected static final int ID_ROW = 25;
 
     private final int id;
     private final QueryDataTypeFamily typeFamily;
@@ -85,6 +86,7 @@ public abstract class Converter implements Serializable {
     private final boolean convertToTimestampWithTimezone;
     private final boolean convertToObject;
     private final boolean convertToJson;
+    private final boolean convertToRow;
 
     protected Converter(int id, QueryDataTypeFamily typeFamily) {
         this.id = id;
@@ -108,6 +110,7 @@ public abstract class Converter implements Serializable {
             convertToTimestampWithTimezone = canConvert(clazz.getMethod("asTimestampWithTimezone", Object.class));
             convertToObject = canConvert(clazz.getMethod("asObject", Object.class));
             convertToJson = canConvert(clazz.getMethod("asJson", Object.class));
+            convertToRow = canConvert(clazz.getMethod("asRow", Object.class));
         } catch (ReflectiveOperationException e) {
             throw new HazelcastException("Failed to initialize converter: " + getClass().getName(), e);
         }
@@ -203,6 +206,11 @@ public abstract class Converter implements Serializable {
         throw cannotConvertError(QueryDataTypeFamily.JSON);
     }
 
+    @NotConvertible
+    public Object asRow(Object val) {
+        throw cannotConvertError(QueryDataTypeFamily.ROW);
+    }
+
     public Object asObject(Object val) {
         return val;
     }
@@ -267,6 +275,10 @@ public abstract class Converter implements Serializable {
         return convertToJson;
     }
 
+    public final boolean canConvertToRow() {
+        return convertToRow;
+    }
+
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount"})
     public final boolean canConvertTo(QueryDataTypeFamily typeFamily) {
         switch (typeFamily) {
@@ -314,6 +326,9 @@ public abstract class Converter implements Serializable {
 
             case JSON:
                 return canConvertToJson();
+
+            case ROW:
+                return canConvertToRow();
 
             default:
                 return getTypeFamily() == typeFamily;

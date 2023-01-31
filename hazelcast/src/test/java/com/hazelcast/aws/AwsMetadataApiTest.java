@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.aws;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.hazelcast.aws.AwsMetadataApi.EcsMetadata;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -68,6 +67,25 @@ public class AwsMetadataApiTest {
 
         // then
         assertEquals(availabilityZone, result);
+    }
+
+    @Test
+    public void availabilityZoneEcs() {
+        // given
+        //language=JSON
+        String response = "{\n"
+                + "  \"Cluster\" : \"hz-cluster\",\n"
+                + "  \"AvailabilityZone\": \"ca-central-1a\"\n"
+                + "}";
+
+        stubFor(get(urlEqualTo("/task"))
+                .willReturn(aResponse().withStatus(200).withBody(response)));
+
+        // when
+        String result = awsMetadataApi.availabilityZoneEcs();
+
+        // then
+        assertEquals("ca-central-1a", result);
     }
 
     @Test
@@ -133,6 +151,26 @@ public class AwsMetadataApiTest {
         verify(moreThan(RETRY_COUNT), getRequestedFor(urlEqualTo(GROUP_NAME_URL)));
     }
 
+
+    @Test
+    public void clusterEcs() {
+        // given
+        //language=JSON
+        String response = "{\n"
+                + "  \"Cluster\" : \"hz-cluster\",\n"
+                + "  \"AvailabilityZone\": \"ca-central-1a\"\n"
+                + "}";
+
+        stubFor(get(urlEqualTo("/task"))
+                .willReturn(aResponse().withStatus(200).withBody(response)));
+
+        // when
+        String result = awsMetadataApi.clusterEcs();
+
+        // then
+        assertEquals("hz-cluster", result);
+    }
+
     @Test
     public void defaultIamRoleEc2() {
         // given
@@ -190,38 +228,6 @@ public class AwsMetadataApiTest {
         assertEquals("Access1234", result.getAccessKey());
         assertEquals("Secret1234", result.getSecretKey());
         assertEquals("Token1234", result.getToken());
-    }
-
-    @Test
-    public void metadataEcs() {
-        // given
-        //language=JSON
-        String response = "{\n"
-            + "  \"Name\": \"container-name\",\n"
-            + "  \"Labels\": {\n"
-            + "    \"com.amazonaws.ecs.cluster\": \"arn:aws:ecs:eu-central-1:665466731577:cluster/default\",\n"
-            + "    \"com.amazonaws.ecs.container-name\": \"container-name\",\n"
-            + "    \"com.amazonaws.ecs.task-arn\": \"arn:aws:ecs:eu-central-1:665466731577:task/default/0dcf990c3ef3436c84e0c7430d14a3d4\",\n"
-            + "    \"com.amazonaws.ecs.task-definition-family\": \"family-name\"\n"
-            + "  },\n"
-            + "  \"Networks\": [\n"
-            + "    {\n"
-            + "      \"NetworkMode\": \"awsvpc\",\n"
-            + "      \"IPv4Addresses\": [\n"
-            + "        \"10.0.1.174\"\n"
-            + "      ]\n"
-            + "    }\n"
-            + "  ]\n"
-            + "}";
-        stubFor(get("/").willReturn(aResponse().withStatus(200).withBody(response)));
-
-        // when
-        EcsMetadata result = awsMetadataApi.metadataEcs();
-
-        // then
-        assertEquals("arn:aws:ecs:eu-central-1:665466731577:task/default/0dcf990c3ef3436c84e0c7430d14a3d4",
-            result.getTaskArn());
-        assertEquals("arn:aws:ecs:eu-central-1:665466731577:cluster/default", result.getClusterArn());
     }
 
     @Test

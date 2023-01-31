@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,8 +73,9 @@ class KubernetesApiEndpointProvider
 
     private Endpoint extractEntrypointAddress(JsonValue endpointAddressJson, Integer endpointPort, boolean isReady) {
         String ip = endpointAddressJson.asObject().get("ip").asString();
+        String targetRefName = endpointAddressJson.asObject().get("targetRef").asObject().get("name").asString();
         Map<String, String> additionalProperties = extractAdditionalPropertiesFrom(endpointAddressJson);
-        return new Endpoint(new EndpointAddress(ip, endpointPort), isReady, additionalProperties);
+        return new Endpoint(new EndpointAddress(ip, endpointPort, targetRefName), isReady, additionalProperties);
     }
 
     public Map<EndpointAddress, String> extractServices(JsonObject endpointsListJson,
@@ -153,9 +154,10 @@ class KubernetesApiEndpointProvider
         Map<EndpointAddress, String> result = new HashMap<>();
         for (JsonValue address : toJsonArray(addressesJson)) {
             String ip = address.asObject().get("ip").asString();
+            String targetRefName = address.asObject().get("targetRef").asObject().get("name").asString();
             String nodeName = KubernetesApiProvider.convertToString(address.asObject().get("nodeName"));
             for (Integer port : ports) {
-                result.put(new EndpointAddress(ip, port), nodeName);
+                result.put(new EndpointAddress(ip, port, targetRefName), nodeName);
             }
         }
         return result;

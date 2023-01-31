@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.nio.serialization.FieldKind;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import javax.annotation.Nonnull;
@@ -83,6 +83,8 @@ import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE;
  */
 public class DeserializedGenericRecord extends CompactGenericRecord {
 
+    private static final String METHOD_PREFIX_FOR_ERROR_MESSAGES = "get";
+
     private final TreeMap<String, Object> objects;
     private final Schema schema;
 
@@ -104,7 +106,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder cloneWithBuilder() {
+    public GenericRecordBuilder newBuilderWithClone() {
         return new DeserializedGenericRecordCloner(schema, objects);
     }
 
@@ -113,7 +115,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     public FieldKind getFieldKind(@Nonnull String fieldName) {
         FieldDescriptor field = schema.getField(fieldName);
         if (field == null) {
-            throw new IllegalArgumentException("Field name " + fieldName + " does not exist in the schema");
+            return FieldKind.NOT_AVAILABLE;
         }
         return field.getKind();
     }
@@ -220,7 +222,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             boolean[] result = new boolean[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Boolean");
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, METHOD_PREFIX_FOR_ERROR_MESSAGES, "Boolean");
                 }
                 result[i] = array[i];
             }
@@ -238,7 +240,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             byte[] result = new byte[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Int8");
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, METHOD_PREFIX_FOR_ERROR_MESSAGES, "Int8");
                 }
                 result[i] = array[i];
             }
@@ -262,7 +264,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             double[] result = new double[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Float64");
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, METHOD_PREFIX_FOR_ERROR_MESSAGES, "Float64");
                 }
                 result[i] = array[i];
             }
@@ -280,7 +282,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             float[] result = new float[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Float32");
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, METHOD_PREFIX_FOR_ERROR_MESSAGES, "Float32");
                 }
                 result[i] = array[i];
             }
@@ -298,7 +300,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             int[] result = new int[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Int32");
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, METHOD_PREFIX_FOR_ERROR_MESSAGES, "Int32");
                 }
                 result[i] = array[i];
             }
@@ -316,7 +318,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             long[] result = new long[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Int64");
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, METHOD_PREFIX_FOR_ERROR_MESSAGES, "Int64");
                 }
                 result[i] = array[i];
             }
@@ -334,7 +336,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             short[] result = new short[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Int16");
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, METHOD_PREFIX_FOR_ERROR_MESSAGES, "Int16");
                 }
                 result[i] = array[i];
             }
@@ -529,7 +531,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         check(fieldName, primitiveFieldKind, nullableFieldKind);
         T t = (T) objects.get(fieldName);
         if (t == null) {
-            throw exceptionForUnexpectedNullValue(fieldName, methodSuffix);
+            throw exceptionForUnexpectedNullValue(fieldName, METHOD_PREFIX_FOR_ERROR_MESSAGES, methodSuffix);
         }
         return t;
     }

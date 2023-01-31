@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,14 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.ascii.HTTPCommunicator.ConnectionResponse;
+import com.hazelcast.internal.ascii.rest.RestValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestAwareInstanceFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -43,6 +45,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
 import static com.hazelcast.internal.nio.IOUtil.readFully;
@@ -57,6 +61,7 @@ import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.HazelcastTestSupport.sleepAtLeastSeconds;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_OK;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -65,7 +70,7 @@ import static org.junit.Assert.assertTrue;
  * Tests HTTP REST API.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class RestTest {
 
     private static final String MAP_WITH_TTL = "mapWithTtl";
@@ -257,6 +262,20 @@ public class RestTest {
     }
 
     @Test
+    public void wanSyncProgress() throws Exception {
+        Config config = instance.getConfig();
+        ConnectionResponse response = communicator.wanSyncGetProgress(UUID.randomUUID());
+
+        int responseCode = response.responseCode;
+        String result = response.response;
+
+        assertEquals(500, responseCode);
+        assertJsonContains(result,
+                "status", "fail",
+                "message", "Wan Sync requires Hazelcast Enterprise Edition.");
+    }
+
+    @Test
     public void wanClearQueues() throws Exception {
         Config config = instance.getConfig();
         String result = communicator.wanClearQueues(config.getClusterName(), "", "atob", "b");
@@ -402,6 +421,69 @@ public class RestTest {
         } finally {
             socket.close();
         }
+    }
+
+    @Test
+    public void testMapGetWithEscapedName() throws IOException {
+        String mapName = randomMapName();
+        IMap<String, String> map = instance.getMap(mapName + " a");
+        map.put("key 1", "value1");
+        ConnectionResponse response = communicator.mapGet(mapName + "%20a", "key%201");
+        assertEquals(HTTP_OK, response.responseCode);
+        assertEquals("value1", response.response);
+    }
+
+    @Test
+    public void testQueuePollWithEscapedName() throws IOException {
+        String queueName = randomString();
+        IQueue<String> queue = instance.getQueue(queueName + " a");
+        assertTrue(queue.offer("value 1"));
+        ConnectionResponse response = communicator.queuePoll(queueName + "%20a", 10);
+        assertEquals(HTTP_OK, response.responseCode);
+        assertEquals("value 1", response.response);
+    }
+
+    @Test
+    public void testQueueOfferWithEscapedNameAndValue() throws IOException {
+        String queueName = randomString();
+        IQueue<Object> queue = instance.getQueue(queueName + " a");
+        assertEquals(HTTP_OK, communicator.queueOffer(queueName + "%20a" + "/value%201", "data"));
+        assertEquals(1, queue.size());
+
+        ConnectionResponse response = communicator.queuePoll(queueName + "%20a", 10);
+        assertEquals(HTTP_OK, response.responseCode);
+        assertEquals("value 1", response.response);
+    }
+
+    @Test
+    public void testMapPutWithEscapedNameAndKey() throws IOException {
+        String mapName = randomMapName();
+        IMap<String, RestValue> map = instance.getMap(mapName + " a");
+        assertEquals(HTTP_OK, communicator.mapPut(mapName + "%20a", "key%201", "value1"));
+        assertEquals(1, map.size());
+        assertArrayEquals("value1".getBytes(StandardCharsets.UTF_8), map.get("key 1").getValue());
+    }
+
+    @Test
+    public void testDeleteAllMapWithEscapedName() throws IOException {
+        String mapName = randomMapName();
+        IMap<String, String> map = instance.getMap(mapName + " a");
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+        assertEquals(HTTP_OK, communicator.mapDeleteAll(mapName + "%20a"));
+        assertEquals(0, map.size());
+    }
+
+    @Test
+    public void testDeleteMapWithEscapedName() throws IOException {
+        String mapName = randomMapName();
+        IMap<String, String> map = instance.getMap(mapName + " a");
+        map.put("key 1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+        assertEquals(HTTP_OK, communicator.mapDelete(mapName + "%20a", "key%201"));
+        assertEquals(2, map.size());
     }
 
     private JsonObject assertJsonContains(String json, String... attributesAndValues) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ public interface OutboundPipeline {
      * No verification is done if the handler is already added and a handler
      * should only be added once.
      *
-     * This method should only be made on the thread 'owning' the handler.
+     * This method should only be made on the thread 'owning' the pipeline.
      *
      * @param handlers the handlers to add.
      * @return this
@@ -43,7 +43,7 @@ public interface OutboundPipeline {
      * No verification is done if any of the handlers is already added and a
      * handler should only be added once.
      *
-     * This method should only be made on the thread 'owning' the handler.
+     * This method should only be made on the thread 'owning' the pipeline.
      *
      * @param oldHandler  the handlers to replace
      * @param newHandlers the new handlers to insert.
@@ -56,7 +56,7 @@ public interface OutboundPipeline {
     /**
      * Removes the given handler from the pipeline.
      *
-     * This method should only be made on the thread 'owning' the handler.
+     * This method should only be made on the thread 'owning' the pipeline.
      *
      * @param handler the handler to remove.
      * @return this

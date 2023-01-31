@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Predicate;
 
 import static com.hazelcast.map.impl.MapKeyLoaderUtil.getMaxSizePerNode;
+import static com.hazelcast.map.impl.MapMigrationAwareService.lesserBackupMapsThen;
 
 public class PartitionContainer {
 
@@ -82,7 +83,8 @@ public class PartitionContainer {
     public PartitionContainer(final MapService mapService, final int partitionId) {
         this.mapService = mapService;
         this.partitionId = partitionId;
-        int approxMapCount = mapService.mapServiceContext.getNodeEngine().getConfig().getMapConfigs().size();
+        int approxMapCount = mapService.mapServiceContext.getNodeEngine()
+                .getConfig().getMapConfigs().size();
         this.maps = MapUtil.createConcurrentHashMap(approxMapCount);
     }
 
@@ -237,6 +239,26 @@ public class PartitionContainer {
 
     public void setLastCleanupTimeCopy(long lastCleanupTimeCopy) {
         this.lastCleanupTimeCopy = lastCleanupTimeCopy;
+    }
+
+    /**
+     * Cleans up the container's state if the enclosing partition is migrated
+     * off this member. Whether cleanup is needed is decided based on the
+     * provided {@code replicaIndex}.
+     *
+     * @param replicaIndex The replica index to use for deciding per map whether
+     *                     cleanup is necessary or not
+     */
+    final void cleanUpOnMigration(int replicaIndex) {
+        mapService.getMapServiceContext().getMapContainers().keySet()
+                .stream()
+                .filter(mapName -> replicaIndex == -1
+                        || lesserBackupMapsThen(replicaIndex).test(getRecordStore(mapName)))
+                .forEach(this::cleanUpMap);
+    }
+
+    protected void cleanUpMap(String mapName) {
+        // overridden in enterprise
     }
 
     // -------------------------------------------------------------------------------------------------------------

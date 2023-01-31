@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,9 @@ public class DynamicConfigSearchOrderTest extends HazelcastTestSupport {
     private static final String DYNAMIC_NAME = "my.custom.data.cache.dynamic";
     private static final String NON_EXISTENT_NAME = "my.custom.data.cache.none";
 
+    private static final int STATIC_MAX_IDLE = 100;
+    private static final int DYNAMIC_MAX_IDLE = 200;
+
     private Config staticHazelcastConfig;
     private HazelcastInstance hazelcastInstance;
 
@@ -58,45 +61,45 @@ public class DynamicConfigSearchOrderTest extends HazelcastTestSupport {
     @Test
     public void testSearchConfigForDynamicWildcardOnlyConfig() {
         hazelcastInstance = createHazelcastInstance(staticHazelcastConfig);
-        hazelcastInstance.getConfig().addMapConfig(new MapConfig(DYNAMIC_WILDCARD_NAME));
-        assertEquals("Dynamic wildcard name should match", DYNAMIC_WILDCARD_NAME,
-                hazelcastInstance.getConfig().getMapConfig(DYNAMIC_NAME).getName());
+        hazelcastInstance.getConfig().addMapConfig(new MapConfig(DYNAMIC_WILDCARD_NAME).setMaxIdleSeconds(DYNAMIC_MAX_IDLE));
+        assertEquals("Dynamic wildcard max idle should match", DYNAMIC_MAX_IDLE,
+                hazelcastInstance.getConfig().getMapConfig(DYNAMIC_NAME).getMaxIdleSeconds());
     }
 
     @Test
     public void testSearchConfigOrderForDynamicWildcardAndExactConfig() {
         hazelcastInstance = createHazelcastInstance(staticHazelcastConfig);
-        hazelcastInstance.getConfig().addMapConfig(new MapConfig(DYNAMIC_WILDCARD_NAME));
-        hazelcastInstance.getConfig().addMapConfig(new MapConfig(DYNAMIC_NAME));
-        assertEquals("Dynamic exact match should prepend wildcard settings", DYNAMIC_NAME,
-                hazelcastInstance.getConfig().getMapConfig(DYNAMIC_NAME).getName());
+        hazelcastInstance.getConfig().addMapConfig(new MapConfig(DYNAMIC_WILDCARD_NAME).setMaxIdleSeconds(DYNAMIC_MAX_IDLE));
+        hazelcastInstance.getConfig().addMapConfig(new MapConfig(DYNAMIC_NAME).setMaxIdleSeconds(DYNAMIC_MAX_IDLE));
+        assertEquals("Dynamic exact match should prepend wildcard settings", DYNAMIC_MAX_IDLE,
+                hazelcastInstance.getConfig().getMapConfig(DYNAMIC_NAME).getMaxIdleSeconds());
     }
 
     @Test
     public void testSearchConfigOrderForDynamicAndStaticConfigs() {
-        staticHazelcastConfig.addMapConfig(new MapConfig(STATIC_WILDCARD_NAME));
-        staticHazelcastConfig.addMapConfig(new MapConfig(STATIC_NAME));
+        staticHazelcastConfig.addMapConfig(new MapConfig(STATIC_WILDCARD_NAME).setMaxIdleSeconds(STATIC_MAX_IDLE));
+        staticHazelcastConfig.addMapConfig(new MapConfig(STATIC_NAME).setMaxIdleSeconds(STATIC_MAX_IDLE));
         hazelcastInstance = createHazelcastInstance(staticHazelcastConfig);
-        hazelcastInstance.getConfig().addMapConfig(new MapConfig(DYNAMIC_WILDCARD_NAME));
-        hazelcastInstance.getConfig().addMapConfig(new MapConfig(DYNAMIC_NAME));
+        hazelcastInstance.getConfig().addMapConfig(new MapConfig(DYNAMIC_WILDCARD_NAME).setMaxIdleSeconds(DYNAMIC_MAX_IDLE));
+        hazelcastInstance.getConfig().addMapConfig(new MapConfig(DYNAMIC_NAME).setMaxIdleSeconds(DYNAMIC_MAX_IDLE));
 
-        assertEquals("Dynamic exact name should match", DYNAMIC_NAME,
-                hazelcastInstance.getConfig().getMapConfig(DYNAMIC_NAME).getName());
-        assertEquals("Dynamic wildcard settings should prepend static settings", DYNAMIC_WILDCARD_NAME,
-                hazelcastInstance.getConfig().getMapConfig(STATIC_NAME).getName());
-        assertEquals("Dynamic wildcard settings should prepend static settings", DYNAMIC_WILDCARD_NAME,
-                hazelcastInstance.getConfig().getMapConfig(NON_EXISTENT_NAME).getName());
+        assertEquals("Dynamic exact max idle should match", DYNAMIC_MAX_IDLE,
+                hazelcastInstance.getConfig().getMapConfig(DYNAMIC_NAME).getMaxIdleSeconds());
+        assertEquals("Dynamic wildcard settings should prepend static settings", DYNAMIC_MAX_IDLE,
+                hazelcastInstance.getConfig().getMapConfig(STATIC_NAME).getMaxIdleSeconds());
+        assertEquals("Dynamic wildcard settings should prepend static settings", DYNAMIC_MAX_IDLE,
+                hazelcastInstance.getConfig().getMapConfig(NON_EXISTENT_NAME).getMaxIdleSeconds());
     }
 
     @Test
     public void testSearchConfigOrderForStaticConfigs() {
-        staticHazelcastConfig.addMapConfig(new MapConfig(STATIC_WILDCARD_NAME));
-        staticHazelcastConfig.addMapConfig(new MapConfig(STATIC_NAME));
+        staticHazelcastConfig.addMapConfig(new MapConfig(STATIC_WILDCARD_NAME).setMaxIdleSeconds(STATIC_MAX_IDLE));
+        staticHazelcastConfig.addMapConfig(new MapConfig(STATIC_NAME).setMaxIdleSeconds(STATIC_MAX_IDLE));
         hazelcastInstance = createHazelcastInstance(staticHazelcastConfig);
 
-        assertEquals("Static wildcard settings should match", STATIC_WILDCARD_NAME,
-                hazelcastInstance.getConfig().getMapConfig(NON_EXISTENT_NAME).getName());
-        assertEquals("Static exact name should match", STATIC_NAME,
-                hazelcastInstance.getConfig().getMapConfig(STATIC_NAME).getName());
+        assertEquals("Static wildcard settings should match", STATIC_MAX_IDLE,
+                hazelcastInstance.getConfig().getMapConfig(NON_EXISTENT_NAME).getMaxIdleSeconds());
+        assertEquals("Static exact max idle should match", STATIC_MAX_IDLE,
+                hazelcastInstance.getConfig().getMapConfig(STATIC_NAME).getMaxIdleSeconds());
     }
 }

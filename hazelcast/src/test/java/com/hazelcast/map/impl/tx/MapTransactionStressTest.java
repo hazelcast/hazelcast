@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,29 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.collection.IQueue;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.config.ServicesConfig;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.map.IMap;
-import com.hazelcast.collection.IQueue;
-import com.hazelcast.transaction.TransactionalMap;
-import com.hazelcast.transaction.TransactionalMultiMap;
-import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.internal.services.RemoteService;
-import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionalMap;
+import com.hazelcast.transaction.TransactionalMultiMap;
 import com.hazelcast.transaction.TransactionalObject;
+import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
 import com.hazelcast.transaction.impl.Transaction;
@@ -181,7 +181,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
                 String id = q.poll();
                 if (id != null) {
                     IMap<Object, Object> map = hz.getMap(name);
-                    assertNotNull(map.getEntryView(id));
+                    assertTrueEventually(() -> assertNotNull(map.getEntryView(id)));
                     map.delete(id);
                 } else {
                     LockSupport.parkNanos(100);

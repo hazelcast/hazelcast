@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.jet.sql.impl.HazelcastSqlToRelConverter;
 import com.hazelcast.jet.sql.impl.opt.logical.CalcMergeRule;
-import com.hazelcast.jet.sql.impl.schema.HazelcastViewExpander;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
@@ -84,13 +83,11 @@ public class QueryConverter {
     private final SqlValidator validator;
     private final Prepare.CatalogReader catalogReader;
     private final RelOptCluster cluster;
-    private final HazelcastViewExpander viewExpander;
 
     public QueryConverter(SqlValidator validator, Prepare.CatalogReader catalogReader, HazelcastRelOptCluster cluster) {
         this.validator = validator;
         this.catalogReader = catalogReader;
         this.cluster = cluster;
-        this.viewExpander = new HazelcastViewExpander(validator, catalogReader, cluster);
     }
 
     public QueryConvertResult convert(SqlNode node) {
@@ -135,7 +132,7 @@ public class QueryConverter {
     }
 
     private HazelcastSqlToRelConverter createSqlToRelConverter() {
-        return new HazelcastSqlToRelConverter(viewExpander, validator, catalogReader, cluster,
+        return new HazelcastSqlToRelConverter(validator, catalogReader, cluster,
                 StandardConvertletTable.INSTANCE, QueryConverter.CONFIG);
     }
 

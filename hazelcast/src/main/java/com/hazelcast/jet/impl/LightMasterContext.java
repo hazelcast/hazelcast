@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,12 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
@@ -39,6 +42,7 @@ import com.hazelcast.version.Version;
 
 import javax.annotation.Nullable;
 import javax.security.auth.Subject;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -49,19 +53,26 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createExecutionPlans;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
+import static java.util.concurrent.CompletableFuture.runAsync;
 
-public class LightMasterContext {
+public final class LightMasterContext {
 
     private static final Object NULL_OBJECT = new Object() {
         @Override
@@ -82,18 +93,30 @@ public class LightMasterContext {
     private final AtomicBoolean invocationsCancelled = new AtomicBoolean();
     private final CompletableFuture<Void> jobCompletionFuture = new CompletableFuture<>();
     private final Set<Vertex> vertices;
+    private final JobClassLoaderService jobClassLoaderService;
+    private volatile boolean userInitiatedTermination;
 
-    @SuppressWarnings("checkstyle:ExecutableStatementCount")
-    public LightMasterContext(
-            NodeEngineImpl nodeEngine, JobCoordinationService coordinationService, DAG dag, long jobId,
-            JobConfig config, Subject subject
-    ) {
+    private LightMasterContext(NodeEngine nodeEngine, long jobId, ILogger logger, String jobIdString,
+                              JobConfig jobConfig, Map<MemberInfo, ExecutionPlan> executionPlanMap,
+                              Set<Vertex> vertices) {
         this.nodeEngine = nodeEngine;
         this.jobId = jobId;
-        this.jobConfig = config;
+        this.logger = logger;
+        this.jobIdString = jobIdString;
+        this.jobConfig = jobConfig;
+        this.executionPlanMap = executionPlanMap;
+        this.vertices = vertices;
+        this.jobClassLoaderService = ((JetServiceBackend) nodeEngine.getService(JetServiceBackend.SERVICE_NAME))
+                .getJobClassLoaderService();
+    }
 
-        logger = nodeEngine.getLogger(LightMasterContext.class);
-        jobIdString = idToString(jobId);
+    @SuppressWarnings("checkstyle:ExecutableStatementCount")
+    public static CompletableFuture<LightMasterContext> createContext(
+            NodeEngineImpl nodeEngine, JobCoordinationService coordinationService, DAG dag, long jobId,
+            JobConfig jobConfig, Subject subject
+    ) {
+        ILogger logger = nodeEngine.getLogger(LightMasterContext.class);
+        String jobIdString = idToString(jobId);
 
         // find a subset of members with version equal to the coordinator version.
         MembersView membersView = Util.getMembersView(nodeEngine);
@@ -112,63 +135,85 @@ public class LightMasterContext {
         }
 
         if (logger.isFineEnabled()) {
-            String dotRepresentation = dag.toDotString();
+            JetConfig jetConfig = nodeEngine.getConfig().getJetConfig();
+            String dotRepresentation = dag.toDotString(jetConfig.getCooperativeThreadCount(),
+                    jetConfig.getDefaultEdgeConfig().getQueueSize());
             logFine(logger, "Start executing light job %s, execution graph in DOT format:\n%s"
                             + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.",
                     jobIdString, dotRepresentation);
             logFine(logger, "Building execution plan for %s", jobIdString);
         }
 
-        vertices = new HashSet<>();
+        Set<Vertex> vertices = new HashSet<>();
         dag.iterator().forEachRemaining(vertices::add);
-        Map<MemberInfo, ExecutionPlan> executionPlanMapTmp;
-        try {
-            executionPlanMapTmp = createExecutionPlans(nodeEngine, members, dag, jobId, jobId, config, 0, true, subject);
-        } catch (Throwable e) {
-            executionPlanMap = null;
-            finalizeJob(e);
-            return;
-        }
-        executionPlanMap = executionPlanMapTmp;
-        logFine(logger, "Built execution plans for %s", jobIdString);
-        Set<MemberInfo> participants = executionPlanMap.keySet();
-        Function<ExecutionPlan, Operation> operationCtor = plan -> {
-            Data serializedPlan = nodeEngine.getSerializationService().toData(plan);
-            return new InitExecutionOperation(jobId, jobId, membersView.getVersion(), coordinatorVersion, participants,
-                    serializedPlan, true);
-        };
-        invokeOnParticipants(operationCtor,
-                responses -> finalizeJob(findError(responses)),
-                error -> cancelInvocations()
-        );
+        return createExecutionPlans(nodeEngine, members, dag, jobId, jobId, jobConfig, 0, true, subject)
+                .handleAsync((planMap, e) -> {
+                    LightMasterContext mc = new LightMasterContext(nodeEngine, jobId, logger,
+                            jobIdString, jobConfig, planMap, vertices);
+                    if (e != null) {
+                        mc.finalizeJob(e);
+                        throw rethrow(e);
+                    }
+                    logFine(logger, "Built execution plans for %s", jobIdString);
+                    Set<MemberInfo> participants = planMap.keySet();
+                    Function<ExecutionPlan, Operation> operationCtor = plan -> {
+                        Data serializedPlan = nodeEngine.getSerializationService().toData(plan);
+                        return new InitExecutionOperation(jobId, jobId, membersView.getVersion(), coordinatorVersion,
+                                participants, serializedPlan, true);
+                    };
+
+                    mc.invokeOnParticipants(operationCtor,
+                            responses -> mc.finalizeJob(mc.findError(responses)),
+                            error -> mc.cancelInvocations()
+                    );
+
+                    return mc;
+                }, coordinationService.coordinationExecutor());
     }
 
     public long getJobId() {
         return jobId;
     }
 
-    private void finalizeJob(@Nullable Throwable failure) {
+    private void finalizeJob(@Nullable final Throwable failure) {
+        ExecutorService offloadExecutor = nodeEngine.getExecutionService().getExecutor(JOB_OFFLOADABLE_EXECUTOR);
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
         // close ProcessorMetaSuppliers
         for (Vertex vertex : vertices) {
-            try {
-                vertex.getMetaSupplier().close(failure);
-            } catch (Throwable e) {
-                logger.severe(jobIdString
-                        + " encountered an exception in ProcessorMetaSupplier.complete(), ignoring it", e);
-            }
+            ProcessorMetaSupplier metaSupplier = vertex.getMetaSupplier();
+            Executor executor  = metaSupplier.closeIsCooperative() ? CALLER_RUNS : offloadExecutor;
+            futures.add(runAsync(() -> invokeClose(failure, metaSupplier), executor));
         }
 
-        if (failure == null) {
-            jobCompletionFuture.complete(null);
-        } else {
-            // translate JobTerminateRequestedException(CANCEL_FORCEFUL) to CancellationException
-            if (failure instanceof JobTerminateRequestedException
-                    && ((JobTerminateRequestedException) failure).mode() == CANCEL_FORCEFUL) {
-                CancellationException newFailure = new CancellationException();
-                newFailure.initCause(failure);
-                failure = newFailure;
+        CompletableFuture<Void> combined = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+
+        combined.whenComplete((ignored, e) -> {
+            Throwable fail = failure;
+            if (fail == null) {
+                jobCompletionFuture.complete(null);
+            } else {
+                // translate JobTerminateRequestedException(CANCEL_FORCEFUL)
+                // to CancellationException or CancellationByUserException
+                if (fail instanceof JobTerminateRequestedException
+                        && ((JobTerminateRequestedException) fail).mode() == CANCEL_FORCEFUL) {
+                    Throwable newFailure = userInitiatedTermination
+                            ? new CancellationByUserException()
+                            : new CancellationException();
+                    newFailure.initCause(failure);
+                    fail = newFailure;
+                }
+                jobCompletionFuture.completeExceptionally(fail);
             }
-            jobCompletionFuture.completeExceptionally(failure);
+        });
+    }
+
+    private void invokeClose(@Nullable Throwable failure, ProcessorMetaSupplier metaSupplier) {
+        try {
+            ClassLoader classLoader = jobClassLoaderService.getClassLoader(jobId);
+            doWithClassLoader(classLoader, () -> metaSupplier.close(failure));
+        } catch (Throwable e) {
+            logger.severe(jobIdString
+                    + " encountered an exception in ProcessorMetaSupplier.complete(), ignoring it", e);
         }
     }
 
@@ -272,7 +317,8 @@ public class LightMasterContext {
         return result;
     }
 
-    public void requestTermination() {
+    public void requestTermination(boolean userInitiated) {
+        this.userInitiatedTermination = userInitiated;
         cancelInvocations();
     }
 

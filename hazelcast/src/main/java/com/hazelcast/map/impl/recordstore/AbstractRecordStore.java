@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final SerializationService serializationService;
     protected final CompositeMutationObserver<Record> mutationObserver;
     protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
-
     protected Storage<Data, Record> storage;
     protected IndexingMutationObserver<Record> indexingObserver;
 
@@ -85,6 +84,14 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     public void init() {
         this.storage = createStorage(recordFactory, inMemoryFormat);
         addMutationObservers();
+    }
+
+    public ValueComparator getValueComparator() {
+        return valueComparator;
+    }
+
+    public LockStore getLockStore() {
+        return lockStore;
     }
 
     // Overridden in EE.
@@ -121,7 +128,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         return getMapContainer().getMapConfig().getEvictionConfig().getEvictionPolicy();
     }
 
-    protected boolean persistenceEnabledFor(@Nonnull CallerProvenance provenance) {
+    public boolean persistenceEnabledFor(@Nonnull CallerProvenance provenance) {
         switch (provenance) {
             case WAN:
                 return mapContainer.isPersistWanReplicatedData();
@@ -130,11 +137,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
             default:
                 throw new IllegalArgumentException("Unexpected provenance: `" + provenance + "`");
         }
-    }
-
-    @Override
-    public LocalRecordStoreStats getLocalRecordStoreStats() {
-        return stats;
     }
 
     @Override
@@ -231,12 +233,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         }
     }
 
-    protected void updateStatsOnPut(long hits, long now) {
-        stats.setLastUpdateTime(now);
-        stats.increaseHits(hits);
-    }
-
-    protected void updateStatsOnRemove(long now) {
+    public void updateStatsOnRemove(long now) {
         stats.setLastUpdateTime(now);
     }
 
@@ -246,12 +243,12 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     @Override
-    public LocalRecordStoreStatsImpl getStats() {
+    public LocalRecordStoreStatsImpl getLocalRecordStoreStats() {
         return stats;
     }
 
     @Override
-    public void setStats(LocalRecordStoreStats stats) {
+    public void setLocalRecordStoreStats(LocalRecordStoreStats stats) {
         this.stats.copyFrom(stats);
     }
 }

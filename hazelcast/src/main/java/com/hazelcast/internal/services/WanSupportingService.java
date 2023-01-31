@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.internal.services;
 
 import com.hazelcast.config.WanAcknowledgeType;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.wan.impl.InternalWanEvent;
 
 /**
@@ -34,4 +35,14 @@ public interface WanSupportingService {
      *                        appropriate member
      */
     void onReplicationEvent(InternalWanEvent event, WanAcknowledgeType acknowledgeType);
+
+    /**
+     * Processes a WAN sync event.
+     *
+     * @param event the event
+     * @param futures the array to save invocations
+     * @param offset place in the array where new invocation should be saved
+     * @return
+     */
+    int onSyncEvent(InternalWanEvent event, InternalCompletableFuture<Boolean>[] futures, int offset);
 }

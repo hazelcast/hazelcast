@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.util.BiTuple;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
@@ -82,6 +83,7 @@ import static com.hazelcast.jet.sql.impl.opt.OptUtils.createRelTable;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.getCluster;
 import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
 import static com.hazelcast.query.impl.CompositeValue.POSITIVE_INFINITY;
+import static com.hazelcast.sql.impl.expression.ConstantExpression.NULL;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.Collections.singletonList;
@@ -457,14 +459,14 @@ public final class IndexResolver {
         switch (kind) {
             case IS_TRUE:
                 filter = new IndexEqualsFilter(new IndexFilterValue(
-                        singletonList(ConstantExpression.create(true, QueryDataType.BOOLEAN)), singletonList(false)
+                        singletonList(ConstantExpression.TRUE), singletonList(false)
                 ));
 
                 break;
 
             case IS_FALSE:
                 filter = new IndexEqualsFilter(new IndexFilterValue(
-                        singletonList(ConstantExpression.create(false, QueryDataType.BOOLEAN)), singletonList(false)
+                        singletonList(ConstantExpression.FALSE), singletonList(false)
                 ));
 
                 break;
@@ -472,10 +474,10 @@ public final class IndexResolver {
             case IS_NOT_TRUE:
                 filter = new IndexCompositeFilter(
                         new IndexEqualsFilter(new IndexFilterValue(
-                                singletonList(ConstantExpression.create(false, QueryDataType.BOOLEAN)), singletonList(false)
+                                singletonList(ConstantExpression.FALSE), singletonList(false)
                         )),
                         new IndexEqualsFilter(new IndexFilterValue(
-                                singletonList(ConstantExpression.create(null, QueryDataType.BOOLEAN)), singletonList(true)
+                                singletonList(NULL), singletonList(true)
                         ))
                 );
 
@@ -486,10 +488,10 @@ public final class IndexResolver {
 
                 filter = new IndexCompositeFilter(
                         new IndexEqualsFilter(new IndexFilterValue(
-                                singletonList(ConstantExpression.create(true, QueryDataType.BOOLEAN)), singletonList(false)
+                                singletonList(ConstantExpression.TRUE), singletonList(false)
                         )),
                         new IndexEqualsFilter(new IndexFilterValue(
-                                singletonList(ConstantExpression.create(null, QueryDataType.BOOLEAN)), singletonList(true)
+                                singletonList(NULL), singletonList(true)
                         ))
                 );
         }
@@ -631,7 +633,7 @@ public final class IndexResolver {
             RexNode operand1,
             RexNode operand2
     ) {
-        // SARG is supported only for literals, not for dynamic parameters
+        // for SARG we expect input reference on the left side, and a (Sarg) literal on the right side
         if (operand1.getKind() != SqlKind.INPUT_REF || operand2.getKind() != SqlKind.LITERAL) {
             return null;
         }
@@ -640,19 +642,36 @@ public final class IndexResolver {
 
         QueryDataType hazelcastType = HazelcastTypeUtils.toHazelcastType(literal.getType());
 
-        RangeSet<?> rangeSet = RexToExpression.extractRangeFromSearch(literal);
+        Tuple2<RangeSet<?>, Boolean> rangeSet = RexToExpression.extractRangeSetAndNullAsFromSearch(literal);
         if (rangeSet == null) {
             return null;
         }
 
-        Set<? extends Range<?>> ranges = rangeSet.asRanges();
-
+        Set<? extends Range<?>> ranges = rangeSet.f0().asRanges();
         IndexFilter indexFilter;
-        if (ranges.size() == 1) {
-            indexFilter = createIndexFilterForSingleRange(Iterables.getFirst(ranges, null), hazelcastType);
+
+        if (TRUE.equals(rangeSet.f1())) {
+            IndexEqualsFilter isNullFilter = new IndexEqualsFilter(new IndexFilterValue(
+                    singletonList(NULL),
+                    singletonList(true)
+            ));
+            if (ranges.size() == 0) {
+                indexFilter = isNullFilter;
+            } else {
+                List<IndexFilter> indexFilters = new ArrayList<>(ranges.size() + 1);
+                indexFilters.add(isNullFilter);
+                for (Range<?> range : ranges) {
+                    indexFilters.add(createIndexFilterForSingleRange(range, hazelcastType));
+                }
+                indexFilter = new IndexCompositeFilter(indexFilters);
+            }
         } else {
-            indexFilter = new IndexCompositeFilter(
-                    toList(ranges, range -> createIndexFilterForSingleRange(range, hazelcastType)));
+            if (ranges.size() == 1) {
+                indexFilter = createIndexFilterForSingleRange(Iterables.getFirst(ranges, null), hazelcastType);
+            } else {
+                indexFilter = new IndexCompositeFilter(
+                        toList(ranges, range -> createIndexFilterForSingleRange(range, hazelcastType)));
+            }
         }
 
         return new IndexComponentCandidate(exp, columnIndex, indexFilter);

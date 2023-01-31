@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,9 @@
 package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.Addresses;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRunner;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -32,6 +34,7 @@ import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -40,8 +43,8 @@ public class DefaultAddressProviderTest {
     @Test
     public void whenNoAddresses() throws UnknownHostException {
         ClientNetworkConfig config = new ClientNetworkConfig();
-        DefaultAddressProvider provider = new DefaultAddressProvider(config);
-        Addresses addresses = provider.loadAddresses();
+        DefaultAddressProvider provider = new DefaultAddressProvider(config, () -> false);
+        Addresses addresses = provider.loadAddresses(createConnectionProcessListenerRunner());
 
         assertPrimary(addresses, new Address("127.0.0.1", 5701));
         assertSecondary(addresses, new Address("127.0.0.1", 5702), new Address("127.0.0.1", 5703));
@@ -51,8 +54,8 @@ public class DefaultAddressProviderTest {
     public void whenExplicitNoPortAddress() throws UnknownHostException {
         ClientNetworkConfig config = new ClientNetworkConfig();
         config.addAddress("10.0.0.1");
-        DefaultAddressProvider provider = new DefaultAddressProvider(config);
-        Addresses addresses = provider.loadAddresses();
+        DefaultAddressProvider provider = new DefaultAddressProvider(config, () -> false);
+        Addresses addresses = provider.loadAddresses(createConnectionProcessListenerRunner());
 
         assertPrimary(addresses, new Address("10.0.0.1", 5701));
         assertSecondary(addresses, new Address("10.0.0.1", 5702), new Address("10.0.0.1", 5703));
@@ -63,8 +66,8 @@ public class DefaultAddressProviderTest {
         ClientNetworkConfig config = new ClientNetworkConfig();
         config.addAddress("10.0.0.1:5703");
         config.addAddress("10.0.0.1:5702");
-        DefaultAddressProvider provider = new DefaultAddressProvider(config);
-        Addresses addresses = provider.loadAddresses();
+        DefaultAddressProvider provider = new DefaultAddressProvider(config, () -> false);
+        Addresses addresses = provider.loadAddresses(createConnectionProcessListenerRunner());
 
         assertPrimary(addresses, new Address("10.0.0.1", 5703), new Address("10.0.0.1", 5702));
         assertSecondaryEmpty(addresses);
@@ -76,8 +79,8 @@ public class DefaultAddressProviderTest {
         config.addAddress("10.0.0.1:5701");
         config.addAddress("10.0.0.1:5702");
         config.addAddress("10.0.0.2");
-        DefaultAddressProvider provider = new DefaultAddressProvider(config);
-        Addresses addresses = provider.loadAddresses();
+        DefaultAddressProvider provider = new DefaultAddressProvider(config, () -> false);
+        Addresses addresses = provider.loadAddresses(createConnectionProcessListenerRunner());
 
         assertPrimary(addresses, new Address("10.0.0.1", 5701),
                 new Address("10.0.0.1", 5702),
@@ -89,8 +92,8 @@ public class DefaultAddressProviderTest {
     public void whenBogusAddress() {
         ClientNetworkConfig config = new ClientNetworkConfig();
         config.addAddress(UUID.randomUUID().toString());
-        DefaultAddressProvider provider = new DefaultAddressProvider(config);
-        Addresses addresses = provider.loadAddresses();
+        DefaultAddressProvider provider = new DefaultAddressProvider(config, () -> false);
+        Addresses addresses = provider.loadAddresses(createConnectionProcessListenerRunner());
 
         assertPrimaryEmpty(addresses);
         assertSecondaryEmpty(addresses);
@@ -110,5 +113,9 @@ public class DefaultAddressProviderTest {
 
     public void assertSecondary(Addresses addresses, Address... expected) {
         assertEquals(Arrays.asList(expected), addresses.secondary());
+    }
+
+    private ClientConnectionProcessListenerRunner createConnectionProcessListenerRunner() {
+        return new ClientConnectionProcessListenerRunner(mock(HazelcastClientInstanceImpl.class));
     }
 }

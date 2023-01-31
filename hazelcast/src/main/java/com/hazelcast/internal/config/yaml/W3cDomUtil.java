@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ public final class W3cDomUtil {
     }
 
     /**
-     * Returns the the wrapped {@link YamlSequence} instance of the
+     * Returns the wrapped {@link YamlSequence} instance of the
      * provided {@link Node} if the {@code node} is an instance of
      * {@link YamlElementAdapter} and the YAML node wrapped by the {@code node}
      * is a {@link YamlSequence}.
@@ -64,7 +64,7 @@ public final class W3cDomUtil {
     }
 
     /**
-     * Returns the the wrapped {@link MutableYamlNode} instance of the
+     * Returns the wrapped {@link MutableYamlNode} instance of the
      * provided {@link Node} if the {@code node} is an instance of
      * {@link YamlElementAdapter} and the YAML node wrapped by the {@code node}
      * is a {@link MutableYamlNode}.

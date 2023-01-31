@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,20 +22,24 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.exactly;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -43,7 +47,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AwsEc2ApiTest {
@@ -247,6 +251,54 @@ public class AwsEc2ApiTest {
     }
 
     @Test
+    public void describeNetworkInterfacesException() {
+        // given
+        List<String> privateAddresses = asList("10.0.1.207", "10.0.1.82");
+
+        String requestUrl = "/?Action=DescribeNetworkInterfaces"
+                + "&Filter.1.Name=addresses.private-ip-address"
+                + "&Filter.1.Value.1=10.0.1.207"
+                + "&Filter.1.Value.2=10.0.1.82"
+                + "&Version=2016-11-15";
+
+        //language=XML
+        String response = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                + "<DescribeNetworkInterfacesResponse xmlns=\"http://ec2.amazonaws.com/doc/2016-11-15/\">\n"
+                + "    <requestId>21bc9f93-2196-4107-87a3-9e5b2b3f29d9</requestId>\n"
+                + "    <networkInterfaceSet>\n"
+                + "        <item>\n"
+                + "            <availabilityZone>eu-central-1a</availabilityZone>\n"
+                + "            <privateIpAddress>10.0.1.207</privateIpAddress>\n"
+                + "            <association>\n"
+                + "                <publicIp>54.93.217.194</publicIp>\n"
+                + "            </association>\n"
+                + "        </item>\n"
+                + "        <item>\n"
+                + "            <availabilityZone>eu-central-1a</availabilityZone>\n"
+                + "            <privateIpAddress>10.0.1.82</privateIpAddress>\n"
+                + "            <association>\n"
+                + "                <publicIp>35.156.192.128</publicIp>\n"
+                + "            </association>\n"
+                + "        </item>\n"
+                + "    </networkInterfaceSet>\n"
+                + "</DescribeNetworkInterfacesResponse>";
+
+        stubFor(get(urlEqualTo(requestUrl))
+                .withHeader("X-Amz-Date", equalTo("20200403T102518Z"))
+                .withHeader("Authorization", equalTo(AUTHORIZATION_HEADER))
+                .withHeader("X-Amz-Security-Token", equalTo(TOKEN))
+                .willReturn(aResponse().withStatus(500)));
+
+        // when
+        Map<String, String> result = awsEc2Api.describeNetworkInterfaces(privateAddresses, CREDENTIALS);
+
+        // then
+        assertEquals(2, result.size());
+        assertNull(result.get("10.0.1.207"));
+        assertNull(result.get("10.0.1.82"));
+    }
+
+    @Test
     public void describeNetworkInterfacesNoPublicIp() {
         // given
         List<String> privateAddresses = asList("10.0.1.207", "10.0.1.82");
@@ -281,8 +333,24 @@ public class AwsEc2ApiTest {
 
         // then
         assertEquals(2, result.size());
+        assertTrue(result.containsKey("10.0.1.207"));
         assertNull(result.get("10.0.1.207"));
+        assertTrue(result.containsKey("10.0.1.82"));
         assertNull(result.get("10.0.1.82"));
+    }
+
+    @Test
+    public void describeNetworkInterfacesEmptyPrivateAddressList() {
+        // given
+        List<String> privateAddresses = Collections.emptyList();
+
+        // when
+        Map<String, String> result = awsEc2Api.describeNetworkInterfaces(privateAddresses, CREDENTIALS);
+
+        // then
+        assertEquals(0, result.size());
+
+        verify(exactly(0), getRequestedFor(urlEqualTo("/?Action=DescribeNetworkInterfaces&Version=2016-11-15")));
     }
 
     @Test
@@ -291,7 +359,7 @@ public class AwsEc2ApiTest {
         int errorCode = 401;
         String errorMessage = "Error message retrieved from AWS";
         stubFor(get(urlMatching("/.*"))
-            .willReturn(aResponse().withStatus(errorCode).withBody(errorMessage)));
+                .willReturn(aResponse().withStatus(errorCode).withBody(errorMessage)));
 
         // when
         Exception exception = assertThrows(Exception.class, () -> awsEc2Api.describeInstances(CREDENTIALS));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.metrics.impl.MetricsUtil.extractExcludedTargets;
@@ -73,6 +74,8 @@ public class MetricsRegistryImpl implements MetricsRegistry {
             = new ConcurrentReferenceHashMap<>(STRONG, STRONG, of(IDENTITY_COMPARISONS));
 
     private final DefaultMetricDescriptorSupplier staticDescriptorSupplier = new DefaultMetricDescriptorSupplier();
+
+    private final AtomicReference<MetricDescriptorReusableData> metricDescriptorReusableData = new AtomicReference<>(null);
 
     /**
      * Creates a MetricsRegistryImpl instance.
@@ -234,7 +237,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
             return;
         }
 
-        descriptor.withExcludedTargets(extractExcludedTargets(function));
+        descriptor.withExcludedTargets(extractExcludedTargets(function, minimumLevel));
 
         MetricDescriptorImpl.LookupView descriptorLookupView = ((MetricDescriptorImpl) descriptor).lookupView();
         ProbeInstance probeInstance = probeInstances
@@ -311,12 +314,16 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         checkNotNull(collector, "collector can't be null");
 
         MetricsCollectionCycle collectionCycle = new MetricsCollectionCycle(this::loadSourceMetadata,
-                this::lookupMetricValueCatcher, collector, minimumLevel);
+                this::lookupMetricValueCatcher, collector, minimumLevel, metricDescriptorReusableData.getAndSet(null));
 
         collectionCycle.collectStaticMetrics(probeInstances);
         collectionCycle.collectDynamicMetrics(metricSourceMap.keySet());
         collectionCycle.notifyAllGauges(gauges.values());
-        collectionCycle.cleanUp();
+        MetricDescriptorReusableData reusableData = collectionCycle.cleanUp();
+        boolean set = metricDescriptorReusableData.compareAndSet(null, reusableData);
+        if (!set) {
+            reusableData.destroy();
+        }
     }
 
     private MetricValueCatcher lookupMetricValueCatcher(MetricDescriptor descriptor) {

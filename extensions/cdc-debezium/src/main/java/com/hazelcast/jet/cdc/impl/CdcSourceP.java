@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import io.debezium.relational.history.AbstractDatabaseHistory;
 import io.debezium.relational.history.DatabaseHistoryException;
 import io.debezium.relational.history.HistoryRecord;
 import org.apache.kafka.connect.connector.ConnectorContext;
+import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceConnector;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -61,6 +62,7 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.core.EventTimeMapper.NO_NATIVE_TIME;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 public abstract class CdcSourceP<T> extends AbstractProcessor {
@@ -77,6 +79,7 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
 
     private static final BroadcastKey<String> SNAPSHOT_KEY = broadcastKey("snap");
     private static final ThreadLocal<List<byte[]>> THREAD_LOCAL_HISTORY = new ThreadLocal<>();
+    private static final String TIMESTAMP_MS_FIELD_NAME = "ts_ms";
 
     @Nonnull
     private final Properties properties;
@@ -172,7 +175,7 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
                 Map<String, ?> partition = record.sourcePartition();
                 Map<String, ?> offset = record.sourceOffset();
                 state.setOffset(partition, offset);
-                task.commitRecord(record);
+                task.commitRecord(record, null);
             }
 
             if (!snapshotting && commitPeriod == 0) {
@@ -210,7 +213,7 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
                 state = new State();
             }
         } else {
-            throw shutDownAndThrow(new JetException("Failed to connect to database" + getCause(re)));
+            throw shutDownAndThrow(new JetException("Failed to connect to database", peel(re)));
         }
     }
 
@@ -238,6 +241,7 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
         }
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private SourceConnector startNewConnector() {
         SourceConnector connector = newInstance(properties.getProperty(CONNECTOR_CLASS_PROPERTY), "connector");
         connector.initialize(new JetConnectorContext());
@@ -246,6 +250,7 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
     }
 
     private SourceTask startNewTask() {
+        logger.info("starting new task with config: " + taskConfig);
         SourceTask task = newInstance(connector.taskClass().getName(), "task");
         task.initialize(new JetSourceTaskContext());
 
@@ -265,7 +270,7 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
             long waitTimeMs = reconnectTracker.getNextWaitTimeMs();
             logger.warning("Failed to initialize the connector task, retrying in " + waitTimeMs + "ms" + getCause(ce));
         } else {
-            throw shutDownAndThrow(new JetException("Failed to connect to database" + getCause(ce)));
+            throw shutDownAndThrow(new JetException("Failed to connect to database", peel(ce)));
         }
     }
 
@@ -342,6 +347,7 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public <V> Map<Map<String, V>, Map<String, Object>> offsets(Collection<Map<String, V>> partitions) {
             Map<Map<String, V>, Map<String, Object>> map = new HashMap<>();
             for (Map<String, V> partition : partitions) {
@@ -363,6 +369,7 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
         return sb.toString();
     }
 
+    @SuppressWarnings("unchecked")
     protected static <T> T newInstance(String className, String type) throws JetException {
         try {
             Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(className);
@@ -407,11 +414,20 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
         }
     }
 
-    private static long extractTimestamp(SourceRecord record) {
-        if (record.valueSchema().field("ts_ms") == null) {
+    private static long extractTimestamp(SourceRecord sourceRecord) {
+        Schema valueSchema = sourceRecord.valueSchema();
+        boolean noValueTsMs = valueSchema.field(TIMESTAMP_MS_FIELD_NAME) == null;
+        boolean noSourceTsMs = valueSchema.field("source").schema().field(TIMESTAMP_MS_FIELD_NAME) == null;
+        if (noValueTsMs && noSourceTsMs) {
             return NO_NATIVE_TIME;
         }
-        Long timestamp = ((Struct) record.value()).getInt64("ts_ms");
+        Long timestamp;
+        Struct valueStruct = (Struct) sourceRecord.value();
+        if (noValueTsMs) {
+            timestamp = valueStruct.getStruct("source").getInt64("ts_ms");
+        } else {
+            timestamp = valueStruct.getInt64("ts_ms");
+        }
         return timestamp == null ? NO_NATIVE_TIME : timestamp;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 
 import static com.hazelcast.jet.impl.JetEvent.jetEvent;
@@ -50,13 +51,14 @@ class CoreSerializerHooks {
                 }
 
                 @Override
-                public void write(ObjectDataOutput out, Watermark object) throws IOException {
+                public void write(@Nonnull ObjectDataOutput out, @Nonnull Watermark object) throws IOException {
                     out.writeLong(object.timestamp());
+                    out.writeByte(object.key());
                 }
 
-                @Override
-                public Watermark read(ObjectDataInput in) throws IOException {
-                    return new Watermark(in.readLong());
+                @Nonnull @Override
+                public Watermark read(@Nonnull ObjectDataInput in) throws IOException {
+                    return new Watermark(in.readLong(), in.readByte());
                 }
             };
         }

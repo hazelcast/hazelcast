@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ public class PostgresCdcAuthAndConnectionIntegrationTest extends AbstractPostgre
     @Test
     public void wrongPassword() {
         StreamSource<ChangeRecord> source = PostgresCdcSources.postgres("name")
-                .setDatabaseAddress(postgres.getContainerIpAddress())
+                .setDatabaseAddress(postgres.getHost())
                 .setDatabasePort(postgres.getMappedPort(POSTGRESQL_PORT))
                 .setDatabaseUser("postgres")
                 .setDatabasePassword("wrongPassword")
@@ -51,14 +51,14 @@ public class PostgresCdcAuthAndConnectionIntegrationTest extends AbstractPostgre
         Job job = hz.getJet().newJob(pipeline);
         // then
         assertThatThrownBy(job::join)
-                .hasRootCauseInstanceOf(JetException.class)
+                .hasCauseInstanceOf(JetException.class)
                 .hasStackTraceContaining("password authentication failed for user \"postgres\"");
     }
 
     @Test
     public void incorrectDatabaseName() {
         StreamSource<ChangeRecord> source = PostgresCdcSources.postgres("name")
-                .setDatabaseAddress(postgres.getContainerIpAddress())
+                .setDatabaseAddress(postgres.getHost())
                 .setDatabasePort(postgres.getMappedPort(POSTGRESQL_PORT))
                 .setDatabaseUser("postgres")
                 .setDatabasePassword("postgres")
@@ -73,7 +73,7 @@ public class PostgresCdcAuthAndConnectionIntegrationTest extends AbstractPostgre
         Job job = hz.getJet().newJob(pipeline);
         // then
         assertThatThrownBy(job::join)
-                .hasRootCauseInstanceOf(JetException.class)
+                .hasCauseInstanceOf(JetException.class)
                 .hasStackTraceContaining("database \"wrongDatabaseName\" does not exist");
     }
 

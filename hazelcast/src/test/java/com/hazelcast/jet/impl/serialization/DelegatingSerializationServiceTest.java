@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,8 +98,11 @@ public class DelegatingSerializationServiceTest {
 
         // When
         // Then
+
+        /* TODO (mdumandag) - remove the comments when we start testing for
+            applicability of the reflective serializer before returning it
         assertThatThrownBy(() -> service.serializerFor(new Object(), false))
-                .isInstanceOf(JetException.class);
+                .isInstanceOf(JetException.class);*/
         assertThatThrownBy(() -> service.serializerFor(Integer.MAX_VALUE))
                 .isInstanceOf(JetException.class);
     }

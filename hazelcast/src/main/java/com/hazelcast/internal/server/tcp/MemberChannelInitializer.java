@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,11 +38,19 @@ public class MemberChannelInitializer
         OutboundHandler[] outboundHandlers = serverContext.createOutboundHandlers(EndpointQualifier.MEMBER, connection);
         InboundHandler[] inboundHandlers = serverContext.createInboundHandlers(EndpointQualifier.MEMBER, connection);
 
-        SingleProtocolEncoder protocolEncoder = new SingleProtocolEncoder(new MemberProtocolEncoder(outboundHandlers));
+        OutboundHandler outboundHandler;
+        SingleProtocolEncoder protocolEncoder;
+        if (channel.isClientMode()) {
+            protocolEncoder = new SingleProtocolEncoder(outboundHandlers);
+            outboundHandler = new MemberProtocolEncoder(protocolEncoder);
+        } else {
+            protocolEncoder = new SingleProtocolEncoder(new MemberProtocolEncoder(outboundHandlers));
+            outboundHandler = protocolEncoder;
+        }
         SingleProtocolDecoder protocolDecoder = new SingleProtocolDecoder(ProtocolType.MEMBER,
-                inboundHandlers, protocolEncoder, true);
+                inboundHandlers, protocolEncoder);
 
-        channel.outboundPipeline().addLast(protocolEncoder);
+        channel.outboundPipeline().addLast(outboundHandler);
         channel.inboundPipeline().addLast(protocolDecoder);
     }
 }

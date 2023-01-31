@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -911,7 +911,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         try {
             executor.execute(() -> {
                 try {
-                    biConsumer.accept((V) value, throwable);
+                    biConsumer.accept(value, throwable);
                 } catch (Throwable t) {
                     completeDependentExceptionally(future, throwable, t);
                     return;
@@ -1250,9 +1250,10 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     // received a response, but before it cleans up itself, it receives a HazelcastInstanceNotActiveException
     private void warnIfSuspiciousDoubleCompletion(Object s0, Object s1) {
         if (s0 != s1 && !(isStateCancelled(s0)) && !(isStateCancelled(s1))) {
-            logger.warning(String.format("Future.complete(Object) on completed future. "
+            String message = String.format("Future.complete(Object) on completed future. "
                             + "Request: %s, current value: %s, offered value: %s",
-                    invocationToString(), s0, s1), new Exception());
+                    invocationToString(), s0, s1);
+            logger.warning(message, new Exception(message));
         }
     }
 
@@ -1965,12 +1966,10 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         if (cause instanceof WrappableException) {
             return ((WrappableException) cause).wrap();
         }
-        RuntimeException wrapped = cloneExceptionWithFixedAsyncStackTrace(cause);
-        return wrapped == null ? new HazelcastException(cause) : wrapped;
+        return cloneExceptionWithFixedAsyncStackTrace(cause);
     }
 
     private static Error wrapError(Error cause) {
-        Error result = cloneExceptionWithFixedAsyncStackTrace(cause);
-        return result == null ? cause : result;
+        return cloneExceptionWithFixedAsyncStackTrace(cause);
     }
 }

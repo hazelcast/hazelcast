@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.logging.Logger;
 import org.w3c.dom.Node;
 
 import java.time.Clock;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +44,7 @@ class AwsEc2Api {
     private final AwsConfig awsConfig;
     private final AwsRequestSigner requestSigner;
     private final Clock clock;
+    private boolean isNoPublicIpAlreadyLogged;
 
     AwsEc2Api(String endpoint, AwsConfig awsConfig, AwsRequestSigner requestSigner, Clock clock) {
         this.endpoint = endpoint;
@@ -154,12 +156,39 @@ class AwsEc2Api {
      * @return map from private to public IP
      * @see <a href="http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeNetworkInterfaces.html">
      * EC2 Describe Network Interfaces</a>
+     *
+     * <p>
+     * @implNote This is done as best-effort and does not fail if no public addresses are found, because:
+     * <ul>
+     * <li>Task may not have public IP addresses</li>
+     * <li>Task may not have access rights to query for public addresses</li>
+     * </ul>
+     * <p>
+     * This is performed regardless of the configured use-public-ip value
+     * to make external smart clients able to work properly when possible.
      */
     Map<String, String> describeNetworkInterfaces(List<String> privateAddresses, AwsCredentials credentials) {
-        Map<String, String> attributes = createAttributesDescribeNetworkInterfaces(privateAddresses);
-        Map<String, String> headers = createHeaders(attributes, credentials);
-        String response = callAwsService(attributes, headers);
-        return parseDescribeNetworkInterfaces(response);
+        if (privateAddresses.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        try {
+            Map<String, String> attributes = createAttributesDescribeNetworkInterfaces(privateAddresses);
+            Map<String, String> headers = createHeaders(attributes, credentials);
+            String response = callAwsService(attributes, headers);
+            return parseDescribeNetworkInterfaces(response);
+        } catch (Exception e) {
+            LOGGER.finest(e);
+            // Log warning only once.
+            if (!isNoPublicIpAlreadyLogged) {
+                LOGGER.warning("Cannot fetch the public IPs of ECS Tasks. You won't be able to use "
+                        + "Hazelcast Smart Client from outside of this VPC.");
+                isNoPublicIpAlreadyLogged = true;
+            }
+
+            Map<String, String> map = new HashMap<>();
+            privateAddresses.forEach(k -> map.put(k, null));
+            return map;
+        }
     }
 
     private Map<String, String> createAttributesDescribeNetworkInterfaces(List<String> privateAddresses) {

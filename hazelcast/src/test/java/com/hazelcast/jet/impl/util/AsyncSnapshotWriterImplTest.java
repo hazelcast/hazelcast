@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,7 +97,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         when(snapshotContext.currentMapName()).thenReturn("map1");
         when(snapshotContext.currentSnapshotId()).thenReturn(0L);
         writer = new AsyncSnapshotWriterImpl(128, nodeEngine, snapshotContext, "vertex", 0, 1,
-                nodeEngine.getSerializationService());
+                (InternalSerializationService) nodeEngine.getSerializationService());
         when(snapshotContext.currentSnapshotId()).thenReturn(1L); // simulates starting new snapshot
         map = instance.getMap("map1");
         assertTrue(writer.usableChunkCapacity > 0);
@@ -115,7 +115,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         for (int i = 64; i < 196; i++) {
             when(snapshotContext.currentMapName()).thenReturn(randomMapName());
             writer = new AsyncSnapshotWriterImpl(128, nodeEngine, snapshotContext, "vertex", 0, 1,
-                    nodeEngine.getSerializationService());
+                    (InternalSerializationService) nodeEngine.getSerializationService());
             try {
                 assertTrue(writer.offer(entry(serialize("k"), serialize(String.join("", nCopies(i, "a"))))));
                 assertTrue(writer.flushAndResetMap());
@@ -208,9 +208,9 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         byte[] data = map.get(new SnapshotDataKey(partitionKey, 1, "vertex", 0));
         assertEquals(data.length + Bits.INT_SIZE_IN_BYTES, writer.getTotalPayloadBytes());
         BufferObjectDataInput in = serializationService.createObjectDataInput(data);
-        assertEquals(key, in.readObject());
-        assertEquals(value, in.readObject());
-        assertEquals(SnapshotDataValueTerminator.INSTANCE, in.readObject());
+        assertEquals(key, serializationService.readObject(in, true));
+        assertEquals(value, serializationService.readObject(in, true));
+        assertEquals(SnapshotDataValueTerminator.INSTANCE, serializationService.readObject(in, true));
     }
 
     @Test
@@ -290,8 +290,8 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         });
 
         BufferObjectDataInput in = serializationService.createObjectDataInput(os.toByteArray());
-        Assert.assertEquals("foo", in.readObject());
-        Assert.assertEquals("bar", in.readObject());
+        Assert.assertEquals("foo", serializationService.readObject(in, true));
+        Assert.assertEquals("bar", serializationService.readObject(in, true));
     }
 
     @Test

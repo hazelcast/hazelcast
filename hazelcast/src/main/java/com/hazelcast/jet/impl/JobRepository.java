@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,6 +90,7 @@ import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
 public class JobRepository {
@@ -367,13 +368,13 @@ public class JobRepository {
             @Nonnull MasterContext masterContext,
             @Nullable List<RawJobMetrics> terminalMetrics,
             @Nullable Throwable error,
-            long completionTime
-    ) {
+            long completionTime,
+            boolean userCancelled) {
         long jobId = masterContext.jobId();
 
         JobConfig config = masterContext.jobRecord().getConfig();
         long creationTime = masterContext.jobRecord().getCreationTime();
-        JobResult jobResult = new JobResult(jobId, config, creationTime, completionTime, toErrorMsg(error));
+        JobResult jobResult = new JobResult(jobId, config, creationTime, completionTime, toErrorMsg(error), userCancelled);
 
         if (terminalMetrics != null) {
             try {
@@ -407,8 +408,7 @@ public class JobRepository {
     }
 
     /**
-     * Performs cleanup after job completion. Deletes job record and job resources but keeps the job id
-     * so that it will not be used again for a new job submission.
+     * Performs cleanup after job completion.
      */
     void deleteJob(long jobId) {
         // delete the job record and related records
@@ -535,6 +535,18 @@ public class JobRepository {
         ids.addAll(jobRecordsMap().keySet());
         ids.addAll(jobResultsMap().keySet());
         return ids;
+    }
+
+    public Collection<String> getActiveJobNames() {
+        Map<Long, String> res = getJobRecords().stream()
+                .filter(record -> record.getConfig().getName() != null)
+                .collect(toMap(JobRecord::getJobId, record -> record.getConfig().getName()));
+        // When finalizing a job, we first create the JobResult, then delete the JobRecord.
+        // So it can happen that we saw a JobRecord for a completed job. Here we remove those.
+        for (JobResult result : getJobResults()) {
+            res.remove(result.getJobId());
+        }
+        return res.values();
     }
 
     public Collection<JobRecord> getJobRecords() {

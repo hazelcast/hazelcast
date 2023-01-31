@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ public class IndexesTest {
 
     @Test
     public void testAndWithSingleEntry() {
-        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
+        Indexes indexes = Indexes.newBuilder(null, "test", serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
         indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"));
         indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "age"));
         indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "salary"));
@@ -98,7 +98,7 @@ public class IndexesTest {
 
     @Test
     public void testIndex() {
-        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
+        Indexes indexes = Indexes.newBuilder(null, "test", serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
         indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"));
         indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "age"));
         indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "salary"));
@@ -116,7 +116,7 @@ public class IndexesTest {
 
     @Test
     public void testIndex2() {
-        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
+        Indexes indexes = Indexes.newBuilder(null, "test", serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
         indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"));
         indexes.putEntry(new QueryEntry(serializationService, toData(1), new Value("abc"), newExtractor()), null,
                 Index.OperationSource.USER);
@@ -150,7 +150,7 @@ public class IndexesTest {
      */
     @Test
     public void shouldNotThrowException_withNullValues_whenIndexAddedForValueField() {
-        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
+        Indexes indexes = Indexes.newBuilder(null, "test", serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
         indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"));
 
         shouldReturnNull_whenQueryingOnKeys(indexes);
@@ -158,7 +158,7 @@ public class IndexesTest {
 
     @Test
     public void shouldNotThrowException_withNullValues_whenNoIndexAdded() {
-        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
+        Indexes indexes = Indexes.newBuilder(null, "test", serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
 
         shouldReturnNull_whenQueryingOnKeys(indexes);
     }
@@ -176,7 +176,7 @@ public class IndexesTest {
 
     @Test
     public void shouldNotThrowException_withNullValue_whenIndexAddedForKeyField() {
-        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
+        Indexes indexes = Indexes.newBuilder(null, "test", serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
         indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "__key"));
 
         for (int i = 0; i < 100; i++) {
@@ -190,7 +190,7 @@ public class IndexesTest {
 
     @Test
     public void testNoDuplicateIndexes() {
-        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
+        Indexes indexes = Indexes.newBuilder(null, "test", serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
 
         IndexConfig config1 = IndexUtils.createTestIndexConfig(IndexType.HASH, "a");
 
@@ -207,7 +207,7 @@ public class IndexesTest {
 
     @Test
     public void testEvaluateOnlyIndexesMatching() {
-        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
+        Indexes indexes = Indexes.newBuilder(null, "test", serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
 
         Index hashIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "a"));
         Index matched = indexes.matchIndex("a", IndexMatchHint.NONE, SKIP_PARTITIONS_COUNT_CHECK);

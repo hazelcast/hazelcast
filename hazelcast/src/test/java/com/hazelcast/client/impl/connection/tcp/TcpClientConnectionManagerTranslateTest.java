@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.client.HazelcastClientUtil;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.Addresses;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRunner;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.cluster.Address;
@@ -76,7 +77,7 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
         // given
         ClientConfig config = new ClientConfig();
         config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(1000);
-        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(new TestAddressProvider(true), config);
+        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(config, new TestAddressProvider(true));
         TcpClientConnectionManager clientConnectionManager =
                 new TcpClientConnectionManager(getHazelcastClientInstanceImpl(client));
 
@@ -91,7 +92,7 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
     public void testTranslateIsNotUsedOnGettingExistingConnection() {
         // given
         TestAddressProvider provider = new TestAddressProvider(false);
-        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(provider, new ClientConfig());
+        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(new ClientConfig(), provider);
         TcpClientConnectionManager clientConnectionManager =
                 new TcpClientConnectionManager(getHazelcastClientInstanceImpl(client));
 
@@ -114,7 +115,7 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setProperty(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED.getName(), "true");
 
-        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(null, clientConfig);
+        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(clientConfig, null);
         TcpClientConnectionManager clientConnectionManager =
                 new TcpClientConnectionManager(getHazelcastClientInstanceImpl(client));
         clientConnectionManager.start();
@@ -138,7 +139,7 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setProperty(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED.getName(), "false");
 
-        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(null, clientConfig);
+        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(clientConfig, null);
         TcpClientConnectionManager clientConnectionManager =
                 new TcpClientConnectionManager(getHazelcastClientInstanceImpl(client));
         clientConnectionManager.start();
@@ -162,7 +163,7 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
         clientConfig.setProperty(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED.getName(), "true");
 
         TestAddressProvider provider = new TestAddressProvider(false);
-        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(provider, clientConfig);
+        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(clientConfig, provider);
         TcpClientConnectionManager clientConnectionManager =
                 new TcpClientConnectionManager(getHazelcastClientInstanceImpl(client));
         clientConnectionManager.start();
@@ -203,7 +204,12 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
         }
 
         @Override
-        public Addresses loadAddresses() {
+        public Address translate(Member member) {
+            return member.getAddress();
+        }
+
+        @Override
+        public Addresses loadAddresses(ClientConnectionProcessListenerRunner listenerRunner) {
             try {
                 return new Addresses(ImmutableList.of(new Address("127.0.0.1", 5701)));
             } catch (UnknownHostException e) {

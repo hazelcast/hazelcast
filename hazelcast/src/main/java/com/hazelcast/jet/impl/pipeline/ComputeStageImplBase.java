@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -130,7 +130,8 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
                 timestampFn,
                 (item, ts) -> jetEvent(ts, item),
                 limitingLag(allowedLag),
-                0, 0, DEFAULT_IDLE_TIMEOUT
+                0, 0, DEFAULT_IDLE_TIMEOUT,
+                (byte) 0
         ));
         pipelineImpl.connect(this, tsTransform);
         return new StreamStageImpl<>(tsTransform, ADAPT_TO_JET_EVENT, pipelineImpl);

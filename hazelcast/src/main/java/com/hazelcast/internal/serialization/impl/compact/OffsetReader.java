@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,10 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
+import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 
 import java.io.IOException;
-
-import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
 
 /**
  * Reads the offsets of the variable-size fields with the given indexes.
@@ -45,32 +43,50 @@ public interface OffsetReader {
      */
     int SHORT_OFFSET_READER_RANGE = Short.MAX_VALUE - Short.MIN_VALUE;
 
-    OffsetReader BYTE_OFFSET_READER = (in, variableOffsetsPos, index) -> {
-        byte offset = in.readByte(variableOffsetsPos + index);
+    OffsetReader BYTE_OFFSET_READER = (in, varSizedOffsetsOffset, index) -> {
+        byte offset = in.readByte(varSizedOffsetsOffset + index);
         if (offset == NULL_OFFSET) {
             return offset;
         }
         return Byte.toUnsignedInt(offset);
     };
 
-    OffsetReader SHORT_OFFSET_READER = (in, variableOffsetsPos, index) -> {
-        short offset = in.readShort(variableOffsetsPos + (index * SHORT_SIZE_IN_BYTES));
+    OffsetReader SHORT_OFFSET_READER = (in, varSizedOffsetsOffset, index) -> {
+        short offset = in.readShort(varSizedOffsetsOffset + index * Bits.SHORT_SIZE_IN_BYTES);
         if (offset == NULL_OFFSET) {
             return offset;
         }
         return Short.toUnsignedInt(offset);
     };
 
-    OffsetReader INT_OFFSET_READER = (in, variableOffsetsPos, index) ->
-            in.readInt(variableOffsetsPos + (index * INT_SIZE_IN_BYTES));
+    OffsetReader INT_OFFSET_READER = (in, varSizedOffsetsOffset, index) -> {
+        return in.readInt(varSizedOffsetsOffset + index * Bits.INT_SIZE_IN_BYTES);
+    };
 
     /**
-     * Returns the offset of the variable-size field at the given index.
-     * @param in Input to read the offset from.
-     * @param variableOffsetsPos Start of the variable-size field offsets
-     *                           section of the input.
-     * @param index Index of the field.
+     * Returns the offset reader to use for the given data length.
+     *
+     * @param dataLength to get the offset reader.
+     * @return the offset reader.
+     */
+    static OffsetReader readerFor(int dataLength) {
+        if (dataLength < BYTE_OFFSET_READER_RANGE) {
+            return BYTE_OFFSET_READER;
+        } else if (dataLength < SHORT_OFFSET_READER_RANGE) {
+            return SHORT_OFFSET_READER;
+        } else {
+            return INT_OFFSET_READER;
+        }
+    }
+
+    /**
+     * Returns the offset of the var-sized field at the given index.
+     *
+     * @param in                    Input to read the offset from.
+     * @param varSizedOffsetsOffset Start of the var-sized field offsets
+     *                              section of the input.
+     * @param index                 Index of the field.
      * @return The offset.
      */
-    int getOffset(BufferObjectDataInput in, int variableOffsetsPos, int index) throws IOException;
+    int read(BufferObjectDataInput in, int varSizedOffsetsOffset, int index) throws IOException;
 }

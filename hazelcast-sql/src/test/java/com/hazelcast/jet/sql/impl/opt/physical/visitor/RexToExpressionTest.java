@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.opt.physical.visitor;
 
 import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.collect.RangeSet;
-import com.hazelcast.jet.sql.impl.expression.Range;
+import com.hazelcast.jet.sql.impl.expression.Sarg;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -33,7 +33,6 @@ import org.apache.calcite.sql.SqlIntervalQualifier;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.DateString;
-import org.apache.calcite.util.Sarg;
 import org.apache.calcite.util.TimeString;
 import org.apache.calcite.util.TimestampString;
 import org.junit.Test;
@@ -58,56 +57,56 @@ public class RexToExpressionTest {
     @Test
     public void test_boolean() {
         RexLiteral literal = literal(false, true, SqlTypeName.BOOLEAN);
-        Range<?> converted = convert(literal);
+        Sarg<?> converted = convert(literal);
         assertThat(converted).isEqualToComparingFieldByField(range(false, true));
     }
 
     @Test
     public void test_tinyint() {
         RexLiteral literal = literal(new BigDecimal(1), new BigDecimal(2), SqlTypeName.TINYINT);
-        Range<?> converted = convert(literal);
+        Sarg<?> converted = convert(literal);
         assertThat(converted).isEqualToComparingFieldByField(range((byte) 1, (byte) 2));
     }
 
     @Test
     public void test_smallint() {
         RexLiteral literal = literal(new BigDecimal(1), new BigDecimal(2), SqlTypeName.SMALLINT);
-        Range<?> converted = convert(literal);
+        Sarg<?> converted = convert(literal);
         assertThat(converted).isEqualToComparingFieldByField(range((short) 1, (short) 2));
     }
 
     @Test
     public void test_int() {
         RexLiteral literal = literal(new BigDecimal(1), new BigDecimal(2), SqlTypeName.INTEGER);
-        Range<?> converted = convert(literal);
+        Sarg<?> converted = convert(literal);
         assertThat(converted).isEqualToComparingFieldByField(range(1, 2));
     }
 
     @Test
     public void test_bigint() {
         RexLiteral literal = literal(new BigDecimal(1), new BigDecimal(2), SqlTypeName.BIGINT);
-        Range<?> converted = convert(literal);
+        Sarg<?> converted = convert(literal);
         assertThat(converted).isEqualToComparingFieldByField(range(1L, 2L));
     }
 
     @Test
     public void test_decimal() {
         RexLiteral literal = literal(new BigDecimal(1), new BigDecimal(2), SqlTypeName.DECIMAL);
-        Range<?> converted = convert(literal);
+        Sarg<?> converted = convert(literal);
         assertThat(converted).isEqualToComparingFieldByField(range(new BigDecimal(1), new BigDecimal(2)));
     }
 
     @Test
     public void test_real() {
         RexLiteral literal = literal(new BigDecimal(1), new BigDecimal(2), SqlTypeName.REAL);
-        Range<?> converted = convert(literal);
+        Sarg<?> converted = convert(literal);
         assertThat(converted).isEqualToComparingFieldByField(range(1F, 2F));
     }
 
     @Test
     public void test_double() {
         RexLiteral literal = literal(new BigDecimal(1), new BigDecimal(2), SqlTypeName.DOUBLE);
-        Range<?> converted = convert(literal);
+        Sarg<?> converted = convert(literal);
         assertThat(converted).isEqualToComparingFieldByField(range(1D, 2D));
     }
 
@@ -118,7 +117,7 @@ public class RexToExpressionTest {
                 new TimeString("12:23:35"),
                 SqlTypeName.TIME
         );
-        Range<?> converted = convert(literal);
+        Sarg<?> converted = convert(literal);
         assertThat(converted).isEqualToComparingFieldByField(range(
                 LocalTime.of(12, 23, 34),
                 LocalTime.of(12, 23, 35))
@@ -132,7 +131,7 @@ public class RexToExpressionTest {
                 new DateString("2021-09-18"),
                 SqlTypeName.DATE
         );
-        Range<?> converted = convert(literal);
+        Sarg<?> converted = convert(literal);
         assertThat(converted).isEqualToComparingFieldByField(range(
                 LocalDate.of(2021, 9, 17),
                 LocalDate.of(2021, 9, 18))
@@ -146,7 +145,7 @@ public class RexToExpressionTest {
                 new TimestampString("2021-09-17 12:23:35"),
                 SqlTypeName.TIMESTAMP
         );
-        Range<?> converted = convert(literal);
+        Sarg<?> converted = convert(literal);
         assertThat(converted).isEqualToComparingFieldByField(range(
                 LocalDateTime.of(2021, 9, 17, 12, 23, 34),
                 LocalDateTime.of(2021, 9, 17, 12, 23, 35))
@@ -157,7 +156,7 @@ public class RexToExpressionTest {
     public void test_intervalYearMonth() {
         RelDataType type = FACTORY.createSqlIntervalType(new SqlIntervalQualifier(YEAR, MONTH, SqlParserPos.ZERO));
         RexLiteral literal = BUILDER.makeSearchArgumentLiteral(sarg(new BigDecimal(1), new BigDecimal(2)), type);
-        Range<?> converted = convert(literal);
+        Sarg<?> converted = convert(literal);
         assertThat(converted).isEqualToComparingFieldByField(range(
                 new SqlYearMonthInterval(1),
                 new SqlYearMonthInterval(2))
@@ -168,33 +167,33 @@ public class RexToExpressionTest {
     public void test_intervalDaySecond() {
         RelDataType type = FACTORY.createSqlIntervalType(new SqlIntervalQualifier(DAY, SECOND, SqlParserPos.ZERO));
         RexLiteral literal = BUILDER.makeSearchArgumentLiteral(sarg(new BigDecimal(1), new BigDecimal(2)), type);
-        Range<?> converted = convert(literal);
+        Sarg<?> converted = convert(literal);
         assertThat(converted).isEqualToComparingFieldByField(range(
                 new SqlDaySecondInterval(1),
                 new SqlDaySecondInterval(2))
         );
     }
 
-    private static <C extends Comparable<C>> Range<C> convert(RexLiteral literal) {
+    private static <C extends Comparable<C>> Sarg<C> convert(RexLiteral literal) {
         Expression<?> expression = RexToExpression.convertLiteral(literal);
-        return (Range<C>) expression.eval(null, null);
+        return (Sarg<C>) expression.eval(null, null);
     }
 
     private static <C extends Comparable<C>> RexLiteral literal(C left, C right, SqlTypeName typeName) {
-        Sarg<C> sarg = sarg(left, right);
+        org.apache.calcite.util.Sarg<C> sarg = sarg(left, right);
         RelDataType type = HazelcastTypeUtils.createType(FACTORY, typeName, true);
         return BUILDER.makeSearchArgumentLiteral(sarg, type);
     }
 
-    private static <C extends Comparable<C>> Sarg<C> sarg(C left, C right) {
-        return Sarg.of(RexUnknownAs.UNKNOWN, rangeSet(left, right));
+    private static <C extends Comparable<C>> org.apache.calcite.util.Sarg<C> sarg(C left, C right) {
+        return org.apache.calcite.util.Sarg.of(RexUnknownAs.UNKNOWN, rangeSet(left, right));
     }
 
     private static <C extends Comparable<C>> RangeSet<C> rangeSet(C left, C right) {
         return ImmutableRangeSet.of(com.google.common.collect.Range.closed(left, right));
     }
 
-    private static <C extends Comparable<C>> Range<C> range(C left, C right) {
-        return new Range<>(rangeSet(left, right));
+    private static <C extends Comparable<C>> Sarg<C> range(C left, C right) {
+        return new Sarg<>(rangeSet(left, right), null);
     }
 }

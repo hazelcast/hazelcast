@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.cp.internal.session;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -41,6 +42,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -160,6 +162,31 @@ public abstract class AbstractProxySessionManagerTest extends HazelcastRaftTestS
 
         SessionAccessor sessionAccessor = getSessionAccessor();
         assertTrueEventually(() -> assertFalse(sessionAccessor.isActive(groupId, sessionId)));
+    }
+
+    @Test
+    public void sessionHeartbeatsStopSent_afterClusterRestart() {
+        AbstractProxySessionManager sessionManager = getSessionManager();
+        long sessionId = sessionManager.acquireSession(groupId);
+
+        assertTrueEventually(() -> verify(sessionManager, atLeastOnce()).heartbeat(groupId, sessionId));
+
+        Address address1 = members[0].getCPSubsystem().getLocalCPMember().getAddress();
+        Address address2 = members[1].getCPSubsystem().getLocalCPMember().getAddress();
+        Address address3 = members[2].getCPSubsystem().getLocalCPMember().getAddress();
+
+        members[0].getLifecycleService().terminate();
+        members[1].getLifecycleService().terminate();
+        members[2].getLifecycleService().terminate();
+
+        Config config = createConfig(3, 3);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(address1, config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(address2, config);
+        HazelcastInstance instance3 = factory.newHazelcastInstance(address3, config);
+
+        waitUntilCPDiscoveryCompleted(instance1, instance2, instance3);
+
+        assertTrueAllTheTime(() -> verify(sessionManager, atMost(10)).heartbeat(groupId, sessionId), 15);
     }
 
     @Test

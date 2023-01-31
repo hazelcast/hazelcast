@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -140,7 +141,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
         checkCommute("'a'", "?", RES_LT, "b");
         checkCommute("'a'", "?", RES_NULL, (String) null);
         checkCommute("'a'", "?", RES_NULL, (String) null);
-        checkFailure("null", "?", SqlErrorCode.PARSING, signatureErrorOperator(mode.token(), SqlColumnType.NULL, SqlColumnType.NULL), true);
+        checkFailure("null", "?", SqlErrorCode.PARSING, signatureErrorOperator(mode.token(), SqlTypeName.NULL, SqlTypeName.UNKNOWN), true);
     }
 
     @Test(timeout = 600_000)
@@ -194,7 +195,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
         checkCommute("false", "?", RES_LT, true);
         checkCommute("false", "?", RES_EQ, false);
         checkCommute("false", "?", RES_NULL, (Boolean) null);
-        checkFailure("null", "?", SqlErrorCode.PARSING, signatureErrorOperator(mode.token(), SqlColumnType.NULL, SqlColumnType.NULL), true);
+        checkFailure("null", "?", SqlErrorCode.PARSING, signatureErrorOperator(mode.token(), SqlTypeName.NULL, SqlTypeName.UNKNOWN), true);
     }
 
     @Test(timeout = 600_000)
@@ -225,7 +226,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testParameterParameter() {
         put(1);
-        checkFailure("?", "?", SqlErrorCode.PARSING, signatureErrorOperator(mode.token(), SqlColumnType.NULL, SqlColumnType.NULL), true, true);
+        checkFailure("?", "?", SqlErrorCode.PARSING, signatureErrorOperator(mode.token(), SqlTypeName.UNKNOWN, SqlTypeName.UNKNOWN), true, true);
     }
 
     @Test

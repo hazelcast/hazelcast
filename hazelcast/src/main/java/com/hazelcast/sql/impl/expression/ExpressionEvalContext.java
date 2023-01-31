@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,13 @@
 package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
 import com.hazelcast.jet.impl.execution.init.Contexts;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
@@ -47,9 +50,17 @@ public class ExpressionEvalContext {
     }
 
     public static ExpressionEvalContext from(ProcessorSupplier.Context ctx) {
-        return new ExpressionEvalContext(
-                requireNonNull(ctx.jobConfig().getArgument(SQL_ARGUMENTS_KEY_NAME)),
-                ((Contexts.ProcSupplierCtx) ctx).serializationService());
+        List<Object> arguments = ctx.jobConfig().getArgument(SQL_ARGUMENTS_KEY_NAME);
+        if (ctx instanceof TestProcessorSupplierContext) {
+            if (arguments == null) {
+                arguments = new ArrayList<>();
+            }
+            return new ExpressionEvalContext(arguments, new DefaultSerializationServiceBuilder().build());
+        } else {
+            return new ExpressionEvalContext(
+                    requireNonNull(arguments),
+                    ((Contexts.ProcSupplierCtx) ctx).serializationService());
+        }
     }
 
     /**

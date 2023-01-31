@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.MapConfig;
@@ -317,6 +318,24 @@ public final class ConfigSearch {
             @Override
             public Map<String, PNCounterConfig> getStaticConfigs(@Nonnull Config staticConfig) {
                 return staticConfig.getPNCounterConfigs();
+            }
+        });
+
+        CONFIG_SUPPLIERS.put(ExternalDataStoreConfig.class, new ConfigSupplier<ExternalDataStoreConfig>() {
+            @Override
+            public ExternalDataStoreConfig getDynamicConfig(@Nonnull ConfigurationService configurationService,
+                                                            @Nonnull String name) {
+                return configurationService.findExternalDataStoreConfig(name);
+            }
+
+            @Override
+            public ExternalDataStoreConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
+                return staticConfig.getExternalDataStoreConfig(name);
+            }
+
+            @Override
+            public Map<String, ExternalDataStoreConfig> getStaticConfigs(@Nonnull Config staticConfig) {
+                return staticConfig.getExternalDataStoreConfigs();
             }
         });
     }

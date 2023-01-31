@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -34,6 +33,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
+import static com.hazelcast.sql.impl.expression.ColumnExpression.create;
 import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -41,7 +41,7 @@ import static java.util.Collections.emptyList;
 @Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
 public class LateItemsDropPTest extends SqlTestSupport {
-    private static final Expression<?> timestampEx = ColumnExpression.create(0, QueryDataType.BIGINT);
+    private static final Expression<?> timestampEx = create(0, QueryDataType.BIGINT);
 
     @BeforeClass
     public static void beforeClass() {
@@ -50,7 +50,7 @@ public class LateItemsDropPTest extends SqlTestSupport {
 
     @Test
     public void when_noEventIsLate_then_successful() {
-        SupplierEx<Processor> supplier = () -> new LateItemsDropP(timestampEx);
+        SupplierEx<Processor> supplier = () -> new LateItemsDropP((byte) 0, timestampEx);
 
         TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
                 .hazelcastInstance(instance())
@@ -75,7 +75,7 @@ public class LateItemsDropPTest extends SqlTestSupport {
 
     @Test
     public void when_oneEventIsLate_then_dropEvent() {
-        SupplierEx<Processor> supplier = () -> new LateItemsDropP(timestampEx);
+        SupplierEx<Processor> supplier = () -> new LateItemsDropP((byte) 0, timestampEx);
 
         TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
                 .hazelcastInstance(instance())
@@ -99,7 +99,7 @@ public class LateItemsDropPTest extends SqlTestSupport {
 
     @Test
     public void when_fewEventsAreLate_then_dropEvents() {
-        SupplierEx<Processor> supplier = () -> new LateItemsDropP(timestampEx);
+        SupplierEx<Processor> supplier = () -> new LateItemsDropP((byte) 0, timestampEx);
 
         TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
                 .hazelcastInstance(instance())

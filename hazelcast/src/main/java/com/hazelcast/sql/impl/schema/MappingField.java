@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ public class MappingField implements IdentifiedDataSerializable {
     private static final String NAME = "name";
     private static final String TYPE = "type";
     private static final String EXTERNAL_NAME = "externalName";
+    private static final String PRIMARY_KEY = "primaryKey";
 
     // This generic structure is used to have binary compatibility if more fields are added in
     // the future, like nullability, uniqueness etc. Instances are stored as a part of the
@@ -70,6 +71,10 @@ public class MappingField implements IdentifiedDataSerializable {
         return requireNonNull((QueryDataType) properties.get(TYPE), "missing type property");
     }
 
+    public void setType(QueryDataType type) {
+        properties.put(TYPE, type);
+    }
+
     /**
      * The external name of a field. For example, in case of IMap or Kafka,
      * it always starts with `__key` or `this`.
@@ -80,6 +85,14 @@ public class MappingField implements IdentifiedDataSerializable {
 
     public void setExternalName(String extName) {
         properties.put(EXTERNAL_NAME, extName);
+    }
+
+    public boolean isPrimaryKey() {
+        return (Boolean) properties.getOrDefault(PRIMARY_KEY, Boolean.FALSE);
+    }
+
+    public void setPrimaryKey(boolean primaryKey) {
+        properties.put(PRIMARY_KEY, primaryKey);
     }
 
     @Override

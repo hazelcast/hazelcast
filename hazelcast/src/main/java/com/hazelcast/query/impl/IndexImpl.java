@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
@@ -30,20 +31,22 @@ public class IndexImpl extends AbstractIndex {
     private final GlobalIndexPartitionTracker partitionTracker;
 
     public IndexImpl(
+            Node node,
             IndexConfig config,
             InternalSerializationService ss,
             Extractors extractors,
             IndexCopyBehavior copyBehavior,
             PerIndexStats stats,
-            int partitionCount
+            int partitionCount,
+            String mapName
     ) {
-        super(config, ss, extractors, copyBehavior, stats);
+        super(node, config, ss, extractors, copyBehavior, stats, mapName);
 
         partitionTracker = new GlobalIndexPartitionTracker(partitionCount);
     }
 
     @Override
-    protected IndexStore createIndexStore(IndexConfig config, PerIndexStats stats) {
+    protected IndexStore createIndexStore(Node node, IndexConfig config, PerIndexStats stats, String mapName) {
         switch (config.getType()) {
             case SORTED:
                 return new OrderedIndexStore(copyBehavior);

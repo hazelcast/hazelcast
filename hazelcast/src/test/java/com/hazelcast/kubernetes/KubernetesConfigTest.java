@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,8 @@ import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_API_RETIR
 import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_API_TOKEN;
 import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_CA_CERTIFICATE;
 import static com.hazelcast.kubernetes.KubernetesProperties.NAMESPACE;
+import static com.hazelcast.kubernetes.KubernetesProperties.POD_LABEL_NAME;
+import static com.hazelcast.kubernetes.KubernetesProperties.POD_LABEL_VALUE;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS_TIMEOUT;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_NAME;
@@ -101,7 +103,6 @@ public class KubernetesConfigTest {
         assertEquals(serviceDns, config.getServiceDns());
         assertEquals(serviceDnsTimeout, config.getServiceDnsTimeout());
         assertEquals(servicePort, config.getServicePort());
-        assertNull(config.getKubernetesApiToken());
         assertNull(config.getKubernetesCaCertificate());
     }
 
@@ -118,7 +119,7 @@ public class KubernetesConfigTest {
         assertEquals("test", config.getNamespace());
         assertEquals(true, config.isResolveNotReadyAddresses());
         assertEquals(false, config.isUseNodeNameAsExternalAddress());
-        assertEquals(TEST_API_TOKEN, config.getKubernetesApiToken());
+        assertEquals(TEST_API_TOKEN, config.getTokenProvider().getToken());
         assertEquals(TEST_CA_CERTIFICATE, config.getKubernetesCaCertificate());
         assertEquals(ExposeExternallyMode.AUTO, config.getExposeExternallyMode());
     }
@@ -187,8 +188,6 @@ public class KubernetesConfigTest {
         // given
         KubernetesConfig.FileContentsReader dummyFileContentsReader = fileName -> {
             switch (fileName) {
-                case "/var/run/secrets/kubernetes.io/serviceaccount/token":
-                    return "token-xyz";
                 case "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt":
                     return "certificate-xyz";
                 case "/var/run/secrets/kubernetes.io/serviceaccount/namespace":
@@ -202,7 +201,6 @@ public class KubernetesConfigTest {
 
         // then
         assertEquals("certificate-xyz", config.getKubernetesCaCertificate());
-        assertEquals("token-xyz", config.getKubernetesApiToken());
         assertEquals("namespace-xyz", config.getNamespace());
     }
 
@@ -242,6 +240,34 @@ public class KubernetesConfigTest {
         properties.put(SERVICE_NAME.key(), "service-name");
         properties.put(SERVICE_LABEL_NAME.key(), "service-label-name");
         properties.put(SERVICE_LABEL_VALUE.key(), "service-label-value");
+
+        // when
+        new KubernetesConfig(properties);
+
+        // then
+        // throws exception
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void invalidConfigurationMismatchingServiceLabelNameAndValues() {
+        // given
+        Map<String, Comparable> properties = createProperties();
+        properties.put(SERVICE_LABEL_NAME.key(), "service-label-1,service-label-2");
+        properties.put(SERVICE_LABEL_VALUE.key(), "service-val-1");
+
+        // when
+        new KubernetesConfig(properties);
+
+        // then
+        // throws exception
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void invalidConfigurationMismatchingPodLabelNameAndValues() {
+        // given
+        Map<String, Comparable> properties = createProperties();
+        properties.put(POD_LABEL_NAME.key(), "pod-label-1,pod-label-2");
+        properties.put(POD_LABEL_VALUE.key(), "pod-val-1");
 
         // when
         new KubernetesConfig(properties);

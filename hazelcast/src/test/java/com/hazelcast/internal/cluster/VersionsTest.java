@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,11 +38,11 @@ public class VersionsTest extends HazelcastTestSupport {
 
     @Test
     public void version_4_0() {
-        assertEquals(Version.of(4, 0), Versions.V4_0);
+        assertEquals(Versions.V4_0, Version.of(4, 0));
     }
 
     @Test
     public void version_4_1() {
-        assertEquals(Version.of(4, 1), Versions.V4_1);
+        assertEquals(Versions.V4_1, Version.of(4, 1));
     }
 }

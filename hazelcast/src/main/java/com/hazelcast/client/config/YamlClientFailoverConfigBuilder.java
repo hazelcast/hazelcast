@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Collections;
 import java.util.Properties;
 
 import static com.hazelcast.internal.config.yaml.W3cDomUtil.asW3cNode;
@@ -159,7 +160,7 @@ public class YamlClientFailoverConfigBuilder
             clientFailoverRoot = yamlRootNode;
         }
 
-        YamlDomChecker.check(clientFailoverRoot);
+        YamlDomChecker.check(clientFailoverRoot, Collections.singleton(ClientFailoverConfigSections.CLIENT_FAILOVER.getName()));
 
         Node w3cRootNode = asW3cNode(clientFailoverRoot);
         replaceVariables(w3cRootNode);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,9 @@ import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.internal.cluster.impl.TcpIpJoiner;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
@@ -36,6 +38,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
@@ -133,7 +139,7 @@ public class TcpIpJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void test_whenIncompatibleGroups() throws Exception {
+    public void test_whenIncompatibleGroups() {
         Config config1 = new Config();
         config1.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config1.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
@@ -152,8 +158,7 @@ public class TcpIpJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void test_whenSameClusterNamesButDifferentPassword()
-            throws Exception {
+    public void test_whenSameClusterNamesButDifferentPassword() {
         Config config1 = new Config();
         config1.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config1.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
@@ -178,7 +183,7 @@ public class TcpIpJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void test_whenIncompatiblePartitionGroups() throws Exception {
+    public void test_whenIncompatiblePartitionGroups() {
         Config config1 = new Config();
         config1.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config1.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
@@ -198,7 +203,7 @@ public class TcpIpJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void test_whenIncompatibleJoiners() throws Exception {
+    public void test_whenIncompatibleJoiners() {
         Config config1 = new Config();
         config1.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config1.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
@@ -212,5 +217,59 @@ public class TcpIpJoinTest extends AbstractJoinTest {
                 .setEnabled(true).addMember("127.0.0.1");
 
         assertIncompatible(config1, config2);
+    }
+
+    @Test
+    public void test_tcpIpJoinerRemembersJoinedMemberAddresses() {
+        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(prepareConfigWithTcpIpConfigEnabled(5701));
+        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(prepareConfigWithTcpIpConfigEnabled(8899, 5701));
+        HazelcastInstance hz3 = Hazelcast.newHazelcastInstance(prepareConfigWithTcpIpConfigEnabled(9099, 5701));
+        Address hz2Address = hz2.getCluster().getLocalMember().getAddress();
+        Address hz3Address = hz3.getCluster().getLocalMember().getAddress();
+        TcpIpJoiner tcpJoiner1 = (TcpIpJoiner) Accessors.getNode(hz1).getJoiner();
+        assertTrueEventually(() -> assertContainsAll(tcpJoiner1.getKnownMemberAddresses().keySet(), Arrays.asList(hz2Address, hz3Address)));
+        hz2.shutdown();
+        hz3.shutdown();
+        assertTrueAllTheTime(() -> assertContainsAll(tcpJoiner1.getKnownMemberAddresses().keySet(),
+                Arrays.asList(hz2Address, hz3Address)), 20);
+    }
+
+    @Test
+    public void test_tcpIpJoinerCleanupAddressesAfterAddressRetentionPeriodIsPassed() throws Exception {
+        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(prepareConfigWithTcpIpConfigEnabled(5701));
+        TcpIpJoiner tcpJoiner1 = (TcpIpJoiner) Accessors.getNode(hz1).getJoiner();
+        overrideAddressRetentionDuration(tcpJoiner1, TimeUnit.SECONDS.toMillis(10));
+        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(prepareConfigWithTcpIpConfigEnabled(8899, 5701));
+        HazelcastInstance hz3 = Hazelcast.newHazelcastInstance(prepareConfigWithTcpIpConfigEnabled(9099, 5701));
+
+        Address hz2Address = hz2.getCluster().getLocalMember().getAddress();
+        Address hz3Address = hz3.getCluster().getLocalMember().getAddress();
+        assertTrueEventually(() -> assertContainsAll(tcpJoiner1.getKnownMemberAddresses().keySet(), Arrays.asList(hz2Address, hz3Address)));
+        hz3.shutdown();
+        // Timeout below must be greater than both hazelcast.merge.next.run.delay.seconds and previouslyJoinedMemberAddressRetentionDuration
+        assertTrueEventually(() -> {
+            Set<Address> rememberedAddresses = tcpJoiner1.getKnownMemberAddresses().keySet();
+            assertContains(rememberedAddresses, hz2Address);
+            assertNotContains(rememberedAddresses, hz3Address);
+        }, 20);
+    }
+
+    private static Config prepareConfigWithTcpIpConfigEnabled(int port, int... otherKnownMemberPorts) {
+        Config config = smallInstanceConfig()
+                .setProperty("hazelcast.merge.first.run.delay.seconds", "10")
+                .setProperty("hazelcast.merge.next.run.delay.seconds", "10");
+        JoinConfig join = config.getNetworkConfig().setPort(port).getJoin();
+        TcpIpConfig tcpIpConfig = join.getTcpIpConfig();
+        tcpIpConfig.setEnabled(true);
+        for (int otherMemberPort : otherKnownMemberPorts) {
+            tcpIpConfig.setEnabled(true).addMember("127.0.0.1:" + otherMemberPort);
+        }
+        return config;
+    }
+
+    public static void overrideAddressRetentionDuration(TcpIpJoiner tcpIpJoiner, long addressRetentionDuration) throws Exception {
+        Field privateField = TcpIpJoiner.class.getDeclaredField("previouslyJoinedMemberAddressRetentionDuration");
+        privateField.setAccessible(true);
+        privateField.set(tcpIpJoiner, addressRetentionDuration);
     }
 }

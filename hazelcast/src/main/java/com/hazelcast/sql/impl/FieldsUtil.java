@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,8 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.serialization.impl.compact.Schema;
-import com.hazelcast.internal.serialization.impl.portable.FieldTypeToFieldKind;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldKind;
-import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -151,26 +149,6 @@ public final class FieldsUtil {
     }
 
     /**
-     * Resolve the list of fields from a portable {@link ClassDefinition},
-     * along with their {@link QueryDataType}.
-     */
-    @Nonnull
-    public static SortedMap<String, QueryDataType> resolvePortable(@Nonnull ClassDefinition clazz) {
-        SortedMap<String, QueryDataType> fields = new TreeMap<>();
-
-        // Add regular fields.
-        for (String name : clazz.getFieldNames()) {
-            FieldType portableType = clazz.getFieldType(name);
-
-            QueryDataType type = resolveType(FieldTypeToFieldKind.toFieldKind(portableType));
-
-            fields.putIfAbsent(name, type);
-        }
-
-        return fields;
-    }
-
-    /**
      * Resolve the list of fields from a schema {@link com.hazelcast.internal.serialization.impl.compact.Schema},
      * along with their {@link QueryDataType}.
      */
@@ -188,9 +166,10 @@ public final class FieldsUtil {
         return fields;
     }
 
+    // TODO: maybe move to more generic utilities class?
     @SuppressWarnings({"checkstyle:ReturnCount", "checkstyle:cyclomaticcomplexity"})
     @Nonnull
-    private static QueryDataType resolveType(@Nonnull FieldKind kind) {
+    public static QueryDataType resolveType(@Nonnull FieldKind kind) {
         switch (kind) {
             case BOOLEAN:
                 return QueryDataType.BOOLEAN;

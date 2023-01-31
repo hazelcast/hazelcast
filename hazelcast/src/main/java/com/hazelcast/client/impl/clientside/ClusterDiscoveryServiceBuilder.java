@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,9 @@ import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils;
 import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.connection.AddressProvider;
+import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.impl.DefaultAddressProvider;
+import com.hazelcast.client.impl.spi.impl.TranslateToPublicAddressProvider;
 import com.hazelcast.client.impl.spi.impl.discovery.HazelcastCloudDiscovery;
 import com.hazelcast.client.impl.spi.impl.discovery.RemoteAddressProvider;
 import com.hazelcast.client.properties.ClientProperty;
@@ -71,10 +73,12 @@ class ClusterDiscoveryServiceBuilder {
     private final Collection<ClientConfig> configs;
     private final LifecycleService lifecycleService;
     private final AddressProvider externalAddressProvider;
+    private final ClientClusterService clusterService;
 
     ClusterDiscoveryServiceBuilder(int configsTryCount, List<ClientConfig> configs, LoggingService loggingService,
                                    AddressProvider externalAddressProvider, HazelcastProperties properties,
-                                   ClientExtension clientExtension, LifecycleService lifecycleService) {
+                                   ClientExtension clientExtension, LifecycleService lifecycleService,
+                                   ClientClusterService clusterService) {
         this.configsTryCount = configsTryCount;
         this.configs = configs;
         this.loggingService = loggingService;
@@ -82,6 +86,7 @@ class ClusterDiscoveryServiceBuilder {
         this.properties = properties;
         this.clientExtension = clientExtension;
         this.lifecycleService = lifecycleService;
+        this.clusterService = clusterService;
     }
 
     public ClusterDiscoveryService build() {
@@ -104,7 +109,8 @@ class ClusterDiscoveryServiceBuilder {
 
             final SSLConfig sslConfig = networkConfig.getSSLConfig();
             final SocketOptions socketOptions = networkConfig.getSocketOptions();
-            contexts.add(new CandidateClusterContext(config.getClusterName(), provider, discoveryService, credentialsFactory,
+            contexts.add(new CandidateClusterContext(config.getClusterName(), provider,
+                    discoveryService, credentialsFactory,
                     interceptor, clientExtension.createChannelInitializer(sslConfig, socketOptions)));
         }
         return new ClusterDiscoveryService(unmodifiableList(contexts), configsTryCount, lifecycleService);
@@ -145,7 +151,11 @@ class ClusterDiscoveryServiceBuilder {
         } else if (networkConfig.getAddresses().isEmpty() && discoveryService != null) {
             return new RemoteAddressProvider(() -> discoverAddresses(discoveryService), usePublicAddress(clientConfig));
         }
-        return new DefaultAddressProvider(networkConfig);
+        TranslateToPublicAddressProvider toPublicAddressProvider = new TranslateToPublicAddressProvider(networkConfig,
+                properties,
+                loggingService.getLogger(TranslateToPublicAddressProvider.class));
+        clusterService.addMembershipListener(toPublicAddressProvider);
+        return new DefaultAddressProvider(networkConfig, toPublicAddressProvider);
     }
 
     private Map<Address, Address> discoverAddresses(DiscoveryService discoveryService) {
@@ -173,41 +183,44 @@ class ClusterDiscoveryServiceBuilder {
                                                     boolean gcpDiscoveryEnabled, boolean azureDiscoveryEnabled,
                                                     boolean kubernetesDiscoveryEnabled, boolean eurekaDiscoveryEnabled,
                                                     boolean discoverySpiEnabled, boolean hazelcastCloudEnabled) {
+        List<String> enabledDiscoveries = new ArrayList<>();
         int count = 0;
         if (addressListProvided) {
             count++;
+            enabledDiscoveries.add("cluster members given explicitly");
         }
         if (awsDiscoveryEnabled) {
             count++;
+            enabledDiscoveries.add("AWS discovery");
         }
         if (gcpDiscoveryEnabled) {
             count++;
+            enabledDiscoveries.add("GCP discovery");
         }
         if (azureDiscoveryEnabled) {
             count++;
+            enabledDiscoveries.add("Azure discovery");
         }
         if (kubernetesDiscoveryEnabled) {
             count++;
+            enabledDiscoveries.add("Kubernetes discovery");
         }
         if (eurekaDiscoveryEnabled) {
             count++;
+            enabledDiscoveries.add("Eureka discovery");
         }
         if (discoverySpiEnabled) {
             count++;
+            enabledDiscoveries.add("Discovery SPI");
         }
         if (hazelcastCloudEnabled) {
             count++;
+            enabledDiscoveries.add("Hazelcast Cloud");
         }
         if (count > 1) {
             throw new IllegalStateException("Only one discovery method can be enabled at a time. "
-                    + "cluster members given explicitly : " + addressListProvided
-                    + ", aws discovery: " + awsDiscoveryEnabled
-                    + ", gcp discovery: " + gcpDiscoveryEnabled
-                    + ", azure discovery: " + azureDiscoveryEnabled
-                    + ", kubernetes discovery: " + kubernetesDiscoveryEnabled
-                    + ", eureka discovery: " + eurekaDiscoveryEnabled
-                    + ", discovery spi enabled : " + discoverySpiEnabled
-                    + ", hazelcast.cloud enabled : " + hazelcastCloudEnabled);
+                    + "Keep only one of the following method enabled by removing the others from the configuration, "
+                    + "or setting enabled to 'false': " + String.join(",", enabledDiscoveries));
         }
     }
 
@@ -252,7 +265,6 @@ class ClusterDiscoveryServiceBuilder {
         if (isAutoDetectionEnabled && isEmptyDiscoveryStrategies(discoveryService)) {
             return null;
         }
-        discoveryService.start();
         return discoveryService;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,9 @@ public class KubernetesApiEndpointSlicesProviderTest
            + "      \"addressType\": \"IPv4\",\n"
            + "      \"endpoints\": [\n"
            + "        {\n"
+           + "          \"targetRef\": {\n"
+           + "            \"name\": \"service-0\""
+           + "          },\n"
            + "          \"addresses\": [\n"
            + "            \"192.168.0.25\"\n"
            + "          ],\n"
@@ -121,7 +124,7 @@ public class KubernetesApiEndpointSlicesProviderTest
            + "          },\n"
            + "          \"targetRef\": {\n"
            + "            \"kind\": \"Pod\",\n"
-           + "            \"name\": \"service-1\"\n"
+           + "            \"name\": \"hazelcast-1\"\n"
            + "          },\n"
            + "          \"nodeName\": \"nodeName-2\"\n"
            + "        }\n"
@@ -170,7 +173,7 @@ public class KubernetesApiEndpointSlicesProviderTest
            + "          },\n"
            + "          \"targetRef\": {\n"
            + "            \"kind\": \"Pod\",\n"
-           + "            \"name\": \"service-1\"\n"
+           + "            \"name\": \"hazelcast-1\"\n"
            + "          },\n"
            + "          \"nodeName\": \"node-name-2\"\n"
            + "        }\n"
@@ -194,6 +197,9 @@ public class KubernetesApiEndpointSlicesProviderTest
            + "      \"addressType\": \"IPv4\",\n"
            + "      \"endpoints\": [\n"
            + "        {\n"
+           + "          \"targetRef\": {\n"
+           + "            \"name\": \"kubernetes\""
+           + "          },\n"
            + "          \"addresses\": [\n"
            + "            \"34.122.156.52\"\n"
            + "          ],\n"

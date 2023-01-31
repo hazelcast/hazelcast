@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.spi.impl.listener;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddClusterViewListenerCodec;
@@ -61,18 +62,19 @@ public class ClientClusterViewListenerService implements ConnectionListener {
         connectionManager.addConnectionListener(this);
     }
 
-    private final class ClusterViewListenerHandler extends ClientAddClusterViewListenerCodec.AbstractEventHandler
+    // public for tests
+    public final class ClusterViewListenerHandler extends ClientAddClusterViewListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
-        private final Connection connection;
+        private final ClientConnection connection;
 
-        private ClusterViewListenerHandler(Connection connection) {
+        private ClusterViewListenerHandler(ClientConnection connection) {
             this.connection = connection;
         }
 
         @Override
         public void beforeListenerRegister(Connection connection) {
-            clusterService.clearMemberListVersion();
+            clusterService.onClusterConnect();
             if (logger.isFinestEnabled()) {
                 logger.finest("Register attempt of ClusterViewListenerHandler to " + connection);
             }
@@ -87,7 +89,7 @@ public class ClientClusterViewListenerService implements ConnectionListener {
 
         @Override
         public void handleMembersViewEvent(int memberListVersion, Collection<MemberInfo> memberInfos) {
-            clusterService.handleMembersViewEvent(memberListVersion, memberInfos);
+            clusterService.handleMembersViewEvent(memberListVersion, memberInfos, connection.getClusterUuid());
         }
 
         @Override
@@ -98,7 +100,7 @@ public class ClientClusterViewListenerService implements ConnectionListener {
 
     @Override
     public void connectionAdded(Connection connection) {
-        tryRegister(connection);
+        tryRegister((ClientConnection) connection);
     }
 
     @Override
@@ -111,13 +113,13 @@ public class ClientClusterViewListenerService implements ConnectionListener {
             //somebody else already trying to rereigster
             return;
         }
-        Connection newConnection = connectionManager.getRandomConnection();
+        ClientConnection newConnection = connectionManager.getRandomConnection();
         if (newConnection != null) {
             tryRegister(newConnection);
         }
     }
 
-    private void tryRegister(Connection connection) {
+    private void tryRegister(ClientConnection connection) {
         if (!listenerAddedConnection.compareAndSet(null, connection)) {
             //already registering/registered to another connection
             return;

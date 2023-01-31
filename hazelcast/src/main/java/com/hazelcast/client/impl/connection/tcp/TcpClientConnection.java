@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import java.util.function.Consumer;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_CONNECTION_CLOSED_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_CONNECTION_CONNECTIONID;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_CONNECTION_EVENT_HANDLER_COUNT;
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.StringUtil.timeToStringFriendly;
 
@@ -55,7 +56,7 @@ import static com.hazelcast.internal.util.StringUtil.timeToStringFriendly;
  */
 public class TcpClientConnection implements ClientConnection {
 
-    @Probe(name = CLIENT_METRIC_CONNECTION_CONNECTIONID)
+    @Probe(name = CLIENT_METRIC_CONNECTION_CONNECTIONID, level = DEBUG)
     private final int connectionId;
     private final ILogger logger;
     private final Channel channel;
@@ -77,6 +78,7 @@ public class TcpClientConnection implements ClientConnection {
     private volatile String closeReason;
     private String connectedServerVersion;
     private volatile UUID remoteUuid;
+    private volatile UUID clusterUuid;
 
     public TcpClientConnection(HazelcastClientInstanceImpl client, int connectionId, Channel channel) {
         this.client = client;
@@ -286,10 +288,6 @@ public class TcpClientConnection implements ClientConnection {
         this.connectedServerVersion = connectedServerVersion;
     }
 
-    public String getConnectedServerVersion() {
-        return connectedServerVersion;
-    }
-
     @Override
     public EventHandler getEventHandler(long correlationId) {
         return eventHandlerMap.get(correlationId);
@@ -303,6 +301,16 @@ public class TcpClientConnection implements ClientConnection {
     @Override
     public void addEventHandler(long correlationId, EventHandler handler) {
         eventHandlerMap.put(correlationId, handler);
+    }
+
+    @Override
+    public void setClusterUuid(UUID uuid) {
+        clusterUuid = uuid;
+    }
+
+    @Override
+    public UUID getClusterUuid() {
+        return clusterUuid;
     }
 
     // used in tests

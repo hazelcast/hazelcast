@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,7 +102,7 @@ public class ClientConfigTest {
         SerializationConfig serializationConfig = client.getConfig().getSerializationConfig();
         Map<Integer, com.hazelcast.nio.serialization.PortableFactory> factories = serializationConfig.getPortableFactories();
         assertEquals(1, factories.size());
-        assertEquals(factories.get(PortableFactory.FACTORY_ID).create(Employee.CLASS_ID).getClassId(), Employee.CLASS_ID);
+        assertEquals(Employee.CLASS_ID, factories.get(PortableFactory.FACTORY_ID).create(Employee.CLASS_ID).getClassId());
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.recordstore.StaticParams;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
-
-import static com.hazelcast.map.impl.record.Record.UNSET;
 
 public class PutOperation extends BasePutOperation implements MutatingOperation {
 
@@ -36,14 +35,9 @@ public class PutOperation extends BasePutOperation implements MutatingOperation 
         oldValue = mapServiceContext.toData(recordStore.put(dataKey, dataValue, getTtl(), getMaxIdle()));
     }
 
-    // overridden in extension classes
-    protected long getTtl() {
-        return UNSET;
-    }
-
-    // overridden in extension classes
-    protected long getMaxIdle() {
-        return UNSET;
+    @Override
+    protected StaticParams getStaticParams() {
+        return StaticParams.PUT_PARAMS;
     }
 
     @Override

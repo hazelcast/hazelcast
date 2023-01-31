@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,14 @@ import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
+import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -124,6 +126,22 @@ public interface SqlConnector {
     String OPTION_VALUE_COMPACT_TYPE_NAME = "valueCompactTypeName";
 
     /**
+     * The class name of the Custom Type's underlying Java Class
+     */
+    String OPTION_TYPE_JAVA_CLASS = "javaClass";
+
+    /**
+     * The name of the Compact type used for Type
+     */
+    String OPTION_TYPE_COMPACT_TYPE_NAME = "compactTypeName";
+
+    String OPTION_TYPE_PORTABLE_FACTORY_ID = "portableFactoryId";
+
+    String OPTION_TYPE_PORTABLE_CLASS_ID = "portableClassId";
+
+    String OPTION_TYPE_PORTABLE_CLASS_VERSION = "portableClassVersion";
+
+    /**
      * Value for {@value #OPTION_KEY_FORMAT} and {@value #OPTION_VALUE_FORMAT}
      * for Java serialization.
      */
@@ -192,13 +210,15 @@ public interface SqlConnector {
      * @param nodeEngine an instance of {@link NodeEngine}
      * @param options    user-provided options
      * @param userFields user-provided list of fields, possibly empty
+     * @param externalName external name of the table
      * @return final field list, must not be empty
      */
     @Nonnull
     List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields
+            @Nonnull List<MappingField> userFields,
+            @Nonnull String externalName
     );
 
     /**
@@ -236,6 +256,10 @@ public interface SqlConnector {
      * }</pre>
      * Then the projection will be {@code {1}} and the predicate will be {@code
      * {2}=10}.
+     * <p>
+     * If the implementation cannot generate watermarks, it should throw, if the
+     * {@code eventTimePolicyProvider} is not null. Streaming sources should
+     * support it, batch sources don't have to.
      *
      * @param table                   the table object
      * @param predicate               SQL expression to filter the rows
@@ -252,6 +276,23 @@ public interface SqlConnector {
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         throw new UnsupportedOperationException("Full scan not supported for " + typeName());
+    }
+
+    /**
+     * Variant of {@link #fullScanReader(DAG, Table, Expression, List, FunctionEx)} that provides
+     * {@link HazelcastTable}. It is useful to get filter and projection as RexNode instead of Expression.
+     *
+     * You should override only one of the {@code fullScanReader} methods.
+     */
+    default Vertex fullScanReader(
+            @Nonnull DAG dag,
+            @Nonnull Table table,
+            @Nonnull HazelcastTable hzTable,
+            @Nullable Expression<Boolean> predicate,
+            @Nonnull List<Expression<?>> projection,
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
+    ) {
+        return fullScanReader(dag, table, predicate, projection, eventTimePolicyProvider);
     }
 
     /**
@@ -346,6 +387,16 @@ public interface SqlConnector {
             @Nonnull Map<String, Expression<?>> updatesByFieldNames
     ) {
         throw new UnsupportedOperationException("UPDATE not supported for " + typeName());
+    }
+
+    @Nonnull
+    default Vertex updateProcessor(
+            @Nonnull DAG dag,
+            @Nonnull Table table,
+            @Nonnull Map<String, RexNode> updates,
+            @Nonnull Map<String, Expression<?>> updatesByFieldNames
+    ) {
+        return updateProcessor(dag, table, updatesByFieldNames);
     }
 
     /**

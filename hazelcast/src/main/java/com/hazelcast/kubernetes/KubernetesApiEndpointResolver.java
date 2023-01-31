@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ class KubernetesApiEndpointResolver
     }
 
     private List<DiscoveryNode> getSimpleDiscoveryNodes(List<Endpoint> endpoints) {
-        List<DiscoveryNode> discoveredNodes = new ArrayList<DiscoveryNode>();
+        List<DiscoveryNode> discoveredNodes = new ArrayList<>();
         for (Endpoint address : endpoints) {
             addAddress(discoveredNodes, address);
         }

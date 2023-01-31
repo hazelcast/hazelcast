@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,6 @@ import static com.hazelcast.jet.impl.processor.ProcessorSupplierWithService.supp
  * @param <R> emitted item type
  */
 public class AsyncTransformUsingServiceOrderedP<C, S, T, IR, R> extends AbstractAsyncTransformUsingServiceP<C, S> {
-
     private final BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<IR>> callAsyncFn;
     private final BiFunctionEx<? super T, ? super IR, ? extends Traverser<? extends R>> mapResultFn;
 
@@ -94,15 +93,30 @@ public class AsyncTransformUsingServiceOrderedP<C, S, T, IR, R> extends Abstract
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
-        if (isQueueFull() && !tryFlushQueue()) {
-            return false;
+        if (makeRoomInQueue()) {
+            return tryProcessInt((T) item);
         }
-        @SuppressWarnings("unchecked")
-        T castItem = (T) item;
-        CompletableFuture<IR> future = callAsyncFn.apply(service, castItem);
+        return false;
+    }
+
+    protected boolean tryProcessInt(T item) {
+        CompletableFuture<IR> future = callAsyncFn.apply(service, item);
         if (future != null) {
-            queue.add(tuple2(castItem, future));
+            queue.add(tuple2(item, future));
+        }
+        return true;
+    }
+
+    /**
+     * If the queue is full, try to flush some items. Return true, if there's
+     * some space in the queue after this call.
+     */
+    protected boolean makeRoomInQueue() {
+        if (isQueueFull()) {
+            tryFlushQueue();
+            return !isQueueFull();
         }
         return true;
     }
@@ -113,8 +127,8 @@ public class AsyncTransformUsingServiceOrderedP<C, S, T, IR, R> extends Abstract
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
-        tryFlushQueue();
-        if (queue.peekLast() instanceof Watermark) {
+        Object lastItem = queue.peekLast();
+        if (lastItem instanceof Watermark && watermark.key() == ((Watermark) lastItem).key()) {
             // conflate the previous wm with the current one
             queue.removeLast();
             queue.add(watermark);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -150,6 +150,8 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.CREATE_INDEX);
         SUPPORTED_KINDS.add(SqlKind.DROP_VIEW);
         SUPPORTED_KINDS.add(SqlKind.COLUMN_DECL);
+        SUPPORTED_KINDS.add(SqlKind.CREATE_TYPE);
+        SUPPORTED_KINDS.add(SqlKind.DROP_TYPE);
 
         SUPPORTED_KINDS.add(SqlKind.ROW);
         SUPPORTED_KINDS.add(SqlKind.VALUES);
@@ -162,6 +164,13 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
 
         // Ordering
         SUPPORTED_KINDS.add(SqlKind.DESCENDING);
+
+        SUPPORTED_KINDS.add(SqlKind.JSON_ARRAYAGG);
+        SUPPORTED_KINDS.add(SqlKind.JSON_OBJECTAGG);
+        SUPPORTED_KINDS.add(SqlKind.WITHIN_GROUP);
+
+        // Nested Fields
+        SUPPORTED_KINDS.add(SqlKind.DOT);
 
         // Supported operators
         SUPPORTED_OPERATORS = new HashSet<>();
@@ -213,6 +222,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.EXTRACT);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_TIMESTAMP_TZ);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_EPOCH_MILLIS);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_CHAR);
 
         // Windowing
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.IMPOSE_ORDER);
@@ -224,12 +234,19 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_VALUE);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_OBJECT);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_ARRAY);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_ARRAYAGG_ABSENT_ON_NULL);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_ARRAYAGG_NULL_ON_NULL);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_OBJECTAGG_ABSENT_ON_NULL);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_OBJECTAGG_NULL_ON_NULL);
+
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.WITHIN_GROUP);
 
         // Extensions
         SUPPORTED_OPERATORS.add(SqlOption.OPERATOR);
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_MAPPINGS);
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_VIEWS);
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_JOBS);
+        SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_TYPES);
 
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.GENERATE_SERIES);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.GENERATE_STREAM);
@@ -238,6 +255,8 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_FLAT_FILE);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.AVRO_FILE);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.PARQUET_FILE);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.DOT);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_ROW);
 
         // SYMBOLS
         SUPPORTED_SYMBOLS = new HashSet<>();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.validate;
 
-import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
@@ -26,6 +25,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
 import com.hazelcast.jet.sql.impl.validate.param.AbstractParameterConverter;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeCoercion;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
@@ -37,6 +37,7 @@ import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.ResourceUtil;
 import org.apache.calcite.runtime.Resources;
@@ -44,13 +45,13 @@ import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlIntervalLiteral;
 import org.apache.calcite.sql.SqlJoin;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
-import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUpdate;
 import org.apache.calcite.sql.SqlUtil;
@@ -68,12 +69,16 @@ import org.apache.calcite.util.Static;
 import org.apache.calcite.util.Util;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.extractHzObjectType;
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isHzObjectType;
 import static org.apache.calcite.sql.JoinType.FULL;
 
 /**
@@ -173,6 +178,28 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         }
     }
 
+    @Override
+    public void validateInsert(final SqlInsert insert) {
+        super.validateInsert(insert);
+        validateUpsertRowType((SqlIdentifier) insert.getTargetTable());
+    }
+
+    private boolean containsCycles(final HazelcastObjectType type, final Set<String> discovered) {
+        if (!discovered.add(type.getTypeName())) {
+            return true;
+        }
+
+        for (final RelDataTypeField field : type.getFieldList()) {
+            final RelDataType fieldType = field.getType();
+            if (isHzObjectType(fieldType)
+                    && containsCycles(extractHzObjectType(fieldType), discovered)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private void validateSelect(SqlSelect select, SqlValidatorScope scope) {
         // Derive the types for offset-fetch expressions, Calcite doesn't do
         // that automatically.
@@ -204,34 +231,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         }
 
         super.addToSelectList(list, aliases, fieldList, exp, scope, includeSystemVars);
-    }
-
-    @Override
-    protected void validateFrom(SqlNode node, RelDataType targetRowType, SqlValidatorScope scope) {
-        super.validateFrom(node, targetRowType, scope);
-
-        if (countOrderingFunctions(node) > 1) {
-            throw newValidationError(node, RESOURCE.multipleOrderingFunctionsNotSupported());
-        }
-    }
-
-    private static int countOrderingFunctions(SqlNode node) {
-        class OrderingFunctionCounter extends SqlBasicVisitor<Void> {
-            int count;
-
-            @Override
-            public Void visit(SqlCall call) {
-                SqlOperator operator = call.getOperator();
-                if (operator instanceof ImposeOrderFunction) {
-                    count++;
-                }
-                return super.visit(call);
-            }
-        }
-
-        OrderingFunctionCounter counter = new OrderingFunctionCounter();
-        node.accept(counter);
-        return counter.count;
     }
 
     @Override
@@ -304,6 +303,25 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                 return call.getOperator().acceptCall(this, call);
             }
         });
+
+        validateUpsertRowType((SqlIdentifier) update.getTargetTable());
+    }
+
+    private void validateUpsertRowType(SqlIdentifier table) {
+        final RelDataType rowType = Objects.requireNonNull(getCatalogReader()
+                        .getTable(table.names))
+                .getRowType();
+
+        for (final RelDataTypeField field : rowType.getFieldList()) {
+            final RelDataType fieldType = field.getType();
+            if (!isHzObjectType(fieldType)) {
+                continue;
+            }
+
+            if (containsCycles(extractHzObjectType(fieldType), new HashSet<>())) {
+                throw QueryException.error("Upserts are not supported for cyclic data type columns");
+            }
+        }
     }
 
     @Override

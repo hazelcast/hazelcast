@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,14 +29,25 @@ public final class HazelcastRelSubsetUtil {
     }
 
     /**
-     * Gets all subsets from the input's set
-     *
-     * @param input the input
-     * @return the subset
+     * Gets all subsets from the node's set
      */
-    public static List<RelSubset> getSubsets(RelNode input) {
-        VolcanoPlanner planner = (VolcanoPlanner) input.getCluster().getPlanner();
-        RelSet set = planner.getSet(input);
+    public static List<RelSubset> getSubsets(RelNode node) {
+        VolcanoPlanner planner = (VolcanoPlanner) node.getCluster().getPlanner();
+        RelSet set = planner.getSet(node);
         return set.subsets;
+    }
+
+    /**
+     * If the {@code node} is a {@link RelSubset}, return the best rel from it.
+     *  Otherwise, return the node.
+     */
+    public static RelNode unwrapSubset(RelNode node) {
+        if (node instanceof RelSubset) {
+            RelNode best = ((RelSubset) node).getBest();
+            if (best != null) {
+                return unwrapSubset(best);
+            }
+        }
+        return node;
     }
 }

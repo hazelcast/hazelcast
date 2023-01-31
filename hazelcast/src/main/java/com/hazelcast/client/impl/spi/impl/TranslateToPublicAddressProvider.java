@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,15 @@
 package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.config.ClientNetworkConfig;
-import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.InitialMembershipEvent;
+import com.hazelcast.cluster.InitialMembershipListener;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -38,9 +40,10 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
-class TranslateToPublicAddressProvider {
+public class TranslateToPublicAddressProvider implements InitialMembershipListener, BooleanSupplier {
     private static final int REACHABLE_ADDRESS_TIMEOUT_MILLIS = 1000;
     private static final int NON_REACHABLE_ADDRESS_TIMEOUT_MILLIS = 3000;
     private static final int REACHABLE_CHECK_NUMBER = 3;
@@ -52,21 +55,13 @@ class TranslateToPublicAddressProvider {
 
     private volatile boolean translateToPublicAddress;
 
-    TranslateToPublicAddressProvider(ClientNetworkConfig config, HazelcastProperties properties, ILogger logger) {
+    public TranslateToPublicAddressProvider(ClientNetworkConfig config, HazelcastProperties properties, ILogger logger) {
         this.config = config;
         this.properties = properties;
         this.logger = logger;
     }
 
-    void refresh(AddressProvider addressProvider, Collection<MemberInfo> members) {
-        translateToPublicAddress = resolve(addressProvider, members);
-    }
-
-    private boolean resolve(AddressProvider addressProvider, Collection<MemberInfo> members) {
-        if (!(addressProvider instanceof DefaultAddressProvider)) {
-            return false;
-        }
-
+    private boolean resolve(Collection<Member> members) {
         // Default value of DISCOVERY_SPI_PUBLIC_IP_ENABLED is `null` intentionally.
         // If DISCOVERY_SPI_PUBLIC_IP_ENABLED is not set to true/false, we don't know the intention of the user,
         // we will try to decide if we should use private/public address automatically in that case.
@@ -104,7 +99,7 @@ class TranslateToPublicAddressProvider {
      * If any member has its internal/private address the same as configured in ClientConfig, then it means that the client is
      * able to connect to members via configured address. No need to use make any address translation.
      */
-    boolean memberInternalAddressAsDefinedInClientConfig(Collection<MemberInfo> members) {
+    boolean memberInternalAddressAsDefinedInClientConfig(Collection<Member> members) {
         List<String> addresses = config.getAddresses();
         List<String> resolvedHosts = addresses.stream().map(s -> {
             try {
@@ -128,15 +123,15 @@ class TranslateToPublicAddressProvider {
      * <p>
      * We check only limited number of random members to reduce the slowdown of the startup.
      */
-    private boolean membersReachableOnlyViaPublicAddress(Collection<MemberInfo> members) {
-        List<MemberInfo> shuffledList = new ArrayList<>(members);
+    private boolean membersReachableOnlyViaPublicAddress(Collection<Member> members) {
+        List<Member> shuffledList = new ArrayList<>(members);
         Collections.shuffle(shuffledList);
-        Iterator<MemberInfo> iter = shuffledList.iterator();
+        Iterator<Member> iter = shuffledList.iterator();
         for (int i = 0; i < REACHABLE_CHECK_NUMBER; i++) {
             if (!iter.hasNext()) {
                 iter = shuffledList.iterator();
             }
-            MemberInfo member = iter.next();
+            Member member = iter.next();
             Address publicAddress = member.getAddressMap().get(CLIENT_PUBLIC_ENDPOINT_QUALIFIER);
             Address internalAddress = member.getAddress();
             if (publicAddress == null) {
@@ -178,7 +173,23 @@ class TranslateToPublicAddressProvider {
         return true;
     }
 
-    boolean get() {
+    @Override
+    public void init(InitialMembershipEvent event) {
+        translateToPublicAddress = resolve(event.getMembers());
+    }
+
+    @Override
+    public void memberAdded(MembershipEvent membershipEvent) {
+
+    }
+
+    @Override
+    public void memberRemoved(MembershipEvent membershipEvent) {
+
+    }
+
+    @Override
+    public boolean getAsBoolean() {
         return translateToPublicAddress;
     }
 }

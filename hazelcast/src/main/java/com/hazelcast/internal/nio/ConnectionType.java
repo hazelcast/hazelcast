@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,6 +82,11 @@ public final class ConnectionType {
      */
     public static final String MC_JAVA_CLIENT = "MCJVM";
 
+    /**
+     * Command Line client Connection Type
+     */
+    public static final String CL_CLIENT = "CLC";
+
     private static final Map<String, Integer> ID_MAP = new HashMap<>();
 
     static {
@@ -95,6 +100,8 @@ public final class ConnectionType {
         ID_MAP.put(REST_CLIENT, 7);
         ID_MAP.put(MEMCACHE_CLIENT, 8);
         ID_MAP.put(MC_JAVA_CLIENT, 9);
+        ID_MAP.put(CSHARP_CLIENT, 10);
+        ID_MAP.put(CL_CLIENT, 11);
     }
 
     private ConnectionType() {

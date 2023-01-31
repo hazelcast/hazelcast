@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,13 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.google.common.collect.Iterables;
-import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.core.EventTimePolicy;
-import com.hazelcast.jet.core.WatermarkPolicy;
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.row.JetSqlRow;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptRule;
@@ -38,8 +32,6 @@ import org.apache.calcite.rel.logical.LogicalTableFunctionScan;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
-
-import java.util.Map;
 
 import static com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdWatermarkedFields.watermarkedFieldByIndex;
 import static com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER;
@@ -73,50 +65,28 @@ final class WatermarkRules {
                     scan.getCluster(),
                     OptUtils.toLogicalConvention(scan.getTraitSet()),
                     Iterables.getOnlyElement(Util.toList(scan.getInputs(), OptUtils::toLogicalInput)),
-                    toEventTimePolicyProvider(scan),
+                    lagExpression(scan),
                     wmIndex);
 
             if (wmIndex < 0) {
                 call.transformTo(wmRel);
                 return;
             }
-            WatermarkedFields watermarkedFields = watermarkedFieldByIndex(wmRel, wmIndex);
+            WatermarkedFields watermarkedFields = watermarkedFieldByIndex(wmIndex);
             if (watermarkedFields == null || watermarkedFields.isEmpty()) {
                 call.transformTo(wmRel);
                 return;
             }
 
-            Map.Entry<Integer, RexNode> watermarkedField = watermarkedFields.findFirst();
-            if (watermarkedField == null) {
-                call.transformTo(wmRel);
-                return;
-            }
+            int watermarkedField = watermarkedFields.findFirst();
 
             DropLateItemsLogicalRel dropLateItemsRel = new DropLateItemsLogicalRel(
                     scan.getCluster(),
                     OptUtils.toLogicalConvention(scan.getTraitSet()),
                     wmRel,
-                    watermarkedField.getValue()
+                    watermarkedField
             );
             call.transformTo(dropLateItemsRel);
-        }
-
-        private FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> toEventTimePolicyProvider(
-                LogicalTableFunctionScan function
-        ) {
-            int orderingColumnFieldIndex = orderingColumnFieldIndex(function);
-            Expression<?> lagExpression = lagExpression(function);
-            return context -> {
-                // todo [viliam] move this to CreateDagVisitor
-                long lagMs = WindowUtils.extractMillis(lagExpression, context);
-                return EventTimePolicy.eventTimePolicy(
-                        row -> WindowUtils.extractMillis(row.get(orderingColumnFieldIndex)),
-                        (row, timestamp) -> row,
-                        WatermarkPolicy.limitingLag(lagMs),
-                        lagMs,
-                        0,
-                        EventTimePolicy.DEFAULT_IDLE_TIMEOUT);
-            };
         }
 
         private int orderingColumnFieldIndex(LogicalTableFunctionScan function) {
@@ -147,7 +117,7 @@ final class WatermarkRules {
                     logicalWatermark.getCluster(),
                     logicalWatermark.getTraitSet(),
                     logicalScan.getTable(),
-                    logicalWatermark.eventTimePolicyProvider(),
+                    logicalWatermark.lagExpression(),
                     logicalWatermark.watermarkedColumnIndex()
             );
             call.transformTo(scan);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,8 @@ import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import java.security.AccessControlException;
 import java.security.Permission;
+
+import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 
 /**
  * SQL query execute task.
@@ -72,7 +74,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         AbstractSqlResult result = (AbstractSqlResult) response;
 
         if (result.updateCount() >= 0) {
-            return SqlExecuteCodec.encodeResponse(null, null, result.updateCount(), null);
+            return SqlExecuteCodec.encodeResponse(null, null, result.updateCount(), null, false);
         } else {
             SqlServiceImpl sqlService = nodeEngine.getSqlService();
 
@@ -87,7 +89,8 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
                     result.getRowMetadata().getColumns(),
                     page,
                     -1,
-                    null
+                    null,
+                    result.isInfiniteRows()
             );
         }
     }
@@ -98,7 +101,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
             return super.encodeException(throwable);
         }
 
-        nodeEngine.getSqlService().getInternalService().getClientStateRegistry().closeOnError(parameters.queryId);
+        nodeEngine.getSqlService().closeOnError(parameters.queryId);
 
         if (throwable instanceof AccessControlException) {
             return super.encodeException(throwable);
@@ -106,13 +109,15 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         if (!(throwable instanceof Exception)) {
             return super.encodeException(throwable);
         }
+        logFine(logger, "Client SQL error: %s", throwable);
         SqlError error = SqlClientUtils.exceptionToClientError((Exception) throwable, nodeEngine.getLocalMember().getUuid());
 
         return SqlExecuteCodec.encodeResponse(
                 null,
                 null,
                 -1,
-                error
+                error,
+                false
         );
     }
 

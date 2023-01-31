@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.client.SqlClientResult;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -129,6 +130,18 @@ public class SqlClientResultTest extends SqlTestSupport {
                 iterator.next();
             }
             assertGreaterOrEquals("shortestSleep", shortestSleep, TimeUnit.MILLISECONDS.toNanos(10));
+        }
+    }
+
+    @Test
+    public void when_executingQuery_then_isInfiniteRowsIsSet() {
+        try (SqlResult result = execute("select * from table(generate_stream(1))")) {
+            SqlClientResult sqlClientResult = (SqlClientResult) result;
+            assertTrue(sqlClientResult.isInfiniteRows());
+        }
+        try (SqlResult result = execute("select * from " + MAP_NAME)) {
+            SqlClientResult sqlClientResult = (SqlClientResult) result;
+            assertFalse(sqlClientResult.isInfiniteRows());
         }
     }
 

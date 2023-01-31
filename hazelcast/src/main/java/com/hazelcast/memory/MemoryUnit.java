@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import static com.hazelcast.internal.util.QuickMath.divideByAndRoundToInt;
  * MemoryUnit represents memory size at a given unit of
  * granularity and provides utility methods to convert across units.
  *
- * @see MemorySize
+ * @see Capacity
  * @since 3.4
  */
 public enum MemoryUnit {
@@ -30,7 +30,7 @@ public enum MemoryUnit {
     /**
      * MemoryUnit in bytes
      */
-    BYTES {
+    BYTES(0) {
         public long convert(long value, MemoryUnit m) {
             return m.toBytes(value);
         }
@@ -59,7 +59,7 @@ public enum MemoryUnit {
     /**
      * MemoryUnit in kilobytes
      */
-    KILOBYTES {
+    KILOBYTES(1) {
         public long convert(long value, MemoryUnit m) {
             return m.toKiloBytes(value);
         }
@@ -88,7 +88,7 @@ public enum MemoryUnit {
     /**
      * MemoryUnit in megabytes
      */
-    MEGABYTES {
+    MEGABYTES(2) {
         public long convert(long value, MemoryUnit m) {
             return m.toMegaBytes(value);
         }
@@ -117,7 +117,7 @@ public enum MemoryUnit {
     /**
      * MemoryUnit in gigabytes
      */
-    GIGABYTES {
+    GIGABYTES(3) {
         public long convert(long value, MemoryUnit m) {
             return m.toGigaBytes(value);
         }
@@ -147,6 +147,21 @@ public enum MemoryUnit {
     static final int K = 1 << POWER;
     static final int M = 1 << (POWER * 2);
     static final int G = 1 << (POWER * 3);
+
+    private static final MemoryUnit[] VALUES = values();
+    private final int id;
+
+    MemoryUnit(int id) {
+        this.id = id;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public static MemoryUnit getById(int id) {
+        return VALUES[id];
+    }
 
     public abstract long convert(long value, MemoryUnit m);
 

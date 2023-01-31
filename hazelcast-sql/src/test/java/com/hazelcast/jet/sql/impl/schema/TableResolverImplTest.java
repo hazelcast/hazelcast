@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.LifecycleService;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -49,6 +51,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -71,10 +74,18 @@ public class TableResolverImplTest {
     @Mock
     private TableListener listener;
 
+    @Mock
+    private HazelcastInstance hazelcastInstance;
+
+    @Mock
+    private LifecycleService lifecycleService;
+
     @Before
     public void before() {
         MockitoAnnotations.openMocks(this);
 
+        when(nodeEngine.getHazelcastInstance()).thenReturn(hazelcastInstance);
+        when(hazelcastInstance.getLifecycleService()).thenReturn(lifecycleService);
         catalog = new TableResolverImpl(nodeEngine, tableStorage, connectorCache);
         catalog.registerListener(listener);
     }
@@ -87,7 +98,7 @@ public class TableResolverImplTest {
         Mapping mapping = mapping();
 
         given(connectorCache.forType(mapping.type())).willReturn(connector);
-        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
+        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(), mapping.externalName()))
                 .willThrow(new RuntimeException("expected test exception"));
 
         // when
@@ -105,7 +116,7 @@ public class TableResolverImplTest {
         Mapping mapping = mapping();
 
         given(connectorCache.forType(mapping.type())).willReturn(connector);
-        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
+        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(), mapping.externalName()))
                 .willReturn(singletonList(new MappingField("field_name", INT)));
         given(tableStorage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
 
@@ -123,7 +134,7 @@ public class TableResolverImplTest {
         Mapping mapping = mapping();
 
         given(connectorCache.forType(mapping.type())).willReturn(connector);
-        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
+        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(), mapping.externalName()))
                 .willReturn(singletonList(new MappingField("field_name", INT)));
         given(tableStorage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
 
@@ -140,7 +151,7 @@ public class TableResolverImplTest {
         Mapping mapping = mapping();
 
         given(connectorCache.forType(mapping.type())).willReturn(connector);
-        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
+        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(), mapping.externalName()))
                 .willReturn(singletonList(new MappingField("field_name", INT)));
 
         // when

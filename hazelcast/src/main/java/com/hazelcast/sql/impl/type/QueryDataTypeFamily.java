@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_MAP;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_NULL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_REAL;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_ROW;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_SMALLINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_TIME;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_TIMESTAMP;
@@ -45,6 +46,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_JSON;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_MAP;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_NULL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_OBJECT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_ROW;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_TIME;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_TIMESTAMP;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_TIMESTAMP_WITH_TIME_ZONE;
@@ -69,11 +71,13 @@ public enum QueryDataTypeFamily {
         PRECEDENCE_TIMESTAMP_WITH_TIME_ZONE,
         SqlColumnType.TIMESTAMP_WITH_TIME_ZONE
     ),
+    // this family is used for plain OBJECT, and also for custom types
     OBJECT(TYPE_LEN_OBJECT, PRECEDENCE_OBJECT, SqlColumnType.OBJECT),
     INTERVAL_YEAR_MONTH(TYPE_LEN_INTERVAL_YEAR_MONTH, PRECEDENCE_INTERVAL_YEAR_MONTH, null),
     INTERVAL_DAY_SECOND(TYPE_LEN_INTERVAL_DAY_SECOND, PRECEDENCE_INTERVAL_DAY_SECOND, null),
     MAP(TYPE_LEN_MAP, PRECEDENCE_MAP, null),
-    JSON(TYPE_LEN_JSON, PRECEDENCE_JSON, SqlColumnType.JSON);
+    JSON(TYPE_LEN_JSON, PRECEDENCE_JSON, SqlColumnType.JSON),
+    ROW(TYPE_LEN_ROW, PRECEDENCE_ROW, SqlColumnType.ROW);
 
     private final int estimatedSize;
     private final int precedence;

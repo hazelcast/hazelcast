@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -210,6 +210,8 @@ public final class MetricDescriptorConstants {
     public static final String MAP_METRIC_PUT_COUNT = "putCount";
     public static final String MAP_METRIC_SET_COUNT = "setCount";
     public static final String MAP_METRIC_REMOVE_COUNT = "removeCount";
+    public static final String MAP_METRIC_EVICTION_COUNT = "evictionCount";
+    public static final String MAP_METRIC_EXPIRATION_COUNT = "expirationCount";
     public static final String MAP_METRIC_CREATION_TIME = "creationTime";
     public static final String MAP_METRIC_OWNED_ENTRY_COUNT = "ownedEntryCount";
     public static final String MAP_METRIC_BACKUP_ENTRY_COUNT = "backupEntryCount";
@@ -248,6 +250,10 @@ public final class MetricDescriptorConstants {
             = "fullPartitionReplicationRecordsCount";
     public static final String MAP_METRIC_DIFF_PARTITION_REPLICATION_RECORDS_COUNT
             = "differentialPartitionReplicationRecordsCount";
+    public static final String MAP_PREFIX_MAP_STORE_OFFLOADED_OPERATIONS
+            = "map.store.offloaded.operations";
+    public static final String MAP_METRIC_MAP_STORE_WAITING_TO_BE_PROCESSED_COUNT
+            = "waitingToBeProcessedCount";
     // ===[/MAP]========================================================
 
     // ===[MEMORY]======================================================
@@ -574,6 +580,12 @@ public final class MetricDescriptorConstants {
     // ===[/THREAD]=====================================================
 
     // ===[TSTORE]======================================================
+    public static final String TSTORE_DEVICE_DISCRIMINATOR_NAME = "name";
+    public static final String TSTORE_DEVICE_USED_SPACE = "tstore.device.usedSpace";
+    public static final String TSTORE_DEVICE_FREE_SPACE = "tstore.device.freeSpace";
+    public static final String TSTORE_DEVICE_MAX_SPACE = "tstore.device.maxSpace";
+    public static final String TSTORE_DEVICE_USAGE = "tstore.device.usage";
+    public static final String TSTORE_HLOG_LENGTH = "tstore.hlog.length";
     public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_AVG = "tstore.hlog.pageWriteDuration.avg";
     public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_MIN = "tstore.hlog.pageWriteDuration.min";
     public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_MAX = "tstore.hlog.pageWriteDuration.max";

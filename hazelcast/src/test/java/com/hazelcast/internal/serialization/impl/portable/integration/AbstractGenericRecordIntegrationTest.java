@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,9 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.FieldKind;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
@@ -48,7 +49,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractGenericRecordIntegrationTest extends HazelcastTestSupport {
 
@@ -124,8 +124,8 @@ public abstract class AbstractGenericRecordIntegrationTest extends HazelcastTest
         //read from the cluster without serialization config
         GenericRecord actualRecord = (GenericRecord) clusterMap.get(2);
 
-        assertTrue(actualRecord.hasField("name"));
-        assertTrue(actualRecord.hasField("myint"));
+        assertEquals(FieldKind.STRING, actualRecord.getFieldKind("name"));
+        assertEquals(FieldKind.INT32, actualRecord.getFieldKind("myint"));
 
         assertEquals(expected.name, actualRecord.getString("name"));
         assertEquals(expected.myint, actualRecord.getInt32("myint"));
@@ -149,8 +149,8 @@ public abstract class AbstractGenericRecordIntegrationTest extends HazelcastTest
         IMap<Object, Object> clusterMap = instances[0].getMap("test");
         GenericRecord actual = (GenericRecord) clusterMap.get(1);
 
-        assertTrue(actual.hasField("name"));
-        assertTrue(actual.hasField("myint"));
+        assertEquals(FieldKind.STRING, actual.getFieldKind("name"));
+        assertEquals(FieldKind.INT32, actual.getFieldKind("myint"));
 
         assertEquals(expected.name, actual.getString("name"));
         assertEquals(expected.myint, actual.getInt32("myint"));
@@ -201,7 +201,7 @@ public abstract class AbstractGenericRecordIntegrationTest extends HazelcastTest
             Object value = entry.getValue();
             GenericRecord genericRecord = (GenericRecord) value;
 
-            GenericRecord modifiedGenericRecord = genericRecord.cloneWithBuilder()
+            GenericRecord modifiedGenericRecord = genericRecord.newBuilderWithClone()
                     .setInt32("myint", 4).build();
 
             entry.setValue(modifiedGenericRecord);

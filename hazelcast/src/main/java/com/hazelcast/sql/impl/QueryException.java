@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,10 @@ public final class QueryException extends HazelcastException implements Wrappabl
     private final int code;
     private final String suggestion;
     private final UUID originatingMemberId;
+
+    public QueryException(String message, Throwable cause) {
+        this(SqlErrorCode.GENERIC, message, cause, null);
+    }
 
     private QueryException(int code, String message, Throwable cause, UUID originatingMemberId) {
         this(code, message, cause, null, originatingMemberId);

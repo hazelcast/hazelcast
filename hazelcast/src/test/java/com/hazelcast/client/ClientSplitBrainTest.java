@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,10 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
@@ -38,9 +38,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.instance.impl.TestUtil.getNode;
 import static com.hazelcast.test.Accessors.getClientEngineImpl;
 import static com.hazelcast.test.SplitBrainTestSupport.blockCommunicationBetween;
 import static com.hazelcast.test.SplitBrainTestSupport.unblockCommunicationBetween;
@@ -51,10 +53,11 @@ import static org.junit.Assert.assertTrue;
 @Category(NightlyTest.class)
 public class ClientSplitBrainTest extends ClientTestSupport {
 
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
+
     @After
-    public void cleanup() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+    public void tearDown() throws Exception {
+        factory.terminateAll();
     }
 
     @Test
@@ -62,11 +65,11 @@ public class ClientSplitBrainTest extends ClientTestSupport {
         Config config = new Config()
                 .setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5")
                 .setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        HazelcastInstance h2 = factory.newHazelcastInstance(config);
 
         final ClientConfig clientConfig = new ClientConfig();
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        final HazelcastInstance client = factory.newHazelcastClient(clientConfig);
 
         final String mapName = randomMapName();
         final IMap mapNode1 = h1.getMap(mapName);
@@ -166,13 +169,12 @@ public class ClientSplitBrainTest extends ClientTestSupport {
         config.setProperty(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "5");
         config.setProperty(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
 
-        TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-        HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance h1 = factory.newHazelcastInstance(config);
 
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        HazelcastInstance client = factory.newHazelcastClient();
 
-        HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(config);
-        HazelcastInstance h3 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        HazelcastInstance h3 = factory.newHazelcastInstance(config);
 
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
 
@@ -214,7 +216,73 @@ public class ClientSplitBrainTest extends ClientTestSupport {
         assertEquals(1, clientEngineImpl1.getClientEndpointCount());
         assertEquals(1, clientEngineImpl2.getClientEndpointCount());
         assertEquals(1, clientEngineImpl3.getClientEndpointCount());
+    }
 
-        hazelcastFactory.shutdownAll();
+    @Test
+    public void testMemberList_afterConnectingToOtherHalf() {
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+
+        // Client now has the cluster view listener registered to instance1
+        HazelcastInstance client = factory.newHazelcastClient();
+
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance3 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance4 = factory.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(4, instance1, instance2, instance3, instance4);
+
+        // split the cluster [1, 3, 4], [2]
+        blockCommunicationBetween(instance2, instance1);
+        blockCommunicationBetween(instance2, instance3);
+        blockCommunicationBetween(instance2, instance4);
+
+        // make sure that each member quickly drops the other from their member list
+        closeConnectionBetween(instance1, instance2);
+        closeConnectionBetween(instance3, instance2);
+        closeConnectionBetween(instance4, instance2);
+
+        assertClusterSizeEventually(3, instance1, instance3, instance4);
+        assertClusterSizeEventually(1, instance2);
+
+        // make sure that the client is connected to [1, 3, 4]
+        assertTrueEventually(() -> {
+            assertEquals(3, client.getCluster().getMembers().size());
+        });
+
+        // Shutdown 3 and 4 to make sure that the member list version in
+        // instance1 is greater than the instance2
+        instance3.shutdown();
+        instance4.shutdown();
+
+        assertTrueEventually(() -> {
+            int memberListVersion1 = getNode(instance1).getClusterService().getMemberListVersion();
+            int memberListVersion2 = getNode(instance2).getClusterService().getMemberListVersion();
+            assertTrue(memberListVersion1 > memberListVersion2);
+        });
+
+        // make sure the client has received the member list updates for 3 and 4
+        assertTrueEventually(() -> {
+            assertEquals(1, client.getCluster().getMembers().size());
+        });
+
+        ReconnectListener reconnectListener = new ReconnectListener();
+        client.getLifecycleService().addLifecycleListener(reconnectListener);
+
+        instance1.shutdown();
+
+        // wait until the client reconnects to instance2
+        assertOpenEventually(reconnectListener.reconnectedLatch);
+
+        // make sure that the member list is updated with the instance 2, despite
+        // the fact that it has a member list version less than the previously
+        // set value
+        assertTrueEventually(() -> {
+            Set<Member> members = client.getCluster().getMembers();
+            assertEquals(1, members.size());
+
+            Member member = members.iterator().next();
+            assertEquals(instance2.getLocalEndpoint().getUuid(), member.getUuid());
+        });
     }
 }

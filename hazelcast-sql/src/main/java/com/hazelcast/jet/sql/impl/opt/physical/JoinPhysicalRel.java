@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import org.apache.calcite.rex.RexNode;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 
-public abstract class JoinPhysicalRel  extends Join implements PhysicalRel {
+public abstract class JoinPhysicalRel extends Join implements PhysicalRel {
 
     public JoinPhysicalRel(
             RelOptCluster cluster,

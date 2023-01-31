@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,7 @@ import com.hazelcast.internal.serialization.impl.compact.DeserializedGenericReco
 import com.hazelcast.internal.serialization.impl.portable.DeserializedPortableGenericRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableInternalGenericRecord;
-import com.hazelcast.nio.serialization.AbstractGenericRecord;
-import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 
@@ -64,6 +63,13 @@ import java.time.OffsetDateTime;
  * ---- {@link PortableInternalGenericRecord}     -> concrete class passed to the user
  */
 public interface InternalGenericRecord extends GenericRecord {
+
+    /**
+     * @param fieldName the name of the field
+     * @return true if field exists in the schema/class definition. Note that
+     * returns true even if the field is null.
+     */
+    boolean hasField(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field

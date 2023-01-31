@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,6 +107,7 @@ public class IndexTest {
         when(clusterService.getClusterVersion()).thenReturn(Versions.CURRENT_CLUSTER_VERSION);
         when(mapContainer.getMapConfig()).thenReturn(new MapConfig());
         when(mapContainer.getMapServiceContext()).thenReturn(mapServiceContext);
+        when(mapContainer.getName()).thenReturn("testMap");
     }
 
     final DataRecordFactory recordFactory = new DataRecordFactory(mapContainer, ss);
@@ -125,7 +126,8 @@ public class IndexTest {
     public void testRemoveEnumIndex() {
         IndexConfig config = IndexUtils.createTestIndexConfig(IndexType.HASH, "favoriteCity");
 
-        Indexes is = Indexes.newBuilder(ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
+        String mapName = mapContainer.getName();
+        Indexes is = Indexes.newBuilder(null, mapName, ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
         is.addOrGetIndex(config);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
@@ -140,7 +142,8 @@ public class IndexTest {
     public void testUpdateEnumIndex() {
         IndexConfig config = IndexUtils.createTestIndexConfig(IndexType.HASH, "favoriteCity");
 
-        Indexes is = Indexes.newBuilder(ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
+        String mapName = mapContainer.getName();
+        Indexes is = Indexes.newBuilder(null, mapName, ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
         is.addOrGetIndex(config);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
@@ -159,7 +162,8 @@ public class IndexTest {
 
     @Test
     public void testIndex() throws QueryException {
-        Indexes indexes = Indexes.newBuilder(ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
+        String mapName = mapContainer.getName();
+        Indexes indexes = Indexes.newBuilder(null, mapName, ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
         Index dIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "d"));
         Index boolIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "bool"));
         Index strIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "str"));
@@ -222,7 +226,9 @@ public class IndexTest {
 
     @Test
     public void testIndexWithNull() throws QueryException {
-        Indexes is = Indexes.newBuilder(ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
+        String mapName = mapContainer.getName();
+
+        Indexes is = Indexes.newBuilder(null, mapName, ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
         Index strIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "str"));
 
         Data value = ss.toData(new MainPortable(false, 1, null));
@@ -430,12 +436,14 @@ public class IndexTest {
         IndexConfig config = IndexUtils.createTestIndexConfig(type, QueryConstants.THIS_ATTRIBUTE_NAME.value());
 
         IndexImpl index = new IndexImpl(
+                null,
                 config,
                 ss,
                 newExtractor(),
                 copyBehavior,
                 PerIndexStats.EMPTY,
-                MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT
+                MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT,
+                "test"
         );
 
         assertEquals(0, index.getRecords(0L).size());

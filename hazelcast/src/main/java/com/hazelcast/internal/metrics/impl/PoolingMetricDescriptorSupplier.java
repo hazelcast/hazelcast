@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.internal.metrics.impl;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -31,20 +30,32 @@ import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplie
  */
 class PoolingMetricDescriptorSupplier implements Supplier<MetricDescriptorImpl> {
     static final int INITIAL_CAPACITY = 32;
+    private static final int LAST_SIZE_INCREMENT = 8;
     private static final double GROW_FACTOR = 1.2D;
 
-    private final List<MetricDescriptorImpl> allCreated = new ArrayList<>(INITIAL_CAPACITY);
+    private final List<MetricDescriptorImpl> allCreated;
     private MetricDescriptorImpl[] pool = new MetricDescriptorImpl[INITIAL_CAPACITY];
     private int poolPtr;
     private boolean closed;
 
     PoolingMetricDescriptorSupplier() {
+        allCreated = new ArrayList<>(INITIAL_CAPACITY);
         for (int i = 0; i < pool.length; i++) {
             MetricDescriptorImpl descriptor = new MetricDescriptorImpl(this);
             pool[i] = descriptor;
             allCreated.add(descriptor);
         }
         poolPtr = pool.length - 1;
+    }
+
+    PoolingMetricDescriptorSupplier(MetricDescriptorReusableData reusableData) {
+        allCreated = new ArrayList<>(reusableData.getAllCreatedLastSize() + LAST_SIZE_INCREMENT);
+        pool = reusableData.getPool();
+        poolPtr = reusableData.getPoolPtr();
+        for (int i = 0; i <= poolPtr; i++) {
+            pool[i].setSupplier(this);
+            allCreated.add(pool[i]);
+        }
     }
 
     @Override
@@ -75,19 +86,14 @@ class PoolingMetricDescriptorSupplier implements Supplier<MetricDescriptorImpl> 
         pool[++poolPtr] = descriptor;
     }
 
-    /**
-     * Releases all taken but not recycled {@link MetricDescriptorImpl}
-     * instances. Used to make sure that there is no leaking is possible
-     * if there is a reference stored to any of the descriptors taken from
-     * this pool.
-     */
-    void close() {
+    MetricDescriptorReusableData close() {
         closed = true;
         for (MetricDescriptorImpl descriptor : allCreated) {
             descriptor.setSupplier(DEFAULT_DESCRIPTOR_SUPPLIER);
         }
+        int allCreatedLastSize = allCreated.size();
         allCreated.clear();
-        Arrays.fill(pool, null);
+        return new MetricDescriptorReusableData(allCreatedLastSize, pool, poolPtr);
     }
 
     private void ensureCapacity(int poolPtr) {

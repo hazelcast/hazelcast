@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,15 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static java.util.Collections.unmodifiableCollection;
+import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.unmodifiableSet;
 
 /**
  * Snapshot of the Metadata Raft group state
+ * This class should be IMMUTABLE since it is stored in the RaftLog's SnapshotEntry
  */
 public final class MetadataRaftGroupSnapshot implements IdentifiedDataSerializable {
 
@@ -38,75 +44,63 @@ public final class MetadataRaftGroupSnapshot implements IdentifiedDataSerializab
     private final Collection<CPGroupInfo> groups = new ArrayList<>();
     private MembershipChangeSchedule membershipChangeSchedule;
     private List<CPMemberInfo> initialCPMembers;
-    private Set<CPMemberInfo> initializedCPMembers = new HashSet<>();
+    private final Set<CPMemberInfo> initializedCPMembers = new HashSet<>();
     private MetadataRaftGroupInitStatus initializationStatus;
-    private Set<Long> initializationCommitIndices = new HashSet<>();
+    private final Set<Long> initializationCommitIndices = new HashSet<>();
 
-    public void setGroups(Collection<CPGroupInfo> groups) {
-        for (CPGroupInfo group : groups) {
-            // Deep copy CPGroupInfo, because it's a mutable object.
-            this.groups.add(new CPGroupInfo(group));
-        }
+    public MetadataRaftGroupSnapshot() {
     }
 
-    public void setMembers(Collection<CPMemberInfo> members) {
+    public MetadataRaftGroupSnapshot(Collection<CPMemberInfo> members,
+                                     long membersCommitIndex,
+                                     Collection<CPGroupInfo> groups,
+                                     MembershipChangeSchedule membershipChangeSchedule,
+                                     List<CPMemberInfo> initialCPMembers,
+                                     Set<CPMemberInfo> initializedCPMembers,
+                                     MetadataRaftGroupInitStatus initializationStatus,
+                                     Set<Long> initializationCommitIndices) {
         this.members.addAll(members);
+        this.membersCommitIndex = membersCommitIndex;
+        // Deep copy CPGroupInfo, because it's a mutable object.
+        groups.stream().map(CPGroupInfo::new).forEach(this.groups::add);
+        this.membershipChangeSchedule = membershipChangeSchedule;
+        this.initialCPMembers = initialCPMembers;
+        this.initializedCPMembers.addAll(initializedCPMembers);
+        this.initializationStatus = initializationStatus;
+        this.initializationCommitIndices.addAll(initializationCommitIndices);
     }
 
     public Collection<CPMemberInfo> getMembers() {
-        return members;
+        return unmodifiableCollection(members);
     }
 
     public long getMembersCommitIndex() {
         return membersCommitIndex;
     }
 
-    public void setMembersCommitIndex(long membersCommitIndex) {
-        this.membersCommitIndex = membersCommitIndex;
-    }
-
     public Collection<CPGroupInfo> getGroups() {
-        return groups;
+        // Deep copy CPGroupInfo, because it's a mutable object.
+        return groups.stream().map(CPGroupInfo::new).collect(Collectors.toList());
     }
 
     public MembershipChangeSchedule getMembershipChangeSchedule() {
         return membershipChangeSchedule;
     }
 
-    public void setMembershipChangeSchedule(MembershipChangeSchedule membershipChangeSchedule) {
-        this.membershipChangeSchedule = membershipChangeSchedule;
-    }
-
     public Set<CPMemberInfo> getInitializedCPMembers() {
-        return initializedCPMembers;
-    }
-
-    public void setInitializedCPMembers(Collection<CPMemberInfo> initializedCPMembers) {
-        this.initializedCPMembers.addAll(initializedCPMembers);
+        return unmodifiableSet(initializedCPMembers);
     }
 
     public List<CPMemberInfo> getInitialCPMembers() {
-        return initialCPMembers;
-    }
-
-    public void setInitialCPMembers(List<CPMemberInfo> initialCPMembers) {
-        this.initialCPMembers = initialCPMembers;
+        return unmodifiableList(initialCPMembers);
     }
 
     public MetadataRaftGroupInitStatus getInitializationStatus() {
         return initializationStatus;
     }
 
-    public void setInitializationStatus(MetadataRaftGroupInitStatus initializationStatus) {
-        this.initializationStatus = initializationStatus;
-    }
-
     public Set<Long> getInitializationCommitIndices() {
-        return initializationCommitIndices;
-    }
-
-    public void setInitializationCommitIndices(Set<Long> initializationCommitIndices) {
-        this.initializationCommitIndices.addAll(initializationCommitIndices);
+        return unmodifiableSet(initializationCommitIndices);
     }
 
     @Override
@@ -187,5 +181,19 @@ public final class MetadataRaftGroupSnapshot implements IdentifiedDataSerializab
             long commitIndex = in.readLong();
             initializationCommitIndices.add(commitIndex);
         }
+    }
+
+    @Override
+    public String toString() {
+        return "MetadataRaftGroupSnapshot{"
+                + "members=" + members
+                + ", membersCommitIndex=" + membersCommitIndex
+                + ", groups=" + groups
+                + ", membershipChangeSchedule=" + membershipChangeSchedule
+                + ", initialCPMembers=" + initialCPMembers
+                + ", initializedCPMembers=" + initializedCPMembers
+                + ", initializationStatus=" + initializationStatus
+                + ", initializationCommitIndices=" + initializationCommitIndices
+                + '}';
     }
 }

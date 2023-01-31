@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,7 +89,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         // We are not using injected index provider since we're not supporting off-heap indexes in CQC due
         // to threading incompatibility. If we injected the IndexProvider from the MapServiceContext
         // the EE side would create HD indexes which is undesired.
-        this.indexes = Indexes.newBuilder(ss, COPY_ON_READ, queryCacheConfig.getInMemoryFormat())
+        this.indexes = Indexes.newBuilder(null, mapName, ss, COPY_ON_READ, queryCacheConfig.getInMemoryFormat())
                 .partitionCount(context.getPartitionCount())
                 .build();
 

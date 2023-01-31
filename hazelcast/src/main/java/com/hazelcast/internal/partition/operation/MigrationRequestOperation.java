@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.internal.partition.operation;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.ChunkSupplier;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.MigrationInfo;
@@ -46,14 +45,12 @@ import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
-import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -344,7 +341,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
     private ReplicaFragmentMigrationState createAllReplicaFragmentsMigrationState() {
         PartitionReplicationEvent event = getPartitionReplicationEvent();
         Collection<Operation> operations = createAllReplicationOperations(event);
-        return createReplicaFragmentMigrationState(namespacesContext.allNamespaces, operations,
+        return createReplicaFragmentMigrationState(namespacesContext.getAllNamespaces(), operations,
                 emptyList(), maxTotalChunkedDataInBytes);
     }
 
@@ -356,7 +353,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         PartitionReplicaVersionManager versionManager = partitionService.getPartitionReplicaVersionManager();
         Map<ServiceNamespace, long[]> versions = new HashMap<>(namespaces.size());
         for (ServiceNamespace namespace : namespaces) {
-            long[] v = versionManager.getPartitionReplicaVersions(getPartitionId(), namespace);
+            long[] v = versionManager.getPartitionReplicaVersionsForSync(getPartitionId(), namespace);
             versions.put(namespace, v);
         }
 
@@ -449,99 +446,6 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
                 }
                 completeMigration(false);
             }
-        }
-    }
-
-    /**
-     * A namespace is used to group single or multiple services'.
-     * <p>
-     * For instance, map-service uses same namespace with lock-service
-     * and ring-buffer-service when it needs to use their functionality.
-     *
-     * <p>
-     * To clarify the concept, this is a sketch of multiple
-     * services which are sharing the same namespace
-     *
-     * <pre>
-     *
-     * serviceName-1    serviceName-2    serviceName-3
-     * /---------\      /---------\      /---------\
-     * |         |      |         |      |         |
-     * |         |      |         |      |         |
-     * |         |      |         |      |         |
-     * /-------------------------------------------\
-     * | A SHARED NAMESPACE OF MULTIPLE SERVICES   |
-     * \-------------------------------------------/
-     * |         |      |         |      |         |
-     * |         |      |         |      |         |
-     * |         |      |         |      |         |
-     * \---------/      \---------/      \---------/
-     * </pre>
-     */
-    private final class ServiceNamespacesContext {
-
-        private final Iterator<ServiceNamespace> namespaceIterator;
-        private final Set<ServiceNamespace> allNamespaces = new HashSet<>();
-        private final Map<ServiceNamespace, Collection<String>> namespaceToServices = new HashMap<>();
-
-        private ServiceNamespace currentNamespace;
-
-        private ServiceNamespacesContext(NodeEngineImpl nodeEngine, PartitionReplicationEvent event) {
-            nodeEngine.forEachMatchingService(FragmentedMigrationAwareService.class, serviceInfo -> {
-                // get all namespaces of a service
-                Collection<ServiceNamespace> namespaces = getAllServiceNamespaces(serviceInfo, event);
-                if (isNotEmpty(namespaces)) {
-                    // update collection of unique namespaces
-                    allNamespaces.addAll(namespaces);
-                    // map namespace to serviceName
-                    namespaces.forEach(ns -> mapNamespaceToService(ns, serviceInfo.getName()));
-                }
-            });
-
-            // add a namespace to represent non-fragmented services
-            allNamespaces.add(NonFragmentedServiceNamespace.INSTANCE);
-
-            namespaceIterator = allNamespaces.iterator();
-        }
-
-        private void mapNamespaceToService(ServiceNamespace ns, String serviceName) {
-            Collection<String> existingServiceNames = namespaceToServices.get(ns);
-            if (existingServiceNames == null) {
-                // generally a namespace belongs to a single service only
-                namespaceToServices.put(ns, singleton(serviceName));
-                return;
-            }
-
-            if (existingServiceNames.size() == 1) {
-                existingServiceNames = new HashSet<>(existingServiceNames);
-                namespaceToServices.put(ns, existingServiceNames);
-            }
-
-            existingServiceNames.add(serviceName);
-
-        }
-
-        private Collection<ServiceNamespace> getAllServiceNamespaces(ServiceInfo serviceInfo,
-                                                                     PartitionReplicationEvent event) {
-            return ((FragmentedMigrationAwareService) serviceInfo
-                    .getService()).getAllServiceNamespaces(event);
-        }
-
-        private boolean hasNext() {
-            return namespaceIterator.hasNext();
-        }
-
-        private ServiceNamespace current() {
-            return currentNamespace;
-        }
-
-        private ServiceNamespace next() {
-            currentNamespace = namespaceIterator.next();
-            return currentNamespace;
-        }
-
-        private Collection<String> getServiceNames(ServiceNamespace ns) {
-            return namespaceToServices.get(ns);
         }
     }
 }

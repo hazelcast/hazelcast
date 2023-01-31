@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_MAPS;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_QUEUES;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeIntegrationTest.containingParam;
@@ -60,13 +61,14 @@ public class RESTClientPhoneHomeTest {
     }
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule();
+    public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
 
     private HazelcastInstance instance;
 
     private HTTPCommunicator http;
 
     private Config config;
+    private int port;
 
     @Before
     public void setUp() {
@@ -74,6 +76,7 @@ public class RESTClientPhoneHomeTest {
         instance = factory.newHazelcastInstance(config);
         http = new HTTPCommunicator(instance);
         stubFor(post(urlPathEqualTo("/ping")).willReturn(aResponse().withStatus(200)));
+        port = wireMockRule.port();
     }
 
     @After
@@ -103,7 +106,7 @@ public class RESTClientPhoneHomeTest {
         assertEquals(400, http.doGet(http.getUrl(URI_MAPS)).responseCode);
         assertEquals(200, http.mapDelete("my-map", "key"));
 
-        PhoneHome phoneHome = new PhoneHome(getNode(instance), "http://localhost:8080/ping");
+        PhoneHome phoneHome = new PhoneHome(getNode(instance), "http://localhost:" + port + "/ping");
         phoneHome.phoneHome(false);
 
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
@@ -134,7 +137,7 @@ public class RESTClientPhoneHomeTest {
         assertEquals(204, http.doDelete(http.getUrl(URI_QUEUES) + "my-queue/10").responseCode);
         assertEquals(400, http.doDelete(http.getUrl(URI_QUEUES) + "my-queue").responseCode);
 
-        PhoneHome phoneHome = new PhoneHome(getNode(instance), "http://localhost:8080/ping");
+        PhoneHome phoneHome = new PhoneHome(getNode(instance), "http://localhost:" + port + "/ping");
         phoneHome.phoneHome(false);
 
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
@@ -157,7 +160,7 @@ public class RESTClientPhoneHomeTest {
         http.configReload(config.getClusterName(), "");
         http.configUpdate(config.getClusterName(), "", "hazelcast:\n");
 
-        PhoneHome phoneHome = new PhoneHome(getNode(instance), "http://localhost:8080/ping");
+        PhoneHome phoneHome = new PhoneHome(getNode(instance), "http://localhost:" + port + "/ping");
         phoneHome.phoneHome(false);
 
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))

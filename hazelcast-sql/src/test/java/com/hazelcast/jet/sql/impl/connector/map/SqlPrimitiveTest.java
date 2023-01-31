@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -531,5 +532,16 @@ public class SqlPrimitiveTest extends SqlTestSupport {
         instance().getMap(mapName).put(testValue, testValue);
 
         assertRowsAnyOrder("SELECT * FROM " + mapName, singletonList(new Row(testValue, testValue)));
+    }
+
+    @Test
+    // reproducer for https://github.com/hazelcast/hazelcast/issues/21252
+    public void test_selectByKey_nonExistentKey() {
+        instance().getSql().execute("CREATE MAPPING m "
+                + " TYPE IMap  OPTIONS ("
+                + " 'keyFormat' = 'int',"
+                + " 'valueFormat' = 'int')");
+
+        assertRowsAnyOrder(instance(), "SELECT * FROM m WHERE __key = 1", emptyList());
     }
 }

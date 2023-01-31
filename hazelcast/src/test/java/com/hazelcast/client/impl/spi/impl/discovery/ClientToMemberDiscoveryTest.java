@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,8 +58,8 @@ public class ClientToMemberDiscoveryTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        String serverXmlFileName = "hazelcast-multicast-plugin.xml";
-        String clientXmlFileName = "hazelcast-client-multicast-plugin.xml";
+        String serverXmlFileName = "hazelcast-multicast-plugin-non-default-port.xml";
+        String clientXmlFileName = "hazelcast-client-multicast-plugin-non-default-port.xml";
 
         InputStream xmlResource = MulticastDiscoveryStrategy.class.getClassLoader().getResourceAsStream(serverXmlFileName);
         serverConfig = new XmlConfigBuilder(xmlResource).build();

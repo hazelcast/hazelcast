@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@
 package com.hazelcast.query;
 
 import com.hazelcast.internal.serialization.BinaryInterface;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
- * A {@link Predicate} that restricts the execution of a {@link Predicate} to a single partition.
+ * A {@link Predicate} that restricts the execution of a {@link Predicate} to specific partitions.
  *
- * This can help to speed up query execution since only a single instead of all partitions needs to be queried.
+ * This can help to speed up query execution since only a subset of all partitions needs to be queried.
  *
  * This predicate only has effect if used as an outermost predicate.
  *
@@ -33,10 +35,27 @@ import com.hazelcast.internal.serialization.BinaryInterface;
 public interface PartitionPredicate<K, V> extends Predicate<K, V> {
 
     /**
-     * Returns the partition key that determines the partition the {@linkplain
+     * Returns the partition keys that determine the partitions the {@linkplain
      * #getTarget() target} {@link Predicate} is going to execute on.
      *
-     * @return the partition key
+     * A default implementation of {@linkplain #getPartitionKeys() partition keys}
+     * that wraps the {@linkplain #getPartitionKey() partition key} in a singleton
+     * collection is provided for backwards compatibility.
+     *
+     * @return the partition keys
+     * @since 5.2
+     */
+    default Collection<? extends Object> getPartitionKeys() {
+        return Collections.singleton(getPartitionKey());
+    }
+
+    /**
+     * Returns a random partition key from the {@linkplain #getPartitionKeys() collection}.
+     * This is useful for client message routing to cluster instances.
+     * If there is a single value in the collection it is always returned as-is to be backwards
+     * compatible with older versions of PartitionPredicate.
+     *
+     * @return the single key
      */
     Object getPartitionKey();
 

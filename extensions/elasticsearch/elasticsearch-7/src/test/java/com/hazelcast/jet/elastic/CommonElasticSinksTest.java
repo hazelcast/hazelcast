@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,10 @@ package com.hazelcast.jet.elastic;
 
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.pipeline.Sink;
-import com.hazelcast.jet.pipeline.test.TestSources;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
-import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.junit.Test;
@@ -38,6 +31,10 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSinksPipeline.deleteItemsFromIndexPipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSinksPipeline.updateItemsInIndexPipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSinksPipeline.writeItemsToIndexPipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSinksPipeline.writeItemsToIndexUsingSourceFactoryMethodPipeline;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.elasticsearch.client.RequestOptions.DEFAULT;
@@ -46,37 +43,25 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
 
     @Test
     public void given_singleDocument_whenWriteToElasticSink_then_singleDocumentInIndex() throws Exception {
-        Sink<TestItem> elasticSink = new ElasticSinkBuilder<>()
-                .clientFn(elasticClientSupplier())
-                .bulkRequestFn(() -> new BulkRequest().setRefreshPolicy(RefreshPolicy.IMMEDIATE))
-                .mapToRequestFn((TestItem item) -> new IndexRequest("my-index").source(item.asMap()))
-                .build();
-
-        Pipeline p = Pipeline.create();
-        p.readFrom(TestSources.items(new TestItem("id", "Frantisek")))
-         .writeTo(elasticSink);
+        Pipeline p = writeItemsToIndexPipeline(
+                "my-index",
+                elasticPipelineClientSupplier(),
+                new TestItem("id", "Frantisek")
+        );
 
         submitJob(p);
-
         assertSingleDocument();
     }
 
     @Test
     public void given_batchOfDocuments_whenWriteToElasticSink_then_batchOfDocumentsInIndex() throws IOException {
-        Sink<TestItem> elasticSink = new ElasticSinkBuilder<>()
-                .clientFn(elasticClientSupplier())
-                .mapToRequestFn((TestItem item) -> new IndexRequest("my-index").source(item.asMap()))
-                .build();
-
         int batchSize = 10_000;
         TestItem[] items = new TestItem[batchSize];
         for (int i = 0; i < batchSize; i++) {
             items[i] = new TestItem("id" + i, "name" + i);
         }
-        Pipeline p = Pipeline.create();
-        p.readFrom(TestSources.items(items))
-         .writeTo(elasticSink);
 
+        Pipeline p = writeItemsToIndexPipeline("my-index", elasticPipelineClientSupplier(), items);
         submitJob(p);
         refreshIndex();
 
@@ -87,14 +72,11 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
 
     @Test
     public void given_sinkCreatedByFactoryMethod_whenWriteToElasticSink_thenDocumentInIndex() throws Exception {
-        Sink<TestItem> elasticSink = ElasticSinks.elastic(
-                elasticClientSupplier(),
-                item -> new IndexRequest("my-index").source(item.asMap())
+        Pipeline p = writeItemsToIndexUsingSourceFactoryMethodPipeline(
+                "my-index",
+                elasticPipelineClientSupplier(),
+                new TestItem("id", "Frantisek")
         );
-
-        Pipeline p = Pipeline.create();
-        p.readFrom(TestSources.items(new TestItem("id", "Frantisek")))
-         .writeTo(elasticSink);
 
         submitJob(p);
         refreshIndex();
@@ -108,15 +90,11 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
         doc.put("name", "Fra");
         String id = indexDocument("my-index", doc);
 
-        Sink<TestItem> elasticSink = ElasticSinks.elastic(
-                elasticClientSupplier(),
-                item -> new UpdateRequest("my-index", item.getId()).doc(item.asMap())
+        Pipeline p = updateItemsInIndexPipeline(
+                "my-index",
+                elasticPipelineClientSupplier(),
+                new TestItem(id, "Frantisek")
         );
-
-        Pipeline p = Pipeline.create();
-        p.readFrom(TestSources.items(new TestItem(id, "Frantisek")))
-         .writeTo(elasticSink);
-
         submitJob(p);
         refreshIndex();
 
@@ -129,14 +107,11 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
         doc.put("name", "Fra");
         String id = indexDocument("my-index", doc);
 
-        Sink<TestItem> elasticSink = ElasticSinks.elastic(
-                elasticClientSupplier(),
-                (item) -> new DeleteRequest("my-index", item.getId())
+        Pipeline p = deleteItemsFromIndexPipeline(
+                "my-index",
+                elasticPipelineClientSupplier(),
+                new TestItem(id, "Frantisek")
         );
-
-        Pipeline p = Pipeline.create();
-        p.readFrom(TestSources.items(new TestItem(id, "Frantisek")))
-         .writeTo(elasticSink);
 
         submitJob(p);
         refreshIndex();
@@ -154,15 +129,11 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
     public void given_documentNotInIndex_whenWriteToElasticSinkUpdateRequest_then_jobShouldFail() throws Exception {
         elasticClient.indices().create(new CreateIndexRequest("my-index"), RequestOptions.DEFAULT);
 
-        Sink<TestItem> elasticSink = new ElasticSinkBuilder<>()
-                .clientFn(elasticClientSupplier())
-                .mapToRequestFn((TestItem item) -> new UpdateRequest("my-index", item.getId()).doc(item.asMap()))
-                .retries(0)
-                .build();
-
-        Pipeline p = Pipeline.create();
-        p.readFrom(TestSources.items(new TestItem("notExist", "Frantisek")))
-         .writeTo(elasticSink);
+        Pipeline p = updateItemsInIndexPipeline(
+                "my-index",
+                elasticPipelineClientSupplier(),
+                new TestItem("notExist", "Frantisek")
+        );
 
         assertThatThrownBy(() -> submitJob(p))
                 .hasRootCauseInstanceOf(JetException.class)
@@ -177,15 +148,11 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
         doc.put("name", "Frantisek");
         String id = indexDocument("my-index", doc);
 
-        Sink<String> elasticSink = new ElasticSinkBuilder<>()
-                .clientFn(elasticClientSupplier())
-                .mapToRequestFn((String item) -> new DeleteRequest("my-index", item))
-                .bulkRequestFn(() -> new BulkRequest().setRefreshPolicy(RefreshPolicy.IMMEDIATE))
-                .build();
-
-        Pipeline p = Pipeline.create();
-        p.readFrom(TestSources.items(id))
-         .writeTo(elasticSink);
+        Pipeline p = deleteItemsFromIndexPipeline(
+                "my-index",
+                elasticPipelineClientSupplier(),
+                new TestItem(id, "Frantisek")
+        );
 
         // Submit job 2x to delete non-existing document on 2nd run
         submitJob(p);
@@ -199,13 +166,13 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
         elasticClient.indices().refresh(new RefreshRequest("my-index"), DEFAULT);
     }
 
-    static class TestItem implements Serializable {
+    public static class TestItem implements Serializable {
 
         private static final long serialVersionUID = 1L;
         private final String id;
         private final String name;
 
-        TestItem(String id, String name) {
+        public TestItem(String id, String name) {
             this.id = id;
             this.name = name;
         }

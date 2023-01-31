@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,10 +56,10 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
     public void customers() throws Exception {
         // given
         List<String> expectedRecords = Arrays.asList(
-                "1001/0:INSERT:Customer {id=1001, firstName=Sally, lastName=Thomas, email=sally.thomas@acme.com}",
-                "1002/0:INSERT:Customer {id=1002, firstName=George, lastName=Bailey, email=gbailey@foobar.com}",
-                "1003/0:INSERT:Customer {id=1003, firstName=Edward, lastName=Walker, email=ed@walker.com}",
-                "1004/0:INSERT:Customer {id=1004, firstName=Anne, lastName=Kretchmar, email=annek@noanswer.org}",
+                "1001/0:SYNC:Customer {id=1001, firstName=Sally, lastName=Thomas, email=sally.thomas@acme.com}",
+                "1002/0:SYNC:Customer {id=1002, firstName=George, lastName=Bailey, email=gbailey@foobar.com}",
+                "1003/0:SYNC:Customer {id=1003, firstName=Edward, lastName=Walker, email=ed@walker.com}",
+                "1004/0:SYNC:Customer {id=1004, firstName=Anne, lastName=Kretchmar, email=annek@noanswer.org}",
                 "1004/1:UPDATE:Customer {id=1004, firstName=Anne Marie, lastName=Kretchmar, email=annek@noanswer.org}",
                 "1005/0:INSERT:Customer {id=1005, firstName=Jason, lastName=Bourne, email=jason@bourne.org}",
                 "1005/1:DELETE:Customer {id=1005, firstName=Jason, lastName=Bourne, email=jason@bourne.org}"
@@ -113,13 +113,13 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
     public void orders() {
         // given
         List<String> expectedRecords = Arrays.asList(
-                "10001/0:INSERT:Order {orderNumber=10001, orderDate=" + new Date(1452902400000L) +
+                "10001/0:SYNC:Order {orderNumber=10001, orderDate=" + new Date(1452902400000L) +
                         ", quantity=1, productId=102}",
-                "10002/0:INSERT:Order {orderNumber=10002, orderDate=" + new Date(1452988800000L) +
+                "10002/0:SYNC:Order {orderNumber=10002, orderDate=" + new Date(1452988800000L) +
                         ", quantity=2, productId=105}",
-                "10003/0:INSERT:Order {orderNumber=10003, orderDate=" + new Date(1455840000000L) +
+                "10003/0:SYNC:Order {orderNumber=10003, orderDate=" + new Date(1455840000000L) +
                         ", quantity=2, productId=106}",
-                "10004/0:INSERT:Order {orderNumber=10004, orderDate=" + new Date(1456012800000L) +
+                "10004/0:SYNC:Order {orderNumber=10004, orderDate=" + new Date(1456012800000L) +
                         ", quantity=1, productId=107}"
         );
 

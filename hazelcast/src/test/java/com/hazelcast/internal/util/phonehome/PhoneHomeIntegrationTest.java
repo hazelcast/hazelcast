@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.test.Accessors.getNode;
 import static org.mockito.Mockito.when;
@@ -72,7 +73,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
     }
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule();
+    public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
 
     private Node node;
     private PhoneHome phoneHome;
@@ -94,11 +95,12 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         when(dockerPath.toRealPath()).thenReturn(Paths.get(System.getProperty("user.dir")));
         when(kubernetesTokenPath.toRealPath()).thenReturn(Paths.get(System.getProperty("user.dir")));
 
-        cloudInfoCollector = new CloudInfoCollector("http://localhost:8080/latest/meta-data",
-                "http://localhost:8080/metadata/instance/compute?api-version=2018-02-01",
-                "http://localhost:8080/metadata.google.internal", kubernetesTokenPath, dockerPath);
+        int port = wireMockRule.port();
+        cloudInfoCollector = new CloudInfoCollector("http://localhost:" + port + "/latest/meta-data",
+                "http://localhost:" + port + "/metadata/instance/compute?api-version=2018-02-01",
+                "http://localhost:" + port + "/metadata.google.internal", kubernetesTokenPath, dockerPath);
 
-        phoneHome = new PhoneHome(node, "http://localhost:8080/ping", cloudInfoCollector);
+        phoneHome = new PhoneHome(node, "http://localhost:" + port + "/ping", cloudInfoCollector);
         stubUrls("200", "4XX", "4XX", "4XX");
     }
 

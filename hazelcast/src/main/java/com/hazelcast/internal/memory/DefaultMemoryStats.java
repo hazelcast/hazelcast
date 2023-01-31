@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.memory;
 
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 
 import static com.hazelcast.internal.memory.MemoryStatsSupport.freePhysicalMemory;
 import static com.hazelcast.internal.memory.MemoryStatsSupport.totalPhysicalMemory;
@@ -98,12 +98,12 @@ public class DefaultMemoryStats implements MemoryStats {
     @Override
     public String toString() {
         return "MemoryStats{"
-                + "Total Physical: " + MemorySize.toPrettyString(getTotalPhysical())
-                + ", Free Physical: " + MemorySize.toPrettyString(getFreePhysical())
-                + ", Max Heap: " + MemorySize.toPrettyString(getMaxHeap())
-                + ", Committed Heap: " + MemorySize.toPrettyString(getCommittedHeap())
-                + ", Used Heap: " + MemorySize.toPrettyString(getUsedHeap())
-                + ", Free Heap: " + MemorySize.toPrettyString(getFreeHeap())
+                + "Total Physical: " + Capacity.toPrettyString(getTotalPhysical())
+                + ", Free Physical: " + Capacity.toPrettyString(getFreePhysical())
+                + ", Max Heap: " + Capacity.toPrettyString(getMaxHeap())
+                + ", Committed Heap: " + Capacity.toPrettyString(getCommittedHeap())
+                + ", Used Heap: " + Capacity.toPrettyString(getUsedHeap())
+                + ", Free Heap: " + Capacity.toPrettyString(getFreeHeap())
                 + ", " + getGCStats()
                 + '}';
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,13 @@ package com.hazelcast.client.impl.management;
 
 import com.hazelcast.cluster.ClusterState;
 
+import java.util.UUID;
+
 public class MCClusterMetadata {
     private ClusterState currentState;
     private long clusterTime;
     private String memberVersion;
+    private UUID clusterId;
 
     public ClusterState getCurrentState() {
         return currentState;
@@ -46,4 +49,13 @@ public class MCClusterMetadata {
     public void setMemberVersion(String memberVersion) {
         this.memberVersion = memberVersion;
     }
+
+    public UUID getClusterId() {
+        return clusterId;
+    }
+
+    public void setClusterId(UUID clusterId) {
+        this.clusterId = clusterId;
+    }
+
 }

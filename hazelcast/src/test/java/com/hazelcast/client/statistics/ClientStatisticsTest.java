@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.client.statistics;
 
 import com.hazelcast.cache.ICache;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
@@ -31,6 +32,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICacheManager;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -43,6 +45,7 @@ import org.junit.runner.RunWith;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +56,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.client.impl.statistics.ClientStatisticsService.split;
 import static com.hazelcast.client.impl.statistics.ClientStatisticsService.unescapeSpecialCharacters;
+import static com.hazelcast.instance.impl.TestUtil.getNode;
 import static com.hazelcast.test.Accessors.getClientEngineImpl;
 import static java.lang.String.format;
 import static org.junit.Assert.assertArrayEquals;
@@ -191,6 +195,36 @@ public class ClientStatisticsTest extends ClientTestSupport {
     }
 
     @Test
+    public void testStatisticsSentImmediatelyOnClusterChange() {
+        HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
+        // set the collection frequency to something really high to test that statistics are sent on cluster change
+        clientConfig.getMetricsConfig()
+                .setCollectionFrequencySeconds(Integer.MAX_VALUE);
+
+        HazelcastInstance clientInstance = hazelcastFactory.newHazelcastClient(clientConfig);
+        HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(clientInstance);
+
+        ReconnectListener reconnectListener = new ReconnectListener();
+        client.getLifecycleService().addLifecycleListener(reconnectListener);
+
+        hazelcastInstance.getLifecycleService().terminate();
+        Node hazelcastNode = getNode(hazelcastFactory.newHazelcastInstance());
+
+        assertOpenEventually(reconnectListener.reconnectedLatch);
+
+        // Statistics should be sent in some time that is shorter than the period
+        assertTrueEventually(() -> {
+            Collection<ClientEndpoint> endpoints = hazelcastNode.getClientEngine().getEndpointManager().getEndpoints();
+            ClientEndpoint[] endpointArray = endpoints.toArray(new ClientEndpoint[0]);
+            assertNotNull("Statistics are not sent on cluster change", endpointArray[0].getClientStatistics());
+        });
+    }
+
+    @Test
     public void testStatisticsTwoClients() {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
         final HazelcastClientInstanceImpl client1 = createHazelcastClient();
@@ -202,8 +236,8 @@ public class ClientStatisticsTest extends ClientTestSupport {
             assertNotNull(clientStatistics);
             assertEquals(2, clientStatistics.size());
             List<UUID> expectedUUIDs = new ArrayList<>(2);
-            expectedUUIDs.add(client1.getClientClusterService().getLocalClient().getUuid());
-            expectedUUIDs.add(client2.getClientClusterService().getLocalClient().getUuid());
+            expectedUUIDs.add(client1.getLocalEndpoint().getUuid());
+            expectedUUIDs.add(client2.getLocalEndpoint().getUuid());
             for (Map.Entry<UUID, ClientStatistics> clientEntry : clientStatistics.entrySet()) {
                 assertTrue(expectedUUIDs.contains(clientEntry.getKey()));
                 String clientAttributes = clientEntry.getValue().clientAttributes();
@@ -299,7 +333,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
         assertEquals("clientStatistics.size() should be 1", 1, clientStatistics.size());
         Set<Map.Entry<UUID, ClientStatistics>> entries = clientStatistics.entrySet();
         Map.Entry<UUID, ClientStatistics> statEntry = entries.iterator().next();
-        assertEquals(client.getClientClusterService().getLocalClient().getUuid(), statEntry.getKey());
+        assertEquals(client.getLocalEndpoint().getUuid(), statEntry.getKey());
         return parseClientAttributeValue(statEntry.getValue().clientAttributes());
     }
 

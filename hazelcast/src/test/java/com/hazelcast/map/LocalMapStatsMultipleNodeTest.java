@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -52,8 +51,27 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LocalMapStatsMultipleNodeTest extends HazelcastTestSupport {
 
+    //https://github.com/hazelcast/hazelcast/issues/21785
     @Test
-    public void testHits_whenMultipleNodes() throws InterruptedException {
+    public void testHits_isZero_afterPutAndReplicated() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance instance1 = factory.newHazelcastInstance(getConfig());
+        IMap<Integer, Integer> iMap = instance1.getMap("test-hits");
+
+        for (int i = 0; i < 100; i++) {
+            iMap.put(i, i);
+        }
+
+        HazelcastInstance instance2 = factory.newHazelcastInstance(getConfig());
+        HazelcastInstance instance3 = factory.newHazelcastInstance(getConfig());
+        waitAllForSafeState(instance1, instance2, instance3);
+        assertEquals(0, instance1.getMap("test-hits").getLocalMapStats().getHits());
+        assertEquals(0, instance2.getMap("test-hits").getLocalMapStats().getHits());
+        assertEquals(0, instance3.getMap("test-hits").getLocalMapStats().getHits());
+    }
+
+    @Test
+    public void testHits_whenMultipleNodes() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(getConfig());
         MultiMap<Object, Object> multiMap0 = instances[0].getMultiMap("testHits_whenMultipleNodes");
@@ -81,7 +99,7 @@ public class LocalMapStatsMultipleNodeTest extends HazelcastTestSupport {
     public void testPutStats_afterPutAll() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(getConfig());
-        Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+        Map<Integer, Integer> map = new HashMap<>();
         for (int i = 1; i <= 5000; i++) {
             map.put(i, i);
         }
@@ -89,16 +107,11 @@ public class LocalMapStatsMultipleNodeTest extends HazelcastTestSupport {
         IMap<Integer, Integer> iMap = instances[0].getMap("example");
         iMap.putAll(map);
         final LocalMapStats localMapStats = iMap.getLocalMapStats();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(5000, localMapStats.getPutOperationCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(5000, localMapStats.getPutOperationCount()));
     }
 
     @Test
-    public void testLocalMapStats_withMemberGroups() throws Exception {
+    public void testLocalMapStats_withMemberGroups() {
         final String mapName = randomMapName();
         final String[] firstMemberGroup = {"127.0.0.1", "127.0.0.2"};
         final String[] secondMemberGroup = {"127.0.0.3"};
@@ -143,31 +156,37 @@ public class LocalMapStatsMultipleNodeTest extends HazelcastTestSupport {
             map.set(i, i);
             assertEquals(i, map.get(i));
         }
-        LocalMapStats localMapStats = map.getLocalMapStats();
-        assertEquals(2000, localMapStats.getHits());
-        assertEquals(1000, localMapStats.getPutOperationCount());
-        assertEquals(1000, localMapStats.getSetOperationCount());
-        assertEquals(1000, localMapStats.getGetOperationCount());
+
+        // eviction happens after response return, this
+        // is why we have eventual assertion here.
+        assertTrueEventually(() -> {
+            LocalMapStats localMapStats = map.getLocalMapStats();
+            assertEquals(2000, localMapStats.getHits());
+            assertEquals(1000, localMapStats.getPutOperationCount());
+            assertEquals(1000, localMapStats.getSetOperationCount());
+            assertEquals(1000, localMapStats.getGetOperationCount());
+        });
+
         assertOpenEventually(entryEvictedLatch);
-        localMapStats = map.getLocalMapStats();
-        assertEquals(2000, localMapStats.getHits());
-        assertEquals(1000, localMapStats.getPutOperationCount());
-        assertEquals(1000, localMapStats.getSetOperationCount());
-        assertEquals(1000, localMapStats.getGetOperationCount());
+
+        assertTrueEventually(() -> {
+            LocalMapStats localMapStats = map.getLocalMapStats();
+            assertEquals(2000, localMapStats.getHits());
+            assertEquals(1000, localMapStats.getPutOperationCount());
+            assertEquals(1000, localMapStats.getSetOperationCount());
+            assertEquals(1000, localMapStats.getGetOperationCount());
+        });
     }
 
     private void assertBackupEntryCount(final long expectedBackupEntryCount, final String mapName,
                                         final Collection<HazelcastInstance> nodes) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                long backup = 0;
-                for (HazelcastInstance node : nodes) {
-                    final IMap<Object, Object> map = node.getMap(mapName);
-                    backup += getBackupEntryCount(map);
-                }
-                assertEquals(expectedBackupEntryCount, backup);
+        assertTrueEventually(() -> {
+            long backup = 0;
+            for (HazelcastInstance node : nodes) {
+                final IMap<Object, Object> map = node.getMap(mapName);
+                backup += getBackupEntryCount(map);
             }
+            assertEquals(expectedBackupEntryCount, backup);
         });
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.config.MapConfig;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -48,57 +49,63 @@ public final class ExpirationTimeSetter {
     }
 
     /**
-     * @param time value of ttl or maxIdle
-     * @return {@code true} if time parameter is
-     * between zero and long-max, this means ttl/maxIdle
-     * value is configured otherwise {@code false}
+     * Pick the right value for TTL expiry.
+     *
+     * @param mapConfig           used to get configured TTL seconds
+     * @param millisFromOperation user provided TTL during operation call
+     * @return TTL value in millis
      */
-    public static boolean isTtlOrMaxIdleConfigured(long time) {
-        return time > 0 && time < Long.MAX_VALUE;
+    public static long pickTTLMillis(MapConfig mapConfig, long millisFromOperation) {
+        return pickRightTimeInMillis(mapConfig.getTimeToLiveSeconds(), millisFromOperation);
     }
 
     /**
-     * Decides if TTL millis should to be set on record.
+     * Pick the right value for idleness expiry.
      *
-     * @param mapConfig          used to get configured TTL
-     * @param operationTTLMillis user provided TTL during operation call like put with TTL
-     * @return TTL value in millis to set to record
+     * @param mapConfig           used to get configured maxIdleSeconds
+     * @param millisFromOperation user provided maxIdle value during operation call
+     * @return maxIdle value in millis
      */
-    public static long pickTTLMillis(MapConfig mapConfig, long operationTTLMillis) {
-        if (operationTTLMillis < 0 && mapConfig.getTimeToLiveSeconds() == 0) {
-            return Long.MAX_VALUE;
-        }
-
-        if (operationTTLMillis > 0) {
-            // if user set operationTTLMillis when calling operation, use it
-            return operationTTLMillis;
-        } else if (operationTTLMillis == 0) {
-            return Long.MAX_VALUE;
-        } else if (mapConfig.getTimeToLiveSeconds() > 0) {
-            // if this is the first creation of entry, try to get TTL from mapConfig
-            return SECONDS.toMillis(mapConfig.getTimeToLiveSeconds());
-        } else {
-            // if we are here, entry should live forever
-            return Long.MAX_VALUE;
-        }
+    public static long pickMaxIdleMillis(MapConfig mapConfig, long millisFromOperation) {
+        return pickRightTimeInMillis(mapConfig.getMaxIdleSeconds(), millisFromOperation);
     }
 
-    public static long pickMaxIdleMillis(MapConfig mapConfig, long operationMaxIdleMillis) {
-        if (operationMaxIdleMillis < 0 && mapConfig.getMaxIdleSeconds() == 0) {
+    /**
+     * Have right expiry value by using mapConfig or operation provided values.
+     *
+     * @param secondsFromMapConfig expiry in seconds from map config
+     * @param millisFromOperation  expiry in millis from operation
+     * @return time in millis
+     */
+    private static long pickRightTimeInMillis(int secondsFromMapConfig, long millisFromOperation) {
+        if (millisFromOperation > 0) {
+            // if user set millisFromOperation when calling operation, use it
+            return millisFromOperation;
+        }
+
+        if (millisFromOperation == 0) {
             return Long.MAX_VALUE;
         }
 
-        if (operationMaxIdleMillis > 0) {
-            // if user set operationMaxIdleMillis when calling operation, use it
-            return operationMaxIdleMillis;
-        } else if (operationMaxIdleMillis == 0) {
-            return Long.MAX_VALUE;
-        } else if (mapConfig.getMaxIdleSeconds() > 0) {
-            // if this is the first creation of entry, try to get max-idle from mapConfig
-            return SECONDS.toMillis(mapConfig.getMaxIdleSeconds());
-        } else {
-            // if we are here, entry should live forever
-            return Long.MAX_VALUE;
+        if (secondsFromMapConfig > 0 && secondsFromMapConfig < Integer.MAX_VALUE) {
+            // if this is the first creation of entry, try to get expiry value from mapConfig
+            return SECONDS.toMillis(secondsFromMapConfig);
         }
+        // if we are here, entry should live forever
+        return Long.MAX_VALUE;
+    }
+
+    public static int toSeconds(long millis) {
+        long seconds = MILLISECONDS.toSeconds(millis);
+        if (seconds == 0 && millis != 0) {
+            seconds = 1;
+        }
+        return seconds > Integer.MAX_VALUE
+                ? Integer.MAX_VALUE : (int) seconds;
+    }
+
+    public static long toMillis(int seconds) {
+        return seconds == Integer.MAX_VALUE
+                ? Long.MAX_VALUE : SECONDS.toMillis(seconds);
     }
 }

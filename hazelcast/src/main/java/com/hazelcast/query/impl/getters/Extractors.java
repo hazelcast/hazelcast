@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,17 +32,17 @@ import com.hazelcast.query.impl.DefaultArgumentParser;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractArgumentsFromAttributeName;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeNameNameWithoutArguments;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.instantiateExtractors;
+import static com.hazelcast.query.impl.getters.GetterCache.EVICTABLE_GETTER_CACHE_SUPPLIER;
 
 // one instance per MapContainer
 public final class Extractors {
 
-    private static final int MAX_CLASSES_IN_CACHE = 1000;
-    private static final int MAX_GETTERS_PER_CLASS_IN_CACHE = 100;
-    private static final float EVICTION_PERCENTAGE = 0.2f;
+    final GetterCache getterCache;
 
     private volatile PortableGetter portableGetter;
     private volatile JsonDataGetter jsonDataGetter;
@@ -55,16 +55,18 @@ public final class Extractors {
      */
     private final Map<String, ValueExtractor> extractors;
     private final InternalSerializationService ss;
-    private final EvictableGetterCache getterCache;
     private final DefaultArgumentParser argumentsParser;
 
-    private Extractors(List<AttributeConfig> attributeConfigs,
-                       ClassLoader classLoader, InternalSerializationService ss) {
+    private Extractors(
+            List<AttributeConfig> attributeConfigs,
+            ClassLoader classLoader,
+            InternalSerializationService ss,
+            Supplier<GetterCache> getterCacheSupplier
+    ) {
         this.extractors = attributeConfigs == null
                 ? Collections.<String, ValueExtractor>emptyMap()
                 : instantiateExtractors(attributeConfigs, classLoader);
-        this.getterCache = new EvictableGetterCache(MAX_CLASSES_IN_CACHE,
-                MAX_GETTERS_PER_CLASS_IN_CACHE, EVICTION_PERCENTAGE, false);
+        this.getterCache = getterCacheSupplier.get();
         this.argumentsParser = new DefaultArgumentParser();
         this.ss = ss;
     }
@@ -73,11 +75,14 @@ public final class Extractors {
         return extract(target, attributeName, metadata, true);
     }
 
-    public Object extract(Object target, String attributeName, Object metadata, boolean failOnMissingReflectiveAttribute) {
+    public Object extract(Object target, String attributeName, Object metadata,
+                          boolean failOnMissingReflectiveAttribute) {
         Object targetObject = getTargetObject(target);
         if (targetObject != null) {
             Getter getter = getGetter(targetObject, attributeName, failOnMissingReflectiveAttribute);
             try {
+                // For CompactGetter and PortableGetter metadata is a boolean
+                // indicating whether lazy deserialization should be used or not.
                 return getter.getValue(targetObject, attributeName, metadata);
             } catch (Exception ex) {
                 throw new QueryException(ex);
@@ -194,11 +199,17 @@ public final class Extractors {
     public static final class Builder {
         private ClassLoader classLoader;
         private List<AttributeConfig> attributeConfigs;
+        private Supplier<GetterCache> getterCacheSupplier = EVICTABLE_GETTER_CACHE_SUPPLIER;
 
         private final InternalSerializationService ss;
 
         public Builder(InternalSerializationService ss) {
             this.ss = Preconditions.checkNotNull(ss);
+        }
+
+        public Builder setGetterCacheSupplier(Supplier<GetterCache> getterCacheSupplier) {
+            this.getterCacheSupplier = getterCacheSupplier;
+            return this;
         }
 
         public Builder setAttributeConfigs(List<AttributeConfig> attributeConfigs) {
@@ -215,7 +226,7 @@ public final class Extractors {
          * @return a new instance of Extractors
          */
         public Extractors build() {
-            return new Extractors(attributeConfigs, classLoader, ss);
+            return new Extractors(attributeConfigs, classLoader, ss, getterCacheSupplier);
         }
     }
 }

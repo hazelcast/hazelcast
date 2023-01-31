@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,15 @@ class SingleRecordStoreForcedEviction implements ForcedEviction {
 
     @Override
     public boolean forceEvictAndRun(MapOperation mapOperation, double evictionPercentage) {
+        return forceEvictAndRun0(mapOperation, evictionPercentage, null);
+    }
+
+    @Override
+    public boolean forceEvictAndRun(MapOperation mapOperation, double evictionPercentage, Runnable runnable) {
+        return forceEvictAndRun0(mapOperation, evictionPercentage, runnable);
+    }
+
+    private boolean forceEvictAndRun0(MapOperation mapOperation, double evictionPercentage, Runnable runnable) {
         assert evictionPercentage > 0 && evictionPercentage <= 1;
 
         RecordStore recordStore = mapOperation.recordStore;
@@ -58,7 +67,11 @@ class SingleRecordStoreForcedEviction implements ForcedEviction {
             try {
                 Evictor evictor = recordStore.getMapContainer().getEvictor();
                 evictor.forceEvictByPercentage(recordStore, evictionPercentage);
-                mapOperation.runInternal();
+                if (runnable != null) {
+                    runnable.run();
+                } else {
+                    mapOperation.runInternal();
+                }
                 return true;
             } catch (NativeOutOfMemoryError e) {
                 ignore(e);

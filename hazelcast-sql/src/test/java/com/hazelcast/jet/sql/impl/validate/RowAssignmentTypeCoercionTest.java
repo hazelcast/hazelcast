@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -519,7 +519,9 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                 TestParams.passingCase(1809, REAL, BIGINT, "cast(42 as real)", 42F, 42L)
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but REAL was found"),
                 TestParams.passingCase(1810, REAL, BIGINT, "cast(42.1 as real)", 42.1F, 42L)
-                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but REAL was found"),
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but REAL was found")
+                        // the following case fails because of https://issues.apache.org/jira/browse/CALCITE-5228
+                        .withExpectedLiteralFailureRegex("For input string: \"42.1\""),
                 TestParams.failingCase(1811, REAL, BIGINT, "cast(18223372036854775808000 as real)", 18223372036854775808000F)
                         .withExpectedLiteralFailureRegex("Numeric overflow while converting REAL to BIGINT")
                         .withExpectedColumnFailureRegex("Numeric overflow while converting REAL to BIGINT")
@@ -588,7 +590,9 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                 TestParams.passingCase(1912, DOUBLE, REAL, "cast(42 as double)", 42D, 42F)
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of REAL type, but DOUBLE was found"),
                 TestParams.passingCase(1913, DOUBLE, BIGINT, "cast(42.1 as double)", 42.1D, 42L)
-                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but DOUBLE was found"),
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but DOUBLE was found")
+                        // the following case fails because of https://issues.apache.org/jira/browse/CALCITE-5228
+                        .withExpectedLiteralFailureRegex("For input string: \"42.1\""),
                 TestParams.failingCase(1914, DOUBLE, REAL, "cast(42e42 as double)", 42e42D)
                         .withExpectedLiteralFailureRegex("Numeric overflow while converting DOUBLE to REAL")
                         .withExpectedColumnFailureRegex("Numeric overflow while converting DOUBLE to REAL")
@@ -896,9 +900,8 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of JSON type, but OBJECT was found"),
 
                 // JSON
-                TestParams.failingCase(2501, JSON, VARCHAR, "CAST('\"foo\"' AS JSON)", new HazelcastJsonValue("\"foo\""))
-                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type JSON")
-                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type JSON")
+                TestParams.passingCase(2501, JSON, VARCHAR, "CAST('\"foo\"' AS JSON)", new HazelcastJsonValue("\"foo\""), "\"foo\"")
+                        // JSON->VARCHAR coercion is not supported for dynamic parameters
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of VARCHAR type, but JSON was found"),
                 TestParams.failingCase(2502, JSON, BOOLEAN, "CAST('true' AS JSON)", new HazelcastJsonValue("true"))
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type JSON")

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,16 @@
 package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.connection.AddressProvider;
-import com.hazelcast.client.impl.connection.Addresses;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Cluster;
+import com.hazelcast.cluster.InitialMembershipEvent;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -38,12 +39,15 @@ import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.UUID;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonMap;
+import static java.util.Collections.emptySet;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -63,27 +67,14 @@ public class TranslateToPublicAddressProviderTest {
     }
 
     @Test
-    public void nonDefaultAddressProvider() {
-        // given
-        TranslateToPublicAddressProvider translateProvider = createTranslateProvider();
-
-        // when
-        translateProvider.refresh(new TestAddressProvider(), null);
-        boolean result = translateProvider.get();
-
-        // then
-        assertFalse(result);
-    }
-
-    @Test
     public void propertyTrue() {
         // given
         config.setProperty(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED.toString(), "true");
         TranslateToPublicAddressProvider translateProvider = createTranslateProvider();
 
         // when
-        translateProvider.refresh(defaultAddressProvider(), null);
-        boolean result = translateProvider.get();
+        translateProvider.init(new InitialMembershipEvent(mock(Cluster.class), emptySet()));
+        boolean result = translateProvider.getAsBoolean();
 
         // then
         assertTrue(result);
@@ -96,8 +87,8 @@ public class TranslateToPublicAddressProviderTest {
         TranslateToPublicAddressProvider translateProvider = createTranslateProvider();
 
         // when
-        translateProvider.refresh(defaultAddressProvider(), null);
-        boolean result = translateProvider.get();
+        translateProvider.init(new InitialMembershipEvent(mock(Cluster.class), emptySet()));
+        boolean result = translateProvider.getAsBoolean();
 
         // then
         assertFalse(result);
@@ -110,8 +101,9 @@ public class TranslateToPublicAddressProviderTest {
         TranslateToPublicAddressProvider translateProvider = createTranslateProvider();
 
         // when
-        translateProvider.refresh(defaultAddressProvider(), asList(member("192.168.0.1"), member("127.0.0.1")));
-        boolean result = translateProvider.get();
+        translateProvider.init(new InitialMembershipEvent(mock(Cluster.class),
+                new HashSet<>(asList(member("192.168.0.1"), member("127.0.0.1")))));
+        boolean result = translateProvider.getAsBoolean();
 
         // then
         assertFalse(result);
@@ -124,8 +116,9 @@ public class TranslateToPublicAddressProviderTest {
         TranslateToPublicAddressProvider translateProvider = createTranslateProvider();
 
         // when
-        translateProvider.refresh(defaultAddressProvider(), asList(member("localhost")));
-        boolean result = translateProvider.get();
+        translateProvider.init(new InitialMembershipEvent(mock(Cluster.class),
+                new HashSet<>(Collections.singletonList(member("localhost")))));
+        boolean result = translateProvider.getAsBoolean();
 
         // then
         assertFalse(result);
@@ -138,8 +131,9 @@ public class TranslateToPublicAddressProviderTest {
         TranslateToPublicAddressProvider translateProvider = createTranslateProvider();
 
         // when
-        translateProvider.refresh(defaultAddressProvider(), asList(member("127.0.0.1")));
-        boolean result = translateProvider.get();
+        translateProvider.init(new InitialMembershipEvent(mock(Cluster.class),
+                new HashSet<>(Collections.singletonList(member("127.0.0.1")))));
+        boolean result = translateProvider.getAsBoolean();
 
         // then
         assertFalse(result);
@@ -152,8 +146,9 @@ public class TranslateToPublicAddressProviderTest {
         TranslateToPublicAddressProvider translateProvider = createTranslateProvider();
 
         // when
-        translateProvider.refresh(defaultAddressProvider(), asList(member("127.0.0.1")));
-        boolean result = translateProvider.get();
+        translateProvider.init(new InitialMembershipEvent(mock(Cluster.class),
+                new HashSet<>(Collections.singletonList(member("127.0.0.1")))));
+        boolean result = translateProvider.getAsBoolean();
 
         // then
         assertFalse(result);
@@ -165,8 +160,9 @@ public class TranslateToPublicAddressProviderTest {
         TranslateToPublicAddressProvider translateProvider = createTranslateProvider();
 
         // when
-        translateProvider.refresh(defaultAddressProvider(), asList(member("127.0.0.1")));
-        boolean result = translateProvider.get();
+        translateProvider.init(new InitialMembershipEvent(mock(Cluster.class),
+                new HashSet<>(Collections.singletonList(member("127.0.0.1")))));
+        boolean result = translateProvider.getAsBoolean();
 
         // then
         assertFalse(result);
@@ -179,9 +175,10 @@ public class TranslateToPublicAddressProviderTest {
         TranslateToPublicAddressProvider translateProvider = createTranslateProvider();
 
         // when
-        translateProvider.refresh(defaultAddressProvider(),
-                asList(member(REACHABLE_HOST, UNREACHABLE_HOST), member(REACHABLE_HOST, UNREACHABLE_HOST)));
-        boolean result = translateProvider.get();
+        translateProvider.init(new InitialMembershipEvent(mock(Cluster.class),
+                new HashSet<>(asList(member(REACHABLE_HOST, UNREACHABLE_HOST),
+                        member(REACHABLE_HOST, UNREACHABLE_HOST)))));
+        boolean result = translateProvider.getAsBoolean();
 
         // then
         assertFalse(result);
@@ -193,8 +190,9 @@ public class TranslateToPublicAddressProviderTest {
         TranslateToPublicAddressProvider translateProvider = createTranslateProvider();
 
         // when
-        translateProvider.refresh(defaultAddressProvider(), asList(member(UNREACHABLE_HOST, UNREACHABLE_HOST)));
-        boolean result = translateProvider.get();
+        translateProvider.init(new InitialMembershipEvent(mock(Cluster.class),
+                new HashSet<>(Collections.singletonList(member(UNREACHABLE_HOST, UNREACHABLE_HOST)))));
+        boolean result = translateProvider.getAsBoolean();
 
         // then
         assertFalse(result);
@@ -207,8 +205,9 @@ public class TranslateToPublicAddressProviderTest {
         TranslateToPublicAddressProvider translateProvider = createTranslateProvider();
 
         // when
-        translateProvider.refresh(defaultAddressProvider(), asList(member(UNREACHABLE_HOST, REACHABLE_HOST)));
-        boolean result = translateProvider.get();
+        translateProvider.init(new InitialMembershipEvent(mock(Cluster.class),
+                new HashSet<>(Collections.singletonList(member(UNREACHABLE_HOST, REACHABLE_HOST)))));
+        boolean result = translateProvider.getAsBoolean();
 
         // then
         assertTrue(result);
@@ -221,40 +220,40 @@ public class TranslateToPublicAddressProviderTest {
     }
 
     @Nonnull
-    private DefaultAddressProvider defaultAddressProvider() {
-        return new DefaultAddressProvider(config.getNetworkConfig());
-    }
-
-    @Nonnull
-    private MemberInfo member(String host) {
+    private Member member(String host) {
         try {
-            return new MemberInfo(new Address(host, 5701), UUID.randomUUID(), emptyMap(), false, VERSION);
+            MemberImpl.Builder memberBuilder;
+            memberBuilder = new MemberImpl.Builder(new Address(host, 5701));
+            return memberBuilder.version(VERSION)
+                    .uuid(UUID.randomUUID())
+                    .attributes(emptyMap())
+                    .liteMember(false).build();
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Nonnull
-    private MemberInfo member(String host, String publicHost) {
+    private Member member(String host, String publicHost) {
+
         try {
+            MemberImpl.Builder memberBuilder;
+
             Address internalAddress = new Address(host, 5701);
             Address publicAddress = new Address(publicHost, 5701);
-            return new MemberInfo(internalAddress, UUID.randomUUID(), emptyMap(), false, VERSION,
-                    singletonMap(EndpointQualifier.resolve(ProtocolType.CLIENT, "public"), publicAddress));
+
+            Map<EndpointQualifier, Address> addressMap = new HashMap<>();
+            addressMap.put(EndpointQualifier.resolve(ProtocolType.CLIENT, "public"), publicAddress);
+            addressMap.put(EndpointQualifier.MEMBER, internalAddress);
+
+            memberBuilder = new MemberImpl.Builder(addressMap);
+            return memberBuilder.version(VERSION)
+                    .uuid(UUID.randomUUID())
+                    .attributes(emptyMap())
+                    .liteMember(false).build();
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private class TestAddressProvider implements AddressProvider {
-        @Override
-        public Address translate(Address address) {
-            return address;
-        }
-
-        @Override
-        public Addresses loadAddresses() {
-            return new Addresses(emptyList());
-        }
-    }
 }

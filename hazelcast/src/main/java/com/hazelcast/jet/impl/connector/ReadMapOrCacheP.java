@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
@@ -48,9 +47,6 @@ import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.map.impl.LazyMapEntry;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.iterator.AbstractCursor;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.operation.MapOperation;
@@ -60,7 +56,6 @@ import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.query.ResultSegment;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -68,7 +63,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 
@@ -76,14 +70,12 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.security.Permission;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -96,7 +88,6 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
 import static com.hazelcast.jet.impl.util.Util.distributeObjects;
-import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -136,6 +127,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
     private ReadMapOrCacheP(@Nonnull Reader<F, B, R> reader, @Nonnull int[] partitionIds) {
         this.reader = reader;
         this.partitionIds = partitionIds;
+
         maxParallelRead = Math.min(partitionIds.length, MAX_PARALLEL_READ);
         readPointers = new IterationPointer[partitionIds.length][];
         Arrays.fill(readPointers, new IterationPointer[]{new IterationPointer(Integer.MAX_VALUE, -1)});
@@ -152,6 +144,11 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             }
         }
         return false;
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
     }
 
     @SuppressWarnings("unchecked")
@@ -288,6 +285,11 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         }
 
         @Override
+        public boolean closeIsCooperative() {
+            return true;
+        }
+
+        @Override
         public int preferredLocalParallelism() {
             return 1;
         }
@@ -329,6 +331,11 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
                     .map(partitions ->
                             new ReadMapOrCacheP<>(readerSupplier.apply(hzInstance, serializationService), partitions))
                     .collect(toList());
+        }
+
+        @Override
+        public boolean closeIsCooperative() {
+            return true;
         }
 
         @Override
@@ -509,14 +516,9 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
     }
 
     static class LocalMapReader
-            extends Reader<CompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>> {
+            extends Reader<InternalCompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>> {
 
-        private static final int RETRY_DELAY = 100;
         private final MapProxyImpl mapProxyImpl;
-        private final MapServiceContext mapServiceContext;
-        private final NodeEngineImpl nodeEngine;
-        private final boolean isHD;
-
 
         LocalMapReader(@Nonnull HazelcastInstance hzInstance,
                        @Nonnull InternalSerializationService serializationService,
@@ -524,78 +526,15 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             super(mapName,
                     AbstractCursor::getIterationPointers,
                     AbstractCursor::getBatch);
-            this.serializationService = serializationService;
             this.mapProxyImpl = (MapProxyImpl) hzInstance.getMap(mapName);
-            nodeEngine = getNodeEngine(hzInstance);
-            MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
-            mapServiceContext = service.getMapServiceContext();
-            isHD = mapProxyImpl.getMapConfig().getInMemoryFormat().equals(InMemoryFormat.NATIVE);
+            this.serializationService = serializationService;
         }
 
         @Nonnull @Override
-        public CompletableFuture<MapEntriesWithCursor> readBatch(int partitionId, IterationPointer[] pointers) {
-            if (isHD) {
-                return readWithOperationService(partitionId, pointers);
-            }
-
-            CompletableFuture<MapEntriesWithCursor> f = new CompletableFuture<>();
-            read0(f, partitionId, pointers);
-            return f;
-        }
-
-        private void read0(CompletableFuture<MapEntriesWithCursor> f, int partitionId, IterationPointer[] pointers) {
-            try {
-                boolean isOwned = mapServiceContext.getOrInitCachedMemberPartitions().contains(partitionId);
-
-                if (isOwned) {
-                    int migrationStamp = mapServiceContext.getService().getMigrationStamp();
-
-                    MapEntriesWithCursor result = readFromRecordStore(partitionId, pointers);
-
-                    if (validateMigrationStamp(migrationStamp)) {
-                        f.complete(result);
-                    } else {
-                        scheduleForLater(f, partitionId, pointers);
-                    }
-                } else {
-                    CompletableFuture<MapEntriesWithCursor> f1 = readWithOperationService(partitionId, pointers);
-                    f1.whenComplete((r, t) -> {
-                        if (t != null) {
-                            f.completeExceptionally(t);
-                        } else {
-                            f.complete(r);
-                        }
-                    });
-                }
-            } catch (Throwable t) {
-                f.completeExceptionally(t);
-            }
-        }
-
-        private void scheduleForLater(CompletableFuture<MapEntriesWithCursor> f, int partitionId, IterationPointer[] pointers) {
-            nodeEngine.getExecutionService().schedule(() -> read0(f, partitionId, pointers), RETRY_DELAY, TimeUnit.MILLISECONDS);
-        }
-
-        private MapEntriesWithCursor readFromRecordStore(int partitionId, IterationPointer[] pointers) {
-            PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
-            RecordStore recordStore = partitionContainer.getExistingRecordStore(mapProxyImpl.getName());
-
-            if (recordStore != null) {
-                //Fetch entries using recordStore
-                return recordStore.fetchEntries(pointers, MAX_FETCH_SIZE);
-            }
-            //Partition is empty
-            return new MapEntriesWithCursor(new ArrayList<>(), new IterationPointer[]{new IterationPointer(-1, -1)});
-        }
-
-        private CompletableFuture<MapEntriesWithCursor> readWithOperationService(int partitionId, IterationPointer[] pointers) {
+        public InternalCompletableFuture<MapEntriesWithCursor> readBatch(int partitionId, IterationPointer[] pointers) {
             MapOperationProvider operationProvider = mapProxyImpl.getOperationProvider();
             Operation op = operationProvider.createFetchEntriesOperation(objectName, pointers, MAX_FETCH_SIZE);
             return mapProxyImpl.getOperationService().invokeOnPartition(mapProxyImpl.getServiceName(), op, partitionId);
-        }
-
-        private boolean validateMigrationStamp(int migrationStamp) {
-            return mapServiceContext.getService().validateMigrationStamp(migrationStamp);
         }
 
         @Nullable @Override

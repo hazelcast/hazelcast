@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,24 @@ import javax.annotation.Nonnull;
 public class DummyCompactSerializer implements CompactSerializer<DummyCompactSerializable> {
     @Nonnull
     @Override
-    public DummyCompactSerializable read(@Nonnull CompactReader in) {
+    public DummyCompactSerializable read(@Nonnull CompactReader reader) {
         return new DummyCompactSerializable();
     }
 
     @Override
-    public void write(@Nonnull CompactWriter out, @Nonnull DummyCompactSerializable object) {
+    public void write(@Nonnull CompactWriter writer, @Nonnull DummyCompactSerializable object) {
 
+    }
+
+    @Nonnull
+    @Override
+    public String getTypeName() {
+        return "dummy";
+    }
+
+    @Nonnull
+    @Override
+    public Class<DummyCompactSerializable> getCompactClass() {
+        return DummyCompactSerializable.class;
     }
 }

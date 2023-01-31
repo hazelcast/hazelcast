@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.jet.RestartableException;
+import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlException;
@@ -71,6 +73,16 @@ public final class QueryUtils {
 
             return new HazelcastSqlException(originatingMemberId, e0.getCode(), e0.getMessage(), e, e0.getSuggestion());
         } else {
+            Throwable copy = e;
+            while (copy != null) {
+                if (ExceptionUtil.isTopologyException(copy)) {
+                    return new HazelcastSqlException(localMemberId, SqlErrorCode.TOPOLOGY_CHANGE, e.getMessage(), e, null);
+                } else if (copy instanceof RestartableException) {
+                    return new HazelcastSqlException(localMemberId, SqlErrorCode.RESTARTABLE_ERROR, e.getMessage(), e, null);
+                }
+                copy = copy.getCause();
+            }
+
             return new HazelcastSqlException(localMemberId, SqlErrorCode.GENERIC, e.getMessage(), e, null);
         }
     }

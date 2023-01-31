@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,13 +34,15 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.adapter.ICacheDataStructureAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
-import com.hazelcast.internal.nearcache.impl.NearCachingHook;
+import com.hazelcast.internal.nearcache.impl.RemoteCallHook;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CompletionListener;
 import java.util.ArrayList;
@@ -467,10 +469,10 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
     @Override
     protected void callPutAllSync(List<Map.Entry<Data, Data>>[] entriesPerPartition, Data expiryPolicyData,
-                                  NearCachingHook<K, V> nearCachingHook, long startNanos) {
+                                  RemoteCallHook<K, V> nearCachingHook, long startNanos) {
         try {
             super.callPutAllSync(entriesPerPartition, expiryPolicyData, nearCachingHook, startNanos);
-            nearCachingHook.onRemoteCallSuccess();
+            nearCachingHook.onRemoteCallSuccess(null);
         } catch (Throwable t) {
             nearCachingHook.onRemoteCallFailure();
             throw rethrow(t);
@@ -478,7 +480,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     }
 
     @Override
-    protected NearCachingHook<K, V> createPutAllNearCachingHook(int keySetSize) {
+    protected RemoteCallHook<K, V> createPutAllNearCachingHook(int keySetSize) {
         return cacheOnUpdate
                 ? new PutAllCacheOnUpdateHook(keySetSize)
                 : new PutAllInvalidateHook(keySetSize);
@@ -491,7 +493,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
      *  
      * Only used with putAll calls.
      */
-    private class PutAllCacheOnUpdateHook implements NearCachingHook<K, V> {
+    private class PutAllCacheOnUpdateHook implements RemoteCallHook<K, V> {
         // Holds near-cache-key, near-cache-value and reservation-id
         private final List<Object> keyValueId;
 
@@ -507,7 +509,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
 
         @Override
-        public void onRemoteCallSuccess() {
+        public void onRemoteCallSuccess(Operation remoteCall) {
             for (int i = 0; i < keyValueId.size(); i += 3) {
                 Object nearCacheKey = keyValueId.get(i);
                 Object nearCacheValue = keyValueId.get(i + 1);
@@ -542,7 +544,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
      *  
      * Only used with putAll calls.
      */
-    private class PutAllInvalidateHook implements NearCachingHook<K, V> {
+    private class PutAllInvalidateHook implements RemoteCallHook<K, V> {
 
         private final List<Object> nearCacheKeys;
 
@@ -556,7 +558,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
 
         @Override
-        public void onRemoteCallSuccess() {
+        public void onRemoteCallSuccess(@Nullable Operation remoteCall) {
             for (Object nearCacheKey : nearCacheKeys) {
                 invalidateNearCache(nearCacheKey);
             }
@@ -564,7 +566,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
         @Override
         public void onRemoteCallFailure() {
-            onRemoteCallSuccess();
+            onRemoteCallSuccess(null);
         }
     }
 

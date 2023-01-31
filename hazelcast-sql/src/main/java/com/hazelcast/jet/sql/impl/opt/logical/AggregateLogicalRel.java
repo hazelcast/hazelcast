@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,5 +48,9 @@ public class AggregateLogicalRel extends Aggregate implements LogicalRel {
             List<AggregateCall> aggregateCalls
     ) {
         return new AggregateLogicalRel(getCluster(), traitSet, input, groupSet, groupSets, aggregateCalls);
+    }
+
+    public final boolean hasCollation() {
+        return getAggCallList().stream().anyMatch(agg -> agg.getCollation().getFieldCollations().size() > 0);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier;
+import com.hazelcast.jet.sql.impl.expression.ToRowFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonArrayFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonObjectFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
@@ -61,12 +62,17 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int AGGREGATE_CREATE_SUPPLIER = 14;
     public static final int AGGREGATE_ACCUMULATE_FUNCTION = 15;
     public static final int AGGREGATE_COMBINE_FUNCTION = 16;
-    public static final int AGGREGATE_EXPORT_FINISH_FUNCTION = 17;
+    public static final int AGGREGATE_FINISH_FUNCTION = 17;
     public static final int AGGREGATE_SUM_SUPPLIER = 18;
     public static final int AGGREGATE_AVG_SUPPLIER = 19;
     public static final int AGGREGATE_COUNT_SUPPLIER = 20;
+    public static final int AGGREGATE_JSON_ARRAY_AGG_SUPPLIER = 21;
+    public static final int ROW_IDENTITY_FN = 22;
+    public static final int AGGREGATE_EXPORT_FUNCTION = 23;
+    public static final int AGGREGATE_JSON_OBJECT_AGG_SUPPLIER = 24;
+    public static final int TO_ROW = 25;
 
-    public static final int LEN = AGGREGATE_COUNT_SUPPLIER + 1;
+    public static final int LEN = TO_ROW + 1;
 
     @Override
     public int getFactoryId() {
@@ -97,11 +103,16 @@ public class JetSqlSerializerHook implements DataSerializerHook {
                 arg -> new AggregateAbstractPhysicalRule.AggregateAccumulateFunction();
         constructors[AGGREGATE_COMBINE_FUNCTION] =
                 arg -> AggregateAbstractPhysicalRule.AggregateCombineFunction.INSTANCE;
-        constructors[AGGREGATE_EXPORT_FINISH_FUNCTION] =
-                arg -> AggregateAbstractPhysicalRule.AggregateExportFinishFunction.INSTANCE;
+        constructors[AGGREGATE_FINISH_FUNCTION] =
+                arg -> AggregateAbstractPhysicalRule.AggregateFinishFunction.INSTANCE;
         constructors[AGGREGATE_SUM_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateSumSupplier();
         constructors[AGGREGATE_AVG_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateAvgSupplier();
         constructors[AGGREGATE_COUNT_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateCountSupplier();
+        constructors[AGGREGATE_JSON_ARRAY_AGG_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateArrayAggSupplier();
+        constructors[ROW_IDENTITY_FN] = arg -> new AggregateAbstractPhysicalRule.RowIdentityFn();
+        constructors[AGGREGATE_EXPORT_FUNCTION] = arg -> AggregateAbstractPhysicalRule.AggregateExportFunction.INSTANCE;
+        constructors[AGGREGATE_JSON_OBJECT_AGG_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateObjectAggSupplier();
+        constructors[TO_ROW] = arg -> new ToRowFunction();
 
         return new ArrayDataSerializableFactory(constructors);
     }

@@ -25,7 +25,7 @@ The equivalent XML configuration:
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-4.1.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-5.2.xsd">
     
     <instance-tracking enabled="true">
         <file-name>/tmp/hz-tracking.txt</file-name>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,12 +90,16 @@ public abstract class AbstractKinesisTest extends JetTestSupport {
 
     @After
     public void after() {
-        cleanUpCluster(cluster);
+        if (cluster != null) {
+            cleanUpCluster(cluster);
+        }
 
         helper.deleteStream();
 
-        results.clear();
-        results.destroy();
+        if (results != null) {
+            results.clear();
+            results.destroy();
+        }
     }
 
     protected HazelcastInstance hz() {
@@ -126,12 +130,15 @@ public abstract class AbstractKinesisTest extends JetTestSupport {
     }
 
     protected Map<String, List<String>> sendMessages(int count) {
+        return sendMessages(count, kinesisSink().build());
+    }
+
+    protected Map<String, List<String>> sendMessages(int count, Sink<Map.Entry<String, byte[]>> sink) {
         List<Map.Entry<String, String>> msgEntryList = messages(0, count);
 
         BatchSource<Map.Entry<String, byte[]>> source = TestSources.items(msgEntryList.stream()
                 .map(e1 -> entry(e1.getKey(), e1.getValue().getBytes()))
                 .collect(toList()));
-        Sink<Map.Entry<String, byte[]>> sink = kinesisSink();
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(source)
@@ -182,13 +189,12 @@ public abstract class AbstractKinesisTest extends JetTestSupport {
                 .withCredentials(awsConfig.getAccessKey(), awsConfig.getSecretKey());
     }
 
-    protected Sink<Map.Entry<String, byte[]>> kinesisSink() {
+    protected KinesisSinks.Builder<Map.Entry<String, byte[]>> kinesisSink() {
         return KinesisSinks.kinesis(STREAM)
                 .withEndpoint(awsConfig.getEndpoint())
                 .withRegion(awsConfig.getRegion())
                 .withCredentials(awsConfig.getAccessKey(), awsConfig.getSecretKey())
-                .withRetryStrategy(RetryStrategies.indefinitely(250))
-                .build();
+                .withRetryStrategy(RetryStrategies.indefinitely(250));
     }
 
     protected List<Shard> listOpenShards() {

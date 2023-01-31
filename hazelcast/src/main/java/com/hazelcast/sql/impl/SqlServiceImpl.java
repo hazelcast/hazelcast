@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,6 +83,7 @@ public class SqlServiceImpl implements SqlService {
     private SqlInternalService internalService;
 
     private final Counter sqlQueriesSubmitted = MwCounter.newMwCounter();
+    private final Counter sqlStreamingQueriesExecuted = MwCounter.newMwCounter();
 
     public SqlServiceImpl(NodeEngineImpl nodeEngine) {
         this.logger = nodeEngine.getLogger(getClass());
@@ -95,6 +96,9 @@ public class SqlServiceImpl implements SqlService {
     }
 
     public void start() {
+        if (!Util.isJetEnabled(nodeEngine)) {
+            return;
+        }
         QueryResultRegistry resultRegistry = new QueryResultRegistry();
         optimizer = createOptimizer(nodeEngine, resultRegistry);
 
@@ -115,10 +119,16 @@ public class SqlServiceImpl implements SqlService {
     }
 
     public void reset() {
+        if (!Util.isJetEnabled(nodeEngine)) {
+            return;
+        }
         planCache.clear();
     }
 
     public void shutdown() {
+        if (!Util.isJetEnabled(nodeEngine)) {
+            return;
+        }
         planCache.clear();
         if (internalService != null) {
             internalService.shutdown();
@@ -131,6 +141,10 @@ public class SqlServiceImpl implements SqlService {
 
     public long getSqlQueriesSubmittedCount() {
         return sqlQueriesSubmitted.get();
+    }
+
+    public long getSqlStreamingQueriesExecutedCount() {
+        return sqlStreamingQueriesExecuted.get();
     }
 
     /**
@@ -190,7 +204,7 @@ public class SqlServiceImpl implements SqlService {
                 queryId = QueryId.create(nodeServiceProvider.getLocalMemberId());
             }
 
-            return query0(
+            SqlResult sqlResult = query0(
                     queryId,
                     statement.getSchema(),
                     statement.getSql(),
@@ -200,10 +214,22 @@ public class SqlServiceImpl implements SqlService {
                     statement.getExpectedResultType(),
                     securityContext
             );
+            if (!skipStats) {
+                updateSqlStreamingQueriesExecuted(sqlResult);
+            }
+            return sqlResult;
         } catch (AccessControlException e) {
             throw e;
         } catch (Exception e) {
             throw QueryUtils.toPublicException(e, nodeServiceProvider.getLocalMemberId());
+        }
+    }
+
+    private void updateSqlStreamingQueriesExecuted(SqlResult sqlResult) {
+        if (sqlResult instanceof AbstractSqlResult) {
+            if (((AbstractSqlResult) sqlResult).isInfiniteRows()) {
+                sqlStreamingQueriesExecuted.inc();
+            }
         }
     }
 
@@ -334,5 +360,12 @@ public class SqlServiceImpl implements SqlService {
         } catch (ReflectiveOperationException e) {
             throw new HazelcastException("Failed to instantiate the optimizer class " + className + ": " + e.getMessage(), e);
         }
+    }
+
+    public void closeOnError(QueryId queryId) {
+        if (!Util.isJetEnabled(nodeEngine)) {
+            return;
+        }
+        getInternalService().getClientStateRegistry().closeOnError(queryId);
     }
 }

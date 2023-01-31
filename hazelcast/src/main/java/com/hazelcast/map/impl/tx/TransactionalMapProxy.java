@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package com.hazelcast.map.impl.tx;
 
-import com.hazelcast.internal.nearcache.impl.NearCachingHook;
+import com.hazelcast.internal.nearcache.impl.RemoteCallHook;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryEngine;
@@ -52,11 +53,13 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 /**
  * Proxy implementation of {@link TransactionalMap} interface.
  */
-public class TransactionalMapProxy extends TransactionalMapProxySupport implements TransactionalMap {
+public class TransactionalMapProxy
+        extends TransactionalMapProxySupport implements TransactionalMap {
 
     private final Map<Data, TxnValueWrapper> txMap = new HashMap<>();
 
-    public TransactionalMapProxy(String name, MapService mapService, NodeEngine nodeEngine, Transaction transaction) {
+    public TransactionalMapProxy(String name, MapService mapService,
+                                 NodeEngine nodeEngine, Transaction transaction) {
         super(name, mapService, nodeEngine, transaction);
     }
 
@@ -110,13 +113,15 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkTransactionState();
         checkNotNull(key, "key can't be null");
 
+        long startNanos = statisticsEnabled ? Timer.nanos() : -1;
         Object nearCacheKey = toNearCacheKeyWithStrategy(key);
         Data keyData = mapServiceContext.toData(nearCacheKey, partitionStrategy);
         TxnValueWrapper currentValue = txMap.get(keyData);
         if (currentValue != null) {
             return checkIfRemoved(currentValue);
         }
-        return toObjectIfNeeded(getInternal(nearCacheKey, keyData, skipNearCacheLookup));
+        return toObjectIfNeeded(getInternal(nearCacheKey, keyData,
+                skipNearCacheLookup, startNanos));
     }
 
     @Override
@@ -148,10 +153,11 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         Data keyData = mapServiceContext.toData(key, partitionStrategy);
         Data valueData = mapServiceContext.toData(value);
 
-        NearCachingHook invalidationHook = newNearCachingHook();
-        invalidationHook.beforeRemoteCall(key, keyData, value, valueData);
+        RemoteCallHook remoteCallHook = newRemoteCallHook();
+        remoteCallHook.beforeRemoteCall(key, keyData, value, valueData);
 
-        Object valueBeforeTxn = toObjectIfNeeded(putInternal(keyData, valueData, ttl, timeUnit, invalidationHook));
+        Object valueBeforeTxn = toObjectIfNeeded(putInternal(keyData, valueData,
+                ttl, timeUnit, remoteCallHook));
         TxnValueWrapper currentValue = txMap.get(keyData);
         Type type = valueBeforeTxn == null ? Type.NEW : Type.UPDATED;
         TxnValueWrapper wrapper = new TxnValueWrapper(value, type);
@@ -168,10 +174,10 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         Data keyData = mapServiceContext.toData(key, partitionStrategy);
         Data valueData = mapServiceContext.toData(value);
 
-        NearCachingHook invalidationHook = newNearCachingHook();
-        invalidationHook.beforeRemoteCall(key, keyData, value, valueData);
+        RemoteCallHook remoteCallHook = newRemoteCallHook();
+        remoteCallHook.beforeRemoteCall(key, keyData, value, valueData);
 
-        Data dataBeforeTxn = putInternal(keyData, valueData, UNSET, MILLISECONDS, invalidationHook);
+        Data dataBeforeTxn = putInternal(keyData, valueData, UNSET, MILLISECONDS, remoteCallHook);
         Type type = dataBeforeTxn == null ? Type.NEW : Type.UPDATED;
         TxnValueWrapper wrapper = new TxnValueWrapper(value, type);
         txMap.put(keyData, wrapper);
@@ -186,8 +192,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         Data keyData = mapServiceContext.toData(key, partitionStrategy);
         Data valueData = mapServiceContext.toData(value);
 
-        NearCachingHook invalidationHook = newNearCachingHook();
-        invalidationHook.beforeRemoteCall(key, keyData, value, valueData);
+        RemoteCallHook remoteCallHook = newRemoteCallHook();
+        remoteCallHook.beforeRemoteCall(key, keyData, value, valueData);
 
         TxnValueWrapper wrapper = txMap.get(keyData);
         boolean haveTxnPast = wrapper != null;
@@ -195,11 +201,11 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
             if (wrapper.type != Type.REMOVED) {
                 return wrapper.value;
             }
-            putInternal(keyData, valueData, UNSET, MILLISECONDS, invalidationHook);
+            putInternal(keyData, valueData, UNSET, MILLISECONDS, remoteCallHook);
             txMap.put(keyData, new TxnValueWrapper(value, Type.NEW));
             return null;
         } else {
-            Data oldValue = putIfAbsentInternal(keyData, valueData, invalidationHook);
+            Data oldValue = putIfAbsentInternal(keyData, valueData, remoteCallHook);
             if (oldValue == null) {
                 txMap.put(keyData, new TxnValueWrapper(value, Type.NEW));
             }
@@ -216,8 +222,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         Data keyData = mapServiceContext.toData(key, partitionStrategy);
         Data valueData = mapServiceContext.toData(value);
 
-        NearCachingHook invalidationHook = newNearCachingHook();
-        invalidationHook.beforeRemoteCall(key, keyData, value, valueData);
+        RemoteCallHook remoteCallHook = newRemoteCallHook();
+        remoteCallHook.beforeRemoteCall(key, keyData, value, valueData);
 
         TxnValueWrapper wrapper = txMap.get(keyData);
         boolean haveTxnPast = wrapper != null;
@@ -225,11 +231,11 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
             if (wrapper.type == Type.REMOVED) {
                 return null;
             }
-            putInternal(keyData, valueData, UNSET, MILLISECONDS, invalidationHook);
+            putInternal(keyData, valueData, UNSET, MILLISECONDS, remoteCallHook);
             txMap.put(keyData, new TxnValueWrapper(value, Type.UPDATED));
             return wrapper.value;
         } else {
-            Data oldValue = replaceInternal(keyData, valueData, invalidationHook);
+            Data oldValue = replaceInternal(keyData, valueData, remoteCallHook);
             if (oldValue != null) {
                 txMap.put(keyData, new TxnValueWrapper(value, Type.UPDATED));
             }
@@ -247,8 +253,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         Data keyData = mapServiceContext.toData(key, partitionStrategy);
         Data newValueData = mapServiceContext.toData(newValue);
 
-        NearCachingHook invalidationHook = newNearCachingHook();
-        invalidationHook.beforeRemoteCall(key, keyData, newValue, newValueData);
+        RemoteCallHook remoteCallHook = newRemoteCallHook();
+        remoteCallHook.beforeRemoteCall(key, keyData, newValue, newValueData);
 
         TxnValueWrapper wrapper = txMap.get(keyData);
         boolean haveTxnPast = wrapper != null;
@@ -256,12 +262,12 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
             if (!wrapper.value.equals(oldValue)) {
                 return false;
             }
-            putInternal(keyData, newValueData, UNSET, MILLISECONDS, invalidationHook);
+            putInternal(keyData, newValueData, UNSET, MILLISECONDS, remoteCallHook);
             txMap.put(keyData, new TxnValueWrapper(wrapper.value, Type.UPDATED));
             return true;
         } else {
             boolean success = replaceIfSameInternal(keyData, mapServiceContext.toData(oldValue),
-                    newValueData, invalidationHook);
+                    newValueData, remoteCallHook);
             if (success) {
                 txMap.put(keyData, new TxnValueWrapper(newValue, Type.UPDATED));
             }
@@ -280,10 +286,10 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         TxnValueWrapper wrapper = txMap.get(keyData);
         // wrapper is null which means this entry is not touched by transaction
         if (wrapper == null) {
-            NearCachingHook invalidationHook = newNearCachingHook();
-            invalidationHook.beforeRemoteCall(key, keyData, null, null);
+            RemoteCallHook remoteCallHook = newRemoteCallHook();
+            remoteCallHook.beforeRemoteCall(key, keyData, null, null);
 
-            boolean removed = removeIfSameInternal(keyData, value, invalidationHook);
+            boolean removed = removeIfSameInternal(keyData, value, remoteCallHook);
             if (removed) {
                 txMap.put(keyData, new TxnValueWrapper(value, Type.REMOVED));
             }
@@ -298,10 +304,10 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
             return false;
         }
 
-        NearCachingHook invalidationHook = newNearCachingHook();
-        invalidationHook.beforeRemoteCall(key, keyData, null, null);
+        RemoteCallHook remoteCallHook = newRemoteCallHook();
+        remoteCallHook.beforeRemoteCall(key, keyData, null, null);
         // wrapper value is equal to passed value, we call removeInternal just to add delete log
-        removeInternal(keyData, invalidationHook);
+        removeInternal(keyData, remoteCallHook);
         txMap.put(keyData, new TxnValueWrapper(value, Type.REMOVED));
 
         return true;
@@ -314,10 +320,10 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
         Data keyData = mapServiceContext.toData(key, partitionStrategy);
 
-        NearCachingHook invalidationHook = newNearCachingHook();
-        invalidationHook.beforeRemoteCall(key, keyData, null, null);
+        RemoteCallHook remoteCallHook = newRemoteCallHook();
+        remoteCallHook.beforeRemoteCall(key, keyData, null, null);
 
-        Object valueBeforeTxn = toObjectIfNeeded(removeInternal(keyData, invalidationHook));
+        Object valueBeforeTxn = toObjectIfNeeded(removeInternal(keyData, remoteCallHook));
 
         TxnValueWrapper wrapper = null;
         if (valueBeforeTxn != null || txMap.containsKey(keyData)) {
@@ -333,10 +339,10 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
         Data keyData = mapServiceContext.toData(key, partitionStrategy);
 
-        NearCachingHook invalidationHook = newNearCachingHook();
-        invalidationHook.beforeRemoteCall(key, keyData, null, null);
+        RemoteCallHook remoteCallHook = newRemoteCallHook();
+        remoteCallHook.beforeRemoteCall(key, keyData, null, null);
 
-        Data data = removeInternal(keyData, invalidationHook);
+        Data data = removeInternal(keyData, remoteCallHook);
         if (data != null || txMap.containsKey(keyData)) {
             txMap.put(keyData, new TxnValueWrapper(toObjectIfNeeded(data), Type.REMOVED));
         }
@@ -353,7 +359,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     public Set keySet(Predicate predicate) {
         checkTransactionState();
         checkNotNull(predicate, "Predicate should not be null!");
-        checkNotInstanceOf(PagingPredicate.class, predicate, "Paging is not supported for Transactional queries!");
+        checkNotInstanceOf(PagingPredicate.class, predicate,
+                "Paging is not supported for Transactional queries!");
 
         QueryEngine queryEngine = mapServiceContext.getQueryEngine(name);
 
@@ -383,6 +390,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
                 }
             }
         }
+
+        incrementOtherOperationsStat();
         return returningKeySet;
     }
 
@@ -397,7 +406,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     public Collection values(Predicate predicate) {
         checkTransactionState();
         checkNotNull(predicate, "Predicate can not be null!");
-        checkNotInstanceOf(PagingPredicate.class, predicate, "Paging is not supported for Transactional queries");
+        checkNotInstanceOf(PagingPredicate.class, predicate,
+                "Paging is not supported for Transactional queries");
 
         QueryEngine queryEngine = mapServiceContext.getQueryEngine(name);
 
@@ -431,6 +441,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
             }
         }
         removeFromResultSet(result, valueSet, keyWontBeIncluded);
+        incrementOtherOperationsStat();
         return valueSet;
     }
 

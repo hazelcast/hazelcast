@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@
 
 package com.hazelcast.internal.server.tcp;
 
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.Packet;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -40,6 +43,9 @@ public abstract class TcpServerConnection_AbstractBasicTest extends TcpServerCon
     private static final int MARGIN_OF_ERROR_MS = 3000;
 
     private List<Packet> packetsB;
+
+    @Mock
+    private ConnectionLifecycleListener<TcpServerConnection> mockedListener;
 
     @Before
     public void setup() throws Exception {
@@ -187,9 +193,25 @@ public abstract class TcpServerConnection_AbstractBasicTest extends TcpServerCon
 
         assertEquals(connAB, connAB);
         assertEquals(connAC, connAC);
-        assertNotEquals(connAB, null);
+        assertNotEquals(null, connAB);
         assertNotEquals(connAB, connAC);
         assertNotEquals(connAC, connAB);
-        assertNotEquals(connAB, "foo");
+        assertNotEquals("foo", connAB);
+
+        //don't mock if you don't need to
+        TcpServerConnectionManager cm = connAB.getConnectionManager();
+        Channel channel = connAB.getChannel();
+        TcpServerConnection conn1 = new TcpServerConnection(cm, mockedListener, 0, channel, true);
+        TcpServerConnection conn2 = new TcpServerConnection(cm, mockedListener, 0, channel, true);
+        TcpServerConnection conn3 = new TcpServerConnection(cm, mockedListener, 0, channel, false);
+        assertEquals(conn1, conn2);
+        assertNotEquals(conn1, conn3);
+        conn1.setRemoteAddress(addressA);
+        assertNotEquals(conn1, conn2);
+        conn2.setRemoteAddress(addressB);
+        assertNotEquals(conn1, conn2);
+        conn2.setRemoteAddress(addressA);
+        assertEquals(conn1, conn2);
     }
+
 }

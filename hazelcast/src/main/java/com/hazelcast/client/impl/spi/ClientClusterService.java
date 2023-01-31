@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.spi;
 
-import com.hazelcast.client.Client;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
@@ -29,14 +28,9 @@ import java.util.UUID;
 /**
  * Cluster service for Hazelcast clients.
  * <p>
- * Allows to retrieve Hazelcast members of the cluster, e.g. by their {@link Address} or UUID.
+ * Allows retrieving Hazelcast members of the cluster, e.g. by their {@link Address} or UUID.
  */
 public interface ClientClusterService {
-
-    /**
-     * @return The client interface representing the local client.
-     */
-    Client getLocalClient();
 
     /**
      * Gets the member with the given UUID.
@@ -67,27 +61,6 @@ public interface ClientClusterService {
      * @return The address of the master member. Could be null if the master is not yet known.
      */
     Member getMasterMember();
-
-    /**
-     * Gets the current number of members.
-     *
-     * @return The current number of members.
-     */
-    int getSize();
-
-    /**
-     * Returns the cluster-time.
-     *
-     * @return The cluster-time.
-     */
-    long getClusterTime();
-
-    /**
-     * Returns {@code true} if member internal address should be translated into its public address.
-     *
-     * @return true if member address should be translated into its public address.
-     */
-    boolean translateToPublicAddress();
 
     /**
      * @param listener The listener to be registered.

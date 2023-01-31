@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
@@ -66,13 +65,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -404,7 +399,7 @@ public final class Util {
     /**
      * Logs a late event that was dropped.
      */
-    public static void logLateEvent(ILogger logger, long currentWm, @Nonnull Object item) {
+    public static void logLateEvent(ILogger logger, byte key, long currentWm, @Nonnull Object item) {
         if (!logger.isInfoEnabled()) {
             return;
         }
@@ -417,7 +412,7 @@ public final class Util {
                     ));
         } else {
             logger.info(format(
-                    "Late event dropped. currentWatermark=%s, event=%s", new Watermark(currentWm), item
+                    "Late event dropped. currentWatermark=%s, event=%s", new Watermark(currentWm, key), item
             ));
         }
     }
@@ -469,6 +464,18 @@ public final class Util {
         int sum = 0;
         for (E e : collection) {
             sum += toIntF.applyAsInt(e);
+        }
+        return sum;
+    }
+
+    /**
+     * Adds items of an array. Creates no GC litter (if you use non-capturing lambda for
+     * {@code toIntF}, else new lambda instance is created for each call).
+     */
+    public static <E> int sum(E[] array, ToIntFunction<E> toIntF, int size) {
+        int sum = 0;
+        for (int i = 0; i < size; i++) {
+            sum += toIntF.applyAsInt(array[i]);
         }
         return sum;
     }
@@ -640,44 +647,6 @@ public final class Util {
     }
 
     /**
-     * Assigns given partitions to given {@code members}.
-     * Set of partitions belonging to non-members are assigned to
-     * {@code members} in a round robin fashion.
-     */
-    public static Map<Address, List<Integer>> assignPartitions(
-            Collection<Address> members0,
-            Map<Address, List<Integer>> partitionsByOwner
-    ) {
-        assert !members0.isEmpty();
-
-        LinkedHashSet<Address> members = new LinkedHashSet<>(members0);
-
-        Iterator<Address> iterator = members.iterator();
-
-        Map<Address, List<Integer>> partitionsByMember = new HashMap<>();
-        for (Entry<Address, List<Integer>> entry : partitionsByOwner.entrySet()) {
-            Address partitionOwner = entry.getKey();
-            List<Integer> partitions = entry.getValue();
-
-            Address target;
-            if (members.contains(partitionOwner)) {
-                target = partitionOwner;
-            } else {
-                if (!iterator.hasNext()) {
-                    iterator = members.iterator();
-                }
-                target = iterator.next();
-            }
-
-            partitionsByMember.merge(target, new ArrayList<>(partitions), (existing, incoming) -> {
-                existing.addAll(incoming);
-                return existing;
-            });
-        }
-        return partitionsByMember;
-    }
-
-    /**
      * Given a list of input field names and a list of output field names
      * creates a projection to map between these.
      * <p>
@@ -777,9 +746,13 @@ public final class Util {
     }
 
     public static void checkJetIsEnabled(NodeEngine nodeEngine) {
-        if (!nodeEngine.getConfig().getJetConfig().isEnabled()) {
+        if (!isJetEnabled(nodeEngine)) {
             throw new JetDisabledException(JET_IS_DISABLED_MESSAGE);
         }
+    }
+
+    public static boolean isJetEnabled(NodeEngine nodeEngine) {
+        return nodeEngine.getConfig().getJetConfig().isEnabled();
     }
 
     public static class Identity<T> implements IdentifiedDataSerializable, FunctionEx<T, T> {

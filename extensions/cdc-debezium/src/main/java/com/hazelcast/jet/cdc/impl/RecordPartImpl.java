@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,23 +24,32 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
+
+import static java.util.Objects.requireNonNull;
 
 class RecordPartImpl implements RecordPart {
 
-    private final String json;
+    private String json;
+
+    private final transient Supplier<String> jsonSupplier;
 
     private Map<String, Object> content;
 
+    RecordPartImpl(@Nonnull Supplier<String> json) {
+        this.jsonSupplier = requireNonNull(json);
+    }
     RecordPartImpl(@Nonnull String json) {
-        this.json = Objects.requireNonNull(json);
+        this.json = requireNonNull(json);
+        this.jsonSupplier = null;
     }
 
     @Override
     @Nonnull
     public <T> T toObject(@Nonnull Class<T> clazz) throws ParsingException {
-        Objects.requireNonNull(clazz, "class");
+        requireNonNull(clazz, "class");
         try {
-            T t = JsonUtil.beanFrom(json, clazz);
+            T t = JsonUtil.beanFrom(toJson(), clazz);
             if (t == null) {
                 throw new ParsingException(String.format("Mapping %s as %s didn't yield a result", json, clazz.getName()));
             }
@@ -55,7 +64,7 @@ class RecordPartImpl implements RecordPart {
     public Map<String, Object> toMap() throws ParsingException {
         if (content == null) {
             try {
-                content = JsonUtil.mapFrom(json);
+                content = JsonUtil.mapFrom(toJson());
                 if (content == null) {
                     throw new ParsingException(String.format("Parsing %s didn't yield a result", json));
                 }
@@ -69,12 +78,15 @@ class RecordPartImpl implements RecordPart {
     @Override
     @Nonnull
     public String toJson() {
-        return json;
+        if (json == null && jsonSupplier != null) {
+            json = jsonSupplier.get();
+        }
+        return requireNonNull(json, "RecordPart.json must not be null");
     }
 
     @Override
     public int hashCode() {
-        return json.hashCode();
+        return toJson().hashCode();
     }
 
     @Override
@@ -86,7 +98,7 @@ class RecordPartImpl implements RecordPart {
             return false;
         }
         RecordPartImpl other = (RecordPartImpl) obj;
-        return Objects.equals(json, other.json);
+        return Objects.equals(toJson(), other.toJson());
     }
 
     @Override

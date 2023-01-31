@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import static com.hazelcast.sql.impl.type.QueryDataType.JSON;
 import static com.hazelcast.sql.impl.type.QueryDataType.NULL;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataType.REAL;
+import static com.hazelcast.sql.impl.type.QueryDataType.ROW;
 import static com.hazelcast.sql.impl.type.QueryDataType.SMALLINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.TIME;
 import static com.hazelcast.sql.impl.type.QueryDataType.TIMESTAMP;
@@ -153,6 +154,9 @@ public final class QueryDataTypeUtils {
     /** 12 (hdr) + 36 (arbitrary content). */
     public static final int TYPE_LEN_OBJECT = 12 + 36;
 
+    /** TODO: actual value? */
+    public static final int TYPE_LEN_ROW = 12 + 36;
+
     // With a non-zero value we avoid weird zero-cost columns. Technically, it
     // still costs a single reference now, but reference cost is not taken into
     // account as of now.
@@ -177,6 +181,7 @@ public final class QueryDataTypeUtils {
     public static final int PRECEDENCE_INTERVAL_DAY_SECOND = 20;
     public static final int PRECEDENCE_MAP = 30;
     public static final int PRECEDENCE_JSON = 40;
+    public static final int PRECEDENCE_ROW = 50;
 
     private QueryDataTypeUtils() {
         // No-op.
@@ -261,7 +266,8 @@ public final class QueryDataTypeUtils {
 
             case JSON:
                 return JSON;
-
+            case ROW:
+                return ROW;
             default:
                 throw new IllegalArgumentException("Unexpected class: " + clazz);
         }
@@ -317,6 +323,9 @@ public final class QueryDataTypeUtils {
 
             case JSON:
                 return JSON;
+
+            case ROW:
+                return ROW;
 
             default:
                 throw new IllegalArgumentException("Unexpected type family: " + typeFamily);

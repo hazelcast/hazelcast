@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,11 +48,12 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
+import static java.util.Collections.synchronizedList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -110,9 +111,9 @@ public class JetClassLoaderTest extends JetTestSupport {
         job.resume();
         job.join();
 
-        assertClassLoaders(TargetP.classLoaders);
+        TargetP.classLoaders.assertClassLoadersTypes();
 
-        assertClassLoaderForAllMethodsChecked(Processor.class, TargetP.classLoaders);
+        TargetP.classLoaders.assertClassLoaderForAllMethodsChecked();
     }
 
     /**
@@ -152,95 +153,91 @@ public class JetClassLoaderTest extends JetTestSupport {
         private volatile boolean received = false;
         private volatile boolean restored = false;
 
-        private static Map<String, List<ClassLoader>> classLoaders = new HashMap<>();
-
-        private void putClassLoader(String methodName) {
-            List<ClassLoader> cls = classLoaders.computeIfAbsent(methodName, (key) -> new ArrayList<>());
-            cls.add(Thread.currentThread().getContextClassLoader());
-        }
+        private static final ClassLoaderMap classLoaders = new ClassLoaderMap();
 
         @Override
         public boolean isCooperative() {
-            putClassLoader("isCooperative");
+            classLoaders.putClassLoader("isCooperative");
             return super.isCooperative();
         }
 
         @Override
         protected void init(@Nonnull Context context) throws Exception {
-            putClassLoader("init");
+            classLoaders.putClassLoader("init");
             super.init(context);
         }
 
         @Override
         public void process(int ordinal, @Nonnull Inbox inbox) {
-            putClassLoader("process");
+            classLoaders.putClassLoader("process");
             super.process(ordinal, inbox);
         }
 
         @Override
         public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
-            putClassLoader("tryProcessWatermark");
+            classLoaders.putClassLoader("tryProcessWatermark");
             return super.tryProcessWatermark(watermark);
         }
 
         @Override
         public boolean tryProcess() {
-            putClassLoader("tryProcess");
+            classLoaders.putClassLoader("tryProcess");
             return super.tryProcess();
         }
 
         @Override
         public boolean completeEdge(int ordinal) {
-            putClassLoader("completeEdge");
+            classLoaders.putClassLoader("completeEdge");
             return super.completeEdge(ordinal);
         }
 
         @Override
         public boolean complete() {
-            putClassLoader("complete");
+            classLoaders.putClassLoader("complete");
             return restored && received;
         }
 
         @Override
+        @SuppressWarnings("ResultOfMethodCallIgnored")
         public boolean saveToSnapshot() {
             getOutbox().offerToSnapshot(1, 1);
-            putClassLoader("saveToSnapshot");
+            classLoaders.putClassLoader("saveToSnapshot");
             return super.saveToSnapshot();
         }
 
         @Override
         public boolean snapshotCommitPrepare() {
-            putClassLoader("snapshotCommitPrepare");
+            classLoaders.putClassLoader("snapshotCommitPrepare");
             return super.snapshotCommitPrepare();
         }
 
         @Override
         public boolean snapshotCommitFinish(boolean success) {
-            putClassLoader("snapshotCommitFinish");
+            classLoaders.putClassLoader("snapshotCommitFinish");
             return super.snapshotCommitFinish(success);
         }
 
         @Override
         protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
-            putClassLoader("restoreFromSnapshot");
+            classLoaders.putClassLoader("restoreFromSnapshot");
         }
 
         @Override
         public boolean finishSnapshotRestore() {
             restored = true;
-            putClassLoader("finishSnapshotRestore");
+            classLoaders.putClassLoader("finishSnapshotRestore");
             return super.finishSnapshotRestore();
         }
 
         @Override
         public void close() throws Exception {
-            putClassLoader("close");
+            classLoaders.putClassLoader("close");
             super.close();
         }
 
         @Override
         public boolean closeIsCooperative() {
-            putClassLoader("closeIsCooperative");
+            classLoaders.putClassLoader("closeIsCooperative");
             return super.closeIsCooperative();
         }
 
@@ -255,6 +252,7 @@ public class JetClassLoaderTest extends JetTestSupport {
     public void when_processorSupplierCalled_then_contextClassLoaderSet() {
         DAG dag = new DAG();
         dag.newVertex("v", new LeakClassLoaderPS()).localParallelism(1);
+        dag.newVertex("v2", new LeakClassLoaderPS().withBlock()).localParallelism(1);
 
         Config config = smallInstanceWithResourceUploadConfig();
         HazelcastInstance instance = createHazelcastInstance(config);
@@ -262,35 +260,45 @@ public class JetClassLoaderTest extends JetTestSupport {
         // When
         instance.getJet().newJob(dag).join();
 
-        assertClassLoaders(LeakClassLoaderPS.classLoaders);
-        assertThat(LeakClassLoaderPS.classLoaders)
-                .containsKeys("init", "get", "close");
+        LeakClassLoaderPS.classLoaders.assertClassLoadersTypes();
+        LeakClassLoaderPS.classLoaders.assertContainsMethods("init", "get", "close");
     }
 
     private static class LeakClassLoaderPS implements ProcessorSupplier {
 
-        private static Map<String, List<ClassLoader>> classLoaders = new HashMap<>();
+        private static final ClassLoaderMap classLoaders = new ClassLoaderMap();
+        private volatile boolean blocks = false;
+
+        LeakClassLoaderPS withBlock() {
+            this.blocks = true;
+            return this;
+        }
+
+        @Override
+        public boolean initIsCooperative() {
+            return !blocks;
+        }
+
+        @Override
+        public boolean closeIsCooperative() {
+            return !blocks;
+        }
 
         @Override
         public void init(@Nonnull Context context) throws Exception {
-            putClassLoader("init");
+            classLoaders.putClassLoader("init");
         }
 
         @Nonnull
         @Override
         public Collection<? extends Processor> get(int count) {
-            putClassLoader("get");
+            classLoaders.putClassLoader("get");
             return Collections.singleton(new NoopP());
         }
 
         @Override
         public void close(@Nullable Throwable error) throws Exception {
-            putClassLoader("close");
-        }
-
-        private void putClassLoader(String methodName) {
-            List<ClassLoader> cls = classLoaders.computeIfAbsent(methodName, (key) -> new ArrayList<>());
-            cls.add(Thread.currentThread().getContextClassLoader());
+            classLoaders.putClassLoader("close");
         }
     }
 
@@ -305,64 +313,69 @@ public class JetClassLoaderTest extends JetTestSupport {
         // When
         instance.getJet().newJob(dag).join();
 
-        assertClassLoaders(LeakClassLoaderPMS.classLoaders);
-        assertThat(LeakClassLoaderPMS.classLoaders)
-                .containsKeys("init", "get", "close");
+        LeakClassLoaderPMS.classLoaders.assertClassLoadersTypes();
+        LeakClassLoaderPMS.classLoaders.assertContainsMethods("init", "get", "close");
     }
 
     private static class LeakClassLoaderPMS implements ProcessorMetaSupplier {
 
-        private static Map<String, List<ClassLoader>> classLoaders = new HashMap<>();
+        private static final ClassLoaderMap classLoaders = new ClassLoaderMap();
 
         @Override
         public void init(@Nonnull Context context) throws Exception {
-            putClassLoader("init");
+            classLoaders.putClassLoader("init");
         }
 
         @Nonnull
         @Override
         public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            putClassLoader("get");
+            classLoaders.putClassLoader("get");
             return address -> ProcessorSupplier.of(NoopP::new);
         }
 
         @Override
         public void close(@Nullable Throwable error) throws Exception {
-            putClassLoader("close");
+            classLoaders.putClassLoader("close");
         }
+    }
 
-        private void putClassLoader(String methodName) {
-            List<ClassLoader> cls = classLoaders.computeIfAbsent(methodName, (key) -> new ArrayList<>());
+    private static final class ClassLoaderMap {
+        private final Map<String, List<ClassLoader>> classLoaderMap = new ConcurrentHashMap<>();
+
+        void putClassLoader(String methodName) {
+            List<ClassLoader> cls = classLoaderMap.computeIfAbsent(methodName, (key) -> synchronizedList(new ArrayList<>()));
             cls.add(Thread.currentThread().getContextClassLoader());
         }
-    }
 
-    private void assertClassLoaderForAllMethodsChecked(
-            Class<?> clazz,
-            Map<String, List<ClassLoader>> classLoaders) {
-
-        // Future-proof against Processor API additions
-        Method[] methods = clazz.getMethods();
-        for (Method method : methods) {
-            if (Modifier.isStatic(method.getModifiers())) {
-                continue;
+        void assertClassLoadersTypes() {
+            for (Map.Entry<String, List<ClassLoader>> entry : classLoaderMap.entrySet()) {
+                List<ClassLoader> cls = entry.getValue();
+                for (ClassLoader cl : cls) {
+                    assertThat(cl)
+                            .describedAs("expecting JetClassLoader for method " + entry.getKey())
+                            .isInstanceOf(JetClassLoader.class);
+                }
             }
+        }
 
-            String name = method.getName();
-            assertThat(classLoaders)
-                    .describedAs("method " + name + " not called")
-                    .containsKey(name);
+        void assertClassLoaderForAllMethodsChecked() {
+            // Future-proof against Processor API additions
+            Method[] methods = Processor.class.getMethods();
+            for (Method method : methods) {
+                if (Modifier.isStatic(method.getModifiers())) {
+                    continue;
+                }
+
+                String name = method.getName();
+                assertThat(classLoaderMap)
+                        .describedAs("method " + name + " not called")
+                        .containsKey(name);
+            }
+        }
+
+        void assertContainsMethods(String... methodNames) {
+            assertThat(classLoaderMap).containsKeys(methodNames);
         }
     }
 
-    private void assertClassLoaders(Map<String, List<ClassLoader>> classLoaders) {
-        for (Map.Entry<String, List<ClassLoader>> entry : classLoaders.entrySet()) {
-            List<ClassLoader> cls = entry.getValue();
-            for (ClassLoader cl : cls) {
-                assertThat(cl)
-                        .describedAs("expecting JetClassLoader for method " + entry.getKey())
-                        .isInstanceOf(JetClassLoader.class);
-            }
-        }
-    }
 }

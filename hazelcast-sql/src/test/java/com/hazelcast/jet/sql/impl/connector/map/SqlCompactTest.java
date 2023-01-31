@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.connector.map;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
@@ -30,11 +29,12 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlRow;
@@ -91,26 +91,40 @@ public class SqlCompactTest extends SqlTestSupport {
         config.getJetConfig().setEnabled(true);
         CompactSerializationConfig compactSerializationConfig =
                 config.getSerializationConfig().getCompactSerializationConfig();
-        compactSerializationConfig.setEnabled(true);
         // registering this class to the member to see it does not affect any of the tests.
         // It has a different schema than all the tests
-        compactSerializationConfig.register(Person.class, PERSON_TYPE_NAME, new CompactSerializer<Person>() {
+        compactSerializationConfig.addSerializer(new CompactSerializer<Person>() {
             @Nonnull
             @Override
-            public Person read(@Nonnull CompactReader in) {
+            public Person read(@Nonnull CompactReader reader) {
                 Person person = new Person();
-                person.surname = in.readString("surname", "NotAssigned");
+                if (reader.getFieldKind("surname") == FieldKind.STRING) {
+                    person.surname = reader.readString("surname");
+                } else {
+                    person.surname = "NotAssigned";
+                }
                 return person;
             }
 
             @Override
-            public void write(@Nonnull CompactWriter out, @Nonnull Person person) {
-                out.writeString("surname", person.surname);
+            public void write(@Nonnull CompactWriter writer, @Nonnull Person person) {
+                writer.writeString("surname", person.surname);
+            }
+
+            @Nonnull
+            @Override
+            public String getTypeName() {
+                return PERSON_TYPE_NAME;
+            }
+
+            @Nonnull
+            @Override
+            public Class<Person> getCompactClass() {
+                return Person.class;
             }
         });
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getSerializationConfig().getCompactSerializationConfig().setEnabled(true);
         initializeWithClient(1, config, clientConfig);
         sqlService = instance().getSql();
         clientSqlService = client().getSql();
@@ -183,13 +197,13 @@ public class SqlCompactTest extends SqlTestSupport {
         IMap<Object, Object> map = client().getMap(name);
         Primitives primitives = (Primitives) map.get(1);
 
-        assertEquals(primitives.b, true);
-        assertEquals(primitives.bt, 2);
-        assertEquals(primitives.s, 3);
-        assertEquals(primitives.i, 4);
-        assertEquals(primitives.l, 5);
-        assertEquals(primitives.f, 12.321, 0.1);
-        assertEquals(primitives.d, 124.311, 0.1);
+        assertEquals(true, primitives.b);
+        assertEquals(2, primitives.bt);
+        assertEquals(3, primitives.s);
+        assertEquals(4, primitives.i);
+        assertEquals(5, primitives.l);
+        assertEquals(12.321, primitives.f, 0.1);
+        assertEquals(124.311, primitives.d, 0.1);
     }
 
 
@@ -607,18 +621,6 @@ public class SqlCompactTest extends SqlTestSupport {
                         + ")").iterator().next())
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessage("Cannot use the '" + field + "' field with Compact serialization");
-    }
-
-    @Test
-    public void when_compactDisabled_then_compactFormatNotAllowed() {
-        HazelcastInstance inst = createHazelcastInstance(smallInstanceConfig());
-        assertFalse(inst.getConfig().getSerializationConfig().getCompactSerializationConfig().isEnabled());
-        assertThatThrownBy(() -> inst.getSql().execute("create mapping m " +
-                "type imap " +
-                "options (" +
-                "'keyFormat'='int', 'valueFormat'='compact', " +
-                "'valueCompactTypeName'='foo')"))
-                .hasMessage("Compact serialization is disabled in the config");
     }
 
     @SuppressWarnings({"OptionalGetWithoutIsPresent", "unchecked", "rawtypes"})

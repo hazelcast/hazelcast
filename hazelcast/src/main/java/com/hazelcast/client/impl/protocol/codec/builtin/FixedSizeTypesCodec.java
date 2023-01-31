@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.nio.Bits;
+import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.sql.SqlColumnType;
 
@@ -114,6 +116,14 @@ public final class FixedSizeTypesCodec {
 
     public static void encodeInt(byte[] buffer, int pos, SqlColumnType columnType) {
         encodeInt(buffer, pos, columnType.getId());
+    }
+
+    public static void encodeInt(byte[] buffer, int pos, MemoryUnit memoryUnit) {
+        encodeInt(buffer, pos, memoryUnit.getId());
+    }
+
+    public static void encodeInt(byte[] buffer, int pos, JobStatus jobStatus) {
+        encodeInt(buffer, pos, jobStatus.getId());
     }
 
     public static void encodeShort(byte[] buffer, int pos, short value) {

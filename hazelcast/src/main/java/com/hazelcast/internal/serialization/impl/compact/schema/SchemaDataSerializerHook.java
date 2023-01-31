@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,9 +32,10 @@ public class SchemaDataSerializerHook implements DataSerializerHook {
     public static final int F_ID = FactoryIdHelper.getFactoryId(SCHEMA_DS_FACTORY, SCHEMA_DS_FACTORY_ID);
 
     public static final int SCHEMA = 1;
-    public static final int SEND_SCHEMA_OPERATION = 2;
-    public static final int FETCH_SCHEMA_OPERATION = 3;
-    public static final int SEND_ALL_SCHEMAS_OPERATION = 4;
+    public static final int SEND_SCHEMA_REPLICATIONS_OPERATION = 2;
+    public static final int PREPARE_SCHEMA_REPLICATION_OPERATION = 3;
+    public static final int ACK_SCHEMA_REPLICATION_OPERATION = 4;
+    public static final int SCHEMA_REPLICATION = 5;
 
     @Override
     public int getFactoryId() {
@@ -47,12 +48,14 @@ public class SchemaDataSerializerHook implements DataSerializerHook {
             switch (typeId) {
                 case SCHEMA:
                     return new Schema();
-                case SEND_SCHEMA_OPERATION:
-                    return new SendSchemaOperation();
-                case FETCH_SCHEMA_OPERATION:
-                    return new FetchSchemaOperation();
-                case SEND_ALL_SCHEMAS_OPERATION:
-                    return new SendAllSchemasOperation();
+                case SEND_SCHEMA_REPLICATIONS_OPERATION:
+                    return new SendSchemaReplicationsOperation();
+                case PREPARE_SCHEMA_REPLICATION_OPERATION:
+                    return new PrepareSchemaReplicationOperation();
+                case ACK_SCHEMA_REPLICATION_OPERATION:
+                    return new AckSchemaReplicationOperation();
+                case SCHEMA_REPLICATION:
+                    return new SchemaReplication();
                 default:
                     return null;
             }
