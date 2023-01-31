@@ -349,6 +349,22 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         return true;
     }
 
+    public boolean removeListener(UUID userRegistrationId) {
+        try {
+            return registrationExecutor.submit(() -> {
+                ClientListenerRegistration listenerRegistration = registrations.remove(userRegistrationId);
+                if (listenerRegistration == null) {
+                    return false;
+                }
+                listenerRegistration.getConnectionRegistrations().forEach((connection, registration) ->
+                        ((ClientConnection) connection).removeEventHandler(registration.getCallId()));
+                return true;
+            }).get();
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
     private final class ClientEventProcessor implements StripedRunnable {
         final ClientMessage clientMessage;
 

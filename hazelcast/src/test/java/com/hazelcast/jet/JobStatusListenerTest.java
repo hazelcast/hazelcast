@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -53,6 +54,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.spi.impl.eventservice.impl.EventServiceTest.getEventService;
@@ -60,6 +62,7 @@ import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -95,6 +98,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     public Supplier<HazelcastInstance> instance;
 
     private String jobIdString;
+    private UUID registrationId;
 
     @BeforeClass
     public static void setUp() throws NoSuchFieldException {
@@ -202,7 +206,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
                     assertJobStatusEventually(job, RUNNING);
                     listener.deregister();
                     cancelAndJoin(job);
-                    assertHasNoListenerEventually(job.getIdString());
+                    assertHasNoListenerEventually(job.getIdString(), listener.registrationId);
                     assertTailEqualsEventually(listener.log,
                             "Jet: NOT_RUNNING -> STARTING",
                             "Jet: STARTING -> RUNNING");
@@ -245,19 +249,23 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
                 (job, listener) -> {
                     listener.deregister();
                     job.cancel();
-                    assertHasNoListenerEventually(job.getIdString());
+                    assertHasNoListenerEventually(job.getIdString(), listener.registrationId);
                     assertTrue(listener.log.isEmpty());
                 });
     }
 
     @After
     public void testListenerDeregistration_onCompletion() {
-        assertHasNoListenerEventually(jobIdString);
+        assertHasNoListenerEventually(jobIdString, registrationId);
     }
 
-    static void assertHasNoListenerEventually(String jobIdString) {
-        assertTrueEventually(() -> assertTrue(Arrays.stream(instances()).allMatch(hz ->
-                getEventService(hz).getRegistrations(JobEventService.SERVICE_NAME, jobIdString).isEmpty())));
+    static void assertHasNoListenerEventually(String jobIdString, UUID registrationId) {
+        assertTrueEventually(() -> {
+            assertTrue(Arrays.stream(instances()).allMatch(hz ->
+                    getEventService(hz).getRegistrations(JobEventService.SERVICE_NAME, jobIdString).isEmpty()));
+            assertFalse(((ClientListenerServiceImpl) getHazelcastClientInstanceImpl(client()).getListenerService())
+                    .getRegistrations().containsKey(registrationId));
+        });
     }
 
     /**
@@ -277,6 +285,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         Job job = instance.get().getJet().newJob(p, config);
         JobStatusLogger listener = new JobStatusLogger(job, jobId);
         jobIdString = job.getIdString();
+        registrationId = listener.registrationId;
         test.accept(job, listener);
     }
 
@@ -301,6 +310,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         Job job = instance.get().getJet().newLightJob(p);
         JobStatusLogger listener = new JobStatusLogger(job, -1);
         jobIdString = job.getIdString();
+        registrationId = listener.registrationId;
         test.accept(job, listener);
     }
 

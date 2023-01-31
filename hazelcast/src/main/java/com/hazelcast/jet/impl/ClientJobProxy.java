@@ -35,6 +35,7 @@ import com.hazelcast.client.impl.protocol.codec.JetTerminateJobCodec;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
+import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -242,8 +243,10 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     @Nonnull
     @Override
     public UUID addStatusListener(@Nonnull JobStatusListener listener) {
-        return container().getListenerService().registerListener(
-                createJobStatusListenerCodec(getId()), new ClientJobStatusEventHandler(listener));
+        ClientJobStatusEventHandler handler = new ClientJobStatusEventHandler(listener);
+        handler.registrationId = container().getListenerService().registerListener(
+                createJobStatusListenerCodec(getId()), handler);
+        return handler.registrationId;
     }
 
     @Override
@@ -275,8 +278,17 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
         };
     }
 
-    private static class ClientJobStatusEventHandler implements EventHandler<ClientMessage> {
+    /**
+     * When a terminal job status event is published, the coordinator member sends a deregistration
+     * operation to every member. The same effect cannot be achieved by intercepting the messages to
+     * detect a terminal event since the listener is registered on all members, but the events are
+     * only sent to the subscriber member. However, deregistration on clients can be done by using an
+     * interceptor since the listener is only registered on the subscriber client. In fact, existing
+     * event handlers are essentially event interceptors, which do not introduce additional wrapping.
+     */
+    private class ClientJobStatusEventHandler implements EventHandler<ClientMessage> {
         final JetAddJobStatusListenerCodec.AbstractEventHandler handler;
+        UUID registrationId;
 
         ClientJobStatusEventHandler(final JobStatusListener listener) {
             handler = new JetAddJobStatusListenerCodec.AbstractEventHandler() {
@@ -285,6 +297,9 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
                                                  @Nullable String description, boolean userRequested) {
                     listener.jobStatusChanged(new JobStatusEvent(jobId, JobStatus.getById(previousStatus),
                             JobStatus.getById(newStatus), description, userRequested));
+                    if (JobStatus.getById(newStatus).isTerminal()) {
+                        ((ClientListenerServiceImpl) container().getListenerService()).removeListener(registrationId);
+                    }
                 }
             };
         }
