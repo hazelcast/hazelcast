@@ -29,6 +29,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.jet.sql.impl.connector.CalciteNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataJavaResolver;
@@ -54,7 +55,6 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.MapTableUtils;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
-import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -165,8 +165,8 @@ public class IMapSqlConnector implements SqlConnector {
     @Override
     public Vertex fullScanReader(
             @Nonnull DagBuildContext context,
-            @Nullable RexNode filter,
-            @Nonnull List<RexNode> projection,
+            @Nullable CalciteNode filter,
+            @Nonnull List<CalciteNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
@@ -202,8 +202,8 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull DagBuildContext context,
             @Nonnull Address localMemberAddress,
             @Nonnull MapTableIndex tableIndex,
-            @Nullable RexNode remainingFilter,
-            @Nonnull List<RexNode> projection,
+            @Nullable CalciteNode remainingFilter,
+            @Nonnull List<CalciteNode> projection,
             @Nullable IndexFilter indexFilter,
             @Nullable ComparatorEx<JetSqlRow> comparator,
             boolean descending
@@ -255,8 +255,8 @@ public class IMapSqlConnector implements SqlConnector {
     @Override
     public VertexWithInputConfig nestedLoopReader(
             @Nonnull DagBuildContext context,
-            @Nullable RexNode predicate,
-            @Nonnull List<RexNode> projections,
+            @Nullable CalciteNode predicate,
+            @Nonnull List<CalciteNode> projections,
             @Nonnull JetJoinInfo joinInfo
     ) {
         PartitionedMapTable table = (PartitionedMapTable) context.getTable();
@@ -324,7 +324,7 @@ public class IMapSqlConnector implements SqlConnector {
     public Vertex updateProcessor(
             @Nonnull DagBuildContext context,
             @Nonnull List<String> fieldNames,
-            @Nonnull List<RexNode> expressions
+            @Nonnull List<CalciteNode> expressions
     ) {
         PartitionedMapTable table = (PartitionedMapTable) context.getTable();
 

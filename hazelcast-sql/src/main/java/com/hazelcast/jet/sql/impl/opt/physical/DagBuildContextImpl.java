@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.sql.impl.connector.CalciteNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.DagBuildContext;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -30,6 +31,8 @@ import org.apache.calcite.rex.RexVisitor;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+
+import static java.util.stream.Collectors.toList;
 
 public class DagBuildContextImpl implements DagBuildContext {
     private final DAG dag;
@@ -68,18 +71,19 @@ public class DagBuildContextImpl implements DagBuildContext {
     @Nullable
     @SuppressWarnings("unchecked")
     @Override
-    public Expression<Boolean> convertFilter(@Nullable RexNode node) {
+    public Expression<Boolean> convertFilter(@Nullable CalciteNode node) {
         if (node == null) {
             return null;
         }
-        return (Expression<Boolean>) node.accept(createVisitor());
+        return (Expression<Boolean>) node.unwrap().accept(createVisitor());
     }
 
     @Nonnull
     @Override
-    public List<Expression<?>> convertProjection(@Nonnull List<RexNode> nodes) {
+    public List<Expression<?>> convertProjection(@Nonnull List<CalciteNode> nodes) {
         RexVisitor<Expression<?>> visitor = createVisitor();
-        return Util.toList(nodes, node -> node.accept(visitor));
+        List<RexNode> rexNodes = nodes.stream().map(CalciteNode::unwrap).collect(toList());
+        return Util.toList(rexNodes, node -> node.accept(visitor));
     }
 
     @Nonnull

@@ -44,6 +44,7 @@ import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
+import com.hazelcast.jet.sql.impl.connector.CalciteNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
@@ -184,7 +185,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         dagBuildContext.setTable(table);
         dagBuildContext.setRel(rel);
         Vertex vertex = getJetSqlConnector(table).updateProcessor(
-                dagBuildContext, rel.getUpdateColumnList(), rel.getSourceExpressionList());
+                dagBuildContext, rel.getUpdateColumnList(), CalciteNode.projection(rel.getSourceExpressionList()));
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }
@@ -228,8 +229,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         dagBuildContext.setRel(rel);
         return getJetSqlConnector(table).fullScanReader(
                 dagBuildContext,
-                rel.filter(),
-                rel.projection(),
+                CalciteNode.filter(rel.filter()),
+                CalciteNode.projection(rel.projection()),
                 policyProvider != null
                         ? context -> policyProvider.apply(context, wmKey)
                         : null
@@ -248,8 +249,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                         dagBuildContext,
                         localMemberAddress,
                         rel.getIndex(),
-                        rel.filter(),
-                        rel.projection(),
+                        CalciteNode.filter(rel.filter()),
+                        CalciteNode.projection(rel.projection()),
                         rel.getIndexFilter(),
                         rel.getComparator(),
                         rel.isDescending()
@@ -261,11 +262,11 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         RexProgram program = rel.getProgram();
         dagBuildContext.setTable(null);
         dagBuildContext.setRel(rel);
-        List<Expression<?>> projection = dagBuildContext.convertProjection(rel.projection());
+        List<Expression<?>> projection = dagBuildContext.convertProjection(CalciteNode.projection(rel.projection()));
 
         Vertex vertex;
         if (program.getCondition() != null) {
-            Expression<Boolean> filterExpr = dagBuildContext.convertFilter(rel.filter());
+            Expression<Boolean> filterExpr = dagBuildContext.convertFilter(CalciteNode.filter(rel.filter()));
             vertex = dag.newUniqueVertex("Calc", mapUsingServiceP(
                     ServiceFactories.nonSharedService(ctx ->
                             ExpressionUtil.calcFn(projection, filterExpr, ExpressionEvalContext.from(ctx))),
@@ -479,8 +480,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         dagBuildContext.setRel(rel);
         VertexWithInputConfig vertexWithConfig = getJetSqlConnector(rightTable).nestedLoopReader(
                 dagBuildContext,
-                rel.rightFilter(),
-                rel.rightProjection(),
+                CalciteNode.filter(rel.rightFilter()),
+                CalciteNode.projection(rel.rightProjection()),
                 rel.joinInfo(dagBuildContext.getParameterMetadata())
         );
         Vertex vertex = vertexWithConfig.vertex();

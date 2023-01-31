@@ -23,6 +23,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.connector.CalciteNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -275,8 +276,8 @@ public class JdbcSqlConnector implements SqlConnector {
     @Override
     public Vertex fullScanReader(
             @Nonnull DagBuildContext context,
-            @Nullable RexNode predicate,
-            @Nonnull List<RexNode> projection,
+            @Nullable CalciteNode predicate,
+            @Nonnull List<CalciteNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
@@ -284,7 +285,9 @@ public class JdbcSqlConnector implements SqlConnector {
         }
         JdbcTable table = (JdbcTable) context.getTable();
 
-        SelectQueryBuilder builder = new SelectQueryBuilder(context.getTable(), predicate, projection);
+        List<RexNode> projections = projection.stream().map(CalciteNode::unwrap).collect(toList());
+        RexNode filter = predicate == null ? null : predicate.unwrap();
+        SelectQueryBuilder builder = new SelectQueryBuilder(context.getTable(), filter, projections);
         return context.getDag().newUniqueVertex(
                 "Select(" + table.getExternalName() + ")",
                 ProcessorMetaSupplier.forceTotalParallelismOne(
@@ -324,7 +327,7 @@ public class JdbcSqlConnector implements SqlConnector {
     public Vertex updateProcessor(
             @Nonnull DagBuildContext context,
             @Nonnull List<String> fieldNames,
-            @Nonnull List<RexNode> expressions
+            @Nonnull List<CalciteNode> expressions
     ) {
         JdbcTable table = (JdbcTable) context.getTable();
 
@@ -333,7 +336,8 @@ public class JdbcSqlConnector implements SqlConnector {
                 .map(f -> table.getField(f).externalName())
                 .collect(toList());
 
-        UpdateQueryBuilder builder = new UpdateQueryBuilder(table, pkFields, fieldNames, expressions);
+        List<RexNode> projections = expressions.stream().map(CalciteNode::unwrap).collect(toList());
+        UpdateQueryBuilder builder = new UpdateQueryBuilder(table, pkFields, fieldNames, projections);
 
         return context.getDag().newUniqueVertex(
                 "Update(" + table.getExternalName() + ")",

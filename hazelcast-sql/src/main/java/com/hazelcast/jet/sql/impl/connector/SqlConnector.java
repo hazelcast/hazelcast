@@ -269,8 +269,8 @@ public interface SqlConnector {
     @Nonnull
     default Vertex fullScanReader(
             @Nonnull DagBuildContext context,
-            @Nullable RexNode predicate,
-            @Nonnull List<RexNode> projection,
+            @Nullable CalciteNode predicate,
+            @Nonnull List<CalciteNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         throw new UnsupportedOperationException("Full scan not supported for " + typeName());
@@ -320,8 +320,8 @@ public interface SqlConnector {
     @Nonnull
     default VertexWithInputConfig nestedLoopReader(
             @Nonnull DagBuildContext context,
-            @Nullable RexNode predicate,
-            @Nonnull List<RexNode> projection,
+            @Nullable CalciteNode predicate,
+            @Nonnull List<CalciteNode> projection,
             @Nonnull JetJoinInfo joinInfo
     ) {
         throw new UnsupportedOperationException("Nested-loop join not supported for " + typeName());
@@ -363,7 +363,7 @@ public interface SqlConnector {
     default Vertex updateProcessor(
             @Nonnull DagBuildContext context,
             @Nonnull List<String> fieldNames,
-            @Nonnull List<RexNode> expressions
+            @Nonnull List<CalciteNode> expressions
     ) {
         throw new UnsupportedOperationException("UPDATE not supported for " + typeName());
     }
@@ -421,14 +421,14 @@ public interface SqlConnector {
          * </ul>
          */
         @Nullable
-        Expression<Boolean> convertFilter(@Nullable RexNode node);
+        Expression<Boolean> convertFilter(@Nullable CalciteNode node);
 
         /**
-         * Converts a list of RexNodes. See also {@link #convertFilter(RexNode)}
+         * Converts a list of RexNodes. See also {@link #convertFilter(CalciteNode)}
          * for information about {@link RexInputRef} conversion.
          */
         @Nonnull
-        List<Expression<?>> convertProjection(@Nonnull List<RexNode> nodes);
+        List<Expression<?>> convertProjection(@Nonnull List<CalciteNode> nodes);
     }
 
     /**
