@@ -410,7 +410,7 @@ public interface SqlConnector {
          * @throws IllegalStateException if the table doesn't apply in the current context
          */
         @Nonnull
-        Table getTable();
+        <T extends Table> T getTable();
 
         /**
          * Converts a boolean RexNode. When evaluating a {@link RexInputRef},

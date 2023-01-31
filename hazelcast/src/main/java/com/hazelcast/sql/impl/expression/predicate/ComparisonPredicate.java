@@ -168,4 +168,7 @@ public final class ComparisonPredicate extends BiExpression<Boolean> implements 
         return getClass().getSimpleName() + "{mode=" + mode + ", operand1=" + operand1 + ", operand2=" + operand2 + '}';
     }
 
+    public ComparisonMode getMode() {
+        return mode;
+    }
 }

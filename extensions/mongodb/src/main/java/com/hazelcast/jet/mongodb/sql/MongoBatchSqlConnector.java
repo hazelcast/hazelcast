@@ -19,15 +19,17 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.connector.CalciteNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.connector.SqlProcessors;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
-import org.apache.calcite.rex.RexNode;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -38,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
+import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.mongodb.Mappers.defaultCodecRegistry;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -98,18 +101,18 @@ public class MongoBatchSqlConnector implements SqlConnector {
     @Override
     @Nonnull
     public Vertex fullScanReader(
-            @Nonnull DagBuildContext dagBuildContext,
-            @Nullable RexNode predicate,
-            @Nonnull List<RexNode> projection,
+            @Nonnull DagBuildContext context,
+            @Nullable CalciteNode predicate,
+            @Nonnull List<CalciteNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
-        MongoTable table = (MongoTable) dagBuildContext.getTable();
+        MongoTable table = context.getTable();
 
-        RexToMongoVisitor visitor = new RexToMongoVisitor(table);
+        ExpressionToMongoVisitor visitor = new ExpressionToMongoVisitor(table, null, true);
 
-        TranslationResult<String> filter = translateFilter(predicate, visitor);
-        TranslationResult<List<String>> projections = translateProjections(projection, visitor);
+        TranslationResult<String> filter = translateFilter(predicate, context, visitor);
+        TranslationResult<List<String>> projections = translateProjections(projection, context, visitor);
 
-        DAG dag = dagBuildContext.getDag();
+        DAG dag = context.getDag();
 
         // if not all filters are pushed down, then we cannot push down projection
         // because later filters may use those fields
@@ -120,29 +123,33 @@ public class MongoBatchSqlConnector implements SqlConnector {
                 new SelectProcessorSupplier(table, filter.result, projectionList)
         );
 
-//        if (!filter.allProceeded || !projections.allProceeded) {
-//            Vertex vEnd = dag.newUniqueVertex(
-//                    "ProjectAndFilter(" + table + ")",
-//                    SqlProcessors.rowProjector(
-//                            table.paths(),
-//                            table.types(),
-//                            table.queryTargetSupplier(),
-//                            predicate,
-//                            projection
-//                    )
-//            );
-//            dag.edge(between(sourceVertex, vEnd).isolated());
-//            return vEnd;
-//        }
+        if (!filter.allProceeded || !projections.allProceeded) {
+            List<Expression<?>> projectionExpr = context.convertProjection(projection);
+            Expression<Boolean> filterExpr = context.convertFilter(predicate);
+            Vertex vEnd = dag.newUniqueVertex(
+                    "ProjectAndFilter(" + table + ")",
+                    SqlProcessors.rowProjector(
+                            table.paths(),
+                            table.types(),
+                            table.queryTargetSupplier(),
+                            filterExpr,
+                            projectionExpr
+                    )
+            );
+            dag.edge(between(sourceVertex, vEnd).isolated());
+            return vEnd;
+        }
         return sourceVertex;
     }
 
-    private static TranslationResult<String> translateFilter(RexNode filterNode, RexToMongoVisitor visitor) {
-        String expression;
+    private static TranslationResult<String> translateFilter(CalciteNode calciteNode, DagBuildContext context,
+                                                             ExpressionToMongoVisitor visitor) {
         TranslationResult<String> r;
         try {
-            Bson filter = (Bson) filterNode.accept(visitor);
-            expression = filter.toBsonDocument(Document.class, defaultCodecRegistry()).toJson();
+            Expression<Boolean> filter = context.convertFilter(calciteNode);
+            Object result = visitor.visitGeneric(filter);
+            assert result instanceof Bson;
+            String expression = ((Bson) result).toBsonDocument(Document.class, defaultCodecRegistry()).toJson();
             r = new TranslationResult<>(expression, true);
         } catch (Throwable t) {
             r = new TranslationResult<>(null, false);
@@ -150,11 +157,13 @@ public class MongoBatchSqlConnector implements SqlConnector {
         return r;
     }
 
-    private static TranslationResult<List<String>> translateProjections(List<RexNode> projectionNodes,
-                                                                        RexToMongoVisitor visitor) {
+    private static TranslationResult<List<String>> translateProjections(List<CalciteNode> projectionNodes,
+                                                                        DagBuildContext context,
+                                                                        ExpressionToMongoVisitor visitor) {
         try {
-            List<String> fields = projectionNodes.stream()
-                                          .map(proj -> proj.accept(visitor))
+            List<Expression<?>> expressions = context.convertProjection(projectionNodes);
+            List<String> fields = expressions.stream()
+                                          .map(visitor::visitGeneric)
                                           .filter(proj -> proj instanceof String)
                                           .map(p -> (String) p)
                                           .collect(toList());
