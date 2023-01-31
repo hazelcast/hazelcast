@@ -30,12 +30,6 @@ public class ConcurrentBufferAllocator implements BufferAllocator<ThreadLocalBuf
     private static final MpmcArrayQueue<ByteBuffer> FREED_BYTE_BUFFERS = new MpmcArrayQueue<>(INITIAL_POOL_SIZE);
 
     @Override
-    public ThreadLocalBuffer allocate() {
-        return allocate(DEFAULT_BUFFER_SIZE);
-    }
-
-    @SuppressWarnings("checkstyle:MagicNumber")
-    @Override
     public ThreadLocalBuffer allocate(int minSize) {
         ThreadLocalBufferAllocator allocator = THREAD_LOCAL_IO_BUFFER_ALLOCATORS.get();
         if (allocator == null) {

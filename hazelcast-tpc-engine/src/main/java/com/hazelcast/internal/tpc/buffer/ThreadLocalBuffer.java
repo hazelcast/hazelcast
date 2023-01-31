@@ -43,7 +43,10 @@ public class ThreadLocalBuffer implements Buffer {
 
     private int chunkToRelease;
 
-    public ThreadLocalBuffer(ThreadLocalBufferAllocator allocator, int minSize, ConcurrentBufferAllocator concurrentAllocator) {
+    public ThreadLocalBuffer(
+            ThreadLocalBufferAllocator allocator,
+            int minSize,
+            ConcurrentBufferAllocator concurrentAllocator) {
         this.allocator = allocator;
         this.superAllocator = concurrentAllocator;
         this.chunks = new ByteBuffer[((minSize - 1) / ThreadLocalBufferAllocator.BUFFER_SIZE) + 1];
@@ -117,6 +120,74 @@ public class ThreadLocalBuffer implements Buffer {
         return chunks[chunk].get(posInChunk);
     }
 
+    @Override
+    public void write(ByteBuffer src) {
+        write(src, src.remaining());
+    }
+
+    @Override
+    public void write(ByteBuffer src, int count) {
+        ensureRemaining(count);
+        while (count > 0) {
+            int chunk = pos / ThreadLocalBufferAllocator.BUFFER_SIZE;
+            int currentChunkCapacity = chunks[chunk].remaining();
+            if (currentChunkCapacity >= count) {
+                chunks[chunk].put(src);
+                pos += count;
+                count = 0;
+            } else {
+                int limit = src.limit();
+                src.limit(src.position() + currentChunkCapacity);
+                chunks[chunk].put(src);
+                src.limit(limit);
+                pos += currentChunkCapacity;
+                count -= currentChunkCapacity;
+            }
+        }
+    }
+
+    @Override
+    public int remaining() {
+        return limit - pos;
+    }
+
+    @Override
+    public ByteBuffer[] getChunks() {
+        return chunks;
+    }
+
+    public int chunksPos() {
+        return chunksPos;
+    }
+
+    public int chunkToRelease() {
+        return chunkToRelease;
+    }
+
+    void addChunk(ByteBuffer chunk) {
+        ensureRemainingForNewChunk();
+        chunks[chunksPos++] = chunk;
+        limit += ThreadLocalBufferAllocator.BUFFER_SIZE;
+    }
+
+    @Override
+    public boolean hasRemainingChunks() {
+        return chunkToRelease < chunks.length;
+    }
+
+    private void ensureRemaining(int length) {
+        while (remaining() < length) {
+            addChunk(allocator.getNextByteBuffer());
+        }
+    }
+
+    private void ensureRemainingForNewChunk() {
+        if (chunksPos == chunks.length) {
+            chunks = Arrays.copyOf(chunks, chunks.length * 2);
+        }
+    }
+
+    //#region write-specific methods
     @Override
     public void writeByte(byte src) {
         ensureRemaining(1);
@@ -218,71 +289,5 @@ public class ThreadLocalBuffer implements Buffer {
         writeByteUnsafe((byte) ((value >>> 8) & 0xFF));
         writeByteUnsafe((byte) (value & 0xFF));
     }
-
-    @Override
-    public void write(ByteBuffer src) {
-        write(src, src.remaining());
-    }
-
-    @Override
-    public void write(ByteBuffer src, int count) {
-        ensureRemaining(count);
-        while (count > 0) {
-            int chunk = pos / ThreadLocalBufferAllocator.BUFFER_SIZE;
-            int currentChunkCapacity = chunks[chunk].remaining();
-            if (currentChunkCapacity >= count) {
-                chunks[chunk].put(src);
-                pos += count;
-                count = 0;
-            } else {
-                int limit = src.limit();
-                src.limit(src.position() + currentChunkCapacity);
-                chunks[chunk].put(src);
-                src.limit(limit);
-                pos += currentChunkCapacity;
-                count -= currentChunkCapacity;
-            }
-        }
-    }
-
-    @Override
-    public int remaining() {
-        return limit - pos;
-    }
-
-    @Override
-    public ByteBuffer[] getChunks() {
-        return chunks;
-    }
-
-    public int chunksPos() {
-        return chunksPos;
-    }
-
-    public int chunkToRelease() {
-        return chunkToRelease;
-    }
-
-    @Override
-    public boolean hasRemainingChunks() {
-        return chunkToRelease < chunks.length;
-    }
-
-    private void ensureRemaining(int length) {
-        while (remaining() < length) {
-            addChunk(allocator.getNextByteBuffer());
-        }
-    }
-
-    void addChunk(ByteBuffer chunk) {
-        ensureRemainingForNewChunk();
-        chunks[chunksPos++] = chunk;
-        limit += ThreadLocalBufferAllocator.BUFFER_SIZE;
-    }
-
-    private void ensureRemainingForNewChunk() {
-        if (chunksPos == chunks.length) {
-            chunks = Arrays.copyOf(chunks, chunks.length * 2);
-        }
-    }
+    //#endregion
 }

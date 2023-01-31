@@ -45,8 +45,7 @@ import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.internal.tpc.buffer.BufferAllocator;
-import com.hazelcast.internal.tpc.buffer.ThreadLocalBuffer;
+import com.hazelcast.internal.tpc.buffer.ThreadLocalBufferAllocator;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.executor.ExecutorType;
 import com.hazelcast.internal.util.executor.UnblockablePoolExecutorThreadFactory;
@@ -122,7 +121,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     private final ClientLifecycleMonitor lifecycleMonitor;
     private final Map<UUID, Consumer<Long>> backupListeners = new ConcurrentHashMap<>();
     private final AddressChecker addressChecker;
-    private final BufferAllocator<ThreadLocalBuffer> responseBufAllocator = createGrowingThreadLocal();
+    private final ThreadLocalBufferAllocator responseBufAllocator = createGrowingThreadLocal();
 
     // not final for the testing purposes
     private ClientEndpointStatisticsManager endpointStatisticsManager;
@@ -230,7 +229,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         if (messageTask instanceof AbstractMessageTask) {
             AbstractMessageTask abstractMessageTask = (AbstractMessageTask) messageTask;
             abstractMessageTask.setAsyncSocket(clientMessage.getAsyncSocket());
-            abstractMessageTask.setResponseBufAllocator(responseBufAllocator);
+            abstractMessageTask.setBufferAllocator(responseBufAllocator);
         }
         OperationServiceImpl operationService = nodeEngine.getOperationService();
         if (isUrgent(messageTask)) {

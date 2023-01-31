@@ -40,11 +40,6 @@ public class ThreadLocalBufferAllocator implements BufferAllocator<ThreadLocalBu
     }
 
     @Override
-    public ThreadLocalBuffer allocate() {
-        return allocate(DEFAULT_BUFFER_SIZE);
-    }
-
-    @Override
     public ThreadLocalBuffer allocate(int minSize) {
         return getNextIOBuffer(minSize);
     }

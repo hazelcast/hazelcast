@@ -35,10 +35,8 @@ import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.tpc.AsyncSocket;
-import com.hazelcast.internal.tpc.buffer.Buffer;
 import com.hazelcast.internal.tpc.buffer.BufferAllocator;
 import com.hazelcast.internal.tpc.buffer.ThreadLocalBuffer;
-import com.hazelcast.internal.tpc.buffer.ThreadLocalBufferAllocator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
@@ -69,7 +67,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
             Arrays.asList(Error.class, MemberLeftException.class);
 
     protected AsyncSocket asyncSocket;
-    protected BufferAllocator responseBufAllocator;
+    protected BufferAllocator<ThreadLocalBuffer> responseBufAllocator;
 
     protected final ClientMessage clientMessage;
     protected final ServerConnection connection;
@@ -98,8 +96,8 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         this.asyncSocket = asyncSocket;
     }
 
-    public void setResponseBufAllocator(BufferAllocator responseBufAllocator) {
-        this.responseBufAllocator = responseBufAllocator;
+    public void setBufferAllocator(BufferAllocator bufferAllocator) {
+        this.responseBufAllocator = bufferAllocator;
     }
 
     @SuppressWarnings("unchecked")
@@ -282,11 +280,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
             connection.write(resultClientMessage);
         } else {
             ClientMessage.Frame frame = resultClientMessage.getStartFrame();
-            Buffer buf = new ThreadLocalBuffer(
-                    (ThreadLocalBufferAllocator) responseBufAllocator,
-                    resultClientMessage.getBufferLength(),
-                    null);
-//            Buffer buf = responseBufAllocator.allocate(resultClientMessage.getBufferLength());
+            ThreadLocalBuffer buf = responseBufAllocator.allocate(resultClientMessage.getBufferLength());
             while (frame != null) {
                 buf.writeIntL(frame.content.length + SIZE_OF_FRAME_LENGTH_AND_FLAGS);
 
@@ -301,7 +295,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
             }
             buf.flip();
             asyncSocket.writeAndFlush(buf);
-            buf.release();
+            responseBufAllocator.free(buf);
         }
         //TODO framing not implemented yet, should be split into frames before writing to connection
         // PETER: There is no point in chopping it up in frames and in 1 go write all these frames because it still will
