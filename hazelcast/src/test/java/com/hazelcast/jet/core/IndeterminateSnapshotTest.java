@@ -41,7 +41,9 @@ import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.Accessors;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.Repeat;
@@ -51,6 +53,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import org.mockito.Mockito;
 import org.mockito.internal.stubbing.answers.ThrowsException;
 
@@ -218,10 +223,14 @@ public class IndeterminateSnapshotTest {
             Vertex sink = dag.newVertex("sink", Processors.noopP()).localParallelism(1);
             dag.edge(between(source, sink));
 
-            return instances[0].getJet().newJob(dag, new JobConfig()
+            return instances[0].getJet().newJob(dag, customizeJobConfig(new JobConfig()
                     .setProcessingGuarantee(EXACTLY_ONCE)
                     // trigger snapshot often to speed up test
-                    .setSnapshotIntervalMillis(1000));
+                    .setSnapshotIntervalMillis(1000)));
+        }
+
+        protected JobConfig customizeJobConfig(JobConfig config) {
+            return config;
         }
     }
 
@@ -633,8 +642,22 @@ public class IndeterminateSnapshotTest {
      * more resembling reality.
      */
     @Category({QuickTest.class, ParallelJVMTest.class})
-    @RunWith(HazelcastSerialClassRunner.class)
+    @RunWith(HazelcastParametrizedRunner.class)
+    @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
     public static class SnapshotFailureTests extends IndeterminateSnapshotTestBase {
+
+        @Parameter
+        public boolean suspendOnFailure;
+
+        @Parameterized.Parameters(name = "suspendOnFailure:{0}")
+        public static Object[] parameters() {
+            return new Object[] { false, true };
+        }
+
+        @Override
+        protected JobConfig customizeJobConfig(JobConfig config) {
+            return config.setSuspendOnFailure(suspendOnFailure);
+        }
 
         // fixes problem with mock deserialization on cluster side.
         // probably registers generated mockito classes in classloader that is shared with the HZ instances.
@@ -799,9 +822,9 @@ public class IndeterminateSnapshotTest {
             @Nonnull
             private AbstractScenarioStep getFirst() {
                 AbstractScenarioStep first = this;
-                do {
+                while (first.prev != null) {
                     first = first.prev;
-                } while (first.prev != null);
+                }
                 return first;
             }
         }
@@ -818,7 +841,6 @@ public class IndeterminateSnapshotTest {
 
             /**
              * Snapshot counter will be reused. Most often this is the case after restore.
-             * @return
              */
             SuccessfulSnapshots reusedCounter() {
                 repeat(repetitions > 1 ? repetitions - 1 : null);
@@ -893,7 +915,7 @@ public class IndeterminateSnapshotTest {
          */
         private class IndeterminateLostPutsUntil extends AbstractScenarioStep {
 
-            private CompletableFuture<String> registration = new CompletableFuture<>();
+            private final CompletableFuture<String> registration = new CompletableFuture<>();
 
             <T> IndeterminateLostPutsUntil(CompletableFuture<T> condition) {
                 super();
@@ -912,9 +934,8 @@ public class IndeterminateSnapshotTest {
             protected void doApply() {
                 initSnapshotDoneCounter();
                 SnapshotInstrumentationP.snapshotCommitPrepareConsumer =
-                        breakSnapshotConsumer("snapshot commit prepare", () -> {
-                            registration.complete(allIndeterminatePutsLost());
-                        });
+                        breakSnapshotConsumer("snapshot commit prepare",
+                                () -> registration.complete(allIndeterminatePutsLost()));
             }
 
             @Override
@@ -1166,9 +1187,8 @@ public class IndeterminateSnapshotTest {
         @Nullable
         static volatile Consumer<Integer> saveSnapshotConsumer;
         @Nullable
-        static volatile CountDownLatch initLatch;
-        @Nullable
         static volatile Consumer<Integer> snapshotCommitPrepareConsumer;
+        @Nonnull
         static volatile Consumer<Boolean> snapshotCommitFinishConsumer = b -> { };
         static volatile boolean restoredFromSnapshot = false;
 
@@ -1184,7 +1204,6 @@ public class IndeterminateSnapshotTest {
             restoredCounters.clear();
 
             allowedSnapshotsCount = 0;
-            initLatch = null;
             saveSnapshotConsumer = null;
             snapshotCommitPrepareConsumer = null;
             snapshotCommitFinishConsumer = b -> { };
@@ -1194,9 +1213,6 @@ public class IndeterminateSnapshotTest {
         @Override
         protected void init(@Nonnull Context context) {
             globalIndex = context.globalProcessorIndex();
-            if (initLatch != null) {
-//               initLatch.await();
-            }
         }
 
         @Override
@@ -1209,10 +1225,8 @@ public class IndeterminateSnapshotTest {
 
         @Override
         public boolean saveToSnapshot() {
-            if (saveSnapshotConsumer != null) {
-                if (snapshotCounter >= allowedSnapshotsCount) {
-                    saveSnapshotConsumer.accept(globalIndex);
-                }
+            if (saveSnapshotConsumer != null && snapshotCounter >= allowedSnapshotsCount) {
+                saveSnapshotConsumer.accept(globalIndex);
             }
             savedCounters.put(globalIndex, snapshotCounter);
             return tryEmitToSnapshot(broadcastKey(globalIndex), snapshotCounter);
@@ -1220,10 +1234,8 @@ public class IndeterminateSnapshotTest {
 
         @Override
         public boolean snapshotCommitPrepare() {
-            if (snapshotCommitPrepareConsumer != null) {
-                if (snapshotCounter >= allowedSnapshotsCount) {
-                    snapshotCommitPrepareConsumer.accept(globalIndex);
-                }
+            if (snapshotCommitPrepareConsumer != null && snapshotCounter >= allowedSnapshotsCount) {
+                snapshotCommitPrepareConsumer.accept(globalIndex);
             }
             return true;
         }

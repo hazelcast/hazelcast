@@ -218,19 +218,21 @@ Updated algorithm guarantees correctness by holding the following invariants:
 
 ### Job suspension
 
-TBD: job suspension creates snapshot. What if it is indeterminate? 
-There are already some warnings in `Job.suspend()` docs that the job can be restarted instead of suspended. 
+Job suspension creates snapshot. If the snapshot is indeterminate, Job will be suspended anyway.
+Snapshot state (if the update was successful or lost) will be resolved when the job is resumed. 
 
 ### Job suspension on failure
 
 Job restart due to failed snapshot (indeterminate result of `JobExecutionRecord` write)
-should not trigger yet another snapshot if `suspendOnFailure` is enabled.
+will not be treated as failure and will not suspend job if `suspendOnFailure` is enabled.
+Additionally, `suspendOnFailure` does not initiate snapshot. 
 
 ### Exported snapshots (Enterprise version)
 
 Exported snapshots are performed as follows:
 1. if the job is running, take snapshot but write data to `exportedSnapshot.<name>` IMap instead of ordinary snapshot data IMap
-2. if the job is suspended, copy most recent automatic snapshot data to `exportedSnapshot.<name>` IMap
+2. if the job is suspended, copy most recent automatic snapshot data to `exportedSnapshot.<name>` IMap.
+   Before copying Jet will ensure that JobExecutionRecord is safe so appropriate snapshot is copied.
 
 First case will benefit from added protection against corruption.
 `IndeterminateOperationStateException` at the last stage (writing `SnapshotVerificationRecord`)
