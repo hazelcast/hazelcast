@@ -75,14 +75,14 @@ public class DagBuildContextImpl implements DagBuildContext {
         if (node == null) {
             return null;
         }
-        return (Expression<Boolean>) node.unwrap().accept(createVisitor());
+        return (Expression<Boolean>) node.unwrap(RexNode.class).accept(createVisitor());
     }
 
     @Nonnull
     @Override
     public List<Expression<?>> convertProjection(@Nonnull List<CalciteNode> nodes) {
         RexVisitor<Expression<?>> visitor = createVisitor();
-        List<RexNode> rexNodes = nodes.stream().map(CalciteNode::unwrap).collect(toList());
+        List<RexNode> rexNodes = nodes.stream().map(n -> n.unwrap(RexNode.class)).collect(toList());
         return Util.toList(rexNodes, node -> node.accept(visitor));
     }
 

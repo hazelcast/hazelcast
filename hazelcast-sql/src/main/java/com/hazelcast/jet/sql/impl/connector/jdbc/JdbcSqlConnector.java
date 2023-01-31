@@ -285,8 +285,8 @@ public class JdbcSqlConnector implements SqlConnector {
         }
         JdbcTable table = (JdbcTable) context.getTable();
 
-        List<RexNode> projections = projection.stream().map(CalciteNode::unwrap).collect(toList());
-        RexNode filter = predicate == null ? null : predicate.unwrap();
+        List<RexNode> projections = projection.stream().map(n -> n.unwrap(RexNode.class)).collect(toList());
+        RexNode filter = predicate == null ? null : predicate.unwrap(RexNode.class);
         SelectQueryBuilder builder = new SelectQueryBuilder(context.getTable(), filter, projections);
         return context.getDag().newUniqueVertex(
                 "Select(" + table.getExternalName() + ")",
@@ -336,7 +336,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 .map(f -> table.getField(f).externalName())
                 .collect(toList());
 
-        List<RexNode> projections = expressions.stream().map(CalciteNode::unwrap).collect(toList());
+        List<RexNode> projections = expressions.stream().map(n -> n.unwrap(RexNode.class)).collect(toList());
         UpdateQueryBuilder builder = new UpdateQueryBuilder(table, pkFields, fieldNames, projections);
 
         return context.getDag().newUniqueVertex(

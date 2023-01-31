@@ -36,11 +36,13 @@ public final class CalciteNode {
 
     /**
      * Returns underlying Calcite {@linkplain RexNode}.
-     * @return
      */
     @Nullable
-    public RexNode unwrap() {
-        return node;
+    public <T> T unwrap(Class<T> clazz) {
+        if (clazz.isInstance(node)) {
+            return clazz.cast(node);
+        }
+        return null;
     }
 
     /**
