@@ -195,8 +195,8 @@ public final class CompactUtil {
                 + "cannot be serialized with zero configuration Compact "
                 + "serialization because this type is not supported yet. If you "
                 + "want to serialize '" + clazz + "' which uses this class in "
-                + "its fields, consider writing a CompactSerializer for the main class or "
-                + "the field class which is " + fieldClass + " in this case.");
+                + "its fields, consider writing a CompactSerializer for either the '"
+                + clazz + "' or the '" + fieldClass + "'.");
     }
 
     public static void verifyFieldClassShouldBeSerializedAsCompact(CompactStreamSerializer compactStreamSerializer,
@@ -211,7 +211,7 @@ public final class CompactUtil {
                 + "serialization mechanism. If you want to serialize "
                 + "'" + clazz + "' which uses this class in its fields, consider "
                 + "overriding that serialization mechanism. You can do that by "
-                + "adding " + fieldClass + " to CompactSerializationConfig, or "
+                + "adding '" + fieldClass + " to CompactSerializationConfig, or "
                 + "writing and registering an explicit CompactSerializer for it.");
     }
 
