@@ -52,7 +52,7 @@ public class DagBuildContextImpl implements DagBuildContext {
     @Override
     public Table getTable() {
         if (table == null) {
-            throw new IllegalArgumentException("table not available");
+            throw new IllegalStateException("table not available");
         }
         return table;
     }
