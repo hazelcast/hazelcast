@@ -364,26 +364,26 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         return (HzClientDataStoreFactory) dataStoreFactory;
     }
 
-    private static class ClusterMetaSupplier<E, T> implements ProcessorMetaSupplier {
+    // Creates ClusterProcessorSupplier per member. Each ClusterProcessorSupplier is given a
+    // list of partitions IDs
+    private static class ClusterMetaSupplier<E> implements ProcessorMetaSupplier {
 
         static final long serialVersionUID = 1L;
 
         private ClusterMetaSupplierParams clusterMetaSupplierParams;
         private final String clientXml;
 
-        private ExternalDataStoreRef externalDataStoreRef;
-
-        private final FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<E>>
-                eventJournalReaderSupplier;
-
+        private final ExternalDataStoreRef externalDataStoreRef;
         private transient int remotePartitionCount;
+
+        //Key : Address of the local or remote member
+        //Value : List of partitions ids on this member
         private transient Map<Address, List<Integer>> addrToPartitions;
 
         ClusterMetaSupplier(ClusterMetaSupplierParams clusterMetaSupplierParams) {
             this.clusterMetaSupplierParams = clusterMetaSupplierParams;
 
             clientXml = clusterMetaSupplierParams.getClientXml();
-            eventJournalReaderSupplier = clusterMetaSupplierParams.getEventJournalReaderSupplier();
             externalDataStoreRef = clusterMetaSupplierParams.getExternalDataStoreRef();
 
         }
@@ -396,22 +396,25 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         @Override
         public void init(@Nonnull Context context) {
             // The order is important.
-            // In the abstract factory, if externalDataStoreRef is specified prefer it to clientXml
+            // If externalDataStoreRef is specified prefer it to clientXml
             if (externalDataStoreRef != null) {
                 HzClientDataStoreFactory hzClientDataStoreFactory = getDataStoreFactory(context.hazelcastInstance(),
                         externalDataStoreRef.getName());
                 HazelcastInstance client = hzClientDataStoreFactory.getDataStore();
-                initRemote(client);
+                findRemotePartitionCount(client);
             } else if (clientXml != null) {
-                initRemote();
+                findRemotePartitionCount();
             } else {
+
+                FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<E>>
+                        eventJournalReaderSupplier = clusterMetaSupplierParams.getEventJournalReaderSupplier();
                 PermissionsUtil.checkPermission(eventJournalReaderSupplier, context);
                 initLocal(context.hazelcastInstance().getPartitionService().getPartitions());
             }
         }
 
         // Get remotePartitionCount from new HazelcastInstance
-        private void initRemote() {
+        private void findRemotePartitionCount() {
             HazelcastInstance client = newHazelcastClient(asClientConfig(clientXml));
             try {
                 HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
@@ -422,7 +425,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         }
 
         // Get remotePartitionCount from given HazelcastInstance
-        private void initRemote(HazelcastInstance client) {
+        private void findRemotePartitionCount(HazelcastInstance client) {
             HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
             remotePartitionCount = clientProxy.client.getClientPartitionService().getPartitionCount();
         }
@@ -436,17 +439,16 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         @Override
         @Nonnull
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            // If addrToPartitions is null it means that
-            // the abstract factory is connecting to remote cluster
+            // If addrToPartitions is null it means that we are connecting to remote cluster
             if (addrToPartitions == null) {
-                // assign each remote partition to a member
+                // assign each remote partition id to a local member address
                 addrToPartitions = range(0, remotePartitionCount)
                         .boxed()
                         .collect(groupingBy(partition -> addresses.get(partition % addresses.size())));
             }
 
 
-            // Return a new factory for processors
+            // Return a new factory per member owning the given partitions
             return address -> new ClusterProcessorSupplier<>(addrToPartitions.get(address), clusterMetaSupplierParams);
         }
 
@@ -513,7 +515,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             HazelcastInstance instance = context.hazelcastInstance();
 
             // The order is important.
-            // In the processor factory, if externalDataStoreRef is specified prefer it to clientXml
+            // If externalDataStoreRef is specified prefer it to clientXml
             if (externalDataStoreRef != null) {
                 // Use cached HazelcastInstance for client
                 HzClientDataStoreFactory hzClientDataStoreFactory = getDataStoreFactory(context.hazelcastInstance(),
@@ -578,7 +580,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         return new ClusterMetaSupplier<>(params);
     }
 
-    // RemoteMap processor that uses the given clientXml
+    // remoteMapJournal processor that uses the given clientXml
     public static <K, V, R> ProcessorMetaSupplier streamRemoteMapSupplier(
             @Nonnull String mapName,
             @Nonnull String clientXml,
@@ -599,12 +601,12 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         params.setEventTimePolicy(eventTimePolicy);
         params.setPermissionFn(() -> new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
 
-        return new ClusterMetaSupplier<EventJournalMapEvent<K, V>, R>(params);
+        return new ClusterMetaSupplier<EventJournalMapEvent<K, V>>(params);
 
     }
 
-    // RemoteMap processor that uses the given ExternalDataStoreRef
-    // K,V is input type
+    // remoteMapJournal processor that uses the given ExternalDataStoreRef
+    // K,V are input type
     // R is return type
     public static <K, V, R> ProcessorMetaSupplier streamRemoteMapSupplier(
             @Nonnull String mapName,
@@ -629,6 +631,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         return new ClusterMetaSupplier<>(params);
     }
 
+    // cacheJournal processor
     public static <K, V, R> ProcessorMetaSupplier streamCacheSupplier(
             @Nonnull String cacheName,
             @Nonnull PredicateEx<? super EventJournalCacheEvent<K, V>> predicate,
@@ -651,6 +654,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         return new ClusterMetaSupplier<>(params);
     }
 
+    // remoteCacheJournal processor that uses the given clientXml
     public static <K, V, R> ProcessorMetaSupplier streamRemoteCacheSupplier(
             @Nonnull String cacheName,
             @Nonnull String clientXml,
