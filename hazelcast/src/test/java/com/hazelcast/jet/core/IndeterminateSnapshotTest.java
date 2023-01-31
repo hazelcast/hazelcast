@@ -53,8 +53,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import org.mockito.Mockito;
 import org.mockito.internal.stubbing.answers.ThrowsException;
@@ -86,6 +86,7 @@ import static com.hazelcast.jet.core.TestUtil.throttle;
 import static com.hazelcast.jet.impl.JobRepository.JOB_EXECUTION_RECORDS_MAP_NAME;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -178,10 +179,14 @@ public class IndeterminateSnapshotTest {
             });
         }
 
-        protected void waitForCorruptedSnapshot() throws InterruptedException {
-            logger.info("Waiting for corrupted snapshot");
-            assertTrue(snapshotDone.await(30, TimeUnit.SECONDS));
-            logger.info("Got corrupted snapshot");
+        protected void waitForSnapshot() {
+            logger.info("Waiting for selected snapshot");
+            try {
+                assertTrue(snapshotDone.await(30, TimeUnit.SECONDS));
+            } catch (InterruptedException e) {
+                fail("Interrupted", e);
+            }
+            logger.info("Got selected snapshot");
         }
 
         /**
@@ -469,7 +474,7 @@ public class IndeterminateSnapshotTest {
             // ensure that job started
             assertJobStatusEventually(job, JobStatus.RUNNING);
 
-            waitForCorruptedSnapshot();
+            waitForSnapshot();
             sleepMillis(500);
 
             logger.info("Shutting down instance... " + failingInstance);
@@ -548,7 +553,7 @@ public class IndeterminateSnapshotTest {
             // ensure that job started
             assertJobStatusEventually(job, JobStatus.RUNNING);
 
-            waitForCorruptedSnapshot();
+            waitForSnapshot();
             sleepMillis(500);
 
             logger.info("Shutting down instance... " + failingInstance);
@@ -649,7 +654,7 @@ public class IndeterminateSnapshotTest {
         @Parameter
         public boolean suspendOnFailure;
 
-        @Parameterized.Parameters(name = "suspendOnFailure:{0}")
+        @Parameters(name = "suspendOnFailure:{0}")
         public static Object[] parameters() {
             return new Object[] { false, true };
         }
@@ -721,8 +726,7 @@ public class IndeterminateSnapshotTest {
             assertJobStatusEventually(job, JobStatus.RUNNING);
 
             if (initialSnapshotsCount > 0) {
-                logger.info("Waiting for snapshot...");
-                snapshotDone.await();
+                waitForSnapshot();
             }
 
             // wait for job restart
@@ -748,12 +752,12 @@ public class IndeterminateSnapshotTest {
         }
 
         @Test
-        public void whenSuspendSnapshotUpdateLostSameCoordinatorAndNoOtherSnapshots_thenRestartFromSuspendSnapshot() throws InterruptedException {
+        public void whenSuspendSnapshotUpdateLostSameCoordinatorAndNoOtherSnapshots_thenRestartFromSuspendSnapshot() {
             whenSuspendSnapshotUpdateLostSameCoordinator(0);
         }
 
         @Test
-        public void whenSuspendSnapshotUpdateLostSameCoordinator_thenRestartFromSuspendSnapshot() throws InterruptedException {
+        public void whenSuspendSnapshotUpdateLostSameCoordinator_thenRestartFromSuspendSnapshot() {
             whenSuspendSnapshotUpdateLostSameCoordinator(3);
         }
 
@@ -829,12 +833,12 @@ public class IndeterminateSnapshotTest {
             }
         }
 
-        private class SuccessfulSnapshots extends AbstractScenarioStep {
+        protected class SuccessfulSnapshots extends AbstractScenarioStep {
             SuccessfulSnapshots() {
                 super();
             }
 
-            SuccessfulSnapshots(int repetitions) {
+            public SuccessfulSnapshots(int repetitions) {
                 this();
                 repeat(repetitions);
             }
@@ -885,8 +889,8 @@ public class IndeterminateSnapshotTest {
         /**
          * 1 lost indeterminate IMap update, then successes (configured number of repetitions)
          */
-        private class IndeterminateLostPut extends AbstractScenarioStep {
-            IndeterminateLostPut() {
+        protected class IndeterminateLostPut extends AbstractScenarioStep {
+            public IndeterminateLostPut() {
                 super();
                 repeat(null);
             }
@@ -947,7 +951,7 @@ public class IndeterminateSnapshotTest {
         /**
          * @param initialSnapshotsCount number of snapshots before suspend
          */
-        private void whenSuspendSnapshotUpdateLostSameCoordinator(int initialSnapshotsCount) throws InterruptedException {
+        private void whenSuspendSnapshotUpdateLostSameCoordinator(int initialSnapshotsCount) {
             // Suspend operation is initiated.
             // JobExecutionRecord update during snapshot commit is indeterminate and lost,
             // but succeeds after job restart on the same coordinator.
@@ -964,7 +968,7 @@ public class IndeterminateSnapshotTest {
 
             if (initialSnapshotsCount > 0) {
                 // wait for initial successful snapshots
-                snapshotDone.await();
+                waitForSnapshot();
             }
 
             // there is a race between suspend and regular snapshots,
@@ -998,7 +1002,7 @@ public class IndeterminateSnapshotTest {
             whenSuspendSnapshotUpdateLostChangedCoordinator(3);
         }
 
-        private void whenSuspendSnapshotUpdateLostChangedCoordinator(int initialSnapshotsCount) throws InterruptedException {
+        private void whenSuspendSnapshotUpdateLostChangedCoordinator(int initialSnapshotsCount) {
             // Suspend operation is initiated.
             // JobExecutionRecord update during snapshot commit is indeterminate and lost.
             // Job restarted on different coordinator.
@@ -1018,7 +1022,7 @@ public class IndeterminateSnapshotTest {
 
             if (initialSnapshotsCount > 0) {
                 // wait for initial successful snapshots
-                snapshotDone.await();
+                waitForSnapshot();
             }
 
             job.suspend();
