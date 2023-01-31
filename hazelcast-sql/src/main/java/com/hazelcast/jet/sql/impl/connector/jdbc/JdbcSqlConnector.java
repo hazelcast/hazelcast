@@ -20,17 +20,14 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.datastore.ExternalDataStoreFactory;
 import com.hazelcast.datastore.impl.CloseableDataSource;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
@@ -277,20 +274,18 @@ public class JdbcSqlConnector implements SqlConnector {
     @Nonnull
     @Override
     public Vertex fullScanReader(
-            @Nonnull DAG dag,
-            @Nonnull Table table0,
-            @Nonnull HazelcastTable hzTable,
-            @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projection,
+            @Nonnull DagBuildContext context,
+            @Nullable RexNode predicate,
+            @Nonnull List<RexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
             throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
         }
-        JdbcTable table = (JdbcTable) table0;
+        JdbcTable table = (JdbcTable) context.getTable();
 
-        SelectQueryBuilder builder = new SelectQueryBuilder(hzTable);
-        return dag.newUniqueVertex(
+        SelectQueryBuilder builder = new SelectQueryBuilder(context.getTable(), predicate, projection);
+        return context.getDag().newUniqueVertex(
                 "Select(" + table.getExternalName() + ")",
                 ProcessorMetaSupplier.forceTotalParallelismOne(
                         new SelectProcessorSupplier(
@@ -303,11 +298,11 @@ public class JdbcSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public VertexWithInputConfig insertProcessor(@Nonnull DAG dag, @Nonnull Table table0) {
-        JdbcTable table = (JdbcTable) table0;
+    public VertexWithInputConfig insertProcessor(@Nonnull DagBuildContext context) {
+        JdbcTable table = (JdbcTable) context.getTable();
 
         InsertQueryBuilder builder = new InsertQueryBuilder(table.getExternalName(), table.dbFieldNames());
-        return new VertexWithInputConfig(dag.newUniqueVertex(
+        return new VertexWithInputConfig(context.getDag().newUniqueVertex(
                 "Insert(" + table.getExternalName() + ")",
                 new InsertProcessorSupplier(
                         table.getExternalDataStoreRef(),
@@ -326,21 +321,21 @@ public class JdbcSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public Vertex updateProcessor(@Nonnull DAG dag,
-                                  @Nonnull Table table0,
-                                  @Nonnull Map<String, RexNode> updates,
-                                  @Nonnull Map<String, Expression<?>> updatesByFieldNames
+    public Vertex updateProcessor(
+            @Nonnull DagBuildContext context,
+            @Nonnull List<String> fieldNames,
+            @Nonnull List<RexNode> expressions
     ) {
-        JdbcTable table = (JdbcTable) table0;
+        JdbcTable table = (JdbcTable) context.getTable();
 
-        List<String> pkFields = getPrimaryKey(table0)
+        List<String> pkFields = getPrimaryKey(context.getTable())
                 .stream()
                 .map(f -> table.getField(f).externalName())
                 .collect(toList());
 
-        UpdateQueryBuilder builder = new UpdateQueryBuilder(table, pkFields, updates);
+        UpdateQueryBuilder builder = new UpdateQueryBuilder(table, pkFields, fieldNames, expressions);
 
-        return dag.newUniqueVertex(
+        return context.getDag().newUniqueVertex(
                 "Update(" + table.getExternalName() + ")",
                 new UpdateProcessorSupplier(
                         table.getExternalDataStoreRef(),
@@ -353,16 +348,16 @@ public class JdbcSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public Vertex deleteProcessor(@Nonnull DAG dag, @Nonnull Table table0) {
-        JdbcTable table = (JdbcTable) table0;
+    public Vertex deleteProcessor(@Nonnull DagBuildContext context) {
+        JdbcTable table = (JdbcTable) context.getTable();
 
-        List<String> pkFields = getPrimaryKey(table0)
+        List<String> pkFields = getPrimaryKey(context.getTable())
                 .stream()
                 .map(f -> table.getField(f).externalName())
                 .collect(toList());
 
         DeleteQueryBuilder builder = new DeleteQueryBuilder(table.getExternalName(), pkFields);
-        return dag.newUniqueVertex(
+        return context.getDag().newUniqueVertex(
                 "Delete(" + table.getExternalName() + ")",
                 new DeleteProcessorSupplier(
                         table.getExternalDataStoreRef(),

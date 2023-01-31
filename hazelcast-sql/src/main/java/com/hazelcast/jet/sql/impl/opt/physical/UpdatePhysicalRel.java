@@ -16,9 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
@@ -29,10 +27,7 @@ import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rex.RexNode;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.IntStream;
 
-import static java.util.stream.Collectors.toMap;
 import static org.apache.calcite.rel.core.TableModify.Operation.UPDATE;
 
 public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
@@ -48,20 +43,6 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
             boolean flattened
     ) {
         super(cluster, traitSet, table, catalogReader, input, UPDATE, updateColumnList, sourceExpressionList, flattened);
-    }
-
-    public Map<String, Expression<?>> updates(QueryParameterMetadata parameterMetadata) {
-        List<Expression<?>> projects = project(OptUtils.schema(getTable()), getSourceExpressionList(), parameterMetadata);
-        return IntStream.range(0, projects.size())
-                .boxed()
-                .collect(toMap(i -> getUpdateColumnList().get(i), projects::get));
-    }
-
-    public Map<String, RexNode> updatesAsRex() {
-        List<RexNode> updates = getSourceExpressionList();
-        return IntStream.range(0, updates.size())
-                        .boxed()
-                        .collect(toMap(i -> getUpdateColumnList().get(i), updates::get));
     }
 
     @Override
