@@ -629,7 +629,8 @@ public class JobRepository {
      * UpdateJobExecutionRecordEntryProcessor#process}. It will also be ignored
      * if the key doesn't exist in the IMap.
      *
-     * @return if the update was executed (not ignored)
+     * @return true if the update was executed (not ignored) or cannot be executed
+     *         because canCreate=false but there is no record in IMap to update.
      */
     boolean writeJobExecutionRecord(long jobId, JobExecutionRecord record, boolean canCreate) {
         record.updateTimestamp();
@@ -637,6 +638,11 @@ public class JobRepository {
                 new UpdateJobExecutionRecordEntryProcessor(jobId, record, canCreate));
         if (message != null) {
             logger.fine(message);
+            if (message.endsWith("oldValue == null")) {
+                // canCreate=false but there is no record in IMap to update.
+                // There is no point in repeating.
+                return true;
+            }
         }
         return message == null;
     }
