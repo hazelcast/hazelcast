@@ -80,9 +80,4 @@ public class JetRemoveJobStatusListenerMessageTask extends AbstractRemoveListene
     public Permission getRequiredPermission() {
         return new JobPermission(ActionConstants.ACTION_LISTEN);
     }
-
-    @Override
-    public Object[] getParameters() {
-        return null;
-    }
 }
