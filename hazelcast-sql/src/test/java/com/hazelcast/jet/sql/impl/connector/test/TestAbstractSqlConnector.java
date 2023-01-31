@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.connector.test;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor.Context;
@@ -41,6 +40,7 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -182,26 +182,27 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
     @Nonnull
     @Override
     public Vertex fullScanReader(
-            @Nonnull DAG dag,
-            @Nonnull Table table_,
-            @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projection,
+            @Nonnull DagBuildContext context,
+            @Nullable RexNode predicate,
+            @Nonnull List<RexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
-        TestTable table = (TestTable) table_;
+        TestTable table = (TestTable) context.getTable();
         List<Object[]> rows = table.rows;
         boolean streaming = table.streaming;
+        Expression<Boolean> convertedPredicate = context.convertFilter(predicate);
+        List<Expression<?>> convertedProjection = context.convertProjection(projection);
 
         FunctionEx<Context, TestDataGenerator> createContextFn = ctx -> {
             ExpressionEvalContext evalContext = ExpressionEvalContext.from(ctx);
             EventTimePolicy<JetSqlRow> eventTimePolicy = eventTimePolicyProvider == null
                     ? EventTimePolicy.noEventTime()
                     : eventTimePolicyProvider.apply(evalContext);
-            return new TestDataGenerator(rows, predicate, projection, evalContext, eventTimePolicy, streaming);
+            return new TestDataGenerator(rows, convertedPredicate, convertedProjection, evalContext, eventTimePolicy, streaming);
         };
 
         ProcessorMetaSupplier pms = createProcessorSupplier(createContextFn);
-        return dag.newUniqueVertex(table.toString(), pms);
+        return context.getDag().newUniqueVertex(table.toString(), pms);
     }
 
     protected abstract ProcessorMetaSupplier createProcessorSupplier(FunctionEx<Context, TestDataGenerator> createContextFn);
