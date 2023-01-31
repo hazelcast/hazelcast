@@ -84,11 +84,18 @@ void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters);
 ### Technical Design
 
 The client protocol needs to support job uploading. So that non-java clients can also upload jet jobs.
-For this purpose two new messages are added to client protocol. These messages should be sent to the same member in a cluster since they are logically related
-Any member can be chosen but coordinator member should be preferred.  
+For this purpose two new messages have been added to client protocol. 
 
 1. uploadJobMetaData
 2. uploadJobMultipart
+
+These messages should be sent to the job coordinator member in the cluster
+The job coordinator member (sometimes referred as the master) is the oldest member in the cluster and  is the first member in the member list.
+On the client side it can be found by
+```java
+ClientClusterService service = ...,
+clusterService().getMasterMember()
+```
 
 **1. uploadJobMetaData Message**
 
