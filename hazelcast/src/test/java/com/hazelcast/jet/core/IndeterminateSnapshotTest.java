@@ -31,7 +31,8 @@ import com.hazelcast.internal.server.FirewallingServer;
 import com.hazelcast.internal.server.OperationPacketFilter;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.processor.DiagnosticProcessors;
+import com.hazelcast.jet.core.processor.Processors;
+import com.hazelcast.jet.impl.JobProxy;
 import com.hazelcast.jet.impl.SnapshotValidationRecord;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -67,7 +68,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -130,27 +131,46 @@ public class IndeterminateSnapshotTest {
             };
         }
 
+        private int getActiveNodesCount() {
+            int terminatedCount = (instances != null && instances[0].getLifecycleService().isRunning()) ? 0 : 1;
+            return NODE_COUNT - terminatedCount;
+        }
+
         protected void initSnapshotDoneCounter() {
-            snapshotDone = new CountDownLatch(NODE_COUNT * LOCAL_PARALLELISM);
+            snapshotDone = new CountDownLatch(getActiveNodesCount() * LOCAL_PARALLELISM);
         }
 
         /**
          * Executes given action once when invoked multiple times from many instances of processor.
          */
-        protected Consumer<Integer> breakSnapshotConsumer(String message, Runnable snapshotAction) {
-            AtomicBoolean networkBroken = new AtomicBoolean(false);
+        protected <T> Consumer<T> singleExecutionConsumer(Consumer<T> snapshotAction) {
+            AtomicBoolean executed = new AtomicBoolean(false);
             return (idx) -> {
                 // synchronize so all snapshot chunk operations have broken replication
-                synchronized (networkBroken) {
-                    if (networkBroken.compareAndSet(false, true)) {
-                        logger.info("Breaking replication in " + message + " for " + idx);
-                        snapshotAction.run();
-                        logger.finest("Proceeding with " + message + " " + idx + " after breaking replication");
-                    } else {
-                        logger.finest("Proceeding with " + message + " " + idx);
+                synchronized (executed) {
+                    if (executed.compareAndSet(false, true)) {
+                        snapshotAction.accept(idx);
                     }
                 }
             };
+        }
+
+        protected <T> Consumer<T> lastExecutionConsumer(Consumer<T> snapshotAction) {
+            AtomicInteger executed = new AtomicInteger();
+            return (idx) -> {
+                int activeNodesCount = getActiveNodesCount();
+                if (executed.incrementAndGet() >= activeNodesCount * LOCAL_PARALLELISM) {
+                    snapshotAction.accept(idx);
+                }
+            };
+        }
+
+        protected <T> Consumer<T> breakSnapshotConsumer(String message, Runnable snapshotAction) {
+            return singleExecutionConsumer((idx) -> {
+                logger.info("Breaking replication in " + message + " for " + idx);
+                snapshotAction.run();
+                logger.finest("Proceeding with " + message + " " + idx + " after breaking replication");
+            });
         }
 
         protected void waitForCorruptedSnapshot() throws InterruptedException {
@@ -161,7 +181,7 @@ public class IndeterminateSnapshotTest {
 
         /**
          * @param allowedSnapshotsCount snapshot id that should be used to restore
-         * or -1 if the job should not be restored
+         *                              or -1 if the job should not be restored
          */
         protected static void assertRestoredFromSnapshot(int allowedSnapshotsCount) {
             if (allowedSnapshotsCount >= 0) {
@@ -174,11 +194,28 @@ public class IndeterminateSnapshotTest {
             }
         }
 
+        /**
+         * @param snapshotId snapshot id for last snapshot (including in progress)
+         *                   or -1 if no snapshot is expected
+         */
+        protected static void assumePresentLastSnapshot(int snapshotId) {
+            // TODO: assume instead of assert
+            if (snapshotId >= 0) {
+                assertThat(SnapshotInstrumentationP.savedCounters.values())
+                        .as("Current snapshot is different than expected")
+                        .containsOnly(snapshotId);
+            } else {
+                assertThat(SnapshotInstrumentationP.savedCounters)
+                        .as("Unexpected snapshot")
+                        .isEmpty();
+            }
+        }
+
         @NotNull
         protected Job createJob(int numItems) {
             DAG dag = new DAG();
             Vertex source = dag.newVertex("source", throttle(() -> new SnapshotInstrumentationP(numItems), 1)).localParallelism(LOCAL_PARALLELISM);
-            Vertex sink = dag.newVertex("sink", DiagnosticProcessors.writeLoggerP()).localParallelism(1);
+            Vertex sink = dag.newVertex("sink", Processors.noopP()).localParallelism(1);
             dag.edge(between(source, sink));
 
             return instances[0].getJet().newJob(dag, new JobConfig()
@@ -613,26 +650,27 @@ public class IndeterminateSnapshotTest {
             whenSnapshotUpdateLostSameCoordinator(3);
         }
 
-        private void whenSnapshotUpdateLostSameCoordinator(int allowedSnapshotsCount) {
+        private void whenSnapshotUpdateLostSameCoordinator(int initialSnapshotsCount) {
             // JobExecutionRecord update during snapshot commit is indeterminate and lost,
             // but succeeds after job restart on the same coordinator.
             // Indeterminate snapshot turns out to be correct.
-            setupJetTests(allowedSnapshotsCount);
 
-            SnapshotInstrumentationP.snapshotCommitPrepareConsumer =
-                    breakSnapshotConsumer("snapshot commit prepare", this::singleIndeterminatePutLost);
+            new SuccessfulSnapshots(Math.max(initialSnapshotsCount - 1, 0))
+                    .then(new IndeterminateLostPut())
+                    .then(new SuccessfulSnapshots(100))
+                    .start();
 
-            Job job = createJob(allowedSnapshotsCount + 5);
+            Job job = createJob(initialSnapshotsCount + 3);
 
             logger.info("Joining job...");
             instances[0].getJet().getJob(job.getId()).join();
             logger.info("Joined");
 
-            assertRestoredFromSnapshot(allowedSnapshotsCount);
+            assertRestoredFromSnapshot(initialSnapshotsCount);
         }
 
         @Test
-        public void whenSnapshotUpdateLostChangedCoordinator_thenRestartWithoutSnapshot() throws InterruptedException {
+        public void whenSnapshotUpdateLostChangedCoordinatorNoOtherSnapshot_thenRestartWithoutSnapshot() throws InterruptedException {
             whenSnapshotUpdateLostChangedCoordinator(0);
         }
 
@@ -641,25 +679,29 @@ public class IndeterminateSnapshotTest {
             whenSnapshotUpdateLostChangedCoordinator(3);
         }
 
-        private void whenSnapshotUpdateLostChangedCoordinator(int allowedSnapshotsCount) throws InterruptedException {
+        private void whenSnapshotUpdateLostChangedCoordinator(int initialSnapshotsCount) throws InterruptedException {
             // JobExecutionRecord update during snapshot commit is indeterminate and lost,
             // and is indeterminate until original coordinator is terminated.
             // Job is restart on different coordinator and indeterminate snapshot turns out to be lost.
-            setupJetTests(allowedSnapshotsCount);
 
-            AtomicReference<String> interceptorRegistration = new AtomicReference<>();
-            CountDownLatch prepared = new CountDownLatch(1);
+            CompletableFuture<Void> coordinatorTerminated = new CompletableFuture<>();
 
-            SnapshotInstrumentationP.snapshotCommitPrepareConsumer =
-                    breakSnapshotConsumer("snapshot commit prepare", () -> {
-                        interceptorRegistration.set(allIndeterminatePutsLost());
-                        prepared.countDown();
-                    });
+            new SuccessfulSnapshots(Math.max(initialSnapshotsCount - 1, 0))
+                    // snapshot during suspend will be indeterminate until coordinator is terminated
+                    .then(new IndeterminateLostPutsUntil(coordinatorTerminated))
+                    // will be restored from previous snapshot, reuse counter
+                    .then(new SuccessfulSnapshots(1).reusedCounter())
+                    .then(new SuccessfulIgnoredSnapshots(100))
+                    .start();
 
-            Job job = createJob(allowedSnapshotsCount + 5);
+            Job job = createJob(initialSnapshotsCount + 3);
+            assertJobStatusEventually(job, JobStatus.RUNNING);
 
-            logger.info("Waiting for snapshot...");
-            prepared.await();
+            if (initialSnapshotsCount > 0) {
+                logger.info("Waiting for snapshot...");
+                snapshotDone.await();
+            }
+
             // wait for job restart
             logger.info("Waiting for job restart...");
             assertJobStatusEventually(job, JobStatus.STARTING);
@@ -670,8 +712,7 @@ public class IndeterminateSnapshotTest {
             // terminate coordinator
             logger.info("Terminating coordinator...");
             instances[0].getLifecycleService().terminate();
-            logger.info("Fixing IMap...");
-            getJobExecutionRecordIMap().removeInterceptor(interceptorRegistration.get());
+            coordinatorTerminated.complete(null);
 
             logger.info("Joining job...");
             instances[1].getJet().getJob(job.getId()).join();
@@ -680,7 +721,7 @@ public class IndeterminateSnapshotTest {
             assertThat(snapshotDone.getCount())
                     .as("Snapshot should be ultimately committed")
                     .isZero();
-            assertRestoredFromSnapshot(allowedSnapshotsCount - 1);
+            assertRestoredFromSnapshot(initialSnapshotsCount - 1);
         }
 
         @Test
@@ -693,33 +734,237 @@ public class IndeterminateSnapshotTest {
             whenSuspendSnapshotUpdateLostSameCoordinator(3);
         }
 
-        private void whenSuspendSnapshotUpdateLostSameCoordinator(int allowedSnapshotsCount) throws InterruptedException {
+        private abstract class AbstractScenarioStep {
+            @Nullable
+            private AbstractScenarioStep next;
+            @Nullable
+            protected AbstractScenarioStep prev;
+            /**
+             * Null means step that adds some action, but does not increase number of completed snapshots
+             */
+            protected Integer repetitions = 1;
+
+            public AbstractScenarioStep repeat(Integer repetitions) {
+                this.repetitions = repetitions;
+                return this;
+            }
+
+            public <T extends AbstractScenarioStep> T then(T next) {
+                this.next = next;
+                next.prev = this;
+                return next;
+            }
+
+            /**
+             * Configure {@link SnapshotInstrumentationP} according to this step
+             */
+            public final void apply() {
+                if (repetitions == null || repetitions > 0) {
+                    logger.info("Applying scenario step " + this);
+                    if (repetitions != null) {
+                        SnapshotInstrumentationP.allowedSnapshotsCount += repetitions;
+                    }
+
+                    // init consumers to default values
+                    SnapshotInstrumentationP.saveSnapshotConsumer = null;
+                    SnapshotInstrumentationP.snapshotCommitPrepareConsumer = null;
+                    // If step breaks snapshot, snapshotCommitFinishConsumer may be not invoked.
+                    // In such case step is responsible for advancing the scenario.
+                    SnapshotInstrumentationP.snapshotCommitFinishConsumer =
+                            ((Consumer<Boolean>) (b) -> snapshotDone.countDown())
+                            .andThen(lastExecutionConsumer((b) -> goToNextStep()));
+
+                    doApply();
+                } else {
+                    logger.info("Skipping scenario step " + this);
+                    goToNextStep();
+                }
+            }
+
+            protected abstract void doApply();
+
+            protected void goToNextStep() {
+                if (next != null) {
+                    next.apply();
+                }
+            }
+
+            /**
+             * Start executing the scenario
+             */
+            public final void start() {
+                getFirst().apply();
+            }
+
+            @Nonnull
+            private AbstractScenarioStep getFirst() {
+                AbstractScenarioStep first = this;
+                do {
+                    first = first.prev;
+                } while (first.prev != null);
+                return first;
+            }
+        }
+
+        private class SuccessfulSnapshots extends AbstractScenarioStep {
+            SuccessfulSnapshots() {
+                super();
+            }
+
+            SuccessfulSnapshots(int repetitions) {
+                this();
+                repeat(repetitions);
+            }
+
+            /**
+             * Snapshot counter will be reused. Most often this is the case after restore.
+             * @return
+             */
+            SuccessfulSnapshots reusedCounter() {
+                repeat(repetitions > 1 ? repetitions - 1 : null);
+                return this;
+            }
+
+            @Override
+            protected void doApply() {
+                // will count commits of last repetition
+                initSnapshotDoneCounter();
+                SnapshotInstrumentationP.snapshotCommitFinishConsumer =
+                        ((Consumer<Boolean>) (b) -> snapshotDone.countDown())
+                                .andThen(lastExecutionConsumer((b) -> goToNextStep()));
+            }
+
+            @Override
+            public String toString() {
+                return String.format("Successful %d Snapshots", repetitions);
+            }
+        }
+
+        private class SuccessfulIgnoredSnapshots extends AbstractScenarioStep {
+            SuccessfulIgnoredSnapshots() {
+                super();
+            }
+
+            SuccessfulIgnoredSnapshots(int repetitions) {
+                this();
+                repeat(repetitions);
+            }
+            @Override
+            protected void doApply() {
+                // nothing to break
+            }
+
+            @Override
+            public String toString() {
+                return String.format("Successful %d Snapshots - do not count", repetitions);
+            }
+        }
+
+        /**
+         * 1 lost indeterminate IMap update, then successes (configured number of repetitions)
+         */
+        private class IndeterminateLostPut extends AbstractScenarioStep {
+            IndeterminateLostPut() {
+                super();
+                repeat(null);
+            }
+
+            @Override
+            protected void doApply() {
+                initSnapshotDoneCounter();
+                SnapshotInstrumentationP.snapshotCommitPrepareConsumer =
+                        SnapshotFailureTests.this.<Integer>
+                            breakSnapshotConsumer("snapshot commit prepare",
+                                        SnapshotFailureTests.this::singleIndeterminatePutLost)
+                            .andThen(lastExecutionConsumer((Integer b) -> {
+                                // there should be no commit complete
+                                goToNextStep();
+                            }));
+            }
+
+            @Override
+            public String toString() {
+                return "IndeterminateLostPut";
+            }
+        }
+
+        /**
+         * Lost indeterminate IMap updates until condition is satisfied
+         */
+        private class IndeterminateLostPutsUntil extends AbstractScenarioStep {
+
+            private CompletableFuture<String> registration = new CompletableFuture<>();
+
+            <T> IndeterminateLostPutsUntil(CompletableFuture<T> condition) {
+                super();
+                repeat(null);
+
+                // fix IMap when condition is met
+                condition.thenCombineAsync(registration, (v, reg) -> {
+                    logger.info("Fixing IMap replication");
+                    getJobExecutionRecordIMap().removeInterceptor(reg);
+                    goToNextStep();
+                    return null;
+                });
+            }
+
+            @Override
+            protected void doApply() {
+                initSnapshotDoneCounter();
+                SnapshotInstrumentationP.snapshotCommitPrepareConsumer =
+                        breakSnapshotConsumer("snapshot commit prepare", () -> {
+                            registration.complete(allIndeterminatePutsLost());
+                        });
+            }
+
+            @Override
+            public String toString() {
+                return "IndeterminateLostPutsUntil";
+            }
+        }
+
+        /**
+         * @param initialSnapshotsCount number of snapshots before suspend
+         */
+        private void whenSuspendSnapshotUpdateLostSameCoordinator(int initialSnapshotsCount) throws InterruptedException {
             // Suspend operation is initiated.
             // JobExecutionRecord update during snapshot commit is indeterminate and lost,
             // but succeeds after job restart on the same coordinator.
             // Indeterminate snapshot turns out to be correct.
-            setupJetTests(allowedSnapshotsCount);
 
-            Job job = createJob(allowedSnapshotsCount + 5);
-            snapshotDone.await();
+            new SuccessfulSnapshots(Math.max(initialSnapshotsCount - 1, 0))
+                    .then(new IndeterminateLostPut())
+                    .then(new SuccessfulSnapshots(100))
+                    .start();
 
-            // snapshot during suspend will be indeterminate
-            SnapshotInstrumentationP.snapshotCommitPrepareConsumer =
-                    breakSnapshotConsumer("snapshot commit prepare", this::singleIndeterminatePutLost);
-            SnapshotInstrumentationP.allowedSnapshotsCount++;
+            Job job = createJob(initialSnapshotsCount + 3);
+
+            assertJobStatusEventually(job, JobStatus.RUNNING);
+
+            if (initialSnapshotsCount > 0) {
+                // wait for initial successful snapshots
+                snapshotDone.await();
+            }
+
+            // there is a race between suspend and regular snapshots,
+            // but we want the test to be executed when there is no snapshot in progress
+            // try to detect slow execution and skip test if there is unexpected snapshot
+            assumePresentLastSnapshot(initialSnapshotsCount - 1);
 
             job.suspend();
             assertJobStatusEventually(job, JobStatus.SUSPENDED);
             logger.info("Suspended");
+
             job.resume();
             assertJobStatusEventually(job, JobStatus.RUNNING);
+            logger.info("Resumed");
 
             logger.info("Joining job...");
             instances[0].getJet().getJob(job.getId()).join();
             logger.info("Joined");
 
             // indeterminate suspend snapshot turns out to be fine
-            assertRestoredFromSnapshot(allowedSnapshotsCount + 1);
+            assertRestoredFromSnapshot(initialSnapshotsCount);
         }
 
         @Test
@@ -732,23 +977,28 @@ public class IndeterminateSnapshotTest {
             whenSuspendSnapshotUpdateLostChangedCoordinator(3);
         }
 
-        private void whenSuspendSnapshotUpdateLostChangedCoordinator(int allowedSnapshotsCount) throws InterruptedException {
+        private void whenSuspendSnapshotUpdateLostChangedCoordinator(int initialSnapshotsCount) throws InterruptedException {
             // Suspend operation is initiated.
             // JobExecutionRecord update during snapshot commit is indeterminate and lost.
             // Job restarted on different coordinator.
             // Indeterminate snapshot is lost.
-            setupJetTests(allowedSnapshotsCount);
 
-            Job job = createJob(allowedSnapshotsCount + 3);
-            snapshotDone.await();
+            CompletableFuture<Void> coordinatorTerminated = new CompletableFuture<>();
 
-            // snapshot during suspend will be indeterminate
-            AtomicReference<String> interceptorRegistration = new AtomicReference<>();
-            SnapshotInstrumentationP.snapshotCommitPrepareConsumer =
-                    breakSnapshotConsumer("snapshot commit prepare",
-                            () -> interceptorRegistration.set(allIndeterminatePutsLost()));
-            initSnapshotDoneCounter();
-            SnapshotInstrumentationP.allowedSnapshotsCount++;
+            new SuccessfulSnapshots(Math.max(initialSnapshotsCount - 1, 0))
+                    // snapshot during suspend will be indeterminate until coordinator is terminated
+                    .then(new IndeterminateLostPutsUntil(coordinatorTerminated))
+                    .then(new SuccessfulSnapshots(100))
+                    .start();
+
+            Job job = createJob(initialSnapshotsCount + 3);
+
+            assertJobStatusEventually(job, JobStatus.RUNNING);
+
+            if (initialSnapshotsCount > 0) {
+                // wait for initial successful snapshots
+                snapshotDone.await();
+            }
 
             job.suspend();
             assertJobStatusEventually(job, JobStatus.SUSPENDED);
@@ -758,9 +1008,7 @@ public class IndeterminateSnapshotTest {
                     .isEqualTo(NODE_COUNT * LOCAL_PARALLELISM);
 
             instances[0].getLifecycleService().terminate();
-
-            // fix IMap
-            getJobExecutionRecordIMap().removeInterceptor(interceptorRegistration.get());
+            coordinatorTerminated.complete(null);
 
             job = instances[1].getJet().getJob(job.getId());
             job.resume();
@@ -771,7 +1019,49 @@ public class IndeterminateSnapshotTest {
             logger.info("Joined");
 
             // indeterminate suspend snapshot turns out to disappear
-            assertRestoredFromSnapshot(allowedSnapshotsCount);
+            assertRestoredFromSnapshot(initialSnapshotsCount - 1);
+        }
+
+        @Test
+        public void whenRestartGracefulSnapshotUpdateLostSameCoordinatorAndNoOtherSnapshots_thenRestartFromRestartSnapshot() throws InterruptedException {
+            whenRestartGracefulSnapshotUpdateLostSameCoordinator(0);
+        }
+
+        @Test
+        public void whenRestartGracefulSnapshotUpdateLostSameCoordinator_thenRestartFromRestartSnapshot() throws InterruptedException {
+            whenRestartGracefulSnapshotUpdateLostSameCoordinator(3);
+        }
+
+        private void whenRestartGracefulSnapshotUpdateLostSameCoordinator(int initialSnapshotsCount) throws InterruptedException {
+            // Restart_graceful operation is initiated (private API).
+            // JobExecutionRecord update during snapshot commit is indeterminate and lost,
+            // but succeeds after job restart on the same coordinator.
+            // Indeterminate snapshot turns out to be correct.
+
+            new SuccessfulSnapshots(Math.max(initialSnapshotsCount - 1, 0))
+                    .then(new IndeterminateLostPut())
+                    .then(new SuccessfulSnapshots(100))
+                    .start();
+
+            Job job = createJob(initialSnapshotsCount + 3);
+            assertJobStatusEventually(job, JobStatus.RUNNING);
+
+            if (initialSnapshotsCount > 0) {
+                snapshotDone.await();
+            }
+
+            // there is a race between suspend and regular snapshots,
+            // but we want the test to be executed when there is no snapshot in progress
+            // try to detect slow execution and skip test if there is unexpected snapshot
+            assumePresentLastSnapshot(initialSnapshotsCount - 1);
+            ((JobProxy) job).restart(true);
+
+            logger.info("Joining job...");
+            instances[0].getJet().getJob(job.getId()).join();
+            logger.info("Joined");
+
+            // indeterminate restart graceful snapshot turns out to be fine
+            assertRestoredFromSnapshot(initialSnapshotsCount);
         }
 
         @Nonnull
@@ -865,15 +1155,18 @@ public class IndeterminateSnapshotTest {
 
         private int globalIndex;
         private final int numItems;
-        private int snapshotCounter;
-
         /**
-         * Number of normal snapshots before {@link #saveSnapshotConsumer} is called.
-         * Resets on job reset/restore.
+         * Number of completed snapshots.
+         */
+        private int snapshotCounter;
+        /**
+         * Number of normal snapshots before {@link #saveSnapshotConsumer} and other hooks are called.
          */
         static volatile int allowedSnapshotsCount = 0;
         @Nullable
         static volatile Consumer<Integer> saveSnapshotConsumer;
+        @Nullable
+        static volatile CountDownLatch initLatch;
         @Nullable
         static volatile Consumer<Integer> snapshotCommitPrepareConsumer;
         static volatile Consumer<Boolean> snapshotCommitFinishConsumer = b -> { };
@@ -891,6 +1184,7 @@ public class IndeterminateSnapshotTest {
             restoredCounters.clear();
 
             allowedSnapshotsCount = 0;
+            initLatch = null;
             saveSnapshotConsumer = null;
             snapshotCommitPrepareConsumer = null;
             snapshotCommitFinishConsumer = b -> { };
@@ -900,6 +1194,9 @@ public class IndeterminateSnapshotTest {
         @Override
         protected void init(@Nonnull Context context) {
             globalIndex = context.globalProcessorIndex();
+            if (initLatch != null) {
+//               initLatch.await();
+            }
         }
 
         @Override
@@ -943,6 +1240,8 @@ public class IndeterminateSnapshotTest {
         protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
             if (key instanceof BroadcastKey && ((BroadcastKey<?>) key).key().equals(globalIndex)) {
                 restoredCounters.put(globalIndex, (Integer) value);
+                // Note that counter will not be incremented before first snapshot after restore.
+                // snapshotCounter can be less than snapshot id if some snapshots are lost.
                 snapshotCounter = (int) value;
             }
             restoredFromSnapshot = true;
