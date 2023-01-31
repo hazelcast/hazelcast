@@ -20,16 +20,14 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.jet.sql.impl.connector.SqlProcessors;
-import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
+import org.apache.calcite.rex.RexNode;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -40,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
-import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.mongodb.Mappers.defaultCodecRegistry;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -99,16 +96,20 @@ public class MongoBatchSqlConnector implements SqlConnector {
     }
 
     @Override
+    @Nonnull
     public Vertex fullScanReader(
-            @Nonnull DAG dag, @Nonnull Table table0, @Nonnull HazelcastTable hzTable,
-            @Nullable Expression<Boolean> predicate, @Nonnull List<Expression<?>> projection,
+            @Nonnull DagBuildContext dagBuildContext,
+            @Nullable RexNode predicate,
+            @Nonnull List<RexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
-        MongoTable table = (MongoTable) table0;
+        MongoTable table = (MongoTable) dagBuildContext.getTable();
 
         RexToMongoVisitor visitor = new RexToMongoVisitor(table);
 
-        TranslationResult<String> filter = translateFilter(hzTable, visitor);
-        TranslationResult<List<String>> projections = translateProjections(hzTable, visitor);
+        TranslationResult<String> filter = translateFilter(predicate, visitor);
+        TranslationResult<List<String>> projections = translateProjections(projection, visitor);
+
+        DAG dag = dagBuildContext.getDag();
 
         // if not all filters are pushed down, then we cannot push down projection
         // because later filters may use those fields
@@ -119,28 +120,28 @@ public class MongoBatchSqlConnector implements SqlConnector {
                 new SelectProcessorSupplier(table, filter.result, projectionList)
         );
 
-        if (!filter.allProceeded || !projections.allProceeded) {
-            Vertex vEnd = dag.newUniqueVertex(
-                    "ProjectAndFilter(" + table + ")",
-                    SqlProcessors.rowProjector(
-                            table.paths(),
-                            table.types(),
-                            table.queryTargetSupplier(),
-                            predicate,
-                            projection
-                    )
-            );
-            dag.edge(between(sourceVertex, vEnd).isolated());
-            return vEnd;
-        }
+//        if (!filter.allProceeded || !projections.allProceeded) {
+//            Vertex vEnd = dag.newUniqueVertex(
+//                    "ProjectAndFilter(" + table + ")",
+//                    SqlProcessors.rowProjector(
+//                            table.paths(),
+//                            table.types(),
+//                            table.queryTargetSupplier(),
+//                            predicate,
+//                            projection
+//                    )
+//            );
+//            dag.edge(between(sourceVertex, vEnd).isolated());
+//            return vEnd;
+//        }
         return sourceVertex;
     }
 
-    private static TranslationResult<String> translateFilter(HazelcastTable hzTable, RexToMongoVisitor visitor) {
+    private static TranslationResult<String> translateFilter(RexNode filterNode, RexToMongoVisitor visitor) {
         String expression;
         TranslationResult<String> r;
         try {
-            Bson filter = (Bson) hzTable.getFilter().accept(visitor);
+            Bson filter = (Bson) filterNode.accept(visitor);
             expression = filter.toBsonDocument(Document.class, defaultCodecRegistry()).toJson();
             r = new TranslationResult<>(expression, true);
         } catch (Throwable t) {
@@ -149,16 +150,16 @@ public class MongoBatchSqlConnector implements SqlConnector {
         return r;
     }
 
-    private static TranslationResult<List<String>> translateProjections(HazelcastTable hzTable,
+    private static TranslationResult<List<String>> translateProjections(List<RexNode> projectionNodes,
                                                                         RexToMongoVisitor visitor) {
         try {
-            List<String> fields = hzTable.getProjects().stream()
+            List<String> fields = projectionNodes.stream()
                                           .map(proj -> proj.accept(visitor))
                                           .filter(proj -> proj instanceof String)
                                           .map(p -> (String) p)
                                           .collect(toList());
 
-            if (fields.size() != hzTable.getProjects().size()) {
+            if (fields.size() != projectionNodes.size()) {
                 return new TranslationResult<>(emptyList(), false);
             }
 
