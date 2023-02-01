@@ -153,32 +153,34 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
     private JetSqlRow convertStreamDocToRow(ChangeStreamDocument<Document> changeStreamDocument) {
         Document doc = changeStreamDocument.getFullDocument();
         requireNonNull(doc, "Document is empty");
-        List<Object> row = new ArrayList<>(doc.size());
-
-        boolean noId = !projection.contains("fullDocument._id");
+        Object[] row = new Object[projection.size()];
 
         for (Entry<String, Object> entry : doc.entrySet()) {
-            boolean noIdButThisIsId = noId && "_id".equalsIgnoreCase(entry.getKey());
-            if (!noIdButThisIsId) {
-                row.add(entry.getValue());
+            int index = indexInProjection(entry.getKey());
+            if (index == -1) {
+                continue;
             }
+            row[index] = entry.getValue();
         }
         addIfInProjection(changeStreamDocument.getOperationType().getValue(), "operationType", row);
         addIfInProjection(changeStreamDocument.getResumeToken().toString(), "resumeToken", row);
 
-        Object[] values = row.toArray(new Object[0]);
-        return new JetSqlRow(evalContext.getSerializationService(), values);
+        return new JetSqlRow(evalContext.getSerializationService(), row);
     }
 
-    private void addIfInProjection(Object value, String field, List<Object> row) {
-        int index = projection.indexOf(field);
+    private void addIfInProjection(Object value, String field, Object[] row) {
+        int index = indexInProjection(field);
         if (index == -1) {
             return;
         }
-        if (index >= row.size()) {
-            row.add(value);
-        } else {
-            row.set(index, value);
+        row[index] = value;
+    }
+
+    private int indexInProjection(String columnName) {
+        int index = projection.indexOf(columnName);
+        if (index == -1) {
+            index = projection.indexOf("fullDocument." + columnName);
         }
+        return index;
     }
 }
