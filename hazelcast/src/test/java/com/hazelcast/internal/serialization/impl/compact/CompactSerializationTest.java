@@ -41,7 +41,6 @@ import example.serialization.MainDTOSerializer;
 import example.serialization.SameClassEmployeeDTOSerializer;
 import example.serialization.SameTypeNameEmployeeDTOSerializer;
 import example.serialization.SerializableEmployeeDTO;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -532,27 +531,27 @@ public class CompactSerializationTest {
     }
 
     private static class FooBarSerializer implements CompactSerializer<FooBar> {
-        @NotNull
+        @Nonnull
         @Override
-        public FooBar read(@NotNull CompactReader reader) {
+        public FooBar read(@Nonnull CompactReader reader) {
             String foo = reader.readString("foo");
             long bar = reader.readInt64("bar");
             return new FooBar(foo, bar);
         }
 
         @Override
-        public void write(@NotNull CompactWriter writer, @NotNull FooBar object) {
+        public void write(@Nonnull CompactWriter writer, @Nonnull FooBar object) {
             writer.writeString("foo", object.foo);
             writer.writeInt64("bar", object.bar);
         }
 
-        @NotNull
+        @Nonnull
         @Override
         public String getTypeName() {
             return "foobar";
         }
 
-        @NotNull
+        @Nonnull
         @Override
         public Class getCompactClass() {
             return FooBar.class;
