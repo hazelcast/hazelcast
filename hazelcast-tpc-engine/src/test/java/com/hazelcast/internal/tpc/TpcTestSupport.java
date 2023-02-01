@@ -80,7 +80,29 @@ public class TpcTestSupport {
         }
     }
 
-    public static void sleepMillis(int millis) {
+    public static void assertTrueFiveSeconds(AssertTask task) {
+        assertTrueAllTheTime(task, 5);
+    }
+
+    public static void assertTrueTwoSeconds(AssertTask task) {
+        assertTrueAllTheTime(task, 2);
+    }
+
+    public static void assertTrueAllTheTime(AssertTask task, long durationSeconds) {
+        for (int i = 0; i <= durationSeconds; i++) {
+            try {
+                task.run();
+            } catch (Exception e) {
+                throw rethrow(e);
+            }
+            // Don't wait if there is not next iteration
+            if ((i + 1) <= durationSeconds) {
+                sleepMillis(SECONDS.toMillis(1));
+            }
+        }
+    }
+
+    public static void sleepMillis(long millis) {
         try {
             MILLISECONDS.sleep(millis);
         } catch (InterruptedException e) {

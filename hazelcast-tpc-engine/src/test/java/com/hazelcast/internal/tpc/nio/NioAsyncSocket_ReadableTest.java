@@ -14,29 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc.util;
+package com.hazelcast.internal.tpc.nio;
 
-import javax.annotation.Nonnull;
+import com.hazelcast.internal.tpc.AsyncSocket_ReadableTest;
+import com.hazelcast.internal.tpc.Reactor;
 
-/**
- * Utility class containing exception related functions.
- */
-public final class ExceptionUtil {
+public class NioAsyncSocket_ReadableTest extends AsyncSocket_ReadableTest {
 
-    private ExceptionUtil() {
-    }
-
-    /**
-     * Ignores the given exception.
-     *
-     * @param t the exception to ignore
-     */
-    public static void ignore(Throwable t) {
-    }
-
-    @SuppressWarnings("unchecked")
-    @Nonnull
-    public static <T extends Throwable> RuntimeException sneakyThrow(@Nonnull Throwable t) throws T {
-        throw (T) t;
+    @Override
+    public Reactor newReactor() {
+        Reactor reactor = new NioReactor();
+        reactor.start();
+        return reactor;
     }
 }
