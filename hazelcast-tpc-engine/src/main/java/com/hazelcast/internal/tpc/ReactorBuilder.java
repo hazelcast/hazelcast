@@ -19,6 +19,7 @@ package com.hazelcast.internal.tpc;
 import com.hazelcast.internal.util.ThreadAffinity;
 
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNegative;
@@ -48,6 +49,15 @@ public abstract class ReactorBuilder {
     protected final ReactorType type;
     Supplier<Scheduler> schedulerSupplier = NopScheduler::new;
     Supplier<String> threadNameSupplier;
+    Supplier<String> reactorNameSupplier = new Supplier<String>() {
+        private final AtomicInteger idGenerator = new AtomicInteger();
+
+        @Override
+        public String get() {
+            return "Reactor-" + idGenerator.incrementAndGet();
+        }
+    };
+
     ThreadAffinity threadAffinity = ThreadAffinity.newSystemThreadAffinity(NAME_REACTOR_AFFINITY);
 
     ThreadFactory threadFactory = Thread::new;
@@ -77,6 +87,16 @@ public abstract class ReactorBuilder {
      * @return the created Reactor.
      */
     public abstract Reactor build();
+
+    /**
+     * Sets the reactor name supplier.
+     *
+     * @param reactorNameSupplier the reactor name supplier.
+     * @throws NullPointerException if reactorNameSupplier is null.
+     */
+    public void setReactorNameSupplier(Supplier<String> reactorNameSupplier) {
+        this.reactorNameSupplier = checkNotNull(reactorNameSupplier, "reactorNameSupplier");
+    }
 
     /**
      * Sets the clock refresh period.
