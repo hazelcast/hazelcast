@@ -28,6 +28,10 @@ class MongoTableField extends TableField {
         this.externalName = externalName;
     }
 
+    public String getExternalName() {
+        return externalName;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

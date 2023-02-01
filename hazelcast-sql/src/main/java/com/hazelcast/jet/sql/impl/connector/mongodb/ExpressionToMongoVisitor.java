@@ -120,16 +120,16 @@ final class ExpressionToMongoVisitor implements ExpressionVisitor<Object> {
     @Override
     public Object visit(ColumnExpression<?> expr) {
         int index = expr.getIndex();
-        TableField field = table.getField(index);
-        return field.getName();
+        MongoTableField field = table.getField(index);
+        return field.externalName;
     }
 
     @Override
     public Object visit(ComparisonPredicate predicate) {
         Expression<?> operand1 = predicate.getOperand1();
         Expression<?> operand2 = predicate.getOperand2();
-        Object o1 = visitGeneric(operand1);
-        Object o2 = visitGeneric(operand2);
+        Object o1 = operand1.accept(this);
+        Object o2 = operand2.accept(this);
 
         switch (predicate.getMode()) {
             case EQUALS: return Filters.eq((String) o1, o2);

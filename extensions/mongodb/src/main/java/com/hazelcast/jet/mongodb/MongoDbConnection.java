@@ -15,7 +15,6 @@
  */
 package com.hazelcast.jet.mongodb;
 
-import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.retry.RetryStrategies;
@@ -23,7 +22,13 @@ import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.jet.retry.impl.RetryTracker;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.mongodb.MongoCommandException;
 import com.mongodb.client.MongoClient;
+import org.bson.BsonArray;
+import org.bson.BsonString;
+import org.bson.BsonValue;
+
+import java.util.function.Consumer;
 
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.retry.IntervalFunction.exponentialBackoffWithCap;
@@ -40,13 +45,13 @@ class MongoDbConnection {
                                                                        .build();
 
     private final SupplierEx<? extends MongoClient> clientSupplier;
-    private final ConsumerEx<MongoClient> afterConnection;
+    private final Consumer<MongoClient> afterConnection;
     private final RetryTracker connectionRetryTracker;
     private final ILogger logger = Logger.getLogger(MongoDbConnection.class);
 
     private MongoClient mongoClient;
 
-    MongoDbConnection(SupplierEx<? extends MongoClient> clientSupplier, ConsumerEx<MongoClient> afterConnection) {
+    MongoDbConnection(SupplierEx<? extends MongoClient> clientSupplier, Consumer<MongoClient> afterConnection) {
         this.clientSupplier = clientSupplier;
         this.afterConnection = afterConnection;
         this.connectionRetryTracker = new RetryTracker(RETRY_STRATEGY);
@@ -69,6 +74,18 @@ class MongoDbConnection {
                     afterConnection.accept(mongoClient);
                     connectionRetryTracker.reset();
                     return true;
+                }
+                catch (MongoCommandException e) {
+                    BsonValue errorLabels = e.getResponse().get("errorLabels");
+                    if (errorLabels != null && errorLabels.isArray()) {
+                        BsonArray values = errorLabels.asArray();
+                        if (values.contains(new BsonString("NonResumableChangeStreamError"))) {
+                            throw new JetException("NonResumableChangeStreamError thrown by Mongo", e);
+                        }
+                    }
+                    logger.warning("Could not connect to MongoDB", e);
+                    connectionRetryTracker.attemptFailed();
+                    return false;
                 } catch (Exception e) {
                     logger.warning("Could not connect to MongoDB", e);
                     connectionRetryTracker.attemptFailed();

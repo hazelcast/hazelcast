@@ -15,14 +15,21 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-final class Options {
+/**
+ * Stream-query MongoDB SQL Connector.
+ *
+ * @see FieldResolver
+ * TODO: add more
+ */
+public class MongoStreamSqlConnector extends MongoSqlConnectorBase {
 
-    static final String CONNECTION_STRING_OPTION = "connectionString";
-    static final String DATABASE_NAME_OPTION = "database";
-    static final String COLLECTION_NAME_OPTION = "collection";
-    static final String START_AT_OPTION = "startAt";
-
-    private Options() {
+    @Override
+    public String typeName() {
+        return "MongoDBStream";
     }
 
+    @Override
+    public boolean isStream() {
+        return true;
+    }
 }

@@ -52,9 +52,10 @@ class FieldResolver {
      */
     List<MappingField> resolveFields(
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields
+            @Nonnull List<MappingField> userFields,
+            boolean stream
     ) {
-        Map<String, DocumentField> dbFields = readFields(options);
+        Map<String, DocumentField> dbFields = readFields(options, stream);
 
         List<MappingField> resolvedFields = new ArrayList<>();
         if (userFields.isEmpty()) {
@@ -64,6 +65,9 @@ class FieldResolver {
                             documentField.columnName,
                             resolveType(documentField.columnType)
                     );
+                    if (stream) {
+                        mappingField.setExternalName("fullDocument." + mappingField.name());
+                    }
                     mappingField.setPrimaryKey(documentField.columnName.equalsIgnoreCase("_id"));
                     resolvedFields.add(mappingField);
                 } catch (IllegalArgumentException e) {
@@ -72,18 +76,27 @@ class FieldResolver {
             }
         } else {
             for (MappingField f : userFields) {
-                String nameInMongo = f.externalName() == null ? f.name() : f.externalName();
+                String prefixIfStream = stream ? "fullDocument." : "";
+                String nameInMongo = f.externalName() == null ? prefixIfStream + f.name() : f.externalName();
+
                 DocumentField documentField = dbFields.get(nameInMongo);
                 if (documentField == null) {
                     throw new IllegalArgumentException("Could not resolve field with name " + nameInMongo);
                 }
                 MappingField mappingField = new MappingField(f.name(), f.type(), nameInMongo);
-                mappingField.setPrimaryKey(documentField.columnName.equalsIgnoreCase("_id"));
+                mappingField.setPrimaryKey(isId(documentField.columnName, stream));
                 validateType(f, documentField);
                 resolvedFields.add(mappingField);
             }
         }
         return resolvedFields;
+    }
+
+    boolean isId(String nameInMongo, boolean stream) {
+        if (stream) {
+            return "fullDocument._id".equalsIgnoreCase(nameInMongo);
+        }
+        return "_id".equalsIgnoreCase(nameInMongo);
     }
 
     private QueryDataType resolveType(BsonType columnType) {
@@ -111,7 +124,7 @@ class FieldResolver {
         }
     }
 
-    Map<String, DocumentField> readFields(Map<String, String> options) {
+    Map<String, DocumentField> readFields(Map<String, String> options, boolean stream) {
         Map<String, DocumentField> fields = new HashMap<>();
         try (MongoClient client = connect(options)) {
             String databaseName = requireNonNull(options.get(DATABASE_NAME_OPTION),
@@ -133,7 +146,11 @@ class FieldResolver {
                     String bsonTypeName = (String) props.get("bsonType");
                     BsonType bsonType = resolveTypeByName(bsonTypeName);
 
-                    fields.put(property.getKey(), new DocumentField(bsonType, property.getKey()));
+                    String key = property.getKey();
+                    if (stream) {
+                        key = "fullDocument." + key;
+                    }
+                    fields.put(key, new DocumentField(bsonType, key));
                 }
             } else {
                 // fall back to sampling
@@ -148,8 +165,12 @@ class FieldResolver {
                     if (entry.getValue() == null) {
                         continue;
                     }
-                    DocumentField field = new DocumentField(resolveTypeFromJava(entry.getValue()), entry.getKey());
-                    fields.put(entry.getKey(), field);
+                    String key = entry.getKey();
+                    if (stream) {
+                        key = "fullDocument." + key;
+                    }
+                    DocumentField field = new DocumentField(resolveTypeFromJava(entry.getValue()), key);
+                    fields.put(key, field);
                 }
             }
         }

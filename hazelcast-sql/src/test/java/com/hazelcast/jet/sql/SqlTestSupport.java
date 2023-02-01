@@ -207,7 +207,8 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      * @param arguments    The query arguments
      * @param expectedRows Expected rows
      */
-    public static void assertRowsEventuallyInAnyOrder(String sql, List<Object> arguments, Collection<Row> expectedRows) {
+    public static void assertRowsEventuallyInAnyOrder(String sql, List<Object> arguments, Collection<Row> expectedRows,
+                                                      long timeoutForNextMs) {
         SqlService sqlService = instance().getSql();
         CompletableFuture<Void> future = new CompletableFuture<>();
         Deque<Row> rows = new ArrayDeque<>();
@@ -220,8 +221,8 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
                 ResultIterator<SqlRow> iterator = (ResultIterator<SqlRow>) result.iterator();
                 for (
                         int i = 0;
-                        i < expectedRows.size() && iterator.hasNext()
-                                || iterator.hasNext(50, TimeUnit.MILLISECONDS) == YES;
+                        i < expectedRows.size() && (iterator.hasNext()
+                                || iterator.hasNext(timeoutForNextMs, TimeUnit.MILLISECONDS) == YES);
                         i++
                 ) {
                     rows.add(new Row(iterator.next()));
@@ -248,6 +249,22 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
         List<Row> actualRows = new ArrayList<>(rows);
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
+    }
+
+    /**
+     * Execute a query and wait for the results to contain all the {@code
+     * expectedRows}. Suitable for streaming queries that don't terminate, but
+     * return a deterministic set of rows. Rows can arrive in any order.
+     * <p>
+     * After all expected rows are received, the method further waits a little
+     * more if any extra rows are received, and fails, if they are.
+     *
+     * @param sql          The query
+     * @param arguments    The query arguments
+     * @param expectedRows Expected rows
+     */
+    public static void assertRowsEventuallyInAnyOrder(String sql, List<Object> arguments, Collection<Row> expectedRows) {
+        assertRowsEventuallyInAnyOrder(sql, arguments, expectedRows, 50);
     }
 
     /**

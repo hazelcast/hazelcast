@@ -15,12 +15,15 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.mongodb.ReadMongoP;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.mongodb.client.MongoClients;
+import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -28,6 +31,7 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map.Entry;
 
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.project;
@@ -35,6 +39,7 @@ import static com.mongodb.client.model.Projections.excludeId;
 import static com.mongodb.client.model.Projections.fields;
 import static com.mongodb.client.model.Projections.include;
 import static java.util.Arrays.asList;
+import static java.util.Objects.requireNonNull;
 
 /**
  * ProcessorSupplier that creates {@linkplain ReadMongoP} processors on each instance.
@@ -44,18 +49,38 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
     private final String connectionString;
     private final String databaseName;
     private final String collectionName;
+    private final boolean stream;
+    private final FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
+    private final boolean needTwoSteps;
     private final String predicate;
     private final List<String> projection;
     private final boolean containsMappingForId;
+    private final Long startAt;
     private transient ExpressionEvalContext evalContext;
 
-    SelectProcessorSupplier(MongoTable table, String predicate, List<String> projection) {
+    SelectProcessorSupplier(MongoTable table, String predicate, List<String> projection, Long startAt, boolean stream,
+                            FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
+                            boolean needTwoSteps) {
         this.predicate = predicate;
         this.projection = projection;
         this.containsMappingForId = table.hasMappingForId();
-        connectionString = table.connectionString;
-        databaseName = table.databaseName;
-        collectionName = table.collectionName;
+        this.connectionString = table.connectionString;
+        this.databaseName = table.databaseName;
+        this.collectionName = table.collectionName;
+        this.startAt = startAt;
+        this.stream = stream;
+        this.eventTimePolicyProvider = eventTimePolicyProvider;
+        this.needTwoSteps = needTwoSteps;
+    }
+
+    SelectProcessorSupplier(MongoTable table, String predicate, List<String> projection, Long startAt,
+                            FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
+                            boolean needTwoSteps) {
+        this(table, predicate, projection, startAt, true, eventTimePolicyProvider, needTwoSteps);
+    }
+
+    SelectProcessorSupplier(MongoTable table, String predicate, List<String> projection, boolean needTwoSteps) {
+        this(table, predicate, projection, null, false, null, needTwoSteps);
     }
 
     @Override
@@ -75,30 +100,48 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         }
         if (this.projection != null && !this.projection.isEmpty()) {
             Bson proj = include(this.projection);
-            if (!projection.contains("_id")) {
+            if (!projection.contains("_id") && !stream) {
                 aggregates.add(project(fields(excludeId(), proj)));
             } else {
                 aggregates.add(project(proj));
             }
-        } else if (!containsMappingForId) {
+        } else if (!stream && !containsMappingForId) {
             aggregates.add(project(excludeId()));
         }
 
         Processor[] processors = new Processor[count];
+
+        EventTimePolicy<JetSqlRow> eventTimePolicy = eventTimePolicyProvider == null
+                ? EventTimePolicy.noEventTime()
+                : eventTimePolicyProvider.apply(evalContext);
         for (int i = 0; i < count; i++) {
-            Processor processor = new ReadMongoP<>(
-                    () -> MongoClients.create(connectionString),
-                    aggregates,
-                    databaseName,
-                    collectionName,
-                    this::convertToRow
-            );
+            Processor processor;
+            if (!stream) {
+                processor  = new ReadMongoP<>(
+                        () -> MongoClients.create(connectionString),
+                        aggregates,
+                        databaseName,
+                        collectionName,
+                        this::convertDocToRow
+                );
+            } else {
+                processor  = new ReadMongoP<>(
+                        () -> MongoClients.create(connectionString),
+                        startAt,
+                        eventTimePolicy,
+                        aggregates,
+                        databaseName,
+                        collectionName,
+                        this::convertStreamDocToRow
+                );
+            }
+
             processors[i] = processor;
         }
         return asList(processors);
     }
 
-    private JetSqlRow convertToRow(Document doc) {
+    private JetSqlRow convertDocToRow(Document doc) {
         Object[] row = new Object[doc.size()];
 
         int i = 0;
@@ -107,5 +150,23 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         }
 
         return new JetSqlRow(evalContext.getSerializationService(), row);
+    }
+
+    private JetSqlRow convertStreamDocToRow(ChangeStreamDocument<Document> changeStreamDocument) {
+        Document doc = changeStreamDocument.getFullDocument();
+        requireNonNull(doc, "Document is empty");
+        List<Object> row = new ArrayList<>(doc.size());
+
+        boolean noId = !projection.isEmpty() && !projection.contains("_id");
+
+        for (Entry<String, Object> entry : doc.entrySet()) {
+            boolean noIdButThisIsId = noId && "_id".equalsIgnoreCase(entry.getKey());
+            if (!noIdButThisIsId) {
+                row.add(entry.getValue());
+            }
+        }
+
+        Object[] values = row.toArray(new Object[0]);
+        return new JetSqlRow(evalContext.getSerializationService(), values);
     }
 }

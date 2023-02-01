@@ -57,6 +57,7 @@ import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.mongodb.MongoUtilities.partitionAggregate;
 import static com.mongodb.client.model.Aggregates.sort;
 import static com.mongodb.client.model.Sorts.ascending;
+import static com.mongodb.client.model.changestream.OperationType.OTHER;
 import static java.util.Collections.emptyList;
 
 /**

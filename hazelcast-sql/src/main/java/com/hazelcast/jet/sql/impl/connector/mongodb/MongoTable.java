@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,6 +40,10 @@ class MongoTable extends JetTable {
     final String collectionName;
     final String connectionString;
     private final Map<String, String> options;
+    /**
+     * Streaming query always needs _id to be present, even if user don't request it
+     */
+    final boolean streaming;
 
     MongoTable(
             @Nonnull String schemaName,
@@ -48,12 +53,13 @@ class MongoTable extends JetTable {
             @Nonnull Map<String, String> options,
             @Nonnull SqlConnector sqlConnector,
             @Nonnull List<TableField> fields,
-            @Nonnull TableStatistics statistics) {
+            @Nonnull TableStatistics statistics, boolean streaming) {
         super(sqlConnector, fields, schemaName, name, statistics);
         this.databaseName = databaseName;
         this.collectionName = collectionName;
         this.options = options;
         this.connectionString = options.get(Options.CONNECTION_STRING_OPTION);
+        this.streaming = streaming;
     }
 
     String[] paths() {
@@ -70,7 +76,7 @@ class MongoTable extends JetTable {
 
     SupplierEx<QueryTarget> queryTargetSupplier() {
         List<String> fields = getFields().stream()
-                                          .map(TableField::getName)
+                                          .map(f -> ((MongoTableField) f).externalName)
                                           .collect(toList());
         return () -> new DocumentQueryTarget(fields);
     }
@@ -83,6 +89,10 @@ class MongoTable extends JetTable {
     @Override
     public PlanObjectKey getObjectKey() {
         return new MongoObjectKey(getSchemaName(), getSqlName(), databaseName, collectionName, getFields(), options);
+    }
+
+    public Map<String, String> getOptions() {
+        return options;
     }
 
     static final class MongoObjectKey implements PlanObjectKey {

@@ -82,7 +82,7 @@ public class FieldResolverTest {
             readOpts.put("connectionString", mongoContainer.getConnectionString());
             readOpts.put("database", databaseName);
             readOpts.put("collection", collectionName);
-            Map<String, DocumentField> fields = resolver.readFields(readOpts);
+            Map<String, DocumentField> fields = resolver.readFields(readOpts, false);
             assertThat(fields).containsOnlyKeys("firstName", "lastName", "birthYear");
             assertThat(fields.get("lastName").columnType).isEqualTo(BsonType.STRING);
             assertThat(fields.get("birthYear").columnType).isEqualTo(BsonType.INT32);
@@ -107,7 +107,7 @@ public class FieldResolverTest {
             readOpts.put("connectionString", mongoContainer.getConnectionString());
             readOpts.put("database", databaseName);
             readOpts.put("collection", collectionName);
-            Map<String, DocumentField> fields = resolver.readFields(readOpts);
+            Map<String, DocumentField> fields = resolver.readFields(readOpts, false);
             assertThat(fields).containsOnlyKeys("_id", "firstName", "lastName", "birthYear");
             assertThat(fields.get("lastName").columnType).isEqualTo(BsonType.STRING);
             assertThat(fields.get("birthYear").columnType).isEqualTo(BsonType.INT32);
@@ -132,7 +132,7 @@ public class FieldResolverTest {
             readOpts.put("connectionString", mongoContainer.getConnectionString());
             readOpts.put("database", databaseName);
             readOpts.put("collection", collectionName);
-            List<MappingField> fields = resolver.resolveFields(readOpts, Collections.emptyList());
+            List<MappingField> fields = resolver.resolveFields(readOpts, Collections.emptyList(), false);
             assertThat(fields).contains(
                     new MappingField("_id", QueryDataType.VARCHAR).setPrimaryKey(true),
                     new MappingField("firstName", QueryDataType.VARCHAR).setPrimaryKey(false),
@@ -163,7 +163,7 @@ public class FieldResolverTest {
             List<MappingField> fields = resolver.resolveFields(readOpts, Arrays.asList(
                     new MappingField("id", QueryDataType.VARCHAR).setExternalName("_id"),
                     new MappingField("birthYear", QueryDataType.BIGINT)
-            ));
+            ), false);
             assertThat(fields).contains(
                     new MappingField("id", QueryDataType.VARCHAR).setPrimaryKey(true).setExternalName("_id"),
                     new MappingField("birthYear", QueryDataType.BIGINT).setExternalName("birthYear").setPrimaryKey(false)
@@ -192,7 +192,7 @@ public class FieldResolverTest {
             try {
                 resolver.resolveFields(readOpts, Collections.singletonList(
                         new MappingField("id", QueryDataType.MAP).setExternalName("_id")
-                ));
+                ), false);
             } catch (IllegalStateException e) {
                 assertThat(e.getMessage()).isEqualTo("Type MAP of field id does not match db type VARCHAR");
             }
