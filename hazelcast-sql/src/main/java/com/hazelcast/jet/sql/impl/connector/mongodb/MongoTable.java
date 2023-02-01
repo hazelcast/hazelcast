@@ -27,7 +27,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,7 +38,7 @@ class MongoTable extends JetTable {
     final String databaseName;
     final String collectionName;
     final String connectionString;
-    private final Map<String, String> options;
+    final Map<String, String> options;
     /**
      * Streaming query always needs _id to be present, even if user don't request it
      */

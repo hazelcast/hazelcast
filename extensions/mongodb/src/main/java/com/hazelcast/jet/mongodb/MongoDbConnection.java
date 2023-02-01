@@ -74,14 +74,10 @@ class MongoDbConnection {
                     afterConnection.accept(mongoClient);
                     connectionRetryTracker.reset();
                     return true;
-                }
-                catch (MongoCommandException e) {
-                    BsonValue errorLabels = e.getResponse().get("errorLabels");
-                    if (errorLabels != null && errorLabels.isArray()) {
-                        BsonArray values = errorLabels.asArray();
-                        if (values.contains(new BsonString("NonResumableChangeStreamError"))) {
-                            throw new JetException("NonResumableChangeStreamError thrown by Mongo", e);
-                        }
+                } catch (MongoCommandException e) {
+                    BsonArray codes = codes(e);
+                    if (codes.contains(new BsonString("NonResumableChangeStreamError"))) {
+                        throw new JetException("NonResumableChangeStreamError thrown by Mongo", e);
                     }
                     logger.warning("Could not connect to MongoDB", e);
                     connectionRetryTracker.attemptFailed();
@@ -96,6 +92,15 @@ class MongoDbConnection {
             }
         } else {
             return true;
+        }
+    }
+
+    private BsonArray codes(MongoCommandException e) {
+        BsonValue errorLabels = e.getResponse().get("errorLabels");
+        if (errorLabels != null && errorLabels.isArray()) {
+            return errorLabels.asArray();
+        } else {
+            return new BsonArray();
         }
     }
 

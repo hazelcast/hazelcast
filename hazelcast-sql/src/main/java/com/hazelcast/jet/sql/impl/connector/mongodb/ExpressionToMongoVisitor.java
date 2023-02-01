@@ -29,7 +29,6 @@ import com.hazelcast.sql.impl.expression.predicate.IsNotNullPredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsNullPredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsTruePredicate;
 import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
-import com.hazelcast.sql.impl.schema.TableField;
 import com.mongodb.client.model.Filters;
 import org.bson.conversions.Bson;
 
