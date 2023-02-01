@@ -97,11 +97,9 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
         instance().getJet().newJob(pipeline, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE)).join();
 
-        assertTrueEventually(() -> {
-            List<Object> local = new ArrayList<>(list);
-            local.removeIf(e -> !testName.equals(((Document) e).get("testName")));
-            assertEquals(COUNT_IN_BATCH, local.size());
-        });
+        List<Object> local = new ArrayList<>(list);
+        local.removeIf(e -> !testName.getMethodName().equals(((Document) e).get("testName")));
+        assertEquals(COUNT_IN_BATCH, local.size());
     }
 
     @Test
@@ -175,7 +173,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         }
         return sourceBuilder;
     }
-d
+
     @Test
     public void testStreamSimple() {
         String methodName = testName.getMethodName();
@@ -194,7 +192,7 @@ d
         collection("someOther").insertOne(newDocument("val", 1000).append("foo", "bar"));
         assertTrueEventually(() -> {
             List<Object> local = new ArrayList<>(list);
-            local.removeIf(e -> !testName.equals(((Document) e).get("testName")));
+            local.removeIf(e -> !testName.getMethodName().equals(((Document) e).get("testName")));
             assertEquals(1, local.size());
         });
         job.cancel();
