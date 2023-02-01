@@ -50,7 +50,7 @@ final class ExpressionToMongoVisitor implements ExpressionVisitor<Object> {
 
     @Override
     public Object visit(AndPredicate predicate) {
-        Bson[] filters = getFilters(predicate.getOperands());
+        Bson[] filters = getFilters(predicate.operands());
         return Filters.and(filters);
     }
 
