@@ -34,10 +34,12 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -71,6 +73,8 @@ public class AddCacheConfigMessageTaskTest {
         NodeExtension mockNodeExtension = mock(NodeExtension.class);
         ClusterWideConfigurationService mockConfigurationService = mock(ClusterWideConfigurationService.class);
         InternalCompletableFuture<Object> mockFuture = mock(InternalCompletableFuture.class);
+        ExecutionService mockExecutionService = mock(ExecutionService.class);
+        ManagedExecutorService mockManagedExecutorService = mock(ManagedExecutorService.class);
 
         when(mockNode.getClientEngine()).thenReturn(mockClientEngine);
         when(mockNode.getConfig()).thenReturn(new Config());
@@ -91,6 +95,8 @@ public class AddCacheConfigMessageTaskTest {
                 new HazelcastProperties(new Config()))
         );
         when(mockNodeEngineImpl.getService(ConfigurationService.SERVICE_NAME)).thenReturn(mockConfigurationService);
+        when(mockNodeEngineImpl.getExecutionService()).thenReturn(mockExecutionService);
+        when(mockExecutionService.getExecutor(ExecutionService.ASYNC_EXECUTOR)).thenReturn(mockManagedExecutorService);
 
         when(mockConfigurationService.broadcastConfigAsync(any(IdentifiedDataSerializable.class)))
                 .thenReturn(mockFuture);
