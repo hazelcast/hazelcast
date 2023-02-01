@@ -20,7 +20,6 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapEvent;
-import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.type.Type;
@@ -121,13 +120,6 @@ public class TablesStorage {
         if (!nodeEngine.getLocalMember().isLiteMember()) {
             storage().addEntryListener(listener, false);
         }
-    }
-
-    ReplicatedMap<String, Object> oldStorage() {
-        // To remove in 5.3. We are using the old storage if the cluster version is lower than 5.2. We destroy the old catalog
-        // during the first read after the cluster version is upgraded to > =5.2. We do not synchronize put operations to the old
-        // catalog, so it is possible that destroy happens before put, and we end up with a leaked ReplicatedMap.
-        return nodeEngine.getHazelcastInstance().getReplicatedMap(SQL_CATALOG_MAP_NAME);
     }
 
     IMap<String, Object> storage() {
