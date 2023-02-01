@@ -44,6 +44,7 @@ import java.util.Set;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.mongodb.Mappers.streamToClass;
+import static com.hazelcast.jet.mongodb.MongoDBSources.batch;
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.gte;
@@ -78,6 +79,30 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
                    .map(tuple -> tuple.toArray(new Object[0]))
                    .toArray(Object[]::new);
     }
+    @Test
+    public void testBatchSimple() {
+        IList<Object> list = instance().getList(testName.getMethodName());
+        final String connectionString = mongoContainer.getConnectionString();
+
+        collection().insertMany(range(0, COUNT_IN_BATCH)
+                .mapToObj(i -> newDocument("key", i).append("val", i))
+                .collect(toList())
+        );
+        assertEquals(collection().countDocuments(), COUNT_IN_BATCH);
+
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(batch(SOURCE_NAME, connectionString, defaultDatabase(), testName.getMethodName(), null, null))
+                .setLocalParallelism(2)
+                .writeTo(Sinks.list(list));
+
+        instance().getJet().newJob(pipeline, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE)).join();
+
+        assertTrueEventually(() -> {
+            List<Object> local = new ArrayList<>(list);
+            local.removeIf(e -> !testName.equals(((Document) e).get("testName")));
+            assertEquals(COUNT_IN_BATCH, local.size());
+        });
+    }
 
     @Test
     public void testBatchOneCollection() {
@@ -91,7 +116,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         assertEquals(collection().countDocuments(), COUNT_IN_BATCH);
 
         Pipeline pipeline = Pipeline.create();
-        Batch<?> sourceBuilder = MongoDBSources.batch(SOURCE_NAME, () -> mongoClient(connectionString))
+        Batch<?> sourceBuilder = batch(SOURCE_NAME, () -> mongoClient(connectionString))
                                                .database(defaultDatabase())
                                                .collection(testName.getMethodName())
                                                .sort(ascending("key"));
@@ -123,7 +148,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
         Pipeline pipeline = Pipeline.create();
         String connectionString = mongoContainer.getConnectionString();
-        Batch<?> sourceBuilder = MongoDBSources.batch(SOURCE_NAME, () -> mongoClient(connectionString))
+        Batch<?> sourceBuilder = batch(SOURCE_NAME, () -> mongoClient(connectionString))
                 .database(defaultDatabase());
         sourceBuilder = batchFilters(sourceBuilder);
         pipeline.readFrom(sourceBuilder.build())
@@ -150,7 +175,30 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         }
         return sourceBuilder;
     }
+d
+    @Test
+    public void testStreamSimple() {
+        String methodName = testName.getMethodName();
+        IList<Object> list = instance().getList(methodName);
+        String connectionString = mongoContainer.getConnectionString();
 
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(MongoDBSources.stream(SOURCE_NAME, connectionString, defaultDatabase(), methodName, null, null))
+                .withNativeTimestamps(0)
+                .setLocalParallelism(1)
+                .writeTo(Sinks.list(list));
+
+        Job job = instance().getJet().newJob(pipeline);
+
+        collection().insertOne(newDocument("val", 1));
+        collection("someOther").insertOne(newDocument("val", 1000).append("foo", "bar"));
+        assertTrueEventually(() -> {
+            List<Object> local = new ArrayList<>(list);
+            local.removeIf(e -> !testName.equals(((Document) e).get("testName")));
+            assertEquals(1, local.size());
+        });
+        job.cancel();
+    }
     @Test
     public void testStreamOneCollection() {
         IList<Object> list = instance().getList(testName.getMethodName());
