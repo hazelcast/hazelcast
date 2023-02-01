@@ -68,6 +68,7 @@ public abstract class Reactor implements Executor {
     public final CircularQueue<Runnable> localTaskQueue;
     protected final boolean spin;
     protected final Thread eventloopThread;
+    protected final String name;
     protected volatile State state = NEW;
 
     TpcEngine engine;
@@ -93,6 +94,16 @@ public abstract class Reactor implements Executor {
         if (builder.threadNameSupplier != null) {
             eventloopThread.setName(builder.threadNameSupplier.get());
         }
+        this.name = builder.reactorNameSupplier.get();
+    }
+
+    /**
+     * Gets the name of this reactor. Useful for debugging purposes.
+     *
+     * @return the name.
+     */
+    public final String name() {
+        return name;
     }
 
     /**
@@ -285,6 +296,11 @@ public abstract class Reactor implements Executor {
         } else {
             return false;
         }
+    }
+
+    @Override
+    public String toString() {
+        return name;
     }
 
     /**
