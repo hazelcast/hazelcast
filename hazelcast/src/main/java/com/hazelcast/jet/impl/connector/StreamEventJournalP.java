@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
+import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
@@ -403,7 +404,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
                 HazelcastInstance client = hzClientDataStoreFactory.getDataStore();
                 findRemotePartitionCount(client);
             } else if (clientXml != null) {
-                findRemotePartitionCount();
+                findRemotePartitionCountUsingNewClient();
             } else {
 
                 FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<E>>
@@ -414,11 +415,10 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         }
 
         // Get remotePartitionCount from new HazelcastInstance
-        private void findRemotePartitionCount() {
+        private void findRemotePartitionCountUsingNewClient() {
             HazelcastInstance client = newHazelcastClient(asClientConfig(clientXml));
             try {
-                HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
-                remotePartitionCount = clientProxy.client.getClientPartitionService().getPartitionCount();
+                findRemotePartitionCount(client);
             } finally {
                 client.shutdown();
             }
@@ -427,7 +427,9 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         // Get remotePartitionCount from given HazelcastInstance
         private void findRemotePartitionCount(HazelcastInstance client) {
             HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
-            remotePartitionCount = clientProxy.client.getClientPartitionService().getPartitionCount();
+            ClientPartitionService clientPartitionService = clientProxy.client.getClientPartitionService();
+            // The implementation of getPartitionCount is using an AtomicInteger internally. So it is thread-safe
+            remotePartitionCount = clientPartitionService.getPartitionCount();
         }
 
         private void initLocal(Set<Partition> partitions) {
@@ -528,6 +530,9 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
                 instance = client;
             }
             // Create a new EventJournalReader
+            // The eventJournalReaderSupplier is using the Hazelcast client to create an EventJournalReader
+            // Hazelcast client is thread safe.
+            // So we can create EventJournalReader in a thread-safe manner
             eventJournalReader = eventJournalReaderSupplier.apply(instance);
         }
 
