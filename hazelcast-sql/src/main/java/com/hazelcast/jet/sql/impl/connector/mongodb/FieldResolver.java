@@ -36,6 +36,7 @@ import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.CONNECTION_ST
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.DATABASE_NAME_OPTION;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.resolveTypeByName;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.resolveTypeFromJava;
+import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static com.mongodb.client.model.Filters.eq;
 import static java.util.Objects.requireNonNull;
 
@@ -63,12 +64,10 @@ class FieldResolver {
                 try {
                     MappingField mappingField = new MappingField(
                             documentField.columnName,
-                            resolveType(documentField.columnType)
+                            resolveType(documentField.columnType),
+                            documentField.columnName
                     );
-                    if (stream) {
-                        mappingField.setExternalName("fullDocument." + mappingField.name());
-                    }
-                    mappingField.setPrimaryKey(documentField.columnName.equalsIgnoreCase("_id"));
+                    mappingField.setPrimaryKey(isId(documentField.columnName, stream));
                     resolvedFields.add(mappingField);
                 } catch (IllegalArgumentException e) {
                     throw new IllegalArgumentException("Could not load column class " + documentField.columnType, e);
@@ -110,7 +109,7 @@ class FieldResolver {
                 return QueryDataType.TIMESTAMP;
             case STRING:
             case OBJECT_ID:
-                return QueryDataType.VARCHAR;
+                return VARCHAR;
             case DECIMAL128: return QueryDataType.DECIMAL;
             default:  throw new UnsupportedOperationException("Cannot resolve type for BSON type " + columnType);
         }
@@ -172,6 +171,10 @@ class FieldResolver {
                     DocumentField field = new DocumentField(resolveTypeFromJava(entry.getValue()), key);
                     fields.put(key, field);
                 }
+            }
+            if (stream) {
+                fields.put("operationType", new DocumentField(BsonType.STRING, "operationType"));
+                fields.put("resumeToken", new DocumentField(BsonType.STRING, "resumeToken"));
             }
         }
         return fields;

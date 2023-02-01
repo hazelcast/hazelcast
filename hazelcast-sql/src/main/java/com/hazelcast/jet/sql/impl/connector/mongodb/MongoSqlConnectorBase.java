@@ -120,7 +120,9 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         // if not all filters are pushed down, then we cannot push down projection
         // because later filters may use those fields
         // We could do it smarter and check field usage in the filters, but it's something TODO
-        List<String> projectionList = filter.allProceeded ? projections.result : emptyList();
+        List<String> projectionList = filter.allProceeded
+                ? projections.result
+                : allFieldsExternalNames(table);
         boolean needTwoSteps = !filter.allProceeded || !projections.allProceeded;
 
         SelectProcessorSupplier supplier;
@@ -152,6 +154,12 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             return vEnd;
         }
         return sourceVertex;
+    }
+
+    private static List<String> allFieldsExternalNames(MongoTable table) {
+        return table.getFields().stream()
+                    .map(f -> ((MongoTableField) f).externalName)
+                    .collect(toList());
     }
 
     private Long parseStartAt(Map<String, String> options) {
@@ -214,7 +222,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
 
             return new TranslationResult<>(fields, true);
         } catch (Throwable t) {
-            return new TranslationResult<>(emptyList(), false);
+            return new TranslationResult<>(allFieldsExternalNames(context.getTable()), false);
         }
     }
 

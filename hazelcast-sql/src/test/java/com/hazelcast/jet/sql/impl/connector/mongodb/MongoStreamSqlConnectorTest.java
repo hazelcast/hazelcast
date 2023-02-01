@@ -111,7 +111,8 @@ public class MongoStreamSqlConnectorTest extends SqlTestSupport {
                 + (includeIdInMapping ? " id VARCHAR external name \"fullDocument._id\", " : "")
                 + " firstName VARCHAR, "
                 + " lastName VARCHAR, "
-                + " jedi BOOLEAN "
+                + " jedi BOOLEAN, "
+                + " operation VARCHAR external name operationType"
                 + ") "
                 + "TYPE MongoDBStream "
                 + "OPTIONS ("
@@ -130,12 +131,12 @@ public class MongoStreamSqlConnectorTest extends SqlTestSupport {
             sleep(100);
             collection.insertOne(new Document("firstName", "Anakin").append("lastName", "Skywalker").append("jedi", true));
         });
-        assertRowsEventuallyInAnyOrder("select firstName, lastName from " + tableName
+        assertRowsEventuallyInAnyOrder("select firstName, lastName, operation from " + tableName
                         + " where lastName = ? and jedi=true" + force,
                 singletonList("Skywalker"),
                 asList(
-                        new Row("Luke", "Skywalker"),
-                        new Row("Anakin", "Skywalker")
+                        new Row("Luke", "Skywalker", "insert"),
+                        new Row("Anakin", "Skywalker", "insert")
                 ),
                 TimeUnit.SECONDS.toMillis(10)
         );

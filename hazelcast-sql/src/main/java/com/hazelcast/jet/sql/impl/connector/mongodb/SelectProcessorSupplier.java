@@ -33,6 +33,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.project;
 import static com.mongodb.client.model.Projections.excludeId;
@@ -71,6 +72,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         this.stream = stream;
         this.eventTimePolicyProvider = eventTimePolicyProvider;
         this.needTwoSteps = needTwoSteps;
+        checkArgument(projection != null && !projection.isEmpty(), "projection cannot be empty");
     }
 
     SelectProcessorSupplier(MongoTable table, String predicate, List<String> projection, Long startAt,
@@ -98,15 +100,11 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
             Bson filterWithParams = ParameterReplacer.replacePlaceholders(filterDoc, evalContext);
             aggregates.add(match(filterWithParams.toBsonDocument()));
         }
-        if (this.projection != null && !this.projection.isEmpty()) {
-            Bson proj = include(this.projection);
-            if (!projection.contains("_id") && !stream) {
-                aggregates.add(project(fields(excludeId(), proj)));
-            } else {
-                aggregates.add(project(proj));
-            }
-        } else if (!stream && !containsMappingForId) {
-            aggregates.add(project(excludeId()));
+        Bson proj = include(this.projection);
+        if (!projection.contains("_id") && !stream) {
+            aggregates.add(project(fields(excludeId(), proj)));
+        } else {
+            aggregates.add(project(proj));
         }
 
         Processor[] processors = new Processor[count];
@@ -157,7 +155,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         requireNonNull(doc, "Document is empty");
         List<Object> row = new ArrayList<>(doc.size());
 
-        boolean noId = !projection.isEmpty() && !projection.contains("_id");
+        boolean noId = !projection.contains("fullDocument._id");
 
         for (Entry<String, Object> entry : doc.entrySet()) {
             boolean noIdButThisIsId = noId && "_id".equalsIgnoreCase(entry.getKey());
@@ -165,8 +163,22 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
                 row.add(entry.getValue());
             }
         }
+        addIfInProjection(changeStreamDocument.getOperationType().getValue(), "operationType", row);
+        addIfInProjection(changeStreamDocument.getResumeToken().toString(), "resumeToken", row);
 
         Object[] values = row.toArray(new Object[0]);
         return new JetSqlRow(evalContext.getSerializationService(), values);
+    }
+
+    private void addIfInProjection(Object value, String field, List<Object> row) {
+        int index = projection.indexOf(field);
+        if (index == -1) {
+            return;
+        }
+        if (index >= row.size()) {
+            row.add(value);
+        } else {
+            row.set(index, value);
+        }
     }
 }

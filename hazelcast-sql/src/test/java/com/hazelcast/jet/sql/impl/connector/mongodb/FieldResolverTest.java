@@ -41,6 +41,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -134,12 +136,46 @@ public class FieldResolverTest {
             readOpts.put("collection", collectionName);
             List<MappingField> fields = resolver.resolveFields(readOpts, Collections.emptyList(), false);
             assertThat(fields).contains(
-                    new MappingField("_id", QueryDataType.VARCHAR).setPrimaryKey(true),
-                    new MappingField("firstName", QueryDataType.VARCHAR).setPrimaryKey(false),
-                    new MappingField("lastName", QueryDataType.VARCHAR).setPrimaryKey(false),
-                    new MappingField("birthYear", QueryDataType.INT).setPrimaryKey(false)
+                    fieldWithSameExternal("_id", VARCHAR).setPrimaryKey(true),
+                    fieldWithSameExternal("firstName", VARCHAR),
+                    fieldWithSameExternal("lastName", VARCHAR),
+                    fieldWithSameExternal("birthYear", INT)
             );
         }
+    }
+
+    @Test
+    public void testResolvesMappingFieldsViaSampleInStream() {
+        try (MongoClient client = MongoClients.create(mongoContainer.getConnectionString())) {
+            String databaseName = "testDatabase";
+            String collectionName = "testResolvesMappingFieldsViaSampleInStream";
+            MongoDatabase testDatabase = client.getDatabase(databaseName);
+            MongoCollection<Document> collection = testDatabase.getCollection(collectionName);
+
+            collection.insertOne(new Document("firstName", "Tomasz")
+                    .append("lastName", "Gawęda")
+                    .append("birthYear", 1992));
+
+            FieldResolver resolver = new FieldResolver();
+
+            Map<String, String> readOpts = new HashMap<>();
+            readOpts.put("connectionString", mongoContainer.getConnectionString());
+            readOpts.put("database", databaseName);
+            readOpts.put("collection", collectionName);
+            List<MappingField> fields = resolver.resolveFields(readOpts, Collections.emptyList(), true);
+            assertThat(fields).contains(
+                    fieldWithSameExternal("resumeToken", VARCHAR),
+                    fieldWithSameExternal("operationType", VARCHAR),
+                    fieldWithSameExternal("fullDocument._id", VARCHAR).setPrimaryKey(true),
+                    fieldWithSameExternal("fullDocument.firstName", VARCHAR),
+                    fieldWithSameExternal("fullDocument.lastName", VARCHAR),
+                    fieldWithSameExternal("fullDocument.birthYear", INT)
+            );
+        }
+    }
+
+    private static MappingField fieldWithSameExternal(String name, QueryDataType type) {
+        return new MappingField(name, type, name).setPrimaryKey(false);
     }
 
     @Test
@@ -161,11 +197,11 @@ public class FieldResolverTest {
             readOpts.put("database", databaseName);
             readOpts.put("collection", collectionName);
             List<MappingField> fields = resolver.resolveFields(readOpts, Arrays.asList(
-                    new MappingField("id", QueryDataType.VARCHAR).setExternalName("_id"),
+                    new MappingField("id", VARCHAR).setExternalName("_id"),
                     new MappingField("birthYear", QueryDataType.BIGINT)
             ), false);
             assertThat(fields).contains(
-                    new MappingField("id", QueryDataType.VARCHAR).setPrimaryKey(true).setExternalName("_id"),
+                    new MappingField("id", VARCHAR).setPrimaryKey(true).setExternalName("_id"),
                     new MappingField("birthYear", QueryDataType.BIGINT).setExternalName("birthYear").setPrimaryKey(false)
             );
         }
