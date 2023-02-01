@@ -211,7 +211,7 @@ public final class CompactUtil {
                 + "serialization mechanism. If you want to serialize "
                 + "'" + clazz + "' which uses this class in its fields, consider "
                 + "overriding that serialization mechanism. You can do that by "
-                + "adding '" + fieldClass + " to CompactSerializationConfig, or "
+                + "adding '" + fieldClass + "' to CompactSerializationConfig, or "
                 + "writing and registering an explicit CompactSerializer for it.");
     }
 
