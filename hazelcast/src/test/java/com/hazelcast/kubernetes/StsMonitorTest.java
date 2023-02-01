@@ -20,7 +20,6 @@ import com.hazelcast.instance.impl.ClusterTopologyIntentTracker;
 import com.hazelcast.instance.impl.NoOpClusterTopologyIntentTracker;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.spi.utils.RestClient;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import io.fabric8.kubernetes.api.model.ListMetaBuilder;
