@@ -516,7 +516,7 @@ public class CompactSerializationTest {
         private final String foo;
         private final long bar;
 
-        public FooBar(String foo, long bar) {
+        FooBar(String foo, long bar) {
             this.foo = foo;
             this.bar = bar;
         }
