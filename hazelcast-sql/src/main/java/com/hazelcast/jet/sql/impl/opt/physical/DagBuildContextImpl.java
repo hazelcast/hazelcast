@@ -75,7 +75,11 @@ public class DagBuildContextImpl implements DagBuildContext {
         if (node == null) {
             return null;
         }
-        return (Expression<Boolean>) node.unwrap(RexNode.class).accept(createVisitor());
+        RexNode unwrap = node.unwrap(RexNode.class);
+        if (unwrap == null) {
+            return null;
+        }
+        return (Expression<Boolean>) unwrap.accept(createVisitor());
     }
 
     @Nonnull
