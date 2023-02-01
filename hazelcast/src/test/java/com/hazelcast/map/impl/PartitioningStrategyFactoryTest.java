@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.partition.PartitioningStrategy;
+import com.hazelcast.partition.strategy.AttributePartitioningStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -39,6 +40,7 @@ import org.junit.runner.RunWith;
 
 import java.util.UUID;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -138,6 +140,17 @@ public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
 
         assertTrueEventually(() -> assertFalse("Key should have been removed from cache",
                 partitioningStrategyFactory.cache.containsKey(mapName)), 20);
+    }
+
+    @Test
+    public void test_partitioningStrategyClassNameWithArgs() {
+        PartitioningStrategyConfig cfg = new PartitioningStrategyConfig();
+        cfg.setPartitioningStrategyClass(AttributePartitioningStrategy.class.getName() + "(field1, field2)");
+        partitioningStrategyFactory.cache.clear();
+        PartitioningStrategy partitioningStrategy = partitioningStrategyFactory.getPartitioningStrategy(mapName, cfg);
+        assertEquals(AttributePartitioningStrategy.class, partitioningStrategy.getClass());
+        assertArrayEquals(((AttributePartitioningStrategy) partitioningStrategy).getPartitioningAttributes(),
+                new String[] {"field1", "field2"});
     }
 
     @Override

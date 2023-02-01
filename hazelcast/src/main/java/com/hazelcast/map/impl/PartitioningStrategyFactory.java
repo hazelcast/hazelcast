@@ -17,17 +17,23 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.PartitioningStrategyConfig;
-import com.hazelcast.partition.PartitioningStrategy;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.partition.PartitioningStrategy;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Factory for {@link PartitioningStrategy} instances.
  */
 public final class PartitioningStrategyFactory {
 
+    private static final String ARGUMENTS_REGEX = "(.*)\\((.+)\\)";
     // not private for tests
     final ConcurrentHashMap<String, PartitioningStrategy> cache = new ConcurrentHashMap<>();
 
@@ -36,6 +42,7 @@ public final class PartitioningStrategyFactory {
 
     /**
      * Construct a new PartitioningStrategyFactory
+     *
      * @param configClassLoader the current {@code NodeEngine}'s {@code configClassLoader}.
      */
     public PartitioningStrategyFactory(ClassLoader configClassLoader) {
@@ -47,10 +54,12 @@ public final class PartitioningStrategyFactory {
      * first attempts locating a {@link PartitioningStrategy} in {code config.getPartitioningStrategy()}. If this is {@code null},
      * then looks up its internal cache of partitioning strategies; if one has already been created for the given
      * {@code mapName}, it is returned, otherwise it is instantiated, cached and returned.
-     * @param mapName       Map for which this partitioning strategy is being created
-     * @param config        the partitioning strategy configuration
+     *
+     * @param mapName Map for which this partitioning strategy is being created
+     * @param config  the partitioning strategy configuration
      * @return
      */
+    @SuppressWarnings("checkstyle:NestedIfDepth")
     public PartitioningStrategy getPartitioningStrategy(String mapName, PartitioningStrategyConfig config) {
         PartitioningStrategy strategy = null;
         if (config != null) {
@@ -60,7 +69,11 @@ public final class PartitioningStrategyFactory {
                     strategy = cache.get(mapName);
                 } else if (config.getPartitioningStrategyClass() != null) {
                     try {
-                        strategy = ClassLoaderUtil.newInstance(configClassLoader, config.getPartitioningStrategyClass());
+                        if (classNameContainsArgs(config.getPartitioningStrategyClass())) {
+                            strategy = constructPartitioningStrategyWithArgs(config.getPartitioningStrategyClass());
+                        } else {
+                            strategy = ClassLoaderUtil.newInstance(configClassLoader, config.getPartitioningStrategyClass());
+                        }
                         cache.put(mapName, strategy);
                     } catch (Exception e) {
                         throw ExceptionUtil.rethrow(e);
@@ -73,9 +86,54 @@ public final class PartitioningStrategyFactory {
 
     /**
      * Remove the cached {@code PartitioningStrategy} from the internal cache, if it exists.
+     *
      * @param mapName name of the map whose partitioning strategy will be removed from internal cache
      */
     public void removePartitioningStrategyFromCache(String mapName) {
         cache.remove(mapName);
+    }
+
+    private boolean classNameContainsArgs(String className) {
+        return className.matches(ARGUMENTS_REGEX);
+    }
+
+    private PartitioningStrategy constructPartitioningStrategyWithArgs(
+            final String classNameWithArgs
+    ) throws ClassNotFoundException {
+        final Matcher matcher = Pattern.compile(ARGUMENTS_REGEX).matcher(classNameWithArgs);
+        if (!matcher.matches()) {
+            throw new HazelcastException("Provided PartitionStrategy arguments are in invalid format: "
+                    + classNameWithArgs);
+        }
+
+        assert matcher.groupCount() == 2;
+        final String className = matcher.group(1);
+        final String argsString = matcher.group(2);
+
+        final String[] args = argsString.split(",");
+        for (int i = 0; i < args.length; i++) {
+            args[i] = args[i].trim();
+        }
+
+        final Class<?> strategyClass = ClassLoaderUtil.loadClass(configClassLoader, className);
+
+        if (!PartitioningStrategy.class.isAssignableFrom(strategyClass)) {
+            throw new HazelcastException("Provided PartitionStrategy class "
+                    + "does not implement PartitionStrategy interface: " + strategyClass.getName());
+        }
+
+        final Constructor<?> constructor;
+        try {
+            constructor = strategyClass.getConstructor(String[].class);
+        } catch (NoSuchMethodException e) {
+            throw new HazelcastException("Could not find fitting constructor for specified PartitionStrategy: "
+                    + classNameWithArgs, e);
+        }
+
+        try {
+            return (PartitioningStrategy) constructor.newInstance(new Object[]{args});
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            throw new HazelcastException("Failed to instantiate PartitionStrategy with constructor " + constructor, e);
+        }
     }
 }
