@@ -626,7 +626,7 @@ public class MasterJobContext {
             logger.fine(opName + " of " + mc.jobIdString() + " terminated after a terminal snapshot");
             TerminationMode mode = requestedTerminationMode().orElseThrow(() -> new AssertionError("mode is null"));
             assert mode.isWithTerminalSnapshot() : "mode=" + mode;
-            return mode == CANCEL_GRACEFUL ? new CancellationException() : new JobTerminateRequestedException(mode);
+            return mode == CANCEL_GRACEFUL ? createCancellationException() : new JobTerminateRequestedException(mode);
         }
 
         // If all exceptions are of certain type, treat it as TopologyChangedException

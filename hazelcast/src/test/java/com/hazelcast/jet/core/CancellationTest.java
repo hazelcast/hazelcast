@@ -108,7 +108,7 @@ public class CancellationTest extends JetTestSupport {
         return useLightJob ? instance.getJet().newLightJob(dag) : instance.getJet().newJob(dag);
     }
 
-    private static void joinAndExpectUserCancellation(Job job) {
+    public static void joinAndExpectUserCancellation(Job job) {
         assertThatThrownBy(job::join).isInstanceOf(CancellationByUserException.class);
     }
 
