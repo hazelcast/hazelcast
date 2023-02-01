@@ -154,7 +154,8 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                 }
             };
             for (Map.Entry<Address, List<Integer>> entry : memberPartitionsMap.entrySet()) {
-                invokePutAllOperation(entry.getKey(), entry.getValue(), entriesPerPartition).whenCompleteAsync(callback);
+                invokePutAllOperation(entry.getKey(), entry.getValue(), entriesPerPartition)
+                        .whenCompleteAsync(callback, internalAsyncExecutor);
             }
             // if executing in sync mode, block for the responses
             if (future == null) {

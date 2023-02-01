@@ -148,7 +148,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
                 } else {
                     invalidateNearCache(ncKey);
                 }
-            });
+            }, internalAsyncExecutor);
         }
         return future;
     }

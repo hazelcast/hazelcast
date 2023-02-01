@@ -281,7 +281,7 @@ abstract class CacheProxySupport<K, V>
                 if (t != null) {
                     logger.warning("Problem in loadAll task", t);
                 }
-            });
+            }, internalAsyncExecutor);
         } catch (Exception e) {
             if (completionListener != null) {
                 completionListener.onException(e);

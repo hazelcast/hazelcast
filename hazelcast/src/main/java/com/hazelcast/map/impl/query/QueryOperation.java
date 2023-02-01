@@ -27,6 +27,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
@@ -199,7 +200,8 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
             QueryFuture future = new QueryFuture(localPartitions.cardinality());
             getOperationService().executeOnPartitions(
                     new QueryTaskFactory(query, queryRunner, future), localPartitions);
-            future.whenCompleteAsync(new ExecutionCallbackImpl(queryRunner, query));
+            future.whenCompleteAsync(new ExecutionCallbackImpl(queryRunner, query),
+                    nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR));
         }
     }
 

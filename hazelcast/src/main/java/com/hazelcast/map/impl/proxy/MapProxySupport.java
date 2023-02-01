@@ -1052,7 +1052,7 @@ abstract class MapProxySupport<K, V>
             };
             for (Entry<Address, List<Integer>> entry : memberPartitionsMap.entrySet()) {
                 invokePutAllOperation(entry.getKey(), entry.getValue(), entriesPerPartition, triggerMapLoader)
-                        .whenCompleteAsync(callback);
+                        .whenCompleteAsync(callback, internalAsyncExecutor);
             }
             // if executing in sync mode, block for the responses
             if (future == null) {
@@ -1289,7 +1289,7 @@ abstract class MapProxySupport<K, V>
                     } else {
                         resultFuture.completeExceptionally(throwable);
                     }
-                });
+                }, internalAsyncExecutor);
         return resultFuture;
     }
 
