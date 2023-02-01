@@ -529,6 +529,7 @@
                                 <includedLicense>BSD 3-Clause License</includedLicense>
                                 <includedLicense>BSD 2-Clause License</includedLicense>
                                 <includedLicense>The JSON License</includedLicense>
+                                <includedLicense>Hazelcast Community License</includedLicense>
                             </includedLicenses>
                             <licenseMerges>
                                 <licenseMerge>
