@@ -17,4 +17,4 @@
 /**
  * Contains implementation of SQL connectors to MongoDB
  */
-package com.hazelcast.jet.mongodb.sql;
+package com.hazelcast.jet.sql.impl.connector.mongodb;

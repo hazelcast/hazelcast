@@ -30,7 +30,6 @@ import org.apache.calcite.rex.RexVisitor;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Objects;
 
 public class DagBuildContextImpl implements DagBuildContext {
     private final DAG dag;

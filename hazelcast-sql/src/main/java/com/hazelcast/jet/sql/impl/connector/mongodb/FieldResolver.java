@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.mongodb.sql;
+package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hazelcast.sql.impl.schema.MappingField;
@@ -31,11 +31,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.hazelcast.jet.mongodb.sql.Options.COLLECTION_NAME_OPTION;
-import static com.hazelcast.jet.mongodb.sql.Options.CONNECTION_STRING_OPTION;
-import static com.hazelcast.jet.mongodb.sql.Options.DATABASE_NAME_OPTION;
-import static com.hazelcast.jet.mongodb.sql.BsonTypes.resolveTypeByName;
-import static com.hazelcast.jet.mongodb.sql.BsonTypes.resolveTypeFromJava;
+import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.COLLECTION_NAME_OPTION;
+import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.CONNECTION_STRING_OPTION;
+import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.DATABASE_NAME_OPTION;
+import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.resolveTypeByName;
+import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.resolveTypeFromJava;
 import static com.mongodb.client.model.Filters.eq;
 import static java.util.Objects.requireNonNull;
 

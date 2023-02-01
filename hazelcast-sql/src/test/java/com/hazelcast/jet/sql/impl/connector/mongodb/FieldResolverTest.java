@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.mongodb.sql;
+package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-import com.hazelcast.jet.mongodb.sql.FieldResolver.DocumentField;
+import com.hazelcast.jet.sql.impl.connector.mongodb.FieldResolver.DocumentField;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastSerialClassRunner;

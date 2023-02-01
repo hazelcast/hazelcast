@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-com.hazelcast.jet.mongodb.sql.MongoBatchSqlConnector
+com.hazelcast.jet.sql.impl.connector.mongodb.MongoBatchSqlConnector

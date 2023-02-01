@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.mongodb.sql;
+package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.sql.impl.connector.CalciteNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlProcessors;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -30,6 +29,7 @@ import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
+import org.apache.calcite.rex.RexNode;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -102,8 +102,8 @@ public class MongoBatchSqlConnector implements SqlConnector {
     @Nonnull
     public Vertex fullScanReader(
             @Nonnull DagBuildContext context,
-            @Nullable CalciteNode predicate,
-            @Nonnull List<CalciteNode> projection,
+            @Nullable RexNode predicate,
+            @Nonnull List<RexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
         MongoTable table = context.getTable();
 
@@ -142,7 +142,7 @@ public class MongoBatchSqlConnector implements SqlConnector {
         return sourceVertex;
     }
 
-    private static TranslationResult<String> translateFilter(CalciteNode calciteNode, DagBuildContext context,
+    private static TranslationResult<String> translateFilter(RexNode calciteNode, DagBuildContext context,
                                                              ExpressionToMongoVisitor visitor) {
         TranslationResult<String> r;
         try {
@@ -157,7 +157,7 @@ public class MongoBatchSqlConnector implements SqlConnector {
         return r;
     }
 
-    private static TranslationResult<List<String>> translateProjections(List<CalciteNode> projectionNodes,
+    private static TranslationResult<List<String>> translateProjections(List<RexNode> projectionNodes,
                                                                         DagBuildContext context,
                                                                         ExpressionToMongoVisitor visitor) {
         try {

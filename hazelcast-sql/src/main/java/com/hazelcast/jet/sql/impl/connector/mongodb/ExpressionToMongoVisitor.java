@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.mongodb.sql;
+package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -131,7 +131,7 @@ final class ExpressionToMongoVisitor implements ExpressionVisitor<Object> {
             case GREATER_THAN_OR_EQUAL: return Filters.gte((String) o1, o2);
             case LESS_THAN: return Filters.lt((String) o1, o2);
             case LESS_THAN_OR_EQUAL: return Filters.lte((String) o1, o2);
+            default: throw new IllegalArgumentException("Mode " + predicate.getMode() + " is not supported");
         }
-        throw new IllegalArgumentException("Mode " + predicate.getMode() + " is not supported");
     }
 }
