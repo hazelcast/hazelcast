@@ -27,6 +27,7 @@ import com.hazelcast.jet.pipeline.test.TestSources;
 import org.junit.Test;
 
 import java.util.AbstractMap.SimpleEntry;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,7 +52,7 @@ public class Hz3SinksTest extends BaseHz3Test {
         JobConfig config = getJobConfig(sink.name());
         hz.getJet().newJob(p, config).join();
 
-        Map<Integer, String> testMap = hz3.getMap("test-map");
+        Map<Integer, String> testMap = new HashMap<>(hz3.getMap("test-map"));
 
         assertThat(testMap).containsOnly(
                 entry(1, "a"),
@@ -75,7 +76,7 @@ public class Hz3SinksTest extends BaseHz3Test {
         JobConfig config = getJobConfig(sink.name());
         Job job = hz.getJet().newJob(p, config);
 
-        assertThatThrownBy(() -> job.join())
+        assertThatThrownBy(job::join)
                 .hasStackTraceContaining(JetException.class.getName())
                 .hasStackTraceContaining("Unable to connect to any cluster");
     }

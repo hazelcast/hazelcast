@@ -55,7 +55,6 @@ public class OnJoinCacheOperationTest {
     public ExpectedException expectedException = ExpectedException.none();
 
     private NodeEngine nodeEngine = mock(NodeEngine.class);
-    private ClassLoader classLoader = mock(ClassLoader.class);
     private ILogger logger = mock(ILogger.class);
 
     @BeforeClass
@@ -70,14 +69,15 @@ public class OnJoinCacheOperationTest {
 
     @Before
     public void setUp() {
-        when(nodeEngine.getConfigClassLoader()).thenReturn(classLoader);
+        when(nodeEngine.getConfigClassLoader()).thenReturn(getClass().getClassLoader());
         when(nodeEngine.getLogger(any(Class.class))).thenReturn(logger);
     }
 
     @Test
     public void test_cachePostJoinOperationSucceeds_whenJCacheAvailable_noWarningIsLogged() throws Exception {
         // JCacheDetector finds JCache in classpath
-        when(JCacheDetector.isJCacheAvailable(classLoader)).thenReturn(true);
+
+        mockedStatic.when(() -> JCacheDetector.isJCacheAvailable(any(ClassLoader.class))).thenReturn(true);
         // node engine returns mock CacheService
         when(nodeEngine.getService(CacheService.SERVICE_NAME)).thenReturn(mock(ICacheService.class));
 
@@ -90,11 +90,12 @@ public class OnJoinCacheOperationTest {
         verify(nodeEngine).getService(CacheService.SERVICE_NAME);
         // verify logger was not invoked
         verify(logger, never()).warning(anyString());
+
     }
 
     @Test
     public void test_cachePostJoinOperationSucceeds_whenJCacheNotAvailable_noCacheConfigs() throws Exception {
-        when(JCacheDetector.isJCacheAvailable(classLoader)).thenReturn(false);
+        mockedStatic.when(() -> JCacheDetector.isJCacheAvailable(any())).thenReturn(false);
 
         OnJoinCacheOperation onJoinCacheOperation = new OnJoinCacheOperation();
         onJoinCacheOperation.setNodeEngine(nodeEngine);
@@ -111,7 +112,7 @@ public class OnJoinCacheOperationTest {
     @Test
     public void test_cachePostJoinOperationFails_whenJCacheNotAvailable_withCacheConfigs() throws Exception {
         // JCache is not available in classpath
-        when(JCacheDetector.isJCacheAvailable(classLoader)).thenReturn(false);
+        mockedStatic.when(() -> JCacheDetector.isJCacheAvailable(any())).thenReturn(false);
         // node engine throws HazelcastException due to missing CacheService
         when(nodeEngine.getService(CacheService.SERVICE_NAME)).thenThrow(new HazelcastException("CacheService not found"));
 

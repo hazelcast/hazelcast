@@ -24,6 +24,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -40,6 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Beta
 public class JdbcDataStoreFactory implements ExternalDataStoreFactory<DataSource> {
 
+    private static final int JDBC_TEST_CONNECTION_TIMEOUT_SECONDS = 5;
     private static final AtomicInteger DATA_SOURCE_COUNTER = new AtomicInteger();
 
     protected HikariDataSource sharedDataSource;
@@ -58,6 +60,14 @@ public class JdbcDataStoreFactory implements ExternalDataStoreFactory<DataSource
     @Override
     public DataSource getDataStore() {
         return config.isShared() ? sharedCloseableDataSource : CloseableDataSource.closing(doCreateDataSource());
+    }
+
+    @Override
+    public boolean testConnection() throws Exception {
+        try (CloseableDataSource dataStore = ((CloseableDataSource) getDataStore());
+             Connection connection = dataStore.getConnection()) {
+            return connection.isValid(JDBC_TEST_CONNECTION_TIMEOUT_SECONDS);
+        }
     }
 
     protected HikariDataSource doCreateDataSource() {
