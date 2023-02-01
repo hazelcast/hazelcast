@@ -47,6 +47,8 @@ import static java.util.stream.Collectors.toList;
 
 /**
  * Batch-query MongoDB SQL Connector.
+ *
+ * @see FieldResolver
  * TODO: add more
  */
 public class MongoBatchSqlConnector implements SqlConnector {
@@ -147,7 +149,7 @@ public class MongoBatchSqlConnector implements SqlConnector {
         TranslationResult<String> r;
         try {
             Expression<Boolean> filter = context.convertFilter(calciteNode);
-            Object result = visitor.visitGeneric(filter);
+            Object result = filter.accept(visitor);
             assert result instanceof Bson;
             String expression = ((Bson) result).toBsonDocument(Document.class, defaultCodecRegistry()).toJson();
             r = new TranslationResult<>(expression, true);
@@ -163,7 +165,7 @@ public class MongoBatchSqlConnector implements SqlConnector {
         try {
             List<Expression<?>> expressions = context.convertProjection(projectionNodes);
             List<String> fields = expressions.stream()
-                                          .map(visitor::visitGeneric)
+                                          .map(e -> e.accept(visitor))
                                           .filter(proj -> proj instanceof String)
                                           .map(p -> (String) p)
                                           .collect(toList());

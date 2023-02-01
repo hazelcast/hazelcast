@@ -131,4 +131,8 @@ public final class ConstantExpression<T> implements Expression<T>, IdentifiedDat
         return "ConstantExpression{type=" + type + ", value=" + value + '}';
     }
 
+    @Override
+    public <R> R accept(ExpressionVisitor<R> visitor) {
+        return visitor.visit(this);
+    }
 }

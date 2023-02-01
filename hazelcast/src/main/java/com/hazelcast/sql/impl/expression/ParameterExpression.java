@@ -109,4 +109,9 @@ public final class ParameterExpression<T> implements Expression<T>, IdentifiedDa
     public String toString() {
         return getClass().getSimpleName() + "{index=" + index + '}';
     }
+
+    @Override
+    public <R> R accept(ExpressionVisitor<R> visitor) {
+        return visitor.visit(this);
+    }
 }

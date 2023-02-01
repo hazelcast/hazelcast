@@ -25,52 +25,15 @@ import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
 
 public interface ExpressionVisitor<R> {
 
-    @SuppressWarnings("unchecked")
-    default R visitGeneric(Expression<?> expr) {
-        Expression<R> e = (Expression<R>) expr;
-        return visit(e);
-    }
-
-    /**
-     * Workaround to the fact, that we don't have (yet) accept method in the Expression.
-     * TODO make proper visitor
-     */
-    @SuppressWarnings("checkstyle:ReturnCount")
-    default R visit(Expression<R> expr) {
-        if (expr instanceof AndPredicate) {
-            return visit((AndPredicate) expr);
-        } else if (expr instanceof OrPredicate) {
-            return visit((OrPredicate) expr);
-        } else if (expr instanceof ParameterExpression) {
-            return visit((ParameterExpression<R>) expr);
-        } else if (expr instanceof ConstantExpression) {
-            return visit((ConstantExpression<R>) expr);
-        } else if (expr instanceof IsTruePredicate) {
-            return visit((IsTruePredicate) expr);
-        } else if (expr instanceof IsFalsePredicate) {
-            return visit((IsFalsePredicate) expr);
-        } else if (expr instanceof IsNullPredicate) {
-            return visit((IsNullPredicate) expr);
-        } else if (expr instanceof IsNotNullPredicate) {
-            return visit((IsNotNullPredicate) expr);
-        } else if (expr instanceof ColumnExpression) {
-            return visit((ColumnExpression<R>) expr);
-        }  else if (expr instanceof ComparisonPredicate) {
-            return visit((ComparisonPredicate) expr);
-        } else {
-            throw new UnsupportedOperationException("expression type " + expr.getClass() + " is not supported yet");
-        }
-    }
-
     R visit(AndPredicate predicate);
     R visit(OrPredicate predicate);
-    R visit(ParameterExpression<R> expr);
-    R visit(ConstantExpression<R> expr);
+    R visit(ParameterExpression<?> expr);
+    R visit(ConstantExpression<?> expr);
     R visit(IsTruePredicate predicate);
     R visit(IsFalsePredicate predicate);
     R visit(IsNullPredicate predicate);
     R visit(IsNotNullPredicate predicate);
-    R visit(ColumnExpression<R> expr);
+    R visit(ColumnExpression<?> expr);
     R visit(ComparisonPredicate expr);
 
 

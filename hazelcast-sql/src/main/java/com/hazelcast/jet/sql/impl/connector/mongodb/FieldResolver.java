@@ -41,6 +41,15 @@ import static java.util.Objects.requireNonNull;
 
 class FieldResolver {
 
+    /**
+     * Resolves fields based on the options passed to the connector and schema provided by user (if any)
+     * @param options options provided for the connector
+     * @param userFields user-defined field list
+     * @return resolved fields - all fields from collection or user provided fields with resolved types
+     *
+     * @throws IllegalArgumentException if given column type won't be resolved or field from user mapping won't exist
+     *                                  in the collection
+     */
     List<MappingField> resolveFields(
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields
@@ -58,7 +67,7 @@ class FieldResolver {
                     mappingField.setPrimaryKey(documentField.columnName.equalsIgnoreCase("_id"));
                     resolvedFields.add(mappingField);
                 } catch (IllegalArgumentException e) {
-                    throw new IllegalStateException("Could not load column class " + documentField.columnType, e);
+                    throw new IllegalArgumentException("Could not load column class " + documentField.columnType, e);
                 }
             }
         } else {
@@ -66,7 +75,7 @@ class FieldResolver {
                 String nameInMongo = f.externalName() == null ? f.name() : f.externalName();
                 DocumentField documentField = dbFields.get(nameInMongo);
                 if (documentField == null) {
-                    throw new IllegalStateException("Could not resolve field with name " + nameInMongo);
+                    throw new IllegalArgumentException("Could not resolve field with name " + nameInMongo);
                 }
                 MappingField mappingField = new MappingField(f.name(), f.type(), nameInMongo);
                 mappingField.setPrimaryKey(documentField.columnName.equalsIgnoreCase("_id"));
@@ -111,8 +120,8 @@ class FieldResolver {
 
             MongoDatabase database = client.getDatabase(databaseName);
             List<Document> collections = database.listCollections()
-                                                      .filter(eq("name", collectionName))
-                                                    .into(new ArrayList<>());
+                                                 .filter(eq("name", collectionName))
+                                                 .into(new ArrayList<>());
             if (collections.isEmpty()) {
                 throw new IllegalArgumentException("collection " + collectionName + " was not found");
             }
@@ -120,7 +129,7 @@ class FieldResolver {
             Document properties = getIgnoringNulls(collectionInfo, "options", "validator", "$jsonSchema", "properties");
             if (properties != null) {
                 for (Entry<String, Object> property : properties.entrySet()) {
-                       Document props = (Document) property.getValue();
+                    Document props = (Document) property.getValue();
                     String bsonTypeName = (String) props.get("bsonType");
                     BsonType bsonType = resolveTypeByName(bsonTypeName);
 

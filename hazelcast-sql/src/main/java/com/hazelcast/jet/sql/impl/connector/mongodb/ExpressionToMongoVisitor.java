@@ -34,14 +34,20 @@ import com.mongodb.client.model.Filters;
 import org.bson.conversions.Bson;
 
 /**
- * Visitor that converts REX nodes to Mongo expressions.
+ * Visitor that converts Hazelcast {@linkplain Expression}s to Mongo expressions (filters, projections).
  */
 @SuppressWarnings("unchecked")
 final class ExpressionToMongoVisitor implements ExpressionVisitor<Object> {
 
     private final MongoTable table;
     private final ExpressionEvalContext context;
+
+    /**
+     * If true, dynamic variables will be resolved as simple strings, otherwise it will use
+     * {@linkplain #context} to gather correct value.
+     */
     private final boolean dryRun;
+
     ExpressionToMongoVisitor(MongoTable table, ExpressionEvalContext context, boolean dryRun) {
         this.table = table;
         this.context = context;
@@ -64,7 +70,7 @@ final class ExpressionToMongoVisitor implements ExpressionVisitor<Object> {
         Bson[] filters = new Bson[operands.length];
         for (int i = 0; i < operands.length; i++) {
             Expression<Object> expr = (Expression<Object>) operands[i];
-            Object r = visit(expr);
+            Object r = expr.accept(this);
             if (r instanceof Bson) {
                 filters[i] = (Bson) r;
             } else if (r instanceof String) {
@@ -77,7 +83,7 @@ final class ExpressionToMongoVisitor implements ExpressionVisitor<Object> {
     }
 
     @Override
-    public Object visit(ParameterExpression<Object> expr) {
+    public Object visit(ParameterExpression<?> expr) {
         if (dryRun) {
             return "/replaceParam:" + expr.getIndex() + "/";
         }
@@ -86,33 +92,33 @@ final class ExpressionToMongoVisitor implements ExpressionVisitor<Object> {
     }
 
     @Override
-    public Object visit(ConstantExpression<Object> expr) {
+    public Object visit(ConstantExpression<?> expr) {
         return expr.getValue();
     }
 
     @Override
     public Object visit(IsTruePredicate predicate) {
         Expression<?> operand = predicate.getOperand();
-        return visitGeneric(operand);
+        return operand.accept(this);
     }
 
     @Override
     public Object visit(IsFalsePredicate predicate) {
-        return visitGeneric(predicate.getOperand());
+        return predicate.getOperand().accept(this);
     }
 
     @Override
     public Object visit(IsNullPredicate predicate) {
-        return visitGeneric(predicate.getOperand());
+        return predicate.getOperand().accept(this);
     }
 
     @Override
     public Object visit(IsNotNullPredicate predicate) {
-        return visitGeneric(predicate.getOperand());
+        return predicate.getOperand().accept(this);
     }
 
     @Override
-    public Object visit(ColumnExpression<Object> expr) {
+    public Object visit(ColumnExpression<?> expr) {
         int index = expr.getIndex();
         TableField field = table.getField(index);
         return field.getName();
