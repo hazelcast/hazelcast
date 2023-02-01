@@ -104,7 +104,7 @@ import static org.mockito.Mockito.withSettings;
 @RunWith(Enclosed.class)
 public class IndeterminateSnapshotTest {
 
-    private static final int NODE_COUNT = 5;
+    public static final int NODE_COUNT = 5;
     private static final int BASE_PORT = NetworkConfig.DEFAULT_PORT;
     // increase number of chunks in snapshot by setting greater parallelism
     private static final int LOCAL_PARALLELISM = 10;
@@ -219,6 +219,12 @@ public class IndeterminateSnapshotTest {
                         .as("Unexpected snapshot")
                         .isEmpty();
             }
+        }
+
+        protected static void assertJobNotRestarted() {
+            assertThat(SnapshotInstrumentationP.executions)
+                    .as("Job should not be restarted during test")
+                    .hasSize(1);
         }
 
         @NotNull
@@ -761,193 +767,6 @@ public class IndeterminateSnapshotTest {
             whenSuspendSnapshotUpdateLostSameCoordinator(3);
         }
 
-        private abstract class AbstractScenarioStep {
-            @Nullable
-            private AbstractScenarioStep next;
-            @Nullable
-            protected AbstractScenarioStep prev;
-            /**
-             * Null means step that adds some action, but does not increase number of completed snapshots
-             */
-            protected Integer repetitions = 1;
-
-            public AbstractScenarioStep repeat(Integer repetitions) {
-                this.repetitions = repetitions;
-                return this;
-            }
-
-            public <T extends AbstractScenarioStep> T then(T next) {
-                this.next = next;
-                next.prev = this;
-                return next;
-            }
-
-            /**
-             * Configure {@link SnapshotInstrumentationP} according to this step
-             */
-            public final void apply() {
-                if (repetitions == null || repetitions > 0) {
-                    logger.info("Applying scenario step " + this);
-                    if (repetitions != null) {
-                        SnapshotInstrumentationP.allowedSnapshotsCount += repetitions;
-                    }
-
-                    // init consumers to default values
-                    SnapshotInstrumentationP.saveSnapshotConsumer = null;
-                    SnapshotInstrumentationP.snapshotCommitPrepareConsumer = null;
-                    // If step breaks snapshot, snapshotCommitFinishConsumer may be not invoked.
-                    // In such case step is responsible for advancing the scenario.
-                    SnapshotInstrumentationP.snapshotCommitFinishConsumer =
-                            ((Consumer<Boolean>) (b) -> snapshotDone.countDown())
-                            .andThen(lastExecutionConsumer((b) -> goToNextStep()));
-
-                    doApply();
-                } else {
-                    logger.info("Skipping scenario step " + this);
-                    goToNextStep();
-                }
-            }
-
-            protected abstract void doApply();
-
-            protected void goToNextStep() {
-                if (next != null) {
-                    next.apply();
-                }
-            }
-
-            /**
-             * Start executing the scenario
-             */
-            public final void start() {
-                getFirst().apply();
-            }
-
-            @Nonnull
-            private AbstractScenarioStep getFirst() {
-                AbstractScenarioStep first = this;
-                while (first.prev != null) {
-                    first = first.prev;
-                }
-                return first;
-            }
-        }
-
-        protected class SuccessfulSnapshots extends AbstractScenarioStep {
-            SuccessfulSnapshots() {
-                super();
-            }
-
-            public SuccessfulSnapshots(int repetitions) {
-                this();
-                repeat(repetitions);
-            }
-
-            /**
-             * Snapshot counter will be reused. Most often this is the case after restore.
-             */
-            SuccessfulSnapshots reusedCounter() {
-                repeat(repetitions > 1 ? repetitions - 1 : null);
-                return this;
-            }
-
-            @Override
-            protected void doApply() {
-                // will count commits of last repetition
-                initSnapshotDoneCounter();
-                SnapshotInstrumentationP.snapshotCommitFinishConsumer =
-                        ((Consumer<Boolean>) (b) -> snapshotDone.countDown())
-                                .andThen(lastExecutionConsumer((b) -> goToNextStep()));
-            }
-
-            @Override
-            public String toString() {
-                return String.format("Successful %d Snapshots", repetitions);
-            }
-        }
-
-        private class SuccessfulIgnoredSnapshots extends AbstractScenarioStep {
-            SuccessfulIgnoredSnapshots() {
-                super();
-            }
-
-            SuccessfulIgnoredSnapshots(int repetitions) {
-                this();
-                repeat(repetitions);
-            }
-            @Override
-            protected void doApply() {
-                // nothing to break
-            }
-
-            @Override
-            public String toString() {
-                return String.format("Successful %d Snapshots - do not count", repetitions);
-            }
-        }
-
-        /**
-         * 1 lost indeterminate IMap update, then successes (configured number of repetitions)
-         */
-        protected class IndeterminateLostPut extends AbstractScenarioStep {
-            public IndeterminateLostPut() {
-                super();
-                repeat(null);
-            }
-
-            @Override
-            protected void doApply() {
-                initSnapshotDoneCounter();
-                SnapshotInstrumentationP.snapshotCommitPrepareConsumer =
-                        SnapshotFailureTests.this.<Integer>
-                            breakSnapshotConsumer("snapshot commit prepare",
-                                        SnapshotFailureTests.this::singleIndeterminatePutLost)
-                            .andThen(lastExecutionConsumer((Integer b) -> {
-                                // there should be no commit complete
-                                goToNextStep();
-                            }));
-            }
-
-            @Override
-            public String toString() {
-                return "IndeterminateLostPut";
-            }
-        }
-
-        /**
-         * Lost indeterminate IMap updates until condition is satisfied
-         */
-        private class IndeterminateLostPutsUntil extends AbstractScenarioStep {
-
-            private final CompletableFuture<String> registration = new CompletableFuture<>();
-
-            <T> IndeterminateLostPutsUntil(CompletableFuture<T> condition) {
-                super();
-                repeat(null);
-
-                // fix IMap when condition is met
-                condition.thenCombineAsync(registration, (v, reg) -> {
-                    logger.info("Fixing IMap replication");
-                    getJobExecutionRecordIMap().removeInterceptor(reg);
-                    goToNextStep();
-                    return null;
-                });
-            }
-
-            @Override
-            protected void doApply() {
-                initSnapshotDoneCounter();
-                SnapshotInstrumentationP.snapshotCommitPrepareConsumer =
-                        breakSnapshotConsumer("snapshot commit prepare",
-                                () -> registration.complete(allIndeterminatePutsLost()));
-            }
-
-            @Override
-            public String toString() {
-                return "IndeterminateLostPutsUntil";
-            }
-        }
-
         /**
          * @param initialSnapshotsCount number of snapshots before suspend
          */
@@ -1122,6 +941,196 @@ public class IndeterminateSnapshotTest {
                     .when(mockInt).afterPut(any());
             getJobExecutionRecordIMap().addInterceptor(mockInt);
         }
+
+        // region Snapshot scenarios
+        private abstract class AbstractScenarioStep {
+            @Nullable
+            private AbstractScenarioStep next;
+            @Nullable
+            protected AbstractScenarioStep prev;
+            /**
+             * Null means step that adds some action, but does not increase number of completed snapshots
+             */
+            protected Integer repetitions = 1;
+
+            public AbstractScenarioStep repeat(Integer repetitions) {
+                this.repetitions = repetitions;
+                return this;
+            }
+
+            public <T extends AbstractScenarioStep> T then(T next) {
+                this.next = next;
+                next.prev = this;
+                return next;
+            }
+
+            /**
+             * Configure {@link SnapshotInstrumentationP} according to this step
+             */
+            public final void apply() {
+                if (repetitions == null || repetitions > 0) {
+                    logger.info("Applying scenario step " + this);
+                    if (repetitions != null) {
+                        SnapshotInstrumentationP.allowedSnapshotsCount += repetitions;
+                    }
+
+                    // init consumers to default values
+                    SnapshotInstrumentationP.saveSnapshotConsumer = null;
+                    SnapshotInstrumentationP.snapshotCommitPrepareConsumer = null;
+                    // If step breaks snapshot, snapshotCommitFinishConsumer may be not invoked.
+                    // In such case step is responsible for advancing the scenario.
+                    SnapshotInstrumentationP.snapshotCommitFinishConsumer =
+                            ((Consumer<Boolean>) (b) -> snapshotDone.countDown())
+                                    .andThen(lastExecutionConsumer((b) -> goToNextStep()));
+
+                    doApply();
+                } else {
+                    logger.info("Skipping scenario step " + this);
+                    goToNextStep();
+                }
+            }
+
+            protected abstract void doApply();
+
+            protected void goToNextStep() {
+                if (next != null) {
+                    next.apply();
+                }
+            }
+
+            /**
+             * Start executing the scenario
+             */
+            public final void start() {
+                getFirst().apply();
+            }
+
+            @Nonnull
+            private AbstractScenarioStep getFirst() {
+                AbstractScenarioStep first = this;
+                while (first.prev != null) {
+                    first = first.prev;
+                }
+                return first;
+            }
+        }
+
+        protected class SuccessfulSnapshots extends AbstractScenarioStep {
+            SuccessfulSnapshots() {
+                super();
+            }
+
+            public SuccessfulSnapshots(int repetitions) {
+                this();
+                repeat(repetitions);
+            }
+
+            /**
+             * Snapshot counter will be reused. Most often this is the case after restore.
+             */
+            SuccessfulSnapshots reusedCounter() {
+                repeat(repetitions > 1 ? repetitions - 1 : null);
+                return this;
+            }
+
+            @Override
+            protected void doApply() {
+                // will count commits of last repetition
+                initSnapshotDoneCounter();
+                SnapshotInstrumentationP.snapshotCommitFinishConsumer =
+                        ((Consumer<Boolean>) (b) -> snapshotDone.countDown())
+                                .andThen(lastExecutionConsumer((b) -> goToNextStep()));
+            }
+
+            @Override
+            public String toString() {
+                return String.format("Successful %d Snapshots", repetitions);
+            }
+        }
+
+        private class SuccessfulIgnoredSnapshots extends AbstractScenarioStep {
+            SuccessfulIgnoredSnapshots() {
+                super();
+            }
+
+            SuccessfulIgnoredSnapshots(int repetitions) {
+                this();
+                repeat(repetitions);
+            }
+            @Override
+            protected void doApply() {
+                // nothing to break
+            }
+
+            @Override
+            public String toString() {
+                return String.format("Successful %d Snapshots - do not count", repetitions);
+            }
+        }
+
+        /**
+         * 1 lost indeterminate IMap update, then successes (configured number of repetitions)
+         */
+        protected class IndeterminateLostPut extends AbstractScenarioStep {
+            public IndeterminateLostPut() {
+                super();
+                repeat(null);
+            }
+
+            @Override
+            protected void doApply() {
+                initSnapshotDoneCounter();
+                SnapshotInstrumentationP.saveSnapshotConsumer =
+                        SnapshotFailureTests.this.<Integer>
+                                        breakSnapshotConsumer("snapshot save",
+                                        SnapshotFailureTests.this::singleIndeterminatePutLost)
+                                .andThen(lastExecutionConsumer((Integer b) -> {
+                                    // there should be no commit complete
+                                    goToNextStep();
+                                }));
+            }
+
+            @Override
+            public String toString() {
+                return "IndeterminateLostPut";
+            }
+        }
+
+        /**
+         * Lost indeterminate IMap updates until condition is satisfied
+         */
+        private class IndeterminateLostPutsUntil extends AbstractScenarioStep {
+
+            private final CompletableFuture<String> registration = new CompletableFuture<>();
+
+            <T> IndeterminateLostPutsUntil(CompletableFuture<T> condition) {
+                super();
+                repeat(null);
+
+                // fix IMap when condition is met
+                condition.thenCombineAsync(registration, (v, reg) -> {
+                    logger.info("Fixing IMap replication");
+                    getJobExecutionRecordIMap().removeInterceptor(reg);
+                    goToNextStep();
+                    return null;
+                });
+            }
+
+            @Override
+            protected void doApply() {
+                initSnapshotDoneCounter();
+                SnapshotInstrumentationP.snapshotCommitPrepareConsumer =
+                        breakSnapshotConsumer("snapshot commit prepare",
+                                () -> registration.complete(allIndeterminatePutsLost()));
+            }
+
+            @Override
+            public String toString() {
+                return "IndeterminateLostPutsUntil";
+            }
+        }
+
+        //endregion
     }
 
     public static void setBackupPacketDropFilter(HazelcastInstance instance, float blockRatio, HazelcastInstance... blockSync) {
@@ -1174,9 +1183,10 @@ public class IndeterminateSnapshotTest {
         }
     }
 
-    private static final class SnapshotInstrumentationP extends AbstractProcessor {
+    public static final class SnapshotInstrumentationP extends AbstractProcessor {
         static final ConcurrentMap<Integer, Integer> savedCounters = new ConcurrentHashMap<>();
         static final ConcurrentMap<Integer, Integer> restoredCounters = new ConcurrentHashMap<>();
+        static final Set<Long> executions = ConcurrentHashMap.newKeySet();
 
         private int globalIndex;
         private final int numItems;
@@ -1187,14 +1197,14 @@ public class IndeterminateSnapshotTest {
         /**
          * Number of normal snapshots before {@link #saveSnapshotConsumer} and other hooks are called.
          */
-        static volatile int allowedSnapshotsCount = 0;
+        public static volatile int allowedSnapshotsCount = 0;
         @Nullable
-        static volatile Consumer<Integer> saveSnapshotConsumer;
+        public static volatile Consumer<Integer> saveSnapshotConsumer;
         @Nullable
-        static volatile Consumer<Integer> snapshotCommitPrepareConsumer;
+        public static volatile Consumer<Integer> snapshotCommitPrepareConsumer;
         @Nonnull
-        static volatile Consumer<Boolean> snapshotCommitFinishConsumer = b -> { };
-        static volatile boolean restoredFromSnapshot = false;
+        public static volatile Consumer<Boolean> snapshotCommitFinishConsumer = b -> { };
+        public static volatile boolean restoredFromSnapshot = false;
 
         SnapshotInstrumentationP(int numItems) {
             this.numItems = numItems;
@@ -1206,6 +1216,7 @@ public class IndeterminateSnapshotTest {
         public static void reset() {
             savedCounters.clear();
             restoredCounters.clear();
+            executions.clear();
 
             allowedSnapshotsCount = 0;
             saveSnapshotConsumer = null;
@@ -1217,6 +1228,7 @@ public class IndeterminateSnapshotTest {
         @Override
         protected void init(@Nonnull Context context) {
             globalIndex = context.globalProcessorIndex();
+            executions.add(context.executionId());
         }
 
         @Override
