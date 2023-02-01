@@ -16,10 +16,13 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
+import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
@@ -38,8 +41,11 @@ import example.serialization.MainDTOSerializer;
 import example.serialization.SameClassEmployeeDTOSerializer;
 import example.serialization.SameTypeNameEmployeeDTOSerializer;
 import example.serialization.SerializableEmployeeDTO;
+import org.jetbrains.annotations.NotNull;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
@@ -63,6 +69,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -71,6 +78,9 @@ import static org.mockito.Mockito.verify;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CompactSerializationTest {
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void testOverridingDefaultSerializers() {
@@ -428,6 +438,125 @@ public class CompactSerializationTest {
 
         Data data = service.toData(new UsesSerializableClassAsField(new SerializableEmployeeDTO("John Doe", 42)));
         assertTrue(data.isCompact());
+    }
+
+    @Test
+    public void testCompactWriterThrowsExceptionWhileWritingWhenSchemaDoesNotHaveThatField() {
+        thrown.expect(HazelcastSerializationException.class);
+        thrown.expectMessage("Failed to serialize");
+        thrown.expectCause(new RootCauseMatcher(HazelcastSerializationException.class, "Invalid field name"));
+
+        FooBarSerializer serializer = spy(new FooBarSerializer());
+        FooBar fooBar = new FooBar("foo", 42L);
+
+        SchemaWriter schemaWriter = new SchemaWriter(serializer.getTypeName());
+        serializer.write(schemaWriter, fooBar);
+        Schema schema = schemaWriter.build();
+
+        SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
+        schemaService.put(schema);
+        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
+        compactSerializationConfig.addSerializer(serializer);
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService)
+                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .build();
+
+        // Add correct schema to classToSchemaMap
+        serializationService.toData(fooBar);
+        // Change serializer's write method
+        doAnswer(invocation -> {
+            CompactWriter writer = invocation.getArgument(0);
+            FooBar value = invocation.getArgument(1);
+            writer.writeString("foo", value.getFoo());
+            writer.writeInt64("bar", value.getBar());
+            writer.writeString("baz", "a");
+            return null;
+        }).when(serializer).write(any(), any());
+        // This should throw because schema does not have a baz field.
+        serializationService.toData(fooBar);
+    }
+
+    @Test
+    public void testCompactWriterThrowsExceptionWhileWritingWhenFieldTypeDoesNotMatch() {
+        thrown.expect(HazelcastSerializationException.class);
+        thrown.expectMessage("Failed to serialize");
+        thrown.expectCause(new RootCauseMatcher(HazelcastSerializationException.class, "Invalid field type"));
+
+        FooBar fooBar = new FooBar("foo", 42L);
+        FooBarSerializer serializer = spy(new FooBarSerializer());
+
+        SchemaWriter schemaWriter = new SchemaWriter(serializer.getTypeName());
+        serializer.write(schemaWriter, fooBar);
+        Schema schema = schemaWriter.build();
+
+        SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
+        schemaService.put(schema);
+        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
+        compactSerializationConfig.addSerializer(serializer);
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService)
+                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .build();
+
+        // Add correct schema to classToSchemaMap
+        serializationService.toData(fooBar);
+        // Change serializer's write method
+        doAnswer(invocation -> {
+            CompactWriter writer = invocation.getArgument(0);
+            FooBar value = invocation.getArgument(1);
+            writer.writeInt32("foo", 123);
+            writer.writeInt64("bar", value.getBar());
+            return null;
+        }).when(serializer).write(any(), any());
+        // This should throw because in the schema type of foo is not int32.
+        serializationService.toData(fooBar);
+    }
+
+    private static class FooBar {
+        private final String foo;
+        private final long bar;
+
+        public FooBar(String foo, long bar) {
+            this.foo = foo;
+            this.bar = bar;
+        }
+
+        public String getFoo() {
+            return foo;
+        }
+
+        public long getBar() {
+            return bar;
+        }
+    }
+
+    private static class FooBarSerializer implements CompactSerializer<FooBar> {
+        @NotNull
+        @Override
+        public FooBar read(@NotNull CompactReader reader) {
+            String foo = reader.readString("foo");
+            long bar = reader.readInt64("bar");
+            return new FooBar(foo, bar);
+        }
+
+        @Override
+        public void write(@NotNull CompactWriter writer, @NotNull FooBar object) {
+            writer.writeString("foo", object.foo);
+            writer.writeInt64("bar", object.bar);
+        }
+
+        @NotNull
+        @Override
+        public String getTypeName() {
+            return "foobar";
+        }
+
+        @NotNull
+        @Override
+        public Class getCompactClass() {
+            return FooBar.class;
+        }
     }
 
     private static class IntegerSerializer implements CompactSerializer<Integer> {
