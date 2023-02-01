@@ -375,7 +375,7 @@ public final class MongoDBSourceBuilder {
          * @param database database name to query.
          * @return this builder
          */
-        @Nonnull
+        @Nonnull @Override
         public Stream<T> database(@Nullable String database) {
             databaseName = database;
             return this;
@@ -397,7 +397,7 @@ public final class MongoDBSourceBuilder {
          * @param collectionName Name of the collection that will be queried.
          * @return this builder
          */
-        @Nonnull
+        @Nonnull @Override
         public Stream<Document> collection(@Nullable String collectionName) {
             return collection(collectionName, Document.class);
         }
@@ -429,6 +429,7 @@ public final class MongoDBSourceBuilder {
          */
         @Nonnull
         @SuppressWarnings("unchecked")
+        @Override
         public <T_NEW> Stream<T_NEW> collection(@Nullable String collectionName, @Nonnull Class<T_NEW> mongoType) {
             Stream<T_NEW> newThis = (Stream<T_NEW>) this;
             newThis.collectionName = collectionName;

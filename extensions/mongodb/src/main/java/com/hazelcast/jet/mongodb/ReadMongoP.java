@@ -57,6 +57,7 @@ import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.mongodb.MongoUtilities.partitionAggregate;
 import static com.mongodb.client.model.Aggregates.sort;
 import static com.mongodb.client.model.Sorts.ascending;
+import static java.util.Collections.emptyList;
 
 /**
  * Processor for reading from MongoDB
@@ -410,25 +411,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
         @Override
         public Traverser<?> nextChunkTraverser() {
             try {
-                ArrayList<ChangeStreamDocument<Document>> chunk = new ArrayList<>(BATCH_SIZE);
-                int count = 0;
-                boolean eagerEnd = false;
-                try {
-                    while (count < BATCH_SIZE && !eagerEnd) {
-                        ChangeStreamDocument<Document> doc;
-                        doc = cursor.tryNext();
-                        if (doc != null) {
-                            chunk.add(doc);
-                            count++;
-                        } else {
-                            eagerEnd = true;
-                        }
-                    }
-                } catch (MongoTimeoutException | MongoServerUnavailableException | MongoServerException e) {
-                    logger.severe("Lost connection to MongoDB", e);
-                    mongoClient = null;
-                    return Traversers.empty();
-                }
+                List<ChangeStreamDocument<Document>> chunk = readChunk();
 
                 Traverser<?> traverser = Traversers.traverseIterable(chunk)
                                       .flatMap(doc -> {
@@ -442,6 +425,29 @@ public class ReadMongoP<I> extends AbstractProcessor {
                 return traverser;
             } catch (MongoException e) {
                 throw new JetException("error while reading from mongodb", e);
+            }
+        }
+
+        private List<ChangeStreamDocument<Document>> readChunk() {
+            List<ChangeStreamDocument<Document>> chunk = new ArrayList<>(BATCH_SIZE);
+            int count = 0;
+            boolean eagerEnd = false;
+            try {
+                while (count < BATCH_SIZE && !eagerEnd) {
+                    ChangeStreamDocument<Document> doc;
+                    doc = cursor.tryNext();
+                    if (doc != null) {
+                        chunk.add(doc);
+                        count++;
+                    } else {
+                        eagerEnd = true;
+                    }
+                }
+                return chunk;
+            } catch (MongoTimeoutException | MongoServerUnavailableException | MongoServerException e) {
+                logger.severe("Lost connection to MongoDB", e);
+                mongoClient = null;
+                return emptyList();
             }
         }
 

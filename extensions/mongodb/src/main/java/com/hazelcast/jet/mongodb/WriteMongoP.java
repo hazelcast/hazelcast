@@ -215,12 +215,13 @@ public class WriteMongoP<I> extends AbstractProcessor {
                     .map(e -> tuple2(collectionPicker.pick(e), e))
                     .collect(groupingBy(Tuple2::f0, mapping(Tuple2::getValue, toList())));
 
-            for (MongoCollectionKey collectionKey : itemsPerCollection.keySet()) {
+            for (Map.Entry<MongoCollectionKey, List<I>> entry : itemsPerCollection.entrySet()) {
+                MongoCollectionKey collectionKey = entry.getKey();
                 MongoCollection<I> collection = collectionKey.get(connection.client(), documentType);
 
                 List<WriteModel<I>> writes = new ArrayList<>();
 
-                for (I item : itemsPerCollection.get(collectionKey)) {
+                for (I item : entry.getValue()) {
                     Object id = documentIdentityFn.apply(item);
 
                     WriteModel<I> write;
