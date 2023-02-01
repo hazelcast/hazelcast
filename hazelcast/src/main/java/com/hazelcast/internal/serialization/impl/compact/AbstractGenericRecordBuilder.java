@@ -93,10 +93,7 @@ abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
     @Nonnull
     @Override
     public GenericRecordBuilder setGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord value) {
-        if (value != null && !(value instanceof CompactGenericRecord)) {
-            throw new HazelcastSerializationException("You can only use Compact GenericRecords in a Compact"
-                    + " GenericRecordBuilder");
-        }
+        checkCompactGenericRecord(value);
         return write(fieldName, value, FieldKind.COMPACT);
     }
 
@@ -135,10 +132,7 @@ abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
     public GenericRecordBuilder setArrayOfGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
         if (value != null) {
             for (GenericRecord genericRecord : value) {
-                if (genericRecord != null && !(genericRecord instanceof CompactGenericRecord)) {
-                    throw new HazelcastSerializationException("You can only use Compact GenericRecords in a Compact"
-                            + " GenericRecordBuilder");
-                }
+                checkCompactGenericRecord(genericRecord);
             }
         }
         return write(fieldName, value, FieldKind.ARRAY_OF_COMPACT);
@@ -322,6 +316,13 @@ abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
         if (fd.getKind() != fieldKind) {
             throw new HazelcastSerializationException("Invalid field kind: '" + fieldName
                     + "' for " + schema + ", expected : " + fd.getKind() + ", given : " + fieldKind);
+        }
+    }
+
+    private static void checkCompactGenericRecord(GenericRecord value) {
+        if (value != null && !(value instanceof CompactGenericRecord)) {
+            throw new HazelcastSerializationException("You can only use Compact GenericRecords in a Compact"
+                    + " GenericRecordBuilder");
         }
     }
 }
