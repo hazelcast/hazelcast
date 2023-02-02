@@ -38,6 +38,7 @@ import org.bson.Document;
 
 import javax.annotation.Nonnull;
 
+import static com.hazelcast.function.FunctionEx.identity;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
@@ -58,16 +59,22 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 @SuppressWarnings("UnusedReturnValue")
 public final class MongoDBSinkBuilder<T> {
 
+    /**
+     * Default transaction options used by the processors.
+     */
     @SuppressWarnings("checkstyle:MagicNumber")
-    private static final TransactionOptions DEFAULT_TRANSACTION_OPTION = TransactionOptions
+    public static final TransactionOptions DEFAULT_TRANSACTION_OPTION = TransactionOptions
             .builder()
             .writeConcern(MAJORITY)
             .maxCommitTime(10L, MINUTES)
             .readPreference(primaryPreferred())
             .build();
 
+    /**
+     * Default retry strategy used by the processors.
+     */
     @SuppressWarnings("checkstyle:MagicNumber")
-    private static final RetryStrategy DEFAULT_COMMIT_RETRY_STRATEGY = RetryStrategies
+    public static final RetryStrategy DEFAULT_COMMIT_RETRY_STRATEGY = RetryStrategies
             .custom()
             .intervalFunction(exponentialBackoffWithCap(100, 2.0, 3000))
             .maxAttempts(20)
@@ -246,12 +253,12 @@ public final class MongoDBSinkBuilder<T> {
             return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism,
                     () -> new WriteMongoP<>(clientSupplier, databaseName, collectionName,
                             documentClass, documentIdentityFn, updateOptionsChanger, fieldName,
-                            commitRetryStrategy, transactionOptions)));
+                            commitRetryStrategy, transactionOptions, identity())));
         } else {
             return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism,
                     () -> new WriteMongoP<>(clientSupplier, selectDatabaseNameFn,
                             selectCollectionNameFn, documentClass, documentIdentityFn, updateOptionsChanger, fieldName,
-                            commitRetryStrategy, transactionOptions)));
+                            commitRetryStrategy, transactionOptions, identity())));
         }
     }
 

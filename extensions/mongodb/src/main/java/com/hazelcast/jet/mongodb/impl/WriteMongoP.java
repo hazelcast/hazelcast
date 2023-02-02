@@ -75,9 +75,10 @@ import static java.util.stream.Collectors.toList;
  *
  * Transactional guarantees are provided using {@linkplain UnboundedTransactionsProcessorUtility}.
  *
+ * @param <IN> input type
  * @param <I> type of saved item
  */
-public class WriteMongoP<I> extends AbstractProcessor {
+public class WriteMongoP<IN, I> extends AbstractProcessor {
     /**
      * Max number of items processed (written) in one invocation of {@linkplain #process}.
      */
@@ -85,6 +86,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
 
     private final MongoDbConnection connection;
     private final Class<I> documentType;
+    private final FunctionEx<IN, I> intermediateMappingFn;
     private ILogger logger;
 
     private UnboundedTransactionsProcessorUtility<MongoTransactionId, MongoTransaction> transactionUtility;
@@ -112,10 +114,12 @@ public class WriteMongoP<I> extends AbstractProcessor {
             ConsumerEx<ReplaceOptions> replaceOptionAdjuster,
             String documentIdentityFieldName,
             RetryStrategy commitRetryStrategy,
-            byte[] transactionOptions) {
+            byte[] transactionOptions,
+            FunctionEx<IN, I> intermediateMappingFn
+    ) {
         this(clientSupplier, new ConstantCollectionPicker<>(databaseName, collectionName),
                 documentType, documentIdentityFn, replaceOptionAdjuster, documentIdentityFieldName,
-                commitRetryStrategy, transactionOptions);
+                commitRetryStrategy, transactionOptions, intermediateMappingFn);
     }
 
     /**
@@ -130,11 +134,12 @@ public class WriteMongoP<I> extends AbstractProcessor {
             ConsumerEx<ReplaceOptions> replaceOptionAdjuster,
             String documentIdentityFieldName,
             RetryStrategy commitRetryStrategy,
-            byte[] transactionOptions
+            byte[] transactionOptions,
+            FunctionEx<IN, I> intermediateMappingFn
     ) {
        this(clientSupplier, new FunctionalCollectionPicker<>(databaseNameSelectFn, collectionNameSelectFn),
                documentType, documentIdentityFn, replaceOptionAdjuster, documentIdentityFieldName,
-               commitRetryStrategy, transactionOptions);
+               commitRetryStrategy, transactionOptions, intermediateMappingFn);
     }
 
     /**
@@ -148,7 +153,8 @@ public class WriteMongoP<I> extends AbstractProcessor {
             ConsumerEx<ReplaceOptions> replaceOptionAdjuster,
             String documentIdentityFieldName,
             RetryStrategy commitRetryStrategy,
-            byte[] transactionOptions) {
+            byte[] transactionOptions,
+            FunctionEx<IN, I> intermediateMappingFn) {
         this.connection = new MongoDbConnection(clientSupplier, client -> {
         });
         this.documentIdentityFn = documentIdentityFn;
@@ -164,6 +170,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
         this.commitRetryStrategy = commitRetryStrategy;
         InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         this.transactionOptions = serializationService.toObject(new HeapData(transactionOptions));
+        this.intermediateMappingFn = intermediateMappingFn;
     }
 
     @Override
@@ -208,10 +215,11 @@ public class WriteMongoP<I> extends AbstractProcessor {
         try {
             MongoTransaction mongoTransaction = transactionUtility.activeTransaction();
 
-            ArrayList<I> items = drainItems(inbox);
+            ArrayList<IN> items = drainItems(inbox);
             @SuppressWarnings("DataFlowIssue")
             Map<MongoCollectionKey, List<I>> itemsPerCollection = items
                     .stream()
+                    .map(intermediateMappingFn)
                     .map(e -> tuple2(collectionPicker.pick(e), e))
                     .collect(groupingBy(Tuple2::f0, mapping(Tuple2::getValue, toList())));
 

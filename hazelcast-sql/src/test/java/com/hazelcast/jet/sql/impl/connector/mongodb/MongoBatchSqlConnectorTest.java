@@ -26,6 +26,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Filters;
 import org.bson.Document;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -36,6 +37,7 @@ import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.MongoDBContainer;
 
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
@@ -138,6 +140,52 @@ public class MongoBatchSqlConnectorTest extends SqlTestSupport {
     protected void execute(String sql, Object... arguments) {
         try (SqlResult ignored = sqlService.execute(sql, arguments)) {
             EmptyStatement.ignore(null);
+        }
+    }
+
+
+    @Test
+    public void writesToMongo() {
+        final String databaseName = "sqlConnectorTest";
+        final String collectionName = testName.getMethodName();
+        final String tableName = "writesToMongo";
+        final String connectionString = mongoContainer.getConnectionString();
+
+        try (MongoClient mongoClient = MongoClients.create(connectionString)) {
+            MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
+            collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
+        }
+
+        execute("CREATE MAPPING " + tableName
+                + " ("
+                + " id VARCHAR external name _id, "
+                + " firstName VARCHAR, "
+                + " lastName VARCHAR, "
+                + " jedi BOOLEAN "
+                + ") "
+                + "TYPE MongoDB "
+                + "OPTIONS ("
+                + "    'connectionString' = '" + connectionString + "', "
+                + "    'database' = '" + databaseName + "', "
+                + "    'collection' = '" + collectionName + "' "
+                + ")");
+
+        execute("insert into " + tableName + "(jedi, firstName, lastName) values (?, ?, ?)",
+                false, "Han", "Solo");
+
+        try (MongoClient mongoClient = MongoClients.create(connectionString)) {
+            MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
+
+            assertTrueEventually(() -> {
+                ArrayList<Document> list = collection.find(Filters.ne("firstName", "temp"))
+                                                     .into(new ArrayList<>());
+                assertEquals(1, list.size());
+                Document item = list.get(0);
+                assertEquals("Han", item.getString("firstName"));
+                assertEquals("Solo", item.getString("lastName"));
+                assertEquals(false, item.getBoolean("jedi"));
+            });
+
         }
     }
 

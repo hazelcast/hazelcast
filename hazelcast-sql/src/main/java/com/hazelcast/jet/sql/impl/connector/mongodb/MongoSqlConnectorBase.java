@@ -235,4 +235,14 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             this.allProceeded = allProceeded;
         }
     }
+
+    @Nonnull
+    @Override
+    public VertexWithInputConfig insertProcessor(@Nonnull DagBuildContext context) {
+        Vertex vertex = context.getDag().newUniqueVertex(
+                "Insert(" + context.getTable().getSqlName() + ")",
+                new InsertProcessorSupplier(context.getTable())
+        );
+        return new VertexWithInputConfig(vertex);
+    }
 }
