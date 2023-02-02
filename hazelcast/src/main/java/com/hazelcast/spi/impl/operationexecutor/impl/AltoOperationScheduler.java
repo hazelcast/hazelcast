@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.internal.tpc.Eventloop;
 import com.hazelcast.internal.tpc.Scheduler;
+import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
 
 public class AltoOperationScheduler implements Scheduler {
 
@@ -55,7 +56,7 @@ public class AltoOperationScheduler implements Scheduler {
     }
 
     @Override
-    public void schedule(Object task) {
-        // todo: not used.
+    public void schedule(IOBuffer task) {
+        throw new UnsupportedOperationException();
     }
 }
