@@ -544,17 +544,22 @@ public final class NioAsyncSocket extends AsyncSocket {
 
             if (ioVector.isEmpty()) {
                 // everything got written
-                int interestOps = key.interestOps();
 
                 // clear the OP_WRITE flag if it was set
+                int interestOps = key.interestOps();
                 if ((interestOps & OP_WRITE) != 0) {
                     key.interestOps(interestOps & ~OP_WRITE);
                 }
 
                 resetFlushed();
             } else {
-                // We need to register for the OP_WRITE because not everything got written
-                key.interestOps(key.interestOps() | OP_WRITE);
+                // Set OP_WRITE since not everything got written because
+                // the socket sendbuffer was full. This way we'll be notified
+                // as soon as the sendbuffer has some space.
+                int interestOps = key.interestOps();
+                if ((interestOps & OP_WRITE) == 0) {
+                    key.interestOps(interestOps | OP_WRITE);
+                }
             }
         }
 
