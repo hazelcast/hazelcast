@@ -100,7 +100,7 @@
         <hadoop.version>3.3.4</hadoop.version>
         <h2.version>2.1.214</h2.version>
         <!-- The Jackson version must match the version in EE, if you change this you must send EE PR as well -->
-        <jackson.version>2.14.1</jackson.version>
+        <jackson.version>2.14.2</jackson.version>
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
         <jaxb.version>2.3.1</jaxb.version>
         <jline.version>3.22.0</jline.version>
