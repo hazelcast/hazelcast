@@ -438,14 +438,7 @@ public class CompactSerializationTest {
         FooBarSerializer serializer = spy(new FooBarSerializer());
         FooBar fooBar = new FooBar("foo", 42L);
 
-        SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
-        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.addSerializer(serializer);
-        SerializationService serializationService = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
-                .build();
-
+        SerializationService serializationService = createSerializationService(() -> serializer);
         // Add correct schema to classToSchemaMap
         serializationService.toData(fooBar);
         // Change serializer's write method
@@ -470,19 +463,7 @@ public class CompactSerializationTest {
         FooBar fooBar = new FooBar("foo", 42L);
         FooBarSerializer serializer = spy(new FooBarSerializer());
 
-        SchemaWriter schemaWriter = new SchemaWriter(serializer.getTypeName());
-        serializer.write(schemaWriter, fooBar);
-        Schema schema = schemaWriter.build();
-
-        SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
-        schemaService.put(schema);
-        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.addSerializer(serializer);
-        SerializationService serializationService = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
-                .build();
-
+        SerializationService serializationService = createSerializationService(() -> serializer);
         // Add correct schema to classToSchemaMap
         serializationService.toData(fooBar);
         // Change serializer's write method
