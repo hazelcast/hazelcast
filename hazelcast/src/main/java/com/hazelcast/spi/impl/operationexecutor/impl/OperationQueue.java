@@ -91,4 +91,8 @@ public interface OperationQueue {
      * @return the total number of pending operations.
      */
     int size();
+
+    Object poll();
+
+    boolean remaining();
 }

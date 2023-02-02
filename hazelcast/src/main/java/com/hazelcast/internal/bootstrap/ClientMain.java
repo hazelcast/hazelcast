@@ -33,7 +33,7 @@ public class ClientMain {
 
     public static void main(String[] args) {
         System.setProperty(ALTO_ENABLED.getName(), "true");
-        System.setProperty(ALTO_EVENTLOOP_COUNT.getName(), "" + Runtime.getRuntime().availableProcessors());
+        System.setProperty(ALTO_EVENTLOOP_COUNT.getName(), "" +1);
         HazelcastInstance server = Hazelcast.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();

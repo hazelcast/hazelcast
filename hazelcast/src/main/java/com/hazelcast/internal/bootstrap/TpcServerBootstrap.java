@@ -35,6 +35,8 @@ import com.hazelcast.internal.tpc.TpcEngine;
 import com.hazelcast.internal.tpc.nio.NioReactorBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationexecutor.impl.AltoOperationScheduler;
+import com.hazelcast.spi.impl.operationexecutor.impl.AltoPartitionOperationThread;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.io.UncheckedIOException;
@@ -45,7 +47,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -55,7 +56,6 @@ import static com.hazelcast.internal.tpc.AsyncSocketOptions.SO_RCVBUF;
 import static com.hazelcast.internal.tpc.AsyncSocketOptions.SO_REUSEPORT;
 import static com.hazelcast.internal.tpc.AsyncSocketOptions.SO_SNDBUF;
 import static com.hazelcast.internal.tpc.AsyncSocketOptions.TCP_NODELAY;
-import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 @SuppressWarnings("checkstyle:MagicNumber, checkstyle:")
@@ -121,12 +121,9 @@ public class TpcServerBootstrap {
 
         Configuration configuration = new Configuration();
         NioReactorBuilder reactorBuilder = new NioReactorBuilder();
-        reactorBuilder.setThreadFactory(AltoEventloopThread::new);
-        AtomicInteger threadId = new AtomicInteger();
-        reactorBuilder.setThreadNameSupplier(() -> createThreadPoolName(
-                nodeEngine.getHazelcastInstance().getName(),
-                "alto-eventloop"
-        ) + threadId.incrementAndGet());
+        reactorBuilder.setThreadFactory(AltoPartitionOperationThread::new);
+        reactorBuilder.setSchedulerSupplier(AltoOperationScheduler::new);
+
         configuration.setReactorBuilder(reactorBuilder);
         configuration.setReactorCount(loadEventloopCount());
         return new TpcEngine(configuration);

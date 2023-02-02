@@ -71,6 +71,16 @@ public final class OperationQueueImpl implements OperationQueue {
     }
 
     @Override
+    public Object poll() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean remaining() {
+        return !normalQueue.isEmpty() || !priorityQueue.isEmpty();
+    }
+
+    @Override
     public Object take(boolean priorityOnly) throws InterruptedException {
         if (priorityOnly) {
             return ((BlockingQueue) priorityQueue).take();

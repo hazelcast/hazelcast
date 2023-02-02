@@ -23,7 +23,7 @@ import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationQueueImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationQueue;
-import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThreadImpl;
+import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
@@ -72,7 +72,7 @@ public class InterceptorRegistryTest extends HazelcastTestSupport {
     @RequireAssertEnabled
     public void testRegister_fromPartitionOperationThread() throws Exception {
         OperationQueue queue = new OperationQueueImpl();
-        PartitionOperationThreadImpl thread = getPartitionOperationThread(queue);
+        PartitionOperationThread thread = getPartitionOperationThread(queue);
         thread.start();
 
         final CountDownLatch latch = new CountDownLatch(1);
@@ -115,7 +115,7 @@ public class InterceptorRegistryTest extends HazelcastTestSupport {
     @RequireAssertEnabled
     public void testDeregister_fromPartitionOperationThread() throws Exception {
         OperationQueue queue = new OperationQueueImpl();
-        PartitionOperationThreadImpl thread = getPartitionOperationThread(queue);
+        PartitionOperationThread thread = getPartitionOperationThread(queue);
         thread.start();
 
         registry.register(interceptor.id, interceptor);
@@ -192,13 +192,13 @@ public class InterceptorRegistryTest extends HazelcastTestSupport {
         assertFalse(id2InterceptorMap.containsValue(interceptor));
     }
 
-    private PartitionOperationThreadImpl getPartitionOperationThread(OperationQueue queue) {
+    private PartitionOperationThread getPartitionOperationThread(OperationQueue queue) {
         NodeExtension nodeExtension = mock(NodeExtension.class);
 
         OperationRunner operationRunner = mock(OperationRunner.class);
         OperationRunner[] operationRunners = new OperationRunner[]{operationRunner};
 
-        return new PartitionOperationThreadImpl("threadName", 0, queue, LOGGER, nodeExtension,
+        return new PartitionOperationThread("threadName", 0, queue, LOGGER, nodeExtension,
                 operationRunners, getClass().getClassLoader());
     }
 
