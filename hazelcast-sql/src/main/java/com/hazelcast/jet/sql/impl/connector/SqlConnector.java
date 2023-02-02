@@ -330,7 +330,7 @@ public interface SqlConnector {
     default boolean isNestedLoopReaderSupported() {
         try {
             // nestedLoopReader() is supported, if the class overrides the default method in this class
-            Method m = getClass().getMethod("nestedLoopReader", DagBuildContext.class, RexNode.class, List.class,
+            Method m = getClass().getMethod("nestedLoopReader", DagBuildContext.class, CalciteNode.class, List.class,
                     JetJoinInfo.class);
             return m.getDeclaringClass() != SqlConnector.class;
         } catch (NoSuchMethodException e) {
@@ -413,7 +413,7 @@ public interface SqlConnector {
         Table getTable();
 
         /**
-         * Converts a boolean RexNode. When evaluating a {@link RexInputRef},
+         * Converts a boolean CalciteNode. When evaluating a {@link RexInputRef},
          * this context is assumed:<ul>
          *     <li>If a table is set (see {@link #getTable()}), then it's assumed that it's that table's fields
          *     <li>If it's a single-input rel, then it's then input
@@ -424,7 +424,7 @@ public interface SqlConnector {
         Expression<Boolean> convertFilter(@Nullable CalciteNode node);
 
         /**
-         * Converts a list of RexNodes. See also {@link #convertFilter(CalciteNode)}
+         * Converts a list of CalciteNodes. See also {@link #convertFilter(CalciteNode)}
          * for information about {@link RexInputRef} conversion.
          */
         @Nonnull
