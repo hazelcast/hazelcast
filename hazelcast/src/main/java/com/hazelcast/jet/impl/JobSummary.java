@@ -29,6 +29,15 @@ import java.io.IOException;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
+/**
+ * Job summary data.
+ * <p>
+ * This class cannot be changed without breaking compatibility with existing
+ * clients, in particular Management Center.
+ *
+ * @deprecated Since 5.3, to be removed in 6.0. Use {@link JobAndSqlSummary} instead
+ */
+@Deprecated
 public class JobSummary implements IdentifiedDataSerializable {
     private boolean isLightJob;
     private long jobId;
@@ -83,15 +92,6 @@ public class JobSummary implements IdentifiedDataSerializable {
      */
     @Nonnull
     public String getNameOrId() {
-        return nameOrId;
-    }
-
-    /**
-     * @deprecated use {@link #getNameOrId()}, semantics is the same
-     */
-    @Nonnull
-    @Deprecated
-    public String getName() {
         return nameOrId;
     }
 
