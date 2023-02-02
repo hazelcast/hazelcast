@@ -32,11 +32,9 @@ import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.result.InsertOneResult;
 import org.bson.Document;
 import org.bson.codecs.pojo.annotations.BsonProperty;
-import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -60,7 +58,6 @@ import static com.hazelcast.jet.pipeline.Sources.mapJournal;
 import static com.hazelcast.jet.pipeline.test.TestSources.items;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.mongodb.client.model.Filters.eq;
-import static com.mongodb.client.model.Filters.gte;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -121,8 +118,8 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
         final String connectionString = mongoContainer.getConnectionString();
         final String defaultDatabase = defaultDatabase();
         IMap<Long, Doc> mapToInsert = instance().getMap("toInsert");
-        mapToInsert.put(10L, new Doc(null, 10L, "new", "text lorem ipsum etc"));
-        mapToInsert.put(20L, new Doc(null, 20L, "new2", "text lorem ipsum etc"));
+        Doc doc = new Doc(null, 10L, "new", "text lorem ipsum etc");
+        mapToInsert.put(10L, doc);
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(newEntries(mapToInsert))
@@ -137,9 +134,12 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
         JobConfig config = new JobConfig().setProcessingGuarantee(processingGuarantee).setSnapshotIntervalMillis(200);
         instance().getJet().newJob(pipeline, config);
 
-        MongoClient client = MongoClients.create(connectionString);
-        MongoDatabase db = client.getDatabase(defaultDatabase);
-        assertTrueEventually(() -> assertEquals(2, countInAll(db, gte("key", 0))));
+        MongoCollection<Document> resultCollection = collection(defaultDatabase, "col_" + (doc.key % 2));
+        assertTrueEventually(() -> {
+            ArrayList<Document> list = resultCollection.find(eq("key", 10L)).into(new ArrayList<>());
+            assertEquals(1, list.size());
+            assertEquals("new", list.get(0).getString("type"));
+        });
     }
 
     @Test
@@ -196,16 +196,6 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
                                                      .applyConnectionString(new ConnectionString(connectionString))
                                                      .build();
         return MongoClients.create(mcs);
-    }
-
-    private static long countInAll(MongoDatabase database, Bson filter) {
-        long count = 0;
-        for (String name : database.listCollectionNames()) {
-            if (name.startsWith("col_")) {
-                count += database.getCollection(name).countDocuments(filter);
-            }
-        }
-        return count;
     }
 
     @SuppressWarnings("unused") // for serialization
