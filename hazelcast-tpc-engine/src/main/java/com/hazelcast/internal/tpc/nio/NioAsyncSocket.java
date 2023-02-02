@@ -501,12 +501,12 @@ public final class NioAsyncSocket extends AsyncSocket {
 
             int readyOps = key.readyOps();
 
-            if ((readyOps & OP_READ) != 0) {
-                handleReadReady();
-            }
-
             if ((readyOps & OP_WRITE) != 0) {
                 handleWriteReady();
+            }
+
+            if ((readyOps & OP_READ) != 0) {
+                handleReadReady();
             }
 
             if ((readyOps & OP_CONNECT) != 0) {
