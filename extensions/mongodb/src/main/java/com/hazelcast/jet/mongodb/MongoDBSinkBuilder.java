@@ -29,6 +29,7 @@ import com.hazelcast.jet.pipeline.SinkBuilder;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.RetryStrategy;
+import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.TransactionOptions;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.ReplaceOptions;
@@ -53,6 +54,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
  *
  * @param <T> type of the items the sink will accept
  */
+@Beta
 @SuppressWarnings("UnusedReturnValue")
 public final class MongoDBSinkBuilder<T> {
 
