@@ -59,7 +59,6 @@ public final class MongoDBSourceBuilder {
     private MongoDBSourceBuilder() {
     }
 
-
     /**
      * Returns a builder object that offers a step-by-step fluent API to build
      * a custom MongoDB {@link BatchSource} for the Pipeline API.
@@ -193,7 +192,7 @@ public final class MongoDBSourceBuilder {
         /**
          * Adds filter aggregate to this builder, which allows to filter documents in MongoDB, without
          * the need to download all documents.
-         *
+         * <p>
          * Example usage:
          * <pre>{@code
          *  import static com.mongodb.client.model.Filters.eq;
@@ -201,6 +200,7 @@ public final class MongoDBSourceBuilder {
          *  MongoDBSourceBuilder.stream(name, supplier)
          *      .filter(eq("fieldName", 10));
          * }</pre>
+         *
          * @param filter Bson form of filter. Use {@link com.mongodb.client.model.Filters} to create sort.
          * @return this builder with aggregate added
          */
@@ -239,7 +239,7 @@ public final class MongoDBSourceBuilder {
         /**
          * Specifies from which collection connector will read documents. If not invoked,
          * then connector will look at all collections in given database.
-         *
+         * <p>
          * Example usage:
          * <pre>{@code
          *  MongoDBSourceBuilder.stream(name, supplier)
@@ -263,7 +263,7 @@ public final class MongoDBSourceBuilder {
          * parsed to user-defined type using
          * {@linkplain com.mongodb.MongoClientSettings#getDefaultCodecRegistry mongo's standard codec registry}
          * with pojo support added.
-         *
+         * <p>
          * Example usage:
          * <pre>{@code
          *  MongoDBSourceBuilder.stream(name, supplier)
@@ -302,12 +302,17 @@ public final class MongoDBSourceBuilder {
             List<Bson> aggregates = this.aggregates;
             String databaseName = this.databaseName;
             String collectionName = this.collectionName;
-            SupplierEx<? extends MongoClient> localclientSupplier = clientSupplier;
-            FunctionEx<Document, T> localMapFn = mapFn;
+            SupplierEx<? extends MongoClient> localClientSupplier = this.clientSupplier;
+            FunctionEx<Document, T> localMapFn = this.mapFn;
 
-            return Sources.batchFromProcessor(name, ProcessorMetaSupplier.of(
-                    () -> new ReadMongoP<>(localclientSupplier, aggregates,
-                            databaseName, collectionName, localMapFn)));
+            return Sources.batchFromProcessor(
+                    name,
+                    ProcessorMetaSupplier.of(
+                            () -> new ReadMongoP<>(
+                                    localClientSupplier, aggregates,
+                                    databaseName, collectionName, localMapFn
+                            )
+                    ));
         }
     }
 
@@ -454,7 +459,7 @@ public final class MongoDBSourceBuilder {
 
         /**
          * Specifies time from which MongoDB's events will be read.
-         *
+         * <p>
          * It is <strong>highly</strong> suggested to provide this argument, as it will reduce reading initial
          * state of database.
          * @param startAtOperationTime time from which events should be taken into consideration

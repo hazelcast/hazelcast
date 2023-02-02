@@ -72,6 +72,7 @@ public class MongoDBSinkResilienceTest extends SimpleTestInClusterSupport {
 
     @Rule
     public Network network = Network.newNetwork();
+
     @Rule
     public MongoDBContainer mongoContainer = new MongoDBContainer("mongo:" + TEST_MONGO_VERSION)
             .withExposedPorts(27017)
@@ -80,7 +81,7 @@ public class MongoDBSinkResilienceTest extends SimpleTestInClusterSupport {
             ;
 
     @Rule
-    public ToxiproxyContainer  toxi = new ToxiproxyContainer("ghcr.io/shopify/toxiproxy:2.5.0")
+    public ToxiproxyContainer toxi = new ToxiproxyContainer("ghcr.io/shopify/toxiproxy:2.5.0")
             .withNetwork(network);
 
     @Rule
@@ -94,16 +95,16 @@ public class MongoDBSinkResilienceTest extends SimpleTestInClusterSupport {
     }
 
     @Test(timeout = 2 * 60_000)
-    public void testWhenServerDown_graceful() {
-        testWhenServerDown(true);
+    public void testWhenMemberDown_graceful() {
+        testWhenMemberDown(true);
     }
 
     @Test(timeout = 2 * 60_000)
-    public void testWhenServerDown_forceful() {
-        testWhenServerDown(false);
+    public void testWhenMemberDown_forceful() {
+        testWhenMemberDown(false);
     }
 
-    void testWhenServerDown(boolean graceful) {
+    void testWhenMemberDown(boolean graceful) {
         Config conf = new Config();
         conf.addMapConfig(new MapConfig("*")
                 .setEventJournalConfig(new EventJournalConfig().setEnabled(true))
@@ -112,7 +113,7 @@ public class MongoDBSinkResilienceTest extends SimpleTestInClusterSupport {
         conf.getJetConfig().setEnabled(true);
         HazelcastInstance hz = createHazelcastInstance(conf);
         JobRepository jobRepository = new JobRepository(hz);
-        HazelcastInstance serverToShutdown = createHazelcastInstance(conf);
+        HazelcastInstance memberToShutdown = createHazelcastInstance(conf);
 
         final String databaseName = "shutdownTest";
         final String collectionName = "testStream_whenServerDown";
@@ -146,9 +147,9 @@ public class MongoDBSinkResilienceTest extends SimpleTestInClusterSupport {
         sleep(500);
 
         if (graceful) {
-            serverToShutdown.shutdown();
+            memberToShutdown.shutdown();
         } else {
-            serverToShutdown.getLifecycleService().terminate();
+            memberToShutdown.getLifecycleService().terminate();
         }
         assertTrueEventually(() -> assertEquals(1, hz.getCluster().getMembers().size()));
 
@@ -233,8 +234,8 @@ public class MongoDBSinkResilienceTest extends SimpleTestInClusterSupport {
         continueCounting.compareAndSet(true, false);
 
         final String directConnectionString = mongoContainer.getConnectionString();
-        MongoClient directClinent = MongoClients.create(directConnectionString);
-        MongoCollection<Document> collection = directClinent.getDatabase(databaseName).getCollection(collectionName);
+        MongoClient directClient = MongoClients.create(directConnectionString);
+        MongoCollection<Document> collection = directClient.getDatabase(databaseName).getCollection(collectionName);
         assertTrueEventually(() ->
                 assertEquals(counter.get(), collection.countDocuments())
         );

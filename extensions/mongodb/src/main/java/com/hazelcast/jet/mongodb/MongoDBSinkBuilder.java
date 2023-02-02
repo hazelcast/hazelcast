@@ -76,7 +76,6 @@ public final class MongoDBSinkBuilder<T> {
     private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
     private final String name;
     private final SupplierEx<MongoClient> clientSupplier;
-    @Nonnull
     private final Class<T> documentClass;
 
     private int preferredLocalParallelism = 2;
@@ -180,12 +179,12 @@ public final class MongoDBSinkBuilder<T> {
 
     /**
      * Sets the retry strategy in case of commit failure.
-     *
+     * <p>
      * MongoDB by default retries simple operations, but commits must be retried manually.
-     *
+     * <p>
      * This option is taken into consideration only if
      * {@linkplain com.hazelcast.jet.config.ProcessingGuarantee#EXACTLY_ONCE} is used.
-     *
+     * <p>
      * Default value is {@linkplain #DEFAULT_COMMIT_RETRY_STRATEGY}.
      */
     @Nonnull
@@ -197,10 +196,10 @@ public final class MongoDBSinkBuilder<T> {
 
     /**
      * Sets options which will be used by MongoDB transaction mechanism.
-     *
+     * <p>
      * This option is taken into consideration only if
      * {@linkplain com.hazelcast.jet.config.ProcessingGuarantee#EXACTLY_ONCE} is used.
-     *
+     * <p>
      * Default value is {@linkplain #DEFAULT_TRANSACTION_OPTION}.
      */
     @Nonnull
@@ -243,15 +242,27 @@ public final class MongoDBSinkBuilder<T> {
                 "Only select*Fn or *Name functions should be called, never mixed");
 
         if (databaseName != null) {
-            return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism,
-                    () -> new WriteMongoP<>(clientSupplier, databaseName, collectionName,
-                            documentClass, documentIdentityFn, updateOptionsChanger, fieldName,
-                            commitRetryStrategy, transactionOptions)));
+            return Sinks.fromProcessor(
+                    name,
+                    ProcessorMetaSupplier.of(
+                            preferredLocalParallelism,
+                            () -> new WriteMongoP<>(
+                                    clientSupplier, databaseName, collectionName,
+                                    documentClass, documentIdentityFn, updateOptionsChanger, fieldName,
+                                    commitRetryStrategy, transactionOptions
+                            )
+                    ));
         } else {
-            return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism,
-                    () -> new WriteMongoP<>(clientSupplier, selectDatabaseNameFn,
-                            selectCollectionNameFn, documentClass, documentIdentityFn, updateOptionsChanger, fieldName,
-                            commitRetryStrategy, transactionOptions)));
+            return Sinks.fromProcessor(
+                    name,
+                    ProcessorMetaSupplier.of(
+                            preferredLocalParallelism,
+                            () -> new WriteMongoP<>(
+                                    clientSupplier, selectDatabaseNameFn, selectCollectionNameFn,
+                                    documentClass, documentIdentityFn, updateOptionsChanger, fieldName,
+                                    commitRetryStrategy, transactionOptions
+                            )
+                    ));
         }
     }
 
