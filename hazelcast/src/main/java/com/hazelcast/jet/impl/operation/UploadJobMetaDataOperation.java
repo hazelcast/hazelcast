@@ -37,6 +37,7 @@ public class UploadJobMetaDataOperation extends Operation implements IdentifiedD
     }
 
     public UploadJobMetaDataOperation(JetUploadJobMetaDataCodec.RequestParameters parameters) {
+        // Save the parameters received from client
         jobMetaDataParameterObject = new JobMetaDataParameterObject();
         jobMetaDataParameterObject.setSessionId(parameters.sessionId);
         jobMetaDataParameterObject.setSha256Hex(parameters.sha256Hex);
@@ -54,11 +55,9 @@ public class UploadJobMetaDataOperation extends Operation implements IdentifiedD
 
     @Override
     public void run() {
-
         JetServiceBackend jetServiceBackend = getJetServiceBackend();
         jetServiceBackend.storeJobMetaData(jobMetaDataParameterObject);
         response = true;
-
     }
 
     protected JetServiceBackend getJetServiceBackend() {

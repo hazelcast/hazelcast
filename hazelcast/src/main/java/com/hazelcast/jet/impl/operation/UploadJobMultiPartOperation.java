@@ -35,6 +35,7 @@ public class UploadJobMultiPartOperation extends AsyncJobOperation {
     }
 
     public UploadJobMultiPartOperation(JetUploadJobMultipartCodec.RequestParameters parameters) {
+        // Save the parameters received from client
         jobMultiPartParameterObject = new JobMultiPartParameterObject();
         jobMultiPartParameterObject.setSessionId(parameters.sessionId);
         jobMultiPartParameterObject.setCurrentPartNumber(parameters.currentPartNumber);
@@ -48,15 +49,17 @@ public class UploadJobMultiPartOperation extends AsyncJobOperation {
     @Override
     public CompletableFuture<Boolean> doRun() {
         return CompletableFuture.supplyAsync(() -> {
+            // Delegate to JetServiceBackend
             JetServiceBackend jetServiceBackend = getJetServiceBackend();
             JobMetaDataParameterObject partsComplete = jetServiceBackend.storeJobMultiPart(jobMultiPartParameterObject);
+            // If JetServiceBackend returns that parts are complete
             if (partsComplete != null) {
+                // Execute the jar
                 jetServiceBackend.executeJar(partsComplete);
             }
             return true;
         });
     }
-
 
     @Override
     public int getClassId() {

@@ -40,6 +40,9 @@ public class JobMetaDataParameterObject {
 
     private Path jarPath;
 
+    // Indicates if the jar should be deleted after the job execution
+    private boolean deleteJarOnExecution;
+
     public UUID getSessionId() {
         return sessionId;
     }
@@ -102,5 +105,13 @@ public class JobMetaDataParameterObject {
 
     public void setJarPath(Path jarPath) {
         this.jarPath = jarPath;
+    }
+
+    public boolean deleteJarOnExecution() {
+        return deleteJarOnExecution;
+    }
+
+    public void setDeleteJarOnExecution(boolean deleteJarOnExecution) {
+        this.deleteJarOnExecution = deleteJarOnExecution;
     }
 }

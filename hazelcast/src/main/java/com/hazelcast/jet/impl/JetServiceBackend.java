@@ -401,16 +401,19 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     /**
      * Store the metadata about the job jar that is uploaded from client side
      *
-     * @param parameterObject contains all the metadata about the upload operation
+     * @param jobMetaDataParameterObject contains all the metadata about the upload operation
      */
-    public void storeJobMetaData(JobMetaDataParameterObject parameterObject) {
+    public void storeJobMetaData(JobMetaDataParameterObject jobMetaDataParameterObject) {
         checkResourceUploadEnabled();
         try {
+            // The jar should be deleted
+            jobMetaDataParameterObject.setDeleteJarOnExecution(true);
+
             // Delegate processing to store
-            jobUploadStore.processJobMetaData(parameterObject);
+            jobUploadStore.processJobMetaData(jobMetaDataParameterObject);
         } catch (Exception exception) {
             // Upon exception, remove from the store
-            jobUploadStore.remove(parameterObject.getSessionId());
+            jobUploadStore.remove(jobMetaDataParameterObject.getSessionId());
             // Only throw a JetException
             wrapWithJetException(exception);
         }
@@ -419,17 +422,17 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     /**
      * Store a part of job jar that is uploaded
      *
-     * @param parameterObject contains all the metadata about the upload operation
+     * @param jobMultiPartParameterObject contains all the metadata about the upload operation
      * @return the parameter object if upload is complete, null if upload is incomplete and more parts are expected,
      */
-    public JobMetaDataParameterObject storeJobMultiPart(JobMultiPartParameterObject parameterObject) {
+    public JobMetaDataParameterObject storeJobMultiPart(JobMultiPartParameterObject jobMultiPartParameterObject) {
         JobMetaDataParameterObject result = null;
         try {
             // Delegate processing to store
-            result = jobUploadStore.processJobMultipart(parameterObject);
+            result = jobUploadStore.processJobMultipart(jobMultiPartParameterObject);
         } catch (Exception exception) {
             // Upon exception, remove from the store
-            jobUploadStore.remove(parameterObject.getSessionId());
+            jobUploadStore.remove(jobMultiPartParameterObject.getSessionId());
             // Only throw a JetException
             wrapWithJetException(exception);
         }
@@ -437,7 +440,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     }
 
     private void wrapWithJetException(Exception exception) {
-        // If exception is not JetException e.g. IOException, FileSystemException etc, wrap it with JetException
+        // If exception is not JetException e.g. IOException, FileSystemException etc., wrap it with JetException
         if (!(exception instanceof JetException)) {
             ExceptionUtil.rethrow(exception);
         } else {
@@ -477,11 +480,17 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
             sneakyThrow(exception);
         } finally {
             // We are done with the jar. Delete it
-            try {
-                Files.delete(parameterObject.getJarPath());
-            } catch (IOException exception) {
-                logger.severe("executeJar could not delete the jar after running it", exception);
+            if (parameterObject.deleteJarOnExecution()) {
+                deleteJar(parameterObject);
             }
+        }
+    }
+
+    private void deleteJar(JobMetaDataParameterObject parameterObject) {
+        try {
+            Files.delete(parameterObject.getJarPath());
+        } catch (IOException exception) {
+            logger.severe("executeJar could not delete the jar after running it", exception);
         }
     }
 
