@@ -22,7 +22,6 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
@@ -41,10 +40,8 @@ import example.serialization.MainDTOSerializer;
 import example.serialization.SameClassEmployeeDTOSerializer;
 import example.serialization.SameTypeNameEmployeeDTOSerializer;
 import example.serialization.SerializableEmployeeDTO;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
@@ -77,9 +74,6 @@ import static org.mockito.Mockito.verify;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CompactSerializationTest {
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void testOverridingDefaultSerializers() {
@@ -441,19 +435,10 @@ public class CompactSerializationTest {
 
     @Test
     public void testCompactWriterThrowsExceptionWhileWritingWhenSchemaDoesNotHaveThatField() {
-        thrown.expect(HazelcastSerializationException.class);
-        thrown.expectMessage("Failed to serialize");
-        thrown.expectCause(new RootCauseMatcher(HazelcastSerializationException.class, "Invalid field name"));
-
         FooBarSerializer serializer = spy(new FooBarSerializer());
         FooBar fooBar = new FooBar("foo", 42L);
 
-        SchemaWriter schemaWriter = new SchemaWriter(serializer.getTypeName());
-        serializer.write(schemaWriter, fooBar);
-        Schema schema = schemaWriter.build();
-
         SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
-        schemaService.put(schema);
         CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
         compactSerializationConfig.addSerializer(serializer);
         SerializationService serializationService = new DefaultSerializationServiceBuilder()
@@ -473,15 +458,15 @@ public class CompactSerializationTest {
             return null;
         }).when(serializer).write(any(), any());
         // This should throw because schema does not have a baz field.
-        serializationService.toData(fooBar);
+        assertThatThrownBy(() -> {
+            serializationService.toData(fooBar);
+        }).isInstanceOf(HazelcastSerializationException.class)
+          .hasCauseInstanceOf(HazelcastSerializationException.class)
+          .hasStackTraceContaining("Invalid field name");
     }
 
     @Test
     public void testCompactWriterThrowsExceptionWhileWritingWhenFieldTypeDoesNotMatch() {
-        thrown.expect(HazelcastSerializationException.class);
-        thrown.expectMessage("Failed to serialize");
-        thrown.expectCause(new RootCauseMatcher(HazelcastSerializationException.class, "Invalid field type"));
-
         FooBar fooBar = new FooBar("foo", 42L);
         FooBarSerializer serializer = spy(new FooBarSerializer());
 
@@ -509,7 +494,11 @@ public class CompactSerializationTest {
             return null;
         }).when(serializer).write(any(), any());
         // This should throw because in the schema type of foo is not int32.
-        serializationService.toData(fooBar);
+        assertThatThrownBy(() -> {
+                serializationService.toData(fooBar);
+        }).isInstanceOf(HazelcastSerializationException.class)
+          .hasCauseInstanceOf(HazelcastSerializationException.class)
+          .hasStackTraceContaining("Invalid field type");
     }
 
     private static class FooBar {
