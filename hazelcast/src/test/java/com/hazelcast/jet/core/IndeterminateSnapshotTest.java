@@ -215,13 +215,12 @@ public class IndeterminateSnapshotTest {
          *                   or -1 if no snapshot is expected
          */
         protected static void assumePresentLastSnapshot(int snapshotId) {
-            // TODO: assume instead of assert
             if (snapshotId >= 0) {
-                assertThat(SnapshotInstrumentationP.savedCounters.values())
+                assumeThat(SnapshotInstrumentationP.savedCounters.values())
                         .as("Current snapshot is different than expected")
                         .containsOnly(snapshotId);
             } else {
-                assertThat(SnapshotInstrumentationP.savedCounters)
+                assumeThat(SnapshotInstrumentationP.savedCounters)
                         .as("Unexpected snapshot")
                         .isEmpty();
             }
@@ -261,7 +260,7 @@ public class IndeterminateSnapshotTest {
      * Tests that break replication in the cluster. More realistic, but slower,
      * and sometimes it is hard to get correct partitions assignment.
      */
-    // TODO: make this SlowTest? This test needs mock network
+    // this test needs mock network
     @Category({QuickTest.class, ParallelJVMTest.class})
     @RunWith(HazelcastSerialClassRunner.class)
     public static class ReplicationBreakingTests extends IndeterminateSnapshotTestBase {
