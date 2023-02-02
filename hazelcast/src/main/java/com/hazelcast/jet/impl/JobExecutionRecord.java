@@ -68,14 +68,14 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
      * not-null while the job is exporting a state snapshot. The value is null
      * when writing a normal snapshot or when no snapshot is in progress.
      * <p>
-     * This value is transient, and it is not needed after coordinator restart.
+     * This value is not needed after coordinator restart.
      * <p>
      * {@link #ongoingSnapshotId} and {@link #ongoingExportedSnapshotMapName}
      * define target of current snapshot (if any).
      * {@link #snapshotId} and {@link #exportedSnapshotMapName} define last
      * successful snapshot (if any).
      */
-    private volatile String ongoingExportedSnapshotMapName;
+    private transient volatile String ongoingExportedSnapshotMapName;
     private volatile String exportedSnapshotMapName;
     @Nullable
     private volatile String lastSnapshotFailure;
