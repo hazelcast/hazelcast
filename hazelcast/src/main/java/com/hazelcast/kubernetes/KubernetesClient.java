@@ -713,11 +713,14 @@ class KubernetesClient {
     final class StsMonitor implements Runnable {
 
         // backoff properties when retrying
+        private static final int MAX_SPINS = 3;
         private static final int MAX_YIELDS = 10;
+        private static final int MIN_PARK_PERIOD_MILLIS = 1;
         private static final int MAX_PARK_PERIOD_SECONDS = 10;
 
         // used only for tests
         volatile boolean running = true;
+
         String latestResourceVersion;
         RuntimeContext latestRuntimeContext;
         int idleCount;
@@ -727,8 +730,8 @@ class KubernetesClient {
 
         StsMonitor() {
             stsUrlString = formatStsListUrl();
-            backoffIdleStrategy = new BackoffIdleStrategy(3, MAX_YIELDS,
-                    MILLISECONDS.toNanos(1), SECONDS.toNanos(MAX_PARK_PERIOD_SECONDS));
+            backoffIdleStrategy = new BackoffIdleStrategy(MAX_SPINS, MAX_YIELDS,
+                    MILLISECONDS.toNanos(MIN_PARK_PERIOD_MILLIS), SECONDS.toNanos(MAX_PARK_PERIOD_SECONDS));
         }
 
         /**
