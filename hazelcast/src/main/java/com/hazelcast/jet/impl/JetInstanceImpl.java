@@ -29,7 +29,6 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.jobupload.JobMetaDataParameterObject;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -73,20 +72,15 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
     // Called by member to run a job on itself
     @Override
     public void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
-        try {
-            JobMetaDataParameterObject parameterObject = new JobMetaDataParameterObject();
-            parameterObject.setSnapshotName(submitJobParameters.getSnapshotName());
-            parameterObject.setJobName(submitJobParameters.getJobName());
-            parameterObject.setMainClass(submitJobParameters.getMainClass());
-            parameterObject.setJobParameters(submitJobParameters.getJobParameters());
-            parameterObject.setJarPath(submitJobParameters.getJarPath());
+        JobMetaDataParameterObject parameterObject = new JobMetaDataParameterObject();
+        parameterObject.setSnapshotName(submitJobParameters.getSnapshotName());
+        parameterObject.setJobName(submitJobParameters.getJobName());
+        parameterObject.setMainClass(submitJobParameters.getMainClass());
+        parameterObject.setJobParameters(submitJobParameters.getJobParameters());
+        parameterObject.setJarPath(submitJobParameters.getJarPath());
 
-            JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
-            jetServiceBackend.executeJar(parameterObject);
-
-        } catch (Exception exception) {
-            ExceptionUtil.sneakyThrow(exception);
-        }
+        JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
+        jetServiceBackend.executeJar(parameterObject);
     }
 
     @Override

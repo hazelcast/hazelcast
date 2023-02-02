@@ -488,5 +488,4 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private HazelcastInstance getHazelcastInstance() {
         return getNodeEngine().getHazelcastInstance();
     }
-
 }
