@@ -146,7 +146,7 @@ public class PlanExecutor {
 
     SqlResult execute(CreateConnectionPlan plan) {
         // TODO: implement.
-        throw new UnsupportedOperationException("CREATE CONNECTION is not implemented yet");
+        throw new UnsupportedOperationException("CREATE DATA STORE is not implemented yet");
 //        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 

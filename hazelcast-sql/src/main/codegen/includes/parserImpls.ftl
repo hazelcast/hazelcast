@@ -59,9 +59,9 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
 }
 
 /**
- * Parses CREATE CONNECTION statement.
+ * Parses CREATE DATA STORE statement.
  */
-SqlCreate SqlCreateConnection(Span span, boolean replace) :
+SqlCreate SqlCreateDataStore(Span span, boolean replace) :
 {
     SqlParserPos startPos = span.pos();
     boolean ifNotExists = false;
@@ -70,7 +70,7 @@ SqlCreate SqlCreateConnection(Span span, boolean replace) :
     SqlNodeList sqlOptions;
 }
 {
-    <CONNECTION>
+    <DATA> <STORE>
     [
         <IF> <NOT> <EXISTS> { ifNotExists = true; }
     ]
@@ -82,7 +82,7 @@ SqlCreate SqlCreateConnection(Span span, boolean replace) :
     <OPTIONS>
     sqlOptions = SqlOptions()
     {
-        return new SqlCreateConnection(
+        return new SqlCreateDataStore(
             startPos.plus(getPos()),
             replace,
             ifNotExists,

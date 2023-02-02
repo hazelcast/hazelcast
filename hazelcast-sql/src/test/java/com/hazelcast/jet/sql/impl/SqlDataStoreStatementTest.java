@@ -22,15 +22,15 @@ import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class SqlConnectionStatementTest extends SqlTestSupport {
+public class SqlDataStoreStatementTest extends SqlTestSupport {
     @BeforeClass
     public static void beforeClass() throws Exception {
         initialize(1, null);
     }
 
     @Test
-    public void when_createConnection_then_unsupported() {
-        assertThatThrownBy(() -> instance().getSql().execute("CREATE CONNECTION a TYPE Kafka OPTIONS ()"))
-                .hasMessageContaining("CREATE CONNECTION is not implemented yet");
+    public void when_createDataStore_then_notImplemented() {
+        assertThatThrownBy(() -> instance().getSql().execute("CREATE DATA STORE a TYPE Kafka OPTIONS ()"))
+                .hasMessageContaining("CREATE DATA STORE is not implemented yet");
     }
 }

@@ -255,8 +255,8 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            SqlPlanImpl.ensureNoArguments("CREATE CONNECTION", arguments);
-            SqlPlanImpl.ensureNoTimeout("CREATE CONNECTION", timeout);
+            SqlPlanImpl.ensureNoArguments("CREATE DATA STORE", arguments);
+            SqlPlanImpl.ensureNoTimeout("CREATE DATA STORE", timeout);
             return planExecutor.execute(this);
         }
     }

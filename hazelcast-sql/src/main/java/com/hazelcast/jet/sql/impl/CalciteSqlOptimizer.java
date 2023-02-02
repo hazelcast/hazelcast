@@ -66,7 +66,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.UpdateByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob;
-import com.hazelcast.jet.sql.impl.parse.SqlCreateConnection;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateDataStore;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateIndex;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
@@ -292,8 +292,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             return toCreateIndexPlan(planKey, (SqlCreateIndex) node);
         } else if (node instanceof SqlDropIndex) {
             return toDropIndexPlan(planKey, (SqlDropIndex) node);
-        } else if (node instanceof SqlCreateConnection) {
-            return toCreateConnectionPlan(planKey, (SqlCreateConnection) node);
+        } else if (node instanceof SqlCreateDataStore) {
+            return toCreateConnectionPlan(planKey, (SqlCreateDataStore) node);
         } else if (node instanceof SqlCreateJob) {
             return toCreateJobPlan(planKey, parseResult, context, task.getSql());
         } else if (node instanceof SqlAlterJob) {
@@ -350,7 +350,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         );
     }
 
-    private SqlPlan toCreateConnectionPlan(PlanKey planKey, SqlCreateConnection sqlCreateConnection) {
+    private SqlPlan toCreateConnectionPlan(PlanKey planKey, SqlCreateDataStore sqlCreateConnection) {
         return new CreateConnectionPlan(
                 planKey,
                 sqlCreateConnection.getReplace(),

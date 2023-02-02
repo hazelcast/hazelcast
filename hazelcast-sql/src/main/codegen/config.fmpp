@@ -23,7 +23,7 @@ data: {
     imports: [
       "com.hazelcast.jet.sql.impl.parse.ParserResource"
       "com.hazelcast.jet.sql.impl.parse.SqlAlterJob"
-      "com.hazelcast.jet.sql.impl.parse.SqlCreateConnection"
+      "com.hazelcast.jet.sql.impl.parse.SqlCreateDataStore"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateIndex"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateJob"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateMapping"
@@ -62,6 +62,7 @@ data: {
       "RESUME"
       "SINK"
       "SNAPSHOT"
+      "STORE"
       "SUSPEND"
       "VIEWS"
       "TYPES"
@@ -401,6 +402,7 @@ data: {
       "RESUME"
       "SINK"
       "SNAPSHOT"
+      "STORE"
       "SUSPEND"
       "VIEWS"
       "TYPES"
@@ -460,7 +462,7 @@ data: {
     # Each must accept arguments "(SqlParserPos pos, boolean replace)".
     # Example: "SqlCreateForeignSchema".
     createStatementParserMethods: [
-      "SqlCreateConnection"
+      "SqlCreateDataStore"
       "SqlCreateIndex"
       "SqlCreateJob"
       "SqlCreateMapping"
