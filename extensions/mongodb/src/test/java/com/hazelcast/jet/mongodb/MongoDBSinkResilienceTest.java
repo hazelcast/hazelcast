@@ -30,7 +30,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
@@ -66,7 +66,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class}) // TODO #23348 move it to nightly test
+@Category({NightlyTest.class})
 public class MongoDBSinkResilienceTest extends SimpleTestInClusterSupport {
     private static final ILogger logger = Logger.getLogger(MongoDBSinkResilienceTest.class);
 

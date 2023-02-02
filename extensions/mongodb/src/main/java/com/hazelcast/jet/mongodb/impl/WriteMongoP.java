@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.mongodb;
+package com.hazelcast.jet.mongodb.impl;
 
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
@@ -58,7 +58,7 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
-import static com.hazelcast.jet.mongodb.Mappers.defaultCodecRegistry;
+import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 import static com.mongodb.client.model.Filters.eq;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.mongodb;
+package com.hazelcast.jet.mongodb.impl;
 
 import com.hazelcast.function.FunctionEx;
 import com.mongodb.MongoClientSettings;
@@ -48,7 +48,7 @@ public final class Mappers {
         this.decoderContext = DecoderContext.builder().build();
     }
 
-    static <T> T map(Document doc, Class<T> type) {
+    public static <T> T map(Document doc, Class<T> type) {
         return INSTANCE.pojoCodecRegistry.get(type).decode(
                 new BsonDocumentReader(doc.toBsonDocument()), INSTANCE.decoderContext);
     }
@@ -64,12 +64,12 @@ public final class Mappers {
     }
 
     @Nonnull
-    static <T> FunctionEx<Document, T> toClass(Class<T> type) {
+    public static <T> FunctionEx<Document, T> toClass(Class<T> type) {
         return doc -> map(doc, type);
     }
 
     @Nonnull
-    static <T> FunctionEx<ChangeStreamDocument<Document>, T> streamToClass(Class<T> type) {
+    public static <T> FunctionEx<ChangeStreamDocument<Document>, T> streamToClass(Class<T> type) {
         return doc -> {
             assert doc.getFullDocument() != null;
             return map(doc.getFullDocument(), type);

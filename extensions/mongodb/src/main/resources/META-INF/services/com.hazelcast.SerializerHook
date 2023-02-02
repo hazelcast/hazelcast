@@ -14,8 +14,8 @@
 # limitations under the License.
 #
 
-com.hazelcast.jet.mongodb.MongoDBSerializerHooks$TransactionOptionsHook
-com.hazelcast.jet.mongodb.MongoDBSerializerHooks$ReadConcernLevelHook
-com.hazelcast.jet.mongodb.MongoDBSerializerHooks$ReadConcernHook
-com.hazelcast.jet.mongodb.MongoDBSerializerHooks$WriteConcernHook
+com.hazelcast.jet.mongodb.impl.MongoDBSerializerHooks$TransactionOptionsHook
+com.hazelcast.jet.mongodb.impl.MongoDBSerializerHooks$ReadConcernLevelHook
+com.hazelcast.jet.mongodb.impl.MongoDBSerializerHooks$ReadConcernHook
+com.hazelcast.jet.mongodb.impl.MongoDBSerializerHooks$WriteConcernHook
 

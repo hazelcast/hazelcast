@@ -22,6 +22,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.mongodb.MongoDBSourceBuilder.Batch;
 import com.hazelcast.jet.mongodb.MongoDBSourceBuilder.Stream;
+import com.hazelcast.jet.mongodb.impl.Mappers;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -43,7 +44,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
-import static com.hazelcast.jet.mongodb.Mappers.streamToClass;
+import static com.hazelcast.jet.mongodb.impl.Mappers.streamToClass;
 import static com.hazelcast.jet.mongodb.MongoDBSources.batch;
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
@@ -84,11 +85,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         IList<Object> list = instance().getList(testName.getMethodName());
         final String connectionString = mongoContainer.getConnectionString();
 
-        collection().insertMany(range(0, COUNT_IN_BATCH)
-                .mapToObj(i -> newDocument("key", i).append("val", i))
-                .collect(toList())
-        );
-        assertEquals(collection().countDocuments(), COUNT_IN_BATCH);
+        insertDocuments();
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(batch(SOURCE_NAME, connectionString, defaultDatabase(), testName.getMethodName(), null, null))
@@ -107,11 +104,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         IList<Object> list = instance().getList(testName.getMethodName());
         final String connectionString = mongoContainer.getConnectionString();
 
-        collection().insertMany(range(0, COUNT_IN_BATCH)
-                .mapToObj(i -> newDocument("key", i).append("val", i))
-                .collect(toList())
-        );
-        assertEquals(collection().countDocuments(), COUNT_IN_BATCH);
+        insertDocuments();
 
         Pipeline pipeline = Pipeline.create();
         Batch<?> sourceBuilder = batch(SOURCE_NAME, () -> mongoClient(connectionString))
@@ -135,14 +128,8 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
     public void testBatchDatabase() {
         IList<Object> list = instance().getList(testName.getMethodName());
 
-        collection().insertMany(range(1, 6).mapToObj(i -> newDocument("key", i).append("val", i)).collect(toList()));
-        assertEquals(collection().countDocuments(), 5L);
-
-        collection(testName.getMethodName() + "_second")
-                .insertMany(range(1, 6)
-                        .mapToObj(i -> newDocument("key", i).append("val", i).append("test", "other"))
-                        .collect(toList()));
-        assertEquals(collection().countDocuments(), 5L);
+        insertDocuments(testName.getMethodName(), 1, 6);
+        insertDocuments(testName.getMethodName() + "_second", 1, 6);
 
         Pipeline pipeline = Pipeline.create();
         String connectionString = mongoContainer.getConnectionString();
@@ -156,6 +143,17 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         instance().getJet().newJob(pipeline, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE)).join();
 
         assertTrueEventually(() -> contentAsserts(list, filter ? FILTERED_BOUND : 1, 5, filter ? 2 : 10));
+    }
+    private void insertDocuments() {
+        insertDocuments(testName.getMethodName(), 0, COUNT_IN_BATCH);
+    }
+
+    private void insertDocuments(String collectionName, int rangeStartInc, int rangeEndExcl) {
+        collection(collectionName).insertMany(range(rangeStartInc, rangeEndExcl)
+                .mapToObj(i -> newDocument("key", i).append("val", i))
+                .collect(toList())
+        );
+        assertEquals(collection().countDocuments(), rangeEndExcl - rangeStartInc);
     }
 
     private Batch<?> batchFilters(Batch<?> sourceBuilder) {
@@ -201,7 +199,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
     public void testStreamOneCollection() {
         IList<Object> list = instance().getList(testName.getMethodName());
         String connectionString = mongoContainer.getConnectionString();
-        Stream<?> sourceBuilder = MongoDBSourceBuilder.stream(SOURCE_NAME, () -> mongoClient(connectionString))
+        Stream<?> sourceBuilder = MongoDBSources.stream(SOURCE_NAME, () -> mongoClient(connectionString))
                                                       .database(defaultDatabase())
                                                       .collection(testName.getMethodName(), Document.class);
         sourceBuilder = streamFilters(sourceBuilder);

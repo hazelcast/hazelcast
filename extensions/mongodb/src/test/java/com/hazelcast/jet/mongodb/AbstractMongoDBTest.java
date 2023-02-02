@@ -44,7 +44,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.jet.mongodb.Mappers.defaultCodecRegistry;
+import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -70,16 +70,13 @@ public abstract class AbstractMongoDBTest extends SimpleTestInClusterSupport {
     public TestName testName = new TestName();
 
     @BeforeClass
-    public static void setUpHazelcast() {
+    public static void setUp() {
         assumeDockerEnabled();
         Config config = new Config();
         config.addMapConfig(new MapConfig("*").setEventJournalConfig(new EventJournalConfig().setEnabled(true)));
         config.getJetConfig().setEnabled(true);
         initialize(2, config);
-    }
 
-    @BeforeClass
-    public static void setUpMongo() {
         mongo = MongoClients.create(mongoContainer.getConnectionString());
 
         // workaround to obtain a timestamp before starting the test
@@ -100,9 +97,6 @@ public abstract class AbstractMongoDBTest extends SimpleTestInClusterSupport {
                     database.drop();
                 }
             }
-
-        }
-        try (MongoClient mongoClient = MongoClients.create(mongoContainer.getConnectionString())) {
             List<String> allowedDatabasesLeft = asList("admin", "local", "config", "tech");
             assertTrueEventually(() -> {
                 ArrayList<String> databasesLeft = mongoClient.listDatabaseNames().into(new ArrayList<>());

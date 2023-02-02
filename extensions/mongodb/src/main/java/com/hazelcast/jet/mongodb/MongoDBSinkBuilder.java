@@ -23,11 +23,13 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.SinkBuilder;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.RetryStrategy;
+import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.TransactionOptions;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.ReplaceOptions;
@@ -52,6 +54,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
  *
  * @param <T> type of the items the sink will accept
  */
+@Beta
 @SuppressWarnings("UnusedReturnValue")
 public final class MongoDBSinkBuilder<T> {
 
@@ -211,7 +214,7 @@ public final class MongoDBSinkBuilder<T> {
      * supplied to this builder.
      */
     @Nonnull
-    public Sink<T> build() {
+        public Sink<T> build() {
         checkNotNull(clientSupplier, "clientSupplier must be set");
         checkNotNull(documentIdentityFn, "documentIdentityFn must be set");
         checkNotNull(commitRetryStrategy, "commitRetryStrategy must be set");

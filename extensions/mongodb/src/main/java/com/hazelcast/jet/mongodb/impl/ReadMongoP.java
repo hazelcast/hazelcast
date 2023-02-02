@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.mongodb;
+package com.hazelcast.jet.mongodb.impl;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
@@ -54,7 +54,7 @@ import static com.hazelcast.jet.Traversers.singleton;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
-import static com.hazelcast.jet.mongodb.MongoUtilities.partitionAggregate;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.partitionAggregate;
 import static com.mongodb.client.model.Aggregates.sort;
 import static com.mongodb.client.model.Sorts.ascending;
 import static java.util.Collections.emptyList;
@@ -322,16 +322,11 @@ public class ReadMongoP<I> extends AbstractProcessor {
         @Nonnull
         @Override
         public Traverser<I> nextChunkTraverser() {
-            List<I> chunk = new ArrayList<>(BATCH_SIZE);
-            Document doc;
-            Document lastItem = null;
-            while ((doc = delegate.next()) != null) {
-                chunk.add(mapItemFn.apply(doc));
-                lastItem = doc;
-            }
-            lastKey = lastItem == null ? null : lastItem.getObjectId("__id");
-
-            return Traversers.traverseIterable(chunk);
+            return delegate
+                    .map(item -> {
+                        lastKey = item.getObjectId("_id");
+                        return mapItemFn.apply(item);
+                    });
         }
 
         @Override
@@ -348,11 +343,6 @@ public class ReadMongoP<I> extends AbstractProcessor {
         @Override
         public void restore(Object value) {
             lastKey = (ObjectId) value;
-        }
-
-        @Override
-        public void close() {
-
         }
     }
 
@@ -434,8 +424,9 @@ public class ReadMongoP<I> extends AbstractProcessor {
             boolean eagerEnd = false;
             try {
                 while (count < BATCH_SIZE && !eagerEnd) {
-                    ChangeStreamDocument<Document> doc;
-                    doc = cursor.tryNext();
+                    // note: do not use `hasNext` and `next` - those methods blocks for new elements
+                    // and we don't want to block
+                    ChangeStreamDocument<Document> doc = cursor.tryNext();
                     if (doc != null) {
                         chunk.add(doc);
                         count++;
@@ -477,6 +468,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
                 cursor.close();
                 cursor = null;
             }
+            super.close();
         }
     }
 }

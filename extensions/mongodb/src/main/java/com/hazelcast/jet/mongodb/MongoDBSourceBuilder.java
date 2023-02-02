@@ -19,9 +19,11 @@ package com.hazelcast.jet.mongodb;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.mongodb.impl.ReadMongoP;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
+import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
@@ -36,8 +38,8 @@ import java.util.List;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static com.hazelcast.jet.mongodb.Mappers.streamToClass;
-import static com.hazelcast.jet.mongodb.Mappers.toClass;
+import static com.hazelcast.jet.mongodb.impl.Mappers.streamToClass;
+import static com.hazelcast.jet.mongodb.impl.Mappers.toClass;
 
 /**
  * Top-level class for MongoDB custom source builders.
@@ -51,6 +53,7 @@ import static com.hazelcast.jet.mongodb.Mappers.toClass;
  * @since 5.3
  *
  */
+@Beta
 public final class MongoDBSourceBuilder {
 
     private MongoDBSourceBuilder() {
@@ -108,9 +111,6 @@ public final class MongoDBSourceBuilder {
         protected String databaseName;
         protected String collectionName;
         protected final List<Bson> aggregates = new ArrayList<>();
-
-        private Base() {
-        }
 
         @Nonnull
         public Base<T> database(String database) {
@@ -272,7 +272,7 @@ public final class MongoDBSourceBuilder {
          *
          * This function is an equivalent for calling:
          * <pre>{@code
-         * import static com.hazelcast.jet.mongodb.Mappers.toClass;
+         * import static com.hazelcast.jet.mongodb.impl.Mappers.toClass;
          *
          *  MongoDBSourceBuilder.stream(name, supplier)
          *      .collection("myCollection")
@@ -417,7 +417,7 @@ public final class MongoDBSourceBuilder {
          *
          * This function is an equivalent for calling:
          * <pre>{@code
-         * import static com.hazelcast.jet.mongodb.Mappers.toClass;
+         * import static com.hazelcast.jet.mongodb.impl.Mappers.toClass;
          *
          *  MongoDBSourceBuilder.stream(name, supplier)
          *      .collection("myCollection")
