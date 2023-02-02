@@ -18,6 +18,7 @@ package com.hazelcast.jet;
 
 import javax.annotation.Nonnull;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -48,7 +49,7 @@ public class SubmitJobParameters {
     /**
      * Parameters to be used for the job
      */
-    private List<String> jobParameters;
+    private List<String> jobParameters = Collections.emptyList();
 
     @Nonnull
     public Path getJarPath() {
