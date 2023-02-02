@@ -357,6 +357,27 @@ SqlDrop SqlDropMapping(Span span, boolean replace) :
 }
 
 /**
+ * Parses DROP DATA STORE statement.
+ */
+SqlDrop SqlDropDataStore(Span span, boolean replace) :
+{
+    SqlParserPos pos = span.pos();
+
+    SqlIdentifier name;
+    boolean ifExists = false;
+}
+{
+    <DATA> <STORE>
+    [
+        <IF> <EXISTS> { ifExists = true; }
+    ]
+    name = CompoundIdentifier()
+    {
+        return new SqlDropDataStore(name, ifExists, pos.plus(getPos()));
+    }
+}
+
+/**
  * Parses DROP TYPE statement.
  */
 SqlDrop SqlDropType(Span span, boolean replace) :

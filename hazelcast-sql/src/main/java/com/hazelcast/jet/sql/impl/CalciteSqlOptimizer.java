@@ -135,7 +135,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
-import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateConnectionPlan;
+import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataStorePlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.DropIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.ExplainStatementPlan;
@@ -351,7 +351,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private SqlPlan toCreateConnectionPlan(PlanKey planKey, SqlCreateDataStore sqlCreateConnection) {
-        return new CreateConnectionPlan(
+        return new CreateDataStorePlan(
                 planKey,
                 sqlCreateConnection.getReplace(),
                 sqlCreateConnection.ifNotExists,

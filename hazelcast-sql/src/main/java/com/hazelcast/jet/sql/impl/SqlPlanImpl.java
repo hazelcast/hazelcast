@@ -196,7 +196,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
     }
 
-    static class CreateConnectionPlan extends SqlPlanImpl {
+    static class CreateDataStorePlan extends SqlPlanImpl {
         private final boolean replace;
         private final boolean ifNotExists;
         private final String name;
@@ -204,7 +204,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final Map<String, String> options;
         private final PlanExecutor planExecutor;
 
-        CreateConnectionPlan(
+        CreateDataStorePlan(
                 PlanKey planKey,
                 boolean replace,
                 boolean ifNotExists,
@@ -257,6 +257,54 @@ abstract class SqlPlanImpl extends SqlPlan {
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             SqlPlanImpl.ensureNoArguments("CREATE DATA STORE", arguments);
             SqlPlanImpl.ensureNoTimeout("CREATE DATA STORE", timeout);
+            return planExecutor.execute(this);
+        }
+    }
+
+    static class DropDataStorePlan extends SqlPlanImpl {
+        private final String name;
+        private final boolean ifExists;
+        private final PlanExecutor planExecutor;
+
+        DropDataStorePlan(
+                PlanKey planKey,
+                String name,
+                boolean ifExists,
+                PlanExecutor planExecutor
+        ) {
+            super(planKey);
+
+            this.name = name;
+            this.ifExists = ifExists;
+            this.planExecutor = planExecutor;
+        }
+
+        String name() {
+            return name;
+        }
+
+        boolean ifExists() {
+            return ifExists;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            context.checkPermission(new SqlPermission(name, ACTION_DESTROY));
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            SqlPlanImpl.ensureNoTimeout("DROP DATA STORE", timeout);
             return planExecutor.execute(this);
         }
     }

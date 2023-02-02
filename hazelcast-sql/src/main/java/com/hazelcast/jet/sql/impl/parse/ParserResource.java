@@ -49,6 +49,9 @@ public interface ParserResource {
     @BaseMessage("Mapping does not exist: {0}")
     ExInst<SqlValidatorException> droppedMappingDoesNotExist(String mappingName);
 
+    @BaseMessage("Data Store does not exist: {0}")
+    ExInst<SqlValidatorException> droppedDataStoreDoesNotExist(String dataStoreName);
+
     @BaseMessage("Index does not exist: {0}")
     ExInst<SqlValidatorException> droppedIndexDoesNotExist(String indexName);
 

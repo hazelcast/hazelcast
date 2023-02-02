@@ -20,6 +20,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateDataStore;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
+import com.hazelcast.jet.sql.impl.parse.SqlDropDataStore;
 import com.hazelcast.jet.sql.impl.parse.SqlDropView;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
@@ -140,9 +141,15 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             return topNode;
         }
 
-        if (topNode instanceof SqlShowStatement || topNode instanceof SqlCreateDataStore) {
+        // CREATE or DROP DATA STORE
+        if (topNode instanceof SqlCreateDataStore || topNode instanceof SqlDropDataStore) {
             return topNode;
         }
+
+        if (topNode instanceof SqlShowStatement) {
+            return topNode;
+        }
+
 
         if (topNode instanceof SqlExplainStatement) {
             /*

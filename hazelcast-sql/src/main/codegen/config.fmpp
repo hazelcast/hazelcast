@@ -31,6 +31,7 @@ data: {
       "com.hazelcast.jet.sql.impl.parse.SqlCreateType"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateView"
       "com.hazelcast.jet.sql.impl.parse.SqlDataType"
+      "com.hazelcast.jet.sql.impl.parse.SqlDropDataStore"
       "com.hazelcast.jet.sql.impl.parse.SqlDropIndex"
       "com.hazelcast.jet.sql.impl.parse.SqlDropJob"
       "com.hazelcast.jet.sql.impl.parse.SqlDropMapping"
@@ -475,6 +476,7 @@ data: {
     # Each must accept arguments "(SqlParserPos pos)".
     # Example: "SqlDropSchema".
     dropStatementParserMethods: [
+      "SqlDropDataStore"
       "SqlDropIndex"
       "SqlDropJob"
       "SqlDropMapping"

@@ -33,4 +33,10 @@ public class SqlDataStoreStatementTest extends SqlTestSupport {
         assertThatThrownBy(() -> instance().getSql().execute("CREATE DATA STORE a TYPE Kafka OPTIONS ()"))
                 .hasMessageContaining("CREATE DATA STORE is not implemented yet");
     }
+
+    @Test
+    public void when_dropDataStore_then_notImplemented() {
+        assertThatThrownBy(() -> instance().getSql().execute("DROP DATA STORE a"))
+                .hasMessageContaining("CREATE DATA STORE is not implemented yet");
+    }
 }
