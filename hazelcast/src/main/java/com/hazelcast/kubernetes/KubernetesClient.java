@@ -723,9 +723,12 @@ class KubernetesClient {
         int idleCount;
 
         private final String stsUrlString;
+        private final BackoffIdleStrategy backoffIdleStrategy;
 
         StsMonitor() {
             stsUrlString = formatStsListUrl();
+            backoffIdleStrategy = new BackoffIdleStrategy(3, MAX_YIELDS,
+                    MILLISECONDS.toNanos(1), SECONDS.toNanos(MAX_PARK_PERIOD_SECONDS));
         }
 
         /**
@@ -738,8 +741,6 @@ class KubernetesClient {
          */
         @Override
         public void run() {
-            BackoffIdleStrategy backoffIdleStrategy = new BackoffIdleStrategy(3, MAX_YIELDS,
-                    MILLISECONDS.toNanos(1), SECONDS.toNanos(MAX_PARK_PERIOD_SECONDS));
             RestClient.WatchResponse watchResponse;
             String message;
 
@@ -755,7 +756,8 @@ class KubernetesClient {
                     updateTracker(previous, latestRuntimeContext);
                     watchResponse = sendWatchRequest();
                 } catch (RestClientException e) {
-                    handleFailure(backoffIdleStrategy, e);
+                    handleFailure(e);
+                    // always retry after a RestClientException
                     continue;
                 }
                 // reset backoff-idle count
@@ -775,17 +777,17 @@ class KubernetesClient {
             }
         }
 
-        private void handleFailure(BackoffIdleStrategy backoffIdleStrategy, RestClientException e) {
+        private void handleFailure(RestClientException e) {
             if (e.getHttpErrorCode() == HTTP_GONE) {
                 // occurs when the resource version we are watching for is stale
-                LOGGER.info("Statefulset watcher has fallen behind, re-reading sts list and resuming watch: "
+                LOGGER.info("StatefulSet watcher has fallen behind, re-reading sts list and resuming watch: "
                         + e.getMessage());
             } else {
                 // watch failed with another HTTP error code, let's log at WARNING level,
                 // backoff and try to resume again
-                LOGGER.warning("Error while attempting to watch kubernetes API for statefulsets: "
+                LOGGER.warning("Error while attempting to watch kubernetes API for StatefulSets: "
                         + e.getHttpErrorCode() + " " + e.getMessage() + ". Backing off (n: " + idleCount
-                        + " ) before ");
+                        + " ) before retrying.");
                 backoffIdleStrategy.idle(idleCount);
                 idleCount++;
             }
