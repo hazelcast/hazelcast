@@ -201,7 +201,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
     public void testStreamOneCollection() {
         IList<Object> list = instance().getList(testName.getMethodName());
         String connectionString = mongoContainer.getConnectionString();
-        Stream<?> sourceBuilder = MongoDBSourceBuilder.stream(SOURCE_NAME, () -> mongoClient(connectionString))
+        Stream<?> sourceBuilder = MongoDBSources.stream(SOURCE_NAME, () -> mongoClient(connectionString))
                                                       .database(defaultDatabase())
                                                       .collection(testName.getMethodName(), Document.class);
         sourceBuilder = streamFilters(sourceBuilder);
