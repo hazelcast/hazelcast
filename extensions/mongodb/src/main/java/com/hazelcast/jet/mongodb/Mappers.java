@@ -30,7 +30,7 @@ import static com.mongodb.MongoClientSettings.getDefaultCodecRegistry;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
-final class Mappers {
+public final class Mappers {
 
     private static final Mappers INSTANCE = new Mappers();
     private final CodecRegistry pojoCodecRegistry;

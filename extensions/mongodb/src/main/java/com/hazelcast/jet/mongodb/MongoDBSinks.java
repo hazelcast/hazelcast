@@ -18,6 +18,7 @@ package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.pipeline.Sink;
+import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
@@ -30,6 +31,7 @@ import javax.annotation.Nonnull;
  *
  * @since 5.3
  */
+@Beta
 public final class MongoDBSinks {
 
     private MongoDBSinks() {
@@ -48,6 +50,23 @@ public final class MongoDBSinks {
      * All writes are by default done with non-standard {@linkplain Mappers#defaultCodecRegistry() codec registry},
      * to allow out-of-the-box POJO support.
      *
+     * Example usage:
+     * <pre>{@code
+     * Sink<Document> mongoSink =
+     *         MongoDBSinks.builder(
+     *                     "stream-sink",
+     *                     Document.class,
+     *                     () -> MongoClients.create("mongodb://127.0.0.1:27017")
+     *                 )
+     *                 .into("myDatabase", "myCollection")
+     *                 .identifyDocumentBy("_id", doc -> doc.get("_id"))
+     *                 .build()
+     *         );
+     *
+     * Pipeline p = Pipeline.create();
+     * (...)
+     * someStage.writeTo(mongoSink);
+     * }</pre>
      * @since 5.3
      *
      * @param name               name of the sink
@@ -55,6 +74,7 @@ public final class MongoDBSinks {
      * @param itemClass          type of document that will be saved
      * @param <T>                type of the items the sink accepts
      */
+    @Beta
     public static <T> MongoDBSinkBuilder<T> builder(
             @Nonnull String name,
             @Nonnull Class<T> itemClass,
@@ -67,8 +87,29 @@ public final class MongoDBSinks {
     /**
      * Convenience for {@link #builder}.
      *
+     * Example usage:
+     * <pre>{@code
+     * Sink<Document> mongoSink =
+     *         MongoDBSinks.builder(
+     *                 "mongoSink",
+     *                 "mongodb://127.0.0.1:27017",
+     *                 "myDatabase",
+     *                 "myCollection"
+     *         );
+     *
+     * Pipeline p = Pipeline.create();
+     * (...)
+     * someStage.writeTo(mongoSink);
+     * }</pre>
+     *
      * @since 5.3
+     *
+     * @param name name of this sink
+     * @param connectionString connection string to MongoDB instance
+     * @param database database to which the documents will be put into
+     * @param collection collection to which the documents will be put into
      */
+    @Beta
     public static Sink<Document> mongodb(
             @Nonnull String name,
             @Nonnull String connectionString,

@@ -19,6 +19,7 @@ package com.hazelcast.jet.mongodb;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.mongodb.impl.ReadMongoP;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
@@ -108,9 +109,6 @@ public final class MongoDBSourceBuilder {
         protected String databaseName;
         protected String collectionName;
         protected final List<Bson> aggregates = new ArrayList<>();
-
-        private Base() {
-        }
 
         @Nonnull
         public Base<T> database(String database) {

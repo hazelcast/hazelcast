@@ -23,6 +23,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.SinkBuilder;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -211,7 +212,7 @@ public final class MongoDBSinkBuilder<T> {
      * supplied to this builder.
      */
     @Nonnull
-    public Sink<T> build() {
+        public Sink<T> build() {
         checkNotNull(clientSupplier, "clientSupplier must be set");
         checkNotNull(documentIdentityFn, "documentIdentityFn must be set");
         checkNotNull(commitRetryStrategy, "commitRetryStrategy must be set");

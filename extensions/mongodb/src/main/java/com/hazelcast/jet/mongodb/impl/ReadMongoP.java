@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.mongodb;
+package com.hazelcast.jet.mongodb.impl;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
@@ -24,6 +24,7 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.jet.mongodb.MongoDbConnection;
 import com.hazelcast.logging.ILogger;
 import com.mongodb.MongoException;
 import com.mongodb.MongoServerException;

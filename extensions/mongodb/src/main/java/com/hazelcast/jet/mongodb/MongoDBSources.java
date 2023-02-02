@@ -21,6 +21,7 @@ import com.hazelcast.jet.mongodb.MongoDBSourceBuilder.Batch;
 import com.hazelcast.jet.mongodb.MongoDBSourceBuilder.Stream;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.StreamSource;
+import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
@@ -63,37 +64,12 @@ public final class MongoDBSources {
      * @param clientSupplier a function that creates MongoDB client.
      * @return Batch Mongo source builder
      */
+    @Beta
+    @Nonnull
     public static MongoDBSourceBuilder.Batch<Document> batch(
             @Nonnull String name,
             @Nonnull SupplierEx<? extends MongoClient> clientSupplier) {
         return MongoDBSourceBuilder.batch(name, clientSupplier);
-    }
-
-    /**
-     * Creates as builder for new stream mongo source. Equivalent to calling {@link MongoDBSourceBuilder#stream}.
-     *
-     * Example usage:
-     * <pre>{@code
-     * StreamSource<Document> streamSource =
-     *         MongoDBSources.stream("batch-source", () -> MongoClients.create("mongodb://127.0.0.1:27017"))
-     *                 .into("myDatabase", "myCollection")
-     *                 .filter(new Document("age", new Document("$gt", 10)),
-     *                 .projection(new Document("age", 1))
-     *         );
-     * Pipeline p = Pipeline.create();
-     * StreamStage<Document> srcStage = p.readFrom(streamSource);
-     * }</pre>
-     *
-     * @since 5.3
-     *
-     * @param name descriptive name for the source (diagnostic purposes) client.
-     * @param clientSupplier a function that creates MongoDB client.
-     * @return Stream Mongo source builder
-     */
-    public static MongoDBSourceBuilder.Stream<Document> stream(
-            @Nonnull String name,
-            @Nonnull SupplierEx<? extends MongoClient> clientSupplier) {
-        return MongoDBSourceBuilder.stream(name, clientSupplier);
     }
 
     /**
@@ -131,6 +107,7 @@ public final class MongoDBSources {
      * @param filter           filter object as a {@link Document}
      * @param projection       projection object as a {@link Document}
      */
+    @Beta
     @Nonnull
     public static BatchSource<Document> batch(
             @Nonnull String name,
@@ -151,6 +128,35 @@ public final class MongoDBSources {
             builder.filter(filter);
         }
         return builder.build();
+    }
+
+    /**
+     * Creates as builder for new stream mongo source. Equivalent to calling {@link MongoDBSourceBuilder#stream}.
+     *
+     * Example usage:
+     * <pre>{@code
+     * StreamSource<Document> streamSource =
+     *         MongoDBSources.stream("batch-source", () -> MongoClients.create("mongodb://127.0.0.1:27017"))
+     *                 .into("myDatabase", "myCollection")
+     *                 .filter(new Document("age", new Document("$gt", 10)),
+     *                 .projection(new Document("age", 1))
+     *         );
+     * Pipeline p = Pipeline.create();
+     * StreamStage<Document> srcStage = p.readFrom(streamSource);
+     * }</pre>
+     *
+     * @since 5.3
+     *
+     * @param name descriptive name for the source (diagnostic purposes) client.
+     * @param clientSupplier a function that creates MongoDB client.
+     * @return Stream Mongo source builder
+     */
+    @Beta
+    @Nonnull
+    public static MongoDBSourceBuilder.Stream<Document> stream(
+            @Nonnull String name,
+            @Nonnull SupplierEx<? extends MongoClient> clientSupplier) {
+        return MongoDBSourceBuilder.stream(name, clientSupplier);
     }
 
     /**
@@ -197,6 +203,7 @@ public final class MongoDBSources {
      * @param filter           filter object as a {@link Document}
      * @param projection       projection object as a {@link Document}
      */
+    @Beta
     @Nonnull
     public static StreamSource<? extends Document> stream(
             @Nonnull String name,
