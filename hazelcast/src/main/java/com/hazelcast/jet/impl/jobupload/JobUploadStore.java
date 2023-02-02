@@ -65,13 +65,15 @@ public class JobUploadStore {
      *
      * @param parameterObject specifies the first message for the job upload
      */
-    public void processJobMetaData(JobMetaDataParameterObject parameterObject) {
+    public void processJobMetaData(JobMetaDataParameterObject parameterObject) throws IOException {
         UUID sessionId = parameterObject.getSessionId();
         String message = String.format("processJobMetaData : Session : %s ", sessionId);
         logger.info(message);
 
         // Create a new JobUploadStatus object and save parameters
-        jobMap.computeIfAbsent(parameterObject.getSessionId(), key -> new JobUploadStatus(parameterObject));
+        JobUploadStatus jobUploadStatus = jobMap.computeIfAbsent(parameterObject.getSessionId(),
+                key -> new JobUploadStatus(parameterObject));
+        jobUploadStatus.createNewTemporaryFile();
 
     }
 

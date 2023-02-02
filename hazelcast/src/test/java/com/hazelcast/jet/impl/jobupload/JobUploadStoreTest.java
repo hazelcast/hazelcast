@@ -29,6 +29,7 @@ import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.security.MessageDigest;
@@ -87,7 +88,7 @@ public class JobUploadStoreTest {
     }
 
     @Test
-    public void testProcessJarMetaData() {
+    public void testProcessJarMetaData() throws IOException {
         UUID sessionID = UUID.randomUUID();
         JobMetaDataParameterObject parameterObject = new JobMetaDataParameterObject();
         parameterObject.setSessionId(sessionID);

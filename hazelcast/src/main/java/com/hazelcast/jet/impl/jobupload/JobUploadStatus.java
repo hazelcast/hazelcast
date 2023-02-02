@@ -116,11 +116,6 @@ public class JobUploadStatus {
         currentPart = parameterObject.getCurrentPartNumber();
         totalPart = parameterObject.getTotalPartNumber();
 
-        // If the first part
-        if (currentPart == 1) {
-            createNewTemporaryFile();
-        }
-
         Path jarPath = jobMetaDataParameterObject.getJarPath();
 
         // Append data to file
@@ -147,7 +142,7 @@ public class JobUploadStatus {
         return result;
     }
 
-    private void createNewTemporaryFile() throws IOException {
+    void createNewTemporaryFile() throws IOException {
         // Create a new temporary file
         Path jarPath = Files.createTempFile(jobMetaDataParameterObject.getFileName(), ".jar"); //NOSONAR
 

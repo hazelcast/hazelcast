@@ -21,11 +21,13 @@ import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -126,5 +128,30 @@ public class JetClientInstanceImplTest extends JetTestSupport {
 
         Path jarPath2 = Paths.get("foo");
         assertThrows(JetException.class, () -> jetClientInstance.getFileNameWithoutExtension(jarPath2));
+    }
+
+    @Test
+    public void validateParameterObject_NullJarPath() {
+        // Member is required to start the client
+        createHazelcastInstance();
+        JetClientInstanceImpl jetClientInstance = (JetClientInstanceImpl) createHazelcastClient().getJet();
+
+        SubmitJobParameters parameterObject = new SubmitJobParameters();
+        Assertions.assertThatThrownBy(() -> jetClientInstance.validateParameterObject(parameterObject))
+                .isInstanceOf(JetException.class)
+                .hasMessageContaining("jarPath can not be null");
+    }
+
+    @Test
+    public void validateParameterObject_NullJobParameters() {
+        // Member is required to start the client
+        createHazelcastInstance();
+        JetClientInstanceImpl jetClientInstance = (JetClientInstanceImpl) createHazelcastClient().getJet();
+
+        SubmitJobParameters parameterObject = new SubmitJobParameters();
+        parameterObject.setJarPath(Paths.get("foo.jar"));
+        Assertions.assertThatThrownBy(() -> jetClientInstance.validateParameterObject(parameterObject))
+                .isInstanceOf(JetException.class)
+                .hasMessageContaining("jobParameters can not be null");
     }
 }

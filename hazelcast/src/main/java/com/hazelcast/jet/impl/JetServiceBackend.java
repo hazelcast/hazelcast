@@ -399,27 +399,49 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
 
     /**
      * Store the metadata about the job jar that is uploaded from client side
+     *
      * @param parameterObject contains all the metadata about the upload operation
      */
     public void storeJobMetaData(JobMetaDataParameterObject parameterObject) {
         checkResourceUploadEnabled();
-        jobUploadStore.processJobMetaData(parameterObject);
+        try {
+            // Delegate processing to store
+            jobUploadStore.processJobMetaData(parameterObject);
+        } catch (Exception exception) {
+            // Upon exception, remove from the store
+            jobUploadStore.remove(parameterObject.getSessionId());
+            // Only throw a JetException
+            wrapWithJetException(exception);
+        }
     }
 
     /**
      * Store a part of job jar that is uploaded
+     *
      * @param parameterObject contains all the metadata about the upload operation
      * @return the parameter object if upload is complete, null if upload is incomplete and more parts are expected,
      */
     public JobMetaDataParameterObject storeJobMultiPart(JobMultiPartParameterObject parameterObject) {
         JobMetaDataParameterObject result = null;
         try {
+            // Delegate processing to store
             result = jobUploadStore.processJobMultipart(parameterObject);
         } catch (Exception exception) {
+            // Upon exception, remove from the store
             jobUploadStore.remove(parameterObject.getSessionId());
-            sneakyThrow(exception);
+            // Only throw a JetException
+            wrapWithJetException(exception);
         }
         return result;
+    }
+
+    private void wrapWithJetException(Exception exception) {
+        // If exception is not JetException e.g. IOException, FileSystemException etc, wrap it with JetException
+        if (!(exception instanceof JetException)) {
+            ExceptionUtil.rethrow(exception);
+        } else {
+            sneakyThrow(exception);
+        }
     }
 
     private void checkResourceUploadEnabled() {

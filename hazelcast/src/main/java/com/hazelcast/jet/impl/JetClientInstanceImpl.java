@@ -147,9 +147,10 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
     @Override
     public void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
-
         try {
             UUID sessionId = UuidUtil.newSecureUUID();
+
+            validateParameterObject(submitJobParameters);
 
             Path jarPath = submitJobParameters.getJarPath();
             // Calculate some parameters for JobMetadata
@@ -170,7 +171,21 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         }
     }
 
-    protected String getFileNameWithoutExtension(Path jarPath) {
+    // Validate the parameters used by the client
+    protected void validateParameterObject(SubmitJobParameters parameterObject) {
+        // Check that parameter is not null, because it is used to access the file
+        if (parameterObject.getJarPath() == null) {
+            throw new JetException("jarPath can not be null");
+        }
+
+        // Check that parameter is not null, because it is used by the JetUploadJobMetaDataCodec
+        if (parameterObject.getJobParameters() == null) {
+            throw new JetException("jobParameters can not be null");
+        }
+    }
+
+    // This method is public for testing purposes.
+    public String getFileNameWithoutExtension(Path jarPath) {
         String fileName = jarPath.getFileName().toString();
         if (!fileName.endsWith(".jar")) {
             throw new JetException("File name extension should be .jar");
@@ -181,7 +196,6 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
     private boolean sendJobMetaData(UUID sessionId, String fileNameWithoutExtension, String sha256Hex,
                                     SubmitJobParameters submitJobParameters) {
-
         ClientMessage jobMetaDataRequest = JetUploadJobMetaDataCodec.encodeRequest(sessionId,
                 fileNameWithoutExtension, sha256Hex,
                 submitJobParameters.getSnapshotName(),
