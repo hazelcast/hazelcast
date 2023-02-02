@@ -77,7 +77,7 @@
         <maven.jacoco.plugin.version>0.8.8</maven.jacoco.plugin.version>
         <maven.failsafe.plugin.version>${maven.surefire.plugin.version}</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
-        <maven.enforcer.plugin.version>3.1.0</maven.enforcer.plugin.version>
+        <maven.enforcer.plugin.version>3.2.1</maven.enforcer.plugin.version>
         <maven.os.plugin.version>1.7.1</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
         <maven.resources.plugin.version>3.3.0</maven.resources.plugin.version>
