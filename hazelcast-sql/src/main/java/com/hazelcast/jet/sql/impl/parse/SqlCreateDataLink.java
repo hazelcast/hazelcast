@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.google.common.collect.ImmutableList;
-import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastCreateDataStoreOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastCreateDataLinkOperator;
 import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
@@ -35,25 +35,25 @@ import java.util.Map;
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
 
 /**
- * AST node representing a CREATE DATA STORE statement.
+ * AST node representing a CREATE DATA LINK statement.
  *
  * @since 5.3
  */
-public class SqlCreateDataStore extends SqlCreate {
-    public static final SqlOperator CREATE_DATA_STORE = new HazelcastCreateDataStoreOperator();
+public class SqlCreateDataLink extends SqlCreate {
+    public static final SqlOperator CREATE_DATA_LINK = new HazelcastCreateDataLinkOperator();
 
     private final SqlIdentifier name;
     private final SqlIdentifier type;
     private final SqlNodeList options;
 
-    public SqlCreateDataStore(
+    public SqlCreateDataLink(
             SqlParserPos pos,
             boolean replace,
             boolean ifNotExists,
             SqlIdentifier name,
             SqlIdentifier type,
             SqlNodeList options) {
-        super(CREATE_DATA_STORE, pos, replace, ifNotExists);
+        super(CREATE_DATA_LINK, pos, replace, ifNotExists);
         this.name = name;
         this.type = type;
         this.options = options;
@@ -84,7 +84,7 @@ public class SqlCreateDataStore extends SqlCreate {
 
     @Override
     public SqlOperator getOperator() {
-        return CREATE_DATA_STORE;
+        return CREATE_DATA_LINK;
     }
 
     @Override
@@ -94,7 +94,7 @@ public class SqlCreateDataStore extends SqlCreate {
         } else {
             writer.keyword("CREATE");
         }
-        writer.keyword("DATA STORE");
+        writer.keyword("DATA LINK");
 
         if (ifNotExists) {
             writer.keyword("IF NOT EXISTS");

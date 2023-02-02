@@ -23,13 +23,13 @@ import org.apache.calcite.sql.SqlKind;
 /**
  * Hazelcast implementation of EXPLAIN operator.
  */
-public class HazelcastCreateDataStoreOperator extends HazelcastSpecialOperator {
-    public HazelcastCreateDataStoreOperator() {
-        super("CREATE DATA STORE", SqlKind.OTHER_FUNCTION);
+public class HazelcastCreateDataLinkOperator extends HazelcastSpecialOperator {
+    public HazelcastCreateDataLinkOperator() {
+        super("CREATE DATA LINK", SqlKind.OTHER_FUNCTION);
     }
 
     @Override
     protected boolean checkOperandTypes(HazelcastCallBinding callBinding, boolean throwOnFailure) {
-        throw new UnsupportedOperationException("Never called for CREATE DATA STORE.");
+        throw new UnsupportedOperationException("Never called for CREATE DATA LINK.");
     }
 }

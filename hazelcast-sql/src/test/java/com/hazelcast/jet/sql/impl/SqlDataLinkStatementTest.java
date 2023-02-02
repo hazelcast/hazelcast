@@ -22,21 +22,21 @@ import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class SqlDataStoreStatementTest extends SqlTestSupport {
+public class SqlDataLinkStatementTest extends SqlTestSupport {
     @BeforeClass
     public static void beforeClass() throws Exception {
         initialize(1, null);
     }
 
     @Test
-    public void when_createDataStore_then_notImplemented() {
-        assertThatThrownBy(() -> instance().getSql().execute("CREATE DATA STORE a TYPE Kafka OPTIONS ()"))
-                .hasMessageContaining("CREATE DATA STORE is not implemented yet");
+    public void when_createDataLink_then_notImplemented() {
+        assertThatThrownBy(() -> instance().getSql().execute("CREATE DATA LINK a TYPE Kafka OPTIONS ()"))
+                .hasMessageContaining("CREATE DATA LINK is not implemented yet");
     }
 
     @Test
-    public void when_dropDataStore_then_notImplemented() {
-        assertThatThrownBy(() -> instance().getSql().execute("DROP DATA STORE a"))
-                .hasMessageContaining("CREATE DATA STORE is not implemented yet");
+    public void when_dropDataLink_then_notImplemented() {
+        assertThatThrownBy(() -> instance().getSql().execute("DROP DATA LINK a"))
+                .hasMessageContaining("DROP DATA LINK is not implemented yet");
     }
 }

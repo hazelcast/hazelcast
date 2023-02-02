@@ -59,9 +59,9 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
 }
 
 /**
- * Parses CREATE DATA STORE statement.
+ * Parses CREATE DATA LINK statement.
  */
-SqlCreate SqlCreateDataStore(Span span, boolean replace) :
+SqlCreate SqlCreateDataLink(Span span, boolean replace) :
 {
     SqlParserPos startPos = span.pos();
     boolean ifNotExists = false;
@@ -70,7 +70,7 @@ SqlCreate SqlCreateDataStore(Span span, boolean replace) :
     SqlNodeList sqlOptions;
 }
 {
-    <DATA> <STORE>
+    <DATA> <LINK>
     [
         <IF> <NOT> <EXISTS> { ifNotExists = true; }
     ]
@@ -82,7 +82,7 @@ SqlCreate SqlCreateDataStore(Span span, boolean replace) :
     <OPTIONS>
     sqlOptions = SqlOptions()
     {
-        return new SqlCreateDataStore(
+        return new SqlCreateDataLink(
             startPos.plus(getPos()),
             replace,
             ifNotExists,
@@ -357,9 +357,9 @@ SqlDrop SqlDropMapping(Span span, boolean replace) :
 }
 
 /**
- * Parses DROP DATA STORE statement.
+ * Parses DROP DATA LINK statement.
  */
-SqlDrop SqlDropDataStore(Span span, boolean replace) :
+SqlDrop SqlDropDataLink(Span span, boolean replace) :
 {
     SqlParserPos pos = span.pos();
 
@@ -367,13 +367,13 @@ SqlDrop SqlDropDataStore(Span span, boolean replace) :
     boolean ifExists = false;
 }
 {
-    <DATA> <STORE>
+    <DATA> <LINK>
     [
         <IF> <EXISTS> { ifExists = true; }
     ]
     name = CompoundIdentifier()
     {
-        return new SqlDropDataStore(name, ifExists, pos.plus(getPos()));
+        return new SqlDropDataLink(name, ifExists, pos.plus(getPos()));
     }
 }
 

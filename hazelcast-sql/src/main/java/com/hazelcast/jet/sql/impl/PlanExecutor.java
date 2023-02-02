@@ -37,7 +37,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateSnapshotPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateTypePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateViewPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
-import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropDataStorePlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropDataLinkPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropSnapshotPlan;
@@ -106,7 +106,7 @@ import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.impl.util.Util.getSerializationService;
-import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataStorePlan;
+import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataLinkPlan;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
@@ -145,15 +145,15 @@ public class PlanExecutor {
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
-    SqlResult execute(CreateDataStorePlan plan) {
+    SqlResult execute(CreateDataLinkPlan plan) {
         // TODO: implement after backend readiness.
-        throw new UnsupportedOperationException("CREATE DATA STORE is not implemented yet");
+        throw new UnsupportedOperationException("CREATE DATA LINK is not implemented yet");
 //        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
-    SqlResult execute(DropDataStorePlan plan) {
+    SqlResult execute(DropDataLinkPlan plan) {
         // TODO: implement after backend readiness.
-        throw new UnsupportedOperationException("DROP DATA STORE is not implemented yet");
+        throw new UnsupportedOperationException("DROP DATA LINK is not implemented yet");
     }
 
     SqlResult execute(CreateIndexPlan plan) {

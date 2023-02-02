@@ -196,7 +196,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
     }
 
-    static class CreateDataStorePlan extends SqlPlanImpl {
+    static class CreateDataLinkPlan extends SqlPlanImpl {
         private final boolean replace;
         private final boolean ifNotExists;
         private final String name;
@@ -204,7 +204,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final Map<String, String> options;
         private final PlanExecutor planExecutor;
 
-        CreateDataStorePlan(
+        CreateDataLinkPlan(
                 PlanKey planKey,
                 boolean replace,
                 boolean ifNotExists,
@@ -255,18 +255,18 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            SqlPlanImpl.ensureNoArguments("CREATE DATA STORE", arguments);
-            SqlPlanImpl.ensureNoTimeout("CREATE DATA STORE", timeout);
+            SqlPlanImpl.ensureNoArguments("CREATE DATA LINK", arguments);
+            SqlPlanImpl.ensureNoTimeout("CREATE DATA LINK", timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class DropDataStorePlan extends SqlPlanImpl {
+    static class DropDataLinkPlan extends SqlPlanImpl {
         private final String name;
         private final boolean ifExists;
         private final PlanExecutor planExecutor;
 
-        DropDataStorePlan(
+        DropDataLinkPlan(
                 PlanKey planKey,
                 String name,
                 boolean ifExists,
@@ -304,7 +304,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            SqlPlanImpl.ensureNoTimeout("DROP DATA STORE", timeout);
+            SqlPlanImpl.ensureNoTimeout("DROP DATA LINK", timeout);
             return planExecutor.execute(this);
         }
     }

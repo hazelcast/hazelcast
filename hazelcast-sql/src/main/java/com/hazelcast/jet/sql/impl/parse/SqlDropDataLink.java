@@ -35,19 +35,19 @@ import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
 import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.isCatalogObjectNameValid;
 import static java.util.Objects.requireNonNull;
 
-public class SqlDropDataStore extends SqlDrop {
+public class SqlDropDataLink extends SqlDrop {
 
-    private static final SqlSpecialOperator OPERATOR =
-            new SqlSpecialOperator("DROP DATA STORE", SqlKind.OTHER_FUNCTION);
+    public static final SqlSpecialOperator DROP_DATA_LINK =
+            new SqlSpecialOperator("DROP DATA LINK", SqlKind.OTHER_FUNCTION);
 
     private final SqlIdentifier name;
 
-    public SqlDropDataStore(
+    public SqlDropDataLink(
             SqlIdentifier name,
             boolean ifExists,
             SqlParserPos pos
     ) {
-        super(OPERATOR, pos, ifExists);
+        super(DROP_DATA_LINK, pos, ifExists);
 
         this.name = requireNonNull(name, "Name should not be null");
     }
@@ -63,7 +63,7 @@ public class SqlDropDataStore extends SqlDrop {
     @Nonnull
     @Override
     public SqlOperator getOperator() {
-        return OPERATOR;
+        return DROP_DATA_LINK;
     }
 
     @Nonnull
@@ -74,7 +74,7 @@ public class SqlDropDataStore extends SqlDrop {
 
     @Override
     public void unparse(SqlWriter writer, int leftPrec, int rightPrec) {
-        writer.keyword("DROP DATA STORE");
+        writer.keyword("DROP DATA LINK");
         if (ifExists) {
             writer.keyword("IF EXISTS");
         }
@@ -84,7 +84,7 @@ public class SqlDropDataStore extends SqlDrop {
     @Override
     public void validate(SqlValidator validator, SqlValidatorScope scope) {
         if (!isCatalogObjectNameValid(name)) {
-            throw validator.newValidationError(name, RESOURCE.droppedDataStoreDoesNotExist(name.toString()));
+            throw validator.newValidationError(name, RESOURCE.droppedDataLinkDoesNotExist(name.toString()));
         }
     }
 }
