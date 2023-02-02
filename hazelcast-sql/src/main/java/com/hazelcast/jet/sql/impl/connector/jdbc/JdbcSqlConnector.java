@@ -374,8 +374,8 @@ public class JdbcSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public Vertex sinkProcessor(@Nonnull DAG dag, @Nonnull Table table) {
-        JdbcTable jdbcTable = (JdbcTable) table;
+    public Vertex sinkProcessor(@Nonnull DagBuildContext context) {
+        JdbcTable jdbcTable = (JdbcTable) context.getTable();
 
         // If dialect is supported
         if (UpsertBuilder.isUpsertDialectSupported(jdbcTable)) {
@@ -383,7 +383,7 @@ public class JdbcSqlConnector implements SqlConnector {
             String upsertStatement = UpsertBuilder.getUpsertStatement(jdbcTable);
 
             // Create Vertex with the UPSERT statement
-            return dag.newUniqueVertex(
+            return context.getDag().newUniqueVertex(
                     "sinkProcessor(" + jdbcTable.getExternalName() + ")",
                     new UpsertProcessorSupplier(
                             jdbcTable.getExternalDataStoreRef(),
@@ -393,7 +393,7 @@ public class JdbcSqlConnector implements SqlConnector {
             );
         }
         // Unsupported dialect. Create Vertex with the INSERT statement
-        VertexWithInputConfig vertexWithInputConfig = insertProcessor(dag, table);
+        VertexWithInputConfig vertexWithInputConfig = insertProcessor(context);
         return vertexWithInputConfig.vertex();
     }
 
