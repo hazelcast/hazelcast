@@ -695,7 +695,7 @@ public class IndeterminateSnapshotTest {
             // but succeeds after job restart on the same coordinator.
             // Indeterminate snapshot turns out to be correct.
 
-            new SuccessfulSnapshots(Math.max(initialSnapshotsCount - 1, 0))
+            new SuccessfulSnapshots(initialSnapshotsCount)
                     .then(new IndeterminateLostPut())
                     .then(new SuccessfulSnapshots(100))
                     .start();
@@ -726,7 +726,7 @@ public class IndeterminateSnapshotTest {
 
             CompletableFuture<Void> coordinatorTerminated = new CompletableFuture<>();
 
-            new SuccessfulSnapshots(Math.max(initialSnapshotsCount - 1, 0))
+            new SuccessfulSnapshots(initialSnapshotsCount)
                     // snapshot during suspend will be indeterminate until coordinator is terminated
                     .then(new IndeterminateLostPutsUntil(coordinatorTerminated))
                     // will be restored from previous snapshot, reuse counter
@@ -782,7 +782,7 @@ public class IndeterminateSnapshotTest {
             // but succeeds after job restart on the same coordinator.
             // Indeterminate snapshot turns out to be correct.
 
-            new SuccessfulSnapshots(Math.max(initialSnapshotsCount - 1, 0))
+            new SuccessfulSnapshots(initialSnapshotsCount)
                     .then(new IndeterminateLostPut())
                     .then(new SuccessfulSnapshots(100))
                     .start();
@@ -831,7 +831,7 @@ public class IndeterminateSnapshotTest {
 
             CompletableFuture<Void> coordinatorTerminated = new CompletableFuture<>();
 
-            new SuccessfulSnapshots(Math.max(initialSnapshotsCount - 1, 0))
+            new SuccessfulSnapshots(initialSnapshotsCount)
                     // snapshot during suspend will be indeterminate until coordinator is terminated
                     .then(new IndeterminateLostPutsUntil(coordinatorTerminated))
                     .then(new SuccessfulSnapshots(100))
@@ -886,7 +886,7 @@ public class IndeterminateSnapshotTest {
             // but succeeds after job restart on the same coordinator.
             // Indeterminate snapshot turns out to be correct.
 
-            new SuccessfulSnapshots(Math.max(initialSnapshotsCount - 1, 0))
+            new SuccessfulSnapshots(initialSnapshotsCount)
                     .then(new IndeterminateLostPut())
                     .then(new SuccessfulSnapshots(100))
                     .start();
@@ -975,7 +975,13 @@ public class IndeterminateSnapshotTest {
                 if (repetitions == null || repetitions > 0) {
                     logger.info("Applying scenario step " + this);
                     if (repetitions != null) {
+                        boolean first = SnapshotInstrumentationP.allowedSnapshotsCount == 0;
                         SnapshotInstrumentationP.allowedSnapshotsCount += repetitions;
+                        if (first) {
+                            // snapshot ids start from 0
+                            // correct counter so repetitions are intuitive
+                            SnapshotInstrumentationP.allowedSnapshotsCount--;
+                        }
                     }
 
                     // init consumers to default values
@@ -1200,7 +1206,8 @@ public class IndeterminateSnapshotTest {
          */
         private int snapshotCounter;
         /**
-         * Number of normal snapshots before {@link #saveSnapshotConsumer} and other hooks are called.
+         * Id of first snapshot for which {@link #saveSnapshotConsumer} and other hooks are called.
+         * Snapshot ids are assigned starting with 0.
          */
         public static volatile int allowedSnapshotsCount = 0;
         @Nullable
