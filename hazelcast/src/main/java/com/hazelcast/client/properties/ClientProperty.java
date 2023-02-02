@@ -312,6 +312,12 @@ public final class ClientProperty {
             = new HazelcastProperty("hazelcast.client.metrics.collection.frequency", 5);
 
     /**
+     * The default size of multipart job upload
+     */
+    public static final HazelcastProperty JOB_UPLOAD_PART_SIZE
+            = new HazelcastProperty("hazelcast.jobupload.partsize", 10_000_000);
+
+    /**
      * Parametrized SQL queries touching only a single partition benefit from
      * using the partition owner as the query coordinator, if the partition
      * owner can be determined from one of the query parameters. When such a

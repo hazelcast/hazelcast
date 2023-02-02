@@ -16,8 +16,11 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
+import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -27,6 +30,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -47,15 +52,79 @@ public class JetClientInstanceImplTest extends JetTestSupport {
         // When
         List<DistributedObjectInfo> objects = client.getDistributedObjects();
 
-
         // Then
         assertFalse(objects.isEmpty());
         DistributedObjectInfo info = objects.stream()
-                                            .filter(i -> mapName.equals(i.getName()))
-                                            .findFirst()
-                                            .orElseThrow(AssertionError::new);
+                .filter(i -> mapName.equals(i.getName()))
+                .findFirst()
+                .orElseThrow(AssertionError::new);
         assertEquals(MapService.SERVICE_NAME, info.getServiceName());
     }
 
+    @Test
+    public void calculateTotalParts() {
+        long jarSize = 10_000_000;
+        int partSize = 10_000_000;
 
+        // Member is required to start the client
+        createHazelcastInstance();
+        JetClientInstanceImpl jetClientInstance = (JetClientInstanceImpl) createHazelcastClient().getJet();
+
+        int totalParts = jetClientInstance.calculateTotalParts(jarSize, partSize);
+        assertEquals(1, totalParts);
+    }
+
+    @Test
+    public void calculatePartSize_when_validProperty() {
+        // Member is required to start the client
+        createHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(ClientProperty.JOB_UPLOAD_PART_SIZE.getName(), "1000");
+
+        HazelcastInstance hazelcastClient = createHazelcastClient(clientConfig);
+        JetClientInstanceImpl jetClientInstance = (JetClientInstanceImpl) hazelcastClient.getJet();
+
+        int partSize = jetClientInstance.calculatePartBufferSize();
+        assertEquals(1_000, partSize);
+    }
+
+    @Test
+    public void calculatePartSize_when_invalidProperty() {
+        // Member is required to start the client
+        createHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(ClientProperty.JOB_UPLOAD_PART_SIZE.getName(), "E");
+        HazelcastInstance hazelcastClient = createHazelcastClient(clientConfig);
+
+        JetClientInstanceImpl jetClientInstance = (JetClientInstanceImpl) hazelcastClient.getJet();
+
+        assertThrows(NumberFormatException.class, jetClientInstance::calculatePartBufferSize);
+
+    }
+
+    @Test
+    public void fileNameWithoutExtension() {
+        // Member is required to start the client
+        createHazelcastInstance();
+
+        HazelcastInstance hazelcastClient = createHazelcastClient();
+        JetClientInstanceImpl jetClientInstance = (JetClientInstanceImpl) hazelcastClient.getJet();
+
+        String expectedFileName = "foo";
+        Path jarPath = Paths.get("/mnt/foo.jar");
+        String fileNameWithoutExtension = jetClientInstance.getFileNameWithoutExtension(jarPath);
+        assertEquals(expectedFileName, fileNameWithoutExtension);
+
+        Path jarPath1 = Paths.get("/mnt/foo");
+        assertThrows(JetException.class, () -> jetClientInstance.getFileNameWithoutExtension(jarPath1));
+
+        jarPath = Paths.get("foo.jar");
+        fileNameWithoutExtension = jetClientInstance.getFileNameWithoutExtension(jarPath);
+        assertEquals(expectedFileName, fileNameWithoutExtension);
+
+        Path jarPath2 = Paths.get("foo");
+        assertThrows(JetException.class, () -> jetClientInstance.getFileNameWithoutExtension(jarPath2));
+    }
 }
