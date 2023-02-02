@@ -90,37 +90,17 @@ public class ReadMongoP<I> extends AbstractProcessor {
     private Traverser<?> traverser;
     private Traverser<? extends Entry<BroadcastKey<Integer>, ?>> snapshotTraverser;
 
-    /**
-     * Creates a new processor with batch reader.
-     */
-    public ReadMongoP(
-            SupplierEx<? extends MongoClient> clientSupplier,
-            List<Bson> aggregates,
-            String databaseName,
-            String collectionName,
-            FunctionEx<Document, I> mapItemFn
-    ) {
-        this.reader = new BatchMongoReader(databaseName, collectionName, mapItemFn, aggregates);
-        this.connection = new MongoDbConnection(clientSupplier, client -> reader.connect(client, snapshotsEnabled));
-    }
-
-    /**
-     * Creates a new processor with streaming reader.
-     */
-    public ReadMongoP(
-            SupplierEx<? extends MongoClient> clientSupplier,
-            Long startAtTimestamp,
-            EventTimePolicy<? super I> eventTimePolicy,
-            List<Bson> aggregates,
-            String databaseName,
-            String collectionName,
-            FunctionEx<ChangeStreamDocument<Document>, I> mapStreamFn
-    ) {
-        EventTimeMapper<I> eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
-        eventTimeMapper.addPartitions(1);
-        this.reader = new StreamMongoReader(databaseName, collectionName, mapStreamFn,
-                startAtTimestamp, aggregates, eventTimeMapper);
-        this.connection = new MongoDbConnection(clientSupplier, client -> reader.connect(client, snapshotsEnabled));
+    public ReadMongoP(ReadMongoParams<I> params) {
+        if (params.isStream()) {
+            EventTimeMapper<I> eventTimeMapper = new EventTimeMapper<>(params.eventTimePolicy);
+            eventTimeMapper.addPartitions(1);
+            this.reader = new StreamMongoReader(params.databaseName, params.collectionName, params.mapStreamFn,
+                    params.startAtTimestamp, params.aggregates, eventTimeMapper);
+        } else {
+            this.reader = new BatchMongoReader(params.databaseName, params.collectionName, params.mapItemFn,
+                    params.aggregates);
+        }
+        this.connection = new MongoDbConnection(params.clientSupplier, client -> reader.connect(client, snapshotsEnabled));
     }
 
     @Override
