@@ -189,6 +189,12 @@ public class IndeterminateSnapshotTest {
             logger.info("Got selected snapshot");
         }
 
+        protected void assertSnapshotNotCommitted() {
+            assertThat(snapshotDone.getCount())
+                    .as("Snapshot must not be committed when indeterminate")
+                    .isEqualTo(NODE_COUNT * LOCAL_PARALLELISM);
+        }
+
         /**
          * @param allowedSnapshotsCount snapshot id that should be used to restore
          *                              or -1 if the job should not be restored
@@ -496,10 +502,7 @@ public class IndeterminateSnapshotTest {
             restoreNetwork();
 
             logger.info("Joining job...");
-            // TODO: in reproducer job.join() fails, after fix should not throw but complete normally
             instances[liveInstance].getJet().getJob(job.getId()).join();
-//        assertThatThrownBy(() -> instances[liveInstance].getJet().getJob(job.getId()).join())
-//                .hasMessageContainingAll("State for job", "is corrupted: it should have");
             logger.info("Joined");
 
             assertRestoredFromSnapshot(allowedSnapshotsCount - 1);
@@ -575,10 +578,7 @@ public class IndeterminateSnapshotTest {
             restoreNetwork();
 
             logger.info("Joining job...");
-            // TODO: in reproducer job.join() fails, after fix should not throw but complete normally
             instances[liveInstance].getJet().getJob(job.getId()).join();
-//        assertThatThrownBy(() -> instances[liveInstance].getJet().getJob(job.getId()).join())
-//                .hasMessageContainingAll("snapshot with ID", "is damaged. Unable to restore the state for job");
             logger.info("Joined");
 
             assertRestoredFromSnapshot(allowedSnapshotsCount - 1);
@@ -744,9 +744,7 @@ public class IndeterminateSnapshotTest {
             // wait for job restart
             logger.info("Waiting for job restart...");
             assertJobStatusEventually(job, JobStatus.STARTING);
-            assertThat(snapshotDone.getCount())
-                    .as("Snapshot must not be committed when indeterminate")
-                    .isEqualTo(NODE_COUNT * LOCAL_PARALLELISM);
+            assertSnapshotNotCommitted();
 
             // terminate coordinator
             logger.info("Terminating coordinator...");
@@ -851,15 +849,12 @@ public class IndeterminateSnapshotTest {
             // but after restart it will still be indeterminate
             assertJobStatusEventually(job, JobStatus.STARTING);
             logger.info("Suspend failed and job restarted");
-            assertThat(snapshotDone.getCount())
-                    .as("Snapshot must not be committed when indeterminate")
-                    .isEqualTo(NODE_COUNT * LOCAL_PARALLELISM);
+            assertSnapshotNotCommitted();
 
             instances[0].getLifecycleService().terminate();
             coordinatorTerminated.complete(null);
 
             job = instances[1].getJet().getJob(job.getId());
-            job.resume();
             assertJobStatusEventually(job, JobStatus.RUNNING);
 
             logger.info("Joining job...");
@@ -1038,7 +1033,7 @@ public class IndeterminateSnapshotTest {
             /**
              * Snapshot counter will be reused. Most often this is the case after restore.
              */
-            SuccessfulSnapshots reusedCounter() {
+            public SuccessfulSnapshots reusedCounter() {
                 repeat(repetitions > 1 ? repetitions - 1 : null);
                 return this;
             }
@@ -1058,12 +1053,12 @@ public class IndeterminateSnapshotTest {
             }
         }
 
-        private class SuccessfulIgnoredSnapshots extends AbstractScenarioStep {
+        protected class SuccessfulIgnoredSnapshots extends AbstractScenarioStep {
             SuccessfulIgnoredSnapshots() {
                 super();
             }
 
-            SuccessfulIgnoredSnapshots(int repetitions) {
+            public SuccessfulIgnoredSnapshots(int repetitions) {
                 this();
                 repeat(repetitions);
             }
@@ -1109,11 +1104,11 @@ public class IndeterminateSnapshotTest {
         /**
          * Lost indeterminate IMap updates until condition is satisfied
          */
-        private class IndeterminateLostPutsUntil extends AbstractScenarioStep {
+        protected class IndeterminateLostPutsUntil extends AbstractScenarioStep {
 
             private final CompletableFuture<String> registration = new CompletableFuture<>();
 
-            <T> IndeterminateLostPutsUntil(CompletableFuture<T> condition) {
+            public <T> IndeterminateLostPutsUntil(CompletableFuture<T> condition) {
                 super();
                 repeat(null);
 
