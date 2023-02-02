@@ -24,6 +24,7 @@ import com.hazelcast.jet.pipeline.StreamSource;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
+import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -216,6 +217,7 @@ public final class MongoDBSources {
         if (filter != null) {
             builder.filter(filter);
         }
+        builder.startAtOperationTime(new BsonTimestamp(System.currentTimeMillis()));
         return builder.build();
     }
 }
