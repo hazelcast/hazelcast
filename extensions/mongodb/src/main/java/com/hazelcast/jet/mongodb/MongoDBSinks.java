@@ -44,10 +44,10 @@ public final class MongoDBSinks {
      * <p>
      * The sink inserts or replaces the items it receives to specified collection using
      * {@link MongoCollection#bulkWrite}.
-     *
+     * <p>
      * All operations are done within transaction if processing guarantee
      * of the job is {@link com.hazelcast.jet.config.ProcessingGuarantee#EXACTLY_ONCE}.
-     *
+     * <p>
      * All writes are by default done with non-standard {@linkplain Mappers#defaultCodecRegistry() codec registry},
      * to allow out-of-the-box POJO support.
      *

@@ -61,7 +61,7 @@ import static java.util.Collections.emptyList;
 
 /**
  * Processor for reading from MongoDB
- *
+ * <p>
  * Reading is done by one of two readers:
  * <ul>
  * <li>batch reader, which uses {@linkplain MongoCollection#aggregate} to find matching documents.</li>
@@ -383,16 +383,15 @@ public class ReadMongoP<I> extends AbstractProcessor {
             try {
                 List<ChangeStreamDocument<Document>> chunk = readChunk();
 
-                Traverser<?> traverser = Traversers.traverseIterable(chunk)
-                                      .flatMap(doc -> {
-                                          resumeToken = doc.getResumeToken();
-                                          long eventTime = clusterTime(doc);
-                                          I item = mapFn.apply(doc);
-                                          return item == null
-                                                  ? Traversers.empty()
-                                                  : eventTimeMapper.flatMapEvent(item, 0, eventTime);
-                                      });
-                return traverser;
+                return traverseIterable(chunk)
+                        .flatMap(doc -> {
+                            resumeToken = doc.getResumeToken();
+                            long eventTime = clusterTime(doc);
+                            I item = mapFn.apply(doc);
+                            return item == null
+                                    ? Traversers.empty()
+                                    : eventTimeMapper.flatMapEvent(item, 0, eventTime);
+                        });
             } catch (MongoException e) {
                 throw new JetException("error while reading from mongodb", e);
             }

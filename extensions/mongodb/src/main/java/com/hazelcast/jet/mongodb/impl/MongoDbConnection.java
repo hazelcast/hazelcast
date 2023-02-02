@@ -33,11 +33,11 @@ import static com.hazelcast.jet.retry.IntervalFunction.exponentialBackoffWithCap
  */
 class MongoDbConnection {
     @SuppressWarnings("checkstyle:MagicNumber")
-    private static final RetryStrategy RETRY_STRATEGY = RetryStrategies.custom()
-                                                                       .intervalFunction(exponentialBackoffWithCap(100
-                                                                               , 2.0, 3000))
-                                                                       .maxAttempts(20)
-                                                                       .build();
+    private static final RetryStrategy RETRY_STRATEGY =
+            RetryStrategies.custom()
+                           .intervalFunction(exponentialBackoffWithCap(100, 2.0, 3000))
+                           .maxAttempts(20)
+                           .build();
 
     private final SupplierEx<? extends MongoClient> clientSupplier;
     private final ConsumerEx<MongoClient> afterConnection;
@@ -56,7 +56,6 @@ class MongoDbConnection {
         checkState(reconnectIfNecessary(), "should be connected");
         return mongoClient;
     }
-
 
     /**
      * @return true if there is a connection to Mongo after exiting this method
