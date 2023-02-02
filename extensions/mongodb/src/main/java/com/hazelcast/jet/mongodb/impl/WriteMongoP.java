@@ -109,9 +109,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
         this.documentType = params.documentType;
 
         ReplaceOptions options = new ReplaceOptions().upsert(true);
-        if (params.replaceOptionAdjuster != null) {
-            params.replaceOptionAdjuster.accept(options);
-        }
+        params.getReplaceOptionAdjuster().accept(options);
         this.replaceOptions = options;
         this.commitRetryStrategy = params.commitRetryStrategy;
         InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
@@ -120,7 +118,8 @@ public class WriteMongoP<I> extends AbstractProcessor {
         if (params.databaseName != null) {
             this.collectionPicker = new ConstantCollectionPicker<>(params.databaseName, params.collectionName);
         } else {
-            this.collectionPicker = new FunctionalCollectionPicker<>(params.databaseNameSelectFn, params.collectionNameSelectFn);
+            this.collectionPicker = new FunctionalCollectionPicker<>(params.databaseNameSelectFn,
+                    params.collectionNameSelectFn);
         }
     }
 

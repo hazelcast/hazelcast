@@ -16,14 +16,12 @@
 package com.hazelcast.jet.mongodb.impl;
 
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
-import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.logging.ILogger;
 import com.mongodb.MongoException;
 import com.mongodb.MongoServerException;

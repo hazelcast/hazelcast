@@ -1,3 +1,18 @@
+/*
+ * Copyright 2023 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.hazelcast.jet.mongodb.impl;
 
 import com.hazelcast.function.ConsumerEx;
@@ -5,12 +20,12 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.mongodb.TransactionOptions;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.ReplaceOptions;
 
+import javax.annotation.Nonnull;
 import java.io.Serializable;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -20,15 +35,17 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
 public class WriteMongoParams<I> implements Serializable {
-    private static final InternalSerializationService SERIALIZATION_SERVICE = new DefaultSerializationServiceBuilder().build();
+    private static final InternalSerializationService SERIALIZATION_SERVICE = new DefaultSerializationServiceBuilder()
+            .build();
 
     SupplierEx<? extends MongoClient> clientSupplier;
     String databaseName;
     String collectionName;
     Class<I> documentType;
-    FunctionEx<I, Object> documentIdentityFn;
-    ConsumerEx<ReplaceOptions> replaceOptionAdjuster = ConsumerEx.noop();
     String documentIdentityFieldName;
+    FunctionEx<I, Object> documentIdentityFn;
+    @Nonnull
+    ConsumerEx<ReplaceOptions> replaceOptionAdjuster = ConsumerEx.noop();
     RetryStrategy commitRetryStrategy;
     byte[] transactionOptions;
     FunctionEx<I, String> databaseNameSelectFn;
@@ -37,19 +54,23 @@ public class WriteMongoParams<I> implements Serializable {
     public WriteMongoParams() {
     }
 
+    @Nonnull
     public SupplierEx<? extends MongoClient> getClientSupplier() {
         return clientSupplier;
     }
 
-    public WriteMongoParams<I> setClientSupplier(SupplierEx<? extends MongoClient> clientSupplier) {
+    @Nonnull
+    public WriteMongoParams<I> setClientSupplier(@Nonnull SupplierEx<? extends MongoClient> clientSupplier) {
         this.clientSupplier = clientSupplier;
         return this;
     }
 
+    @Nonnull
     public String getDatabaseName() {
         return databaseName;
     }
 
+    @Nonnull
     public WriteMongoParams<I> setDatabaseName(String databaseName) {
         this.databaseName = databaseName;
         return this;
@@ -59,34 +80,41 @@ public class WriteMongoParams<I> implements Serializable {
         return collectionName;
     }
 
+    @Nonnull
     public WriteMongoParams<I> setCollectionName(String collectionName) {
         this.collectionName = collectionName;
         return this;
     }
 
+    @Nonnull
     public Class<I> getDocumentType() {
         return documentType;
     }
 
-    public WriteMongoParams<I> setDocumentType(Class<I> documentType) {
+    @Nonnull
+    public WriteMongoParams<I> setDocumentType(@Nonnull Class<I> documentType) {
         this.documentType = documentType;
         return this;
     }
 
+    @Nonnull
     public FunctionEx<I, Object> getDocumentIdentityFn() {
         return documentIdentityFn;
     }
 
-    public WriteMongoParams<I> setDocumentIdentityFn(FunctionEx<I, Object> documentIdentityFn) {
+    @Nonnull
+    public WriteMongoParams<I> setDocumentIdentityFn(@Nonnull FunctionEx<I, Object> documentIdentityFn) {
         this.documentIdentityFn = documentIdentityFn;
         return this;
     }
 
+    @Nonnull
     public ConsumerEx<ReplaceOptions> getReplaceOptionAdjuster() {
         return replaceOptionAdjuster;
     }
 
-    public WriteMongoParams<I> setReplaceOptionAdjuster(ConsumerEx<ReplaceOptions> replaceOptionAdjuster) {
+    @Nonnull
+    public WriteMongoParams<I> setReplaceOptionAdjuster(@Nonnull ConsumerEx<ReplaceOptions> replaceOptionAdjuster) {
         checkNonNullAndSerializable(replaceOptionAdjuster, "replaceOptionAdjuster");
         this.replaceOptionAdjuster = replaceOptionAdjuster;
         return this;
@@ -96,6 +124,7 @@ public class WriteMongoParams<I> implements Serializable {
         return documentIdentityFieldName;
     }
 
+    @Nonnull
     public WriteMongoParams<I> setDocumentIdentityFieldName(String documentIdentityFieldName) {
         this.documentIdentityFieldName = documentIdentityFieldName;
         return this;
@@ -105,6 +134,7 @@ public class WriteMongoParams<I> implements Serializable {
         return commitRetryStrategy;
     }
 
+    @Nonnull
     public WriteMongoParams<I> setCommitRetryStrategy(RetryStrategy commitRetryStrategy) {
         this.commitRetryStrategy = commitRetryStrategy;
         return this;
@@ -114,6 +144,7 @@ public class WriteMongoParams<I> implements Serializable {
         return transactionOptions;
     }
 
+    @Nonnull
     public WriteMongoParams<I> setTransactionOptions(TransactionOptions transactionOptions) {
         this.transactionOptions = SERIALIZATION_SERVICE.toBytes(transactionOptions);
         return this;
@@ -123,6 +154,7 @@ public class WriteMongoParams<I> implements Serializable {
         return databaseNameSelectFn;
     }
 
+    @Nonnull
     public WriteMongoParams<I> setDatabaseNameSelectFn(FunctionEx<I, String> databaseNameSelectFn) {
         checkSerializable(databaseNameSelectFn, "databaseNameSelectFn");
         this.databaseNameSelectFn = databaseNameSelectFn;
@@ -133,6 +165,7 @@ public class WriteMongoParams<I> implements Serializable {
         return collectionNameSelectFn;
     }
 
+    @Nonnull
     public WriteMongoParams<I> setCollectionNameSelectFn(FunctionEx<I, String> collectionNameSelectFn) {
         checkSerializable(collectionNameSelectFn, "collectionNameSelectFn");
         this.collectionNameSelectFn = collectionNameSelectFn;
