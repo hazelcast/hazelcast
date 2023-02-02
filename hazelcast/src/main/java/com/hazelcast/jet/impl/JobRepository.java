@@ -651,6 +651,10 @@ public class JobRepository {
      * Returns map name in the form {@code "_jet.snapshot.<jobId>.<dataMapIndex>"}.
      */
     public static String snapshotDataMapName(long jobId, int dataMapIndex) {
+        if (dataMapIndex < 0) {
+            throw new IllegalStateException("Negative dataMapIndex - no successful snapshot");
+        }
+
         return SNAPSHOT_DATA_MAP_PREFIX + idToString(jobId) + '.' + dataMapIndex;
     }
 

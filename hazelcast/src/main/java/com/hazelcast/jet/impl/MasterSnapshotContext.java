@@ -80,7 +80,8 @@ class MasterSnapshotContext {
     private class SnapshotRequest {
         /**
          * User-specified name of the snapshot or null, if no name is specified
-         * (regular snapshot).
+         * (regular snapshot). This name is without
+         * {@link JobRepository#EXPORTED_SNAPSHOTS_PREFIX} prefix.
          */
         final String snapshotMapName;
         /**
@@ -364,36 +365,35 @@ class MasterSnapshotContext {
                 // update snapshot state in memory after success or failure
                 stats = mc.jobExecutionRecord().ongoingSnapshotDone(
                         mergedResult.getNumBytes(), mergedResult.getNumKeys(), mergedResult.getNumChunks(),
-                        mergedResult.getError());
+                        mergedResult.getError(), requestedSnapshot.isTerminal);
 
-                if (isSuccess && !requestedSnapshot.isExport()) {
+                // There is no need to restart job in case of failed snapshot:
+                // - ongoingSnapshotId is safe in IMap, because it was written at the beginning
+                // - snapshotId was not updated
+                // - we can rollback transactions now (2nd phase) if needed, we would do it anyway after restart
+                // So regardless if JobExecutionRecord in IMap turns out be new or old,
+                // the state will be consistent.
+                //
+                // There is no need to restart job/skip phase2 in case of exported/named _non-terminal_ snapshot,
+                // because it writes to separate IMap and data in it should be safe by now.
+                // JobExecutionRecord.ongoingSnapshotDone does not update critical data in case of
+                // _non-terminal_ exported snapshots.
+                if (isSuccess && !requestedSnapshot.isExportOnly()) {
                     try {
                         // the decision moment for regular snapshots: after this the snapshot is ready to be restored from
+                        // the decision moment also for terminal exported snapshot: after this
+                        // job can be cleanly terminated without any prepared transactions in unknown state
+                        // and the snapshot can be used to safely start a new job.
                         mc.writeJobExecutionRecordSafe(false);
                         // can proceed to 2nd phase
                         skipPhase2 = false;
                     } catch (IndeterminateOperationStateException indeterminate) {
-                        // There is no need to restart job in case of failed snapshot:
-                        // - ongoingSnapshotId is safe in IMap, because it was written at the beginning
-                        // - snapshotId was not updated
-                        // - we can rollback transactions now (2nd phase) if needed, we would do it anyway after restart
-                        // So regardless if JobExecutionRecord in IMap turns out be new or old,
-                        // the state will be consistent.
-                        //
-                        // There is no need to restart job/skip phase2 in case of exported/named snapshot,
-                        // because it writes to separate IMap and data in it should be safe by now.
-                        // JobExecutionRecord.ongoingSnapshotDone does not update critical data in case of
-                        // named snapshots.
                         skipPhase2 = true;
                         logger.warning(mc.jobIdString() + " snapshot " + snapshotId +
                                 " update of JobExecutionRecord was indeterminate." +
-                                (skipPhase2 ? " Will restart or terminate job forcefully." : ""));
+                                (skipPhase2 ? " Will restart job forcefully." : ""));
                     }
                 } else {
-                    // We have to ensure that JobExecutionRecord is updated only for successful snapshots
-                    // that are written to default IMaps in order to keep track of the data in those IMaps.
-                    // Named snapshots (including terminal ones), writing to different IMaps,
-                    // cannot corrupt automatic snapshots.
                     mc.writeJobExecutionRecord(false);
                     skipPhase2 = false;
                 }
@@ -433,28 +433,26 @@ class MasterSnapshotContext {
                 mc.unlock();
             }
 
+
             if (skipPhase2) {
-                // Restart or terminate job without performing phase 2 now.
+                // Restart the job without performing phase 2 now.
                 // Commit/rollback will be performed during restore from snapshot.
                 //
-                // If this snapshot is result of termination, continue it without snapshot
+                // This snapshot could have been a terminal snapshot (suspend, cancel_graceful).
+                // In such case the job will also be restarted, so we do not keep prepared transactions
+                // in external sources and sinks in prepared state for a long time.
+                // If needed, user should repeat the operation that initiated the snapshot.
                 //
-                TerminationMode newMode;
-                if (requestedSnapshot.isTerminal) {
-                    newMode = mc.jobContext().requestedTerminationMode()
-                            .map(TerminationMode::withoutTerminalSnapshot)
-                            .orElseThrow(() -> new IllegalStateException("Terminal snapshot without termination request"));
-                } else {
-                    // Snapshot (automatic or manual) may have been queued before termination request
-                    // (which may be graceful or forceful).
-                    // In such case job fails on first snapshot and termination request is ignored.
-                    // That is because termination request may want named snapshot and we were performing automatic.
-                   newMode = TerminationMode.RESTART_FORCEFUL;
-                }
+                // This snapshot (automatic or manual) may have been queued before later termination request
+                // (which may be graceful or forceful).
+                // In such case job fails on first snapshot and termination request is ignored.
+                // That is because termination request may want named snapshot, and we could be performing automatic.
+                TerminationMode newMode = TerminationMode.RESTART_FORCEFUL;
                 logger().fine(mc.jobIdString() + ": Terminating job without performing snapshot phase 2 with mode " + newMode);
-                // we do not have mc.lock() here and requestTermination may be invoked concurrently
+                // we do not have mc.lock() here and requestTermination() may be invoked concurrently
                 // so do not use it. Instead, fail execution on members.
                 mc.jobContext().handleTermination(newMode);
+                requestedSnapshot.completeFuture(new JetException("Snapshot in unknown state"));
             } else {
                 // start the phase 2
                 Function<ExecutionPlan, Operation> factory = plan -> new SnapshotPhase2Operation(

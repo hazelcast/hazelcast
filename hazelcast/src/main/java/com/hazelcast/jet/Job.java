@@ -287,6 +287,16 @@ public interface Job {
      * If the terminal snapshot fails, Jet will suspend this job instead of
      * cancelling it.
      * <p>
+     * <strong>NOTE:</strong> if the cluster becomes unstable (a member leaves or
+     * similar) while the job is in the process of being cancelled, it may end up
+     * getting immediately restarted. Call {@link #getStatus()} to find out and
+     * possibly try to cancel again. TODO: maybe result/exception is enough?
+     * Should this restart happen, created snapshot cannot be regarded as exported
+     * snapshot. It shall be not overwritten or deleted until there is a new snapshot
+     * created, either automatic or via cancelAndExportSnapshot method, otherwise data
+     * can be lost. If cancelAndExportSnapshot is used again, ensure that there was
+     * a regular snapshot made or use different snapshot name.
+     * <p>
      * You can call this method for a suspended job, too: in that case it will
      * export the last successful snapshot and cancel the job.
      * <p>

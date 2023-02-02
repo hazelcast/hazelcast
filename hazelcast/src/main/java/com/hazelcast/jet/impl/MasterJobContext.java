@@ -99,7 +99,7 @@ import static com.hazelcast.jet.core.JobStatus.SUSPENDED_EXPORTING_SNAPSHOT;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.COORDINATOR;
-import static com.hazelcast.jet.impl.JobRepository.EXPORTED_SNAPSHOTS_PREFIX;
+import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
 import static com.hazelcast.jet.impl.SnapshotValidator.validateSnapshot;
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.RESTART;
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.SUSPEND;
@@ -145,6 +145,7 @@ public class MasterJobContext {
     private volatile long executionStartTime = System.currentTimeMillis();
     private volatile ExecutionFailureCallback executionFailureCallback;
     private volatile Set<Vertex> vertices;
+    private volatile boolean verticesCompleted;
     @Nonnull
     private volatile List<RawJobMetrics> jobMetrics = Collections.emptyList();
 
@@ -250,12 +251,31 @@ public class MasterJobContext {
                   // must call this before rewriteDagWithSnapshotRestore()
                   String dotRepresentation = dag.toDotString(defaultParallelism, defaultQueueSize);
                   // we ensured that JobExecutionRecord is safe in resolveDag
-                  long snapshotId = jobExecRec.snapshotId();
-                  String snapshotName = mc.jobConfig().getInitialSnapshotName();
-                  String mapName =
-                          snapshotId >= 0 ? jobExecRec.successfulSnapshotDataMapName(mc.jobId())
-                                  : snapshotName != null ? EXPORTED_SNAPSHOTS_PREFIX + snapshotName
-                                  : null;
+
+                  final long snapshotId = jobExecRec.snapshotId();
+                  // name without internal prefix
+                  final String snapshotName;
+                  final String mapName;
+
+                  // check if there is snapshot to restore. It could be in order:
+                  // 1. exported terminal snapshot when the job is restarted due to failure during it
+                  // 2. most recent automatic snapshot
+                  // 3. configured initialSnapshotName
+                  // 4. no snapshot
+                  if (snapshotId >= 0) {
+                      // job restarts with existing snapshot: could be automatic or exported terminal.
+                      // Initial snapshot from Job config, if any, is ignored, because the job has made
+                      // its own snapshots.
+                      snapshotName = jobExecRec.exportedSnapshotMapName();
+                      mapName = jobExecRec.successfulSnapshotDataMapName();
+                  } else {
+                      // there was no snapshot performed before restart or this is a new job
+                      snapshotName = mc.jobConfig().getInitialSnapshotName();
+                      mapName = snapshotName != null
+                              ? exportedSnapshotMapName(snapshotName)
+                              : null;
+                  }
+
                   if (mapName != null) {
                       rewriteDagWithSnapshotRestore(dag, snapshotId, mapName, snapshotName);
                   } else {
@@ -335,14 +355,14 @@ public class MasterJobContext {
                 mc.writeJobExecutionRecordSafe(true);
             } catch (IndeterminateOperationStateException e) {
                 // JobExecutionRecord is not safe, so we cannot restore from snapshot if it will be needed.
-                // But even it there is no snapshot, the cluster probably is in unsafe state
+                // But even it there is no snapshot, the cluster probably is in unsafe state,
                 // so it is better to wait with starting the job anyway.
                 // trigger restart via exception, ordinary exception would cause job failure
                 logger.warning("Job " + mc.jobName() +
                         " initial update of JobExecutionRecord was indeterminate." +
                         " Failed to start job. Will retry.");
                 // TODO: this restarts immediately, it would be better to wait/schedule restart in safe state
-                // the backup ack timeout provides some delay, but blocks coordinator thread.
+                //  the backup ack timeout provides some delay, but blocks coordinator thread.
                 throw new JobTerminateRequestedException(RESTART_FORCEFUL);
             }
 
@@ -371,6 +391,7 @@ public class MasterJobContext {
             }
             // save a copy of the vertex list because it is going to change
             vertices = new HashSet<>();
+            verticesCompleted = false;
             dag.iterator().forEachRemaining(vertices::add);
             mc.setExecutionId(executionIdSupplier.get());
             mc.snapshotContext().onExecutionStarted();
@@ -460,6 +481,8 @@ public class MasterJobContext {
     }
 
     private void rewriteDagWithSnapshotRestore(DAG dag, long snapshotId, String mapName, String snapshotName) {
+        // snapshot map is not updated here, so it does not need to be
+        // configured with failOnIndeterminateOperationState
         IMap<Object, Object> snapshotMap = mc.nodeEngine().getHazelcastInstance().getMap(mapName);
         long resolvedSnapshotId = validateSnapshot(
                 snapshotId, snapshotMap, mc.jobIdString(), snapshotName);
@@ -864,7 +887,7 @@ public class MasterJobContext {
     }
 
     private CompletableFuture<Void> completeVertices(@Nullable Throwable failure) {
-        if (vertices != null) {
+        if (vertices != null && !verticesCompleted) {
             ExecutorService offloadExecutor =
                     mc.nodeEngine().getExecutionService().getExecutor(JOB_OFFLOADABLE_EXECUTOR);
             List<CompletableFuture<Void>> futures = new ArrayList<>(vertices.size());
@@ -886,7 +909,8 @@ public class MasterJobContext {
                 Executor executor = processorMetaSupplier.closeIsCooperative() ? CALLER_RUNS : offloadExecutor;
                 futures.add(runAsync(closeAction, executor));
             }
-            return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+            return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                    .whenComplete((v, e) -> verticesCompleted = true);
         }
         return completedFuture(null);
     }

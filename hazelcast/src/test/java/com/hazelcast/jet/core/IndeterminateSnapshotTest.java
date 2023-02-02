@@ -49,6 +49,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.Repeat;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.experimental.runners.Enclosed;
@@ -100,7 +101,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
-//TODO: manual snapshot tests in EE
 @RunWith(Enclosed.class)
 public class IndeterminateSnapshotTest {
 
@@ -225,6 +225,12 @@ public class IndeterminateSnapshotTest {
             assertThat(SnapshotInstrumentationP.executions)
                     .as("Job should not be restarted during test")
                     .hasSize(1);
+        }
+
+        protected static void assertJobRestarted() {
+            assertThat(SnapshotInstrumentationP.executions)
+                    .as("Job should be restarted during test")
+                    .hasSizeGreaterThan(1);
         }
 
         @NotNull
@@ -416,12 +422,12 @@ public class IndeterminateSnapshotTest {
         }
 
         @Test
-        public void whenFirstSnapshotPossiblyCorrupted_thenRestartWithoutSnapshot() throws InterruptedException {
+        public void whenFirstSnapshotPossiblyCorrupted_thenRestartWithoutSnapshot() {
             when_shutDown(0);
         }
 
         @Test
-        public void whenNextSnapshotPossiblyCorrupted_thenRestartFromLastGoodSnapshot() throws InterruptedException {
+        public void whenNextSnapshotPossiblyCorrupted_thenRestartFromLastGoodSnapshot() {
             when_shutDown(3);
         }
 
@@ -443,7 +449,7 @@ public class IndeterminateSnapshotTest {
             return partitionService.getPartition(partitionId);
         }
 
-        private void when_shutDown(int allowedSnapshotsCount) throws InterruptedException {
+        private void when_shutDown(int allowedSnapshotsCount) {
 
             // We need to keep replicated SVR KEY and JobExecutionRecord for jobId.
             // Each can be in different partition that can be on different instance
@@ -504,7 +510,7 @@ public class IndeterminateSnapshotTest {
 
         @Test
         @Repeat(5)
-        public void whenFirstSnapshotPossiblyCorruptedAfter1stPhase_thenRestartWithoutSnapshot() throws InterruptedException {
+        public void whenFirstSnapshotPossiblyCorruptedAfter1stPhase_thenRestartWithoutSnapshot() {
             assumeThat(test1Succeeded).as("Test already succeeded").isFalse();
             when_shutDownAfter1stPhase(0);
             test1Succeeded = true;
@@ -514,13 +520,13 @@ public class IndeterminateSnapshotTest {
 
         @Test
         @Repeat(5)
-        public void whenNextSnapshotPossiblyCorruptedAfter1stPhase_thenRestartFromLastGoodSnapshot() throws InterruptedException {
+        public void whenNextSnapshotPossiblyCorruptedAfter1stPhase_thenRestartFromLastGoodSnapshot() {
             assumeThat(test2Succeeded).as("Test already succeeded").isFalse();
             when_shutDownAfter1stPhase(3);
             test2Succeeded = true;
         }
 
-        private void when_shutDownAfter1stPhase(int allowedSnapshotsCount) throws InterruptedException {
+        private void when_shutDownAfter1stPhase(int allowedSnapshotsCount) {
 
             setupJetTests(allowedSnapshotsCount);
 
@@ -704,16 +710,16 @@ public class IndeterminateSnapshotTest {
         }
 
         @Test
-        public void whenSnapshotUpdateLostChangedCoordinatorNoOtherSnapshot_thenRestartWithoutSnapshot() throws InterruptedException {
+        public void whenSnapshotUpdateLostChangedCoordinatorNoOtherSnapshot_thenRestartWithoutSnapshot() {
             whenSnapshotUpdateLostChangedCoordinator(0);
         }
 
         @Test
-        public void whenSnapshotUpdateLostChangedCoordinator_thenRestartFromLastGoodSnapshot() throws InterruptedException {
+        public void whenSnapshotUpdateLostChangedCoordinator_thenRestartFromLastGoodSnapshot() {
             whenSnapshotUpdateLostChangedCoordinator(3);
         }
 
-        private void whenSnapshotUpdateLostChangedCoordinator(int initialSnapshotsCount) throws InterruptedException {
+        private void whenSnapshotUpdateLostChangedCoordinator(int initialSnapshotsCount) {
             // JobExecutionRecord update during snapshot commit is indeterminate and lost,
             // and is indeterminate until original coordinator is terminated.
             // Job is restart on different coordinator and indeterminate snapshot turns out to be lost.
@@ -795,13 +801,8 @@ public class IndeterminateSnapshotTest {
             // try to detect slow execution and skip test if there is unexpected snapshot
             assumePresentLastSnapshot(initialSnapshotsCount - 1);
 
+            // suspend should fail and job should be restarted
             job.suspend();
-            assertJobStatusEventually(job, JobStatus.SUSPENDED);
-            logger.info("Suspended");
-
-            job.resume();
-            assertJobStatusEventually(job, JobStatus.RUNNING);
-            logger.info("Resumed");
 
             logger.info("Joining job...");
             instances[0].getJet().getJob(job.getId()).join();
@@ -809,15 +810,16 @@ public class IndeterminateSnapshotTest {
 
             // indeterminate suspend snapshot turns out to be fine
             assertRestoredFromSnapshot(initialSnapshotsCount);
+            assertJobRestarted();
         }
 
         @Test
-        public void whenSuspendSnapshotUpdateLostChangedCoordinatorAndNoOtherSnapshots_thenRestartWithoutSnapshot() throws InterruptedException {
+        public void whenSuspendSnapshotUpdateLostChangedCoordinatorAndNoOtherSnapshots_thenRestartWithoutSnapshot() {
             whenSuspendSnapshotUpdateLostChangedCoordinator(0);
         }
 
         @Test
-        public void whenSuspendSnapshotUpdateLostChangedCoordinator_thenRestartFromRegularSnapshot() throws InterruptedException {
+        public void whenSuspendSnapshotUpdateLostChangedCoordinator_thenRestartFromRegularSnapshot() {
             whenSuspendSnapshotUpdateLostChangedCoordinator(3);
         }
 
@@ -845,8 +847,10 @@ public class IndeterminateSnapshotTest {
             }
 
             job.suspend();
-            assertJobStatusEventually(job, JobStatus.SUSPENDED);
-            logger.info("Suspended");
+            // suspend will fail (be indeterminate) and job will be restarted,
+            // but after restart it will still be indeterminate
+            assertJobStatusEventually(job, JobStatus.STARTING);
+            logger.info("Suspend failed and job restarted");
             assertThat(snapshotDone.getCount())
                     .as("Snapshot must not be committed when indeterminate")
                     .isEqualTo(NODE_COUNT * LOCAL_PARALLELISM);
@@ -1183,6 +1187,7 @@ public class IndeterminateSnapshotTest {
         }
     }
 
+    @Ignore("test processor used by EE tests")
     public static final class SnapshotInstrumentationP extends AbstractProcessor {
         static final ConcurrentMap<Integer, Integer> savedCounters = new ConcurrentHashMap<>();
         static final ConcurrentMap<Integer, Integer> restoredCounters = new ConcurrentHashMap<>();

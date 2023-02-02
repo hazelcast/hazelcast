@@ -54,8 +54,28 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
     private volatile JobSuspensionCause suspensionCause;
     private volatile long snapshotId = NO_SNAPSHOT;
     private volatile int dataMapIndex = -1;
+    /**
+     * Id of most recently attempted snapshot (if no snapshot is in progress)
+     * or id of current snapshot in progress.
+     * <p>
+     * The same id cannot be reused for different snapshot attempts, even if
+     * they failed.
+     */
     private volatile long ongoingSnapshotId = NO_SNAPSHOT;
     private volatile long ongoingSnapshotStartTime = Long.MIN_VALUE;
+    /**
+     * Name of target map for current snapshot being exported. The value is
+     * not-null while the job is exporting a state snapshot. The value is null
+     * when writing a normal snapshot or when no snapshot is in progress.
+     * <p>
+     * This value is transient, and it is not needed after coordinator restart.
+     * <p>
+     * {@link #ongoingSnapshotId} and {@link #ongoingExportedSnapshotMapName}
+     * define target of current snapshot (if any).
+     * {@link #snapshotId} and {@link #exportedSnapshotMapName} define last
+     * successful snapshot (if any).
+     */
+    private volatile String ongoingExportedSnapshotMapName;
     private volatile String exportedSnapshotMapName;
     @Nullable
     private volatile String lastSnapshotFailure;
@@ -124,23 +144,34 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
     public void startNewSnapshot(String exportedSnapshotMapName) {
         ongoingSnapshotId++;
         ongoingSnapshotStartTime = Clock.currentTimeMillis();
-        this.exportedSnapshotMapName = exportedSnapshotMapName;
+        this.ongoingExportedSnapshotMapName = exportedSnapshotMapName;
     }
 
     public SnapshotStats ongoingSnapshotDone(
-            long numBytes, long numKeys, long numChunks, @Nullable String failureText
-    ) {
+            long numBytes, long numKeys, long numChunks, @Nullable String failureText,
+            boolean isTerminal) {
         lastSnapshotFailure = failureText;
         SnapshotStats res = new SnapshotStats(
                 ongoingSnapshotId, ongoingSnapshotStartTime, Clock.currentTimeMillis(), numBytes, numKeys, numChunks
         );
-        // switch dataMapIndex only if the snapshot was successful and it wasn't an exported one
-        if (failureText == null && exportedSnapshotMapName == null) {
-            dataMapIndex = ongoingDataMapIndex();
-            snapshotId = ongoingSnapshotId;
-            snapshotStats = res;
+        if (failureText == null) {
+            boolean isExport = ongoingExportedSnapshotMapName != null;
+            boolean isExportOnly = isExport && !isTerminal;
+
+            if (!isExport) {
+                // switch dataMapIndex only if the snapshot was successful, and it wasn't an exported one
+                dataMapIndex = ongoingDataMapIndex();
+            }
+
+            // for snapshots other than export-only remember map to which the snapshot has been written
+            // (set to null for automatic snapshots performed after restart from terminal exported snapshot)
+            if (!isExportOnly) {
+                exportedSnapshotMapName = ongoingExportedSnapshotMapName;
+                snapshotId = ongoingSnapshotId;
+                snapshotStats = res;
+            }
         }
-        exportedSnapshotMapName = null;
+        ongoingExportedSnapshotMapName = null;
         ongoingSnapshotStartTime = Long.MIN_VALUE;
         return res;
     }
@@ -190,9 +221,8 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
     }
 
     /**
-     * Name of the exported map. The value is not-null while the job is exporting
-     * a state snapshot. The value is null when writing a normal snapshot or
-     * when no snapshot is in progress.
+     * Name of the exported map if the last valid snapshot was terminal
+     * exported snapshot. Null otherwise.
      */
     @Nullable
     public String exportedSnapshotMapName() {
@@ -200,7 +230,7 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
     }
 
     /**
-     * Stats for the last successful snapshot (except for the exported ones).
+     * Stats for the last successful snapshot (except for the export-only ones).
      * {@code null} if no successful snapshot exists.
      */
     @Nullable
@@ -234,11 +264,17 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
         timestamp.updateAndGet(v -> Math.max(Clock.currentTimeMillis(), v + 1));
     }
 
-    String successfulSnapshotDataMapName(long jobId) {
+    /**
+     * @return full map name (with prefix) where last successful snapshot is stored
+     * @throws IllegalStateException when there was no successful snapshot
+     */
+    String successfulSnapshotDataMapName() {
         if (snapshotId() < 0) {
             throw new IllegalStateException("No successful snapshot");
         }
-        return snapshotDataMapName(jobId, dataMapIndex());
+        return exportedSnapshotMapName() != null
+                ? JobRepository.exportedSnapshotMapName(exportedSnapshotMapName())
+                : snapshotDataMapName(getJobId(), dataMapIndex());
     }
 
     @Override
