@@ -47,7 +47,7 @@ public final class ConcurrencyUtil {
 
     // Default executor for async callbacks: ForkJoinPool.commonPool() or a thread-per-task executor when
     // the common pool does not support parallelism
-    private static volatile Executor defaultAsyncExecutor;
+    private static Executor defaultAsyncExecutor;
 
     static {
         Executor asyncExecutor;

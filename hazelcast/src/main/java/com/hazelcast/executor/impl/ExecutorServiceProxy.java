@@ -29,6 +29,7 @@ import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
 import com.hazelcast.executor.impl.operations.ShutdownOperation;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.internal.util.Timer;
 import com.hazelcast.logging.ILogger;
@@ -36,7 +37,6 @@ import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
@@ -55,7 +55,6 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -94,14 +93,12 @@ public class ExecutorServiceProxy
     private final Random random = new Random(-System.currentTimeMillis());
     private final int partitionCount;
     private final ILogger logger;
-    private final Executor internalAsyncExecutor;
 
     public ExecutorServiceProxy(String name, NodeEngine nodeEngine, DistributedExecutorService service) {
         super(nodeEngine, service);
         this.name = name;
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.logger = nodeEngine.getLogger(ExecutorServiceProxy.class);
-        this.internalAsyncExecutor = nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
         getLocalExecutorStats();
     }
 
@@ -376,12 +373,12 @@ public class ExecutorServiceProxy
                 .createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, partitionId)
                 .invoke();
         if (callback != null) {
-            future.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback), internalAsyncExecutor)
+            future.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback), ConcurrencyUtil.getDefaultAsyncExecutor())
                     .whenCompleteAsync((v, t) -> {
                         if (t instanceof RejectedExecutionException) {
                             callback.onFailure(t);
                         }
-                    }, internalAsyncExecutor);
+                    }, ConcurrencyUtil.getDefaultAsyncExecutor());
         }
     }
 
@@ -418,12 +415,12 @@ public class ExecutorServiceProxy
                 .createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, address)
                 .invoke();
         if (callback != null) {
-            future.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback), internalAsyncExecutor)
+            future.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback), ConcurrencyUtil.getDefaultAsyncExecutor())
                     .whenCompleteAsync((v, t) -> {
                         if (t instanceof RejectedExecutionException) {
                             callback.onFailure(t);
                         }
-                    }, internalAsyncExecutor);
+                    }, ConcurrencyUtil.getDefaultAsyncExecutor());
         }
     }
 

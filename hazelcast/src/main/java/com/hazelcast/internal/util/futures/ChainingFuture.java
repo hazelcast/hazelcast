@@ -17,11 +17,10 @@
 
 package com.hazelcast.internal.util.futures;
 
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.Iterator;
-
-import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 
 /**
  * Iterates over supplied {@link InternalCompletableFuture} serially.
@@ -59,7 +58,7 @@ public class ChainingFuture<T> extends InternalCompletableFuture<T> {
                     completeExceptionally(t);
                 }
             }
-        }, CALLER_RUNS);
+        }, ConcurrencyUtil.getDefaultAsyncExecutor());
     }
 
     private void advanceOrComplete(T response, Iterator<InternalCompletableFuture<T>> invocationIterator) {
