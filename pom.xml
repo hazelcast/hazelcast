@@ -147,6 +147,7 @@
         <archunit.version>0.22.0</archunit.version>
         <errorprone.version>2.15.0</errorprone.version>
         <awaitility.version>4.1.1</awaitility.version>
+        <kubernetes-server-mock.version>6.4.0</kubernetes-server-mock.version>
         <hikari.version>4.0.3</hikari.version>
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
@@ -1923,6 +1924,11 @@
                 <groupId>org.awaitility</groupId>
                 <artifactId>awaitility</artifactId>
                 <version>${awaitility.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-server-mock</artifactId>
+                <version>${kubernetes-server-mock.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
