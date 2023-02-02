@@ -19,7 +19,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.mongodb.ReadMongoP;
+import com.hazelcast.jet.mongodb.impl.ReadMongoP;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.mongodb.client.MongoClients;
@@ -43,7 +43,7 @@ import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 
 /**
- * ProcessorSupplier that creates {@linkplain ReadMongoP} processors on each instance.
+ * ProcessorSupplier that creates {@linkplain com.hazelcast.jet.mongodb.impl.ReadMongoP} processors on each instance.
  */
 public class SelectProcessorSupplier implements ProcessorSupplier {
 
@@ -52,37 +52,31 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
     private final String collectionName;
     private final boolean stream;
     private final FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
-    private final boolean needTwoSteps;
     private final String predicate;
     private final List<String> projection;
-    private final boolean containsMappingForId;
     private final Long startAt;
     private transient ExpressionEvalContext evalContext;
 
     SelectProcessorSupplier(MongoTable table, String predicate, List<String> projection, Long startAt, boolean stream,
-                            FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
-                            boolean needTwoSteps) {
+                            FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
         this.predicate = predicate;
         this.projection = projection;
-        this.containsMappingForId = table.hasMappingForId();
         this.connectionString = table.connectionString;
         this.databaseName = table.databaseName;
         this.collectionName = table.collectionName;
         this.startAt = startAt;
         this.stream = stream;
         this.eventTimePolicyProvider = eventTimePolicyProvider;
-        this.needTwoSteps = needTwoSteps;
         checkArgument(projection != null && !projection.isEmpty(), "projection cannot be empty");
     }
 
     SelectProcessorSupplier(MongoTable table, String predicate, List<String> projection, Long startAt,
-                            FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
-                            boolean needTwoSteps) {
-        this(table, predicate, projection, startAt, true, eventTimePolicyProvider, needTwoSteps);
+                            FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
+        this(table, predicate, projection, startAt, true, eventTimePolicyProvider);
     }
 
-    SelectProcessorSupplier(MongoTable table, String predicate, List<String> projection, boolean needTwoSteps) {
-        this(table, predicate, projection, null, false, null, needTwoSteps);
+    SelectProcessorSupplier(MongoTable table, String predicate, List<String> projection) {
+        this(table, predicate, projection, null, false, null);
     }
 
     @Override
