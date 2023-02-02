@@ -21,7 +21,7 @@ import com.hazelcast.instance.impl.NoOpClusterTopologyIntentTracker;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.spi.utils.RestClient;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import io.fabric8.kubernetes.api.model.ListMetaBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.WatchEvent;
@@ -55,8 +55,7 @@ import static org.junit.Assert.assertTrue;
 
 // test interaction of KubernetesClient with Kubernetes mock API server
 @RunWith(HazelcastSerialClassRunner.class)
-// todo move to nightly before merge, test takes roughly 1min on my local
-@Category(QuickTest.class)
+@Category(NightlyTest.class)
 public class StsMonitorTest {
 
     private static final String DEFAULT_STS_NAME = "hz-hazelcast";
