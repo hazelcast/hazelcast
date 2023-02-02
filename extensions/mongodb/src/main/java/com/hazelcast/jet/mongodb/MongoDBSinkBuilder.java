@@ -19,11 +19,10 @@ package com.hazelcast.jet.mongodb;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
+import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.SinkBuilder;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -39,7 +38,6 @@ import org.bson.Document;
 import javax.annotation.Nonnull;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.retry.IntervalFunction.exponentialBackoffWithCap;
@@ -73,23 +71,10 @@ public final class MongoDBSinkBuilder<T> {
             .maxAttempts(20)
             .build();
 
-    private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
     private final String name;
-    private final SupplierEx<MongoClient> clientSupplier;
-    @Nonnull
-    private final Class<T> documentClass;
+    private final WriteMongoParams<T> params = new WriteMongoParams<>();
 
     private int preferredLocalParallelism = 2;
-
-    private FunctionEx<T, String> selectDatabaseNameFn;
-    private FunctionEx<T, String> selectCollectionNameFn;
-    private String databaseName;
-    private String collectionName;
-    private String idFieldName;
-    private FunctionEx<T, Object> documentIdentityFn;
-    private ConsumerEx<ReplaceOptions> replaceOptionsChanger;
-    private RetryStrategy commitRetryStrategy;
-    private TransactionOptions transactionOptions;
 
     /**
      * See {@link MongoDBSinks#builder}
@@ -99,9 +84,9 @@ public final class MongoDBSinkBuilder<T> {
             @Nonnull Class<T> documentClass,
             @Nonnull SupplierEx<MongoClient> clientSupplier
     ) {
-        this.clientSupplier = checkNonNullAndSerializable(clientSupplier, "clientSupplier");
-        this.documentClass = checkNotNull(documentClass, "document class cannot be null");
         this.name = checkNotNull(name, "sink name cannot be null");
+        params.setClientSupplier(checkNonNullAndSerializable(clientSupplier, "clientSupplier"));
+        params.setDocumentType(checkNotNull(documentClass, "document class cannot be null"));
 
         if (Document.class.isAssignableFrom(documentClass)) {
             identifyDocumentBy("_id", doc -> ((Document) doc).get("_id"));
@@ -123,10 +108,8 @@ public final class MongoDBSinkBuilder<T> {
             @Nonnull FunctionEx<T, String> selectDatabaseNameFn,
             @Nonnull FunctionEx<T, String> selectCollectionNameFn
     ) {
-        checkSerializable(selectDatabaseNameFn, "selectDatabaseNameFn");
-        checkSerializable(selectCollectionNameFn, "selectCollectionNameFn");
-        this.selectDatabaseNameFn = selectDatabaseNameFn;
-        this.selectCollectionNameFn = selectCollectionNameFn;
+        params.setDatabaseNameSelectFn(selectDatabaseNameFn);
+        params.setCollectionNameSelectFn(selectCollectionNameFn);
         return this;
     }
 
@@ -136,10 +119,8 @@ public final class MongoDBSinkBuilder<T> {
      */
     @Nonnull
     public MongoDBSinkBuilder<T> into(@Nonnull String databaseName, @Nonnull String collectionName) {
-        checkNotNull(databaseName, "databaseName cannot be null");
-        checkNotNull(collectionName, "collectionName cannot be null");
-        this.databaseName = databaseName;
-        this.collectionName = collectionName;
+        params.setDatabaseName(databaseName);
+        params.setCollectionName(collectionName);
         return this;
     }
 
@@ -158,7 +139,7 @@ public final class MongoDBSinkBuilder<T> {
      */
     @Nonnull
     public MongoDBSinkBuilder<T> withCustomReplaceOptions(@Nonnull ConsumerEx<ReplaceOptions> adjustConsumer) {
-        this.replaceOptionsChanger = checkNonNullAndSerializable(adjustConsumer, "adjustConsumer");
+        params.setReplaceOptionAdjuster(checkNonNullAndSerializable(adjustConsumer, "adjustConsumer"));
         return this;
     }
 
@@ -173,8 +154,8 @@ public final class MongoDBSinkBuilder<T> {
             @Nonnull FunctionEx<T, Object> documentIdentityFn) {
         checkNotNull(fieldName, "fieldName cannot be null");
         checkSerializable(documentIdentityFn, "documentIdentityFn");
-        this.idFieldName = fieldName;
-        this.documentIdentityFn = documentIdentityFn;
+        params.setDocumentIdentityFieldName(fieldName);
+        params.setDocumentIdentityFn(documentIdentityFn);
         return this;
     }
 
@@ -190,7 +171,7 @@ public final class MongoDBSinkBuilder<T> {
      */
     @Nonnull
     public MongoDBSinkBuilder<T> commitRetryStrategy(@Nonnull RetryStrategy commitRetryStrategy) {
-        this.commitRetryStrategy = commitRetryStrategy;
+        params.setCommitRetryStrategy(commitRetryStrategy);
         return this;
     }
 
@@ -205,7 +186,7 @@ public final class MongoDBSinkBuilder<T> {
      */
     @Nonnull
     public MongoDBSinkBuilder<T> transactionOptions(@Nonnull TransactionOptions transactionOptions) {
-        this.transactionOptions = transactionOptions;
+        params.setTransactionOptions(transactionOptions);
         return this;
     }
 
@@ -215,44 +196,11 @@ public final class MongoDBSinkBuilder<T> {
      */
     @Nonnull
         public Sink<T> build() {
-        checkNotNull(clientSupplier, "clientSupplier must be set");
-        checkNotNull(documentIdentityFn, "documentIdentityFn must be set");
-        checkNotNull(commitRetryStrategy, "commitRetryStrategy must be set");
-        checkNotNull(transactionOptions, "transactionOptions must be set");
+        params.checkValid();
+        final WriteMongoParams<T> localParams = this.params;
 
-        final SupplierEx<MongoClient> clientSupplier = this.clientSupplier;
-        final Class<T> documentClass = this.documentClass;
-        final String databaseName = this.databaseName;
-        final String collectionName = this.collectionName;
-        final FunctionEx<T, String> selectDatabaseNameFn = this.selectDatabaseNameFn;
-        final FunctionEx<T, String> selectCollectionNameFn = this.selectCollectionNameFn;
-        final FunctionEx<T, Object> documentIdentityFn = this.documentIdentityFn;
-        final String fieldName = this.idFieldName;
-        final ConsumerEx<ReplaceOptions> updateOptionsChanger = this.replaceOptionsChanger == null
-                ? ConsumerEx.noop()
-                : this.replaceOptionsChanger;
-        final RetryStrategy commitRetryStrategy = this.commitRetryStrategy;
-        final byte[] transactionOptions = serializationService.toData(this.transactionOptions).toByteArray();
-
-        checkState((databaseName == null) == (collectionName == null), "if one of [databaseName, collectionName]" +
-                " is provided, so should the other one");
-        checkState((selectDatabaseNameFn == null) == (selectCollectionNameFn == null),
-                "if one of [selectDatabaseNameFn, selectCollectionNameFn] is provided, so should the other one");
-
-        checkState((selectDatabaseNameFn == null) != (databaseName == null),
-                "Only select*Fn or *Name functions should be called, never mixed");
-
-        if (databaseName != null) {
-            return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism,
-                    () -> new WriteMongoP<>(clientSupplier, databaseName, collectionName,
-                            documentClass, documentIdentityFn, updateOptionsChanger, fieldName,
-                            commitRetryStrategy, transactionOptions)));
-        } else {
-            return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism,
-                    () -> new WriteMongoP<>(clientSupplier, selectDatabaseNameFn,
-                            selectCollectionNameFn, documentClass, documentIdentityFn, updateOptionsChanger, fieldName,
-                            commitRetryStrategy, transactionOptions)));
-        }
+        return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism,
+                () -> new WriteMongoP<>(localParams)));
     }
 
 }
