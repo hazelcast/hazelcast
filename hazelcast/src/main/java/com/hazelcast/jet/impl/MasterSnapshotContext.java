@@ -299,7 +299,7 @@ class MasterSnapshotContext {
     ) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
             final boolean isSuccess;
-            boolean skipPhase2;
+            boolean skipPhase2 = false;
             SnapshotStats stats;
 
             mc.lock();
@@ -347,6 +347,11 @@ class MasterSnapshotContext {
                     // JobExecutionRecord data in IMap become stale (indicate that the exported snapshot is in progress)
                     // but it should not cause problems. They may be overwritten later (in memory values will be correct)
                     // or ignored when JobExecutionRecord is loaded from IMap.
+                    //
+                    // Terminal exported snapshot is formally valid from this point, but it is safe to use it
+                    // to restore from only after and only if the job was cleanly terminated due to _this_ snapshot request.
+                    // On API level, using this snapshot is not safe if cancelAndExportSnapshot throws exception
+                    // and the job will not be cancelled but restarted.
                     Object oldValue = snapshotMap.put(SnapshotValidationRecord.KEY, validationRecord);
 
                     if (requestedSnapshot.isExport()) {
@@ -370,7 +375,7 @@ class MasterSnapshotContext {
                 // There is no need to restart job in case of failed snapshot:
                 // - ongoingSnapshotId is safe in IMap, because it was written at the beginning
                 // - snapshotId was not updated
-                // - we can rollback transactions now (2nd phase) if needed, we would do it anyway after restart
+                // - we can roll back transactions now (2nd phase) if needed, we would do it anyway after restart
                 // So regardless if JobExecutionRecord in IMap turns out be new or old,
                 // the state will be consistent.
                 //
@@ -385,17 +390,13 @@ class MasterSnapshotContext {
                         // job can be cleanly terminated without any prepared transactions in unknown state
                         // and the snapshot can be used to safely start a new job.
                         mc.writeJobExecutionRecordSafe(false);
-                        // can proceed to 2nd phase
-                        skipPhase2 = false;
                     } catch (IndeterminateOperationStateException indeterminate) {
                         skipPhase2 = true;
                         logger.warning(mc.jobIdString() + " snapshot " + snapshotId +
-                                " update of JobExecutionRecord was indeterminate." +
-                                (skipPhase2 ? " Will restart job forcefully." : ""));
+                                " update of JobExecutionRecord was indeterminate. Will restart job forcefully.");
                     }
                 } else {
                     mc.writeJobExecutionRecord(false);
-                    skipPhase2 = false;
                 }
 
                 if (logger.isFineEnabled()) {
