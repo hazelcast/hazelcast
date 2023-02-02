@@ -37,8 +37,8 @@ import java.util.List;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static com.hazelcast.jet.mongodb.Mappers.streamToClass;
-import static com.hazelcast.jet.mongodb.Mappers.toClass;
+import static com.hazelcast.jet.mongodb.impl.Mappers.streamToClass;
+import static com.hazelcast.jet.mongodb.impl.Mappers.toClass;
 
 /**
  * Top-level class for MongoDB custom source builders.
@@ -270,7 +270,7 @@ public final class MongoDBSourceBuilder {
          *
          * This function is an equivalent for calling:
          * <pre>{@code
-         * import static com.hazelcast.jet.mongodb.Mappers.toClass;
+         * import static com.hazelcast.jet.mongodb.impl.Mappers.toClass;
          *
          *  MongoDBSourceBuilder.stream(name, supplier)
          *      .collection("myCollection")
@@ -415,7 +415,7 @@ public final class MongoDBSourceBuilder {
          *
          * This function is an equivalent for calling:
          * <pre>{@code
-         * import static com.hazelcast.jet.mongodb.Mappers.toClass;
+         * import static com.hazelcast.jet.mongodb.impl.Mappers.toClass;
          *
          *  MongoDBSourceBuilder.stream(name, supplier)
          *      .collection("myCollection")

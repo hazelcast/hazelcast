@@ -119,7 +119,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
     }
 
     @Test
-    public void test_withStreamAsInput() {
+        public void test_withStreamAsInput() {
         MongoCollection<Doc> collection = collection(defaultDatabase(), testName.getMethodName())
                 .withDocumentClass(Doc.class);
         IMap<Long, Doc> mapToInsert = instance().getMap("toInsert");

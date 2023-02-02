@@ -24,7 +24,6 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
-import com.hazelcast.jet.mongodb.MongoDbConnection;
 import com.hazelcast.logging.ILogger;
 import com.mongodb.MongoException;
 import com.mongodb.MongoServerException;
@@ -55,7 +54,7 @@ import static com.hazelcast.jet.Traversers.singleton;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
-import static com.hazelcast.jet.mongodb.MongoUtilities.partitionAggregate;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.partitionAggregate;
 import static com.mongodb.client.model.Aggregates.sort;
 import static com.mongodb.client.model.Sorts.ascending;
 import static java.util.Collections.emptyList;
@@ -350,11 +349,6 @@ public class ReadMongoP<I> extends AbstractProcessor {
         public void restore(Object value) {
             lastKey = (ObjectId) value;
         }
-
-        @Override
-        public void close() {
-
-        }
     }
 
     private final class StreamMongoReader extends MongoChunkedReader {
@@ -478,6 +472,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
                 cursor.close();
                 cursor = null;
             }
+            super.close();
         }
     }
 }

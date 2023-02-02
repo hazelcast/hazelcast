@@ -17,6 +17,7 @@
 package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.jet.mongodb.impl.Mappers;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.client.MongoClient;

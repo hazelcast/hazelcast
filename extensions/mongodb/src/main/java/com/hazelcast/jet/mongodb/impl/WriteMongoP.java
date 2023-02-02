@@ -58,6 +58,7 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 import static com.mongodb.client.model.Filters.eq;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;

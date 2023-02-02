@@ -22,6 +22,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.mongodb.MongoDBSourceBuilder.Batch;
 import com.hazelcast.jet.mongodb.MongoDBSourceBuilder.Stream;
+import com.hazelcast.jet.mongodb.impl.Mappers;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -43,7 +44,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
-import static com.hazelcast.jet.mongodb.Mappers.streamToClass;
+import static com.hazelcast.jet.mongodb.impl.Mappers.streamToClass;
 import static com.hazelcast.jet.mongodb.MongoDBSources.batch;
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
