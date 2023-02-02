@@ -55,6 +55,7 @@ import java.util.function.Function;
 
 import static com.hazelcast.client.properties.ClientProperty.INVOCATION_RETRY_PAUSE_MILLIS;
 import static com.hazelcast.client.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
+import static com.hazelcast.client.properties.ClientProperty.PARTITION_ARGUMENT_CACHE_SIZE;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
@@ -68,12 +69,9 @@ import static com.hazelcast.sql.impl.SqlErrorCode.TOPOLOGY_CHANGE;
  */
 public class SqlClientService implements SqlService {
     private static final int MAX_FAST_INVOCATION_COUNT = 5;
-    private static final int ARG_INDEX_CACHE_CLEANUP_THRESHOLD = 1100;
-    private static final int ARG_INDEX_CACHE_CAPACITY = 1000;
 
     @SuppressWarnings("checkstyle:VisibilityModifier")
-    public final ReadOptimizedLruCache<String, Integer> partitionArgumentIndexCache =
-            new ReadOptimizedLruCache<>(ARG_INDEX_CACHE_CAPACITY, ARG_INDEX_CACHE_CLEANUP_THRESHOLD);
+    public final ReadOptimizedLruCache<String, Integer> partitionArgumentIndexCache;
 
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
@@ -96,6 +94,9 @@ public class SqlClientService implements SqlService {
         this.resubmissionTimeoutNano = TimeUnit.MILLISECONDS.toNanos(resubmissionTimeoutMillis);
         this.resubmissionRetryPauseMillis = client.getProperties().getPositiveMillisOrDefault(INVOCATION_RETRY_PAUSE_MILLIS);
         this.isUniSocket = !client.getClientConfig().getNetworkConfig().isSmartRouting();
+        final int partitionArgCacheSize = client.getProperties().getInteger(PARTITION_ARGUMENT_CACHE_SIZE);
+        final int partitionArgCacheThreshold = partitionArgCacheSize + Math.min(partitionArgCacheSize / 10, 50);
+        this.partitionArgumentIndexCache = new ReadOptimizedLruCache<>(partitionArgCacheSize, partitionArgCacheThreshold);
     }
 
     @Nonnull
