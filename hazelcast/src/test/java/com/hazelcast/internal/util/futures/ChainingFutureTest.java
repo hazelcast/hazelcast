@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.iterator.RestartingMemberIterator;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -58,6 +59,7 @@ public class ChainingFutureTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
+        ConcurrencyUtil.setDefaultAsyncExecutor(CALLER_RUNS);
         Set<Member> members = new HashSet<>();
         members.add(mock(Member.class));
         when(clusterService.getMembers()).thenReturn(members);
