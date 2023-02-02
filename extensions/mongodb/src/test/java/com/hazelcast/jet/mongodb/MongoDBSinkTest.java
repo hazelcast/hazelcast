@@ -23,7 +23,6 @@ import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.StreamSource;
-import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -62,7 +61,6 @@ import static com.hazelcast.jet.pipeline.test.TestSources.items;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.gte;
-import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -148,28 +146,25 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
         public void test_withStreamAsInput_update() {
         MongoCollection<Doc> collection = collection(defaultDatabase(), testName.getMethodName())
                 .withDocumentClass(Doc.class);
-        IMap<Long, Doc> mapToUpdate = instance().getMap("toUpdate");
-        asList(new Doc(null, 3L, "existing", "text lorem ipsum etc"),
-                new Doc(null, 4L, "existing", "text lorem ipsum etc"))
-                .forEach(doc -> {
-                    InsertOneResult res = collection.insertOne(doc);
-                    doc.id = res.getInsertedId().asObjectId().getValue();
-                    mapToUpdate.put(doc.key, doc);
-                });
 
+        IMap<Long, Doc> mapToUpdate = instance().getMap("toUpdate");
+        Doc doc = new Doc(null, 3L, "existing", "text lorem ipsum etc");
+        InsertOneResult res = collection.insertOne(doc);
+        doc.id = res.getInsertedId().asObjectId().getValue();
+        mapToUpdate.put(doc.key, doc);
 
         final String connectionString = mongoContainer.getConnectionString();
         final String defaultDatabase = defaultDatabase();
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(newEntries(mapToUpdate)).withIngestionTimestamps()
-                .map(doc -> {
-                    doc.key *= 10;
-                    return doc;
+                .map(item -> {
+                    item.key *= 10;
+                    return item;
                 })
                 .writeTo(builder(SINK_NAME, Doc.class, () -> createClient(connectionString))
-                        .identifyDocumentBy("key", o -> o.key)
-                        .into(i -> defaultDatabase, i -> "col_" + (i.key % 2))
+                        .identifyDocumentBy("_id", o -> o.id)
+                        .into(defaultDatabase, testName.getMethodName())
                         .withCustomReplaceOptions(opt -> opt.upsert(true))
                         .build()
                 );
@@ -177,9 +172,15 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
         JobConfig config = new JobConfig().setProcessingGuarantee(processingGuarantee).setSnapshotIntervalMillis(200);
         instance().getJet().newJob(pipeline, config);
 
-        MongoClient client = MongoClients.create(connectionString);
-        MongoDatabase db = client.getDatabase(defaultDatabase);
-        assertTrueEventually(() -> assertEquals(2, countInAll(db, gte("key", 10))));
+        MongoCollection<Document> resultCollection = collection();
+        assertTrueEventually(() -> {
+            ArrayList<Document> list = resultCollection
+                      .find(eq("_id", doc.id))
+                      .into(new ArrayList<>());
+            assertEquals(1, list.size());
+            Document document = list.get(0);
+            assertEquals(30L, document.get("key"));
+        });
     }
 
     @Nonnull
