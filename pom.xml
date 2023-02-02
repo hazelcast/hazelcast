@@ -176,7 +176,7 @@
         <javaModuleArgs/>
 
         <!-- needed for CheckStyle -->
-        <checkstyle.version>8.38</checkstyle.version>
+        <checkstyle.version>10.7.0</checkstyle.version>
         <checkstyle.configLocation>${main.basedir}/checkstyle/checkstyle.xml</checkstyle.configLocation>
         <checkstyle.supressionsLocation>${main.basedir}/checkstyle/suppressions.xml</checkstyle.supressionsLocation>
         <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeaderApache.txt</checkstyle.headerLocation>
