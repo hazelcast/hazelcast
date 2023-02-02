@@ -322,16 +322,11 @@ public class ReadMongoP<I> extends AbstractProcessor {
         @Nonnull
         @Override
         public Traverser<I> nextChunkTraverser() {
-            List<I> chunk = new ArrayList<>(BATCH_SIZE);
-            Document doc;
-            Document lastItem = null;
-            while ((doc = delegate.next()) != null) {
-                chunk.add(mapItemFn.apply(doc));
-                lastItem = doc;
-            }
-            lastKey = lastItem == null ? null : lastItem.getObjectId("__id");
-
-            return Traversers.traverseIterable(chunk);
+            return delegate
+                    .map(item -> {
+                        lastKey = item.getObjectId("_id");
+                        return mapItemFn.apply(item);
+                    });
         }
 
         @Override
@@ -429,8 +424,9 @@ public class ReadMongoP<I> extends AbstractProcessor {
             boolean eagerEnd = false;
             try {
                 while (count < BATCH_SIZE && !eagerEnd) {
-                    ChangeStreamDocument<Document> doc;
-                    doc = cursor.tryNext();
+                    // note: do not use `hasNext` and `next` - those methods blocks for new elements
+                    // and we don't want to block
+                    ChangeStreamDocument<Document> doc = cursor.tryNext();
                     if (doc != null) {
                         chunk.add(doc);
                         count++;

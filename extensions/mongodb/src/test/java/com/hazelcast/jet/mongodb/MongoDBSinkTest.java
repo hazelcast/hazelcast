@@ -119,13 +119,35 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
     }
 
     @Test
-        public void test_withStreamAsInput() {
+        public void test_withStreamAsInput_insert() {
+        final String connectionString = mongoContainer.getConnectionString();
+        final String defaultDatabase = defaultDatabase();
+        IMap<Long, Doc> mapToInsert = instance().getMap("toInsert");
+        mapToInsert.put(10L, new Doc(null, 10L, "new", "text lorem ipsum etc"));
+        mapToInsert.put(20L, new Doc(null, 20L, "new2", "text lorem ipsum etc"));
+
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(newEntries(mapToInsert))
+                .withIngestionTimestamps()
+                .writeTo(builder(SINK_NAME, Doc.class, () -> createClient(connectionString))
+                        .identifyDocumentBy("key", o -> o.key)
+                        .into(i -> defaultDatabase, i -> "col_" + (i.key % 2))
+                        .withCustomReplaceOptions(opt -> opt.upsert(true))
+                        .build()
+                );
+
+        JobConfig config = new JobConfig().setProcessingGuarantee(processingGuarantee).setSnapshotIntervalMillis(200);
+        instance().getJet().newJob(pipeline, config);
+
+        MongoClient client = MongoClients.create(connectionString);
+        MongoDatabase db = client.getDatabase(defaultDatabase);
+        assertTrueEventually(() -> assertEquals(2, countInAll(db, gte("key", 0))));
+    }
+
+    @Test
+        public void test_withStreamAsInput_update() {
         MongoCollection<Doc> collection = collection(defaultDatabase(), testName.getMethodName())
                 .withDocumentClass(Doc.class);
-        IMap<Long, Doc> mapToInsert = instance().getMap("toInsert");
-        for (long i = 0; i < HALF; i++) {
-            mapToInsert.put(i, new Doc(null, i, "new", "text lorem ipsum etc"));
-        }
         IMap<Long, Doc> mapToUpdate = instance().getMap("toUpdate");
         asList(new Doc(null, 3L, "existing", "text lorem ipsum etc"),
                 new Doc(null, 4L, "existing", "text lorem ipsum etc"))
@@ -136,32 +158,28 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
                 });
 
 
-        String connectionString = mongoContainer.getConnectionString();
-
-        Pipeline pipeline = Pipeline.create();
-        StreamStage<Doc> toAddSource = pipeline.readFrom(newEntries(mapToInsert)).withIngestionTimestamps();
-        StreamStage<Doc> alreadyExistingSource = pipeline.readFrom(newEntries(mapToUpdate)).withIngestionTimestamps();
-
+        final String connectionString = mongoContainer.getConnectionString();
         final String defaultDatabase = defaultDatabase();
 
-        Sink<Doc> sink = builder(SINK_NAME, Doc.class, () -> createClient(connectionString))
-                .identifyDocumentBy("key", o -> o.key)
-                .into(i -> defaultDatabase, i -> "col_" + (i.key % 2))
-                .withCustomReplaceOptions(opt -> opt.upsert(true))
-                .build();
-
-        toAddSource.merge(alreadyExistingSource)
-                   .rebalance(doc -> doc.key).setLocalParallelism(4)
-                   .writeTo(sink);
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(newEntries(mapToUpdate)).withIngestionTimestamps()
+                .map(doc -> {
+                    doc.key *= 10;
+                    return doc;
+                })
+                .writeTo(builder(SINK_NAME, Doc.class, () -> createClient(connectionString))
+                        .identifyDocumentBy("key", o -> o.key)
+                        .into(i -> defaultDatabase, i -> "col_" + (i.key % 2))
+                        .withCustomReplaceOptions(opt -> opt.upsert(true))
+                        .build()
+                );
 
         JobConfig config = new JobConfig().setProcessingGuarantee(processingGuarantee).setSnapshotIntervalMillis(200);
         instance().getJet().newJob(pipeline, config);
 
         MongoClient client = MongoClients.create(connectionString);
         MongoDatabase db = client.getDatabase(defaultDatabase);
-        assertTrueEventually(() -> assertEquals(COUNT, countInAll(db, gte("key", 0))));
-        assertEquals(HALF, countInAll(db, eq("type", "new")));
-        assertEquals(HALF, countInAll(db, eq("type", "existing")));
+        assertTrueEventually(() -> assertEquals(2, countInAll(db, gte("key", 10))));
     }
 
     @Nonnull

@@ -85,11 +85,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         IList<Object> list = instance().getList(testName.getMethodName());
         final String connectionString = mongoContainer.getConnectionString();
 
-        collection().insertMany(range(0, COUNT_IN_BATCH)
-                .mapToObj(i -> newDocument("key", i).append("val", i))
-                .collect(toList())
-        );
-        assertEquals(collection().countDocuments(), COUNT_IN_BATCH);
+        insertDocuments();
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(batch(SOURCE_NAME, connectionString, defaultDatabase(), testName.getMethodName(), null, null))
@@ -108,11 +104,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         IList<Object> list = instance().getList(testName.getMethodName());
         final String connectionString = mongoContainer.getConnectionString();
 
-        collection().insertMany(range(0, COUNT_IN_BATCH)
-                .mapToObj(i -> newDocument("key", i).append("val", i))
-                .collect(toList())
-        );
-        assertEquals(collection().countDocuments(), COUNT_IN_BATCH);
+        insertDocuments();
 
         Pipeline pipeline = Pipeline.create();
         Batch<?> sourceBuilder = batch(SOURCE_NAME, () -> mongoClient(connectionString))
@@ -136,14 +128,8 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
     public void testBatchDatabase() {
         IList<Object> list = instance().getList(testName.getMethodName());
 
-        collection().insertMany(range(1, 6).mapToObj(i -> newDocument("key", i).append("val", i)).collect(toList()));
-        assertEquals(collection().countDocuments(), 5L);
-
-        collection(testName.getMethodName() + "_second")
-                .insertMany(range(1, 6)
-                        .mapToObj(i -> newDocument("key", i).append("val", i).append("test", "other"))
-                        .collect(toList()));
-        assertEquals(collection().countDocuments(), 5L);
+        insertDocuments(testName.getMethodName(), 1, 6);
+        insertDocuments(testName.getMethodName() + "_second", 1, 6);
 
         Pipeline pipeline = Pipeline.create();
         String connectionString = mongoContainer.getConnectionString();
@@ -157,6 +143,17 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         instance().getJet().newJob(pipeline, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE)).join();
 
         assertTrueEventually(() -> contentAsserts(list, filter ? FILTERED_BOUND : 1, 5, filter ? 2 : 10));
+    }
+    private void insertDocuments() {
+        insertDocuments(testName.getMethodName(), 0, COUNT_IN_BATCH);
+    }
+
+    private void insertDocuments(String collectionName, int rangeStartInc, int rangeEndExcl) {
+        collection(collectionName).insertMany(range(rangeStartInc, rangeEndExcl)
+                .mapToObj(i -> newDocument("key", i).append("val", i))
+                .collect(toList())
+        );
+        assertEquals(collection().countDocuments(), rangeEndExcl - rangeStartInc);
     }
 
     private Batch<?> batchFilters(Batch<?> sourceBuilder) {
