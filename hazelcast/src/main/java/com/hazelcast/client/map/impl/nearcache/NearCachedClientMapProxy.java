@@ -491,7 +491,9 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             return super.submitToKeysInternal(objectKeys, dataKeys, entryProcessor);
         } finally {
             Collection<?> nearCacheKeys = serializeKeys ? dataKeys : objectKeys;
-            nearCacheKeys.forEach(this::invalidateNearCache);
+            if (!(entryProcessor instanceof ReadOnly)){
+                nearCacheKeys.forEach(this::invalidateNearCache);
+            }
         }
     }
 

@@ -45,11 +45,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -230,7 +226,7 @@ public class NearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void testNearCacheStatsWithReadOnlyProcessor() {
+    public void testNearCacheStatsWithReadOnlyProcessor_executeOnKey() {
         int mapSize = 1000;
         String mapName = randomMapName();
 
@@ -256,7 +252,39 @@ public class NearCacheTest extends NearCacheTestSupport {
             map.executeOnKey(i, new TestReadOnlyProcessor());
         }
         long invalidationsAfter = stats.getInvalidations();
-        assertEquals("No Invalidation after getting keys from read only entry processor ", invalidationsBefore, invalidationsAfter);
+        assertEquals("There should be no invalidation after getting keys from read only entry processor", invalidationsBefore, invalidationsAfter);
+    }
+
+    @Test
+    public void testNearCacheStatsWithReadOnlyProcessor_executeOnKeys() {
+        int mapSize = 1000;
+        String mapName = randomMapName();
+
+        Config config = getConfig();
+        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(false));
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance[] instances = factory.newInstances(config);
+
+        // populate map
+        IMap<Integer, Integer> map = instances[0].getMap(mapName);
+        populateMap(map, mapSize);
+
+        // populate Near Cache
+        populateNearCache(map, mapSize);
+
+        NearCacheStats stats = getNearCacheStats(map);
+
+        // make some hits
+        populateNearCache(map, mapSize);
+        long invalidationsBefore = stats.getInvalidations();
+        Set<Integer> set = new HashSet<Integer>();
+        for (int i = 0; i < mapSize; i++) {
+            set.add(i);
+        }
+        map.executeOnKeys(set,new TestReadOnlyProcessor());
+        long invalidationsAfter = stats.getInvalidations();
+        assertEquals("There should be no invalidation after getting keys from read only entry processor", invalidationsBefore, invalidationsAfter);
     }
 
 
@@ -283,19 +311,49 @@ public class NearCacheTest extends NearCacheTestSupport {
         // make some hits
         populateNearCache(map, mapSize);
 
-        long hitsBefore = stats.getHits();
         long invalidationsBefore = stats.getInvalidations();
         for (int i = 0; i < mapSize; i++) {
             map.submitToKey(i, new TestReadOnlyProcessor());
         }
-        long hitsAfter = stats.getHits();
         long invalidationsAfter = stats.getInvalidations();
-//        assertEquals("No Invalidation after getting keys from read only entry processor ", hitsBefore, hitsAfter);
-        assertEquals("No Invalidation after getting keys from read only entry processor ", invalidationsBefore, invalidationsAfter);
+        assertEquals("There should be no invalidation after getting keys from read only entry processor", invalidationsBefore, invalidationsAfter);
     }
 
     @Test
-    public void testNearCacheStatsWithReadOnlyProcessor_executeOnEntries() {
+    public void testNearCacheStatsWithReadOnlyProcessor_submitToKeys() {
+        int mapSize = 1000;
+        String mapName = randomMapName();
+
+        Config config = getConfig();
+        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(false));
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance[] instances = factory.newInstances(config);
+
+        // populate map
+        IMap<Integer, Integer> map = instances[0].getMap(mapName);
+        populateMap(map, mapSize);
+
+        // populate Near Cache
+        populateNearCache(map, mapSize);
+
+        NearCacheStats stats = getNearCacheStats(map);
+
+        // make some hits
+        populateNearCache(map, mapSize);
+
+        long invalidationsBefore = stats.getInvalidations();
+        Set<Integer> set = new HashSet<Integer>();
+        for (int i = 0; i < mapSize; i++) {
+            set.add(i);
+        }
+        map.submitToKeys(set,new TestReadOnlyProcessor());
+        long invalidationsAfter = stats.getInvalidations();
+        assertEquals("There should be no invalidation after getting keys from read only entry processor", invalidationsBefore, invalidationsAfter);
+    }
+
+    @Test
+    public void testNearCacheStatsWithReadOnlyProcessor_executeOnEntriesWithPredicate() {
         int mapSize = 1000;
         String mapName = randomMapName();
 
@@ -317,21 +375,36 @@ public class NearCacheTest extends NearCacheTestSupport {
         long invalidationsBefore = stats.getInvalidations();
         EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
         Predicate predicate = e.get("salary").equal(0);
-        map.executeOnEntries(
-                entry -> {
-                    Employee employee = entry.getValue();
-                    double currentSalary = employee.getSalary();
-                    double newSalary = currentSalary + 10;
-                    employee.setSalary(newSalary);
-                    return newSalary;
-                }, predicate);
-//        for (int i = 0; i < mapSize; i++) {
-//            map.executeOnEntries(new TestReadOnlyProcessor(), );
-//        }
-//        long hitsAfter = stats.getHits();
+        map.executeOnEntries(new TestObjectBasedReadOnlyProcessor(), predicate);
         long invalidationsAfter = stats.getInvalidations();
-//        assertEquals("No Invalidation after getting keys from read only entry processor ", hitsBefore, hitsAfter);
-        assertEquals("No Invalidation after getting keys from read only entry processor ", invalidationsBefore, invalidationsAfter);
+        assertEquals("There should be no invalidation after getting keys from read only entry processor", invalidationsBefore, invalidationsAfter);
+    }
+
+    @Test
+    public void testNearCacheStatsWithReadOnlyProcessor_executeOnEntriesWithoutPredicate() {
+        int mapSize = 1000;
+        String mapName = randomMapName();
+
+        Config config = getConfig();
+        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(false));
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance[] instances = factory.newInstances(config);
+
+        IMap<Integer, Employee> map = instances[0].getMap(mapName);
+        for (int i = 0; i < mapSize; i++) {
+            map.put(i, new Employee(i, "", 0, true, 0D));
+        }
+
+        populateNearCache(map, mapSize);
+
+        NearCacheStats stats = getNearCacheStats(map);
+
+        long invalidationsBefore = stats.getInvalidations();
+        EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
+        map.executeOnEntries(new TestObjectBasedReadOnlyProcessor());
+        long invalidationsAfter = stats.getInvalidations();
+        assertEquals("There should be no invalidation after getting keys from read only entry processor", invalidationsBefore, invalidationsAfter);
     }
 
     @Test
@@ -713,7 +786,16 @@ public class NearCacheTest extends NearCacheTestSupport {
         populateNearCache(map, mapSize);
 
         EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
-        map.executeOnEntries(new TestObjectBasedReadOnlyProcessor());
+        Predicate predicate = e.get("salary").equal(0);
+        map.executeOnEntries(
+                entry -> {
+                    Employee employee = entry.getValue();
+                    double currentSalary = employee.getSalary();
+                    double newSalary = currentSalary + 10;
+                    employee.setSalary(newSalary);
+                    return newSalary;
+                }, predicate);
+
         assertEquals(0, getNearCacheStats(map).getOwnedEntryCount());
     }
 

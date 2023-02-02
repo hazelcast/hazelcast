@@ -1423,7 +1423,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage request = MapExecuteWithPredicateCodec.encodeRequest(name, toData(entryProcessor), toData(predicate));
         ClientMessage response = invokeWithPredicate(request, predicate);
         boolean shouldInvalidate = !(entryProcessor instanceof ReadOnly);
-        return prepareResult(MapExecuteWithPredicateCodec.decodeResponse(response) , shouldInvalidate);
+        return prepareResult(MapExecuteWithPredicateCodec.decodeResponse(response), shouldInvalidate);
     }
 
     @Override
@@ -1558,7 +1558,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
         return new ClientDelegatingFuture<>(
                 future, getSerializationService(),
-                message -> prepareResult(MapExecuteOnKeysCodec.decodeResponse(message) , shouldInvalidate));
+                message -> prepareResult(MapExecuteOnKeysCodec.decodeResponse(message), shouldInvalidate));
     }
 
     @Override
