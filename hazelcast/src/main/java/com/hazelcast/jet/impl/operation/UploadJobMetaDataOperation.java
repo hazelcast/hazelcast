@@ -20,9 +20,17 @@ import com.hazelcast.client.impl.protocol.codec.JetUploadJobMetaDataCodec;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.jobupload.JobMetaDataParameterObject;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import java.io.IOException;
+
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readList;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeList;
+import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
+import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
 import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
 
 /**
@@ -74,5 +82,28 @@ public class UploadJobMetaDataOperation extends Operation implements IdentifiedD
     @Override
     public int getClassId() {
         return JetInitDataSerializerHook.UPLOAD_JOB_METADATA_OP;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        writeUUID(out, jobMetaDataParameterObject.getSessionId());
+        out.writeString(jobMetaDataParameterObject.getSha256Hex());
+        out.writeString(jobMetaDataParameterObject.getFileName());
+        out.writeString(jobMetaDataParameterObject.getSnapshotName());
+        out.writeString(jobMetaDataParameterObject.getJobName());
+        out.writeString(jobMetaDataParameterObject.getMainClass());
+        writeList(jobMetaDataParameterObject.getJobParameters(), out);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        jobMetaDataParameterObject = new JobMetaDataParameterObject();
+        jobMetaDataParameterObject.setSessionId(readUUID(in));
+        jobMetaDataParameterObject.setSha256Hex(in.readString());
+        jobMetaDataParameterObject.setFileName(in.readString());
+        jobMetaDataParameterObject.setSnapshotName(in.readString());
+        jobMetaDataParameterObject.setJobName(in.readString());
+        jobMetaDataParameterObject.setMainClass(in.readString());
+        jobMetaDataParameterObject.setJobParameters(readList(in));
     }
 }

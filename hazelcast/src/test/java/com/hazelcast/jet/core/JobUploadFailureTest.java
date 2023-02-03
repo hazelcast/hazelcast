@@ -55,7 +55,7 @@ public class JobUploadFailureTest extends JetTestSupport {
 
     @Test
     public void testNullJarPath() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstance();
+        createHazelcastInstance();
         HazelcastInstance client = createHazelcastClient();
         JetService jetService = client.getJet();
 
@@ -64,13 +64,11 @@ public class JobUploadFailureTest extends JetTestSupport {
         Assertions.assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
                 .isInstanceOf(JetException.class)
                 .hasMessageContaining("jarPath can not be null");
-
-        hazelcastInstance.shutdown();
     }
 
     @Test
     public void testNullJobParameters() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstance();
+        createHazelcastInstance();
         HazelcastInstance client = createHazelcastClient();
         JetService jetService = client.getJet();
 
@@ -81,8 +79,6 @@ public class JobUploadFailureTest extends JetTestSupport {
         Assertions.assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
                 .isInstanceOf(JetException.class)
                 .hasMessageContaining("jobParameters can not be null");
-
-        hazelcastInstance.shutdown();
     }
 
     @Test
@@ -91,7 +87,7 @@ public class JobUploadFailureTest extends JetTestSupport {
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
 
-        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        createHazelcastInstance(config);
         HazelcastInstance client = createHazelcastClient();
         JetService jetService = client.getJet();
 
@@ -101,8 +97,6 @@ public class JobUploadFailureTest extends JetTestSupport {
         Assertions.assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
                 .isInstanceOf(JetException.class)
                 .hasMessageContaining("No Main-Class found in the manifest");
-
-        hazelcastInstance.shutdown();
     }
 
     @Test
@@ -111,7 +105,7 @@ public class JobUploadFailureTest extends JetTestSupport {
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
 
-        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        createHazelcastInstance(config);
         HazelcastInstance client = createHazelcastClient();
         JetService jetService = client.getJet();
         JetClientInstanceImpl spyJetService = (JetClientInstanceImpl) Mockito.spy(jetService);
@@ -131,13 +125,11 @@ public class JobUploadFailureTest extends JetTestSupport {
         Assertions.assertThatThrownBy(() -> spyJetService.submitJobFromJar(submitJobParameters))
                 .isInstanceOf(JetException.class)
                 .hasCauseInstanceOf(FileSystemException.class);
-
-        hazelcastInstance.shutdown();
     }
 
     @Test
     public void test_client_jarUpload_whenResourceUploadIsNotEnabled() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstance();
+        createHazelcastInstance();
         HazelcastInstance client = createHazelcastClient();
         JetService jetService = client.getJet();
 
@@ -149,7 +141,6 @@ public class JobUploadFailureTest extends JetTestSupport {
         );
 
         assertEqualsEventually(() -> jetService.getJobs().size(), 0);
-        hazelcastInstance.shutdown();
     }
 
     @Test
@@ -165,7 +156,6 @@ public class JobUploadFailureTest extends JetTestSupport {
         );
 
         assertEqualsEventually(() -> jetService.getJobs().size(), 0);
-        hazelcastInstance.shutdown();
     }
 
     @Test
@@ -174,7 +164,7 @@ public class JobUploadFailureTest extends JetTestSupport {
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
 
-        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        createHazelcastInstance(config);
         HazelcastInstance client = createHazelcastClient();
         JetService jetService = client.getJet();
 
@@ -183,7 +173,6 @@ public class JobUploadFailureTest extends JetTestSupport {
                 .setMainClass("org.example.Main1");
 
         assertThrows(JetException.class, () -> jetService.submitJobFromJar(submitJobParameters));
-        hazelcastInstance.shutdown();
 
     }
 
@@ -202,8 +191,6 @@ public class JobUploadFailureTest extends JetTestSupport {
                 .setMainClass("org.example.Main1");
 
         assertThrows(ClassNotFoundException.class, () -> jetService.submitJobFromJar(submitJobParameters));
-
-        hazelcastInstance.shutdown();
     }
 
     @Test
@@ -212,7 +199,7 @@ public class JobUploadFailureTest extends JetTestSupport {
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
 
-        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        createHazelcastInstance(config);
         HazelcastInstance client = createHazelcastClient();
 
         // Mock the JetClientInstanceImpl to return an incorrect checksum
@@ -230,8 +217,6 @@ public class JobUploadFailureTest extends JetTestSupport {
         assertThrows(JetException.class, () -> spyJetService.submitJobFromJar(submitJobParameters));
 
         assertEqualsEventually(() -> jetService.getJobs().size(), 0);
-        hazelcastInstance.shutdown();
-
     }
 
     private Path getJarPath() {

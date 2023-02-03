@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -69,7 +70,7 @@ public class JobUploadSuccessTest extends JetTestSupport {
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
 
-        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        createHazelcastInstance(config);
         HazelcastInstance client = createHazelcastClient();
         JetService jetService = client.getJet();
 
@@ -79,7 +80,28 @@ public class JobUploadSuccessTest extends JetTestSupport {
         jetService.submitJobFromJar(submitJobParameters);
 
         assertEqualsEventually(() -> jetService.getJobs().size(), 1);
-        hazelcastInstance.shutdown();
+    }
+
+    @Test
+    public void test_jarUploadByNonSmartClient_whenResourceUploadIsEnabled() {
+        Config config = smallInstanceConfig();
+        JetConfig jetConfig = config.getJetConfig();
+        jetConfig.setResourceUploadEnabled(true);
+
+        createHazelcastInstances(config, 2);
+
+        ClientConfig clientConfig = new ClientConfig();
+        ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
+        networkConfig.setSmartRouting(false);
+        HazelcastInstance client = createHazelcastClient(clientConfig);
+        JetService jetService = client.getJet();
+
+        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+                .setJarPath(getJarPath());
+
+        jetService.submitJobFromJar(submitJobParameters);
+
+        assertEqualsEventually(() -> jetService.getJobs().size(), 1);
     }
 
     @Test
@@ -88,7 +110,7 @@ public class JobUploadSuccessTest extends JetTestSupport {
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
 
-        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        createHazelcastInstance(config);
         HazelcastInstance client = createHazelcastClient();
         JetService jetService = client.getJet();
         List<String> jobParameters = emptyList();
@@ -101,7 +123,6 @@ public class JobUploadSuccessTest extends JetTestSupport {
         jetService.submitJobFromJar(submitJobParameters);
 
         assertEqualsEventually(() -> jetService.getJobs().size(), 1);
-        hazelcastInstance.shutdown();
     }
 
 
@@ -120,7 +141,6 @@ public class JobUploadSuccessTest extends JetTestSupport {
         jetService.submitJobFromJar(submitJobParameters);
 
         assertEqualsEventually(() -> jetService.getJobs().size(), 1);
-        hazelcastInstance.shutdown();
     }
 
     @Test
@@ -139,7 +159,6 @@ public class JobUploadSuccessTest extends JetTestSupport {
         jetService.submitJobFromJar(submitJobParameters);
 
         assertEqualsEventually(() -> jetService.getJobs().size(), 1);
-        hazelcastInstance.shutdown();
     }
 
     @Test
@@ -148,7 +167,7 @@ public class JobUploadSuccessTest extends JetTestSupport {
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
 
-        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        createHazelcastInstance(config);
 
         // Change the part buffer size
         ClientConfig clientConfig = new ClientConfig();
@@ -163,7 +182,6 @@ public class JobUploadSuccessTest extends JetTestSupport {
         jetService.submitJobFromJar(submitJobParameters);
 
         assertEqualsEventually(() -> jetService.getJobs().size(), 1);
-        hazelcastInstance.shutdown();
     }
 
     // This test is slow because it is trying to upload a lot of jobs
@@ -174,7 +192,7 @@ public class JobUploadSuccessTest extends JetTestSupport {
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
 
-        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        createHazelcastInstance(config);
         ExecutorService executorService = Executors.newFixedThreadPool(10);
 
         int jobLimit = 50;
@@ -194,7 +212,6 @@ public class JobUploadSuccessTest extends JetTestSupport {
         HazelcastInstance client = createHazelcastClient();
         JetService jetService = client.getJet();
         assertEqualsEventually(() -> jetService.getJobs().size(), jobLimit);
-        hazelcastInstance.shutdown();
     }
 
     @Test
@@ -203,7 +220,7 @@ public class JobUploadSuccessTest extends JetTestSupport {
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
 
-        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        createHazelcastInstance(config);
         HazelcastInstance client = createHazelcastClient();
         JetService jetService = client.getJet();
 
@@ -229,8 +246,6 @@ public class JobUploadSuccessTest extends JetTestSupport {
 
         // Let the jobs run
         sleepAtLeastSeconds(5);
-
-        hazelcastInstance.shutdown();
     }
 
     private boolean containsName(List<Job> list, String name) {
