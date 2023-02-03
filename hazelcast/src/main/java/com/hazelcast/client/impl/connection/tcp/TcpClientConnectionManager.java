@@ -218,6 +218,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         SWITCHING_CLUSTER
     }
 
+    @SuppressWarnings("ExecutableStatementCount")
     public TcpClientConnectionManager(HazelcastClientInstanceImpl client) {
         this.client = client;
         ClientConfig config = client.getClientConfig();
@@ -954,42 +955,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             if (!isAltoAwareClient || tpcPorts == null || tpcPorts.isEmpty()) {
                 logger.info("TPC Client: disabled, no TPC ports detected");
             } else {
+                logger.info("TPC Client: connecting to ports (" + tpcPorts.size() + "): " + tpcPorts);
                 try {
-                    logger.info("TPC Client: connecting to ports (" + tpcPorts.size() + "): " + tpcPorts);
-
-                    Channel[] tpcChannels = new Channel[tpcPorts.size()];
-                    for (int k = 0; k < tpcChannels.length; k++) {
-                        Address address = new Address(connection.getRemoteAddress().getHost(), tpcPorts.get(k));
-                        logger.info("TPC Client: Connecting to:" + address);
-                        SocketChannel tpcSocketChannel = SocketChannel.open();
-
-                        Channel tpcChannel = networking.register(connection.getChannelInitializer(), tpcSocketChannel, true);
-                        tpcChannel.attributeMap().put(Address.class, address);
-                        tpcChannel.attributeMap().put(TcpClientConnection.class, connection);
-
-                        InetSocketAddress tpcSocketChannelAddress = new InetSocketAddress(address.getHost(), address.getPort());
-
-                        tpcChannel.connect(tpcSocketChannelAddress, connectionTimeoutMillis);
-
-                        logger.info("TPC Client: Successfully connected to " + tpcSocketChannelAddress);
-
-                        tpcSocketChannel.configureBlocking(false);
-
-                        tpcChannel.start();
-
-                        // first thing we need to send is the clientUuid so this new socket can be connected
-                        // to the connection on the member.
-                        ClientMessage clientUuidMessage = ClientMessage.createForEncode();
-                        ClientMessage.Frame initialFrame = new ClientMessage.Frame(
-                                new byte[BOOLEAN_SIZE_IN_BYTES + 2 * LONG_SIZE_IN_BYTES], UNFRAGMENTED_MESSAGE);
-                        encodeUUID(initialFrame.content, 0, clientUuid);
-                        clientUuidMessage.add(initialFrame);
-                        tpcChannel.write(clientUuidMessage);
-                        tpcChannels[k] = tpcChannel;
-                    }
-
-                    logger.info("TPC Client: all connections made ");
-                    connection.setTpcChannels(tpcChannels);
+                    connectToTpcPorts(connection, tpcPorts);
                 } catch (IOException e) {
                     // TODO: Improved handling.
                     e.printStackTrace();
@@ -1076,6 +1044,42 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             onConnectionClose(connection);
         }
         return connection;
+    }
+
+    private void connectToTpcPorts(TcpClientConnection connection, List<Integer> tpcPorts) throws IOException {
+        Channel[] tpcChannels = new Channel[tpcPorts.size()];
+        for (int k = 0; k < tpcChannels.length; k++) {
+            Address address = new Address(connection.getRemoteAddress().getHost(), tpcPorts.get(k));
+            logger.info("TPC Client: Connecting to:" + address);
+            SocketChannel tpcSocketChannel = SocketChannel.open();
+
+            Channel tpcChannel = networking.register(connection.getChannelInitializer(), tpcSocketChannel, true);
+            tpcChannel.attributeMap().put(Address.class, address);
+            tpcChannel.attributeMap().put(TcpClientConnection.class, connection);
+
+            InetSocketAddress tpcSocketChannelAddress = new InetSocketAddress(address.getHost(), address.getPort());
+
+            tpcChannel.connect(tpcSocketChannelAddress, connectionTimeoutMillis);
+
+            logger.info("TPC Client: Successfully connected to " + tpcSocketChannelAddress);
+
+            tpcSocketChannel.configureBlocking(false);
+
+            tpcChannel.start();
+
+            // first thing we need to send is the clientUuid so this new socket can be connected
+            // to the connection on the member.
+            ClientMessage clientUuidMessage = ClientMessage.createForEncode();
+            ClientMessage.Frame initialFrame = new ClientMessage.Frame(
+                    new byte[BOOLEAN_SIZE_IN_BYTES + 2 * LONG_SIZE_IN_BYTES], UNFRAGMENTED_MESSAGE);
+            encodeUUID(initialFrame.content, 0, clientUuid);
+            clientUuidMessage.add(initialFrame);
+            tpcChannel.write(clientUuidMessage);
+            tpcChannels[k] = tpcChannel;
+        }
+
+        logger.info("TPC Client: all connections made ");
+        connection.setTpcChannels(tpcChannels);
     }
 
     /**
