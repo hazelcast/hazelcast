@@ -82,7 +82,7 @@ class NioEventloop extends Eventloop {
 
                     NioHandler handler = (NioHandler) key.attachment();
                     try {
-                        handler.handle(key);
+                        handler.handle();
                     } catch (IOException e) {
                         handler.close(null, e);
                     }
