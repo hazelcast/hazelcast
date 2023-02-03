@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Makes an authentication request to the cluster using custom credentials.
  */
-@Generated("e765e721fd54c74e1c677078d6e81038")
+@Generated("73ffd2b42805be126cc12e0c1a951ada")
 public final class ClientAuthenticationCustomCodec {
     //hex: 0x000200
     public static final int REQUEST_MESSAGE_TYPE = 512;
@@ -177,9 +177,20 @@ public final class ClientAuthenticationCustomCodec {
          * Returns true if server supports clients with failover feature.
          */
         public boolean failoverSupported;
+
+        /**
+         * Returns a list of TPC ports. Null if TPC not enabled
+         */
+        public @Nullable java.util.List<java.lang.Integer> tpcPorts;
+
+        /**
+         * True if the tpcPorts is received from the member, false otherwise.
+         * If this is false, tpcPorts has the default value for its type.
+         */
+        public boolean isTpcPortsExists;
     }
 
-    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported) {
+    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported, @Nullable java.util.Collection<java.lang.Integer> tpcPorts) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
@@ -193,6 +204,7 @@ public final class ClientAuthenticationCustomCodec {
 
         CodecUtil.encodeNullable(clientMessage, address, AddressCodec::encode);
         StringCodec.encode(clientMessage, serverHazelcastVersion);
+        CodecUtil.encodeNullable(clientMessage, tpcPorts, ListIntegerCodec::encode);
         return clientMessage;
     }
 
@@ -208,6 +220,12 @@ public final class ClientAuthenticationCustomCodec {
         response.failoverSupported = decodeBoolean(initialFrame.content, RESPONSE_FAILOVER_SUPPORTED_FIELD_OFFSET);
         response.address = CodecUtil.decodeNullable(iterator, AddressCodec::decode);
         response.serverHazelcastVersion = StringCodec.decode(iterator);
+        if (iterator.hasNext()) {
+            response.tpcPorts = CodecUtil.decodeNullable(iterator, ListIntegerCodec::decode);
+            response.isTpcPortsExists = true;
+        } else {
+            response.isTpcPortsExists = false;
+        }
         return response;
     }
 }
