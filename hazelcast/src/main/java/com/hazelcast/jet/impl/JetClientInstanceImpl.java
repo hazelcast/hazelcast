@@ -50,6 +50,7 @@ import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -174,12 +175,12 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     // Validate the parameters used by the client
     protected void validateParameterObject(SubmitJobParameters parameterObject) {
         // Check that parameter is not null, because it is used to access the file
-        if (parameterObject.getJarPath() == null) {
+        if (Objects.isNull(parameterObject.getJarPath())) {
             throw new JetException("jarPath can not be null");
         }
 
         // Check that parameter is not null, because it is used by the JetUploadJobMetaDataCodec
-        if (parameterObject.getJobParameters() == null) {
+        if (Objects.isNull(parameterObject.getJobParameters())) {
             throw new JetException("jobParameters can not be null");
         }
     }

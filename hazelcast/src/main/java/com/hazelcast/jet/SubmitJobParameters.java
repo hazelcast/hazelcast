@@ -51,7 +51,6 @@ public class SubmitJobParameters {
      */
     private List<String> jobParameters = Collections.emptyList();
 
-    @Nonnull
     public Path getJarPath() {
         return jarPath;
     }

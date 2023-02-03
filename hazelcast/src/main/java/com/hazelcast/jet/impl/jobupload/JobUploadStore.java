@@ -70,6 +70,10 @@ public class JobUploadStore {
         String message = String.format("processJobMetaData : Session : %s ", sessionId);
         logger.info(message);
 
+        if (jobMap.containsKey(sessionId)) {
+            throw  new JetException("Session already exists. sessionID " + sessionId);
+        }
+
         // Create a new JobUploadStatus object and save parameters
         JobUploadStatus jobUploadStatus = jobMap.computeIfAbsent(parameterObject.getSessionId(),
                 key -> new JobUploadStatus(parameterObject));
