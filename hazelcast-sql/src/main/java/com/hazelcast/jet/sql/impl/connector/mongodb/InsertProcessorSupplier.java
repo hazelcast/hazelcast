@@ -17,7 +17,7 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.mongodb.impl.ReadMongoP;
+import com.hazelcast.jet.mongodb.WriteMode;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -32,7 +32,8 @@ import static com.hazelcast.jet.mongodb.MongoDBSinkBuilder.DEFAULT_TRANSACTION_O
 import static java.util.Arrays.asList;
 
 /**
- * ProcessorSupplier that creates {@linkplain ReadMongoP} processors on each instance.
+ * ProcessorSupplier that creates {@linkplain WriteMongoP} processors on each instance
+ * that will insert given item.
  */
 public class InsertProcessorSupplier implements ProcessorSupplier {
 
@@ -40,12 +41,14 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
     private final String databaseName;
     private final String collectionName;
     private final String[] paths;
+    private final WriteMode writeMode;
 
-    InsertProcessorSupplier(MongoTable table) {
+    InsertProcessorSupplier(MongoTable table, WriteMode writeMode) {
         this.connectionString = table.connectionString;
         this.databaseName = table.databaseName;
         this.collectionName = table.collectionName;
-        paths = table.paths();
+        this.paths = table.paths();
+        this.writeMode = writeMode;
     }
 
     @Nonnull
@@ -54,8 +57,7 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
         Processor[] processors = new Processor[count];
 
         for (int i = 0; i < count; i++) {
-            Processor processor;
-            processor  = new WriteMongoP<>(
+            Processor processor = new WriteMongoP<>(
                     new WriteMongoParams<Document>()
                             .setClientSupplier(() -> MongoClients.create(connectionString))
                             .setDatabaseName(databaseName)
@@ -66,7 +68,8 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
                             .setCommitRetryStrategy(DEFAULT_COMMIT_RETRY_STRATEGY)
                             .setTransactionOptions(DEFAULT_TRANSACTION_OPTION)
                             .setIntermediateMappingFn(this::rowToDoc)
-            );
+                            .setWriteMode(writeMode)
+                    );
 
             processors[i] = processor;
         }

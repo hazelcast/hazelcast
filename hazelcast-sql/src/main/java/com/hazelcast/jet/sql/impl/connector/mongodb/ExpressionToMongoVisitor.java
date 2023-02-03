@@ -32,15 +32,16 @@ import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
 import com.mongodb.client.model.Filters;
 import org.bson.conversions.Bson;
 
+import java.io.Serializable;
+
 /**
  * Visitor that converts Hazelcast {@linkplain Expression}s to Mongo expressions (filters, projections).
  */
 @SuppressWarnings("unchecked")
-final class ExpressionToMongoVisitor implements ExpressionVisitor<Object> {
+final class ExpressionToMongoVisitor implements ExpressionVisitor<Object>, Serializable {
 
-    private final MongoTable table;
-    private final ExpressionEvalContext context;
-
+    private transient ExpressionEvalContext context;
+    private final String[] fieldIndexToExternalName;
     /**
      * If true, dynamic variables will be resolved as simple strings, otherwise it will use
      * {@linkplain #context} to gather correct value.
@@ -48,9 +49,18 @@ final class ExpressionToMongoVisitor implements ExpressionVisitor<Object> {
     private final boolean dryRun;
 
     ExpressionToMongoVisitor(MongoTable table, ExpressionEvalContext context, boolean dryRun) {
-        this.table = table;
         this.context = context;
         this.dryRun = dryRun;
+
+        fieldIndexToExternalName = new String[table.getFieldCount()];
+        for (int i = 0; i < table.getFieldCount(); i++) {
+            MongoTableField field = table.getField(i);
+            fieldIndexToExternalName[i] = field.externalName;
+        }
+    }
+
+    public void setContext(ExpressionEvalContext context) {
+        this.context = context;
     }
 
     @Override
@@ -119,8 +129,7 @@ final class ExpressionToMongoVisitor implements ExpressionVisitor<Object> {
     @Override
     public Object visit(ColumnExpression<?> expr) {
         int index = expr.getIndex();
-        MongoTableField field = table.getField(index);
-        return field.externalName;
+        return fieldIndexToExternalName[index];
     }
 
     @Override

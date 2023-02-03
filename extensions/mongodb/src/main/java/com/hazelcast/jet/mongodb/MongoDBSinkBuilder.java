@@ -197,6 +197,20 @@ public final class MongoDBSinkBuilder<T> {
     }
 
     /**
+     * Sets write mode used by the connector. Default value is {@linkplain WriteMode#REPLACE}.
+     *
+     * @see WriteMode#INSERT_ONLY
+     * @see WriteMode#UPDATE_ONLY
+     * @see WriteMode#UPSERT
+     * @see WriteMode#REPLACE
+     */
+    @Nonnull
+    public MongoDBSinkBuilder<T> writeMode(@Nonnull WriteMode writeMode) {
+        params.setWriteMode(writeMode);
+        return this;
+    }
+
+    /**
      * Creates and returns the MongoDB {@link Sink} with the components you
      * supplied to this builder.
      */

@@ -19,6 +19,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.mongodb.WriteMode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlProcessors;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -35,6 +36,7 @@ import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +46,6 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
-import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -53,7 +54,7 @@ import static java.util.stream.Collectors.toList;
  * @see FieldResolver
  * TODO: add more
  */
-public abstract class MongoSqlConnectorBase implements SqlConnector {
+public abstract class MongoSqlConnectorBase implements SqlConnector, Serializable {
 
     private final FieldResolver fieldResolver = new FieldResolver();
 
@@ -216,8 +217,11 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                                           .map(p -> (String) p)
                                           .collect(toList());
 
+            if (fields.isEmpty()) {
+                throw new IllegalArgumentException("Projection list cannot be empty");
+            }
             if (fields.size() != projectionNodes.size()) {
-                return new TranslationResult<>(emptyList(), false);
+                return new TranslationResult<>(allFieldsExternalNames(context.getTable()), false);
             }
 
             return new TranslationResult<>(fields, true);
@@ -241,8 +245,35 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
     public VertexWithInputConfig insertProcessor(@Nonnull DagBuildContext context) {
         Vertex vertex = context.getDag().newUniqueVertex(
                 "Insert(" + context.getTable().getSqlName() + ")",
-                new InsertProcessorSupplier(context.getTable())
+                new InsertProcessorSupplier(context.getTable(), WriteMode.INSERT_ONLY)
         );
         return new VertexWithInputConfig(vertex);
+    }
+
+    @Nonnull
+    @Override
+    public Vertex updateProcessor(@Nonnull DagBuildContext context, @Nonnull List<String> fieldNames,
+                                  @Nonnull List<RexNode> expressions) {
+        MongoTable table = context.getTable();
+        List<Expression<?>> updates = context.convertProjection(expressions);
+
+        Vertex vertex = context.getDag().newUniqueVertex(
+                "Update(" + table.getSqlName() + ")",
+                new UpdateProcessorSupplier(table, fieldNames, updates)
+        );
+        return vertex;
+    }
+
+    @Nonnull
+    @Override
+    public List<String> getPrimaryKey(Table table) {
+        MongoTable mongoTable = (MongoTable) table;
+        return mongoTable.primaryKeyName();
+    }
+
+    @Nonnull
+    @Override
+    public Vertex sinkProcessor(@Nonnull DagBuildContext context) {
+        return SqlConnector.super.sinkProcessor(context);
     }
 }

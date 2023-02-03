@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.schema;
 
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
+import com.hazelcast.sql.impl.schema.map.MapTableField;
 
 import java.util.Collections;
 import java.util.List;

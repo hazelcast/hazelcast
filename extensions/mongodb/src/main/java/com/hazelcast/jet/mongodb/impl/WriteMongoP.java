@@ -26,6 +26,7 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility.TransactionalResource;
 import com.hazelcast.jet.impl.processor.UnboundedTransactionsProcessorUtility;
+import com.hazelcast.jet.mongodb.WriteMode;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.jet.retry.impl.RetryTracker;
 import com.hazelcast.logging.ILogger;
@@ -38,7 +39,12 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.ReplaceOptions;
+import com.mongodb.client.model.UpdateOneModel;
+import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.Updates;
 import com.mongodb.client.model.WriteModel;
+import org.bson.BsonDocument;
+import org.bson.BsonValue;
 import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
@@ -99,6 +105,9 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
     private final Map<MongoTransactionId, MongoTransaction> activeTransactions = new HashMap<>();
     private final RetryStrategy commitRetryStrategy;
     private final TransactionOptions transactionOptions;
+    private final WriteMode writeMode;
+
+    private final FunctionEx<I, WriteModel<I>> writeModelFn;
 
     /**
      * Creates a new processor that will always insert to the same database and collection.
@@ -124,6 +133,14 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
                     params.collectionNameSelectFn);
         }
         this.intermediateMappingFn = params.getIntermediateMappingFn();
+        this.writeMode = params.getWriteMode();
+
+
+        FunctionEx<I, WriteModel<I>> writeFn = params.getWriteModelFn();
+        if (writeFn == null) {
+            writeFn = this::defaultWriteModelSupplier;
+        }
+        this.writeModelFn = writeFn;
     }
 
     @Override
@@ -183,15 +200,7 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
                 List<WriteModel<I>> writes = new ArrayList<>();
 
                 for (I item : entry.getValue()) {
-                    Object id = documentIdentityFn.apply(item);
-
-                    WriteModel<I> write;
-                    if (id == null) {
-                        write = new InsertOneModel<>(item);
-                    } else {
-                        Bson filter = eq(documentIdentityFieldName, id);
-                        write = new ReplaceOneModel<>(filter, item, replaceOptions);
-                    }
+                    WriteModel<I> write = writeModelFn.apply(item);
                     writes.add(write);
                 }
                 if (transactionUtility.usesTransactionLifecycle()) {
@@ -221,6 +230,50 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
             }
         }
         return items;
+    }
+
+    private WriteModel<I> defaultWriteModelSupplier(I item) {
+        Object id = documentIdentityFn.apply(item);
+        switch (writeMode) {
+            case INSERT_ONLY: return insert(item);
+            case UPDATE_ONLY: return update(id, item, new UpdateOptions().upsert(false));
+            case UPSERT:      return upsert(id, item);
+            case REPLACE:     return replace(id, item);
+            default: throw new IllegalStateException("unknown write mode");
+        }
+    }
+
+    WriteModel<I> insert(I item) {
+        return new InsertOneModel<>(item);
+    }
+
+    WriteModel<I> upsert(Object id, I item) {
+        if (id == null) {
+            return new InsertOneModel<>(item);
+        } else {
+            return update(id, item, new UpdateOptions().upsert(true));
+        }
+    }
+    WriteModel<I> replace(Object id, I item) {
+        if (id == null) {
+            return new InsertOneModel<>(item);
+        } else {
+            Bson filter = eq(documentIdentityFieldName, id);
+            return new ReplaceOneModel<>(filter, item, replaceOptions);
+        }
+    }
+
+    WriteModel<I> update(Object id, I item, UpdateOptions opts) {
+        Bson filter = eq(documentIdentityFieldName, id);
+        BsonDocument doc = Mappers.toBsonDocument(item);
+        List<Bson> updates = doc.entrySet().stream()
+                                .map(e -> {
+                                    String field = e.getKey();
+                                    BsonValue value = e.getValue();
+                                    return Updates.set(field, value);
+                                })
+                                .collect(toList());
+        return new UpdateOneModel<>(filter, updates, opts);
     }
 
     @Override

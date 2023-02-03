@@ -20,10 +20,12 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.jet.mongodb.WriteMode;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.mongodb.TransactionOptions;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.ReplaceOptions;
+import com.mongodb.client.model.WriteModel;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
@@ -52,6 +54,9 @@ public class WriteMongoParams<I> implements Serializable {
     byte[] transactionOptions;
     FunctionEx<I, String> databaseNameSelectFn;
     FunctionEx<I, String> collectionNameSelectFn;
+    @Nonnull
+    WriteMode writeMode = WriteMode.REPLACE;
+    FunctionEx<I, WriteModel<I>> writeModelFn;
 
     public WriteMongoParams() {
     }
@@ -187,6 +192,27 @@ public class WriteMongoParams<I> implements Serializable {
     public WriteMongoParams<I> setCollectionNameSelectFn(FunctionEx<I, String> collectionNameSelectFn) {
         checkSerializable(collectionNameSelectFn, "collectionNameSelectFn");
         this.collectionNameSelectFn = collectionNameSelectFn;
+        return this;
+    }
+
+    @Nonnull
+    public WriteMode getWriteMode() {
+        return writeMode;
+    }
+
+    public WriteMongoParams<I> setWriteMode(@Nonnull WriteMode writeMode) {
+        checkNotNull(writeMode, "writeMode cannot be null");
+        this.writeMode = writeMode;
+        return this;
+    }
+
+    public FunctionEx<I, WriteModel<I>> getWriteModelFn() {
+        return writeModelFn;
+    }
+
+    @Nonnull
+    public WriteMongoParams<I> setWriteModelFn(FunctionEx<I, WriteModel<I>> writeModelFn) {
+        this.writeModelFn = writeModelFn;
         return this;
     }
 

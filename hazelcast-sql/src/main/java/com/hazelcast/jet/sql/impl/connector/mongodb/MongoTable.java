@@ -61,6 +61,16 @@ class MongoTable extends JetTable {
         this.streaming = streaming;
     }
 
+    public MongoTableField getField(String name) {
+        List<TableField> fields = getFields();
+        for (TableField field : fields) {
+            if (field.getName().equals(name)) {
+                return (MongoTableField) field;
+            }
+        }
+        throw new IllegalArgumentException("field " + name + " does not exist");
+    }
+
     String[] paths() {
         return getFields().stream()
                           .map(field -> ((MongoTableField) field).externalName)
@@ -92,6 +102,14 @@ class MongoTable extends JetTable {
 
     public Map<String, String> getOptions() {
         return options;
+    }
+
+    public List<String> primaryKeyName() {
+        return getFields().stream()
+                          .filter(field -> ((MongoTableField) field).externalName.equals("_id"))
+                          .map(TableField::getName)
+                          .collect(toList());
+
     }
 
     static final class MongoObjectKey implements PlanObjectKey {
