@@ -264,11 +264,11 @@ public class MongoBatchSqlConnectorTest extends SqlTestSupport {
 
     @Test
     public void sinkInto_allHardcoded_withId() {
-        sinksIntoMongo( true, "sink into " + methodName() + " (firstName, lastName, jedi) values ('Leia', 'Organa', true)");
+        sinksIntoMongo(true, "sink into " + methodName() + " (firstName, lastName, jedi) values ('Leia', 'Organa', true)");
     }
     @Test
     public void sinkInto_allHardcoded_withoutId() {
-        sinksIntoMongo( false, "sink into " + methodName() + " (firstName, lastName, jedi) values ('Leia', 'Organa', true)");
+        sinksIntoMongo(false, "sink into " + methodName() + " (firstName, lastName, jedi) values ('Leia', 'Organa', true)");
     }
 
     @Test
