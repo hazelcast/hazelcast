@@ -16,6 +16,7 @@
 
 package com.hazelcast.partition.strategy;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
@@ -23,6 +24,7 @@ import com.hazelcast.partition.PartitioningStrategy;
 
 import java.io.IOException;
 
+@SerializableByConvention
 public class AttributePartitioningStrategy implements PartitioningStrategy {
 
     private String[] attributes;
