@@ -49,8 +49,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletionException;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.jet.mongodb.MongoDBSinks.builder;
