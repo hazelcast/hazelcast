@@ -170,8 +170,8 @@ public class MongoBatchSqlConnectorTest extends SqlTestSupport {
                 + "    'collection' = '" + collectionName + "' "
                 + ")");
 
-        execute("insert into " + tableName + "(jedi, firstName, lastName) values (?, ?, ?)",
-                false, "Han", "Solo");
+        execute("insert into " + tableName + "(jedi, firstName, lastName) values (?, 'Han', ?)",
+                false, "Solo");
 
         try (MongoClient mongoClient = MongoClients.create(connectionString)) {
             MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
