@@ -32,15 +32,15 @@ import static java.lang.System.getProperty;
  */
 public abstract class ReactorBuilder {
     public static final String NAME_LOCAL_TASK_QUEUE_CAPACITY = "hazelcast.tpc.localTaskQueue.capacity";
-    public static final String NAME_CONCURRENT_TASK_QUEUE_CAPACITY = "hazelcast.tpc.concurrentTaskQueue.capacity";
+    public static final String NAME_EXTERNAL_TASK_QUEUE_CAPACITY = "hazelcast.tpc.externalTaskQueue.capacity";
     public static final String NAME_SCHEDULED_TASK_QUEUE_CAPACITY = "hazelcast.tpc.scheduledTaskQueue.capacity";
     public static final String NAME_BATCH_SIZE = "hazelcast.tpc.batch.size";
     public static final String NAME_CLOCK_REFRESH_PERIOD = "hazelcast.tpc.clock.refreshPeriod";
     public static final String NAME_REACTOR_SPIN = "hazelcast.tpc.reactor.spin";
     public static final String NAME_REACTOR_AFFINITY = "hazelcast.tpc.reactor.affinity";
 
-    private static final int DEFAULT_LOCAL_QUEUE_CAPACITY = 65536;
-    private static final int DEFAULT_CONCURRENT_QUEUE_CAPACITY = 65536;
+    private static final int DEFAULT_LOCAL_TASK_QUEUE_CAPACITY = 65536;
+    private static final int DEFAULT_EXTERNAL_TASK_QUEUE_CAPACITY = 65536;
     private static final int DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY = 4096;
     private static final int DEFAULT_BATCH_SIZE = 64;
     private static final int DEFAULT_CLOCK_REFRESH_INTERVAL = 16;
@@ -63,7 +63,7 @@ public abstract class ReactorBuilder {
     ThreadFactory threadFactory = Thread::new;
     boolean spin;
     int localTaskQueueCapacity;
-    int concurrentTaskQueueCapacity;
+    int externalTaskQueueCapacity;
     int scheduledTaskQueueCapacity;
     int batchSize;
     int clockRefreshPeriod;
@@ -71,9 +71,9 @@ public abstract class ReactorBuilder {
     protected ReactorBuilder(ReactorType type) {
         this.type = checkNotNull(type);
         this.localTaskQueueCapacity = Integer.getInteger(
-                NAME_LOCAL_TASK_QUEUE_CAPACITY, DEFAULT_LOCAL_QUEUE_CAPACITY);
-        this.concurrentTaskQueueCapacity = Integer.getInteger(
-                NAME_CONCURRENT_TASK_QUEUE_CAPACITY, DEFAULT_CONCURRENT_QUEUE_CAPACITY);
+                NAME_LOCAL_TASK_QUEUE_CAPACITY, DEFAULT_LOCAL_TASK_QUEUE_CAPACITY);
+        this.externalTaskQueueCapacity = Integer.getInteger(
+                NAME_EXTERNAL_TASK_QUEUE_CAPACITY, DEFAULT_EXTERNAL_TASK_QUEUE_CAPACITY);
         this.scheduledTaskQueueCapacity = Integer.getInteger(
                 NAME_SCHEDULED_TASK_QUEUE_CAPACITY, DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY);
         this.batchSize = Integer.getInteger(NAME_BATCH_SIZE, DEFAULT_BATCH_SIZE);
@@ -169,13 +169,14 @@ public abstract class ReactorBuilder {
     }
 
     /**
-     * Sets the capacity of the scheduled task queue.
+     * Sets the capacity of the external task queue. The external task queue is the task queue used
+     * for other threads to communicate with the reactor.
      *
-     * @param concurrentTaskQueueCapacity the capacity
-     * @throws IllegalArgumentException if concurrentTaskQueueCapacity not positive.
+     * @param externalTaskQueueCapacity the capacity
+     * @throws IllegalArgumentException if externalTaskQueueCapacity not positive.
      */
-    public void setConcurrentTaskQueueCapacity(int concurrentTaskQueueCapacity) {
-        this.concurrentTaskQueueCapacity = checkPositive(concurrentTaskQueueCapacity, "concurrentTaskQueueCapacity");
+    public void setExternalTaskQueueCapacity(int externalTaskQueueCapacity) {
+        this.externalTaskQueueCapacity = checkPositive(externalTaskQueueCapacity, "externalTaskQueueCapacity");
     }
 
     /**

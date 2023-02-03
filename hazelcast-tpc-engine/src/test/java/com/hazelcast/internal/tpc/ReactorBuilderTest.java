@@ -121,25 +121,25 @@ public abstract class ReactorBuilderTest {
     }
 
     @Test
-    public void test_setConcurrentRunQueueCapacity_whenZero() {
+    public void test_setExternalTaskQueueCapacity_whenZero() {
         ReactorBuilder builder = newBuilder();
-        assertThrows(IllegalArgumentException.class, () -> builder.setConcurrentTaskQueueCapacity(0));
+        assertThrows(IllegalArgumentException.class, () -> builder.setExternalTaskQueueCapacity(0));
     }
 
     @Test
-    public void test_setConcurrentRunQueueCapacity_whenNegative() {
+    public void test_setExternalTaskQueueCapacity_whenNegative() {
         ReactorBuilder builder = newBuilder();
-        assertThrows(IllegalArgumentException.class, () -> builder.setConcurrentTaskQueueCapacity(-1));
+        assertThrows(IllegalArgumentException.class, () -> builder.setExternalTaskQueueCapacity(-1));
     }
 
     @Test
-    public void test_setLocalRunQueueCapacity_whenZero() {
+    public void test_setLocalTaskQueueCapacity_whenZero() {
         ReactorBuilder builder = newBuilder();
         assertThrows(IllegalArgumentException.class, () -> builder.setLocalTaskQueueCapacity(0));
     }
 
     @Test
-    public void test_setLocalRunQueueCapacity_whenNegative() {
+    public void test_setLocalTaskQueueCapacity_whenNegative() {
         ReactorBuilder builder = newBuilder();
         assertThrows(IllegalArgumentException.class, () -> builder.setLocalTaskQueueCapacity(-1));
     }
@@ -157,7 +157,6 @@ public abstract class ReactorBuilderTest {
 
         assertNull(builder.threadAffinity);
     }
-
 
     @Test
     public void test_setThreadAffinity() {
