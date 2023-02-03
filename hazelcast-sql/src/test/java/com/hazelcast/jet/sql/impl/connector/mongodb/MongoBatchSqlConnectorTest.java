@@ -189,4 +189,90 @@ public class MongoBatchSqlConnectorTest extends SqlTestSupport {
         }
     }
 
+    @Test
+    public void updatesMongo() {
+        final String databaseName = "sqlConnectorTest";
+        final String collectionName = testName.getMethodName();
+        final String tableName = "updatesMongo";
+        final String connectionString = mongoContainer.getConnectionString();
+
+        try (MongoClient mongoClient = MongoClients.create(connectionString)) {
+            MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
+                collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
+        }
+
+        execute("CREATE MAPPING " + tableName
+                + " ("
+                + " id VARCHAR external name _id, "
+                + " firstName VARCHAR, "
+                + " lastName VARCHAR, "
+                + " jedi BOOLEAN "
+                + ") "
+                + "TYPE MongoDB "
+                + "OPTIONS ("
+                + "    'connectionString' = '" + connectionString + "', "
+                + "    'database' = '" + databaseName + "', "
+                + "    'collection' = '" + collectionName + "' "
+                + ")");
+
+        execute("update " + tableName + " set firstName = 'Han', lastName = ?, jedi=? where jedi=true or firstName = ?",
+                "Solo", false, "Han");
+
+        try (MongoClient mongoClient = MongoClients.create(connectionString)) {
+            MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
+
+            ArrayList<Document> list = collection.find(Filters.eq("firstName", "Han"))
+                                                 .into(new ArrayList<>());
+            assertEquals(1, list.size());
+            Document item = list.get(0);
+            assertEquals("Han", item.getString("firstName"));
+            assertEquals("Solo", item.getString("lastName"));
+            assertEquals(false, item.getBoolean("jedi"));
+
+        }
+    }
+
+    @Test
+    public void sinksIntoMongo() {
+        final String databaseName = "sqlConnectorTest";
+        final String collectionName = testName.getMethodName();
+        final String tableName = "updatesMongo";
+        final String connectionString = mongoContainer.getConnectionString();
+
+        try (MongoClient mongoClient = MongoClients.create(connectionString)) {
+            MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
+                collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
+        }
+
+        execute("CREATE MAPPING " + tableName
+                + " ("
+                + " id VARCHAR external name _id, "
+                + " firstName VARCHAR, "
+                + " lastName VARCHAR, "
+                + " jedi BOOLEAN "
+                + ") "
+                + "TYPE MongoDB "
+                + "OPTIONS ("
+                + "    'connectionString' = '" + connectionString + "', "
+                + "    'database' = '" + databaseName + "', "
+                + "    'collection' = '" + collectionName + "' "
+                + ")");
+
+        execute("sink into " + tableName + " (firstName, lastName, jedi) values ('Leia', ?, true)",
+                "Organa");
+
+        try (MongoClient mongoClient = MongoClients.create(connectionString)) {
+            MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
+
+            ArrayList<Document> list = collection.find(Filters.eq("firstName", "Leia"))
+                                                 .into(new ArrayList<>());
+            assertEquals(1, list.size());
+            Document item = list.get(0);
+            assertEquals("Leia", item.getString("firstName"));
+            assertEquals("Organa", item.getString("lastName"));
+            assertEquals(true, item.getBoolean("jedi"));
+
+        }
+    }
+
 }

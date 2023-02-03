@@ -71,6 +71,13 @@ public abstract class MongoSqlConnectorBase implements SqlConnector, Serializabl
 
     @Nonnull
     @Override
+    public List<String> getPrimaryKey(Table table) {
+        MongoTable mongoTable = (MongoTable) table;
+        return mongoTable.primaryKeyName();
+    }
+
+    @Nonnull
+    @Override
     public Table createTable(@Nonnull NodeEngine nodeEngine, @Nonnull String schemaName, @Nonnull String mappingName,
                              @Nonnull String externalName, @Nonnull Map<String, String> options,
                              @Nonnull List<MappingField> resolvedFields) {
@@ -266,14 +273,13 @@ public abstract class MongoSqlConnectorBase implements SqlConnector, Serializabl
 
     @Nonnull
     @Override
-    public List<String> getPrimaryKey(Table table) {
-        MongoTable mongoTable = (MongoTable) table;
-        return mongoTable.primaryKeyName();
-    }
-
-    @Nonnull
-    @Override
     public Vertex sinkProcessor(@Nonnull DagBuildContext context) {
-        return SqlConnector.super.sinkProcessor(context);
+        MongoTable table = context.getTable();
+
+        Vertex vertex = context.getDag().newUniqueVertex(
+                "Update(" + table.getSqlName() + ")",
+                new InsertProcessorSupplier(table, WriteMode.UPSERT)
+        );
+        return vertex;
     }
 }
