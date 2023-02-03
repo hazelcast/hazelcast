@@ -87,11 +87,9 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
     @BeforeClass
     public static void beforeClass() {
         assumeDockerEnabled();
-        //There is no arm64 version of currently used docker image
-        assumeNoArm64Architecture();
 
         localStack = new LocalStackContainer(parse("localstack/localstack")
-                .withTag("0.12.3"))
+                .withTag("0.13"))
                 .withServices(Service.KINESIS);
         localStack.start();
 
