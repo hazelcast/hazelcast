@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.tpc.util.BufferUtil.compactOrClear;
 import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
+import static com.hazelcast.internal.tpc.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
@@ -55,7 +56,7 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 /**
  * Nio implementation of the {@link AsyncSocket}.
  */
-@SuppressWarnings({"checkstyle:DeclarationOrder", "checkstyle:VisibilityOrder"})
+@SuppressWarnings({"checkstyle:DeclarationOrder", "checkstyle:VisibilityOrder", "checkstyle:MethodCount"})
 public final class NioAsyncSocket extends AsyncSocket {
 
     private static final int DEFAULT_UNFLUSHED_BUFS_CAPACITY = 2 << 16;
@@ -87,7 +88,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     // concurrent
     private final AtomicReference<Thread> flushThread = new AtomicReference<>();
     private MpmcArrayQueue<IOBuffer> unflushedBufs;
-    private final NioAsyncSocketHandler reactorHandler = new NioAsyncSocketHandler();
+    private final NioAsyncSocketHandler handler = new NioAsyncSocketHandler();
     private CompletableFuture<Void> connectFuture;
 
     // immutable state
@@ -131,6 +132,15 @@ public final class NioAsyncSocket extends AsyncSocket {
         }
     }
 
+    /**
+     * Returns the SelectionKey. This method only exists for testing/debugging purposes.
+     *
+     * @return the selection key.
+     */
+    public SelectionKey key() {
+        return key;
+    }
+
     @Override
     public NioReactor reactor() {
         return reactor;
@@ -155,6 +165,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     @Override
     public void setTcpKeepAliveTime(int keepAliveTime) {
         checkPositive(keepAliveTime, "keepAliveTime");
+
         if (TCP_KEEPIDLE == null) {
             if (TCP_KEEPIDLE_PRINTED.compareAndSet(false, true)) {
                 logger.warning("Ignoring NioAsyncSocket.setTcpKeepAliveTime. "
@@ -323,7 +334,87 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void activate(Reactor reactor) {
+    public void setReadable(boolean readable) {
+        if (Thread.currentThread() == eventloopThread) {
+            setReadable0(readable);
+        } else {
+            CompletableFuture future = new CompletableFuture();
+
+            reactor.execute(() -> {
+                try {
+                    setReadable0(readable);
+                    future.complete(null);
+                } catch (Throwable t) {
+                    future.completeExceptionally(t);
+                    throw sneakyThrow(t);
+                }
+            });
+
+            future.join();
+        }
+    }
+
+    private void setReadable0(boolean readable) {
+        if (key == null) {
+            throw new UncheckedIOException(new IOException(this + " has no key"));
+        }
+
+        if (readable) {
+            key.interestOps(key.interestOps() | OP_READ);
+        } else {
+            key.interestOps(key.interestOps() & ~OP_READ);
+        }
+    }
+
+    @Override
+    public boolean isReadable() {
+        if (Thread.currentThread() == eventloopThread) {
+            return isReadable0();
+        } else {
+            CompletableFuture<Boolean> future = new CompletableFuture<>();
+            reactor.execute(() -> {
+                try {
+                    future.complete(isReadable0());
+                } catch (Throwable t) {
+                    future.completeExceptionally(t);
+                    throw sneakyThrow(t);
+                }
+            });
+
+            return future.join();
+        }
+    }
+
+    private boolean isReadable0() {
+        if (key == null) {
+            throw new UncheckedIOException(new IOException(this + " has no key"));
+        }
+
+        return (key.interestOps() & OP_READ) != 0;
+    }
+
+    @Override
+    public void activate(Reactor r) {
+        NioReactor reactor = checkInstanceOf(NioReactor.class, r, "reactor");
+
+        if (Thread.currentThread() == reactor.eventloopThread()) {
+            activate0(reactor);
+        } else {
+            CompletableFuture future = new CompletableFuture();
+            reactor.execute(() -> {
+                try {
+                    activate0(reactor);
+                    future.complete(null);
+                } catch (Throwable e) {
+                    future.completeExceptionally(e);
+                    throw sneakyThrow(e);
+                }
+            });
+            future.join();
+        }
+    }
+
+    private void activate0(NioReactor reactor) {
         if (this.reactor != null) {
             throw new IllegalStateException(this + " already has been activated");
         }
@@ -332,29 +423,52 @@ public final class NioAsyncSocket extends AsyncSocket {
             throw new IllegalStateException("Can't activate " + this + ": readhandler isn't set");
         }
 
-        this.reactor = checkInstanceOf(NioReactor.class, reactor, "reactor");
+        this.reactor = reactor;
+        this.selector = reactor.selector;
         this.eventloopThread = reactor.eventloopThread();
         this.unflushedBufs = new MpmcArrayQueue<>(unflushedBufsCapacity);
+        this.receiveBuffer = ByteBuffer.allocateDirect(getReceiveBufferSize());
+        try {
+            key = socketChannel.register(selector, clientSide ? 0 : OP_READ, handler);
+        } catch (ClosedChannelException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
 
-        // todo: if something fails within this task, you just get a logged exception and that is it.
-        boolean offered = reactor.offer(() -> {
-            try {
-                selector = this.reactor.selector;
-                receiveBuffer = ByteBuffer.allocateDirect(getReceiveBufferSize());
-                if (!clientSide) {
-                    try {
-                        key = socketChannel.register(selector, OP_READ, reactorHandler);
-                    } catch (ClosedChannelException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                }
-            } catch (Exception e) {
-                close();
+    @Override
+    public CompletableFuture<Void> connect(SocketAddress address) {
+        checkNotNull(address, "address");
+
+        if (logger.isInfoEnabled()) {
+            logger.info("Connecting to address:" + address);
+        }
+
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        if (Thread.currentThread() == eventloopThread) {
+            connect0(address, future);
+        } else {
+            if (reactor == null) {
+                throw new IllegalStateException("Can't connect, NioAsyncSocket isn't activated.");
             }
-        });
 
-        if (!offered) {
-            throw new RuntimeException("Failed to activate " + this);
+            reactor.execute(() -> connect0(address, future));
+        }
+
+        return future;
+    }
+
+    private void connect0(SocketAddress address, CompletableFuture<Void> future) {
+        try {
+            if (this.connectFuture != null) {
+                throw new IllegalStateException(this + " is already trying to connect");
+            }
+
+            connectFuture = future;
+            key.interestOps(key.interestOps() | OP_CONNECT);
+            socketChannel.connect(address);
+        } catch (Throwable e) {
+            connectFuture.completeExceptionally(e);
+            throw sneakyThrow(e);
         }
     }
 
@@ -363,14 +477,16 @@ public final class NioAsyncSocket extends AsyncSocket {
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
             if (currentThread == eventloopThread) {
-                reactor.localTaskQueue.add(reactorHandler);
+                reactor.localTaskQueue.add(handler);
             } else if (writeThrough) {
-                reactorHandler.run();
+                handler.run();
             } else if (regularSchedule) {
                 // todo: return value
-                reactor.offer(reactorHandler);
+                reactor.offer(handler);
             } else {
                 key.interestOps(key.interestOps() | OP_WRITE);
+
+                //todo: is this needed? The whole purpose of using the OP_WRITE is to wakeup the selector.
                 reactor.wakeup();
             }
         }
@@ -381,7 +497,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
         if (!unflushedBufs.isEmpty()) {
             if (flushThread.compareAndSet(null, Thread.currentThread())) {
-                reactor.offer(reactorHandler);
+                reactor.offer(handler);
             }
         }
     }
@@ -413,7 +529,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         boolean result;
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
-                reactor.localTaskQueue.add(reactorHandler);
+                reactor.localTaskQueue.add(handler);
                 if (ioVector.offer(buf)) {
                     result = true;
                 } else {
@@ -452,45 +568,27 @@ public final class NioAsyncSocket extends AsyncSocket {
         super.close0();
     }
 
-    @Override
-    public CompletableFuture<Void> connect(SocketAddress address) {
-        checkNotNull(address, "address");
-
-        CompletableFuture<Void> future = new CompletableFuture<>();
-        if (reactor == null) {
-            throw new IllegalStateException("Can't connect, NioAsyncSocket isn't activated.");
-        }
-
-        if (logger.isInfoEnabled()) {
-            logger.info("Connect to address:" + address);
-        }
-
-        reactor.offer(() -> {
-            try {
-                key = socketChannel.register(selector, OP_CONNECT, reactorHandler);
-                connectFuture = future;
-                socketChannel.connect(address);
-            } catch (IOException e) {
-                connectFuture.completeExceptionally(e);
-            }
-        });
-        return future;
-    }
-
     private class NioAsyncSocketHandler implements NioHandler, Runnable {
 
         @Override
         public void run() {
             try {
-                handleWriteReady();
-            } catch (Exception e) {
+                handleWrite();
+            } catch (Throwable e) {
                 close(null, e);
+                sneakyThrow(e);
             }
         }
 
         @Override
-        public void close(String reason, Exception cause) {
-            NioAsyncSocket.this.close(reason, cause);
+        public void close(String reason, Throwable cause) {
+            if (cause instanceof EOFException) {
+                // The stacktrace of an EOFException isn't important. It just means that the
+                // Exception is closed by the remote side.
+                NioAsyncSocket.this.close(reason != null ? reason : cause.getMessage(), null);
+            } else {
+                NioAsyncSocket.this.close(reason, cause);
+            }
         }
 
         @Override
@@ -502,19 +600,19 @@ public final class NioAsyncSocket extends AsyncSocket {
             int readyOps = key.readyOps();
 
             if ((readyOps & OP_READ) != 0) {
-                handleReadReady();
+                handleRead();
             }
 
             if ((readyOps & OP_WRITE) != 0) {
-                handleWriteReady();
+                handleWrite();
             }
 
             if ((readyOps & OP_CONNECT) != 0) {
-                handleConnectReady();
+                handleConnect();
             }
         }
 
-        private void handleReadReady() throws IOException {
+        private void handleRead() throws IOException {
             readEvents.inc();
 
             int read = socketChannel.read(receiveBuffer);
@@ -530,7 +628,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             }
         }
 
-        private void handleWriteReady() throws IOException {
+        private void handleWrite() throws IOException {
             assert flushThread.get() != null;
 
             writeEvents.inc();
@@ -558,7 +656,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             }
         }
 
-        private void handleConnectReady() throws IOException {
+        private void handleConnect() {
             try {
                 socketChannel.finishConnect();
                 remoteAddress = socketChannel.getRemoteAddress();
@@ -567,11 +665,11 @@ public final class NioAsyncSocket extends AsyncSocket {
                     logger.info("Connection established " + NioAsyncSocket.this);
                 }
 
-                socketChannel.register(selector, OP_READ, this);
+                key.interestOps(key.interestOps() | OP_READ);
                 connectFuture.complete(null);
-            } catch (IOException e) {
+            } catch (Throwable e) {
                 connectFuture.completeExceptionally(e);
-                throw e;
+                throw sneakyThrow(e);
             } finally {
                 connectFuture = null;
             }

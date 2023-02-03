@@ -39,7 +39,7 @@ import static org.junit.Assume.assumeTrue;
 
 public abstract class AsyncServerSocketTest {
 
-    public List<Reactor> reactors = new ArrayList<>();
+    public final List<Reactor> reactors = new ArrayList<>();
 
     public abstract Reactor newReactor();
 
@@ -180,7 +180,7 @@ public abstract class AsyncServerSocketTest {
 
         socket.accept(socket1 -> {
 
-        }).join();
+        });
     }
 
     @Test
@@ -244,7 +244,7 @@ public abstract class AsyncServerSocketTest {
             socket.setReusePort(true);
             socket.bind(local);
             socket.accept(socket1 -> {
-            }).join();
+            });
             socket.close();
         }
     }
@@ -260,7 +260,7 @@ public abstract class AsyncServerSocketTest {
             socket.setReusePort(true);
             socket.bind(local);
             socket.accept(socket1 -> {
-            }).join();
+            });
             terminate(reactor);
         }
     }

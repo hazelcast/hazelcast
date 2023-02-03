@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
+import static com.hazelcast.internal.tpc.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpc.util.ReflectionUtil.findStaticFieldValue;
@@ -57,6 +58,8 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     private final Selector selector;
     private final NioReactor reactor;
     private final Thread eventloopThread;
+    private final SelectionKey key;
+    private Consumer<AsyncSocket> consumer;
 
     private NioAsyncServerSocket(NioReactor reactor) {
         try {
@@ -65,6 +68,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             this.reactor = reactor;
             this.eventloopThread = reactor.eventloopThread();
             this.selector = reactor.selector;
+            this.key = serverSocketChannel.register(selector, 0, new Handler());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -164,13 +168,6 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     protected void close0() throws IOException {
-        // First we need to obtain the key, because as soon as the
-        // serverSocketChannel is closed, the key is deregistered.
-
-        // Can be called on any thread, so we need to make use of the
-        // synchronization of the serverSocketChannel to obtain the key
-        SelectionKey key = serverSocketChannel.keyFor(selector);
-
         closeQuietly(serverSocketChannel);
 
         if (key != null) {
@@ -196,42 +193,46 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public CompletableFuture<Void> accept(Consumer<AsyncSocket> consumer) {
+    public void accept(Consumer<AsyncSocket> consumer) {
         checkNotNull(consumer, "consumer");
 
-        CompletableFuture<Void> future = new CompletableFuture<>();
+        if (Thread.currentThread() == eventloopThread) {
+            accept0(consumer);
+        } else {
+            CompletableFuture<Void> future = new CompletableFuture<>();
+            reactor.execute(() -> {
+                try {
+                    accept0(consumer);
 
-        Runnable acceptTask = () -> {
-            try {
-                serverSocketChannel.register(selector, OP_ACCEPT, new AcceptHandler(consumer));
-
-                if (logger.isInfoEnabled()) {
-                    logger.info(getLocalAddress() + " started accepting");
+                    future.complete(null);
+                } catch (Throwable t) {
+                    future.completeExceptionally(t);
+                    throw sneakyThrow(t);
                 }
+            });
 
-                future.complete(null);
-            } catch (RuntimeException | IOException e) {
-                future.completeExceptionally(e);
-            }
-        };
-
-        if (!reactor.offer(acceptTask)) {
-            future.completeExceptionally(new RuntimeException("Failed to offer accept task"));
+            future.join();
         }
-
-        return future;
     }
 
-    private final class AcceptHandler implements NioHandler {
-
-        private final Consumer<AsyncSocket> consumer;
-
-        private AcceptHandler(Consumer<AsyncSocket> consumer) {
-            this.consumer = consumer;
+    private void accept0(Consumer<AsyncSocket> consumer) {
+        if (this.consumer != null) {
+            throw new IllegalStateException(this + " already is accepting");
         }
 
+        this.consumer = consumer;
+
+        key.interestOps(key.interestOps() | OP_ACCEPT);
+
+        if (logger.isInfoEnabled()) {
+            logger.info(getLocalAddress() + " started accepting");
+        }
+    }
+
+    private final class Handler implements NioHandler {
+
         @Override
-        public void close(String reason, Exception cause) {
+        public void close(String reason, Throwable cause) {
             NioAsyncServerSocket.this.close(reason, cause);
         }
 

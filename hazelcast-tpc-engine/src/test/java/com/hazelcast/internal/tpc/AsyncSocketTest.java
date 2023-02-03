@@ -40,7 +40,7 @@ import static org.mockito.Mockito.mock;
 
 public abstract class AsyncSocketTest {
 
-    public List<Reactor> reactors = new ArrayList<>();
+    public final List<Reactor> reactors = new ArrayList<>();
 
     public abstract Reactor newReactor();
 
@@ -59,7 +59,6 @@ public abstract class AsyncSocketTest {
         SocketAddress remoteAddress = socket.getRemoteAddress();
         assertNull(remoteAddress);
     }
-
 
     @Test
     public void test_localAddress_whenNotConnected() {
@@ -228,7 +227,7 @@ public abstract class AsyncSocketTest {
         socket.setReadHandler(mock(ReadHandler.class));
 
         socket.activate(reactor1);
-        assertThrows(IllegalStateException.class, () -> socket.activate(reactor2));
+        assertThrows(CompletionException.class, () -> socket.activate(reactor2));
     }
 
     @Test
@@ -236,6 +235,23 @@ public abstract class AsyncSocketTest {
         Reactor reactor = newReactor();
 
         AsyncSocket socket = reactor.openTcpAsyncSocket();
-        assertThrows(IllegalStateException.class, () -> socket.activate(reactor));
+        assertThrows(CompletionException.class, () -> socket.activate(reactor));
+    }
+
+    @Test
+    public void test_readable() {
+        Reactor reactor = newReactor();
+        AsyncServerSocket serverSocket = reactor.openTcpAsyncServerSocket();
+        SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
+        serverSocket.bind(serverAddress);
+
+        AsyncSocket socket = reactor.openTcpAsyncSocket();
+        socket.setReadHandler(mock(ReadHandler.class));
+        socket.activate(reactor);
+        socket.connect(serverAddress).join();
+
+        assertTrue(socket.isReadable());
+        socket.setReadable(false);
+        assertFalse(socket.isReadable());
     }
 }

@@ -31,7 +31,7 @@ public interface NioHandler {
      * @param reason the reason (can be null).
      * @param cause  the cause (can be null).
      */
-    void close(String reason, Exception cause);
+    void close(String reason, Throwable cause);
 
     /**
      * Signals that something interesting happened on a SelectionKey.
