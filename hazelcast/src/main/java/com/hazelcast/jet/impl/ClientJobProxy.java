@@ -61,6 +61,7 @@ import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -243,6 +244,7 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     @Nonnull
     @Override
     public UUID addStatusListener(@Nonnull JobStatusListener listener) {
+        requireNonNull(listener, "Listener cannot be null");
         ClientJobStatusEventHandler handler = new ClientJobStatusEventHandler(listener);
         handler.registrationId = container().getListenerService().registerListener(
                 createJobStatusListenerCodec(getId()), handler);

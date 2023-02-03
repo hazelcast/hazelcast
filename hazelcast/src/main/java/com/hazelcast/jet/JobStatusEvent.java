@@ -29,6 +29,13 @@ import java.io.IOException;
 
 import static com.hazelcast.jet.Util.idToString;
 
+/**
+ * Holds information about a job's state (status) transition,
+ * reason for the transition, and whether it is user-initiated.
+ *
+ * @see JobStatusListener
+ * @since 5.3
+ */
 @BinaryInterface
 public class JobStatusEvent implements IdentifiedDataSerializable {
     private long jobId;

@@ -28,13 +28,14 @@ import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.test.TestSources;
-import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -57,7 +58,9 @@ import java.util.function.Supplier;
 import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
+import static com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl.EVENT_SYNC_FREQUENCY_PROP;
 import static com.hazelcast.spi.impl.eventservice.impl.EventServiceTest.getEventService;
+import static com.hazelcast.test.OverridePropertyRule.set;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
@@ -100,10 +103,12 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     private String jobIdString;
     private UUID registrationId;
 
+    /** Disable asynchronous transmission of events to preserve their order. */
+    @ClassRule
+    public static OverridePropertyRule eventSyncFrequency = set(EVENT_SYNC_FREQUENCY_PROP, "1");
+
     @BeforeClass
-    public static void setUp() throws NoSuchFieldException {
-        // Disable asynchronous transmission of events to preserve their order.
-        System.setProperty(EventServiceImpl.EVENT_SYNC_FREQUENCY_PROP, "1");
+    public static void setup() {
         initializeWithClient(2, null, null);
     }
 

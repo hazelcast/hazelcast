@@ -26,5 +26,11 @@ import java.util.UUID;
  * @since 5.3
  */
 public interface JobStatusListener {
+    /**
+     * Invoked upon job status change.
+     *
+     * @param event Holds information about the previous and new job statuses,
+     *        reason for the status change, and whether it is user-initiated.
+     */
     void jobStatusChanged(JobStatusEvent event);
 }
