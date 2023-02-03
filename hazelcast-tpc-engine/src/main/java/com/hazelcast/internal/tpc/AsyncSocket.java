@@ -31,7 +31,7 @@ import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
  * A 'client' Socket that is asynchronous. So reads and writes do not block,
  * but are executed on an {@link Reactor}.
  * <p/>
- * The socket should be configured and then activated before it is shared
+ * The socket should be configured and then started before it is shared
  * with other threads.
  */
 @SuppressWarnings({"checkstyle:MethodCount", "checkstyle:VisibilityModifier"})
@@ -107,8 +107,7 @@ public abstract class AsyncSocket extends Socket {
     /**
      * Gets the {@link Reactor} this {@link AsyncSocket} belongs to.
      *
-     * @return the {@link Reactor} this AsyncSocket belongs to or null if
-     * the AsyncSocket has not been activated yet.
+     * @return the {@link Reactor} this AsyncSocket belongs.
      */
     public abstract Reactor reactor();
 
@@ -277,7 +276,7 @@ public abstract class AsyncSocket extends Socket {
     public abstract int getSendBufferSize();
 
     /**
-     * Sets the read handler. Should be called before this AsyncSocket is activated.
+     * Sets the read handler. Should be called before this AsyncSocket is started.
      *
      * @param readHandler the ReadHandler
      * @throws NullPointerException if readHandler is null.
@@ -303,8 +302,6 @@ public abstract class AsyncSocket extends Socket {
      * This call can safely be made from any thread, but typically you want to call it from the
      * eventloop-thread. This call is blocking; this isn't an issue for the eventloop thread
      * because it is an instantaneous call. For any other thread this call is not cheap.
-     * <p/>
-     * This call should only be made after the socket is activated.
      *
      * @param readable the new readable status.
      * @throws RuntimeException if the readable status could not be set.
@@ -324,20 +321,14 @@ public abstract class AsyncSocket extends Socket {
     public abstract boolean isReadable();
 
     /**
-     * Activates an AsyncSocket by hooking it up to a Reactor.
-     * <p>
-     * This method should only be called once.
-     * <p>
-     * This method is not thread-safe.
-     * <p>
+     * Start the AsyncSocket. The Socket should be started only once.
+     * <p/>
      * Typically you do not want to share this AsyncSocket with other threads till this
      * method is called.
      *
-     * @param reactor the Reactor this AsyncSocket belongs to.
-     * @throws NullPointerException  if reactor is null.
-     * @throws IllegalStateException if this AsyncSocket is already activated.
+     * @throws RuntimeException if the Socket could not be started.
      */
-    public abstract void activate(Reactor reactor);
+    public abstract void start();
 
     /**
      * Ensures that any scheduled IOBuffers are flushed to the socket.

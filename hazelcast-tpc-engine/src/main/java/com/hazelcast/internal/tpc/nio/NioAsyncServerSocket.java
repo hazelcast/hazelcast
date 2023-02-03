@@ -17,8 +17,7 @@
 package com.hazelcast.internal.tpc.nio;
 
 import com.hazelcast.internal.tpc.AsyncServerSocket;
-import com.hazelcast.internal.tpc.AsyncSocket;
-import com.hazelcast.internal.tpc.Reactor;
+import com.hazelcast.internal.tpc.AcceptRequest;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -59,9 +58,9 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     private final NioReactor reactor;
     private final Thread eventloopThread;
     private final SelectionKey key;
-    private Consumer<AsyncSocket> consumer;
+    private Consumer<AcceptRequest> consumer;
 
-    private NioAsyncServerSocket(NioReactor reactor) {
+    NioAsyncServerSocket(NioReactor reactor) {
         try {
             this.serverSocketChannel = ServerSocketChannel.open();
             serverSocketChannel.configureBlocking(false);
@@ -72,18 +71,6 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    /**
-     * Opens a TCP/IP (stream) based IPv4 NioAsyncServerSocket.
-     * <p/>
-     * To prevent coupling to Nio, it is better to use the {@link Reactor#openTcpAsyncServerSocket()}.
-     *
-     * @param reactor the reactor the opened socket will be processed by.
-     * @return the opened NioAsyncServerSocket.
-     */
-    public static NioAsyncServerSocket openTcpServerSocket(NioReactor reactor) {
-        return new NioAsyncServerSocket(reactor);
     }
 
     @Override
@@ -193,7 +180,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public void accept(Consumer<AsyncSocket> consumer) {
+    public void accept(Consumer<AcceptRequest> consumer) {
         checkNotNull(consumer, "consumer");
 
         if (Thread.currentThread() == eventloopThread) {
@@ -215,7 +202,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         }
     }
 
-    private void accept0(Consumer<AsyncSocket> consumer) {
+    private void accept0(Consumer<AcceptRequest> consumer) {
         if (this.consumer != null) {
             throw new IllegalStateException(this + " already is accepting");
         }
@@ -243,10 +230,10 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             }
 
             SocketChannel socketChannel = serverSocketChannel.accept();
-            NioAsyncSocket socket = new NioAsyncSocket(socketChannel);
+            NioAcceptRequest openRequest = new NioAcceptRequest(socketChannel);
 
             accepted.inc();
-            consumer.accept(socket);
+            consumer.accept(openRequest);
 
             if (logger.isInfoEnabled()) {
                 logger.info(NioAsyncServerSocket.this + " accepted: " + socketChannel.getRemoteAddress()
