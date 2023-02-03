@@ -49,7 +49,7 @@ class NioEventloop extends Eventloop {
         final boolean spin = this.spin;
         final Selector selector = this.selector;
         final AtomicBoolean wakeupNeeded = this.wakeupNeeded;
-        final MpmcArrayQueue concurrentTaskQueue = this.concurrentTaskQueue;
+        final MpmcArrayQueue concurrentTaskQueue = this.externalTaskQueue;
         final Scheduler scheduler = this.scheduler;
 
         boolean moreWork = false;
@@ -59,7 +59,7 @@ class NioEventloop extends Eventloop {
                 keyCount = selector.selectNow();
             } else {
                 wakeupNeeded.set(true);
-                if (concurrentTaskQueue.isEmpty()) {
+                if (externalTaskQueue.isEmpty()) {
                     if (earliestDeadlineNanos == -1) {
                         keyCount = selector.select();
                     } else {
@@ -89,7 +89,7 @@ class NioEventloop extends Eventloop {
                 }
             }
 
-            moreWork = runConcurrentTasks();
+            moreWork = runExternalTasks();
             moreWork |= scheduler.tick();
             moreWork |= runScheduledTasks();
             moreWork |= runLocalTasks();
