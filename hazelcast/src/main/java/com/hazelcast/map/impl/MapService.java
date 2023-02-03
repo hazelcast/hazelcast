@@ -53,7 +53,6 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.spi.impl.CountingMigrationAwareService;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
@@ -211,8 +210,8 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
     }
 
     @Override
-    public int onSyncEvent(InternalWanEvent event, InternalCompletableFuture<Boolean>[] futures, int offset) {
-        return wanSupportingService.onSyncEvent(event, futures, offset);
+    public void onSyncBatch(Collection<InternalWanEvent> batch, WanAcknowledgeType acknowledgeType) {
+        wanSupportingService.onSyncBatch(batch, acknowledgeType);
     }
 
     @Override
