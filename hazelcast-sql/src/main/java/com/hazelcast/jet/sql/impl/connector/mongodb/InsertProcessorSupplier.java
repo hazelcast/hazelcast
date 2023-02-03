@@ -15,13 +15,11 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.mongodb.impl.ReadMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.mongodb.client.MongoClients;
 import org.bson.Document;
@@ -42,7 +40,6 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
     private final String databaseName;
     private final String collectionName;
     private final String[] paths;
-    private transient ExpressionEvalContext evalContext;
 
     InsertProcessorSupplier(MongoTable table) {
         this.connectionString = table.connectionString;
@@ -51,31 +48,24 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
         paths = table.paths();
     }
 
-    @Override
-    public void init(@Nonnull Context context) {
-        evalContext = ExpressionEvalContext.from(context);
-    }
-
     @Nonnull
     @Override
     public Collection<? extends Processor> get(int count) {
         Processor[] processors = new Processor[count];
-        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
         for (int i = 0; i < count; i++) {
             Processor processor;
             processor  = new WriteMongoP<>(
-                    () -> MongoClients.create(connectionString),
-                    databaseName,
-                    collectionName,
-                    Document.class,
-                    doc -> doc.getObjectId("_id"),
-                    replaceOpts -> {
-                    },
-                    "_id",
-                    DEFAULT_COMMIT_RETRY_STRATEGY,
-                    serializationService.toBytes(DEFAULT_TRANSACTION_OPTION),
-                    this::rowToDoc
+                    new WriteMongoParams<Document>()
+                            .setClientSupplier(() -> MongoClients.create(connectionString))
+                            .setDatabaseName(databaseName)
+                            .setCollectionName(collectionName)
+                            .setDocumentType(Document.class)
+                            .setDocumentIdentityFn(doc -> doc.getObjectId("_id"))
+                            .setDocumentIdentityFieldName("_id")
+                            .setCommitRetryStrategy(DEFAULT_COMMIT_RETRY_STRATEGY)
+                            .setTransactionOptions(DEFAULT_TRANSACTION_OPTION)
+                            .setIntermediateMappingFn(this::rowToDoc)
             );
 
             processors[i] = processor;

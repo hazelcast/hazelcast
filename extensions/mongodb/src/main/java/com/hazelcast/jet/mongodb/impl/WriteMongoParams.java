@@ -42,6 +42,8 @@ public class WriteMongoParams<I> implements Serializable {
     String databaseName;
     String collectionName;
     Class<I> documentType;
+    @Nonnull
+    FunctionEx<?, I> intermediateMappingFn = FunctionEx.identity();
     String documentIdentityFieldName;
     FunctionEx<I, Object> documentIdentityFn;
     @Nonnull
@@ -95,6 +97,22 @@ public class WriteMongoParams<I> implements Serializable {
     public WriteMongoParams<I> setDocumentType(@Nonnull Class<I> documentType) {
         this.documentType = documentType;
         return this;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Nonnull
+    public <T> FunctionEx<T, I> getIntermediateMappingFn() {
+        return (FunctionEx<T, I>) intermediateMappingFn;
+    }
+
+    @Nonnull
+    public <IN> WriteMongoParams<I> setIntermediateMappingFn(FunctionEx<IN, I> intermediateMappingFn) {
+        this.intermediateMappingFn = intermediateMappingFn;
+        return this;
+    }
+
+    public void setTransactionOptions(byte[] transactionOptions) {
+        this.transactionOptions = transactionOptions;
     }
 
     @Nonnull

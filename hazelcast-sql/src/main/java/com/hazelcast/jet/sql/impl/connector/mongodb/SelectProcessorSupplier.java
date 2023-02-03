@@ -20,6 +20,7 @@ import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.mongodb.impl.ReadMongoP;
+import com.hazelcast.jet.mongodb.impl.ReadMongoParams;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.mongodb.client.MongoClients;
@@ -107,26 +108,17 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
                 ? EventTimePolicy.noEventTime()
                 : eventTimePolicyProvider.apply(evalContext);
         for (int i = 0; i < count; i++) {
-            Processor processor;
-            if (!stream) {
-                processor  = new ReadMongoP<>(
-                        () -> MongoClients.create(connectionString),
-                        aggregates,
-                        databaseName,
-                        collectionName,
-                        this::convertDocToRow
-                );
-            } else {
-                processor  = new ReadMongoP<>(
-                        () -> MongoClients.create(connectionString),
-                        startAt,
-                        eventTimePolicy,
-                        aggregates,
-                        databaseName,
-                        collectionName,
-                        this::convertStreamDocToRow
-                );
-            }
+            Processor processor = new ReadMongoP<>(
+                    new ReadMongoParams<JetSqlRow>(stream)
+                            .setClientSupplier(() -> MongoClients.create(connectionString))
+                            .setAggregates(aggregates)
+                            .setDatabaseName(databaseName)
+                            .setCollectionName(collectionName)
+                            .setMapItemFn(this::convertDocToRow)
+                            .setMapStreamFn(this::convertStreamDocToRow)
+                            .setStartAtTimestamp(startAt)
+                            .setEventTimePolicy(eventTimePolicy)
+            );
 
             processors[i] = processor;
         }

@@ -123,6 +123,7 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
             this.collectionPicker = new FunctionalCollectionPicker<>(params.databaseNameSelectFn,
                     params.collectionNameSelectFn);
         }
+        this.intermediateMappingFn = params.getIntermediateMappingFn();
     }
 
     @Override
