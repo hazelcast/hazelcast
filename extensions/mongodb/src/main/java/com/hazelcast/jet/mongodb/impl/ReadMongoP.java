@@ -16,14 +16,12 @@
 package com.hazelcast.jet.mongodb.impl;
 
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
-import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.logging.ILogger;
 import com.mongodb.MongoException;
 import com.mongodb.MongoServerException;
@@ -61,7 +59,7 @@ import static java.util.Collections.emptyList;
 
 /**
  * Processor for reading from MongoDB
- *
+ * <p>
  * Reading is done by one of two readers:
  * <ul>
  * <li>batch reader, which uses {@linkplain MongoCollection#aggregate} to find matching documents.</li>
@@ -90,37 +88,17 @@ public class ReadMongoP<I> extends AbstractProcessor {
     private Traverser<?> traverser;
     private Traverser<? extends Entry<BroadcastKey<Integer>, ?>> snapshotTraverser;
 
-    /**
-     * Creates a new processor with batch reader.
-     */
-    public ReadMongoP(
-            SupplierEx<? extends MongoClient> clientSupplier,
-            List<Bson> aggregates,
-            String databaseName,
-            String collectionName,
-            FunctionEx<Document, I> mapItemFn
-    ) {
-        this.reader = new BatchMongoReader(databaseName, collectionName, mapItemFn, aggregates);
-        this.connection = new MongoDbConnection(clientSupplier, client -> reader.connect(client, snapshotsEnabled));
-    }
-
-    /**
-     * Creates a new processor with streaming reader.
-     */
-    public ReadMongoP(
-            SupplierEx<? extends MongoClient> clientSupplier,
-            Long startAtTimestamp,
-            EventTimePolicy<? super I> eventTimePolicy,
-            List<Bson> aggregates,
-            String databaseName,
-            String collectionName,
-            FunctionEx<ChangeStreamDocument<Document>, I> mapStreamFn
-    ) {
-        EventTimeMapper<I> eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
-        eventTimeMapper.addPartitions(1);
-        this.reader = new StreamMongoReader(databaseName, collectionName, mapStreamFn,
-                startAtTimestamp, aggregates, eventTimeMapper);
-        this.connection = new MongoDbConnection(clientSupplier, client -> reader.connect(client, snapshotsEnabled));
+    public ReadMongoP(ReadMongoParams<I> params) {
+        if (params.isStream()) {
+            EventTimeMapper<I> eventTimeMapper = new EventTimeMapper<>(params.eventTimePolicy);
+            eventTimeMapper.addPartitions(1);
+            this.reader = new StreamMongoReader(params.databaseName, params.collectionName, params.mapStreamFn,
+                    params.startAtTimestamp, params.aggregates, eventTimeMapper);
+        } else {
+            this.reader = new BatchMongoReader(params.databaseName, params.collectionName, params.mapItemFn,
+                    params.aggregates);
+        }
+        this.connection = new MongoDbConnection(params.clientSupplier, client -> reader.connect(client, snapshotsEnabled));
     }
 
     @Override
@@ -403,16 +381,15 @@ public class ReadMongoP<I> extends AbstractProcessor {
             try {
                 List<ChangeStreamDocument<Document>> chunk = readChunk();
 
-                Traverser<?> traverser = Traversers.traverseIterable(chunk)
-                                      .flatMap(doc -> {
-                                          resumeToken = doc.getResumeToken();
-                                          long eventTime = clusterTime(doc);
-                                          I item = mapFn.apply(doc);
-                                          return item == null
-                                                  ? Traversers.empty()
-                                                  : eventTimeMapper.flatMapEvent(item, 0, eventTime);
-                                      });
-                return traverser;
+                return traverseIterable(chunk)
+                        .flatMap(doc -> {
+                            resumeToken = doc.getResumeToken();
+                            long eventTime = clusterTime(doc);
+                            I item = mapFn.apply(doc);
+                            return item == null
+                                    ? Traversers.empty()
+                                    : eventTimeMapper.flatMapEvent(item, 0, eventTime);
+                        });
             } catch (MongoException e) {
                 throw new JetException("error while reading from mongodb", e);
             }

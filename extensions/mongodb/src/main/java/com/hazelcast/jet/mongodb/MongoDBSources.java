@@ -46,7 +46,7 @@ public final class MongoDBSources {
 
     /**
      * Creates as builder for new batch mongo source. Equivalent to calling {@link MongoDBSourceBuilder#batch}.
-     *
+     * <p>
      * Example usage:
      * <pre>{@code
      * BatchSource<Document> batchSource =

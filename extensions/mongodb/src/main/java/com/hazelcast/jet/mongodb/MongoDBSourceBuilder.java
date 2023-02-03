@@ -20,6 +20,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.mongodb.impl.ReadMongoP;
+import com.hazelcast.jet.mongodb.impl.ReadMongoParams;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
@@ -33,8 +34,6 @@ import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
@@ -58,7 +57,6 @@ public final class MongoDBSourceBuilder {
 
     private MongoDBSourceBuilder() {
     }
-
 
     /**
      * Returns a builder object that offers a step-by-step fluent API to build
@@ -103,29 +101,18 @@ public final class MongoDBSourceBuilder {
     }
 
     private abstract static class Base<T> {
+        protected ReadMongoParams<T> params;
 
         protected String name;
-        protected SupplierEx<? extends MongoClient> clientSupplier;
-        protected Class<T> mongoType;
-
-        protected String databaseName;
-        protected String collectionName;
-        protected final List<Bson> aggregates = new ArrayList<>();
 
         @Nonnull
         public Base<T> database(String database) {
-            databaseName = database;
+            params.setDatabaseName(database);
             return this;
         }
 
         @Nonnull
-        @SuppressWarnings("unchecked")
-        public <T_NEW> Base<T_NEW> collection(String collectionName, Class<T_NEW> mongoType) {
-            Base<T_NEW> newThis = (Base<T_NEW>) this;
-            newThis.collectionName = collectionName;
-            newThis.mongoType = mongoType;
-            return newThis;
-        }
+        public abstract <T_NEW> Base<T_NEW> collection(String collectionName, Class<T_NEW> mongoType);
 
         @Nonnull
         public Base<Document> collection(String collectionName) {
@@ -140,8 +127,6 @@ public final class MongoDBSourceBuilder {
      */
     public static final class Batch<T> extends Base<T> {
 
-        private FunctionEx<Document, T> mapFn;
-
         @SuppressWarnings("unchecked")
         private Batch(
                 @Nonnull String name,
@@ -149,8 +134,10 @@ public final class MongoDBSourceBuilder {
         ) {
             checkSerializable(clientSupplier, "clientSupplier");
             this.name = name;
-            this.clientSupplier = clientSupplier;
-            mapFn = (FunctionEx<Document, T>) toClass(Document.class);
+            this.params = new ReadMongoParams<>(false);
+            params
+                    .setClientSupplier(clientSupplier)
+                    .setMapItemFn((FunctionEx<Document, T>) toClass(Document.class));
         }
 
         /**
@@ -167,7 +154,7 @@ public final class MongoDBSourceBuilder {
          */
         @Nonnull
         public Batch<T> project(@Nonnull Bson projection) {
-            aggregates.add(Aggregates.project(projection).toBsonDocument());
+            params.addAggregate(Aggregates.project(projection).toBsonDocument());
             return this;
         }
 
@@ -186,14 +173,14 @@ public final class MongoDBSourceBuilder {
          */
         @Nonnull
         public Batch<T> sort(@Nonnull Bson sort) {
-            aggregates.add(Aggregates.sort(sort).toBsonDocument());
+            params.addAggregate(Aggregates.sort(sort).toBsonDocument());
             return this;
         }
 
         /**
          * Adds filter aggregate to this builder, which allows to filter documents in MongoDB, without
          * the need to download all documents.
-         *
+         * <p>
          * Example usage:
          * <pre>{@code
          *  import static com.mongodb.client.model.Filters.eq;
@@ -201,13 +188,14 @@ public final class MongoDBSourceBuilder {
          *  MongoDBSourceBuilder.stream(name, supplier)
          *      .filter(eq("fieldName", 10));
          * }</pre>
+         *
          * @param filter Bson form of filter. Use {@link com.mongodb.client.model.Filters} to create sort.
          * @return this builder with aggregate added
          */
         @Nonnull
         public Batch<T> filter(@Nonnull Bson filter) {
             checkNotNull(filter, "filter argument cannot be null");
-            aggregates.add(Aggregates.match(filter).toBsonDocument());
+            params.addAggregate(Aggregates.match(filter).toBsonDocument());
             return this;
         }
 
@@ -219,10 +207,8 @@ public final class MongoDBSourceBuilder {
         @Nonnull
         @SuppressWarnings("unchecked")
         public <T_NEW> Batch<T_NEW> mapFn(@Nonnull FunctionEx<Document, T_NEW> mapFn) {
-            checkNotNull(mapFn, "mapFn argument cannot be null");
-            checkSerializable(mapFn, "mapFn must be serializable");
             Batch<T_NEW> newThis = (Batch<T_NEW>) this;
-            newThis.mapFn = mapFn;
+            newThis.params.setMapItemFn(mapFn);
             return newThis;
         }
 
@@ -239,7 +225,7 @@ public final class MongoDBSourceBuilder {
         /**
          * Specifies from which collection connector will read documents. If not invoked,
          * then connector will look at all collections in given database.
-         *
+         * <p>
          * Example usage:
          * <pre>{@code
          *  MongoDBSourceBuilder.stream(name, supplier)
@@ -254,7 +240,7 @@ public final class MongoDBSourceBuilder {
          */
         @Override @Nonnull
         public Batch<Document> collection(@Nullable String collectionName) {
-            return (Batch<Document>) super.collection(collectionName, Document.class);
+            return collection(collectionName, Document.class);
         }
 
         /**
@@ -263,7 +249,7 @@ public final class MongoDBSourceBuilder {
          * parsed to user-defined type using
          * {@linkplain com.mongodb.MongoClientSettings#getDefaultCodecRegistry mongo's standard codec registry}
          * with pojo support added.
-         *
+         * <p>
          * Example usage:
          * <pre>{@code
          *  MongoDBSourceBuilder.stream(name, supplier)
@@ -286,8 +272,8 @@ public final class MongoDBSourceBuilder {
         @SuppressWarnings("unchecked")
         public <T_NEW> Batch<T_NEW> collection(String collectionName, @Nonnull Class<T_NEW> mongoType) {
             Batch<T_NEW> newThis = (Batch<T_NEW>) this;
-            newThis.collection(collectionName);
-            newThis.mapFn = toClass(mongoType);
+            newThis.params.setCollectionName(collectionName);
+            newThis.params.setMapItemFn(toClass(mongoType));
             return newThis;
         }
 
@@ -296,18 +282,13 @@ public final class MongoDBSourceBuilder {
          */
         @Nonnull
         public BatchSource<T> build() {
-            checkNotNull(clientSupplier, "clientSupplier must be set");
-            checkNotNull(mapFn, "mapFn must be set");
+            checkNotNull(params.getClientSupplier(), "clientSupplier must be set");
+            checkNotNull(params.getMapItemFn(), "mapFn must be set");
 
-            List<Bson> aggregates = this.aggregates;
-            String databaseName = this.databaseName;
-            String collectionName = this.collectionName;
-            SupplierEx<? extends MongoClient> localclientSupplier = clientSupplier;
-            FunctionEx<Document, T> localMapFn = mapFn;
+            final ReadMongoParams<T> localParams = params;
 
             return Sources.batchFromProcessor(name, ProcessorMetaSupplier.of(
-                    () -> new ReadMongoP<>(localclientSupplier, aggregates,
-                            databaseName, collectionName, localMapFn)));
+                    () -> new ReadMongoP<>(localParams)));
         }
     }
 
@@ -318,9 +299,6 @@ public final class MongoDBSourceBuilder {
      */
     public static final class Stream<T> extends Base<T> {
 
-        FunctionEx<ChangeStreamDocument<Document>, T> mapFn;
-        Long startAtOperationTime;
-
         @SuppressWarnings("unchecked")
         private Stream(
                 @Nonnull String name,
@@ -328,8 +306,9 @@ public final class MongoDBSourceBuilder {
         ) {
             checkSerializable(clientSupplier, "clientSupplier");
             this.name = name;
-            this.clientSupplier = clientSupplier;
-            mapFn = (FunctionEx<ChangeStreamDocument<Document>, T>) streamToClass(Document.class);
+            this.params = new ReadMongoParams<>(true);
+            this.params.setClientSupplier(clientSupplier);
+            this.params.setMapStreamFn((FunctionEx<ChangeStreamDocument<Document>, T>) streamToClass(Document.class));
         }
 
         /**
@@ -346,7 +325,7 @@ public final class MongoDBSourceBuilder {
          */
         @Nonnull
         public Stream<T> project(@Nonnull Bson projection) {
-            aggregates.add(Aggregates.project(projection).toBsonDocument());
+            params.addAggregate(Aggregates.project(projection).toBsonDocument());
             return this;
         }
 
@@ -366,7 +345,7 @@ public final class MongoDBSourceBuilder {
          */
         @Nonnull
         public Stream<T> filter(@Nonnull Bson filter) {
-            aggregates.add(Aggregates.match(filter).toBsonDocument());
+            params.addAggregate(Aggregates.match(filter).toBsonDocument());
             return this;
         }
 
@@ -377,7 +356,7 @@ public final class MongoDBSourceBuilder {
          */
         @Nonnull @Override
         public Stream<T> database(@Nullable String database) {
-            databaseName = database;
+            params.setDatabaseName(database);
             return this;
         }
 
@@ -432,8 +411,8 @@ public final class MongoDBSourceBuilder {
         @Override
         public <T_NEW> Stream<T_NEW> collection(@Nullable String collectionName, @Nonnull Class<T_NEW> mongoType) {
             Stream<T_NEW> newThis = (Stream<T_NEW>) this;
-            newThis.collectionName = collectionName;
-            newThis.mapFn = streamToClass(mongoType);
+            newThis.params.setCollectionName(collectionName);
+            newThis.params.setMapStreamFn(streamToClass(mongoType));
             return newThis;
         }
 
@@ -448,13 +427,13 @@ public final class MongoDBSourceBuilder {
         public <T_NEW> Stream<T_NEW> mapFn(@Nonnull FunctionEx<ChangeStreamDocument<Document>, T_NEW> mapFn) {
             checkSerializable(mapFn, "mapFn");
             Stream<T_NEW> newThis = (Stream<T_NEW>) this;
-            newThis.mapFn = mapFn;
+            newThis.params.setMapStreamFn(mapFn);
             return newThis;
         }
 
         /**
          * Specifies time from which MongoDB's events will be read.
-         *
+         * <p>
          * It is <strong>highly</strong> suggested to provide this argument, as it will reduce reading initial
          * state of database.
          * @param startAtOperationTime time from which events should be taken into consideration
@@ -462,7 +441,7 @@ public final class MongoDBSourceBuilder {
          */
         @Nonnull
         public Stream<T> startAtOperationTime(@Nonnull BsonTimestamp startAtOperationTime) {
-            this.startAtOperationTime = startAtOperationTime.getValue();
+            this.params.setStartAtTimestamp(startAtOperationTime.getValue());
             return this;
         }
 
@@ -472,20 +451,14 @@ public final class MongoDBSourceBuilder {
          */
         @Nonnull
         public StreamSource<T> build() {
-            checkNotNull(clientSupplier, "clientSupplier must be set");
-            checkNotNull(mapFn, "mapFn must be set");
+            checkNotNull(params.getClientSupplier(), "clientSupplier must be set");
+            checkNotNull(params.getMapStreamFn(), "mapFn must be set");
 
-            SupplierEx<? extends MongoClient> localclientSupplier = clientSupplier;
-            FunctionEx<ChangeStreamDocument<Document>, T> localMapFn = mapFn;
-            Long startAtOperationTime = this.startAtOperationTime;
-            List<Bson> aggregates = this.aggregates;
-            String databaseName = this.databaseName;
-            String collectionName = this.collectionName;
+            final ReadMongoParams<T> localParams = params;
 
             return Sources.streamFromProcessorWithWatermarks(name, true,
                     eventTimePolicy -> ProcessorMetaSupplier.of(
-                        () -> new ReadMongoP<>(localclientSupplier, startAtOperationTime, eventTimePolicy, aggregates,
-                                databaseName, collectionName, localMapFn)));
+                        () -> new ReadMongoP<>(localParams.setEventTimePolicy(eventTimePolicy))));
         }
     }
 

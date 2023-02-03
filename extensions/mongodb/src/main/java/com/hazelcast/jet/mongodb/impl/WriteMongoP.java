@@ -15,9 +15,7 @@
  */
 package com.hazelcast.jet.mongodb.impl;
 
-import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.HeapData;
@@ -105,72 +103,26 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
     /**
      * Creates a new processor that will always insert to the same database and collection.
      */
-    public WriteMongoP(
-            SupplierEx<? extends MongoClient> clientSupplier,
-            String databaseName,
-            String collectionName,
-            Class<I> documentType,
-            FunctionEx<I, Object> documentIdentityFn,
-            ConsumerEx<ReplaceOptions> replaceOptionAdjuster,
-            String documentIdentityFieldName,
-            RetryStrategy commitRetryStrategy,
-            byte[] transactionOptions,
-            FunctionEx<IN, I> intermediateMappingFn
-    ) {
-        this(clientSupplier, new ConstantCollectionPicker<>(databaseName, collectionName),
-                documentType, documentIdentityFn, replaceOptionAdjuster, documentIdentityFieldName,
-                commitRetryStrategy, transactionOptions, intermediateMappingFn);
-    }
-
-    /**
-     * Creates a new processor that will choose database and collection for each item.
-     */
-    public WriteMongoP(
-            SupplierEx<? extends MongoClient> clientSupplier,
-            FunctionEx<I, String> databaseNameSelectFn,
-            FunctionEx<I, String> collectionNameSelectFn,
-            Class<I> documentType,
-            FunctionEx<I, Object> documentIdentityFn,
-            ConsumerEx<ReplaceOptions> replaceOptionAdjuster,
-            String documentIdentityFieldName,
-            RetryStrategy commitRetryStrategy,
-            byte[] transactionOptions,
-            FunctionEx<IN, I> intermediateMappingFn
-    ) {
-       this(clientSupplier, new FunctionalCollectionPicker<>(databaseNameSelectFn, collectionNameSelectFn),
-               documentType, documentIdentityFn, replaceOptionAdjuster, documentIdentityFieldName,
-               commitRetryStrategy, transactionOptions, intermediateMappingFn);
-    }
-
-    /**
-     * Creates a new processor that will always insert to the same database and collection.
-     */
-    public WriteMongoP(
-            SupplierEx<? extends MongoClient> clientSupplier,
-            CollectionPicker<I> picker,
-            Class<I> documentType,
-            FunctionEx<I, Object> documentIdentityFn,
-            ConsumerEx<ReplaceOptions> replaceOptionAdjuster,
-            String documentIdentityFieldName,
-            RetryStrategy commitRetryStrategy,
-            byte[] transactionOptions,
-            FunctionEx<IN, I> intermediateMappingFn) {
-        this.connection = new MongoDbConnection(clientSupplier, client -> {
+    public WriteMongoP(WriteMongoParams<I> params) {
+        this.connection = new MongoDbConnection(params.clientSupplier, client -> {
         });
-        this.documentIdentityFn = documentIdentityFn;
-        this.documentIdentityFieldName = documentIdentityFieldName;
-        this.documentType = documentType;
-        this.collectionPicker = picker;
+        this.documentIdentityFn = params.documentIdentityFn;
+        this.documentIdentityFieldName = params.documentIdentityFieldName;
+        this.documentType = params.documentType;
 
         ReplaceOptions options = new ReplaceOptions().upsert(true);
-        if (replaceOptionAdjuster != null) {
-            replaceOptionAdjuster.accept(options);
-        }
+        params.getReplaceOptionAdjuster().accept(options);
         this.replaceOptions = options;
-        this.commitRetryStrategy = commitRetryStrategy;
+        this.commitRetryStrategy = params.commitRetryStrategy;
         InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-        this.transactionOptions = serializationService.toObject(new HeapData(transactionOptions));
-        this.intermediateMappingFn = intermediateMappingFn;
+        this.transactionOptions = serializationService.toObject(new HeapData(params.transactionOptions));
+
+        if (params.databaseName != null) {
+            this.collectionPicker = new ConstantCollectionPicker<>(params.databaseName, params.collectionName);
+        } else {
+            this.collectionPicker = new FunctionalCollectionPicker<>(params.databaseNameSelectFn,
+                    params.collectionNameSelectFn);
+        }
     }
 
     @Override
