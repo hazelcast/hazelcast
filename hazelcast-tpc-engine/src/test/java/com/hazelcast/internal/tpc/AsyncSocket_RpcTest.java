@@ -318,7 +318,7 @@ public abstract class AsyncSocket_RpcTest {
                 }
             }
         });
-        clientSocket.activate(clientReactor);
+        clientSocket.start();
         clientSocket.connect(serverAddress).join();
         return clientSocket;
     }
@@ -328,7 +328,8 @@ public abstract class AsyncSocket_RpcTest {
         serverSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
         serverSocket.bind(serverAddress);
 
-        serverSocket.accept(socket -> {
+        serverSocket.accept(acceptRequest -> {
+            AsyncSocket socket = serverReactor.openAsyncSocket(acceptRequest);
             socket.setTcpNoDelay(true);
             socket.setSendBufferSize(SOCKET_BUFFER_SIZE);
             socket.setReceiveBufferSize(serverSocket.getReceiveBufferSize());
@@ -370,7 +371,7 @@ public abstract class AsyncSocket_RpcTest {
                     }
                 }
             });
-            socket.activate(serverReactor);
+            socket.start();
         });
 
         return serverSocket;
