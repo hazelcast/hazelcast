@@ -19,6 +19,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Watermark;
@@ -30,6 +31,7 @@ import com.hazelcast.jet.mongodb.WriteMode;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.jet.retry.impl.RetryTracker;
 import com.hazelcast.logging.ILogger;
+import com.mongodb.MongoBulkWriteException;
 import com.mongodb.MongoException;
 import com.mongodb.TransactionOptions;
 import com.mongodb.bulk.BulkWriteResult;
@@ -214,6 +216,8 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
             for (int i = 0; i < items.size(); i++) {
                 inbox.remove();
             }
+        } catch (MongoBulkWriteException e) {
+            throw new JetException(e);
         } catch (Exception e) {
             logger.info("Unable to process Mongo Sink: " + e.getMessage());
             // not removing from inbox, so it will be retried

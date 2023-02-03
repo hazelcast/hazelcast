@@ -23,6 +23,7 @@ import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.mongodb.client.MongoClients;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -63,7 +64,7 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
                             .setDatabaseName(databaseName)
                             .setCollectionName(collectionName)
                             .setDocumentType(Document.class)
-                            .setDocumentIdentityFn(doc -> doc.getObjectId("_id"))
+                            .setDocumentIdentityFn(doc -> doc.get("_id"))
                             .setDocumentIdentityFieldName("_id")
                             .setCommitRetryStrategy(DEFAULT_COMMIT_RETRY_STRATEGY)
                             .setTransactionOptions(DEFAULT_TRANSACTION_OPTION)
@@ -83,7 +84,12 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
         // assuming values is exactly the length of schema
         for (int i = 0; i < row.getFieldCount(); i++) {
             String fieldName = paths[i];
-            doc = doc.append(fieldName, values[i]);
+            Object value = values[i];
+            if (fieldName.equals("_id") && value instanceof String) {
+                // only field that need explicit coertion
+                value = new ObjectId((String) value);
+            }
+            doc = doc.append(fieldName, value);
         }
 
         return doc;
