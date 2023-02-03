@@ -29,6 +29,7 @@ import com.hazelcast.client.impl.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.logging.ILogger;
 
 import java.util.Collection;
@@ -36,8 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 
 /**
  * Adds cluster listener to one of the connections. If that connection is removed,
@@ -138,7 +137,7 @@ public class ClientClusterViewListenerService implements ConnectionListener {
             }
             //completes with exception, listener needs to be reregistered
             tryReregisterToRandomConnection(connection);
-        }, CALLER_RUNS);
+        }, ConcurrencyUtil.getDefaultAsyncExecutor());
     }
 
 }
