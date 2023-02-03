@@ -36,8 +36,7 @@ public interface NioHandler {
     /**
      * Signals that something interesting happened on a SelectionKey.
      *
-     * @param key the SelectionKey
      * @throws IOException if handling lead to problems.
      */
-    void handle(SelectionKey key) throws IOException;
+    void handle() throws IOException;
 }

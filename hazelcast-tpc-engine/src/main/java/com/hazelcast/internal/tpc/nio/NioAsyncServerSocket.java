@@ -224,7 +224,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         }
 
         @Override
-        public void handle(SelectionKey key) throws IOException {
+        public void handle() throws IOException {
             if (!key.isValid()) {
                 throw new CancelledKeyException();
             }
