@@ -41,7 +41,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.mockito.quality.Strictness;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -119,7 +118,7 @@ public class StsMonitorTest {
 
     @Test
     public void testWatchResumesAfter410Gone() {
-        ClusterTopologyIntentTracker tracker = Mockito.mock(ClusterTopologyIntentTracker.class, Mockito.withSettings().strictness(Strictness.LENIENT));
+        ClusterTopologyIntentTracker tracker = Mockito.mock(ClusterTopologyIntentTracker.class, Mockito.withSettings().lenient());
         KubernetesClient.StsMonitor stsMonitor = buildStsMonitor(namespace, apiServerBaseUrl, token, tracker);
 
         // initial STS list
