@@ -40,7 +40,7 @@ import static org.junit.Assert.assertTrue;
 
 public abstract class ReactorTest {
 
-    public List<Reactor> reactors = new ArrayList<>();
+    public final List<Reactor> reactors = new ArrayList<>();
 
     public abstract Reactor newReactor();
 
@@ -171,7 +171,7 @@ public abstract class ReactorTest {
         SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
         serverSocket.bind(local);
         serverSocket.accept(socket -> {
-        }).join();
+        });
 
         reactor.shutdown();
         assertTrueEventually(() -> assertTrue(serverSocket.isClosed()));
@@ -186,7 +186,7 @@ public abstract class ReactorTest {
         serverSocket.setReusePort(true);
         serverSocket.bind(serverAddress);
         serverSocket.accept(socket -> {
-        }).join();
+        });
 
         AsyncSocket clientSocket = serverReactor.openTcpAsyncSocket();
         clientSocket.setReadHandler(new ReadHandler() {

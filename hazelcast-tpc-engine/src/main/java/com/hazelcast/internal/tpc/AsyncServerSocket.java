@@ -20,7 +20,6 @@ import com.hazelcast.internal.tpc.util.ProgressIndicator;
 
 import java.io.UncheckedIOException;
 import java.net.SocketAddress;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
@@ -183,11 +182,9 @@ public abstract class AsyncServerSocket extends Socket {
      * Before accept is called, bind needs to be called.
      *
      * @param consumer a function that is called when a socket has connected.
-     * @return a CompletableFuture that contains the result of the AsyncServerSocket managed
-     * to start with accepting successfully.
      * @throws NullPointerException if consumer is null.
      */
-    public abstract CompletableFuture<Void> accept(Consumer<AsyncSocket> consumer);
+    public abstract void accept(Consumer<AsyncSocket> consumer);
 
     @Override
     public String toString() {

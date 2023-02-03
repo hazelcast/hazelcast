@@ -30,6 +30,9 @@ import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 /**
  * A 'client' Socket that is asynchronous. So reads and writes do not block,
  * but are executed on an {@link Reactor}.
+ * <p/>
+ * The socket should be configured and then activated before it is shared
+ * with other threads.
  */
 @SuppressWarnings({"checkstyle:MethodCount", "checkstyle:VisibilityModifier"})
 public abstract class AsyncSocket extends Socket {
@@ -285,11 +288,50 @@ public abstract class AsyncSocket extends Socket {
     }
 
     /**
+     * Configures if this AsyncSocket is readable or not. If there is no change in the
+     * readable status, the call is ignored.
+     * <p/>
+     * When an AsyncSocket is readable, it will schedule itself at the Reactor as soon as
+     * data is received at the receive buffer of the socket, so that the received data gets
+     * processed. When it isn't readable, data might be received at the receive buffer, but
+     * the socket will not schedule itself.
+     * <p/>
+     * This functionality can be used to apply backpressure. So what happens is that the receive
+     * buffer fills up. Once it fills up and the other side keeps sending data, the remote send
+     * buffer fills up as well and the pressure get propagated upstream.
+     * <p/>
+     * This call can safely be made from any thread, but typically you want to call it from the
+     * eventloop-thread. This call is blocking; this isn't an issue for the eventloop thread
+     * because it is an instantaneous call. For any other thread this call is not cheap.
+     * <p/>
+     * This call should only be made after the socket is activated.
+     *
+     * @param readable the new readable status.
+     * @throws RuntimeException if the readable status could not be set.
+     */
+    public abstract void setReadable(boolean readable);
+
+    /**
+     * Checks if this AsyncSocket is readable. For more information see {@link #setReadable(boolean)}.
+     * <p/>
+     * This call can safely be made from any thread, but typically you want to call it from the
+     * eventloop-thread. This call is blocking; this isn't an issue for the eventloop thread
+     * because it is an instantaneous call. For any other thread this call is not cheap.
+     *
+     * @return true if readable, false otherwise.
+     * @throws RuntimeException if the readable status could not be retrieved.
+     */
+    public abstract boolean isReadable();
+
+    /**
      * Activates an AsyncSocket by hooking it up to a Reactor.
      * <p>
      * This method should only be called once.
      * <p>
      * This method is not thread-safe.
+     * <p>
+     * Typically you do not want to share this AsyncSocket with other threads till this
+     * method is called.
      *
      * @param reactor the Reactor this AsyncSocket belongs to.
      * @throws NullPointerException  if reactor is null.
@@ -353,6 +395,8 @@ public abstract class AsyncSocket extends Socket {
 
     /**
      * Connects asynchronously to some address.
+     * <p/>
+     * This method is not thread-safe.
      *
      * @param address the address to connect to.
      * @return a {@link CompletableFuture}
