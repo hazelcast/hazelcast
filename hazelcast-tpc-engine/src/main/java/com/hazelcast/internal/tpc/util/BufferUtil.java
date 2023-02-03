@@ -74,9 +74,9 @@ public final class BufferUtil {
             // there is not enough space in the dst buffer, so we need to
             // copy as much as we can.
             int srcOldLimit = src.limit();
-            src.limit(src.position() + dst.remaining());
+            upcast(src).limit(src.position() + dst.remaining());
             dst.put(src);
-            src.limit(srcOldLimit);
+            upcast(src).limit(srcOldLimit);
         }
     }
 

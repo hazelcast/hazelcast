@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.tpc.util.BufferUtil.compactOrClear;
+import static com.hazelcast.internal.tpc.util.BufferUtil.upcast;
 import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpc.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
@@ -604,7 +605,7 @@ public final class NioAsyncSocket extends AsyncSocket {
                 throw new EOFException("Remote socket closed!");
             } else {
                 bytesRead.inc(read);
-                receiveBuffer.flip();
+                upcast(receiveBuffer).flip();
                 readHandler.onRead(receiveBuffer);
                 compactOrClear(receiveBuffer);
             }

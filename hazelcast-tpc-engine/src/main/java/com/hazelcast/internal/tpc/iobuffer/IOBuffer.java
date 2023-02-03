@@ -26,6 +26,7 @@ import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_CHAR;
 import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpc.util.BitUtil.nextPowerOfTwo;
+import static com.hazelcast.internal.tpc.util.BufferUtil.upcast;
 
 
 /**
@@ -86,7 +87,7 @@ public class IOBuffer {
     }
 
     public void clear() {
-        buff.clear();
+        upcast(buff).clear();
     }
 
     public int position() {
@@ -94,15 +95,15 @@ public class IOBuffer {
     }
 
     public void position(int position) {
-        buff.position(position);
+        upcast(buff).position(position);
     }
 
     public void incPosition(int delta) {
-        buff.position(buff.position() + delta);
+        upcast(buff).position(buff.position() + delta);
     }
 
     public void flip() {
-        buff.flip();
+        upcast(buff).flip();
     }
 
     /**
@@ -121,7 +122,7 @@ public class IOBuffer {
             ByteBuffer newBuffer = buff.hasArray()
                     ? ByteBuffer.allocate(newCapacity)
                     : ByteBuffer.allocateDirect(newCapacity);
-            buff.flip();
+            upcast(buff).flip();
             newBuffer.put(buff);
             buff = newBuffer;
         }
@@ -221,9 +222,9 @@ public class IOBuffer {
             buff.put(src);
         } else {
             int limit = src.limit();
-            src.limit(src.position() + count);
+            upcast(src).limit(src.position() + count);
             buff.put(src);
-            src.limit(limit);
+            upcast(src).limit(limit);
         }
     }
 
