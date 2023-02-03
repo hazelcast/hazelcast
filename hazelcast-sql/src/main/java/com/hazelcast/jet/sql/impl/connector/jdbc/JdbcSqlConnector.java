@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,16 +20,14 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.datastore.ExternalDataStoreFactory;
 import com.hazelcast.datastore.impl.CloseableDataSource;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
@@ -50,8 +48,8 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -61,7 +59,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
 public class JdbcSqlConnector implements SqlConnector {
-
 
     public static final String TYPE_NAME = "JDBC";
 
@@ -88,8 +85,8 @@ public class JdbcSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
-            @Nonnull String externalName) {
-
+            @Nonnull String externalName
+    ) {
         Map<String, DbField> dbFields = readDbFields(nodeEngine, options, externalName);
 
         List<MappingField> resolvedFields = new ArrayList<>();
@@ -111,7 +108,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 if (f.externalName() != null) {
                     DbField dbField = dbFields.get(f.externalName());
                     if (dbField == null) {
-                        throw new IllegalStateException("could not resolve field with external name " + f.externalName());
+                        throw new IllegalStateException("Could not resolve field with external name " + f.externalName());
                     }
                     validateType(f, dbField);
                     MappingField mappingField = new MappingField(f.name(), f.type(), f.externalName());
@@ -120,7 +117,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 } else {
                     DbField dbField = dbFields.get(f.name());
                     if (dbField == null) {
-                        throw new IllegalStateException("could not resolve field with name " + f.name());
+                        throw new IllegalStateException("Could not resolve field with name " + f.name());
                     }
                     validateType(f, dbField);
                     MappingField mappingField = new MappingField(f.name(), f.type());
@@ -135,8 +132,8 @@ public class JdbcSqlConnector implements SqlConnector {
     private Map<String, DbField> readDbFields(
             NodeEngine nodeEngine,
             Map<String, String> options,
-            String externalTableName) {
-
+            String externalTableName
+    ) {
         String externalDataStoreRef = requireNonNull(
                 options.get(OPTION_EXTERNAL_DATASTORE_REF),
                 OPTION_EXTERNAL_DATASTORE_REF + " must be set"
@@ -155,7 +152,7 @@ public class JdbcSqlConnector implements SqlConnector {
             ResultSet rs = statement.getResultSet();
             ResultSetMetaData metaData = rs.getMetaData();
 
-            Map<String, DbField> fields = new HashMap<>();
+            Map<String, DbField> fields = new LinkedHashMap<>();
             for (int i = 1; i <= metaData.getColumnCount(); i++) {
                 String columnName = metaData.getColumnName(i);
                 fields.put(columnName,
@@ -166,7 +163,7 @@ public class JdbcSqlConnector implements SqlConnector {
             }
             return fields;
         } catch (Exception e) {
-            throw new HazelcastException("Could not read column metadata for table " + externalDataStoreRef, e);
+            throw new HazelcastException("Could not read column metadata for table " + externalTableName, e);
         } finally {
             closeDataSource(dataSource);
         }
@@ -204,7 +201,7 @@ public class JdbcSqlConnector implements SqlConnector {
     private void validateType(MappingField field, DbField dbField) {
         QueryDataType type = resolveType(dbField.columnTypeName);
         if (!field.type().equals(type) && !type.getConverter().canConvertTo(field.type().getTypeFamily())) {
-            throw new IllegalStateException("type " + field.type().getTypeFamily() + " of field " + field.name()
+            throw new IllegalStateException("Type " + field.type().getTypeFamily() + " of field " + field.name()
                     + " does not match db type " + type.getTypeFamily());
         }
     }
@@ -217,8 +214,8 @@ public class JdbcSqlConnector implements SqlConnector {
             @Nonnull String mappingName,
             @Nonnull String externalName,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields) {
-
+            @Nonnull List<MappingField> resolvedFields
+    ) {
         List<TableField> fields = new ArrayList<>(resolvedFields.size());
         for (MappingField resolvedField : resolvedFields) {
             String fieldExternalName = resolvedField.externalName() != null
@@ -253,7 +250,6 @@ public class JdbcSqlConnector implements SqlConnector {
         DataSource dataSource = createDataStore(nodeEngine, externalDataStoreRef);
 
         try (Connection connection = dataSource.getConnection()) {
-
             SqlDialect dialect = SqlDialectFactoryImpl.INSTANCE.create(connection.getMetaData());
             String databaseProductName = connection.getMetaData().getDatabaseProductName();
             switch (databaseProductName) {
@@ -275,22 +271,22 @@ public class JdbcSqlConnector implements SqlConnector {
         }
     }
 
-
     @Nonnull
     @Override
     public Vertex fullScanReader(
-            @Nonnull DAG dag,
-            @Nonnull Table table0,
-            @Nonnull HazelcastTable hzTable,
-            @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projection,
-            @Nullable FunctionEx<ExpressionEvalContext,
-                    EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
-        JdbcTable table = (JdbcTable) table0;
+            @Nonnull DagBuildContext context,
+            @Nullable RexNode predicate,
+            @Nonnull List<RexNode> projection,
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
+    ) {
+        if (eventTimePolicyProvider != null) {
+            throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
+        }
+        JdbcTable table = (JdbcTable) context.getTable();
 
-        SelectQueryBuilder builder = new SelectQueryBuilder(hzTable);
-        return dag.newUniqueVertex(
-                "Select (" + table.getExternalName() + ")",
+        SelectQueryBuilder builder = new SelectQueryBuilder(context.getTable(), predicate, projection);
+        return context.getDag().newUniqueVertex(
+                "Select(" + table.getExternalName() + ")",
                 ProcessorMetaSupplier.forceTotalParallelismOne(
                         new SelectProcessorSupplier(
                                 table.getExternalDataStoreRef(),
@@ -302,12 +298,12 @@ public class JdbcSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public VertexWithInputConfig insertProcessor(@Nonnull DAG dag, @Nonnull Table table0) {
-        JdbcTable table = (JdbcTable) table0;
+    public VertexWithInputConfig insertProcessor(@Nonnull DagBuildContext context) {
+        JdbcTable table = (JdbcTable) context.getTable();
 
         InsertQueryBuilder builder = new InsertQueryBuilder(table.getExternalName(), table.dbFieldNames());
-        return new VertexWithInputConfig(dag.newUniqueVertex(
-                "Insert (" + table.getExternalName() + ")",
+        return new VertexWithInputConfig(context.getDag().newUniqueVertex(
+                "Insert(" + table.getExternalName() + ")",
                 new InsertProcessorSupplier(
                         table.getExternalDataStoreRef(),
                         builder.query(),
@@ -325,20 +321,21 @@ public class JdbcSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public Vertex updateProcessor(@Nonnull DAG dag,
-                                  @Nonnull Table table0,
-                                  @Nonnull Map<String, RexNode> updates,
-                                  @Nonnull Map<String, Expression<?>> updatesByFieldNames) {
-        JdbcTable table = (JdbcTable) table0;
+    public Vertex updateProcessor(
+            @Nonnull DagBuildContext context,
+            @Nonnull List<String> fieldNames,
+            @Nonnull List<RexNode> expressions
+    ) {
+        JdbcTable table = (JdbcTable) context.getTable();
 
-        List<String> pkFields = getPrimaryKey(table0)
+        List<String> pkFields = getPrimaryKey(context.getTable())
                 .stream()
                 .map(f -> table.getField(f).externalName())
                 .collect(toList());
 
-        UpdateQueryBuilder builder = new UpdateQueryBuilder(table, pkFields, updates);
+        UpdateQueryBuilder builder = new UpdateQueryBuilder(table, pkFields, fieldNames, expressions);
 
-        return dag.newUniqueVertex(
+        return context.getDag().newUniqueVertex(
                 "Update(" + table.getExternalName() + ")",
                 new UpdateProcessorSupplier(
                         table.getExternalDataStoreRef(),
@@ -351,16 +348,16 @@ public class JdbcSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public Vertex deleteProcessor(@Nonnull DAG dag, @Nonnull Table table0) {
-        JdbcTable table = (JdbcTable) table0;
+    public Vertex deleteProcessor(@Nonnull DagBuildContext context) {
+        JdbcTable table = (JdbcTable) context.getTable();
 
-        List<String> pkFields = getPrimaryKey(table0)
+        List<String> pkFields = getPrimaryKey(context.getTable())
                 .stream()
                 .map(f -> table.getField(f).externalName())
                 .collect(toList());
 
         DeleteQueryBuilder builder = new DeleteQueryBuilder(table.getExternalName(), pkFields);
-        return dag.newUniqueVertex(
+        return context.getDag().newUniqueVertex(
                 "Delete(" + table.getExternalName() + ")",
                 new DeleteProcessorSupplier(
                         table.getExternalDataStoreRef(),
@@ -450,8 +447,8 @@ public class JdbcSqlConnector implements SqlConnector {
         @Override
         public String toString() {
             return "DbField{" +
-                    "columnTypeName='" + columnTypeName + '\'' +
-                    ", columnName='" + columnName + '\'' +
+                    "name='" + columnName + '\'' +
+                    ", typeName='" + columnTypeName + '\'' +
                     ", primaryKey=" + primaryKey +
                     '}';
         }

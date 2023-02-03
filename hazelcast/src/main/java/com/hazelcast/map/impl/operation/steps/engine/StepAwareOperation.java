@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,13 @@ public interface StepAwareOperation<S> {
     S createState();
 
     /**
-     * @param state state to be applied to operation
+     * @param state state to be applied to
+     * operation after execution of all step chain
      */
-    void applyState(S state);
+    default void applyState(S state) {
+        // No need to implement, if there
+        // is no state to apply after run.
+    }
 
     /**
      * @return starting {@link Step} for this operation

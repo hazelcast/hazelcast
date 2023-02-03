@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,8 +42,7 @@ final class JoinLogicalRule extends ConverterRule {
     public RelNode convert(RelNode rel) {
         LogicalJoin join = (LogicalJoin) rel;
 
-        // We convert every RIGHT JOIN to LEFT JOIN to use already-implemented
-        // LEFT JOIN operators.
+        // We convert every RIGHT JOIN to LEFT JOIN to use already-implemented LEFT JOIN operators.
         if (OptUtils.isBounded(join) && join.getJoinType() == JoinRelType.RIGHT) {
             return JoinCommuteRule.swap(join, true);
         }

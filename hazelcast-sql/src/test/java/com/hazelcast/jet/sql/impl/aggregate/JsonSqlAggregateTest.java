@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.aggregate;
 
-import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.internal.json.Json;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
-import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -33,18 +28,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
-import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(Enclosed.class)
@@ -333,50 +320,5 @@ public class JsonSqlAggregateTest {
             return name;
         }
 
-        void assertJsonRowsAnyOrder(String sql, Collection<Row> rows) {
-            for (Row row : rows) {
-                convertRow(row);
-            }
-
-            List<Row> actualRows = new ArrayList<>();
-            try (SqlResult result = sqlService.execute(sql)) {
-                result.iterator().forEachRemaining(row -> actualRows.add(convertRow(new Row(row))));
-            }
-            assertThat(actualRows).containsExactlyInAnyOrderElementsOf(rows);
-        }
-
-        private static Row convertRow(Row row) {
-            Object[] rowObj = row.getValues();
-            for (int i = 0; i < rowObj.length; i++) {
-                if (rowObj[i] instanceof HazelcastJsonValue) {
-                    rowObj[i] = new JsonObjectWithRelaxedEquality((HazelcastJsonValue) rowObj[i]);
-                }
-            }
-            return row;
-        }
-
-        /**
-         * A JSON value with equals method that returns true for objects with
-         * the same keys and values, but in any order.
-         */
-        private static class JsonObjectWithRelaxedEquality {
-            private final List<Map.Entry<String, JsonValue>> fields = new ArrayList<>();
-
-            JsonObjectWithRelaxedEquality(HazelcastJsonValue json) {
-                JsonObject jsonObject = (JsonObject) Json.parse(json.getValue());
-                jsonObject.iterator().forEachRemaining(m -> fields.add(entry(m.getName(), m.getValue())));
-            }
-
-            @Override
-            public boolean equals(Object o) {
-                return o instanceof JsonObjectWithRelaxedEquality
-                        && SAME_ITEMS_ANY_ORDER.test(fields, ((JsonObjectWithRelaxedEquality) o).fields);
-            }
-
-            @Override
-            public String toString() {
-                return fields.toString();
-            }
-        }
     }
 }

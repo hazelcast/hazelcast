@@ -23,6 +23,7 @@ reports/
 */src/test/resources/data/file*
 */src/test/resources/data/result*
 *.jfr
+.mvn/wrapper/maven-wrapper.jar
 
 # Hadoop files
 *.crc

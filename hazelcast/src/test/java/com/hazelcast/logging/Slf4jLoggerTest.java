@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -60,13 +60,13 @@ public class Slf4jLoggerTest extends AbstractLoggerTest {
     @Test
     public void logAtLevelOff_shouldNotLog() {
         hazelcastLogger.log(Level.OFF, MESSAGE);
-        verifyZeroInteractions(mockLogger);
+        verifyNoInteractions(mockLogger);
     }
 
     @Test
     public void logAtLevelOff_shouldNotLog_withThrowable() {
         hazelcastLogger.log(Level.OFF, MESSAGE, THROWABLE);
-        verifyZeroInteractions(mockLogger);
+        verifyNoInteractions(mockLogger);
     }
 
     @Test

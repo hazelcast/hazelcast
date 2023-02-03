@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1492,7 +1492,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         IScheduledFuture<Double> copy = executorService.getScheduledFuture(handler);
 
         assertEquals(first.getHandler(), copy.getHandler());
-        assertEquals(copy.getHandler().getTaskName(), taskName);
+        assertEquals(taskName, copy.getHandler().getTaskName());
     }
 
     @Test
@@ -1509,7 +1509,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         IScheduledFuture<Double> copy = executorService.getScheduledFuture(handler);
 
         assertEquals(first.getHandler(), copy.getHandler());
-        assertEquals(copy.getHandler().getTaskName(), taskName);
+        assertEquals(taskName, copy.getHandler().getTaskName());
     }
 
     @Test

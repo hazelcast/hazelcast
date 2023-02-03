@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,7 +126,7 @@ public final class CalcIntoScanRule extends RelRule<Config> implements Transform
                 scan.getCluster(),
                 OptUtils.toLogicalConvention(scan.getTraitSet()),
                 convertedTable,
-                scan.eventTimePolicyProvider(),
+                scan.lagExpression(),
                 OptUtils.getTargetField(program, scan.watermarkedColumnIndex())
         ));
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -505,7 +505,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         Callable<String> task = new BasicTestCallable();
         ExecutorService executor = createSingleNodeExecutorService("testBasicTask");
         Future<String> future = executor.submit(task);
-        assertEquals(future.get(), BasicTestCallable.RESULT);
+        assertEquals(BasicTestCallable.RESULT, future.get());
     }
 
     @Test
@@ -764,7 +764,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     }
 
     private void assertResult(Future<?> future, Object expected) throws Exception {
-        assertEquals(future.get(), expected);
+        assertEquals(expected, future.get());
         assertTrue(future.isDone());
     }
 
@@ -799,17 +799,17 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         ArrayList<Callable<String>> tasks = new ArrayList<>();
         tasks.add(new BasicTestCallable());
         List<Future<String>> futures = executor.invokeAll(tasks);
-        assertEquals(futures.size(), 1);
-        assertEquals(futures.get(0).get(), BasicTestCallable.RESULT);
+        assertEquals(1, futures.size());
+        assertEquals(BasicTestCallable.RESULT, futures.get(0).get());
         // more tasks
         tasks.clear();
         for (int i = 0; i < TASK_COUNT; i++) {
             tasks.add(new BasicTestCallable());
         }
         futures = executor.invokeAll(tasks);
-        assertEquals(futures.size(), TASK_COUNT);
+        assertEquals(TASK_COUNT, futures.size());
         for (int i = 0; i < TASK_COUNT; i++) {
-            assertEquals(futures.get(i).get(), BasicTestCallable.RESULT);
+            assertEquals(BasicTestCallable.RESULT, futures.get(i).get());
         }
     }
 
@@ -821,18 +821,18 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         ArrayList<Callable<Boolean>> tasks = new ArrayList<>();
         tasks.add(new SleepingTask(0));
         List<Future<Boolean>> futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
-        assertEquals(futures.size(), 1);
-        assertEquals(futures.get(0).get(), Boolean.TRUE);
+        assertEquals(1, futures.size());
+        assertEquals(Boolean.TRUE, futures.get(0).get());
         // more tasks
         tasks.clear();
         for (int i = 0; i < TASK_COUNT; i++) {
             tasks.add(new SleepingTask(i < 2 ? 0 : 20));
         }
         futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
-        assertEquals(futures.size(), TASK_COUNT);
+        assertEquals(TASK_COUNT, futures.size());
         for (int i = 0; i < TASK_COUNT; i++) {
             if (i < 2) {
-                assertEquals(futures.get(i).get(), Boolean.TRUE);
+                assertEquals(Boolean.TRUE, futures.get(i).get());
             } else {
                 boolean excepted = false;
                 try {
@@ -853,17 +853,17 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         ArrayList<Callable<String>> tasks = new ArrayList<>();
         tasks.add(new BasicTestCallable());
         List<Future<String>> futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
-        assertEquals(futures.size(), 1);
-        assertEquals(futures.get(0).get(), BasicTestCallable.RESULT);
+        assertEquals(1, futures.size());
+        assertEquals(BasicTestCallable.RESULT, futures.get(0).get());
         // more tasks
         tasks.clear();
         for (int i = 0; i < TASK_COUNT; i++) {
             tasks.add(new BasicTestCallable());
         }
         futures = executor.invokeAll(tasks, 15, TimeUnit.SECONDS);
-        assertEquals(futures.size(), TASK_COUNT);
+        assertEquals(TASK_COUNT, futures.size());
         for (int i = 0; i < TASK_COUNT; i++) {
-            assertEquals(futures.get(i).get(), BasicTestCallable.RESULT);
+            assertEquals(BasicTestCallable.RESULT, futures.get(i).get());
         }
     }
 

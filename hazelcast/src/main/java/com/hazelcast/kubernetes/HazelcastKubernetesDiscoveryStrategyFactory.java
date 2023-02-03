@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,8 +83,11 @@ public class HazelcastKubernetesDiscoveryStrategyFactory
 
     public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger,
                                                   Map<String, Comparable> properties) {
-        ClusterTopologyIntentTracker tracker = (ClusterTopologyIntentTracker) discoveryNode.getProperties()
-                .get(DISCOVERY_PROPERTY_CLUSTER_TOPOLOGY_INTENT_TRACKER);
+        ClusterTopologyIntentTracker tracker = null;
+        if (discoveryNode != null) {
+            tracker = (ClusterTopologyIntentTracker) discoveryNode.getProperties()
+                    .get(DISCOVERY_PROPERTY_CLUSTER_TOPOLOGY_INTENT_TRACKER);
+        }
         return new HazelcastKubernetesDiscoveryStrategy(logger, properties, tracker);
     }
 

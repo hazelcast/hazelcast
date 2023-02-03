@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -177,7 +177,7 @@ public class SqlPredicateTest {
     @Test
     public void testEqualsNull() {
         SqlPredicate sql = new SqlPredicate("foo='bar'");
-        assertNotEquals(sql, null);
+        assertNotEquals(null, sql);
     }
 
     @Test

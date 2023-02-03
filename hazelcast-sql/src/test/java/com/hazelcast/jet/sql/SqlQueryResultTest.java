@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -135,9 +135,9 @@ public class SqlQueryResultTest extends SqlTestSupport {
             String message = e.getMessage();
 
             if (type == SqlExpectedResultType.ROWS) {
-                assertEquals(message, "The statement doesn't produce rows");
+                assertEquals("The statement doesn't produce rows", message);
             } else {
-                assertEquals(message, "The statement doesn't produce update count");
+                assertEquals("The statement doesn't produce update count", message);
             }
         }
     }

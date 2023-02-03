@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,6 @@ public interface ValidatorResource {
 
     @BaseMessage("Unknown argument name ''{0}''")
     ExInst<SqlValidatorException> unknownArgumentName(String name);
-
-    @BaseMessage("Multiple ordering functions are not supported")
-    ExInst<SqlValidatorException> multipleOrderingFunctionsNotSupported();
 
     @BaseMessage("You must specify single ordering column")
     ExInst<SqlValidatorException> mustUseSingleOrderingColumn();

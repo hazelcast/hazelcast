@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
+import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -92,11 +93,16 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
+    @Rule
+    public TestName name = new TestName();
+
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @After
     public void cleanup() {
-        hazelcastFactory.shutdownAll();
+        hazelcastFactory.terminateAll();
+
+        assertNoRunningInstancesEventually(name.getMethodName(), hazelcastFactory);
     }
 
     @Test
@@ -695,10 +701,11 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testClientReconnect_thenCheckRequestsAreRetriedWithoutException() {
+    public void testClientReconnect_thenCheckRequestsAreRetriedWithoutException() throws InterruptedException {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
 
         CountDownLatch clientStartedDoingRequests = new CountDownLatch(1);
+        CountDownLatch restartFinished = new CountDownLatch(1);
         new Thread(() -> {
             try {
                 clientStartedDoingRequests.await();
@@ -708,6 +715,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
             hazelcastInstance.shutdown();
 
             hazelcastFactory.newHazelcastInstance();
+            restartFinished.countDown();
 
         }).start();
 
@@ -733,6 +741,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
                 fail("Requests should not throw exception with this configuration. Last put key: " + i);
             }
         }
+        restartFinished.await();
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,15 +53,24 @@ import com.hazelcast.partition.NoDataMemberInClusterException;
  * no replica with the previously observed state is reachable, the session
  * guarantees are lost and the method invocation will throw a
  * {@link ConsistencyLostException}. This does not mean
- * that an update is lost. All of the updates are part of some replica and
+ * that an update is lost. All the updates are part of some replica and
  * will be eventually reflected in the state of all other replicas. This
  * exception just means that you cannot observe your own writes because
  * all replicas that contain your updates are currently unreachable.
  * After you have received a {@link ConsistencyLostException}, you can either
  * wait for a sufficiently up-to-date replica to become reachable in which
- * case the session can be continued or you can reset the session by calling
+ * case the session can be continued, or you can reset the session by calling
  * the {@link #reset()} method. If you have called the {@link #reset()} method,
  * a new session is started with the next invocation to a CRDT replica.
+ * <p>
+ * If the PN Counter is used through a client, the invocations might throw
+ * {@link com.hazelcast.spi.exception.TargetNotMemberException}, indicating that
+ * the invocation targets are not members of the cluster anymore. That might
+ * happen when the client is connected to a new cluster, but the member list is
+ * not updated yet, or all the replica members of the PN Counter is dead but
+ * the corresponding member list update is not received yet. Upon receiving
+ * the exception, one has to wait until the member list is updated on the
+ * client side and try again.
  * <p>
  * <b>NOTE:</b>
  * The CRDT state is kept entirely on non-lite (data) members. If there
@@ -76,8 +85,6 @@ public interface PNCounter extends DistributedObject {
      *
      * @throws NoDataMemberInClusterException if the cluster does not contain
      *                                        any data members
-     * @throws UnsupportedOperationException  if the cluster version is less
-     *                                        than 3.10
      * @throws ConsistencyLostException       if the session guarantees have
      *                                        been lost (see class level javadoc)
      * @see ClusterService#getClusterVersion()
@@ -91,8 +98,6 @@ public interface PNCounter extends DistributedObject {
      * @return the previous value
      * @throws NoDataMemberInClusterException if the cluster does not contain
      *                                        any data members
-     * @throws UnsupportedOperationException  if the cluster version is less
-     *                                        than 3.10
      * @throws ConsistencyLostException       if the session guarantees have
      *                                        been lost (see class level javadoc)
      * @see ClusterService#getClusterVersion()
@@ -106,8 +111,6 @@ public interface PNCounter extends DistributedObject {
      * @return the updated value
      * @throws NoDataMemberInClusterException if the cluster does not contain
      *                                        any data members
-     * @throws UnsupportedOperationException  if the cluster version is less
-     *                                        than 3.10
      * @throws ConsistencyLostException       if the session guarantees have
      *                                        been lost (see class level javadoc)
      * @see ClusterService#getClusterVersion()
@@ -121,8 +124,6 @@ public interface PNCounter extends DistributedObject {
      * @return the previous value
      * @throws NoDataMemberInClusterException if the cluster does not contain
      *                                        any data members
-     * @throws UnsupportedOperationException  if the cluster version is less
-     *                                        than 3.10
      * @throws ConsistencyLostException       if the session guarantees have
      *                                        been lost (see class level javadoc)
      * @see ClusterService#getClusterVersion()
@@ -136,8 +137,6 @@ public interface PNCounter extends DistributedObject {
      * @return the updated value
      * @throws NoDataMemberInClusterException if the cluster does not contain
      *                                        any data members
-     * @throws UnsupportedOperationException  if the cluster version is less
-     *                                        than 3.10
      * @throws ConsistencyLostException       if the session guarantees have
      *                                        been lost (see class level javadoc)
      * @see ClusterService#getClusterVersion()
@@ -150,8 +149,6 @@ public interface PNCounter extends DistributedObject {
      * @return the updated value
      * @throws NoDataMemberInClusterException if the cluster does not contain
      *                                        any data members
-     * @throws UnsupportedOperationException  if the cluster version is less
-     *                                        than 3.10
      * @throws ConsistencyLostException       if the session guarantees have
      *                                        been lost (see class level javadoc)
      * @see ClusterService#getClusterVersion()
@@ -164,8 +161,6 @@ public interface PNCounter extends DistributedObject {
      * @return the updated value
      * @throws NoDataMemberInClusterException if the cluster does not contain
      *                                        any data members
-     * @throws UnsupportedOperationException  if the cluster version is less
-     *                                        than 3.10
      * @throws ConsistencyLostException       if the session guarantees have
      *                                        been lost (see class level javadoc)
      * @see ClusterService#getClusterVersion()
@@ -178,8 +173,6 @@ public interface PNCounter extends DistributedObject {
      * @return the previous value
      * @throws NoDataMemberInClusterException if the cluster does not contain
      *                                        any data members
-     * @throws UnsupportedOperationException  if the cluster version is less
-     *                                        than 3.10
      * @throws ConsistencyLostException       if the session guarantees have
      *                                        been lost (see class level javadoc)
      * @see ClusterService#getClusterVersion()
@@ -192,10 +185,8 @@ public interface PNCounter extends DistributedObject {
      * @return the previous value
      * @throws NoDataMemberInClusterException if the cluster does not contain
      *                                        any data members
-     * @throws UnsupportedOperationException  if the cluster version is less
-     *                                        than 3.10
      * @throws ConsistencyLostException       if the session guarantees have
-     *                                        beenlost (see class level javadoc)
+     *                                        been lost (see class level javadoc)
      * @see ClusterService#getClusterVersion()
      */
     long getAndIncrement();

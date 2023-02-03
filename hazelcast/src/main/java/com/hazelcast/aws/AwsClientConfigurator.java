@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ final class AwsClientConfigurator {
         }
 
         if (environment.isRunningOnEcs()) {
-            return environment.getAwsRegionOnEcs();
+            return regionFrom(metadataApi.availabilityZoneEcs());
         }
 
         return regionFrom(metadataApi.availabilityZoneEc2());
@@ -141,9 +141,9 @@ final class AwsClientConfigurator {
             return awsConfig.getCluster();
         }
         if (environment.isRunningOnEcs()) {
-            String clusterArn = metadataApi.metadataEcs().getClusterArn();
-            LOGGER.info("No ECS cluster defined, using current cluster: " + clusterArn);
-            return clusterArn;
+            String cluster = metadataApi.clusterEcs();
+            LOGGER.info("No ECS cluster defined, using current cluster: " + cluster);
+            return cluster;
         }
         throw new InvalidConfigurationException("You must define 'cluster' property if not running inside ECS cluster");
     }

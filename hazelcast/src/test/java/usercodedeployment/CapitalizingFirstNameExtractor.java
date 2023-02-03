@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 
 package usercodedeployment;
 
-import java.util.Locale;
-
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
 
 public class CapitalizingFirstNameExtractor implements ValueExtractor<Person, Object> {
     @Override
     public void extract(Person target, Object argument, ValueCollector collector) {
-        collector.addObject(target.getName().toUpperCase(Locale.ROOT));
+        collector.addObject(StringUtil.upperCaseInternal(target.getName()));
     }
 }

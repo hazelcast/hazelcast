@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,13 +36,12 @@ import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
 
@@ -50,17 +49,12 @@ import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.metrics.JobMetrics_BatchTest.JOB_CONFIG_WITH_METRICS;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JobMetrics_MiscTest extends TestInClusterSupport {
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     @Before
     public void setup() {
@@ -148,7 +142,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
     @Test
     public void when_jobSuspended_andMetricsNotStored_then_onlyPeriodicMetricsReturned() throws Throwable {
         DAG dag = new DAG();
-        Vertex v1 = dag.newVertex("v1", TestProcessors.MockP::new);
+        Vertex v1 = dag.newVertex("v1", MockP::new);
         Vertex v2 = dag.newVertex("v2", (SupplierEx<Processor>) TestProcessors.NoOutputSourceP::new);
         dag.edge(between(v1, v2));
 
@@ -159,7 +153,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         Job job = hz().getJet().newJob(dag, config);
 
         //when
-        TestProcessors.NoOutputSourceP.executionStarted.await();
+        NoOutputSourceP.executionStarted.await();
         //then
         assertJobStatusEventually(job, JobStatus.RUNNING);
         assertTrueEventually(() -> assertJobHasMetrics(job, false));
@@ -177,7 +171,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         assertTrueEventually(() -> assertJobHasMetrics(job, false));
 
         //when
-        TestProcessors.NoOutputSourceP.proceedLatch.countDown();
+        NoOutputSourceP.proceedLatch.countDown();
         job.join();
         //then
         assertJobStatusEventually(job, JobStatus.COMPLETED);
@@ -185,24 +179,88 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
     }
 
     @Test
-    public void when_jobRestarted_then_metricsRepopulate() throws Throwable {
+    public void when_jobSuspended_andMetricsStored_then_onlyPeriodicAndFinalMetricsReturned() throws Throwable {
         DAG dag = new DAG();
-        Vertex v1 = dag.newVertex("v1", TestProcessors.MockP::new);
+        Vertex v1 = dag.newVertex("v1", MockP::new);
         Vertex v2 = dag.newVertex("v2", (SupplierEx<Processor>) TestProcessors.NoOutputSourceP::new);
         dag.edge(between(v1, v2));
 
+        //init
+        JobConfig config = new JobConfig()
+                .setMetricsEnabled(true) //enable metric collection
+                .setStoreMetricsAfterJobCompletion(true); //enable metric saving on completion
+        Job job = hz().getJet().newJob(dag, config);
+
+        //when
+        NoOutputSourceP.executionStarted.await();
+        //then
+        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertTrueEventually(() -> assertJobHasMetrics(job, false));
+
+        //when
+        job.suspend();
+        //then
+        assertJobStatusEventually(job, SUSPENDED);
+        assertTrueEventually(() -> assertEmptyJobMetrics(job, false));
+
+        //when
+        job.resume();
+        //then
+        assertJobStatusEventually(job, RUNNING);
+        assertTrueEventually(() -> assertJobHasMetrics(job, false));
+
+        //when
+        NoOutputSourceP.proceedLatch.countDown();
+        job.join();
+        //then
+        assertJobStatusEventually(job, JobStatus.COMPLETED);
+        assertTrueEventually(() -> assertJobHasMetrics(job, true));
+    }
+
+    @Test
+    public void when_jobRestarted_then_metricsRepopulate() throws Throwable {
+        DAG dag = new DAG();
+        Vertex v1 = dag.newVertex("v1", MockP::new);
+        Vertex v2 = dag.newVertex("v2", (SupplierEx<Processor>) NoOutputSourceP::new);
+        dag.edge(between(v1, v2));
+
         Job job = hz().getJet().newJob(dag, JOB_CONFIG_WITH_METRICS);
-        TestProcessors.NoOutputSourceP.executionStarted.await();
+        NoOutputSourceP.executionStarted.await();
         assertJobStatusEventually(job, JobStatus.RUNNING);
 
         job.restart();
         assertJobStatusEventually(job, JobStatus.RUNNING);
         assertTrueEventually(() -> assertJobHasMetrics(job, false));
 
-        TestProcessors.NoOutputSourceP.proceedLatch.countDown();
+        NoOutputSourceP.proceedLatch.countDown();
         job.join();
         assertJobStatusEventually(job, JobStatus.COMPLETED);
         assertJobHasMetrics(job, true);
+    }
+
+    @Test
+    public void when_jobCancelled_then_emptyMetrics() {
+        DAG dag = new DAG();
+        dag.newVertex("v1", () -> new MockP().streaming());
+
+        //init
+        JobConfig config = new JobConfig()
+                .setMetricsEnabled(true) //enable metric collection
+                .setStoreMetricsAfterJobCompletion(true); //enable metric saving on completion
+        Job job = hz().getJet().newJob(dag, config);
+
+        //when
+        assertJobStatusEventually(job, JobStatus.RUNNING);
+        //then
+        assertTrueEventually(() -> assertJobHasMetrics(job, false));
+
+        //when
+        job.cancel();
+        assertThrows(CancellationException.class, job::join);
+
+        //then
+        assertJobStatusEventually(job, JobStatus.FAILED);
+        assertTrueEventually(() -> assertEmptyJobMetrics(job, true));
     }
 
     @Test
@@ -228,19 +286,6 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         assertJobStatusEventually(job, JobStatus.COMPLETED);
         //then
         assertEmptyJobMetrics(job, true);
-    }
-
-    private Job runJobExpectFailure(@Nonnull DAG dag, @Nonnull RuntimeException expectedException) {
-        Job job = null;
-        try {
-            job = hz().getJet().newJob(dag, JOB_CONFIG_WITH_METRICS);
-            job.join();
-            fail("Job execution should have failed");
-        } catch (Exception actual) {
-            Throwable cause = peel(actual);
-            assertContains(cause.getMessage(), expectedException.getMessage());
-        }
-        return job;
     }
 
     private void assertJobHasMetrics(Job job, boolean saved) {

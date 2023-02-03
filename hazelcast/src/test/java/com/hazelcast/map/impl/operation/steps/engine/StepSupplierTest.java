@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,19 @@
 package com.hazelcast.map.impl.operation.steps.engine;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.SetOperation;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.test.Accessors;
@@ -34,6 +40,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -44,9 +53,14 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class StepSupplierTest extends HazelcastTestSupport {
 
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
+    }
+
     @Test
     public void step_supplier_finishes() throws Exception {
-        HazelcastInstance node = createHazelcastInstance();
+        HazelcastInstance node = createHazelcastInstance(getConfig());
         Data data = Accessors.getSerializationService(node).toData("data");
         MapOperation operation = new SetOperation("map", data, data);
         operation.setNodeEngine(Accessors.getNodeEngineImpl(node));
@@ -66,7 +80,7 @@ public class StepSupplierTest extends HazelcastTestSupport {
 
     @Test
     public void step_supplier_get_returns_same_step() throws Exception {
-        HazelcastInstance node = createHazelcastInstance();
+        HazelcastInstance node = createHazelcastInstance(getConfig());
         Data data = Accessors.getSerializationService(node).toData("data");
         MapOperation operation = new SetOperation("map", data, data);
         operation.setNodeEngine(Accessors.getNodeEngineImpl(node));
@@ -82,7 +96,7 @@ public class StepSupplierTest extends HazelcastTestSupport {
     @Test
     public void step_supplier_ends_with_call_timeout_response_when_operation_timed_out() {
         // create node with force offload
-        Config config = smallInstanceConfig();
+        Config config = getConfig();
         config.setProperty(MapServiceContext.FORCE_OFFLOAD_ALL_OPERATIONS.getName(), "true");
         HazelcastInstance node = createHazelcastInstance(config);
 
@@ -117,5 +131,34 @@ public class StepSupplierTest extends HazelcastTestSupport {
         // wait operation end
         assertOpenEventually(latch);
         assertInstanceOf(CallTimeoutResponse.class, expectedResponse.get());
+    }
+
+    @Test
+    public void step_supplier_handles_rejected_execution_exception_then_operations_finish() {
+        Config config = getConfig();
+        // configure offloadable executor to throw
+        // RejectedExecutionException quickly
+        ExecutorConfig executorConfig
+                = config.getExecutorConfig(ExecutionService.MAP_STORE_OFFLOADABLE_EXECUTOR);
+        executorConfig.setPoolSize(1).setQueueCapacity(1);
+
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig
+                .setEnabled(true)
+                .setImplementation(new MapStoreAdapter<String, String>());
+
+        String mapName = "default";
+        config.getMapConfig(mapName)
+                .setMapStoreConfig(mapStoreConfig);
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<String, String> map = instance.getMap(mapName);
+
+        List<CompletableFuture> futures = new ArrayList<>();
+        for (int i = 0; i < 1000; i++) {
+            futures.add(map.setAsync("key-" + i, String.valueOf(i)).toCompletableFuture());
+        }
+
+        FutureUtil.waitUntilAllResponded(futures);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.function.ToLongFunctionEx;
-import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -42,7 +41,7 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
     private final Map<Integer, Map<Integer, Long>> postponeTimeMap;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    protected StreamToStreamJoinPhysicalRel(
+    StreamToStreamJoinPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelNode left,
@@ -54,6 +53,7 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
         super(cluster, traitSet, left, right, condition, joinType);
 
         this.postponeTimeMap = postponeTimeMap;
+        assert !postponeTimeMap.isEmpty();
     }
 
     public JetJoinInfo joinInfo(QueryParameterMetadata parameterMetadata) {
@@ -92,8 +92,33 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
         return postponeTimeMap;
     }
 
+    public long minimumSpread() {
+        return minimumSpread(postponeTimeMap, left.getRowType().getFieldCount());
+    }
+
+    // Separated due to testing concerns
+    static long minimumSpread(Map<Integer, Map<Integer, Long>> postponeTimeMap, int leftColumns) {
+        long[] min = {Long.MAX_VALUE, Long.MAX_VALUE};
+
+        // Postpone map representation is timeA -> timeB -> constant, which represents timeA > timeB - constant
+        // We collect the minimums of the lower and upper bounds into min[0] and min[1].
+        // The spread is then the distance between the lower and upper bounds.
+        for (Map.Entry<Integer, Map<Integer, Long>> outerEntry : postponeTimeMap.entrySet()) {
+            for (Map.Entry<Integer, Long> innerEntry : outerEntry.getValue().entrySet()) {
+                int side = outerEntry.getKey() < leftColumns ? 0 : 1;
+                min[side] = Math.min(min[side], innerEntry.getValue());
+            }
+        }
+        assert min[0] < Long.MAX_VALUE && min[1] < Long.MAX_VALUE;
+        // The spread should be a distance, so it suggests a subtraction. But we're adding instead, because the
+        // upper bound is stored as inverted lower bound.
+        long spread = min[0] + min[1];
+        // the result can be negative or, make it 1 at least
+        return Math.max(spread, 1);
+    }
+
     @Override
-    public Vertex accept(CreateDagVisitor visitor) {
+    public <V> V accept(CreateDagVisitor<V> visitor) {
         return visitor.onStreamToStreamJoin(this);
     }
 

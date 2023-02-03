@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,7 +79,7 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
     public void submitBasicTask() throws Exception {
         Callable<String> task = new BasicTestCallable();
         Future<String> future = executor.submit(task);
-        assertEquals(future.get(), BasicTestCallable.RESULT);
+        assertEquals(BasicTestCallable.RESULT, future.get());
     }
 
     @Test(expected = RejectedExecutionException.class)
@@ -163,7 +163,7 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
     public void isDoneAfterGet() throws Exception {
         Callable<String> task = new BasicTestCallable();
         Future<String> future = executor.submit(task);
-        assertEquals(future.get(), BasicTestCallable.RESULT);
+        assertEquals(BasicTestCallable.RESULT, future.get());
         assertTrue(future.isDone());
     }
 
@@ -174,9 +174,9 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
             Callable<String> task2 = new BasicTestCallable();
             Future<String> future1 = executor.submit(task1);
             Future<String> future2 = executor.submit(task2);
-            assertEquals(future2.get(), BasicTestCallable.RESULT);
+            assertEquals(BasicTestCallable.RESULT, future2.get());
             assertTrue(future2.isDone());
-            assertEquals(future1.get(), BasicTestCallable.RESULT);
+            assertEquals(BasicTestCallable.RESULT, future1.get());
             assertTrue(future1.isDone());
         }
     }
@@ -206,7 +206,7 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
         Callable<String> task = new BasicTestCallable();
         Future<String> future = executor.submit(task);
         for (int i = 0; i < 4; i++) {
-            assertEquals(future.get(), BasicTestCallable.RESULT);
+            assertEquals(BasicTestCallable.RESULT, future.get());
             assertTrue(future.isDone());
         }
     }
@@ -217,17 +217,17 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
         ArrayList<Callable<String>> tasks = new ArrayList<>();
         tasks.add(new BasicTestCallable());
         List<Future<String>> futures = executor.invokeAll(tasks);
-        assertEquals(futures.size(), 1);
-        assertEquals(futures.get(0).get(), BasicTestCallable.RESULT);
+        assertEquals(1, futures.size());
+        assertEquals(BasicTestCallable.RESULT, futures.get(0).get());
         // more tasks
         tasks.clear();
         for (int i = 0; i < 1000; i++) {
             tasks.add(new BasicTestCallable());
         }
         futures = executor.invokeAll(tasks);
-        assertEquals(futures.size(), 1000);
+        assertEquals(1000, futures.size());
         for (int i = 0; i < 1000; i++) {
-            assertEquals(futures.get(i).get(), BasicTestCallable.RESULT);
+            assertEquals(BasicTestCallable.RESULT, futures.get(i).get());
         }
     }
 
@@ -235,18 +235,18 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
     public void invokeAllTimeoutCancelled() throws Exception {
         List<? extends Callable<Boolean>> singleTask = Collections.singletonList(new SleepingTask(0));
         List<Future<Boolean>> futures = executor.invokeAll(singleTask, 5, TimeUnit.SECONDS);
-        assertEquals(futures.size(), 1);
-        assertEquals(futures.get(0).get(), Boolean.TRUE);
+        assertEquals(1, futures.size());
+        assertEquals(Boolean.TRUE, futures.get(0).get());
 
         List<Callable<Boolean>> tasks = new ArrayList<>();
         for (int i = 0; i < 1000; i++) {
             tasks.add(new SleepingTask(i < 2 ? 0 : 20));
         }
         futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
-        assertEquals(futures.size(), 1000);
+        assertEquals(1000, futures.size());
         for (int i = 0; i < 1000; i++) {
             if (i < 2) {
-                assertEquals(futures.get(i).get(), Boolean.TRUE);
+                assertEquals(Boolean.TRUE, futures.get(i).get());
             } else {
                 try {
                     futures.get(i).get();
@@ -264,17 +264,17 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
         ArrayList<Callable<String>> tasks = new ArrayList<>();
         tasks.add(new BasicTestCallable());
         List<Future<String>> futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
-        assertEquals(futures.size(), 1);
-        assertEquals(futures.get(0).get(), BasicTestCallable.RESULT);
+        assertEquals(1, futures.size());
+        assertEquals(BasicTestCallable.RESULT, futures.get(0).get());
         // more tasks
         tasks.clear();
         for (int i = 0; i < 1000; i++) {
             tasks.add(new BasicTestCallable());
         }
         futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
-        assertEquals(futures.size(), 1000);
+        assertEquals(1000, futures.size());
         for (int i = 0; i < 1000; i++) {
-            assertEquals(futures.get(i).get(), BasicTestCallable.RESULT);
+            assertEquals(BasicTestCallable.RESULT, futures.get(i).get());
         }
     }
 
