@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpc.buffer.ThreadLocalBuffer;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
@@ -26,7 +26,7 @@ public class NopSchedulerTest {
     @Test
     public void test() {
         NopScheduler scheduler = new NopScheduler();
-        scheduler.schedule(new IOBuffer(64));
+        scheduler.schedule(new ThreadLocalBuffer(null, 1, null));
     }
 
     @Test

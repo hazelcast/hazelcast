@@ -18,7 +18,7 @@ package com.hazelcast.internal.tpc.nio;
 
 import com.hazelcast.internal.tpc.AsyncSocket;
 import com.hazelcast.internal.tpc.Reactor;
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpc.buffer.Buffer;
 import jdk.net.ExtendedSocketOptions;
 import org.jctools.queues.MpmcArrayQueue;
 
@@ -86,7 +86,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     // concurrent
     private final AtomicReference<Thread> flushThread = new AtomicReference<>();
-    private MpmcArrayQueue<IOBuffer> unflushedBufs;
+    private MpmcArrayQueue<Buffer> unflushedBufs;
     private final NioAsyncSocketHandler reactorHandler = new NioAsyncSocketHandler();
     private CompletableFuture<Void> connectFuture;
 
@@ -387,24 +387,24 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public boolean write(IOBuffer buf) {
+    public boolean write(Buffer buf) {
         return unflushedBufs.add(buf);
     }
 
     @Override
-    public boolean writeAll(Collection<IOBuffer> bufs) {
+    public boolean writeAll(Collection<Buffer> bufs) {
         return unflushedBufs.addAll(bufs);
     }
 
     @Override
-    public boolean writeAndFlush(IOBuffer buf) {
+    public boolean writeAndFlush(Buffer buf) {
         boolean result = write(buf);
         flush();
         return result;
     }
 
     @Override
-    public boolean unsafeWriteAndFlush(IOBuffer buf) {
+    public boolean unsafeWriteAndFlush(Buffer buf) {
         Thread currentFlushThread = flushThread.get();
         Thread currentThread = Thread.currentThread();
 

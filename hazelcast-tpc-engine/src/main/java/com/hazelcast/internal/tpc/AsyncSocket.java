@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpc.buffer.Buffer;
 import com.hazelcast.internal.tpc.util.ProgressIndicator;
 
 import java.io.IOException;
@@ -325,14 +325,14 @@ public abstract class AsyncSocket extends Socket {
      * @param buf the IOBuffer to write.
      * @return true if the IOBuffer was accepted, false otherwise.
      */
-    public abstract boolean write(IOBuffer buf);
+    public abstract boolean write(Buffer buf);
 
-    public abstract boolean writeAll(Collection<IOBuffer> bufs);
+    public abstract boolean writeAll(Collection<Buffer> bufs);
 
     /**
      * Writes a IOBuffer and flushes it.
      * <p>
-     * This is the same as calling {@link #write(IOBuffer)} followed by a {@link #flush()}.
+     * This is the same as calling {@link #write(Buffer)} followed by a {@link #flush()}.
      * <p>
      * There is no guarantee that IOBuffer is actually going to be received by the caller if
      * the AsyncSocket has accepted the IOBuffer. E.g. when the connection closes.
@@ -342,14 +342,14 @@ public abstract class AsyncSocket extends Socket {
      * @param buf the IOBuffer to write.
      * @return true if the IOBuffer was accepted, false otherwise.
      */
-    public abstract boolean writeAndFlush(IOBuffer buf);
+    public abstract boolean writeAndFlush(Buffer buf);
 
     /**
      * Writes a IOBuffer and ensure it gets written.
      * <p>
      * Should only be called from the reactor-thread.
      */
-    public abstract boolean unsafeWriteAndFlush(IOBuffer buf);
+    public abstract boolean unsafeWriteAndFlush(Buffer buf);
 
     /**
      * Connects asynchronously to some address.

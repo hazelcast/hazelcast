@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpc.buffer.Buffer;
 import com.hazelcast.internal.tpc.logging.TpcLogger;
 import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpc.util.BoundPriorityQueue;
@@ -223,8 +223,8 @@ public abstract class Eventloop implements Runnable {
                 } catch (Exception e) {
                     logger.warning(e);
                 }
-            } else if (task instanceof IOBuffer) {
-                scheduler.schedule((IOBuffer) task);
+            } else if (task instanceof Buffer) {
+                scheduler.schedule((Buffer) task);
             } else {
                 throw new RuntimeException("Unrecognized type:" + task.getClass());
             }

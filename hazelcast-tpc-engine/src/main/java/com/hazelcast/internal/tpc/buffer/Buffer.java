@@ -14,13 +14,44 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc.iobuffer;
+package com.hazelcast.internal.tpc.buffer;
 
-public interface IOBufferAllocator {
+import java.nio.ByteBuffer;
 
-    IOBuffer allocate();
+public interface Buffer {
+    void release();
 
-    IOBuffer allocate(int minSize);
+    void releaseNextChunk(ByteBuffer chunk);
 
-    void free(IOBuffer buf);
+    int position();
+
+    void clear();
+
+    void flip();
+
+    byte getByte(int pos);
+
+    void writeByte(byte src);
+
+    void writeBytes(byte[] src);
+
+    void writeShortL(short v);
+
+    int getInt(int index);
+
+    void writeInt(int value);
+
+    void writeIntL(int value);
+
+    void writeLong(long value);
+
+    void write(ByteBuffer src);
+
+    void write(ByteBuffer src, int count);
+
+    int remaining();
+
+    ByteBuffer[] getChunks();
+
+    boolean hasRemainingChunks();
 }

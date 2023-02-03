@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpc.buffer.Buffer;
 
 /**
  * A scheduler that doesn't do anything.
@@ -32,6 +32,6 @@ public class NopScheduler implements Scheduler {
     }
 
     @Override
-    public void schedule(IOBuffer task) {
+    public void schedule(Buffer task) {
     }
 }

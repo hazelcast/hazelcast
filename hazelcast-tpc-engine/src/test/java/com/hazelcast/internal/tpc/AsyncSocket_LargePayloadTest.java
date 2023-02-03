@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
-import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
-import com.hazelcast.internal.tpc.iobuffer.NonConcurrentIOBufferAllocator;
+import com.hazelcast.internal.tpc.buffer.Buffer;
+import com.hazelcast.internal.tpc.buffer.BufferAllocator;
+import com.hazelcast.internal.tpc.buffer.ThreadLocalBuffer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,6 +30,9 @@ import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.internal.tpc.TpcTestSupport.assertOpenEventually;
 import static com.hazelcast.internal.tpc.TpcTestSupport.terminate;
+import static com.hazelcast.internal.tpc.buffer.BufferAllocatorFactory.createConcurrentAllocator;
+import static com.hazelcast.internal.tpc.buffer.BufferAllocatorFactory.createGrowingThreadLocal;
+import static com.hazelcast.internal.tpc.buffer.BufferAllocatorFactory.createNotGrowingThreadLocal;
 import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpc.util.BufferUtil.put;
@@ -196,10 +199,11 @@ public abstract class AsyncSocket_LargePayloadTest {
         AsyncSocket clientSocket = newClient(serverAddress, latch);
 
         System.out.println("Starting");
+        BufferAllocator allocator = createNotGrowingThreadLocal(1, null);
 
         for (int k = 0; k < concurrency; k++) {
             byte[] payload = new byte[payloadSize];
-            IOBuffer buf = new IOBuffer(SIZEOF_INT + SIZEOF_LONG + payload.length, true);
+            Buffer buf = allocator.allocate(SIZEOF_INT + SIZEOF_LONG + payload.length);
             buf.writeInt(payload.length);
             buf.writeLong(iterations / concurrency);
             buf.writeBytes(payload);
@@ -222,7 +226,7 @@ public abstract class AsyncSocket_LargePayloadTest {
             private ByteBuffer payloadBuffer;
             private long round;
             private int payloadSize = -1;
-            private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
+            private final BufferAllocator<ThreadLocalBuffer> responseAllocator = createGrowingThreadLocal();
 
             @Override
             public void onRead(ByteBuffer receiveBuffer) {
@@ -255,7 +259,7 @@ public abstract class AsyncSocket_LargePayloadTest {
                     if (round == 0) {
                         latch.countDown();
                     } else {
-                        IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
+                        Buffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
                         responseBuf.writeInt(payloadSize);
                         responseBuf.writeLong(round);
                         responseBuf.write(payloadBuffer);
@@ -287,7 +291,7 @@ public abstract class AsyncSocket_LargePayloadTest {
                 private ByteBuffer payloadBuffer;
                 private long round;
                 private int payloadSize = -1;
-                private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
+                private final BufferAllocator<ThreadLocalBuffer> responseAllocator = createConcurrentAllocator();
 
                 @Override
                 public void onRead(ByteBuffer receiveBuffer) {
@@ -316,7 +320,7 @@ public abstract class AsyncSocket_LargePayloadTest {
                         }
 
                         payloadBuffer.flip();
-                        IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
+                        Buffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
                         responseBuf.writeInt(payloadSize);
                         responseBuf.writeLong(round - 1);
                         responseBuf.write(payloadBuffer);

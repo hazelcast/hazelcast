@@ -14,7 +14,20 @@
  * limitations under the License.
  */
 
-/**
- * <p>Contains the IOBuffer functionality<br>
- */
-package com.hazelcast.internal.tpc.iobuffer;
+package com.hazelcast.internal.tpc.buffer;
+
+import java.nio.ByteBuffer;
+
+public interface BufferAllocator<T extends Buffer> {
+    int DEFAULT_BUFFER_SIZE = 4096;
+
+    default T allocate() {
+        return allocate(DEFAULT_BUFFER_SIZE);
+    }
+
+    T allocate(int minSize);
+
+    void free(T buf);
+
+    void free(ByteBuffer chunk);
+}

@@ -17,7 +17,7 @@
 package com.hazelcast.internal.tpc;
 
 
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpc.buffer.Buffer;
 import com.hazelcast.internal.tpc.logging.TpcLogger;
 import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpc.util.CircularQueue;
@@ -281,13 +281,13 @@ public abstract class Reactor implements Executor {
     }
 
     /**
-     * Offers an {@link IOBuffer} to be processed by this {@link Reactor}.
+     * Offers an {@link Buffer} to be processed by this {@link Reactor}.
      *
-     * @param buff the {@link IOBuffer} to process.
+     * @param buff the {@link Buffer} to process.
      * @return true if the buffer was accepted, false otherwise.
      * @throws NullPointerException if buff is null.
      */
-    public final boolean offer(IOBuffer buff) {
+    public final boolean offer(Buffer buff) {
         //todo: Don't want to add localRunQueue optimization like the offer(Runnable)?
 
         if (externalTaskQueue.offer(buff)) {
