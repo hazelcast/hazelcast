@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpc.logging.TpcLogger;
 import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpc.util.BoundPriorityQueue;
@@ -49,19 +48,19 @@ import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 public abstract class Eventloop implements Runnable {
     private static final int INITIAL_ALLOCATOR_CAPACITY = 1024;
 
+    protected final MpmcArrayQueue externalTaskQueue;
+    protected final PriorityQueue<ScheduledTask> scheduledTaskQueue;
+    public final CircularQueue localTaskQueue;
     public final Reactor reactor;
     protected final boolean spin;
     protected final int batchSize;
-    protected final MpmcArrayQueue externalTaskQueue;
     private final ReactorBuilder builder;
     protected long earliestDeadlineNanos = -1;
-    protected final PriorityQueue<ScheduledTask> scheduledTaskQueue;
     protected Scheduler scheduler;
     protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     public final NanoClock nanoClock;
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
     protected boolean stop;
-    public final CircularQueue<Runnable> localTaskQueue;
     public final PromiseAllocator promiseAllocator;
 
     public Eventloop(Reactor reactor, ReactorBuilder builder) {
@@ -188,16 +187,21 @@ public abstract class Eventloop implements Runnable {
 
     protected final boolean runLocalTasks() {
         final int batchSize = this.batchSize;
-        final CircularQueue<Runnable> localTaskQueue = this.localTaskQueue;
+        final CircularQueue localTaskQueue = this.localTaskQueue;
         for (int k = 0; k < batchSize; k++) {
-            Runnable task = localTaskQueue.poll();
+            Object task = localTaskQueue.poll();
             if (task == null) {
                 // there are no more tasks.
                 return false;
-            } else {
-                // there is a task, so lets execute it.
+            } else if (task instanceof Runnable) {
                 try {
-                    task.run();
+                    ((Runnable) task).run();
+                } catch (Exception e) {
+                    logger.warning(e);
+                }
+            } else {
+                try {
+                    scheduler.schedule(task);
                 } catch (Exception e) {
                     logger.warning(e);
                 }
@@ -217,16 +221,17 @@ public abstract class Eventloop implements Runnable {
                 // there are no more tasks
                 return false;
             } else if (task instanceof Runnable) {
-                // there is a task, so lets execute it.
                 try {
                     ((Runnable) task).run();
                 } catch (Exception e) {
                     logger.warning(e);
                 }
-            } else if (task instanceof IOBuffer) {
-                scheduler.schedule((IOBuffer) task);
             } else {
-                throw new RuntimeException("Unrecognized type:" + task.getClass());
+                try {
+                    scheduler.schedule(task);
+                } catch (Exception e) {
+                    logger.warning(e);
+                }
             }
         }
 
