@@ -18,6 +18,7 @@ package com.hazelcast.internal.tpc.nio;
 
 import com.hazelcast.internal.tpc.AsyncServerSocket;
 import com.hazelcast.internal.tpc.AsyncSocket;
+import com.hazelcast.internal.tpc.AcceptRequest;
 import com.hazelcast.internal.tpc.Eventloop;
 import com.hazelcast.internal.tpc.Reactor;
 import com.hazelcast.internal.tpc.ReactorBuilder;
@@ -41,12 +42,17 @@ public final class NioReactor extends Reactor {
 
     @Override
     public AsyncServerSocket openTcpAsyncServerSocket() {
-        return NioAsyncServerSocket.openTcpServerSocket(this);
+        return new NioAsyncServerSocket(this);
     }
 
     @Override
     public AsyncSocket openTcpAsyncSocket() {
-        return NioAsyncSocket.openTcpSocket();
+        return new NioAsyncSocket(this);
+    }
+
+    @Override
+    public AsyncSocket openAsyncSocket(AcceptRequest request) {
+        return new NioAsyncSocket(this, (NioAcceptRequest) request);
     }
 
     @Override

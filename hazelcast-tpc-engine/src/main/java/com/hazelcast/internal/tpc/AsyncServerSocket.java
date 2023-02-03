@@ -184,11 +184,10 @@ public abstract class AsyncServerSocket extends Socket {
      * @param consumer a function that is called when a socket has connected.
      * @throws NullPointerException if consumer is null.
      */
-    public abstract void accept(Consumer<AsyncSocket> consumer);
+    public abstract void accept(Consumer<AcceptRequest> consumer);
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "[" + getLocalAddress() + "]";
     }
-
 }

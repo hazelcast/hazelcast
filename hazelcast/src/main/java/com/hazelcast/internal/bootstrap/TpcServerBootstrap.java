@@ -27,6 +27,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.tpc.AsyncServerSocket;
+import com.hazelcast.internal.tpc.AsyncSocket;
 import com.hazelcast.internal.tpc.Configuration;
 import com.hazelcast.internal.tpc.Reactor;
 import com.hazelcast.internal.tpc.ReadHandler;
@@ -169,13 +170,14 @@ public class TpcServerBootstrap {
             serverSocket.setReceiveBufferSize(receiveBufferSize);
             serverSocket.setReuseAddress(true);
             port = bind(serverSocket, port, limit);
-            serverSocket.accept(socket -> {
+            serverSocket.accept(acceptRequest -> {
+                AsyncSocket socket = reactor.openAsyncSocket(acceptRequest);
                 socket.setReadHandler(readHandlerSuppliers.get(reactor).get());
                 socket.setSendBufferSize(sendBufferSize);
                 socket.setReceiveBufferSize(receiveBufferSize);
                 socket.setTcpNoDelay(tcpNoDelay);
                 socket.setKeepAlive(true);
-                socket.activate(reactor);
+                socket.start();
             });
         }
     }

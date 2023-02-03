@@ -163,21 +163,25 @@ public abstract class Reactor implements Executor {
     public abstract AsyncServerSocket openTcpAsyncServerSocket();
 
     /**
-     * Opens TCP/IP (stream) based async socket. The returned socket assumes IPv4. When support for
-     * IPv6 is added, a boolean 'ipv4' flag needs to be added.
-     * <p/>
-     * The opened AsyncSocket isn't tied to this Reactor. After it is opened, it needs to be assigned
-     * to a particular reactor by calling {@link AsyncSocket#activate(Reactor)}. The reason why
-     * this isn't done in 1 go, is that it could be that when the AsyncServerSocket accepts an
-     * AsyncSocket, we want to assign that AsyncSocket to a different Reactor. Otherwise if there
-     * would be 1 AsyncServerSocket, connected AsyncSockets can only run on top of the reactor of
-     * the AsyncServerSocket instead of being distributed over multiple reactors.
+     * Opens client-side TCP/IP (stream) based async socket. The returned socket assumes IPv4.
+     * When support for IPv6 is added, a boolean 'ipv4' flag needs to be added.
      * <p>
      * This method is thread-safe.
      *
      * @return the opened AsyncSocket.
      */
     public abstract AsyncSocket openTcpAsyncSocket();
+
+    /**
+     * Opens a server-side async socket. The AcceptRequest contains all the information to
+     * determine the type of socket.
+     * <p>
+     * This method is thread-safe.
+     *
+     * @return the opened AsyncSocket.
+     */
+
+    public abstract AsyncSocket openAsyncSocket(AcceptRequest request);
 
     /**
      * Creates the Eventloop run by this Reactor.

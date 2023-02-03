@@ -54,7 +54,7 @@ public abstract class AsyncSocketTest {
         Reactor reactor = newReactor();
         AsyncSocket socket = reactor.openTcpAsyncSocket();
         socket.setReadHandler(mock(ReadHandler.class));
-        socket.activate(reactor);
+        socket.start();
 
         SocketAddress remoteAddress = socket.getRemoteAddress();
         assertNull(remoteAddress);
@@ -65,7 +65,7 @@ public abstract class AsyncSocketTest {
         Reactor reactor = newReactor();
         AsyncSocket socket = reactor.openTcpAsyncSocket();
         socket.setReadHandler(mock(ReadHandler.class));
-        socket.activate(reactor);
+        socket.start();
 
         SocketAddress localAddress = socket.getLocalAddress();
         System.out.println(localAddress);
@@ -151,12 +151,12 @@ public abstract class AsyncSocketTest {
 
         SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
         serverSocket.bind(serverAddress);
-        serverSocket.accept(asyncSocket -> {
+        serverSocket.accept(acceptRequest -> {
         });
 
         AsyncSocket clientSocket = reactor.openTcpAsyncSocket();
         clientSocket.setReadHandler(mock(ReadHandler.class));
-        clientSocket.activate(reactor);
+        clientSocket.start();
 
         CompletableFuture<Void> connect = clientSocket.connect(serverAddress);
 
@@ -181,7 +181,7 @@ public abstract class AsyncSocketTest {
         Reactor reactor = newReactor();
         AsyncSocket socket = reactor.openTcpAsyncSocket();
         socket.setReadHandler(mock(ReadHandler.class));
-        socket.activate(reactor);
+        socket.start();
 
         CompletableFuture<Void> future = socket.connect(new InetSocketAddress(50000));
 
@@ -209,25 +209,16 @@ public abstract class AsyncSocketTest {
         assertTrue(socket.isClosed());
     }
 
+
     @Test
-    public void test_activate_whenNull() {
+    public void test_start_whenAlreadyStarted() {
         Reactor reactor = newReactor();
+
         AsyncSocket socket = reactor.openTcpAsyncSocket();
         socket.setReadHandler(mock(ReadHandler.class));
 
-        assertThrows(NullPointerException.class, () -> socket.activate(null));
-    }
-
-    @Test
-    public void test_activate_whenAlreadyActivated() {
-        Reactor reactor1 = newReactor();
-        Reactor reactor2 = newReactor();
-
-        AsyncSocket socket = reactor1.openTcpAsyncSocket();
-        socket.setReadHandler(mock(ReadHandler.class));
-
-        socket.activate(reactor1);
-        assertThrows(CompletionException.class, () -> socket.activate(reactor2));
+        socket.start();
+        assertThrows(CompletionException.class, () -> socket.start());
     }
 
     @Test
@@ -235,7 +226,7 @@ public abstract class AsyncSocketTest {
         Reactor reactor = newReactor();
 
         AsyncSocket socket = reactor.openTcpAsyncSocket();
-        assertThrows(CompletionException.class, () -> socket.activate(reactor));
+        assertThrows(CompletionException.class, () -> socket.start());
     }
 
     @Test
@@ -247,7 +238,7 @@ public abstract class AsyncSocketTest {
 
         AsyncSocket socket = reactor.openTcpAsyncSocket();
         socket.setReadHandler(mock(ReadHandler.class));
-        socket.activate(reactor);
+        socket.start();
         socket.connect(serverAddress).join();
 
         assertTrue(socket.isReadable());

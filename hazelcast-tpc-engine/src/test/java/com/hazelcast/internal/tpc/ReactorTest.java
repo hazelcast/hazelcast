@@ -188,15 +188,15 @@ public abstract class ReactorTest {
         serverSocket.accept(socket -> {
         });
 
-        AsyncSocket clientSocket = serverReactor.openTcpAsyncSocket();
+        Reactor clientReactor = newReactor();
+        AsyncSocket clientSocket = clientReactor.openTcpAsyncSocket();
         clientSocket.setReadHandler(new ReadHandler() {
             @Override
             public void onRead(ByteBuffer receiveBuffer) {
             }
         });
-        Reactor clientReactor = newReactor();
         clientReactor.start();
-        clientSocket.activate(clientReactor);
+        clientSocket.start();
         clientSocket.connect(serverAddress);
 
         clientReactor.shutdown();
