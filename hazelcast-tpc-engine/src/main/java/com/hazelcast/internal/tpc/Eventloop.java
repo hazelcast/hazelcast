@@ -207,7 +207,7 @@ public abstract class Eventloop implements Runnable {
         return !localTaskQueue.isEmpty();
     }
 
-    protected final boolean runConcurrentTasks() {
+    protected final boolean runExternalTasks() {
         final int batchSize = this.batchSize;
         final MpmcArrayQueue concurrentTaskQueue = this.externalTaskQueue;
         final Scheduler scheduler = this.scheduler;
