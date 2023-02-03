@@ -21,6 +21,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.sql.SQLException;
+
 import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
 import static org.assertj.core.util.Lists.emptyList;
 import static org.assertj.core.util.Lists.newArrayList;
@@ -216,4 +218,48 @@ public class SelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         );
     }
 
+    @Test
+    public void selectAllFromTableNonDefaultSchema() throws SQLException {
+        String schemaName = randomName();
+        executeJdbc("CREATE SCHEMA " + schemaName);
+        String fullyQualifiedTable = schemaName + "." + tableName;
+
+        createTable(fullyQualifiedTable);
+        insertItems(fullyQualifiedTable, ITEM_COUNT);
+        createMapping(fullyQualifiedTable);
+
+        assertRowsAnyOrder(
+                "SELECT * FROM \"" + fullyQualifiedTable + "\"",
+                newArrayList(
+                        new Row(0, "name-0"),
+                        new Row(1, "name-1"),
+                        new Row(2, "name-2"),
+                        new Row(3, "name-3"),
+                        new Row(4, "name-4")
+                )
+        );
+    }
+
+    @Test
+    public void selectAllFromTableSpaceInSchema() throws SQLException {
+        String schemaName = "\"prefix " + randomName() + "\"";
+        executeJdbc("CREATE SCHEMA " + schemaName);
+        String fullyQualifiedTable = schemaName + "." + tableName;
+        String mappingName = randomName();
+
+        createTable(fullyQualifiedTable);
+        insertItems(fullyQualifiedTable, ITEM_COUNT);
+        createMapping("\"" + schemaName + "\"." + tableName, mappingName);
+
+        assertRowsAnyOrder(
+                "SELECT * FROM " + mappingName,
+                newArrayList(
+                        new Row(0, "name-0"),
+                        new Row(1, "name-1"),
+                        new Row(2, "name-2"),
+                        new Row(3, "name-3"),
+                        new Row(4, "name-4")
+                )
+        );
+    }
 }

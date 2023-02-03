@@ -23,12 +23,15 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.sql.SQLException;
+
 import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     private String tableName;
+    private String alternativeSchemaTable;
 
     @BeforeClass
     public static void beforeClass() {
@@ -38,6 +41,9 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     @Before
     public void setUp() throws Exception {
         tableName = randomTableName();
+        String schemaName = randomName();
+        executeJdbc("CREATE SCHEMA " + schemaName);
+        alternativeSchemaTable = schemaName + "." + tableName;
     }
 
     @Test
@@ -164,5 +170,27 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         assertJdbcRowsAnyOrder(tableName,
                 new Row(0, "name-0")
         );
+    }
+
+    @Test
+    public void insertIntoTableNonDefaultSchema() throws SQLException {
+
+        createTable(alternativeSchemaTable);
+        createMapping(alternativeSchemaTable);
+
+        execute("INSERT INTO \"" + alternativeSchemaTable + "\" VALUES (0, 'name-0')");
+        assertJdbcRowsAnyOrder(alternativeSchemaTable, new Row(0, "name-0"));
+    }
+
+
+    @Test
+    public void insertIntoTableWithExternalNameNonDefaultSchema() throws Exception {
+        createTable(alternativeSchemaTable);
+        String mappingName = "mapping_" + randomName();
+        createMapping(alternativeSchemaTable, mappingName);
+
+        execute("INSERT INTO " + mappingName + " VALUES (0, 'name-0')");
+
+        assertJdbcRowsAnyOrder(alternativeSchemaTable, new Row(0, "name-0"));
     }
 }
