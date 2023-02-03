@@ -49,7 +49,7 @@ class NioEventloop extends Eventloop {
         final boolean spin = this.spin;
         final Selector selector = this.selector;
         final AtomicBoolean wakeupNeeded = this.wakeupNeeded;
-        final MpmcArrayQueue concurrentTaskQueue = this.externalTaskQueue;
+        final MpmcArrayQueue externalTaskQueue = this.externalTaskQueue;
         final Scheduler scheduler = this.scheduler;
 
         boolean moreWork = false;
