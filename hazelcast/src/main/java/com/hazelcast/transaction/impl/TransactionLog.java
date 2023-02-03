@@ -17,8 +17,8 @@
 package com.hazelcast.transaction.impl;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -156,7 +156,7 @@ public class TransactionLog {
             operationService.invokeOnTarget(op.getServiceName(), op, target);
         } else {
             operationService.invokeOnPartitionAsync(op.getServiceName(), op, op.getPartitionId())
-                    .whenCompleteAsync(callback, nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR));
+                    .whenCompleteAsync(callback, ConcurrencyUtil.getDefaultAsyncExecutor());
         }
     }
 }
