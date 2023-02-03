@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
-
 /**
  * Every Reactor has a scheduler. So incoming work (IOBuffers) can be scheduled
  * and it is up to the Scheduler to process these tasks. The Scheduler gets a frequent
@@ -51,7 +49,7 @@ public interface Scheduler {
     /**
      * Schedules a task to be processed by this Scheduler.
      *
-     * @param task the IOBuffer containing the task to schedule.
+     * @param task the task.
      */
-    void schedule(IOBuffer task);
+    void schedule(Object task);
 }

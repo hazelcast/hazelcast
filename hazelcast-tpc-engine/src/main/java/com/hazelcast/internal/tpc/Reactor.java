@@ -17,7 +17,6 @@
 package com.hazelcast.internal.tpc;
 
 
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpc.logging.TpcLogger;
 import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpc.util.CircularQueue;
@@ -65,7 +64,7 @@ public abstract class Reactor implements Executor {
     protected final AtomicBoolean wakeupNeeded;
     protected final MpmcArrayQueue externalTaskQueue;
     protected final Eventloop eventloop;
-    public final CircularQueue<Runnable> localTaskQueue;
+    public final CircularQueue localTaskQueue;
     protected final boolean spin;
     protected final Thread eventloopThread;
     protected final String name;
@@ -270,27 +269,20 @@ public abstract class Reactor implements Executor {
      * @throws NullPointerException if task is null.
      */
     public final boolean offer(Runnable task) {
-        if (Thread.currentThread() == eventloopThread) {
-            return localTaskQueue.offer(task);
-        } else if (externalTaskQueue.offer(task)) {
-            wakeup();
-            return true;
-        } else {
-            return false;
-        }
+        return offer((Object) task);
     }
 
     /**
-     * Offers an {@link IOBuffer} to be processed by this {@link Reactor}.
+     * Offers a task to be executed on this {@link Reactor}.
      *
-     * @param buff the {@link IOBuffer} to process.
-     * @return true if the buffer was accepted, false otherwise.
-     * @throws NullPointerException if buff is null.
+     * @param task the task to execute.
+     * @return true if the task was accepted, false otherwise.
+     * @throws NullPointerException if task is null.
      */
-    public final boolean offer(IOBuffer buff) {
-        //todo: Don't want to add localRunQueue optimization like the offer(Runnable)?
-
-        if (externalTaskQueue.offer(buff)) {
+    public final boolean offer(Object task) {
+        if (Thread.currentThread() == eventloopThread) {
+            return localTaskQueue.offer(task);
+        } else if (externalTaskQueue.offer(task)) {
             wakeup();
             return true;
         } else {
