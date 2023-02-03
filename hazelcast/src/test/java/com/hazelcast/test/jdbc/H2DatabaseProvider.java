@@ -26,9 +26,23 @@ public class H2DatabaseProvider implements TestDatabaseProvider {
 
     private String jdbcUrl;
 
+    private final boolean useSchema;
+
+    public H2DatabaseProvider(boolean useSchema) {
+        this.useSchema = useSchema;
+    }
+
+    public H2DatabaseProvider() {
+        this.useSchema = false;
+    }
+
     @Override
     public String createDatabase(String dbName) {
-        jdbcUrl = "jdbc:h2:mem:" + dbName + ";DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1";
+        if (useSchema) {
+            jdbcUrl = "jdbc:h2:mem:" + dbName + ";INIT=CREATE SCHEMA IF NOT EXISTS TEST;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1";
+        } else {
+            jdbcUrl = jdbcUrl = "jdbc:h2:mem:" + dbName + ";DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1";
+        }
         waitForDb(jdbcUrl, LOGIN_TIMEOUT);
         return jdbcUrl;
     }

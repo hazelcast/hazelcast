@@ -35,6 +35,7 @@ public class JdbcTable extends JetTable {
     private final List<String> dbFieldNames;
     private final List<String> primaryKeyFieldNames;
     private final SqlDialect sqlDialect;
+    private final String externalSchemaName;
     private final String externalName;
     private final String externalDataStoreRef;
     private final int batchLimit;
@@ -68,7 +69,13 @@ public class JdbcTable extends JetTable {
         this.dbFieldNames = unmodifiableList(dbFieldNames);
         this.primaryKeyFieldNames = unmodifiableList(primaryKeyFieldNames);
         this.sqlDialect = dialect;
-        this.externalName = externalName;
+
+        ExternalNameIdentifiers identifiers = new ExternalNameIdentifiers();
+        identifiers.parseExternalTableName(externalName);
+
+        this.externalSchemaName = identifiers.getSchemaName();
+        this.externalName = identifiers.getTableName();
+
         this.externalDataStoreRef = externalDataStoreRef;
         this.batchLimit = batchLimit;
         this.serializationService = serializationService;
@@ -84,6 +91,10 @@ public class JdbcTable extends JetTable {
 
     public String getExternalName() {
         return externalName;
+    }
+
+    public String getExternalSchemaName() {
+        return externalSchemaName;
     }
 
     public String getExternalDataStoreRef() {

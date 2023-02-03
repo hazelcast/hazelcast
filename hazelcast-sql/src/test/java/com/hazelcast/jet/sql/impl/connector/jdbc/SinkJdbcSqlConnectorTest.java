@@ -25,7 +25,7 @@ import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_
 
 public class SinkJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
-    private String tableName;
+    protected String tableName;
 
     @BeforeClass
     public static void beforeClass() {

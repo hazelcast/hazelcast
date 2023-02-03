@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc.mysql;
 
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcTable;
+import com.hazelcast.jet.sql.impl.connector.jdbc.UpsertBuilder;
 import org.apache.calcite.sql.SqlDialect;
 
 import java.util.List;
@@ -29,11 +30,15 @@ public class MySQLUpsertQueryBuilder {
 
     private final String query;
 
+    private final String schemaName;
+
     private final String quotedTableName;
     private final List<String> quotedColumnNames;
 
     public MySQLUpsertQueryBuilder(JdbcTable jdbcTable) {
         SqlDialect sqlDialect = jdbcTable.sqlDialect();
+
+        schemaName = UpsertBuilder.quoteSchemaName(jdbcTable);
 
         // Quote identifiers
         quotedTableName = sqlDialect.quoteIdentifier(jdbcTable.getExternalName());
@@ -53,6 +58,7 @@ public class MySQLUpsertQueryBuilder {
 
     void getInsertClause(StringBuilder stringBuilder) {
         stringBuilder.append("INSERT INTO ")
+                .append(schemaName)
                 .append(quotedTableName)
                 .append(" (")
                 .append(String.join(",", quotedColumnNames))
