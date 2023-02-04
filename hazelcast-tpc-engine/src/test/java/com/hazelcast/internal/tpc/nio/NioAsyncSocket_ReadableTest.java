@@ -23,8 +23,6 @@ public class NioAsyncSocket_ReadableTest extends AsyncSocket_ReadableTest {
 
     @Override
     public Reactor newReactor() {
-        Reactor reactor = new NioReactor();
-        reactor.start();
-        return reactor;
+        return new NioReactor().start();
     }
 }

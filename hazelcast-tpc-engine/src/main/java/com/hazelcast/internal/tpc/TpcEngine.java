@@ -62,9 +62,10 @@ public final class TpcEngine {
         this.reactors = new Reactor[reactorCount];
         this.terminationLatch = new CountDownLatch(reactorCount);
 
+        ReactorBuilder reactorBuilder = configuration.reactorBuilder;
+        reactorBuilder.engine = this;
         for (int idx = 0; idx < reactorCount; idx++) {
-            reactors[idx] = configuration.reactorBuilder.build();
-            reactors[idx].engine = this;
+            reactors[idx] = reactorBuilder.build();
         }
     }
 

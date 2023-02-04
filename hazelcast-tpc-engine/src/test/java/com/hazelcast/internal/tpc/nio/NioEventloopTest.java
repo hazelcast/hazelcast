@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.Reactor;
 import com.hazelcast.internal.tpc.EventloopTest;
+import com.hazelcast.internal.tpc.Reactor;
 
 public class NioEventloopTest extends EventloopTest {
 

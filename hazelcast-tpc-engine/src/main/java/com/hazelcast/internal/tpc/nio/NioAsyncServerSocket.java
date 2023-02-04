@@ -16,61 +16,58 @@
 
 package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.AsyncServerSocket;
 import com.hazelcast.internal.tpc.AcceptRequest;
+import com.hazelcast.internal.tpc.AsyncServerSocket;
+import com.hazelcast.internal.tpc.AsyncSocketOptions;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketAddress;
-import java.net.SocketOption;
-import java.net.StandardSocketOptions;
 import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpc.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.tpc.util.ReflectionUtil.findStaticFieldValue;
-import static java.net.StandardSocketOptions.SO_RCVBUF;
-import static java.net.StandardSocketOptions.SO_REUSEADDR;
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
 
 /**
  * Nio implementation of the {@link AsyncServerSocket}.
  */
 public final class NioAsyncServerSocket extends AsyncServerSocket {
-    private static final AtomicBoolean SO_REUSE_PORT_PRINTED = new AtomicBoolean();
-
-    // This option is available since Java 9, so we need to use reflection.
-    private static final SocketOption<Boolean> SO_REUSEPORT = findStaticFieldValue(StandardSocketOptions.class, "SO_REUSEPORT");
 
     private final ServerSocketChannel serverSocketChannel;
-    private final Selector selector;
     private final NioReactor reactor;
     private final Thread eventloopThread;
     private final SelectionKey key;
-    private Consumer<AcceptRequest> consumer;
+    private final NioAsyncServerSocketOptions options;
+    private final Consumer<AcceptRequest> consumer;
+    // only accessed from eventloop thread
+    private boolean started;
 
-    NioAsyncServerSocket(NioReactor reactor) {
+    NioAsyncServerSocket(NioAsyncServerSocketBuilder builder) {
         try {
-            this.serverSocketChannel = ServerSocketChannel.open();
-            serverSocketChannel.configureBlocking(false);
-            this.reactor = reactor;
+            this.reactor = builder.reactor;
+            this.consumer = builder.acceptConsumer;
+            this.options = builder.options;
             this.eventloopThread = reactor.eventloopThread();
-            this.selector = reactor.selector;
-            this.key = serverSocketChannel.register(selector, 0, new Handler());
+            this.serverSocketChannel = builder.serverSocketChannel;
+            this.key = serverSocketChannel.register(reactor.selector, 0, new Handler());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    @Override
+    public AsyncSocketOptions options() {
+        return options;
     }
 
     @Override
@@ -89,77 +86,10 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public boolean isReusePort() {
-        if (SO_REUSEPORT == null) {
-            return false;
-        }
-
-        try {
-            return serverSocketChannel.getOption(SO_REUSEPORT);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    @Override
-    public void setReusePort(boolean reusePort) {
-        if (SO_REUSEPORT == null) {
-            if (SO_REUSE_PORT_PRINTED.compareAndSet(false, true)) {
-                logger.warning("Ignoring NioAsyncServerSocket.reusePort."
-                        + "Please upgrade to Java 9+ to enable the SO_REUSEPORT option.");
-            }
-        } else {
-            try {
-                serverSocketChannel.setOption(SO_REUSEPORT, reusePort);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-    }
-
-    @Override
-    public boolean isReuseAddress() {
-        try {
-            return serverSocketChannel.getOption(SO_REUSEADDR);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    @Override
-    public void setReuseAddress(boolean reuseAddress) {
-        try {
-            serverSocketChannel.setOption(SO_REUSEADDR, reuseAddress);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    @Override
-    public void setReceiveBufferSize(int size) {
-        try {
-            serverSocketChannel.setOption(SO_RCVBUF, size);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    @Override
-    public int getReceiveBufferSize() {
-        try {
-            return serverSocketChannel.getOption(SO_RCVBUF);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    @Override
     protected void close0() throws IOException {
         closeQuietly(serverSocketChannel);
 
-        if (key != null) {
-            key.cancel();
-        }
+        key.cancel();
     }
 
     @Override
@@ -180,17 +110,14 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public void accept(Consumer<AcceptRequest> consumer) {
-        checkNotNull(consumer, "consumer");
-
+    public void start() {
         if (Thread.currentThread() == eventloopThread) {
-            accept0(consumer);
+            start0();
         } else {
             CompletableFuture<Void> future = new CompletableFuture<>();
             reactor.execute(() -> {
                 try {
-                    accept0(consumer);
-
+                    start0();
                     future.complete(null);
                 } catch (Throwable t) {
                     future.completeExceptionally(t);
@@ -202,12 +129,11 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         }
     }
 
-    private void accept0(Consumer<AcceptRequest> consumer) {
-        if (this.consumer != null) {
-            throw new IllegalStateException(this + " already is accepting");
+    private void start0() {
+        if (started) {
+            throw new IllegalStateException(this + " is already started");
         }
-
-        this.consumer = consumer;
+        started = true;
 
         key.interestOps(key.interestOps() | OP_ACCEPT);
 
@@ -230,15 +156,14 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             }
 
             SocketChannel socketChannel = serverSocketChannel.accept();
-            NioAcceptRequest openRequest = new NioAcceptRequest(socketChannel);
-
             accepted.inc();
-            consumer.accept(openRequest);
-
             if (logger.isInfoEnabled()) {
                 logger.info(NioAsyncServerSocket.this + " accepted: " + socketChannel.getRemoteAddress()
                         + "->" + socketChannel.getLocalAddress());
             }
+
+            // todo: we need to think about rejection.
+            consumer.accept(new NioAcceptRequest(socketChannel));
         }
     }
 }

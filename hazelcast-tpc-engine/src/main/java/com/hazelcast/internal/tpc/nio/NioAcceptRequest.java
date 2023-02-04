@@ -20,15 +20,13 @@ import com.hazelcast.internal.tpc.AcceptRequest;
 
 import java.nio.channels.SocketChannel;
 
-public class NioAcceptRequest implements AcceptRequest {
+import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 
-    private final SocketChannel socketChannel;
+class NioAcceptRequest implements AcceptRequest {
 
-    public NioAcceptRequest(SocketChannel socketChannel) {
-        this.socketChannel = socketChannel;
-    }
+    final SocketChannel socketChannel;
 
-    public SocketChannel getSocketChannel() {
-        return socketChannel;
+    NioAcceptRequest(SocketChannel socketChannel) {
+        this.socketChannel = checkNotNull(socketChannel, "socketChannel");
     }
 }

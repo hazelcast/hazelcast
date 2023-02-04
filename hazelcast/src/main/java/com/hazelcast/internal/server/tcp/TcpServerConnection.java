@@ -27,9 +27,11 @@ import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerContext;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.tpc.AsyncSocket;
+import com.hazelcast.logging.ILogger;
 
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 import java.io.EOFException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -39,9 +41,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
-
-import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_CONNECTION_CONNECTION_TYPE;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;

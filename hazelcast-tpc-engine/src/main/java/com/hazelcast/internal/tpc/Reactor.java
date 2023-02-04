@@ -20,8 +20,12 @@ package com.hazelcast.internal.tpc;
 import com.hazelcast.internal.tpc.logging.TpcLogger;
 import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpc.util.CircularQueue;
+import com.hazelcast.internal.util.ThreadAffinity;
+import com.hazelcast.internal.util.ThreadAffinityHelper;
 import org.jctools.queues.MpmcArrayQueue;
 
+import java.util.BitSet;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
@@ -54,27 +58,21 @@ public abstract class Reactor implements Executor {
     protected static final AtomicReferenceFieldUpdater<Reactor, State> STATE
             = newUpdater(Reactor.class, State.class, "state");
 
-    /**
-     * Allows for objects to be bound to this Reactor. Useful for the lookup of services
-     * and other dependencies.
-     */
-    public final ConcurrentMap<?, ?> context = new ConcurrentHashMap<>();
-
+    protected final ConcurrentMap<?, ?> context = new ConcurrentHashMap<>();
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
-    protected final AtomicBoolean wakeupNeeded;
     protected final MpmcArrayQueue externalTaskQueue;
     protected final Eventloop eventloop;
-    public final CircularQueue localTaskQueue;
+    protected final CircularQueue localTaskQueue;
     protected final boolean spin;
     protected final Thread eventloopThread;
     protected final String name;
-    protected volatile State state = NEW;
-
-    TpcEngine engine;
-
+    protected final AtomicBoolean wakeupNeeded;
+    private final TpcEngine engine;
     private final ReactorType type;
-    final CountDownLatch terminationLatch = new CountDownLatch(1);
-
+    private final CountDownLatch terminationLatch = new CountDownLatch(1);
+    private final CountDownLatch startLatch = new CountDownLatch(1);
+    private final Scheduler scheduler;
+    protected volatile State state = NEW;
 
     /**
      * Creates a new {@link Reactor}.
@@ -84,16 +82,34 @@ public abstract class Reactor implements Executor {
      */
     protected Reactor(ReactorBuilder builder) {
         this.type = builder.type;
-        this.eventloop = createEventloop(builder);
-        this.wakeupNeeded = eventloop.wakeupNeeded;
-        this.spin = eventloop.spin;
-        this.externalTaskQueue = eventloop.externalTaskQueue;
-        this.localTaskQueue = eventloop.localTaskQueue;
-        this.eventloopThread = builder.threadFactory.newThread(eventloop);
+        this.spin = builder.spin;
+        this.engine = builder.engine;
+        CompletableFuture<Eventloop> eventloopFuture = new CompletableFuture<>();
+        this.eventloopThread = builder.threadFactory.newThread(new EventloopTask(eventloopFuture, builder));
         if (builder.threadNameSupplier != null) {
             eventloopThread.setName(builder.threadNameSupplier.get());
         }
         this.name = builder.reactorNameSupplier.get();
+
+        // The eventloopThread is started so eventloop gets created on the eventloop thread.
+        eventloopThread.start();
+        // wait for the eventloop to be created.
+        eventloop = eventloopFuture.join();
+        // There is a happens-before edge between writing to the eventloopFuture and
+        // the join. So at this point we can safely read the fields that have been
+        // set in the constructor of the eventloop.
+        this.externalTaskQueue = eventloop.externalTaskQueue;
+        this.localTaskQueue = eventloop.localTaskQueue;
+        this.wakeupNeeded = eventloop.wakeupNeeded;
+        this.scheduler = eventloop.scheduler;
+    }
+
+    /**
+     * Allows for objects to be bound to this Reactor. Useful for the lookup
+     * of services and other dependencies.
+     */
+    public final ConcurrentMap<?, ?> context() {
+        return context;
     }
 
     /**
@@ -114,6 +130,15 @@ public abstract class Reactor implements Executor {
      */
     public final ReactorType type() {
         return type;
+    }
+
+    /**
+     * Returns the scheduler for this Reactor.
+     *
+     * @return the scheduler for this reactor.
+     */
+    public final Scheduler scheduler() {
+        return scheduler;
     }
 
     /**
@@ -151,55 +176,49 @@ public abstract class Reactor implements Executor {
     }
 
     /**
-     * Opens an TCP/IP (stream) async server socket and ties that socket to the this Reactor
-     * instance. The returned socket assumes IPv4. When support for IPv6 is added, a boolean
-     * 'ipv4' flag needs to be added.
-     * <p>
-     * This method is thread-safe.
-     *
-     * @return the opened AsyncServerSocket.
-     */
-    public abstract AsyncServerSocket openTcpAsyncServerSocket();
-
-    /**
-     * Opens client-side TCP/IP (stream) based async socket. The returned socket assumes IPv4.
-     * When support for IPv6 is added, a boolean 'ipv4' flag needs to be added.
-     * <p>
-     * This method is thread-safe.
-     *
-     * @return the opened AsyncSocket.
-     */
-    public abstract AsyncSocket openTcpAsyncSocket();
-
-    /**
-     * Opens a server-side async socket. The AcceptRequest contains all the information to
-     * determine the type of socket.
-     * <p>
-     * This method is thread-safe.
-     *
-     * @return the opened AsyncSocket.
-     */
-
-    public abstract AsyncSocket openAsyncSocket(AcceptRequest request);
-
-    /**
-     * Creates the Eventloop run by this Reactor.
+     * Creates the Eventloop run by this Reactor. Will be called from the eventloop-thread.
      *
      * @return the created Eventloop instance.
      */
-    protected abstract Eventloop createEventloop(ReactorBuilder builder);
+    protected abstract Eventloop newEventloop(ReactorBuilder builder);
+
+    /**
+     * Creates a new {@link AsyncServerSocketBuilder}.
+     *
+     * @return the created AsyncSocketBuilder.
+     */
+    public abstract AsyncSocketBuilder newAsyncSocketBuilder();
+
+    /**
+     * Creates a new {@link AsyncServerSocketBuilder} for the given acceptRequest.
+     *
+     * @param acceptRequest a wrapper around a lower level socket implemented that needs
+     *                      to be accepted.
+     * @return the created AsyncSocketBuilder.
+     * @throws NullPointerException if acceptRequest is null.
+     */
+    public abstract AsyncSocketBuilder newAsyncSocketBuilder(AcceptRequest acceptRequest);
+
+    public abstract AsyncServerSocketBuilder newAsyncServerSocketBuilder();
+
+    protected void verifyRunning() {
+        State state = this.state;
+        if (RUNNING != state) {
+            throw new IllegalStateException("Reactor not in RUNNING state, but " + state);
+        }
+    }
 
     /**
      * Starts the reactor.
      *
      * @throws IllegalStateException if the reactor isn't in NEW state.
      */
-    public void start() {
+    public Reactor start() {
         if (!STATE.compareAndSet(Reactor.this, NEW, RUNNING)) {
             throw new IllegalStateException("Can't start reactor, invalid state:" + state);
         }
-
-        eventloopThread.start();
+        startLatch.countDown();
+        return this;
     }
 
     /**
@@ -307,5 +326,75 @@ public abstract class Reactor implements Executor {
         RUNNING,
         SHUTDOWN,
         TERMINATED
+    }
+
+    /**
+     * The EventloopTask does 3 important things:
+     * 1) configure the thread affinity.
+     * 2) Create the eventloop
+     * 3) Run the eventloop
+     */
+    private final class EventloopTask implements Runnable {
+        private final CompletableFuture<Eventloop> future;
+        private final ReactorBuilder builder;
+
+        public EventloopTask(CompletableFuture<Eventloop> future, ReactorBuilder builder) {
+            this.future = future;
+            this.builder = builder;
+        }
+
+        @Override
+        public void run() {
+            try {
+                try {
+                    configureThreadAffinity();
+                    Eventloop eventloop = newEventloop(builder);
+                    future.complete(eventloop);
+
+                    startLatch.await();
+
+                    try {
+                        eventloop.run();
+                    } finally {
+                        eventloop.destroy();
+                    }
+                } catch (Throwable e) {
+                    future.completeExceptionally(e);
+                    logger.severe(e);
+                } finally {
+                    state = TERMINATED;
+
+                    terminationLatch.countDown();
+
+                    if (engine != null) {
+                        engine.notifyReactorTerminated();
+                    }
+
+                    if (logger.isInfoEnabled()) {
+                        logger.info(Thread.currentThread().getName() + " terminated");
+                    }
+                }
+            } catch (Throwable e) {
+                // log whatever wasn't caught so that we don't swallow throwables.
+                logger.severe(e);
+            }
+        }
+
+        private void configureThreadAffinity() {
+            ThreadAffinity threadAffinity = builder.threadAffinity;
+            BitSet allowedCpus = threadAffinity == null ? null : threadAffinity.nextAllowedCpus();
+            if (allowedCpus != null) {
+                ThreadAffinityHelper.setAffinity(allowedCpus);
+                BitSet actualCpus = ThreadAffinityHelper.getAffinity();
+                if (!actualCpus.equals(allowedCpus)) {
+                    logger.warning(Thread.currentThread().getName() + " affinity was not applied successfully. "
+                            + "Expected CPUs:" + allowedCpus + ". Actual CPUs:" + actualCpus);
+                } else {
+                    if (logger.isFineEnabled()) {
+                        logger.fine(Thread.currentThread().getName() + " has affinity for CPUs:" + allowedCpus);
+                    }
+                }
+            }
+        }
     }
 }
