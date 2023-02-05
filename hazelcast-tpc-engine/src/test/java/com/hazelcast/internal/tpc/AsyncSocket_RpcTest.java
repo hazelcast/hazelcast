@@ -318,8 +318,8 @@ public abstract class AsyncSocket_RpcTest {
                 }
             }
         });
-        clientSocket.start();
         clientSocket.connect(serverAddress).join();
+        clientSocket.start();
         return clientSocket;
     }
 
