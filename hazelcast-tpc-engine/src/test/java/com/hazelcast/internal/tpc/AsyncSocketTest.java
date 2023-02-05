@@ -173,7 +173,7 @@ public abstract class AsyncSocketTest {
 
         SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
 
-        assertThrows(IllegalStateException.class, () -> socket.connect(serverAddress));
+        assertThrows(RuntimeException.class, () -> socket.connect(serverAddress).join());
     }
 
     @Test

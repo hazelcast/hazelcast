@@ -420,8 +420,8 @@ public final class NioAsyncSocket extends AsyncSocket {
 
         this.unflushedBufs = new MpmcArrayQueue<>(unflushedBufsCapacity);
         this.receiveBuffer = ByteBuffer.allocateDirect(getReceiveBufferSize());
-        if (clientSide) {
-            // on the client side we immediately start reading.
+        if (!clientSide) {
+            // on the server side we immediately start reading.
             key.interestOps(key.interestOps() | OP_READ);
         }
     }
@@ -450,6 +450,10 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     private void connect0(SocketAddress address, CompletableFuture<Void> future) {
         try {
+            if (!started) {
+                throw new IllegalStateException(this + " can't connect when socket not yet started");
+            }
+
             if (connect) {
                 throw new IllegalStateException(this + " is already trying to connect");
             }
@@ -459,7 +463,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             key.interestOps(key.interestOps() | OP_CONNECT);
             socketChannel.connect(address);
         } catch (Throwable e) {
-            connectFuture.completeExceptionally(e);
+            future.completeExceptionally(e);
             throw sneakyThrow(e);
         }
     }
