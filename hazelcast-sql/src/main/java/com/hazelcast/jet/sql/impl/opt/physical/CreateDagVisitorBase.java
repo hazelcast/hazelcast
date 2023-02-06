@@ -137,6 +137,11 @@ public abstract class CreateDagVisitorBase<V> implements CreateDagVisitor<V> {
     }
 
     @Override
+    public V onGetDdl(GetDdlPhysicalRel rel) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public V onLimit(LimitPhysicalRel rel) {
         throw new UnsupportedOperationException();
     }

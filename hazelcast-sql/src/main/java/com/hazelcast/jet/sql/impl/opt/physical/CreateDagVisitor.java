@@ -61,6 +61,8 @@ public interface CreateDagVisitor<V> {
 
     V onUnion(UnionPhysicalRel rel);
 
+    V onGetDdl(GetDdlPhysicalRel rel);
+
     V onLimit(LimitPhysicalRel rel);
 
     V onRoot(RootRel rootRel);

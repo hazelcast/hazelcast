@@ -50,6 +50,7 @@ import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.jet.sql.impl.opt.WatermarkKeysAssigner;
 import com.hazelcast.jet.sql.impl.opt.WatermarkThrottlingFrameSizeCalculator;
+import com.hazelcast.jet.sql.impl.processors.GetDdlP;
 import com.hazelcast.jet.sql.impl.processors.LateItemsDropP;
 import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinProcessorSupplier;
@@ -575,6 +576,18 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
             dag.edge(edge);
         }
         return merger;
+    }
+
+    @Override
+    public Vertex onGetDdl(GetDdlPhysicalRel rel) {
+        // TODO: compute DDL query.
+        final String ddl = "test";
+
+        return dag.newUniqueVertex(
+                "GetDDL",
+                ProcessorMetaSupplier.forceTotalParallelismOne(
+                        GetDdlP.getDdlSupplier(ddl))
+        );
     }
 
     @Override

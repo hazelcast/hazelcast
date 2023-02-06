@@ -41,6 +41,6 @@ public class GetDdlPhysicalRel extends GetDdlRel implements PhysicalRel {
 
     @Override
     public <V> V accept(CreateDagVisitor<V> visitor) {
-        return null;
+        return visitor.onGetDdl(this);
     }
 }

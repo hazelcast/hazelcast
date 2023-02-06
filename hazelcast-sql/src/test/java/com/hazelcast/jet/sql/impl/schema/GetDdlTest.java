@@ -20,6 +20,8 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.Collections;
+
 public class GetDdlTest extends SqlTestSupport {
 
     @BeforeClass
@@ -28,7 +30,7 @@ public class GetDdlTest extends SqlTestSupport {
     }
 
     @Test
-    public void name() {
-        instance().getSql().execute("SELECT GET_DDL('a', 'b')");
+    public void test() {
+        assertRowsAnyOrder("SELECT GET_DDL('a', 'b')", Collections.singletonList(new Row("test")));
     }
 }
