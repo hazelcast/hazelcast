@@ -782,7 +782,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         ClientAltoConfig originalConfig = new ClientAltoConfig().setEnabled(true);
         clientConfig.setAltoConfig(originalConfig);
         ClientAltoConfig generatedConfig = newConfigViaGenerator().getAltoConfig();
-        assertEquals(originalConfig.isEnabled(), generatedConfig.isEnabled());
+        assertEquals(originalConfig, generatedConfig);
     }
 
     private ClientConfig newConfigViaGenerator() {

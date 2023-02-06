@@ -835,17 +835,6 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 .hasMessageContaining("Cannot load");
     }
 
-    @Override
-    public void testAlto() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "    alto:\n"
-                + "        enabled: true\n";
-
-        ClientAltoConfig altoConfig = buildConfig(yaml).getAltoConfig();
-        assertTrue(altoConfig.isEnabled());
-    }
-
     @Test
     public void testEmptyYaml() {
         String yaml = "hazelcast-client:\n";

@@ -172,6 +172,9 @@ public class ClientConfigTest {
     public void testAltoConfig() {
         ClientConfig config = new ClientConfig();
         ClientAltoConfig altoConfig = new ClientAltoConfig();
+
+        assertFalse(altoConfig.isEnabled());
+
         altoConfig.setEnabled(true);
         config.setAltoConfig(altoConfig);
 

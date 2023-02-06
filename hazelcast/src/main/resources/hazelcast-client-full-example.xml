@@ -1023,12 +1023,11 @@
     <!--
     ===== HAZELCAST ALTO CONFIGURATION =====
 
-    Configures the Alto-aware client, which is the next generation Hazelcast
-    that uses thread-per-core model. Alto-aware clients will maintain
-    connections to all cluster members along with connections to all Alto
-    cores of each cluster member to route invocations to the correct cores
-    of the correct members in best-effort basis. Configuration element's
-    name is <alto>.
+    Configures the client for Alto, which is the next generation Hazelcast that
+    uses thread-per-core model. Alto-aware clients will maintain connections to
+    all cores of all cluster members. The client will rout partition-specific
+    invocations to the correct core of the correct member in the best effort
+    basis. Configuration element's name is <alto>.
 
     It has the following attributes:
       - enabled:
