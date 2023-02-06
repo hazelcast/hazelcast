@@ -107,13 +107,13 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
     static final int AD_HOC_PARTITION_ID = -2;
 
     final OperationServiceImpl operationService;
+    @Probe(name = OPERATION_METRIC_OPERATION_RUNNER_EXECUTED_OPERATIONS_COUNT, level = DEBUG)
     final Counter executedOperationsCounter;
 
     private final ILogger logger;
     private final Node node;
     private final NodeEngineImpl nodeEngine;
 
-    @Probe(name = OPERATION_METRIC_OPERATION_RUNNER_EXECUTED_OPERATIONS_COUNT, level = DEBUG)
     private final Address thisAddress;
     private final boolean staleReadOnMigrationEnabled;
 
