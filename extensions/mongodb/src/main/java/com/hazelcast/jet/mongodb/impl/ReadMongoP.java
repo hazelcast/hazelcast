@@ -17,17 +17,12 @@
 package com.hazelcast.jet.mongodb.impl;
 
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.logging.ILogger;
-import com.mongodb.MongoException;
-import com.mongodb.MongoServerException;
-import com.mongodb.MongoServerUnavailableException;
-import com.mongodb.MongoTimeoutException;
 import com.mongodb.client.ChangeStreamIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -56,7 +51,6 @@ import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.mongodb.impl.MongoUtilities.partitionAggregate;
 import static com.mongodb.client.model.Aggregates.sort;
 import static com.mongodb.client.model.Sorts.ascending;
-import static java.util.Collections.emptyList;
 
 /**
  * Processor for reading from MongoDB
