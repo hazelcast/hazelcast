@@ -18,7 +18,8 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.internal.tpc.Eventloop;
 import com.hazelcast.internal.tpc.Scheduler;
-import com.hazelcast.internal.util.Preconditions;
+
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * The Scheduler for Alto. So each reactor contains an partition-operation thread
@@ -34,7 +35,7 @@ public class AltoOperationScheduler implements Scheduler {
     private OperationQueue queue;
 
     public AltoOperationScheduler(int batchSize) {
-        this.batchSize = Preconditions.checkPositive("batchSize", batchSize);
+        this.batchSize = checkPositive("batchSize", batchSize);
     }
 
     @Override
