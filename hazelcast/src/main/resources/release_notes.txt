@@ -1,5 +1,12 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 4.2.z releases. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 4.2.7 ====
+
+## Fixes
+
+* Fixed an issue where the JSON Query results were inconsistent, using the data stored as JSON via `HazelcastJsonValue`. #23454
+* Fixed an issue where the WAN replicated entries was expiring on the passive cluster when the entries are accessed on the active cluster. #22294
+
 ==== 4.2.6 ====
 
 ## Enhancements
