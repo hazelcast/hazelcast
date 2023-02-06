@@ -205,6 +205,9 @@
     <!-- Transaction -->
     <suppress checks="Javadoc(Method|Type)" files="com[\\/]hazelcast[\\/]transaction[\\/]"/>
 
+    <!-- SQL -->
+    <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]jet[\\/]sql[\\/]SqlPlanImpl"/>
+
     <!-- Security -->
     <suppress checks="Javadoc(Method|Type|Variable)" files="com[\\/]hazelcast[\\/]security[\\/]"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com[\\/]hazelcast[\\/]security[\\/]permission[\\/]ActionConstants"/>
