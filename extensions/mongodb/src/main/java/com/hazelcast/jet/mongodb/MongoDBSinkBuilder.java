@@ -101,7 +101,7 @@ public final class MongoDBSinkBuilder<T> {
             identifyDocumentBy("_id", doc -> ((BsonDocument) doc).get("_id"));
         }
 
-        transactionOptions(DEFAULT_TRANSACTION_OPTION);
+        transactionOptions(() -> DEFAULT_TRANSACTION_OPTION);
         commitRetryStrategy(DEFAULT_COMMIT_RETRY_STRATEGY);
     }
 
@@ -191,8 +191,8 @@ public final class MongoDBSinkBuilder<T> {
      * Default value is {@linkplain #DEFAULT_TRANSACTION_OPTION}.
      */
     @Nonnull
-    public MongoDBSinkBuilder<T> transactionOptions(@Nonnull TransactionOptions transactionOptions) {
-        params.setTransactionOptions(transactionOptions);
+    public MongoDBSinkBuilder<T> transactionOptions(@Nonnull SupplierEx<TransactionOptions> transactionOptionsSup) {
+        params.setTransactionOptions(transactionOptionsSup);
         return this;
     }
 

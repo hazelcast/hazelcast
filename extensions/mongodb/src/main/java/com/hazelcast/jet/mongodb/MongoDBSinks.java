@@ -17,7 +17,6 @@
 package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.mongodb.impl.Mappers;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.client.MongoClient;
@@ -48,9 +47,8 @@ public final class MongoDBSinks {
      * All operations are done within transaction if processing guarantee
      * of the job is {@link com.hazelcast.jet.config.ProcessingGuarantee#EXACTLY_ONCE}.
      * <p>
-     * All writes are by default done with non-standard {@linkplain Mappers#defaultCodecRegistry() codec registry},
-     * to allow out-of-the-box POJO support.
-     *
+     * All writes are done using default MongoDB codecs with POJO class codec added.
+     *<p>
      * Example usage:
      * <pre>{@code
      * Sink<Document> mongoSink =

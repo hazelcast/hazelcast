@@ -51,7 +51,7 @@ public class WriteMongoParams<I> implements Serializable {
     @Nonnull
     ConsumerEx<ReplaceOptions> replaceOptionAdjuster = ConsumerEx.noop();
     RetryStrategy commitRetryStrategy;
-    byte[] transactionOptions;
+    SupplierEx<TransactionOptions> transactionOptionsSup;
     FunctionEx<I, String> databaseNameSelectFn;
     FunctionEx<I, String> collectionNameSelectFn;
     @Nonnull
@@ -163,13 +163,13 @@ public class WriteMongoParams<I> implements Serializable {
         return this;
     }
 
-    public byte[] getTransactionOptions() {
-        return transactionOptions;
+    public SupplierEx<TransactionOptions> getTransactionOptionsSup() {
+        return transactionOptionsSup;
     }
 
     @Nonnull
-    public WriteMongoParams<I> setTransactionOptions(TransactionOptions transactionOptions) {
-        this.transactionOptions = SERIALIZATION_SERVICE.toBytes(transactionOptions);
+    public WriteMongoParams<I> setTransactionOptions(SupplierEx<TransactionOptions> transactionOptionsSup) {
+        this.transactionOptionsSup = transactionOptionsSup;
         return this;
     }
 
@@ -220,7 +220,7 @@ public class WriteMongoParams<I> implements Serializable {
         checkNotNull(clientSupplier, "clientSupplier must be set");
         checkNotNull(documentIdentityFn, "documentIdentityFn must be set");
         checkNotNull(commitRetryStrategy, "commitRetryStrategy must be set");
-        checkNotNull(transactionOptions, "transactionOptions must be set");
+        checkNotNull(transactionOptionsSup, "transactionOptions must be set");
 
 
         checkState((databaseName == null) == (collectionName == null), "if one of [databaseName, collectionName]" +

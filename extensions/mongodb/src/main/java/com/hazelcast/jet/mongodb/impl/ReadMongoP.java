@@ -13,20 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.mongodb.impl;
 
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.logging.ILogger;
-import com.mongodb.MongoException;
-import com.mongodb.MongoServerException;
-import com.mongodb.MongoServerUnavailableException;
-import com.mongodb.MongoTimeoutException;
 import com.mongodb.client.ChangeStreamIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -55,7 +51,6 @@ import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.mongodb.impl.MongoUtilities.partitionAggregate;
 import static com.mongodb.client.model.Aggregates.sort;
 import static com.mongodb.client.model.Sorts.ascending;
-import static java.util.Collections.emptyList;
 
 /**
  * Processor for reading from MongoDB
@@ -65,10 +60,11 @@ import static java.util.Collections.emptyList;
  * <li>batch reader, which uses {@linkplain MongoCollection#aggregate} to find matching documents.</li>
  * <li>streaming reader, which uses {@linkplain MongoClient#watch} (or same function on database or collection level)
  * to find matching documents, as they arrive in the stream.</li>
- *
+ * <p>
  * All processing guarantees are supported via standard snapshotting mechanism. Each instance of this processor
  * will save it's state (last read key or resumeToken) with the key being global processor index mod total parallelism.
  * </ul>
+ *
  * @param <I> type of emitted item
  */
 public class ReadMongoP<I> extends AbstractProcessor {
@@ -98,7 +94,8 @@ public class ReadMongoP<I> extends AbstractProcessor {
             this.reader = new BatchMongoReader(params.databaseName, params.collectionName, params.mapItemFn,
                     params.aggregates);
         }
-        this.connection = new MongoDbConnection(params.clientSupplier, client -> reader.connect(client, snapshotsEnabled));
+        this.connection = new MongoDbConnection(params.clientSupplier, client -> reader.connect(client,
+                snapshotsEnabled));
     }
 
     @Override
@@ -286,7 +283,8 @@ public class ReadMongoP<I> extends AbstractProcessor {
             return aggregateList.stream().anyMatch(agg -> agg.toBsonDocument().get("$sort") != null);
         }
 
-        private Traverser<Document> delegateForCollection(MongoCollection<Document> collection, List<Bson> aggregateList) {
+        private Traverser<Document> delegateForCollection(MongoCollection<Document> collection,
+                                                          List<Bson> aggregateList) {
             return traverseIterable(collection.aggregate(aggregateList));
         }
 
@@ -353,7 +351,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
             if (totalParallelism > 1) {
                 aggregateList.addAll(0, partitionAggregate(totalParallelism, processorIndex, true));
             }
-            ChangeStreamIterable<Document>  changeStream;
+            ChangeStreamIterable<Document> changeStream;
             if (collection != null) {
                 changeStream = collection.watch(aggregateList);
             } else if (database != null) {
@@ -378,45 +376,19 @@ public class ReadMongoP<I> extends AbstractProcessor {
         @Nonnull
         @Override
         public Traverser<?> nextChunkTraverser() {
-            try {
-                List<ChangeStreamDocument<Document>> chunk = readChunk();
-
-                return traverseIterable(chunk)
-                        .flatMap(doc -> {
-                            resumeToken = doc.getResumeToken();
-                            long eventTime = clusterTime(doc);
-                            I item = mapFn.apply(doc);
-                            return item == null
-                                    ? Traversers.empty()
-                                    : eventTimeMapper.flatMapEvent(item, 0, eventTime);
-                        });
-            } catch (MongoException e) {
-                throw new JetException("error while reading from mongodb", e);
-            }
-        }
-
-        private List<ChangeStreamDocument<Document>> readChunk() {
-            List<ChangeStreamDocument<Document>> chunk = new ArrayList<>(BATCH_SIZE);
-            int count = 0;
-            boolean eagerEnd = false;
-            try {
-                while (count < BATCH_SIZE && !eagerEnd) {
-                    // note: do not use `hasNext` and `next` - those methods blocks for new elements
-                    // and we don't want to block
-                    ChangeStreamDocument<Document> doc = cursor.tryNext();
-                    if (doc != null) {
-                        chunk.add(doc);
-                        count++;
-                    } else {
-                        eagerEnd = true;
-                    }
+            Traverser<ChangeStreamDocument<Document>> traverser = cursor::tryNext;
+            return traverser.flatMap(doc -> {
+                if (doc == null) {
+                    return Traversers.empty();
+                } else {
+                    resumeToken = doc.getResumeToken();
+                    long eventTime = clusterTime(doc);
+                    I item = mapFn.apply(doc);
+                    return item == null
+                            ? Traversers.empty()
+                            : eventTimeMapper.flatMapEvent(item, 0, eventTime);
                 }
-                return chunk;
-            } catch (MongoTimeoutException | MongoServerUnavailableException | MongoServerException e) {
-                logger.severe("Lost connection to MongoDB", e);
-                mongoClient = null;
-                return emptyList();
-            }
+            });
         }
 
         private long clusterTime(ChangeStreamDocument<Document> changeStreamDocument) {
