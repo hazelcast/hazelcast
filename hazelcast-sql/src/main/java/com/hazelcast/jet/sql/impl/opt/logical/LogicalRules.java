@@ -34,6 +34,9 @@ public final class LogicalRules {
                 FunctionLogicalRules.SPECIFIC_FUNCTION_INSTANCE,
                 FunctionLogicalRules.DYNAMIC_FUNCTION_INSTANCE,
 
+                // DDL rule
+                GetDdlConverterLogicalRule.INSTANCE,
+
                 // Calc rules
                 CalcLogicalRule.INSTANCE,
                 CalcIntoScanRule.INSTANCE,

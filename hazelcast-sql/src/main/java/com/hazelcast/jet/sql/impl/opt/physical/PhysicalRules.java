@@ -62,6 +62,9 @@ public final class PhysicalRules {
                 // Value rules
                 ValuesPhysicalRule.INSTANCE,
 
+                // DDL rules
+                GetDdlConverterPhysicalRule.INSTANCE,
+
                 // DML rules
                 InsertPhysicalRule.INSTANCE,
                 SinkPhysicalRule.INSTANCE,
