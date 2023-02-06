@@ -18,18 +18,23 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.internal.tpc.Eventloop;
 import com.hazelcast.internal.tpc.Scheduler;
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
 import com.hazelcast.internal.util.Preconditions;
 
-
+/**
+ * The Scheduler for Alto. So each reactor contains an partition-operation thread
+ * and each of these threads runs an eventloop which contains a scheduler. This
+ * scheduler is given a tick on every run of the eventloop to do some work. In
+ * case of the alto, we process of a batch of operations from the operation-queue
+ * and then hand control back to the eventloop.
+ */
 public class AltoOperationScheduler implements Scheduler {
 
     private final int batchSize;
     private AltoPartitionOperationThread operationThread;
     private OperationQueue queue;
 
-    public AltoOperationScheduler(int batchSize){
-        this.batchSize = Preconditions.checkPositive("batchSize",batchSize);
+    public AltoOperationScheduler(int batchSize) {
+        this.batchSize = Preconditions.checkPositive("batchSize", batchSize);
     }
 
     @Override

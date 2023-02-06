@@ -122,7 +122,7 @@ public class TpcServerBootstrap {
         Configuration configuration = new Configuration();
         NioReactorBuilder reactorBuilder = new NioReactorBuilder();
         reactorBuilder.setThreadFactory(AltoPartitionOperationThread::new);
-        reactorBuilder.setSchedulerSupplier(()->new AltoOperationScheduler(1));
+        reactorBuilder.setSchedulerSupplier(() -> new AltoOperationScheduler(1));
 
         configuration.setReactorBuilder(reactorBuilder);
         configuration.setReactorCount(loadEventloopCount());
