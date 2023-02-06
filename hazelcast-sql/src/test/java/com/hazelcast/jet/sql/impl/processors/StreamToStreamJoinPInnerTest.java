@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,9 @@ import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestSupport;
+import com.hazelcast.jet.core.test.TestSupport.TestMode;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
@@ -46,24 +48,90 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.BiPredicate;
+import java.util.function.Function;
 
+import static com.hazelcast.function.FunctionEx.identity;
 import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
+import static com.hazelcast.jet.core.test.TestSupport.TEST_CONTEXT;
 import static com.hazelcast.jet.core.test.TestSupport.in;
 import static com.hazelcast.jet.core.test.TestSupport.out;
 import static com.hazelcast.jet.core.test.TestSupport.processorAssertion;
 import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static java.util.stream.Collectors.toMap;
 import static org.apache.calcite.rel.core.JoinRelType.INNER;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
 public class StreamToStreamJoinPInnerTest extends JetTestSupport {
+
+    /**
+     * An output checker that will consider the actual and expected object lists
+     * equal if they both contain the same items, in any order. If some item is
+     * expected multiple times, it must also be present the same number of times
+     * in the actual output.
+     * <p>
+     * When restoring from the snapshot, a different mechanism is used to
+     * compare watermarks. The WMs must be monotonic, but not strictly monotonic
+     * - after a restore the same WM can be emitted that was already emitted
+     * before restore. The highest actual WM can be lower than the highest
+     * expected one, but not higher - again, after a restore, it might go back.
+     */
+    protected static final BiPredicate<List<?>, List<?>> SAME_ITEMS_ANY_ORDER_EQUIVALENT_WMS =
+            (expected, actual) -> {
+                TestMode testMode = TEST_CONTEXT.get().getTestMode();
+                if (!testMode.isSnapshotsEnabled() || testMode.snapshotRestoreInterval() == Integer.MAX_VALUE) {
+                    return SAME_ITEMS_ANY_ORDER.test(expected, actual);
+                }
+
+                Function<List<?>, Map<Object, Integer>> transformFn = l -> l.stream().filter(o -> !(o instanceof Watermark)).collect(toMap(identity(), e -> 1, Integer::sum));
+                Map<Object, Integer> expectedMap = transformFn.apply(expected);
+                Map<Object, Integer> actualMap = transformFn.apply(actual);
+                if (!expectedMap.equals(actualMap)) {
+                    return false;
+                }
+                Map<Byte, Long> expectedWms = new HashMap<>();
+                Map<Byte, Long> actualWms = new HashMap<>();
+
+                for (Object o : expected) {
+                    if (o instanceof Watermark) {
+                        long newVal = ((Watermark) o).timestamp();
+                        Long oldVal = expectedWms.put(((Watermark) o).key(), newVal);
+                        if (oldVal != null && oldVal >= newVal) {
+                            return false; // not strictly monotonic expected val
+                        }
+                    }
+                }
+
+                for (Object o : actual) {
+                    if (o instanceof Watermark) {
+                        long newVal = ((Watermark) o).timestamp();
+                        Long oldVal = actualWms.put(((Watermark) o).key(), newVal);
+                        if (oldVal != null && oldVal > newVal) {
+                            return false; // not monotonic expected val
+                        }
+                    }
+                }
+
+                for (Entry<Byte, Long> en : expectedWms.entrySet()) {
+                    Long actualVal = actualWms.get(en.getKey());
+                    long expectedVal = en.getValue();
+                    if (actualVal != null && actualVal > expectedVal) {
+                        return false; // expected lower than actual
+                    }
+                }
+                actualWms.keySet().removeAll(expectedWms.keySet());
+                assertTrue("unexpected WM keys received: " + actualWms, actualWms.isEmpty());
+
+                return true;
+            };
 
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
@@ -77,20 +145,18 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1));
 
         TestSupport.verifyProcessor(processorSupplier)
-                .disableSnapshots()
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
                 .expectExactOutput(
-                        in(0, jetRow(0L)),
-                        in(1, jetRow(0L)),
-                        out(jetRow(0L, 0L)),
+                        in(wm(0L, (byte) 1)),
                         in(0, jetRow(1L)),
                         in(1, jetRow(1L)),
                         out(jetRow(1L, 1L)),
-                        in(wm(1L, (byte) 0)),
+                        in(0, jetRow(2L)),
+                        in(1, jetRow(2L)),
+                        out(jetRow(2L, 2L)),
+                        in(wm(2L, (byte) 0)),
                         out(wm(0L, (byte) 0)),
-                        in(wm(2L, (byte) 1)),
-                        out(wm(1L, (byte) 0)),
-                        out(wm(1L, (byte) 1))
+                        out(wm(0L, (byte) 1))
                 );
     }
 
@@ -111,8 +177,7 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         SupplierEx<Processor> supplier = createProcessor(2, 1);
 
         TestSupport.verifyProcessor(supplier)
-                .outputChecker(SAME_ITEMS_ANY_ORDER)
-                .disableSnapshots()
+                .outputChecker(SAME_ITEMS_ANY_ORDER_EQUIVALENT_WMS)
                 .expectExactOutput(
                         in(0, jetRow(12L, 9L)),
                         in(1, jetRow(9L)),
@@ -120,28 +185,26 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
                         in(0, jetRow(12L, 13L)),
                         out(jetRow(12L, 13L, 9L)),
                         processorAssertion((StreamToStreamJoinP p) -> {
-                            assertEquals(asList(jetRow(12L, 9L), jetRow(12L, 13L)), p.buffer[0]);
-                            assertEquals(singletonList(jetRow(9L)), p.buffer[1]);
+                            assertEquals(asList(jetRow(12L, 9L), jetRow(12L, 13L)), p.buffer[0].content());
+                            assertEquals(jetRow(9L), p.buffer[1].content().iterator().next());
                         }),
                         in(1, wm(15L, (byte) 2)),
-                        out(wm(9L, (byte) 2)),
                         processorAssertion((StreamToStreamJoinP p) -> {
-                            assertEquals(singletonList(jetRow(12L, 13L)), p.buffer[0]);
-                            assertEquals(singletonList(jetRow(9L)), p.buffer[1]);
+                            assertEquals(singletonList(jetRow(12L, 13L)), p.buffer[0].content());
+                            assertEquals(jetRow(9L), p.buffer[1].content().iterator().next());
                         }),
                         in(0, wm(12L, (byte) 1)),
-                        out(wm(12L, (byte) 1)),
-                        out(wm(15L, (byte) 2)),
+                        out(wm(11L, (byte) 1)),
+                        out(wm(11L, (byte) 2)),
                         processorAssertion((StreamToStreamJoinP p) -> {
-                            assertEquals(singletonList(jetRow(12L, 13L)), p.buffer[0]);
-                            assertEquals(emptyList(), p.buffer[1]);
+                            assertEquals(singletonList(jetRow(12L, 13L)), p.buffer[0].content());
+                            assertTrue(p.buffer[1].isEmpty());
                         }),
                         in(0, wm(13L, (byte) 0)),
-                        out(wm(12L, (byte) 0)),
                         in(1, jetRow(16L)),
                         // out(jetRow(12L, 13L, 16L)), // doesn't satisfy the join condition
                         in(0, wm(13L, (byte) 1)),
-                        out(wm(13L, (byte) 1)),
+                        out(wm(12L, (byte) 2)),
                         in(1, jetRow(16L))
                 );
     }
@@ -170,8 +233,7 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         SupplierEx<Processor> supplier = createProcessor(2, 2);
 
         TestSupport.verifyProcessor(supplier)
-                .disableSnapshots()
-                .outputChecker(SAME_ITEMS_ANY_ORDER)
+                .outputChecker(SAME_ITEMS_ANY_ORDER_EQUIVALENT_WMS)
                 .expectExactOutput(
                         in(0, jetRow(12L, 10L)),
                         in(1, jetRow(12L, 10L)),
@@ -187,15 +249,12 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
                         // wmState: [{0:min, 1:min, 2:13, 3:11]
                         // leftBuffer: [{12, 10}, {12, 13}]
                         // rightBuffer: []
-                        out(wm(12L, (byte) 0)),
                         in(1, wm(15L, (byte) 2)),
                         // wmState: [{0:14, 1:min, 2:13, 3:11]
                         // leftBuffer: []
                         // rightBuffer: []
-                        out(wm(15L, (byte) 0)),
-                        out(wm(15L, (byte) 2)),
-                        in(0, wm(16L, (byte) 1)),
-                        out(wm(16L, (byte) 1))
+                        out(wm(13L, (byte) 2)),
+                        out(wm(14L, (byte) 0))
                 );
     }
 
@@ -227,7 +286,6 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
                 Tuple2.tuple2(2, 1));
 
         TestSupport.verifyProcessor(supplier)
-                .disableSnapshots()
                 .expectExactOutput(
                         in(1, jetRow(3L)),
                         in(0, jetRow(2L, 2)), // doesn't join, field1 <= 10
@@ -244,7 +302,6 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(2, 1, 1, 2));
 
         TestSupport.verifyProcessor(processorSupplier)
-                .disableSnapshots()
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
                 .expectExactOutput(
                         in(0, jetRow(1L, 42)),
@@ -272,10 +329,8 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         SupplierEx<Processor> supplier = createProcessor(1, 1);
 
         TestSupport.verifyProcessor(supplier)
-                .disableSnapshots()
                 .expectExactOutput(
                         in(0, wm(10, (byte) 0)),
-                        out(wm(10, (byte) 0)),
                         processorAssertion((StreamToStreamJoinP p) ->
                                 assertEquals(ImmutableMap.of((byte) 0, Long.MIN_VALUE + 1, (byte) 1, 9L), p.wmState)),
                         // This item is not late according to the WM for key=1, but is off the join limit according
@@ -294,12 +349,10 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1));
 
         TestSupport.verifyProcessor(processorSupplier)
-                .disableSnapshots()
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
                 .expectExactOutput(
                         in(0, jetRow(0L)),
                         in(0, wm(10L, (byte) 0)),
-                        out(wm(0L, (byte) 0)),
                         // this item is:
                         // 1. not late
                         // 2. can't possibly match a future row from #0, therefore doesn't go to the buffer
@@ -324,12 +377,13 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         SupplierEx<Processor> supplier = createProcessor(1, 1);
 
         TestSupport.verifyProcessor(supplier)
-                .outputChecker(SAME_ITEMS_ANY_ORDER)
-                .disableSnapshots()
+                .outputChecker(SAME_ITEMS_ANY_ORDER_EQUIVALENT_WMS)
                 .expectExactOutput(
                         in(0, wm(10, (byte) 0)),
-                        out(wm(10, (byte) 0)),
-                        in(0, jetRow(8L)),
+                        in(1, wm(10, (byte) 1)),
+                        out(wm(9, (byte) 1)),
+                        out(wm(9, (byte) 0)),
+                        in(1, jetRow(8L)),
                         processorAssertion((StreamToStreamJoinP p) -> {
                             assertEquals(0, p.buffer[0].size());
                             assertEquals(0, p.buffer[1].size());
@@ -339,18 +393,18 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
 
     /**
      * From the postponeTimeMap create the equivalent condition for the join processor.
-     *
+     * <p>
      * For example, this join condition (`l` has `time1` and `time2` columns, `r` has `time`):
-     *     l.time2 BETWEEN r.time - 1 AND r.time + 4
-     *
+     * l.time2 BETWEEN r.time - 1 AND r.time + 4
+     * <p>
      * Is transformed to:
-     *     l.time2 >= r.time - 1
-     *     r.time >= l.time2 - 4
-     *
+     * l.time2 >= r.time - 1
+     * r.time >= l.time2 - 4
+     * <p>
      * For which this postponeTimeMap is created:
-     *     0: {}
-     *     1: {2:4}
-     *     2: {1:1}
+     * 0: {}
+     * 1: {2:4}
+     * 2: {1:1}
      *
      * @param wmKeyToColumnIndex Remapping of WM keys to joined column indexes. Contains
      *                           a sequence of `wmKey1`, `index1`, `wmKey2`, `index2, ... If WM key == index,

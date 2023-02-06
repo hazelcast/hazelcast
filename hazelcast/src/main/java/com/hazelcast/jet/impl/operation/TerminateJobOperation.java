@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,10 +49,10 @@ public class TerminateJobOperation extends AsyncJobOperation {
     @Override
     public CompletableFuture<Void> doRun() {
         if (isLightJob) {
-            getJobCoordinationService().terminateLightJob(jobId());
+            getJobCoordinationService().terminateLightJob(jobId(), true);
             return completedFuture(null);
         } else {
-            return getJobCoordinationService().terminateJob(jobId(), terminationMode);
+            return getJobCoordinationService().terminateJob(jobId(), terminationMode, true);
         }
     }
 

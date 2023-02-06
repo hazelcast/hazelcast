@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,26 +95,26 @@ public class SimpleClientMapInterceptorTest extends HazelcastTestSupport {
 
         }
 
-        assertEquals(map.size(), 6);
-        assertEquals(map.get(1), null);
-        assertEquals(map.get(2), "ISTANBUL:");
-        assertEquals(map.get(3), "TOKYO:");
-        assertEquals(map.get(4), "LONDON:");
-        assertEquals(map.get(5), "PARIS:");
-        assertEquals(map.get(6), "CAIRO:");
-        assertEquals(map.get(7), "HONG KONG:");
+        assertEquals(6, map.size());
+        assertEquals(null, map.get(1));
+        assertEquals("ISTANBUL:", map.get(2));
+        assertEquals("TOKYO:", map.get(3));
+        assertEquals("LONDON:", map.get(4));
+        assertEquals("PARIS:", map.get(5));
+        assertEquals("CAIRO:", map.get(6));
+        assertEquals("HONG KONG:", map.get(7));
 
         map.removeInterceptor(id);
         map.put(8, "Moscow");
 
-        assertEquals(map.get(8), "Moscow");
-        assertEquals(map.get(1), null);
-        assertEquals(map.get(2), "ISTANBUL");
-        assertEquals(map.get(3), "TOKYO");
-        assertEquals(map.get(4), "LONDON");
-        assertEquals(map.get(5), "PARIS");
-        assertEquals(map.get(6), "CAIRO");
-        assertEquals(map.get(7), "HONG KONG");
+        assertEquals("Moscow", map.get(8));
+        assertEquals(null, map.get(1));
+        assertEquals("ISTANBUL", map.get(2));
+        assertEquals("TOKYO", map.get(3));
+        assertEquals("LONDON", map.get(4));
+        assertEquals("PARIS", map.get(5));
+        assertEquals("CAIRO", map.get(6));
+        assertEquals("HONG KONG", map.get(7));
     }
 
     @Test

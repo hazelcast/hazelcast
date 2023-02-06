@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,7 +141,7 @@ public class DefaultNodeExtension implements NodeExtension {
             + "\t+ +   + +  |    |  /     \\   /    |      |     \\       /     \\       |    |   \n"
             + "\t+       +  o    o o       o o---o o----o o----o o---o o       o o----o    o   ";
 
-    private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.";
+    private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.";
 
     protected final Node node;
     protected final ILogger logger;
@@ -318,6 +318,11 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public boolean isStartCompleted() {
+        return node.getClusterService().isJoined();
+    }
+
+    @Override
+    public boolean isReady() {
         return node.getClusterService().isJoined();
     }
 
@@ -533,6 +538,7 @@ public class DefaultNodeExtension implements NodeExtension {
         if (service != null) {
             service.onMemberListChange();
         }
+        node.clusterTopologyIntentTracker.onMembershipChange();
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,6 +80,11 @@ public final class AssertionP<S, T> extends AbstractProcessor {
     @Override
     public boolean complete() {
         completeFn.accept(state);
+        return true;
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
         return true;
     }
 

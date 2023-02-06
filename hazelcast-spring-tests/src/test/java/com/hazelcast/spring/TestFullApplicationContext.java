@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -474,7 +474,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         MapConfig testMapConfig3 = config.getMapConfig("testMap3");
         assertEquals("com.hazelcast.spring.DummyStoreFactory", testMapConfig3.getMapStoreConfig().getFactoryClassName());
         assertFalse(testMapConfig3.getMapStoreConfig().getProperties().isEmpty());
-        assertEquals(testMapConfig3.getMapStoreConfig().getProperty("dummy.property"), "value");
+        assertEquals("value", testMapConfig3.getMapStoreConfig().getProperty("dummy.property"));
 
         MapConfig testMapConfig4 = config.getMapConfig("testMap4");
         assertEquals(dummyMapStoreFactory, testMapConfig4.getMapStoreConfig().getFactoryImplementation());
@@ -830,8 +830,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("36000,36100", portIter.next());
         assertFalse(networkConfig.getJoin().getAutoDetectionConfig().isEnabled());
         assertFalse(networkConfig.getJoin().getMulticastConfig().isEnabled());
-        assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds(), 8);
-        assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeToLive(), 16);
+        assertEquals(8, networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds());
+        assertEquals(16, networkConfig.getJoin().getMulticastConfig().getMulticastTimeToLive());
         assertEquals(Boolean.FALSE, networkConfig.getJoin().getMulticastConfig().getLoopbackModeEnabled());
         Set<String> tis = networkConfig.getJoin().getMulticastConfig().getTrustedInterfaces();
         assertEquals(1, tis.size());

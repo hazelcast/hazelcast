@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ public class UnsafeObjectDataOutputTest {
         out.writeChar(expected);
         char actual = Bits.readChar(out.buffer, 0, ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN);
 
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -72,7 +72,7 @@ public class UnsafeObjectDataOutputTest {
         out.writeChar(2, expected);
         char actual = Bits.readChar(out.buffer, 2, ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN);
 
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -82,7 +82,7 @@ public class UnsafeObjectDataOutputTest {
         long theLong = Bits.readLong(out.buffer, 0, ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN);
         double actual = Double.longBitsToDouble(theLong);
 
-        assertEquals(actual, expected, 0);
+        assertEquals(expected, actual, 0);
     }
 
     @Test
@@ -92,7 +92,7 @@ public class UnsafeObjectDataOutputTest {
         long theLong = Bits.readLong(out.buffer, 1, ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN);
         double actual = Double.longBitsToDouble(theLong);
 
-        assertEquals(actual, expected, 0);
+        assertEquals(expected, actual, 0);
     }
 
     @Test
@@ -102,7 +102,7 @@ public class UnsafeObjectDataOutputTest {
         int val = Bits.readInt(out.buffer, 0, ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN);
         float actual = Float.intBitsToFloat(val);
 
-        assertEquals(actual, expected, 0);
+        assertEquals(expected, actual, 0);
     }
 
     @Test
@@ -112,7 +112,7 @@ public class UnsafeObjectDataOutputTest {
         int val = Bits.readInt(out.buffer, 1, ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN);
         float actual = Float.intBitsToFloat(val);
 
-        assertEquals(actual, expected, 0);
+        assertEquals(expected, actual, 0);
     }
 
     @Test
@@ -121,7 +121,7 @@ public class UnsafeObjectDataOutputTest {
         out.writeInt(expected);
         int actual = Bits.readInt(out.buffer, 0, ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN);
 
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -130,7 +130,7 @@ public class UnsafeObjectDataOutputTest {
         out.writeInt(1, expected);
         int actual = Bits.readInt(out.buffer, 1, ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN);
 
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -141,8 +141,8 @@ public class UnsafeObjectDataOutputTest {
         int actual1 = Bits.readInt(out.buffer, 0, false);
         int actual2 = Bits.readInt(out.buffer, 4, true);
 
-        assertEquals(actual1, expected);
-        assertEquals(actual2, expected);
+        assertEquals(expected, actual1);
+        assertEquals(expected, actual2);
     }
 
     @Test
@@ -153,8 +153,8 @@ public class UnsafeObjectDataOutputTest {
         int actual1 = Bits.readInt(out.buffer, 10, false);
         int actual2 = Bits.readInt(out.buffer, 14, true);
 
-        assertEquals(actual1, expected);
-        assertEquals(actual2, expected);
+        assertEquals(expected, actual1);
+        assertEquals(expected, actual2);
     }
 
     @Test
@@ -163,7 +163,7 @@ public class UnsafeObjectDataOutputTest {
         out.writeLong(expected);
         long actual = Bits.readLong(out.buffer, 0, ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN);
 
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -172,7 +172,7 @@ public class UnsafeObjectDataOutputTest {
         out.writeLong(2, expected);
         long actual = Bits.readLong(out.buffer, 2, ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN);
 
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -183,8 +183,8 @@ public class UnsafeObjectDataOutputTest {
         long actual1 = Bits.readLong(out.buffer, 0, false);
         long actual2 = Bits.readLong(out.buffer, 8, true);
 
-        assertEquals(actual1, expected);
-        assertEquals(actual2, expected);
+        assertEquals(expected, actual1);
+        assertEquals(expected, actual2);
     }
 
     @Test
@@ -195,8 +195,8 @@ public class UnsafeObjectDataOutputTest {
         long actual1 = Bits.readLong(out.buffer, 10, false);
         long actual2 = Bits.readLong(out.buffer, 18, true);
 
-        assertEquals(actual1, expected);
-        assertEquals(actual2, expected);
+        assertEquals(expected, actual1);
+        assertEquals(expected, actual2);
     }
 
     @Test
@@ -205,7 +205,7 @@ public class UnsafeObjectDataOutputTest {
         out.writeShort(expected);
         short actual = Bits.readShort(out.buffer, 0, ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN);
 
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -214,7 +214,7 @@ public class UnsafeObjectDataOutputTest {
         out.writeShort(1, expected);
         short actual = Bits.readShort(out.buffer, 1, ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN);
 
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -225,8 +225,8 @@ public class UnsafeObjectDataOutputTest {
         short actual1 = Bits.readShort(out.buffer, 0, false);
         short actual2 = Bits.readShort(out.buffer, 2, true);
 
-        assertEquals(actual1, expected);
-        assertEquals(actual2, expected);
+        assertEquals(expected, actual1);
+        assertEquals(expected, actual2);
     }
 
     @Test
@@ -237,8 +237,8 @@ public class UnsafeObjectDataOutputTest {
         short actual1 = Bits.readShort(out.buffer, 1, false);
         short actual2 = Bits.readShort(out.buffer, 3, true);
 
-        assertEquals(actual1, expected);
-        assertEquals(actual2, expected);
+        assertEquals(expected, actual1);
+        assertEquals(expected, actual2);
     }
 
     @Test(expected = IllegalArgumentException.class)

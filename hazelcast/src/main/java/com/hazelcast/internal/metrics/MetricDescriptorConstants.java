@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -210,6 +210,8 @@ public final class MetricDescriptorConstants {
     public static final String MAP_METRIC_PUT_COUNT = "putCount";
     public static final String MAP_METRIC_SET_COUNT = "setCount";
     public static final String MAP_METRIC_REMOVE_COUNT = "removeCount";
+    public static final String MAP_METRIC_EVICTION_COUNT = "evictionCount";
+    public static final String MAP_METRIC_EXPIRATION_COUNT = "expirationCount";
     public static final String MAP_METRIC_CREATION_TIME = "creationTime";
     public static final String MAP_METRIC_OWNED_ENTRY_COUNT = "ownedEntryCount";
     public static final String MAP_METRIC_BACKUP_ENTRY_COUNT = "backupEntryCount";

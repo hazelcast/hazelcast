@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,13 @@ public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
                     + "class '" + className + "' not found", e);
         } catch (Exception e) {
             throw rethrow(e);
+        }
+    }
+
+    @Override
+    public boolean testConnection(ExternalDataStoreConfig config) throws Exception {
+        try (ExternalDataStoreFactory<Object> factory = createFactory(config)) {
+            return factory.testConnection();
         }
     }
 

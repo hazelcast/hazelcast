@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -491,6 +491,26 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         putJsonString(map, "three", value3);
 
         Collection<HazelcastJsonValue> vals = map.values(Predicates.equal("arr[any].innerAttribute", 5000));
+        assertEquals(1, vals.size());
+        assertTrue(vals.contains(p1));
+    }
+
+    @Test
+    public void testMatches_whenAnyAndAttributeName_withInnerArray() {
+        JsonArray innerArray = Json.array("one", "two");
+        JsonArray outerArray = Json.array()
+                .add(Json.object().add("one", 1))
+                .add(Json.object().add("innerArray", innerArray))
+                .add(Json.object().add("two", 2))
+                .add(Json.object().add("three", 3));
+
+        JsonValue object = Json.object().add("outerArray", outerArray)
+                .add("id", 171);
+
+        IMap<String, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        HazelcastJsonValue p1 = putJsonString(map, "one", object);
+
+        Collection<HazelcastJsonValue> vals = map.values(Predicates.equal("outerArray[any].one", 1));
         assertEquals(1, vals.size());
         assertTrue(vals.contains(p1));
     }

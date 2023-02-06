@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.apache.http.Consts;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
@@ -92,6 +93,7 @@ public class HTTPCommunicator {
     // WAN
     public static final String URI_WAN_SYNC_MAP = "wan/sync/map";
     public static final String URI_WAN_SYNC_ALL_MAPS = "wan/sync/allmaps";
+    public static final String URI_WAN_SYNC_PROGRESS = "wan/sync/progress/";
     public static final String URI_WAN_CLEAR_QUEUES = "wan/clearWanQueues";
     public static final String URI_ADD_WAN_CONFIG = "wan/addWanConfig";
     public static final String URI_WAN_PAUSE_PUBLISHER = "wan/pausePublisher";
@@ -343,6 +345,11 @@ public class HTTPCommunicator {
         return doPost(url, clusterName, clusterPassword, wanRepName, publisherId).response;
     }
 
+    public ConnectionResponse wanSyncGetProgress(UUID syncUUID) throws IOException {
+        String url = getUrl(URI_WAN_SYNC_PROGRESS + syncUUID);
+        return doGet(url);
+    }
+
     public String wanMapConsistencyCheck(String clusterName, String clusterPassword,
                                          String wanRepName, String publisherId, String mapName) throws IOException {
         String url = getUrl(URI_WAN_CONSISTENCY_CHECK_MAP);
@@ -464,11 +471,7 @@ public class HTTPCommunicator {
             Header[] headers = httpResponse.getAllHeaders();
             Map<String, List<String>> responseHeaders = new HashMap<>();
             for (Header header : headers) {
-                List<String> values = responseHeaders.get(header.getName());
-                if (values == null) {
-                    values = new ArrayList<>();
-                    responseHeaders.put(header.getName(), values);
-                }
+                List<String> values = responseHeaders.computeIfAbsent(header.getName(), k -> new ArrayList<>());
                 values.add(header.getValue());
             }
             this.responseCode = responseCode;
@@ -591,6 +594,15 @@ public class HTTPCommunicator {
             builder.setSSLSocketFactory(new SSLConnectionSocketFactory(sslContext,
                     SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER));
         }
+
+        // configure timeout on the entire client
+        int timeout = 20;
+        RequestConfig config = RequestConfig.custom()
+                .setConnectTimeout(timeout * 1_000)
+                .setConnectionRequestTimeout(timeout * 1_000)
+                .setSocketTimeout(timeout * 1_000).build();
+
+        builder.setDefaultRequestConfig(config);
 
         return builder.build();
     }

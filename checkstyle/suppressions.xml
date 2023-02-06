@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <!--
-  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -421,7 +421,8 @@
     <suppress checks="" files="[\\/]module-info"/>
 
     <suppress checks="FileLength" files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]aggregate[\\/]AggregateOperations"/>
-    <suppress checks="CyclomaticComplexity" files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]config[\\/]JobConfig"/>
+    <suppress checks="FileLength|CyclomaticComplexity" files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]config[\\/]JobConfig"/>
+    <suppress checks="FileLength" files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]impl[\\/]JobCoordinationService"/>
 
     <suppress checks="InnerAssignment|JavadocType|TrailingComment|MethodCount|OperatorWrap|ClassDataAbstractionCoupling|ClassFanOutComplexity|CyclomaticComplexity|NPathComplexity" files="[\\/]src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]"/>
     <suppress checks="InnerAssignment|JavadocType|TrailingComment|MethodCount|OperatorWrap|ClassDataAbstractionCoupling|ClassFanOutComplexity|CyclomaticComplexity|NPathComplexity" files="[\\/]src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]"/>

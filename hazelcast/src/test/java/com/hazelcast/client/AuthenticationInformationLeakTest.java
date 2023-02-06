@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,14 +49,17 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY;
 import static com.hazelcast.test.Accessors.getClientEngineImpl;
 import static com.hazelcast.test.HazelcastTestSupport.assertContains;
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
 import static com.hazelcast.test.HazelcastTestSupport.assertNotContains;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -87,28 +90,46 @@ public class AuthenticationInformationLeakTest {
     }
 
     @Test
-    public void testAuthenticationExceptionDoesNotLeakInfo() throws IOException {
+    public void testAuthenticationExceptionDoesNotLeakInfo() {
+        AtomicReference<ClientMessage> res = new AtomicReference<>();
+        assertTrueEventually(() -> {
+            res.set(tryGettingKeyValueWithoutAuthentication());
+            assertNotNull(res.get());
+        });
+        assertEquals(ErrorsCodec.EXCEPTION_MESSAGE_TYPE, res.get().getMessageType());
+        ClientExceptionFactory factory = new ClientExceptionFactory(false, Thread.currentThread().getContextClassLoader());
+        Throwable err = factory.createException(res.get());
+        String message = err.getMessage();
+        assertInstanceOf(AuthenticationException.class, err.getCause());
+        assertContains(message, "must authenticate before any operation");
+        String messageLowerCase = message.toLowerCase();
+        assertNotContains(messageLowerCase, "connection");
+        assertNotContains(messageLowerCase, "authenticated");
+        assertNotContains(messageLowerCase, "creationTime");
+        assertNotContains(messageLowerCase, "clientAttributes");
+    }
+
+    /**
+     * This function uses a tcp socket to be able to write a message without authenticating.
+     * <p>
+     * In case of an authentication failure, the server sends an exception message and immediately closes the connection
+     * without waiting the message to be written to the client connection. It's possible that we receive EOF from socket,
+     * which will make getKeyValue() throw IOException. In any kind of IOException, value null will be returned.
+     *
+     * @return null if IOException happened, otherwise return the response received from the server as a ClientMessage
+     */
+    private ClientMessage tryGettingKeyValueWithoutAuthentication() {
         SerializationService ss = new DefaultSerializationServiceBuilder().build();
-        InetSocketAddress endpoint = new InetSocketAddress("127.0.0.1", 5701);
+        InetSocketAddress endpoint = instance.getCluster().getLocalMember().getSocketAddress();
         try (Socket socket = new Socket()) {
             socket.setReuseAddress(true);
             socket.connect(endpoint);
-            ClientMessage res;
             try (OutputStream os = socket.getOutputStream(); InputStream is = socket.getInputStream()) {
                 os.write(CLIENT_BINARY.getBytes(StandardCharsets.UTF_8));
-                res = getKeyValue(ss, os, is);
+                return getKeyValue(ss, os, is);
             }
-            assertEquals(res.getMessageType(), ErrorsCodec.EXCEPTION_MESSAGE_TYPE);
-            ClientExceptionFactory factory = new ClientExceptionFactory(false, Thread.currentThread().getContextClassLoader());
-            Throwable err = factory.createException(res);
-            String message = err.getMessage();
-            assertInstanceOf(AuthenticationException.class, err.getCause());
-            assertContains(message, "must authenticate before any operation");
-            String messageLowerCase = message.toLowerCase();
-            assertNotContains(messageLowerCase, "connection");
-            assertNotContains(messageLowerCase, "authenticated");
-            assertNotContains(messageLowerCase, "creationTime");
-            assertNotContains(messageLowerCase, "clientAttributes");
+        } catch (IOException e) {
+            return null;
         }
     }
 
@@ -130,7 +151,7 @@ public class AuthenticationInformationLeakTest {
     }
 
     private void authenticateAndAssert(AuthenticationStatus status, byte serVersion, boolean useWrongClusterName, String clusterName) throws IOException {
-        InetSocketAddress endpoint = new InetSocketAddress("127.0.0.1", 5701);
+        InetSocketAddress endpoint = instance.getCluster().getLocalMember().getSocketAddress();
         try (Socket socket = new Socket()) {
             socket.setReuseAddress(true);
             socket.connect(endpoint);
@@ -157,7 +178,7 @@ public class AuthenticationInformationLeakTest {
         ClientTestUtil.writeClientMessage(os, msg);
 
         ClientMessage res = ClientTestUtil.readResponse(is);
-        assertEquals(res.getMessageType(), ClientAuthenticationCodec.RESPONSE_MESSAGE_TYPE);
+        assertEquals(ClientAuthenticationCodec.RESPONSE_MESSAGE_TYPE, res.getMessageType());
         return res;
     }
 
@@ -169,7 +190,7 @@ public class AuthenticationInformationLeakTest {
         ClientTestUtil.writeClientMessage(os, msg);
         ClientMessage res = ClientTestUtil.readResponse(is);
         if (res.getMessageType() != ErrorsCodec.EXCEPTION_MESSAGE_TYPE) {
-            assertEquals(res.getMessageType(), MapGetCodec.RESPONSE_MESSAGE_TYPE);
+            assertEquals(MapGetCodec.RESPONSE_MESSAGE_TYPE, res.getMessageType());
         }
         return res;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.validate;
 
-import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
@@ -53,7 +52,6 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
-import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUpdate;
 import org.apache.calcite.sql.SqlUtil;
@@ -233,34 +231,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         }
 
         super.addToSelectList(list, aliases, fieldList, exp, scope, includeSystemVars);
-    }
-
-    @Override
-    protected void validateFrom(SqlNode node, RelDataType targetRowType, SqlValidatorScope scope) {
-        super.validateFrom(node, targetRowType, scope);
-
-        if (countOrderingFunctions(node) > 1) {
-            throw newValidationError(node, RESOURCE.multipleOrderingFunctionsNotSupported());
-        }
-    }
-
-    private static int countOrderingFunctions(SqlNode node) {
-        class OrderingFunctionCounter extends SqlBasicVisitor<Void> {
-            int count;
-
-            @Override
-            public Void visit(SqlCall call) {
-                SqlOperator operator = call.getOperator();
-                if (operator instanceof ImposeOrderFunction) {
-                    count++;
-                }
-                return super.visit(call);
-            }
-        }
-
-        OrderingFunctionCounter counter = new OrderingFunctionCounter();
-        node.accept(counter);
-        return counter.count;
     }
 
     @Override

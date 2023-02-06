@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.kubernetes;
 
 import com.hazelcast.config.properties.PropertyDefinition;
+import com.hazelcast.instance.impl.ClusterTopologyIntentTracker;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.discovery.DiscoveryNode;
@@ -31,6 +32,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+
+import static com.hazelcast.instance.impl.Node.DISCOVERY_PROPERTY_CLUSTER_TOPOLOGY_INTENT_TRACKER;
 
 /**
  * Just the factory to create the Kubernetes Discovery Strategy
@@ -80,8 +83,12 @@ public class HazelcastKubernetesDiscoveryStrategyFactory
 
     public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger,
                                                   Map<String, Comparable> properties) {
-
-        return new HazelcastKubernetesDiscoveryStrategy(logger, properties);
+        ClusterTopologyIntentTracker tracker = null;
+        if (discoveryNode != null) {
+            tracker = (ClusterTopologyIntentTracker) discoveryNode.getProperties()
+                    .get(DISCOVERY_PROPERTY_CLUSTER_TOPOLOGY_INTENT_TRACKER);
+        }
+        return new HazelcastKubernetesDiscoveryStrategy(logger, properties, tracker);
     }
 
     public Collection<PropertyDefinition> getConfigurationProperties() {

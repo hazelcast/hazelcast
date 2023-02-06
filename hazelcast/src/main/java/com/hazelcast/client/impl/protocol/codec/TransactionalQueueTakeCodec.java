@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Retrieves and removes the head of this queue, waiting if necessary until an element becomes available.
  */
-@Generated("df23492cd3e5db51189478734d851532")
+@Generated("3680633cedd16c26cc72092e00a5f71c")
 public final class TransactionalQueueTakeCodec {
     //hex: 0x120200
     public static final int REQUEST_MESSAGE_TYPE = 1180160;
