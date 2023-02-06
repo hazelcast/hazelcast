@@ -35,7 +35,7 @@ public final class OperationQueueImpl implements OperationQueue {
     private final Queue<Object> priorityQueue;
 
     public OperationQueueImpl() {
-        this(new LinkedBlockingQueue<Object>(), new ConcurrentLinkedQueue<Object>());
+        this(new LinkedBlockingQueue<>(), new ConcurrentLinkedQueue<>());
     }
 
     public OperationQueueImpl(BlockingQueue<Object> normalQueue, Queue<Object> priorityQueue) {
@@ -72,7 +72,19 @@ public final class OperationQueueImpl implements OperationQueue {
 
     @Override
     public Object poll() {
-        throw new UnsupportedOperationException();
+         for (; ; ) {
+            Object priorityItem = priorityQueue.poll();
+            if (priorityItem != null) {
+                return priorityItem;
+            }
+
+            Object normalItem = normalQueue.poll();
+            if (normalItem == TRIGGER_TASK) {
+                continue;
+            }
+
+            return normalItem;
+        }
     }
 
     @Override

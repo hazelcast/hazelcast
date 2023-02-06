@@ -39,6 +39,7 @@ public class AltoOperationScheduler implements Scheduler {
 
     @Override
     public void init(Eventloop eventloop) {
+        // This method is guaranteed to be called from the Reactor thread (whic is the AltoPartitionOperationThread).
         this.operationThread = (AltoPartitionOperationThread) Thread.currentThread();
         this.queue = operationThread.queue;
     }

@@ -140,9 +140,9 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
 
         this.partitionOperationRunners = initPartitionOperationRunners(properties, runnerFactory);
         if (tpcEngine == null) {
-            this.partitionThreads = initPartitionThreads(properties, hzName, nodeExtension, configClassLoader);
+            this.partitionThreads = initClassicPartitionThreads(properties, hzName, nodeExtension, configClassLoader);
         } else {
-            this.partitionThreads = initAltoPartitionThreads(tpcEngine, properties, hzName, nodeExtension, configClassLoader);
+            this.partitionThreads = initAltoPartitionThreads(tpcEngine, hzName, nodeExtension, configClassLoader);
         }
         this.priorityThreadCount = properties.getInteger(PRIORITY_GENERIC_OPERATION_THREAD_COUNT);
         this.genericOperationRunners = initGenericOperationRunners(properties, runnerFactory);
@@ -168,8 +168,8 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         return operationRunners;
     }
 
-    private PartitionOperationThread[] initPartitionThreads(HazelcastProperties properties, String hzName,
-                                                            NodeExtension nodeExtension, ClassLoader configClassLoader) {
+    private PartitionOperationThread[] initClassicPartitionThreads(HazelcastProperties properties, String hzName,
+                                                                   NodeExtension nodeExtension, ClassLoader configClassLoader) {
 
         int threadCount = properties.getInteger(PARTITION_OPERATION_THREAD_COUNT);
         if (threadAffinity.isEnabled()) {
@@ -204,14 +204,10 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     }
 
     private PartitionOperationThread[] initAltoPartitionThreads(TpcEngine tpcEngine,
-                                                                HazelcastProperties properties,
                                                                 String hzName,
                                                                 NodeExtension nodeExtension,
                                                                 ClassLoader configClassLoader) {
         int threadCount = tpcEngine.reactorCount();
-//        if (threadAffinity.isEnabled()) {
-//            threadCount = threadAffinity.getThreadCount();
-//        }
 
         PartitionOperationThread[] threads = new PartitionOperationThread[threadCount];
         for (int threadId = 0; threadId < threads.length; threadId++) {
@@ -220,8 +216,9 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
 
             partitionThread.setName(createThreadPoolName(hzName, "partition-operation") + threadId);
 
-            AltoOperationQueue operationQueue = new AltoOperationQueue(reactor);
-            partitionThread.queue = operationQueue;
+            // the AltoOperationQueue is unbound just like HZ classic. Since we do not have any back pressure mechanism between
+            // members, there is no proper way to prevent overload. So we keep the same bad bad behavior for now.
+            partitionThread.queue = new AltoOperationQueue(reactor, new MPSCQueue<>(null), new ConcurrentLinkedQueue<>());
             partitionThread.threadId = threadId;
             partitionThread.logger = logger;
             partitionThread.nodeExtension = nodeExtension;
@@ -234,9 +231,8 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         // we need to assign the PartitionOperationThreads to all OperationRunners they own
         for (int partitionId = 0; partitionId < partitionOperationRunners.length; partitionId++) {
             int threadId = getPartitionThreadId(partitionId, threadCount);
-            Thread thread = threads[threadId];
             OperationRunner runner = partitionOperationRunners[partitionId];
-            runner.setCurrentThread(thread);
+            runner.setCurrentThread(threads[threadId]);
         }
 
         return threads;
@@ -576,6 +572,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
                     + genericThreads.length + " generic threads (" + priorityThreadCount + " dedicated for priority tasks)");
         }
 
+        // when tpc is enabled, the partitionThread are manged bu the tpcEngine.
         if (tpcEngine == null) {
             startAll(partitionThreads);
         }
@@ -590,6 +587,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
 
     @Override
     public void shutdown() {
+        // when tpc is enabled, the partitionThread are manged bu the tpcEngine.
         if (tpcEngine == null) {
             shutdownAll(partitionThreads);
         }

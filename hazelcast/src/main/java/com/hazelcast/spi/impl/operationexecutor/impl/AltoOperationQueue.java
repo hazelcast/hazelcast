@@ -17,17 +17,27 @@
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.internal.tpc.Reactor;
-import org.jctools.queues.MpmcArrayQueue;
+
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class AltoOperationQueue implements OperationQueue {
 
-    public static final int CAPACITY = 1024;
-    private Reactor reactor;
-    private MpmcArrayQueue normalQueue = new MpmcArrayQueue(CAPACITY);
-    private MpmcArrayQueue priorityQueue = new MpmcArrayQueue(CAPACITY);
+    private final Reactor reactor;
+    private final Queue<Object> normalQueue;
+    private final Queue<Object> priorityQueue;
 
     public AltoOperationQueue(Reactor reactor) {
+        this(reactor, new LinkedBlockingQueue<>(), new ConcurrentLinkedQueue<>());
+    }
+
+    public AltoOperationQueue(Reactor reactor, Queue<Object> normalQueue, Queue<Object> priorityQueue) {
         this.reactor = reactor;
+        this.normalQueue = checkNotNull(normalQueue, "normalQueue");
+        this.priorityQueue = checkNotNull(priorityQueue, "priorityQueue");
     }
 
     @Override
@@ -43,6 +53,7 @@ public class AltoOperationQueue implements OperationQueue {
 
     @Override
     public Object take(boolean priorityOnly) throws InterruptedException {
+        // We never want to block on the AltoPartitionOperationThread.
         throw new UnsupportedOperationException();
     }
 
