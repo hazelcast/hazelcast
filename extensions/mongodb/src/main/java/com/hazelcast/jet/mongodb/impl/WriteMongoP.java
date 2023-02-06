@@ -16,9 +16,7 @@
 package com.hazelcast.jet.mongodb.impl;
 
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Watermark;
@@ -96,7 +94,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
 
     private final Map<MongoTransactionId, MongoTransaction> activeTransactions = new HashMap<>();
     private final RetryStrategy commitRetryStrategy;
-    private final TransactionOptions transactionOptions;
+    private final SupplierEx<TransactionOptions> transactionOptionsSup;
 
     /**
      * Creates a new processor that will always insert to the same database and collection.
@@ -112,8 +110,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
         params.getReplaceOptionAdjuster().accept(options);
         this.replaceOptions = options;
         this.commitRetryStrategy = params.commitRetryStrategy;
-        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-        this.transactionOptions = serializationService.toObject(new HeapData(params.transactionOptions));
+        this.transactionOptionsSup = params.transactionOptionsSup;
 
         if (params.databaseName != null) {
             this.collectionPicker = new ConstantCollectionPicker<>(params.databaseName, params.collectionName);
@@ -415,7 +412,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
 
         private void startTransactionQuietly() {
             try {
-                clientSession.startTransaction(transactionOptions);
+                clientSession.startTransaction(transactionOptionsSup.get());
             } catch (IllegalStateException e) {
                 if (!e.getMessage().contains("already in progress")) {
                     throw sneakyThrow(e);
