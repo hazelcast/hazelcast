@@ -18,8 +18,6 @@ package com.hazelcast.jet.mongodb.impl;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.mongodb.TransactionOptions;
 import com.mongodb.client.MongoClient;
@@ -35,8 +33,6 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
 public class WriteMongoParams<I> implements Serializable {
-    private static final InternalSerializationService SERIALIZATION_SERVICE = new DefaultSerializationServiceBuilder()
-            .build();
 
     SupplierEx<? extends MongoClient> clientSupplier;
     String databaseName;
