@@ -19,17 +19,21 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 import com.hazelcast.internal.tpc.Eventloop;
 import com.hazelcast.internal.tpc.Scheduler;
 import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+import com.hazelcast.internal.util.Preconditions;
+
 
 public class AltoOperationScheduler implements Scheduler {
 
-    public static final int BATCH_SIZE = 10;
-    private Eventloop eventloop;
+    private final int batchSize;
     private AltoPartitionOperationThread operationThread;
     private OperationQueue queue;
 
+    public AltoOperationScheduler(int batchSize){
+        this.batchSize = Preconditions.checkPositive("batchSize",batchSize);
+    }
+
     @Override
     public void init(Eventloop eventloop) {
-        this.eventloop = eventloop;
         this.operationThread = (AltoPartitionOperationThread) Thread.currentThread();
         this.queue = operationThread.queue;
     }
@@ -38,8 +42,9 @@ public class AltoOperationScheduler implements Scheduler {
     public boolean tick() {
         final AltoPartitionOperationThread operationThread = this.operationThread;
         final OperationQueue queue = this.queue;
+        final int batchSize = this.batchSize;
 
-        for (int k = 0; k < BATCH_SIZE; k++) {
+        for (int k = 0; k < batchSize; k++) {
             if (operationThread.isShutdown()) {
                 return false;
             }
@@ -56,7 +61,8 @@ public class AltoOperationScheduler implements Scheduler {
     }
 
     @Override
-    public void schedule(IOBuffer task) {
+    public void schedule(Object task) {
+        // the OperationExecutor moves tasks directly into the OperationQueue.
         throw new UnsupportedOperationException();
     }
 }
