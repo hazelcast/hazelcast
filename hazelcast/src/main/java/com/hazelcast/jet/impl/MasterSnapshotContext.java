@@ -379,7 +379,7 @@ class MasterSnapshotContext {
                 // So regardless if JobExecutionRecord in IMap turns out be new or old,
                 // the state will be consistent.
                 //
-                // There is no need to restart job/skip phase2 in case of exported/named _non-terminal_ snapshot,
+                // There is no need to restart job/skip phase2 in case of exported _non-terminal_ snapshot,
                 // because it writes to separate IMap and data in it should be safe by now.
                 // JobExecutionRecord.ongoingSnapshotDone does not update critical data in case of
                 // _non-terminal_ exported snapshots.
@@ -394,6 +394,10 @@ class MasterSnapshotContext {
                         skipPhase2 = true;
                         logger.warning(mc.jobIdString() + " snapshot " + snapshotId +
                                 " update of JobExecutionRecord was indeterminate. Will restart job forcefully.");
+                    } catch (Exception otherError) {
+                        skipPhase2 = true;
+                        logger.warning(mc.jobIdString() + " snapshot " + snapshotId +
+                                " update of JobExecutionRecord failed. Will restart job forcefully.", otherError);
                     }
                 } else {
                     mc.writeJobExecutionRecord(false);
@@ -429,7 +433,6 @@ class MasterSnapshotContext {
                     // clear IMap for next automatic snapshot early to decrease memory usage
                     mc.jobRepository().clearSnapshotData(mc.jobId(), mc.jobExecutionRecord().ongoingDataMapIndex());
                 }
-                // TODO: automatic snapshot maps can be cleared after successful terminal export snapshot
             } finally {
                 mc.unlock();
             }
