@@ -1,4 +1,22 @@
+/*
+ * Copyright 2023 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.jet.sql.impl.connector.jdbc;
+
+import java.util.ArrayList;
 
 public class ExternalNameIdentifiers {
 
@@ -21,39 +39,108 @@ public class ExternalNameIdentifiers {
     }
 
     public void parseExternalTableName(String externalTableName) {
-        //"schema.with.dot.in.name"."table.with.dot.in.name"
-        if (externalTableName.contains("\".\"")) {
-            splitByQuotedDot(externalTableName);
+        ArrayList<String> identifiers = getIdentifiers(externalTableName);
+        int size = identifiers.size();
+
+        // Assign according to number of identifiers
+        if (size == 3) {
+            catalog = identifiers.get(0);
+            schemaName = identifiers.get(1);
+            tableName = identifiers.get(2);
+        } else if (size == 2) {
+            schemaName = identifiers.get(0);
+            tableName = identifiers.get(1);
+        } else if (size == 1) {
+            tableName = identifiers.get(0);
         } else {
-            splitByDot(externalTableName);
+            throw new IllegalArgumentException("No identifiers found");
         }
     }
 
-    void splitByQuotedDot(String externalTableName) {
-        String[] split = externalTableName.split("\"\\.\"");
-        if (split.length == 3) {
-            catalog = split[0];
-            schemaName = split[1];
-            tableName = split[2];
-        } else if (split.length == 2) {
-            schemaName = split[0];
-            tableName = split[1];
-        } else {
-            tableName = split[0];
+    protected ArrayList<String> getIdentifiers(String externalTableName) {
+        ArrayList<String> identifiers = new ArrayList<>();
+
+        StringBuilder stringBuilder = new StringBuilder(externalTableName);
+
+        boolean expectClosingQuote;
+
+        while ((stringBuilder.length() > 0)) {
+
+            char firstChar = stringBuilder.charAt(0);
+            String closingQuote;
+
+            if (firstChar == '`') {
+                // Quote is used. Separator is the quote itself. Closing quote must exist
+                closingQuote = "`";
+                expectClosingQuote = true;
+            } else if (firstChar == '\"') {
+                // Quote is used. Separator is the quote itself. . Closing quote must exist
+                closingQuote = "\"";
+                expectClosingQuote = true;
+            } else {
+                // No quote is used. Separator the dot character. Closing quote may not exist
+                closingQuote = ".";
+                expectClosingQuote = false;
+            }
+
+            int closingQuoteIndex = findClosingQuoteIndex(stringBuilder, expectClosingQuote, closingQuote);
+
+            String identifier = substringIdentifier(stringBuilder, expectClosingQuote, closingQuoteIndex);
+            identifiers.add(identifier);
+
+            checkDotSeparatorExists(stringBuilder);
         }
+        return identifiers;
     }
 
-    void splitByDot(String externalTableName) {
-        String[] split = externalTableName.split("\\.");
-        if (split.length == 3) {
-            catalog = split[0];
-            schemaName = split[1];
-            tableName = split[2];
-        } else if (split.length == 2) {
-            schemaName = split[0];
-            tableName = split[1];
+    private int findClosingQuoteIndex(StringBuilder stringBuilder, boolean expectClosingQuote, String closingQuote) {
+        int closingQuoteIndex = stringBuilder.indexOf(closingQuote, 1);
+        if (expectClosingQuote && closingQuoteIndex == -1) {
+            throw new IllegalArgumentException("Closing quote not found");
+        }
+        return closingQuoteIndex;
+    }
+
+    private String substringIdentifier(StringBuilder stringBuilder, boolean expectClosingQuote, int closingQuoteIndex) {
+        String identifier;
+
+        // If closing quote found
+        if (closingQuoteIndex != -1) {
+
+            int endIndex;
+
+            if (expectClosingQuote) {
+
+                // Do not include the starting quote
+                identifier = stringBuilder.substring(1, closingQuoteIndex);
+
+                // The closing quote must be deleted
+                endIndex = closingQuoteIndex + 1;
+            } else {
+
+                identifier = stringBuilder.substring(0, closingQuoteIndex);
+
+                endIndex = closingQuoteIndex;
+            }
+
+            //Delete the identifier from stringBuilder
+            stringBuilder.delete(0, endIndex);
         } else {
-            tableName = split[0];
+            // Closing quote found. Everything is the identifier
+            identifier = stringBuilder.toString();
+            // Clear the stringBuilder
+            stringBuilder.setLength(0);
+        }
+        return identifier;
+    }
+
+    private void checkDotSeparatorExists(StringBuilder stringBuilder) {
+        // Check if separator exists
+        if (stringBuilder.length() > 0) {
+            if (stringBuilder.charAt(0) != '.') {
+                throw new IllegalArgumentException("Dot separator not found");
+            }
+            stringBuilder.deleteCharAt(0);
         }
     }
 }

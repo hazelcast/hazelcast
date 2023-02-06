@@ -33,14 +33,18 @@ import static org.junit.Assert.fail;
 @Category(NightlyTest.class)
 public class MySQLSinkIntoJdbcSqlConnectorWithSchemaTest extends JdbcSqlTestSupport {
 
-    String mySQLTableName;
+    // Quoted table name in the DB
+    String tableName;
 
-    private static final String schemaName = "`test1.1`";
+    // Quoted schema  name in the DB
+    private static final String schemaName = "`test1 2`";
 
     @BeforeClass
     public static void beforeClass() {
         initialize(new MySQLDatabaseProvider());
         try {
+            // MySQL does not have schema concept. It has DB concept
+            // Create DB for the test suite
             executeJdbc("CREATE DATABASE IF NOT EXISTS " + schemaName);
         } catch (SQLException e) {
             fail();
@@ -49,13 +53,13 @@ public class MySQLSinkIntoJdbcSqlConnectorWithSchemaTest extends JdbcSqlTestSupp
 
     @Before
     public void setUp() throws Exception {
-        mySQLTableName = schemaName + "." + "mytable";
+        tableName = schemaName + "." + "mytable";
     }
 
     protected void myCreateMapping(String mappingName) {
         execute(
                 "CREATE MAPPING \"" + mappingName + "\""
-                + " EXTERNAL NAME \"" + mySQLTableName + "\""
+                + " EXTERNAL NAME \"" + tableName + "\""
                 + " ("
                 + " id INT, "
                 + " name VARCHAR "
@@ -69,15 +73,18 @@ public class MySQLSinkIntoJdbcSqlConnectorWithSchemaTest extends JdbcSqlTestSupp
 
     @Test
     public void sinkIntoTableWithExternalSchemaName() throws Exception {
-        createTable(mySQLTableName);
+        createTable(tableName);
 
 
-        String hzTableName = "test1.1.mytable";
-        myCreateMapping(hzTableName);
+        String mappingName = "mapping_1";
+        myCreateMapping(mappingName);
 
-        String mappingName = "mapping_" + randomName();
-        execute("SINK INTO " + mappingName + " VALUES (0, 'name-0')");
+        insertItems(tableName, 2);
 
-        assertJdbcRowsAnyOrder(mySQLTableName, new Row(0, "name-0"));
+        execute("SINK INTO " + mappingName + " VALUES (0, 'name-10')");
+
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(0, "name-10"),
+                new Row(1, "name-1"));
     }
 }
