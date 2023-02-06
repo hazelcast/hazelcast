@@ -30,7 +30,7 @@ import com.hazelcast.internal.config.ConfigUtils;
 import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.config.DurableExecutorConfigReadOnly;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
-import com.hazelcast.internal.config.ExternalDataStoreConfigReadOnly;
+import com.hazelcast.internal.config.ExternalDataLinkConfigReadOnly;
 import com.hazelcast.internal.config.ListConfigReadOnly;
 import com.hazelcast.internal.config.MapConfigReadOnly;
 import com.hazelcast.internal.config.MemberXmlConfigRootTagRecognizer;
@@ -220,7 +220,7 @@ public class Config {
     private IntegrityCheckerConfig integrityCheckerConfig = new IntegrityCheckerConfig();
 
     // @since 5.2
-    private final Map<String, ExternalDataStoreConfig> externalDataStoreConfigs = new ConcurrentHashMap<>();
+    private final Map<String, ExternalDataLinkConfig> externalDataLinkConfigs = new ConcurrentHashMap<>();
 
     public Config() {
     }
@@ -3100,35 +3100,35 @@ public class Config {
     }
 
     /**
-     * Returns the map of external data store configurations, mapped by config name.
+     * Returns the map of external data link configurations, mapped by config name.
      *
      * @since 5.2
      */
     @Beta
-    public Map<String, ExternalDataStoreConfig> getExternalDataStoreConfigs() {
-        return externalDataStoreConfigs;
+    public Map<String, ExternalDataLinkConfig> getExternalDataLinkConfigs() {
+        return externalDataLinkConfigs;
     }
 
     /**
-     * Sets the map of external data store configurations, mapped by config name.
+     * Sets the map of external data link configurations, mapped by config name.
      * <p>
      * <p>
-     * Example configuration: see {@link #addExternalDataStoreConfig(com.hazelcast.config.ExternalDataStoreConfig)}
+     * Example configuration: see {@link #addExternalDataLinkConfig(ExternalDataLinkConfig)}
      *
      * @since 5.2
      */
     @Beta
-    public Config setExternalDataStoreConfigs(Map<String, ExternalDataStoreConfig> externalDataStoreConfigs) {
-        this.externalDataStoreConfigs.clear();
-        this.externalDataStoreConfigs.putAll(externalDataStoreConfigs);
-        for (Entry<String, ExternalDataStoreConfig> entry : externalDataStoreConfigs.entrySet()) {
+    public Config setExternalDataLinkConfigs(Map<String, ExternalDataLinkConfig> externalDataLinkConfigs) {
+        this.externalDataLinkConfigs.clear();
+        this.externalDataLinkConfigs.putAll(externalDataLinkConfigs);
+        for (Entry<String, ExternalDataLinkConfig> entry : externalDataLinkConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;
     }
 
     /**
-     * Adds an external data store configuration.
+     * Adds an external data link configuration.
      * <p>
      * <p>
      * Example:
@@ -3138,24 +3138,24 @@ public class Config {
      *      properties.put("jdbcUrl", jdbcUrl);
      *      properties.put("username", username);
      *      properties.put("password", password);
-     *      ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
-     *              .setName("my-jdbc-data-store")
-     *              .setClassName(JdbcDataStoreFactory.class.getName())
+     *      ExternalDataLinkConfig externalDataLinkConfig = new ExternalDataLinkConfig()
+     *              .setName("my-jdbc-data-link")
+     *              .setClassName(JdbcDataLinkFactory.class.getName())
      *              .setProperties(properties);
-     *      config.addExternalDataStoreConfig(externalDataStoreConfig);
+     *      config.addExternalDataLinkConfig(externalDataLinkConfig);
      * }</pre>
      *
      * @since 5.2
      */
     @Beta
-    public Config addExternalDataStoreConfig(ExternalDataStoreConfig externalDataStoreConfig) {
-        externalDataStoreConfigs.put(externalDataStoreConfig.getName(), externalDataStoreConfig);
+    public Config addExternalDataLinkConfig(ExternalDataLinkConfig externalDataLinkConfig) {
+        externalDataLinkConfigs.put(externalDataLinkConfig.getName(), externalDataLinkConfig);
         return this;
     }
 
 
     /**
-     * Returns the external data store configuration for the given name, creating one
+     * Returns the external data link configuration for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
      * The configuration is found by matching the configuration name
@@ -3168,15 +3168,15 @@ public class Config {
      * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
-     * {@link #addExternalDataStoreConfig(ExternalDataStoreConfig)}.
+     * {@link #addExternalDataLinkConfig(ExternalDataLinkConfig)}.
      * <p>
      * Because it adds new configurations if they are not already present,
      * this method is intended to be used before this config is used to
      * create a hazelcast instance. Afterwards, newly added configurations
      * may be ignored.
      *
-     * @param name data store name
-     * @return external data store configuration
+     * @param name data link name
+     * @return external data link configuration
      * @throws InvalidConfigurationException if ambiguous configurations are
      *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
@@ -3185,12 +3185,12 @@ public class Config {
      * @since 5.2
      */
     @Beta
-    public ExternalDataStoreConfig getExternalDataStoreConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, externalDataStoreConfigs, name, ExternalDataStoreConfig.class);
+    public ExternalDataLinkConfig getExternalDataLinkConfig(String name) {
+        return ConfigUtils.getConfig(configPatternMatcher, externalDataLinkConfigs, name, ExternalDataLinkConfig.class);
     }
 
     /**
-     * Returns a read-only {@link ExternalDataStoreConfig}
+     * Returns a read-only {@link ExternalDataLinkConfig}
      * configuration for the given name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
@@ -3198,8 +3198,8 @@ public class Config {
      * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
-     * @param name name of the external DataStore
-     * @return the external DataStore configuration
+     * @param name name of the external data link
+     * @return the external data link configuration
      * @throws InvalidConfigurationException if ambiguous configurations are
      *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
@@ -3209,13 +3209,13 @@ public class Config {
      * @since 5.2
      */
     @Beta
-    public ExternalDataStoreConfig findExternalDataStoreConfig(String name) {
+    public ExternalDataLinkConfig findExternalDataLinkConfig(String name) {
         name = getBaseName(name);
-        ExternalDataStoreConfig config = lookupByPattern(configPatternMatcher, externalDataStoreConfigs, name);
+        ExternalDataLinkConfig config = lookupByPattern(configPatternMatcher, externalDataLinkConfigs, name);
         if (config != null) {
-            return new ExternalDataStoreConfigReadOnly(config);
+            return new ExternalDataLinkConfigReadOnly(config);
         }
-        return new ExternalDataStoreConfigReadOnly(getExternalDataStoreConfig("default"));
+        return new ExternalDataLinkConfigReadOnly(getExternalDataLinkConfig("default"));
     }
 
     /**
@@ -3281,7 +3281,7 @@ public class Config {
                 + ", jetConfig=" + jetConfig
                 + ", deviceConfigs=" + deviceConfigs
                 + ", integrityCheckerConfig=" + integrityCheckerConfig
-                + ", externalDataStoreConfigs=" + externalDataStoreConfigs
+                + ", externalDataLinkConfigs=" + externalDataLinkConfigs
                 + '}';
     }
 }

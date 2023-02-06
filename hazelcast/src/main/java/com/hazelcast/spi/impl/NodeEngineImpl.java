@@ -23,8 +23,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datastore.ExternalDataStoreService;
-import com.hazelcast.datastore.impl.ExternalDataStoreServiceImpl;
+import com.hazelcast.datalink.ExternalDataLinkService;
+import com.hazelcast.datalink.impl.ExternalDataLinkServiceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.diagnostics.Diagnostics;
@@ -132,7 +132,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
     private final ConcurrencyDetection concurrencyDetection;
     private final TenantControlServiceImpl tenantControlService;
-    private final ExternalDataStoreService externalDataStoreService;
+    private final ExternalDataLinkService externalDataLinkService;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     public NodeEngineImpl(Node node) {
@@ -159,7 +159,7 @@ public class NodeEngineImpl implements NodeEngine {
             this.transactionManagerService = new TransactionManagerServiceImpl(this);
             this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
             this.sqlService = new SqlServiceImpl(this);
-            this.externalDataStoreService = new ExternalDataStoreServiceImpl(node, configClassLoader);
+            this.externalDataLinkService = new ExternalDataLinkServiceImpl(node, configClassLoader);
             this.packetDispatcher = new PacketDispatcher(
                     logger,
                     operationService.getOperationExecutor(),
@@ -376,8 +376,8 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public ExternalDataStoreService getExternalDataStoreService() {
-        return externalDataStoreService;
+    public ExternalDataLinkService getExternalDataLinkService() {
+        return externalDataLinkService;
     }
 
     @Override
@@ -581,8 +581,8 @@ public class NodeEngineImpl implements NodeEngine {
         if (diagnostics != null) {
             diagnostics.shutdown();
         }
-        if (externalDataStoreService != null) {
-            externalDataStoreService.close();
+        if (externalDataLinkService != null) {
+            externalDataLinkService.close();
         }
     }
 

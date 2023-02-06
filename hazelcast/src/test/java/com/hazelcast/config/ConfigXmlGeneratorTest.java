@@ -34,7 +34,7 @@ import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
-import com.hazelcast.datastore.impl.ExternalDataStoreServiceImplTest;
+import com.hazelcast.datalink.impl.ExternalDataLinkServiceImplTest;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.config.JetConfig;
@@ -1463,21 +1463,21 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExternalDataStoreConfig() {
+    public void testExternalDataLinkConfig() {
         Config expectedConfig = new Config();
 
         Properties properties = new Properties();
-        properties.put("jdbcUrl", "jdbc:h2:mem:" + ExternalDataStoreServiceImplTest.class.getSimpleName());
-        ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
-                .setName("test-data-store")
-                .setClassName("com.hazelcast.datastore.JdbcDataStoreFactory")
+        properties.put("jdbcUrl", "jdbc:h2:mem:" + ExternalDataLinkServiceImplTest.class.getSimpleName());
+        ExternalDataLinkConfig externalDataLinkConfig = new ExternalDataLinkConfig()
+                .setName("test-data-link")
+                .setClassName("com.hazelcast.dtalink.JdbcDataLinkFactory")
                 .setProperties(properties);
 
-        expectedConfig.addExternalDataStoreConfig(externalDataStoreConfig);
+        expectedConfig.addExternalDataLinkConfig(externalDataLinkConfig);
 
         Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
 
-        assertEquals(expectedConfig.getExternalDataStoreConfigs(), actualConfig.getExternalDataStoreConfigs());
+        assertEquals(expectedConfig.getExternalDataLinkConfigs(), actualConfig.getExternalDataLinkConfigs());
     }
 
     private Config getNewConfigViaXMLGenerator(Config config) {

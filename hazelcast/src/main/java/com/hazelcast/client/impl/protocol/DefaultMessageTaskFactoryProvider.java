@@ -487,7 +487,7 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddCacheConfigMessa
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddCardinalityEstimatorConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddDurableExecutorConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddExecutorConfigMessageTask;
-import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddExternalDataStoreConfigMessageTask;
+import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddExternalDataLinkConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddFlakeIdGeneratorConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddListConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddMapConfigMessageTask;
@@ -1661,7 +1661,7 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories.put(DynamicConfigAddPNCounterConfigCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new AddPNCounterConfigMessageTask(cm, node, con));
         factories.put(DynamicConfigAddExternalDataStoreConfigCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new AddExternalDataStoreConfigMessageTask(cm, node, con));
+                (cm, con) -> new AddExternalDataLinkConfigMessageTask(cm, node, con));
     }
 
     private void initializeFlakeIdGeneratorTaskFactories() {

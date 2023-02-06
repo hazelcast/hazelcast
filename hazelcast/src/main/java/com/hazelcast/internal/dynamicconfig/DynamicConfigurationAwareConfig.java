@@ -28,7 +28,7 @@ import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.DynamicConfigurationConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.ExternalDataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
@@ -64,7 +64,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
 import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
-import com.hazelcast.internal.config.ExternalDataStoreConfigReadOnly;
+import com.hazelcast.internal.config.ExternalDataLinkConfigReadOnly;
 import com.hazelcast.internal.config.FlakeIdGeneratorConfigReadOnly;
 import com.hazelcast.internal.config.ListConfigReadOnly;
 import com.hazelcast.internal.config.MapConfigReadOnly;
@@ -1220,39 +1220,39 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public Map<String, ExternalDataStoreConfig> getExternalDataStoreConfigs() {
-        Map<String, ExternalDataStoreConfig> staticConfigs = staticConfig.getExternalDataStoreConfigs();
-        Map<String, ExternalDataStoreConfig> dynamicConfigs = configurationService.getExternalDataStoreConfigs();
+    public Map<String, ExternalDataLinkConfig> getExternalDataLinkConfigs() {
+        Map<String, ExternalDataLinkConfig> staticConfigs = staticConfig.getExternalDataLinkConfigs();
+        Map<String, ExternalDataLinkConfig> dynamicConfigs = configurationService.getExternalDataLinkConfigs();
 
         return aggregate(staticConfigs, dynamicConfigs);
     }
 
     @Override
-    public Config setExternalDataStoreConfigs(Map<String, ExternalDataStoreConfig> externalDataStoreConfigs) {
+    public Config setExternalDataLinkConfigs(Map<String, ExternalDataLinkConfig> externalDataLinkConfigs) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 
     @Override
-    public Config addExternalDataStoreConfig(ExternalDataStoreConfig externalDataStoreConfig) {
-        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getExternalDataStoreConfigs(),
-                externalDataStoreConfig.getName(), externalDataStoreConfig);
+    public Config addExternalDataLinkConfig(ExternalDataLinkConfig externalDataLinkConfig) {
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getExternalDataLinkConfigs(),
+                externalDataLinkConfig.getName(), externalDataLinkConfig);
         if (staticConfigDoesNotExist) {
-            configurationService.broadcastConfig(externalDataStoreConfig);
+            configurationService.broadcastConfig(externalDataLinkConfig);
         }
         return this;
     }
 
     @Override
-    public ExternalDataStoreConfig getExternalDataStoreConfig(String name) {
-        return getExternalDataStoreConfigInternal(name, name);
+    public ExternalDataLinkConfig getExternalDataLinkConfig(String name) {
+        return getExternalDataLinkConfigInternal(name, name);
     }
 
-    private ExternalDataStoreConfig getExternalDataStoreConfigInternal(String name, String fallbackName) {
-        return (ExternalDataStoreConfig) configSearcher.getConfig(name, fallbackName, supplierFor(ExternalDataStoreConfig.class));
+    private ExternalDataLinkConfig getExternalDataLinkConfigInternal(String name, String fallbackName) {
+        return (ExternalDataLinkConfig) configSearcher.getConfig(name, fallbackName, supplierFor(ExternalDataLinkConfig.class));
     }
 
     @Override
-    public ExternalDataStoreConfig findExternalDataStoreConfig(String name) {
-        return new ExternalDataStoreConfigReadOnly(getExternalDataStoreConfigInternal(name, "default"));
+    public ExternalDataLinkConfig findExternalDataLinkConfig(String name) {
+        return new ExternalDataLinkConfigReadOnly(getExternalDataLinkConfigInternal(name, "default"));
     }
 }

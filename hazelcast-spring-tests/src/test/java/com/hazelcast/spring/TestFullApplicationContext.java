@@ -48,7 +48,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.ExternalDataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
@@ -1637,12 +1637,12 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExternalDataStoreConfig() {
-        ExternalDataStoreConfig externalDataStoreConfig = config.getExternalDataStoreConfig("my-data-store");
-        assertNotNull(externalDataStoreConfig);
-        assertEquals("my-data-store", externalDataStoreConfig.getName());
-        assertEquals("com.hazelcast.datastore.JdbcDataStoreFactory", externalDataStoreConfig.getClassName());
-        assertFalse(externalDataStoreConfig.isShared());
-        assertEquals("jdbc:mysql://dummy:3306", externalDataStoreConfig.getProperty("jdbcUrl"));
+    public void testExternalDataLinkConfig() {
+        ExternalDataLinkConfig externalDataLinkConfig = config.getExternalDataLinkConfig("my-data-link");
+        assertNotNull(externalDataLinkConfig);
+        assertEquals("my-data-link", externalDataLinkConfig.getName());
+        assertEquals("com.hazelcast.datalink.JdbcDataLinkFactory", externalDataLinkConfig.getClassName());
+        assertFalse(externalDataLinkConfig.isShared());
+        assertEquals("jdbc:mysql://dummy:3306", externalDataLinkConfig.getProperty("jdbcUrl"));
     }
 }

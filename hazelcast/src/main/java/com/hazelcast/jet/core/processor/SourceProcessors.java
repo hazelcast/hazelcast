@@ -19,8 +19,8 @@ package com.hazelcast.jet.core.processor;
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datastore.ExternalDataStoreFactory;
-import com.hazelcast.datastore.JdbcDataStoreFactory;
+import com.hazelcast.datalink.ExternalDataLinkFactory;
+import com.hazelcast.datalink.JdbcDataLinkFactory;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.ConsumerEx;
@@ -46,7 +46,7 @@ import com.hazelcast.jet.impl.connector.StreamJmsP;
 import com.hazelcast.jet.impl.connector.StreamSocketP;
 import com.hazelcast.jet.impl.pipeline.SourceBufferImpl;
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.pipeline.ExternalDataStoreRef;
+import com.hazelcast.jet.pipeline.ExternalDataLinkRef;
 import com.hazelcast.jet.pipeline.FileSourceBuilder;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.SourceBuilder;
@@ -449,28 +449,28 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for {@link Sources#jdbc(
-     *ExternalDataStoreRef, ToResultSetFunction, FunctionEx)}.
+     *ExternalDataLinkRef, ToResultSetFunction, FunctionEx)}.
      *
      * @since 5.2
      */
     public static <T> ProcessorMetaSupplier readJdbcP(
-            @Nonnull ExternalDataStoreRef externalDataStoreRef,
+            @Nonnull ExternalDataLinkRef externalDataLinkRef,
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return ReadJdbcP.supplier(context -> getDataStoreFactory(context, externalDataStoreRef.getName()).getDataStore(),
+        return ReadJdbcP.supplier(context -> getDataLinkFactory(context, externalDataLinkRef.getName()).getDataLink(),
                 resultSetFn,
                 mapOutputFn);
     }
 
-    private static JdbcDataStoreFactory getDataStoreFactory(ProcessorSupplier.Context context, String name) {
+    private static JdbcDataLinkFactory getDataLinkFactory(ProcessorSupplier.Context context, String name) {
         NodeEngineImpl nodeEngine = Util.getNodeEngine(context.hazelcastInstance());
-        ExternalDataStoreFactory<?> dataStoreFactory = nodeEngine.getExternalDataStoreService().getExternalDataStoreFactory(name);
-        if (!(dataStoreFactory instanceof JdbcDataStoreFactory)) {
-            String className = JdbcDataStoreFactory.class.getSimpleName();
-            throw new HazelcastException("Data store factory '" + name + "' must be an instance of " + className);
+        ExternalDataLinkFactory<?> dataLinkFactory = nodeEngine.getExternalDataLinkService().getExternalDataLinkFactory(name);
+        if (!(dataLinkFactory instanceof JdbcDataLinkFactory)) {
+            String className = JdbcDataLinkFactory.class.getSimpleName();
+            throw new HazelcastException("Data link factory '" + name + "' must be an instance of " + className);
         }
-        return (JdbcDataStoreFactory) dataStoreFactory;
+        return (JdbcDataLinkFactory) dataLinkFactory;
     }
 
     /**

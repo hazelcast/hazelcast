@@ -1088,12 +1088,12 @@
         <statement-timeout-millis>0</statement-timeout-millis>
     </sql>
 
-    <external-data-store name="mysql-database">
-        <class-name>com.hazelcast.datastore.JdbcDataStoreFactory</class-name>
+    <external-data-link name="mysql-database">
+        <class-name>com.hazelcast.datalink.JdbcDataLinkFactory</class-name>
         <properties>
             <property name="jdbcUrl">jdbc:mysql://dummy:3306</property>
         </properties>
         <shared>false</shared>
-    </external-data-store>
+    </external-data-link>
 
 </hazelcast>

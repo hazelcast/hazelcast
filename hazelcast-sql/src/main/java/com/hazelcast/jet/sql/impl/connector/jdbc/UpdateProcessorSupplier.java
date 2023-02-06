@@ -55,12 +55,12 @@ public class UpdateProcessorSupplier
     public UpdateProcessorSupplier() {
     }
 
-    public UpdateProcessorSupplier(@Nonnull String externalDataStoreRef,
+    public UpdateProcessorSupplier(@Nonnull String externalDataLinkRef,
                                    @NonNull String query,
                                    @Nonnull int[] parameterPositions,
                                    int batchLimit
     ) {
-        super(externalDataStoreRef);
+        super(externalDataLinkRef);
         this.query = requireNonNull(query, "query must not be null");
         this.parameterPositions = requireNonNull(parameterPositions, "parameterPositions must not be null");
         this.batchLimit = batchLimit;
@@ -103,12 +103,12 @@ public class UpdateProcessorSupplier
     @Nullable
     @Override
     public List<Permission> permissions() {
-        return singletonList(ConnectorPermission.jdbc(externalDataStoreRef, ACTION_WRITE));
+        return singletonList(ConnectorPermission.jdbc(externalDataLinkRef, ACTION_WRITE));
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeString(externalDataStoreRef);
+        out.writeString(externalDataLinkRef);
         out.writeString(query);
         out.writeIntArray(parameterPositions);
         out.writeInt(batchLimit);
@@ -116,7 +116,7 @@ public class UpdateProcessorSupplier
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        externalDataStoreRef = in.readString();
+        externalDataLinkRef = in.readString();
         query = in.readString();
         parameterPositions = in.readIntArray();
         batchLimit = in.readInt();

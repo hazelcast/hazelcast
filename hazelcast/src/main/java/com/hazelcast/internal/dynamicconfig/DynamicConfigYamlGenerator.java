@@ -35,7 +35,7 @@ import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.ExternalDataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.config.IndexConfig;
@@ -149,7 +149,7 @@ public class DynamicConfigYamlGenerator {
         wanReplicationYamlGenerator(root, config);
         networkConfigYamlGenerator(root, config);
         advancedNetworkConfigYamlGenerator(root, config);
-        externalDataStoreYamlGenerator(root, config);
+        externalDataLinkYamlGenerator(root, config);
         DumpSettings dumpSettings = DumpSettings.builder()
                 .setDefaultFlowStyle(FlowStyle.BLOCK)
                 .setIndicatorIndent(INDENT - 2)
@@ -662,26 +662,26 @@ public class DynamicConfigYamlGenerator {
         parent.put("pn-counter", child);
     }
 
-    public static void externalDataStoreYamlGenerator(Map<String, Object> parent, Config config) {
-        if (config.getExternalDataStoreConfigs().isEmpty()) {
+    public static void externalDataLinkYamlGenerator(Map<String, Object> parent, Config config) {
+        if (config.getExternalDataLinkConfigs().isEmpty()) {
             return;
         }
 
         Map<String, Object> child = new LinkedHashMap<>();
-        for (ExternalDataStoreConfig externalDataStoreConfig : config.getExternalDataStoreConfigs().values()) {
+        for (ExternalDataLinkConfig externalDataLinkConfig : config.getExternalDataLinkConfigs().values()) {
             Map<String, Object> subConfigAsMap = new LinkedHashMap<>();
 
             addNonNullToMap(subConfigAsMap, "class-name",
-                    externalDataStoreConfig.getClassName());
+                    externalDataLinkConfig.getClassName());
             addNonNullToMap(subConfigAsMap, "shared",
-                    externalDataStoreConfig.isShared());
+                    externalDataLinkConfig.isShared());
             addNonNullToMap(subConfigAsMap, "properties",
-                    getPropertiesAsMap(externalDataStoreConfig.getProperties()));
+                    getPropertiesAsMap(externalDataLinkConfig.getProperties()));
 
-            child.put(externalDataStoreConfig.getName(), subConfigAsMap);
+            child.put(externalDataLinkConfig.getName(), subConfigAsMap);
         }
 
-        parent.put("external-data-store", child);
+        parent.put("external-data-link", child);
     }
 
     public static void wanReplicationYamlGenerator(Map<String, Object> parent, Config config) {

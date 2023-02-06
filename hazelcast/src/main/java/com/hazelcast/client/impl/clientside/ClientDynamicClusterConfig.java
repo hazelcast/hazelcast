@@ -54,7 +54,7 @@ import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.DynamicConfigurationConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.ExternalDataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
@@ -1118,31 +1118,31 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
-    public Map<String, ExternalDataStoreConfig> getExternalDataStoreConfigs() {
+    public Map<String, ExternalDataLinkConfig> getExternalDataLinkConfigs() {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
-    public Config setExternalDataStoreConfigs(Map<String, ExternalDataStoreConfig> externalDataStoreConfigs) {
+    public Config setExternalDataLinkConfigs(Map<String, ExternalDataLinkConfig> externalDataLinkConfigs) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
-    public Config addExternalDataStoreConfig(ExternalDataStoreConfig externalDataStoreConfig) {
+    public Config addExternalDataLinkConfig(ExternalDataLinkConfig externalDataLinkConfig) {
         ClientMessage request = DynamicConfigAddExternalDataStoreConfigCodec.encodeRequest(
-                externalDataStoreConfig.getName(), externalDataStoreConfig.getClassName(),
-                externalDataStoreConfig.isShared(), toMap(externalDataStoreConfig.getProperties()));
+                externalDataLinkConfig.getName(), externalDataLinkConfig.getClassName(),
+                externalDataLinkConfig.isShared(), toMap(externalDataLinkConfig.getProperties()));
         invoke(request);
         return this;
     }
 
     @Override
-    public ExternalDataStoreConfig getExternalDataStoreConfig(String name) {
+    public ExternalDataLinkConfig getExternalDataLinkConfig(String name) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
-    public ExternalDataStoreConfig findExternalDataStoreConfig(String name) {
+    public ExternalDataLinkConfig findExternalDataLinkConfig(String name) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

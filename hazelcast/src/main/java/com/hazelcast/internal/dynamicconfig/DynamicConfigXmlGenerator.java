@@ -35,7 +35,7 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.ExternalDataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -402,12 +402,12 @@ public final class DynamicConfigXmlGenerator {
         }
     }
 
-    public static void externalDataStoreXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, Config config) {
-        for (ExternalDataStoreConfig externalDataStoreConfig : config.getExternalDataStoreConfigs().values()) {
-            gen.open("external-data-store", "name", externalDataStoreConfig.getName())
-                    .node("class-name", externalDataStoreConfig.getClassName())
-                    .node("shared", externalDataStoreConfig.isShared())
-                    .appendProperties(externalDataStoreConfig.getProperties())
+    public static void externalDataLinkXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, Config config) {
+        for (ExternalDataLinkConfig externalDataLinkConfig : config.getExternalDataLinkConfigs().values()) {
+            gen.open("external-data-link", "name", externalDataLinkConfig.getName())
+                    .node("class-name", externalDataLinkConfig.getClassName())
+                    .node("shared", externalDataLinkConfig.isShared())
+                    .appendProperties(externalDataLinkConfig.getProperties())
                     .close();
         }
     }

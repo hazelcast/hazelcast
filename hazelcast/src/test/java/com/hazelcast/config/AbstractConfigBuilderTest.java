@@ -702,7 +702,7 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testIntegrityCheckerConfig();
 
     @Test
-    public abstract void testExternalDataStoreConfigs();
+    public abstract void testExternalDataLinkConfigs();
 
     protected abstract Config buildAuditlogConfig();
 

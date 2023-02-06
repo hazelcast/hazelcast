@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.datastore.ExternalDataStoreFactory;
-import com.hazelcast.datastore.ExternalDataStoreService;
-import com.hazelcast.datastore.impl.CloseableDataSource;
+import com.hazelcast.datalink.ExternalDataLinkFactory;
+import com.hazelcast.datalink.ExternalDataLinkService;
+import com.hazelcast.datalink.impl.CloseableDataSource;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.jet.core.ProcessorSupplier;
 
@@ -30,25 +30,25 @@ import static java.util.Objects.requireNonNull;
 
 abstract class AbstractJdbcSqlConnectorProcessorSupplier implements ProcessorSupplier {
 
-    protected String externalDataStoreRef;
+    protected String externalDataLinkRef;
 
     protected transient DataSource dataSource;
 
     AbstractJdbcSqlConnectorProcessorSupplier() {
     }
 
-    AbstractJdbcSqlConnectorProcessorSupplier(String externalDataStoreRef) {
-        this.externalDataStoreRef = requireNonNull(externalDataStoreRef, "externalDataStoreRef must not be null");
+    AbstractJdbcSqlConnectorProcessorSupplier(String externalDataLinkRef) {
+        this.externalDataLinkRef = requireNonNull(externalDataLinkRef, "externalDataLinkRef must not be null");
     }
 
     public void init(@Nonnull Context context) throws Exception {
-        ExternalDataStoreService externalDataStoreService = ((HazelcastInstanceImpl) context.hazelcastInstance())
-                .node.getNodeEngine().getExternalDataStoreService();
+        ExternalDataLinkService externalDataLinkService = ((HazelcastInstanceImpl) context.hazelcastInstance())
+                .node.getNodeEngine().getExternalDataLinkService();
 
-        ExternalDataStoreFactory<DataSource> factory = externalDataStoreService
-                .getExternalDataStoreFactory(externalDataStoreRef);
+        ExternalDataLinkFactory<DataSource> factory = externalDataLinkService
+                .getExternalDataLinkFactory(externalDataLinkRef);
 
-        dataSource = factory.getDataStore();
+        dataSource = factory.getDataLink();
     }
 
     @Override

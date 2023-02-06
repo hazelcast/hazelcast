@@ -19,16 +19,16 @@ package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExternalDataStoreConfigCodec;
 import com.hazelcast.client.impl.protocol.util.PropertiesUtil;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.ExternalDataLinkConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class AddExternalDataStoreConfigMessageTask
+public class AddExternalDataLinkConfigMessageTask
         extends AbstractAddConfigMessageTask<DynamicConfigAddExternalDataStoreConfigCodec.RequestParameters> {
 
-    public AddExternalDataStoreConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public AddExternalDataLinkConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
@@ -44,7 +44,7 @@ public class AddExternalDataStoreConfigMessageTask
 
     @Override
     protected IdentifiedDataSerializable getConfig() {
-        ExternalDataStoreConfig config = new ExternalDataStoreConfig(parameters.name);
+        ExternalDataLinkConfig config = new ExternalDataLinkConfig(parameters.name);
         config.setClassName(parameters.className);
         config.setShared(parameters.shared);
         config.setProperties(PropertiesUtil.fromMap(parameters.properties));
@@ -59,8 +59,8 @@ public class AddExternalDataStoreConfigMessageTask
     @Override
     protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
         DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
-        ExternalDataStoreConfig externalDataStoreConfig = (ExternalDataStoreConfig) config;
-        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getExternalDataStoreConfigs(),
-                externalDataStoreConfig.getName(), externalDataStoreConfig);
+        ExternalDataLinkConfig externalDataLinkConfig = (ExternalDataLinkConfig) config;
+        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getExternalDataLinkConfigs(),
+                externalDataLinkConfig.getName(), externalDataLinkConfig);
     }
 }

@@ -15,8 +15,8 @@
  */
 
 /**
- * <p>This package contains implementation of handling external data stores.<br>
+ * <p>This package contains implementation of handling external data links.<br>
  *
  * @since 5.2
  */
-package com.hazelcast.datastore.impl;
+package com.hazelcast.datalink.impl;

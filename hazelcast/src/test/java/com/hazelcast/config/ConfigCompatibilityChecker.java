@@ -140,8 +140,8 @@ public class ConfigCompatibilityChecker {
                 new InstanceTrackingConfigChecker());
         checkCompatibleConfigs("native memory", c1.getNativeMemoryConfig(), c2.getNativeMemoryConfig(),
                 new NativeMemoryConfigChecker());
-        checkCompatibleConfigs("external data store", c1, c2, c1.getExternalDataStoreConfigs(), c2.getExternalDataStoreConfigs(),
-                new ExternalDataStoreConfigChecker());
+        checkCompatibleConfigs("external data link", c1, c2, c1.getExternalDataLinkConfigs(), c2.getExternalDataLinkConfigs(),
+                new ExternalDataLinkConfigChecker());
 
         return true;
     }
@@ -689,9 +689,9 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    private static class ExternalDataStoreConfigChecker extends ConfigChecker<ExternalDataStoreConfig> {
+    private static class ExternalDataLinkConfigChecker extends ConfigChecker<ExternalDataLinkConfig> {
         @Override
-        boolean check(ExternalDataStoreConfig c1, ExternalDataStoreConfig c2) {
+        boolean check(ExternalDataLinkConfig c1, ExternalDataLinkConfig c2) {
             if (c1 == c2) {
                 return true;
             }
@@ -705,8 +705,8 @@ public class ConfigCompatibilityChecker {
         }
 
         @Override
-        ExternalDataStoreConfig getDefault(Config c) {
-            return c.getExternalDataStoreConfig("default");
+        ExternalDataLinkConfig getDefault(Config c) {
+            return c.getExternalDataLinkConfig("default");
         }
     }
 

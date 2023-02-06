@@ -22,7 +22,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.ExternalDataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.MapConfig;
@@ -321,21 +321,21 @@ public final class ConfigSearch {
             }
         });
 
-        CONFIG_SUPPLIERS.put(ExternalDataStoreConfig.class, new ConfigSupplier<ExternalDataStoreConfig>() {
+        CONFIG_SUPPLIERS.put(ExternalDataLinkConfig.class, new ConfigSupplier<ExternalDataLinkConfig>() {
             @Override
-            public ExternalDataStoreConfig getDynamicConfig(@Nonnull ConfigurationService configurationService,
-                                                            @Nonnull String name) {
-                return configurationService.findExternalDataStoreConfig(name);
+            public ExternalDataLinkConfig getDynamicConfig(@Nonnull ConfigurationService configurationService,
+                                                           @Nonnull String name) {
+                return configurationService.findExternalDataLinkConfig(name);
             }
 
             @Override
-            public ExternalDataStoreConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
-                return staticConfig.getExternalDataStoreConfig(name);
+            public ExternalDataLinkConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
+                return staticConfig.getExternalDataLinkConfig(name);
             }
 
             @Override
-            public Map<String, ExternalDataStoreConfig> getStaticConfigs(@Nonnull Config staticConfig) {
-                return staticConfig.getExternalDataStoreConfigs();
+            public Map<String, ExternalDataLinkConfig> getStaticConfigs(@Nonnull Config staticConfig) {
+                return staticConfig.getExternalDataLinkConfigs();
             }
         });
     }

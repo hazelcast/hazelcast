@@ -42,7 +42,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.ExternalDataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartClusterDataRecoveryPolicy;
 import com.hazelcast.config.HotRestartConfig;
@@ -186,7 +186,7 @@ import static com.hazelcast.internal.config.ConfigSections.CRDT_REPLICATION;
 import static com.hazelcast.internal.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.DYNAMIC_CONFIGURATION;
 import static com.hazelcast.internal.config.ConfigSections.EXECUTOR_SERVICE;
-import static com.hazelcast.internal.config.ConfigSections.EXTERNAL_DATA_STORE;
+import static com.hazelcast.internal.config.ConfigSections.EXTERNAL_DATA_LINK;
 import static com.hazelcast.internal.config.ConfigSections.FLAKE_ID_GENERATOR;
 import static com.hazelcast.internal.config.ConfigSections.HOT_RESTART_PERSISTENCE;
 import static com.hazelcast.internal.config.ConfigSections.IMPORT;
@@ -380,8 +380,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleDynamicConfiguration(node);
         } else if (matches(INTEGRITY_CHECKER.getName(), nodeName)) {
             handleIntegrityChecker(node);
-        } else if (matches(EXTERNAL_DATA_STORE.getName(), nodeName)) {
-            handleExternalDataStores(node);
+        } else if (matches(EXTERNAL_DATA_LINK.getName(), nodeName)) {
+            handleExternalDataLinks(node);
         } else {
             return true;
         }
@@ -3431,22 +3431,22 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.getIntegrityCheckerConfig().setEnabled(enabled);
     }
 
-    protected void handleExternalDataStores(Node node) {
+    protected void handleExternalDataLinks(Node node) {
         String name = getAttribute(node, "name");
-        ExternalDataStoreConfig externalDataStoreConfig = ConfigUtils.getByNameOrNew(config.getExternalDataStoreConfigs(),
-                name, ExternalDataStoreConfig.class);
-        handleExternalDataStore(node, externalDataStoreConfig);
+        ExternalDataLinkConfig externalDataLinkConfig = ConfigUtils.getByNameOrNew(config.getExternalDataLinkConfigs(),
+                name, ExternalDataLinkConfig.class);
+        handleExternalDataLink(node, externalDataLinkConfig);
     }
 
-    protected void handleExternalDataStore(Node node, ExternalDataStoreConfig externalDataStoreConfig) {
+    protected void handleExternalDataLink(Node node, ExternalDataLinkConfig externalDataLinkConfig) {
         for (Node child : childElements(node)) {
             String childName = cleanNodeName(child);
             if (matches("class-name", childName)) {
-                externalDataStoreConfig.setClassName(getTextContent(child));
+                externalDataLinkConfig.setClassName(getTextContent(child));
             } else if (matches("properties", childName)) {
-                fillProperties(child, externalDataStoreConfig.getProperties());
+                fillProperties(child, externalDataLinkConfig.getProperties());
             } else if (matches("shared", childName)) {
-                externalDataStoreConfig.setShared(getBooleanValue(getTextContent(child)));
+                externalDataLinkConfig.setShared(getBooleanValue(getTextContent(child)));
             }
         }
     }

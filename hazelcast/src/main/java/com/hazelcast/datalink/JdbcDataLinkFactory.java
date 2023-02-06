@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.datastore;
+package com.hazelcast.datalink;
 
-import com.hazelcast.config.ExternalDataStoreConfig;
-import com.hazelcast.datastore.impl.CloseableDataSource;
+import com.hazelcast.config.ExternalDataLinkConfig;
+import com.hazelcast.datalink.impl.CloseableDataSource;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.spi.annotation.Beta;
 import com.zaxxer.hikari.HikariConfig;
@@ -29,9 +29,9 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Creates a JDBC data store as a {@link DataSource}.
+ * Creates a JDBC data link as a {@link DataSource}.
  * <p>
- * Implementation is based on {@link HikariDataSource}. {@link ExternalDataStoreConfig#getProperties()} are passed directly
+ * Implementation is based on {@link HikariDataSource}. {@link ExternalDataLinkConfig#getProperties()} are passed directly
  * to {@link HikariConfig}. For available options see
  * <a href="https://github.com/brettwooldridge/HikariCP#gear-configuration-knobs-baby">HikariCP configuration</a>
  * </p>
@@ -39,17 +39,17 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @since 5.2
  */
 @Beta
-public class JdbcDataStoreFactory implements ExternalDataStoreFactory<DataSource> {
+public class JdbcDataLinkFactory implements ExternalDataLinkFactory<DataSource> {
 
     private static final int JDBC_TEST_CONNECTION_TIMEOUT_SECONDS = 5;
     private static final AtomicInteger DATA_SOURCE_COUNTER = new AtomicInteger();
 
     protected HikariDataSource sharedDataSource;
     protected CloseableDataSource sharedCloseableDataSource;
-    protected ExternalDataStoreConfig config;
+    protected ExternalDataLinkConfig config;
 
     @Override
-    public void init(ExternalDataStoreConfig config) {
+    public void init(ExternalDataLinkConfig config) {
         this.config = config;
         if (config.isShared()) {
             sharedDataSource = doCreateDataSource();
@@ -58,14 +58,14 @@ public class JdbcDataStoreFactory implements ExternalDataStoreFactory<DataSource
     }
 
     @Override
-    public DataSource getDataStore() {
+    public DataSource getDataLink() {
         return config.isShared() ? sharedCloseableDataSource : CloseableDataSource.closing(doCreateDataSource());
     }
 
     @Override
     public boolean testConnection() throws Exception {
-        try (CloseableDataSource dataStore = ((CloseableDataSource) getDataStore());
-             Connection connection = dataStore.getConnection()) {
+        try (CloseableDataSource dataSource = ((CloseableDataSource) getDataLink());
+             Connection connection = dataSource.getConnection()) {
             return connection.isValid(JDBC_TEST_CONNECTION_TIMEOUT_SECONDS);
         }
     }
