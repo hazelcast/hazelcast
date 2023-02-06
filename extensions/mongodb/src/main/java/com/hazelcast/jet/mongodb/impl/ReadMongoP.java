@@ -378,12 +378,16 @@ public class ReadMongoP<I> extends AbstractProcessor {
         public Traverser<?> nextChunkTraverser() {
             Traverser<ChangeStreamDocument<Document>> traverser = cursor::tryNext;
             return traverser.flatMap(doc -> {
-                resumeToken = doc.getResumeToken();
-                long eventTime = clusterTime(doc);
-                I item = mapFn.apply(doc);
-                return item == null
-                        ? Traversers.empty()
-                        : eventTimeMapper.flatMapEvent(item, 0, eventTime);
+                if (doc == null) {
+                    return Traversers.empty();
+                } else {
+                    resumeToken = doc.getResumeToken();
+                    long eventTime = clusterTime(doc);
+                    I item = mapFn.apply(doc);
+                    return item == null
+                            ? Traversers.empty()
+                            : eventTimeMapper.flatMapEvent(item, 0, eventTime);
+                }
             });
         }
 
