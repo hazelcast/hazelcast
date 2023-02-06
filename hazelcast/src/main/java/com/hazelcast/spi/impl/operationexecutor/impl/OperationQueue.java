@@ -92,7 +92,17 @@ public interface OperationQueue {
      */
     int size();
 
+    /**
+     * Polls a single item or null if no items available.
+     *
+     * @return the polled item or null.
+     */
     Object poll();
 
-    boolean remaining();
+    /**
+     * Checks if the queue is empty.
+     *
+     * @return true when empty
+     */
+    boolean isEmpty();
 }

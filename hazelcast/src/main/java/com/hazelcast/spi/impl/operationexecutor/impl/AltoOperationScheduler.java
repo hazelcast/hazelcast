@@ -63,7 +63,7 @@ public class AltoOperationScheduler implements Scheduler {
             operationThread.process(task);
         }
 
-        return queue.remaining();
+        return !queue.isEmpty();
     }
 
     @Override

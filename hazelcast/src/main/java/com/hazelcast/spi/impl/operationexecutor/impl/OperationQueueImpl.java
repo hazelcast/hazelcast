@@ -72,7 +72,7 @@ public final class OperationQueueImpl implements OperationQueue {
 
     @Override
     public Object poll() {
-         for (; ; ) {
+        for (; ; ) {
             Object priorityItem = priorityQueue.poll();
             if (priorityItem != null) {
                 return priorityItem;
@@ -88,8 +88,8 @@ public final class OperationQueueImpl implements OperationQueue {
     }
 
     @Override
-    public boolean remaining() {
-        return !normalQueue.isEmpty() || !priorityQueue.isEmpty();
+    public boolean isEmpty() {
+        return normalQueue.isEmpty() && priorityQueue.isEmpty();
     }
 
     @Override

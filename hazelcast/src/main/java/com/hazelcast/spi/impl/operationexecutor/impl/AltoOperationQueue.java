@@ -83,7 +83,7 @@ public class AltoOperationQueue implements OperationQueue {
     }
 
     @Override
-    public boolean remaining() {
-        return !normalQueue.isEmpty() || !priorityQueue.isEmpty();
+    public boolean isEmpty() {
+        return normalQueue.isEmpty() && priorityQueue.isEmpty();
     }
 }
