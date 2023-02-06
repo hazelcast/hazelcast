@@ -16,16 +16,25 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
+/**
+ * The {@link AltoPartitionOperationThread} subclasses the {@link PartitionOperationThread} and
+ * overrides the loop method. In the original PartitionOperationThread, there is a loop that
+ * takes items from the operation queue and process them. With the AltoPartitionOperationThread
+ * the loop method forwards to the loopTask. The loopTasks loops over even sources (like
+ * Nio Selectors) and other queues including the OperationQueue. With the AltoPartitionOperationThread
+ * the thread blocks on the OperationQueue with a take. With the alto version, it will only poll
+ * and block on the Reactor (which in Nio blocks on the selector.select).
+ */
 public class AltoPartitionOperationThread extends PartitionOperationThread {
 
-    private final Runnable task;
+    private final Runnable loopTask;
 
-    public AltoPartitionOperationThread(Runnable task) {
-        this.task = task;
+    public AltoPartitionOperationThread(Runnable loopTask) {
+        this.loopTask = loopTask;
     }
 
     @Override
     protected void loop() {
-        task.run();
+        loopTask.run();
     }
 }
