@@ -149,10 +149,10 @@ public class JdbcSqlConnector implements SqlConnector {
             String schema = identifiers.getSchemaName();
             String tableName = identifiers.getTableName();
 
-            Set<String> pkColumns = readPrimaryKeyColumns(catalog,schema,
+            Set<String> pkColumns = readPrimaryKeyColumns(catalog, schema,
                     tableName, databaseMetaData);
 
-            return readColumns(catalog,schema, tableName, databaseMetaData, pkColumns);
+            return readColumns(catalog, schema, tableName, databaseMetaData, pkColumns);
 
         } catch (Exception e) {
             throw new HazelcastException("Could not execute readDbFields for table " + externalTableName, e);

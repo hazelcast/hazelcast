@@ -25,7 +25,7 @@ import org.apache.calcite.sql.dialect.H2SqlDialect;
 import org.apache.calcite.sql.dialect.MysqlSqlDialect;
 import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
 
-public class UpsertBuilder {
+public final class UpsertBuilder {
 
     private UpsertBuilder() {
     }

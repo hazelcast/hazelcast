@@ -34,10 +34,10 @@ import static org.junit.Assert.fail;
 public class PostgreSinkJdbcSqlConnectorWithSchemaTest extends JdbcSqlTestSupport {
 
     // Quoted table name in the DB
-    private String tableName;
+    private String tableName = "\"table.with.dot.in.name\"";
 
     // Quoted schema  name in the DB
-    private static final String schemaName = "\"test1 2\"";
+    private static final String schemaName = "\"schema.with.dot.in.name\"";
 
     @BeforeClass
     public static void beforeClass() {
@@ -52,11 +52,11 @@ public class PostgreSinkJdbcSqlConnectorWithSchemaTest extends JdbcSqlTestSuppor
 
     protected void myCreateMapping(String mappingName) {
         // Currently EXTERNAL NAME can not be
-        //"\"test 1\".mytable\""
+        //\"\"schema.with.dot.in.name\".\"table.with.dot.in.name\"\"
         // so use backtick for quoting
         execute(
                 "CREATE MAPPING \"" + mappingName + "\""
-                + " EXTERNAL NAME \"`test1 2`.mytable\""
+                + " EXTERNAL NAME \"`schema.with.dot.in.name`.`table.with.dot.in.name`\""
                 + " ("
                 + " id INT, "
                 + " name VARCHAR "
@@ -70,7 +70,7 @@ public class PostgreSinkJdbcSqlConnectorWithSchemaTest extends JdbcSqlTestSuppor
 
     @Before
     public void setUp() throws Exception {
-        tableName = schemaName + "." + "mytable";
+        tableName = schemaName + "." + tableName;
     }
 
     @Test

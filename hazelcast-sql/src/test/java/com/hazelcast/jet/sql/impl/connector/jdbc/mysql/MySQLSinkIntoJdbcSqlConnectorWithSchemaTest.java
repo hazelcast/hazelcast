@@ -34,10 +34,10 @@ import static org.junit.Assert.fail;
 public class MySQLSinkIntoJdbcSqlConnectorWithSchemaTest extends JdbcSqlTestSupport {
 
     // Quoted table name in the DB
-    String tableName;
+    String tableName = "`table.with.dot.in.name`";
 
     // Quoted schema  name in the DB
-    private static final String schemaName = "`test1 2`";
+    private static final String schemaName = "`schema.with.dot.in.name`";
 
     @BeforeClass
     public static void beforeClass() {
@@ -53,7 +53,7 @@ public class MySQLSinkIntoJdbcSqlConnectorWithSchemaTest extends JdbcSqlTestSupp
 
     @Before
     public void setUp() throws Exception {
-        tableName = schemaName + "." + "mytable";
+        tableName = schemaName + "." + tableName;
     }
 
     protected void myCreateMapping(String mappingName) {
