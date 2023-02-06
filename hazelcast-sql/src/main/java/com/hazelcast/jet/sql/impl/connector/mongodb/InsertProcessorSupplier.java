@@ -67,7 +67,7 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
                             .setDocumentIdentityFn(doc -> doc.get("_id"))
                             .setDocumentIdentityFieldName("_id")
                             .setCommitRetryStrategy(DEFAULT_COMMIT_RETRY_STRATEGY)
-                            .setTransactionOptions(DEFAULT_TRANSACTION_OPTION)
+                            .setTransactionOptionsSup(() -> DEFAULT_TRANSACTION_OPTION)
                             .setIntermediateMappingFn(this::rowToDoc)
                             .setWriteMode(writeMode)
                     );

@@ -116,10 +116,6 @@ public class WriteMongoParams<I> implements Serializable {
         return this;
     }
 
-    public void setTransactionOptions(byte[] transactionOptions) {
-        this.transactionOptions = transactionOptions;
-    }
-
     @Nonnull
     public FunctionEx<I, Object> getDocumentIdentityFn() {
         return documentIdentityFn;
@@ -168,7 +164,7 @@ public class WriteMongoParams<I> implements Serializable {
     }
 
     @Nonnull
-    public WriteMongoParams<I> setTransactionOptions(SupplierEx<TransactionOptions> transactionOptionsSup) {
+    public WriteMongoParams<I> setTransactionOptionsSup(SupplierEx<TransactionOptions> transactionOptionsSup) {
         this.transactionOptionsSup = transactionOptionsSup;
         return this;
     }

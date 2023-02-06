@@ -90,7 +90,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
                             .setDocumentIdentityFn(doc -> doc.getObjectId("_id"))
                             .setDocumentIdentityFieldName("_id")
                             .setCommitRetryStrategy(DEFAULT_COMMIT_RETRY_STRATEGY)
-                            .setTransactionOptions(DEFAULT_TRANSACTION_OPTION)
+                            .setTransactionOptionsSup(() -> DEFAULT_TRANSACTION_OPTION)
                             .setIntermediateMappingFn(this::rowToUpdateDoc)
                             .setWriteMode(WriteMode.UPDATE_ONLY)
                             .setWriteModelFn(this::write)

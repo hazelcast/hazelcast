@@ -192,7 +192,7 @@ public final class MongoDBSinkBuilder<T> {
      */
     @Nonnull
     public MongoDBSinkBuilder<T> transactionOptions(@Nonnull SupplierEx<TransactionOptions> transactionOptionsSup) {
-        params.setTransactionOptions(transactionOptionsSup);
+        params.setTransactionOptionsSup(transactionOptionsSup);
         return this;
     }
 
