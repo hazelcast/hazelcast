@@ -71,7 +71,7 @@ import static java.util.stream.Stream.of;
  * <p>
  * Usage:
  * <p>
- * First define external data link, e.g. for JDBC use {@link JdbcDataLinkFactory}:
+ * First define data link, e.g. for JDBC use {@link JdbcDataLinkFactory}:
  * <pre>{@code Config config = new Config();
  * config.addDataLinkConfig(
  *   new DataLinkConfig("mysql-ref")
@@ -219,7 +219,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
             if (factory instanceof JdbcDataLinkFactory) {
                 return "JDBC";
             } else {
-                throw new HazelcastException("Unknown ExternalDataLinkFactory class " + factory.getClass()
+                throw new HazelcastException("Unknown DataLinkFactory class " + factory.getClass()
                         + ". Set the mapping type using '" + MAPPING_TYPE_PROPERTY + "' property");
             }
         }

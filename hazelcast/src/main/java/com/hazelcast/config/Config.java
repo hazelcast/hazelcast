@@ -3110,7 +3110,7 @@ public class Config {
     }
 
     /**
-     * Sets the map of external data link configurations, mapped by config name.
+     * Sets the map of data link configurations, mapped by config name.
      * <p>
      * <p>
      * Example configuration: see {@link #addDataLinkConfig(DataLinkConfig)}
@@ -3155,7 +3155,7 @@ public class Config {
 
 
     /**
-     * Returns the external data link configuration for the given name, creating one
+     * Returns the data link configuration for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
      * The configuration is found by matching the configuration name
@@ -3198,7 +3198,7 @@ public class Config {
      * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
-     * @param name name of the external data link
+     * @param name name of the data link
      * @return the data link configuration
      * @throws InvalidConfigurationException if ambiguous configurations are
      *                                       found

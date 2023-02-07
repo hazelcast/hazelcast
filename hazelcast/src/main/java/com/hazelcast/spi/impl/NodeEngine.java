@@ -89,7 +89,7 @@ public interface NodeEngine {
     SqlServiceImpl getSqlService();
 
     /**
-     * Return a service for accessing external data links
+     * Return a service for accessing data links
      */
     DataLinkService getDataLinkService();
 

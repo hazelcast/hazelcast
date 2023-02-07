@@ -1274,7 +1274,7 @@ public final class Sinks {
      * <pre>{@code
      *     Sinks.<T>jdbcBuilder()
      *             .updateQuery(updateQuery)
-     *             .dataLinkRef(externalDataLinkRef)
+     *             .dataLinkRef(dataLinkRef)
      *             .bindFn(bindFn)
      *             .build();
      * }</pre>

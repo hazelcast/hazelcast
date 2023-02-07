@@ -265,7 +265,7 @@ public class JdbcSqlConnector implements SqlConnector {
             }
 
         } catch (Exception e) {
-            throw new HazelcastException("Could not determine dialect for externalDataLinkRef: "
+            throw new HazelcastException("Could not determine dialect for dataLinkRef: "
                     + dataLinkRef, e);
         } finally {
             closeDataSource(dataSource);

@@ -41,7 +41,7 @@ public class DataLinkRef implements Serializable {
     }
 
     /**
-     * Creates a reference to the configured external data link
+     * Creates a reference to the configured data link
      *
      * @param name name of the data link configured in {@link DataLinkConfig}
      * @return the reference to the data link
@@ -56,7 +56,7 @@ public class DataLinkRef implements Serializable {
 
     @Override
     public String toString() {
-        return "ExternalDataLinkRef{" +
+        return "DataLinkRef{" +
                 "name='" + name + '\'' +
                 '}';
     }

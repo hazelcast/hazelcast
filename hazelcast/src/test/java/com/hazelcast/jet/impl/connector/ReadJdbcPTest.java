@@ -117,7 +117,7 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void should_fail_with_non_existing_externalDataLink() {
+    public void should_fail_with_non_existing_dataLink() {
 
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.jdbc(
@@ -132,7 +132,7 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
                 .writeTo(assertAnyOrder(tableContents));
 
         assertThatThrownBy(() -> instance().getJet().newJob(p).join())
-                .hasMessageContaining("External data link factory 'non-existing-data-link' not found");
+                .hasMessageContaining("Data link factory 'non-existing-data-link' not found");
     }
 
     @Test
