@@ -89,7 +89,7 @@ public class ExternalDataLinkServiceImpl implements ExternalDataLinkService {
                 ExternalDataLinkFactory<?> dataLinkFactory = entry.getValue();
                 dataLinkFactory.close();
             } catch (Exception e) {
-                logger.warning("Closing '" + entry.getKey() + "' external datastore factory failed", e);
+                logger.warning("Closing '" + entry.getKey() + "' external data link factory failed", e);
             }
         }
     }
