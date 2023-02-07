@@ -218,7 +218,6 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
 
     @Test
     public void joinWithOtherJdbcNonDefaultSchema() throws SQLException {
-
         String schemaName = randomTableName();
         executeJdbc("CREATE SCHEMA " + schemaName);
         String fullyQualifiedTable = schemaName + "." + tableName;

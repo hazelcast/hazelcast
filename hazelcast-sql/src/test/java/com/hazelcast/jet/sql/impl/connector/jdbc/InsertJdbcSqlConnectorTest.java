@@ -174,7 +174,6 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void insertIntoTableNonDefaultSchema() throws SQLException {
-
         createTable(alternativeSchemaTable);
         createMapping(alternativeSchemaTable);
 
