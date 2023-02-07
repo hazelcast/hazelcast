@@ -4524,7 +4524,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      <shared>true</shared>\n"
                 + "    </external-data-link>"
                 + "    <external-data-link name=\"other-database\">\n"
-                + "        <class-name>com.hazelcast.dataLink.OtherDataLink</class-name>\n"
+                + "        <class-name>com.hazelcast.datalink.OtherDataLink</class-name>\n"
                 + "    </external-data-link>"
                 + HAZELCAST_END_TAG;
 

@@ -34,12 +34,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Adds an external data link configuration.
- * If an external data link configuration with the given {@code name} already exists, then
+ * Adds a data link configuration.
+ * If an data link configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("743a19495961bb0144de58ea45440072")
-public final class DynamicConfigAddExternalDataLinkConfigCodec {
+@Generated("4b1d80b89f74ae0253cb2a9799809067")
+public final class DynamicConfigAddDataLinkConfigCodec {
     //hex: 0x1B1100
     public static final int REQUEST_MESSAGE_TYPE = 1773824;
     //hex: 0x1B1101
@@ -48,24 +48,24 @@ public final class DynamicConfigAddExternalDataLinkConfigCodec {
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_SHARED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
-    private DynamicConfigAddExternalDataLinkConfigCodec() {
+    private DynamicConfigAddDataLinkConfigCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
-         * Name of this external data link, must be unique.
+         * Name of this data link, must be unique.
          */
         public java.lang.String name;
 
         /**
-         * Name for the ExternalDataLinkFactory implementation class.
+         * Name for the DataLinkFactory implementation class.
          */
         public java.lang.String className;
 
         /**
-         * {@code true} if an instance of the external data link will be reused. {@code false} when on each usage
+         * {@code true} if an instance of the data link will be reused. {@code false} when on each usage
          * the data link instance should be created. The default it {@code true}.
          */
         public boolean shared;
@@ -79,7 +79,7 @@ public final class DynamicConfigAddExternalDataLinkConfigCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.lang.String className, boolean shared, java.util.Map<java.lang.String, java.lang.String> properties) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("DynamicConfig.AddExternalDataLinkConfig");
+        clientMessage.setOperationName("DynamicConfig.AddDataLinkConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
@@ -91,7 +91,7 @@ public final class DynamicConfigAddExternalDataLinkConfigCodec {
         return clientMessage;
     }
 
-    public static DynamicConfigAddExternalDataLinkConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static DynamicConfigAddDataLinkConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();

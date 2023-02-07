@@ -5973,15 +5973,15 @@ public class ClientCompatibilityTest_2_6 {
     }
 
     @Test
-    public void test_DynamicConfigAddExternalDataLinkConfigCodec_encodeRequest() {
+    public void test_DynamicConfigAddDataLinkConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 757;
-        ClientMessage encoded = DynamicConfigAddExternalDataLinkConfigCodec.encodeRequest(aString, aString, aBoolean, aMapOfStringToString);
+        ClientMessage encoded = DynamicConfigAddDataLinkConfigCodec.encodeRequest(aString, aString, aBoolean, aMapOfStringToString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
 
     @Test
-    public void test_DynamicConfigAddExternalDataLinkConfigCodec_decodeResponse() {
+    public void test_DynamicConfigAddDataLinkConfigCodec_decodeResponse() {
         int fileClientMessageIndex = 758;
     }
 
