@@ -72,7 +72,7 @@ public enum ConfigSections {
     INTEGRITY_CHECKER("integrity-checker", false),
     JOIN("join", false),
     TCP_IP("tcp-ip", false),
-    EXTERNAL_DATA_LINK("external-data-link", true);
+    DATA_LINK("data-link", true);
 
     final boolean multipleOccurrence;
     private final String name;

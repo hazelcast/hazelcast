@@ -21,7 +21,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataLinkConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
@@ -360,17 +360,17 @@ public interface ConfigurationService {
     Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs();
 
     /**
-     * Finds existing external data link config.
+     * Finds existing data link config.
      *
      * @param name name of the config
-     * @return External data link config or {@code null} when requested configuration does not exist
+     * @return Data link config or {@code null} when requested configuration does not exist
      */
-    ExternalDataLinkConfig findExternalDataLinkConfig(String name);
+    DataLinkConfig findDataLinkConfig(String name);
 
     /**
-     * Returns all registered external data link configurations keyed by store's name.
+     * Returns all registered data link configurations keyed by store's name.
      *
      * @return registered data link configurations keyed by store's name
      */
-    Map<String, ExternalDataLinkConfig> getExternalDataLinkConfigs();
+    Map<String, DataLinkConfig> getDataLinkConfigs();
 }

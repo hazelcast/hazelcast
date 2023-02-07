@@ -49,10 +49,10 @@ public class DeleteProcessorSupplier
     public DeleteProcessorSupplier() {
     }
 
-    public DeleteProcessorSupplier(String externalDataLinkRef,
+    public DeleteProcessorSupplier(String dataLinkRef,
                                    String query,
                                    int batchLimit) {
-        super(externalDataLinkRef);
+        super(dataLinkRef);
         this.query = query;
         this.batchLimit = batchLimit;
     }
@@ -81,19 +81,19 @@ public class DeleteProcessorSupplier
     @Nullable
     @Override
     public List<Permission> permissions() {
-        return singletonList(ConnectorPermission.jdbc(externalDataLinkRef, ACTION_WRITE));
+        return singletonList(ConnectorPermission.jdbc(dataLinkRef, ACTION_WRITE));
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeString(externalDataLinkRef);
+        out.writeString(dataLinkRef);
         out.writeString(query);
         out.writeInt(batchLimit);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        externalDataLinkRef = in.readString();
+        dataLinkRef = in.readString();
         query = in.readString();
         batchLimit = in.readInt();
     }

@@ -37,9 +37,9 @@ import java.util.Map.Entry;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.impl.connector.ExternalDataLinkTestUtil.configureDummyDataLink;
-import static com.hazelcast.jet.impl.connector.ExternalDataLinkTestUtil.configureJdbcDataLink;
-import static com.hazelcast.jet.pipeline.ExternalDataLinkRef.externalDataLinkRef;
+import static com.hazelcast.jet.impl.connector.DataLinkTestUtil.configureDummyDataLink;
+import static com.hazelcast.jet.impl.connector.DataLinkTestUtil.configureJdbcDataLink;
+import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertAnyOrder;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertOrdered;
 import static java.util.stream.Collectors.toList;
@@ -100,10 +100,10 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void should_work_with_externalDataLink() {
+    public void should_work_with_dataLink() {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.jdbc(
-                        externalDataLinkRef(JDBC_DATA_LINK),
+                        dataLinkRef(JDBC_DATA_LINK),
                         (con, parallelism, index) -> {
                             PreparedStatement statement = con.prepareStatement("select * from items where mod(id,?)=?");
                             statement.setInt(1, parallelism);
@@ -121,7 +121,7 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
 
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.jdbc(
-                        externalDataLinkRef("non-existing-data-link"),
+                        dataLinkRef("non-existing-data-link"),
                         (con, parallelism, index) -> {
                             PreparedStatement statement = con.prepareStatement("select * from items where mod(id,?)=?");
                             statement.setInt(1, parallelism);
@@ -136,10 +136,10 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void should_fail_with_non_jdbc_externalDataLink() {
+    public void should_fail_with_non_jdbc_dataLink() {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.jdbc(
-                        externalDataLinkRef(DUMMY_DATA_LINK),
+                        dataLinkRef(DUMMY_DATA_LINK),
                         (con, parallelism, index) -> {
                             PreparedStatement statement = con.prepareStatement("select * from items where mod(id,?)=?");
                             statement.setInt(1, parallelism);

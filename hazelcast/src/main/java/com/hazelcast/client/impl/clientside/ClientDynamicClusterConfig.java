@@ -54,7 +54,7 @@ import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.DynamicConfigurationConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataLinkConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
@@ -1118,31 +1118,31 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
-    public Map<String, ExternalDataLinkConfig> getExternalDataLinkConfigs() {
+    public Map<String, DataLinkConfig> getDataLinkConfigs() {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
-    public Config setExternalDataLinkConfigs(Map<String, ExternalDataLinkConfig> externalDataLinkConfigs) {
+    public Config setDataLinkConfigs(Map<String, DataLinkConfig> dataLinkConfigs) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
-    public Config addExternalDataLinkConfig(ExternalDataLinkConfig externalDataLinkConfig) {
+    public Config addDataLinkConfig(DataLinkConfig dataLinkConfig) {
         ClientMessage request = DynamicConfigAddDataLinkConfigCodec.encodeRequest(
-                externalDataLinkConfig.getName(), externalDataLinkConfig.getClassName(),
-                externalDataLinkConfig.isShared(), toMap(externalDataLinkConfig.getProperties()));
+                dataLinkConfig.getName(), dataLinkConfig.getClassName(),
+                dataLinkConfig.isShared(), toMap(dataLinkConfig.getProperties()));
         invoke(request);
         return this;
     }
 
     @Override
-    public ExternalDataLinkConfig getExternalDataLinkConfig(String name) {
+    public DataLinkConfig getDataLinkConfig(String name) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
-    public ExternalDataLinkConfig findExternalDataLinkConfig(String name) {
+    public DataLinkConfig findDataLinkConfig(String name) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

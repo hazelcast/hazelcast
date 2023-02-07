@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ExternalDataLinkConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.datalink.JdbcDataLinkFactory;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
@@ -36,7 +36,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_EXTERNAL_DATA_LINK_REF;
+import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -61,8 +61,8 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         dbConnectionUrl = databaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
         Properties properties = new Properties();
         properties.setProperty("jdbcUrl", dbConnectionUrl);
-        config.addExternalDataLinkConfig(
-                new ExternalDataLinkConfig(TEST_DATABASE_REF)
+        config.addDataLinkConfig(
+                new DataLinkConfig(TEST_DATABASE_REF)
                         .setClassName(JdbcDataLinkFactory.class.getName())
                         .setProperties(properties)
         );
@@ -142,7 +142,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
                         + ") "
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
+                        + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
         );
     }
@@ -157,7 +157,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
                         + ") "
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
+                        + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
         );
     }

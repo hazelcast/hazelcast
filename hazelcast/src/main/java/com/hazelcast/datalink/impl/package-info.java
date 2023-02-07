@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains implementation of handling external data links.<br>
+ * <p>This package contains implementation of handling data links.<br>
  *
  * @since 5.2
  */

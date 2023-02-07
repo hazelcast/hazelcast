@@ -1,7 +1,7 @@
 {
   "instance": {
     "hazelcast": {
-      "external-data-link": {
+      "data-link": {
         "mysql-database": {
           "class-name": "com.hazelcast.datalink.JdbcDataLinkFactory",
           "properties": {

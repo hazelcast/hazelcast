@@ -35,13 +35,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ExternalDataLinkConfigTest extends HazelcastTestSupport {
+public class DataLinkConfigTest extends HazelcastTestSupport {
     private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     @Test
     public void test_equals_and_hashCode() {
         assumeDifferentHashCodes();
-        EqualsVerifier.forClass(ExternalDataLinkConfig.class)
+        EqualsVerifier.forClass(DataLinkConfig.class)
                 .usingGetClass()
                 .suppress(Warning.NONFINAL_FIELDS)
                 .verify();
@@ -49,13 +49,13 @@ public class ExternalDataLinkConfigTest extends HazelcastTestSupport {
 
     @Test
     public void should_serialize_with_empty_properties() {
-        ExternalDataLinkConfig originalConfig = new ExternalDataLinkConfig()
+        DataLinkConfig originalConfig = new DataLinkConfig()
                 .setName("some-name")
                 .setClassName("some-class-name")
                 .setShared(false);
 
         Data data = serializationService.toData(originalConfig);
-        ExternalDataLinkConfig deserializedCopy = serializationService.toObject(data);
+        DataLinkConfig deserializedCopy = serializationService.toObject(data);
 
         assertThat(deserializedCopy).isEqualTo(originalConfig);
     }
@@ -66,20 +66,20 @@ public class ExternalDataLinkConfigTest extends HazelcastTestSupport {
         Properties properties = new Properties();
         properties.setProperty("prop1", "val1");
         properties.setProperty("prop2", "val2");
-        ExternalDataLinkConfig originalConfig = new ExternalDataLinkConfig()
+        DataLinkConfig originalConfig = new DataLinkConfig()
                 .setName("some-name")
                 .setClassName("some-class-name")
                 .setProperties(properties);
 
         Data data = serializationService.toData(originalConfig);
-        ExternalDataLinkConfig deserializedCopy = serializationService.toObject(data);
+        DataLinkConfig deserializedCopy = serializationService.toObject(data);
         assertThat(deserializedCopy).isEqualTo(originalConfig);
     }
 
     @Test
     public void should_work_with_set_getProperty() {
 
-        ExternalDataLinkConfig config = new ExternalDataLinkConfig()
+        DataLinkConfig config = new DataLinkConfig()
                 .setName("some-name")
                 .setClassName("some-class-name")
                 .setProperty("prop1", "val1")

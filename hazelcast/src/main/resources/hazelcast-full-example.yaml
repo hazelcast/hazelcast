@@ -3803,11 +3803,11 @@ hazelcast:
   # Integrity Checker is disabled by default.
   integrity-checker:
     enabled: false
-  #      ===== HAZELCAST EXTERNAL DATA LINK CONFIGURATION =====
+  #      ===== HAZELCAST DATA LINK CONFIGURATION =====
   #
-  #      Configuration element's name is <external-data-link>. Contains configuration of external data links
+  #      Configuration element's name is <data-link>. Contains configuration of data links
   #      used by map stores and jdbc sinks and sources.
-  external-data-link:
+  data-link:
     mysql-database:
       class-name: com.hazelcast.datalink.JdbcDataLinkFactory
       properties:

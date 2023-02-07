@@ -1274,7 +1274,7 @@ public final class Sinks {
      * <pre>{@code
      *     Sinks.<T>jdbcBuilder()
      *             .updateQuery(updateQuery)
-     *             .externalDataLinkRef(externalDataLinkRef)
+     *             .dataLinkRef(externalDataLinkRef)
      *             .bindFn(bindFn)
      *             .build();
      * }</pre>
@@ -1287,12 +1287,12 @@ public final class Sinks {
     @Beta
     public static <T> Sink<T> jdbc(
             @Nonnull String updateQuery,
-            @Nonnull ExternalDataLinkRef externalDataLinkRef,
+            @Nonnull DataLinkRef dataLinkRef,
             @Nonnull BiConsumerEx<PreparedStatement, T> bindFn
     ) {
         return Sinks.<T>jdbcBuilder()
                 .updateQuery(updateQuery)
-                .externalDataLinkRef(externalDataLinkRef)
+                .dataLinkRef(dataLinkRef)
                 .bindFn(bindFn)
                 .build();
     }
@@ -1326,7 +1326,7 @@ public final class Sinks {
      * builder you must specify a connection (either using a {@linkplain
      * JdbcSinkBuilder#jdbcUrl(String) JDBC URL} or using a {@linkplain
      * JdbcSinkBuilder#dataSourceSupplier(SupplierEx) datasource} or using a {@linkplain
-     * JdbcSinkBuilder#externalDataLinkRef(ExternalDataLinkRef) dataLink}), the
+     * JdbcSinkBuilder#dataLinkRef(DataLinkRef) dataLink}), the
      * {@linkplain JdbcSinkBuilder#updateQuery(String) SQL statement} and a
      * {@linkplain JdbcSinkBuilder#bindFn(BiConsumerEx) bind function}.
      * <p>

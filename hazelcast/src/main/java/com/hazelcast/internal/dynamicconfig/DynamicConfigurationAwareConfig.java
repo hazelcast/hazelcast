@@ -28,7 +28,7 @@ import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.DynamicConfigurationConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataLinkConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
@@ -64,7 +64,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
 import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
-import com.hazelcast.internal.config.ExternalDataLinkConfigReadOnly;
+import com.hazelcast.internal.config.DataLinkConfigReadOnly;
 import com.hazelcast.internal.config.FlakeIdGeneratorConfigReadOnly;
 import com.hazelcast.internal.config.ListConfigReadOnly;
 import com.hazelcast.internal.config.MapConfigReadOnly;
@@ -1220,39 +1220,39 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public Map<String, ExternalDataLinkConfig> getExternalDataLinkConfigs() {
-        Map<String, ExternalDataLinkConfig> staticConfigs = staticConfig.getExternalDataLinkConfigs();
-        Map<String, ExternalDataLinkConfig> dynamicConfigs = configurationService.getExternalDataLinkConfigs();
+    public Map<String, DataLinkConfig> getDataLinkConfigs() {
+        Map<String, DataLinkConfig> staticConfigs = staticConfig.getDataLinkConfigs();
+        Map<String, DataLinkConfig> dynamicConfigs = configurationService.getDataLinkConfigs();
 
         return aggregate(staticConfigs, dynamicConfigs);
     }
 
     @Override
-    public Config setExternalDataLinkConfigs(Map<String, ExternalDataLinkConfig> externalDataLinkConfigs) {
+    public Config setDataLinkConfigs(Map<String, DataLinkConfig> dataLinkConfigs) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 
     @Override
-    public Config addExternalDataLinkConfig(ExternalDataLinkConfig externalDataLinkConfig) {
-        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getExternalDataLinkConfigs(),
-                externalDataLinkConfig.getName(), externalDataLinkConfig);
+    public Config addDataLinkConfig(DataLinkConfig dataLinkConfig) {
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getDataLinkConfigs(),
+                dataLinkConfig.getName(), dataLinkConfig);
         if (staticConfigDoesNotExist) {
-            configurationService.broadcastConfig(externalDataLinkConfig);
+            configurationService.broadcastConfig(dataLinkConfig);
         }
         return this;
     }
 
     @Override
-    public ExternalDataLinkConfig getExternalDataLinkConfig(String name) {
-        return getExternalDataLinkConfigInternal(name, name);
+    public DataLinkConfig getDataLinkConfig(String name) {
+        return getDataLinkConfigInternal(name, name);
     }
 
-    private ExternalDataLinkConfig getExternalDataLinkConfigInternal(String name, String fallbackName) {
-        return (ExternalDataLinkConfig) configSearcher.getConfig(name, fallbackName, supplierFor(ExternalDataLinkConfig.class));
+    private DataLinkConfig getDataLinkConfigInternal(String name, String fallbackName) {
+        return (DataLinkConfig) configSearcher.getConfig(name, fallbackName, supplierFor(DataLinkConfig.class));
     }
 
     @Override
-    public ExternalDataLinkConfig findExternalDataLinkConfig(String name) {
-        return new ExternalDataLinkConfigReadOnly(getExternalDataLinkConfigInternal(name, "default"));
+    public DataLinkConfig findDataLinkConfig(String name) {
+        return new DataLinkConfigReadOnly(getDataLinkConfigInternal(name, "default"));
     }
 }

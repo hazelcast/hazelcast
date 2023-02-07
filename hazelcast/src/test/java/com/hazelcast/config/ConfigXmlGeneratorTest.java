@@ -34,7 +34,7 @@ import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
-import com.hazelcast.datalink.impl.ExternalDataLinkServiceImplTest;
+import com.hazelcast.datalink.impl.DataLinkServiceImplTest;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.config.JetConfig;
@@ -1463,21 +1463,21 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExternalDataLinkConfig() {
+    public void testDataLinkConfig() {
         Config expectedConfig = new Config();
 
         Properties properties = new Properties();
-        properties.put("jdbcUrl", "jdbc:h2:mem:" + ExternalDataLinkServiceImplTest.class.getSimpleName());
-        ExternalDataLinkConfig externalDataLinkConfig = new ExternalDataLinkConfig()
+        properties.put("jdbcUrl", "jdbc:h2:mem:" + DataLinkServiceImplTest.class.getSimpleName());
+        DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName("test-data-link")
                 .setClassName("com.hazelcast.dtalink.JdbcDataLinkFactory")
                 .setProperties(properties);
 
-        expectedConfig.addExternalDataLinkConfig(externalDataLinkConfig);
+        expectedConfig.addDataLinkConfig(dataLinkConfig);
 
         Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
 
-        assertEquals(expectedConfig.getExternalDataLinkConfigs(), actualConfig.getExternalDataLinkConfigs());
+        assertEquals(expectedConfig.getDataLinkConfigs(), actualConfig.getDataLinkConfigs());
     }
 
     private Config getNewConfigViaXMLGenerator(Config config) {

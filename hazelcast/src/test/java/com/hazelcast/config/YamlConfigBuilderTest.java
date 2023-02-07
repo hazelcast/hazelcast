@@ -4537,10 +4537,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    public void testExternalDataLinkConfigs() {
+    public void testDataLinkConfigs() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  external-data-link:\n"
+                + "  data-link:\n"
                 + "    mysql-database:\n"
                 + "      class-name: com.hazelcast.datalink.JdbcDataLink\n"
                 + "      properties:\n"
@@ -4552,19 +4552,19 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         Config config = new InMemoryYamlConfig(yaml);
 
-        Map<String, ExternalDataLinkConfig> externalDataLinkConfigs = config.getExternalDataLinkConfigs();
+        Map<String, DataLinkConfig> dataLinkConfigs = config.getDataLinkConfigs();
 
-        assertThat(externalDataLinkConfigs).hasSize(2);
-        assertThat(externalDataLinkConfigs).containsKey("mysql-database");
-        ExternalDataLinkConfig mysqlDataLinkConfig = externalDataLinkConfigs.get("mysql-database");
+        assertThat(dataLinkConfigs).hasSize(2);
+        assertThat(dataLinkConfigs).containsKey("mysql-database");
+        DataLinkConfig mysqlDataLinkConfig = dataLinkConfigs.get("mysql-database");
         assertThat(mysqlDataLinkConfig.getClassName()).isEqualTo("com.hazelcast.datalink.JdbcDataLink");
         assertThat(mysqlDataLinkConfig.getName()).isEqualTo("mysql-database");
         assertThat(mysqlDataLinkConfig.isShared()).isTrue();
         assertThat(mysqlDataLinkConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
         assertThat(mysqlDataLinkConfig.getProperty("some.property")).isEqualTo("dummy-value");
 
-        assertThat(externalDataLinkConfigs).containsKey("other-database");
-        ExternalDataLinkConfig otherDataLinkConfig = externalDataLinkConfigs.get("other-database");
+        assertThat(dataLinkConfigs).containsKey("other-database");
+        DataLinkConfig otherDataLinkConfig = dataLinkConfigs.get("other-database");
         assertThat(otherDataLinkConfig.getClassName()).isEqualTo("com.hazelcast.datalink.OtherDataLink");
     }
 

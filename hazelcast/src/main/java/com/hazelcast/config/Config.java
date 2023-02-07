@@ -30,7 +30,7 @@ import com.hazelcast.internal.config.ConfigUtils;
 import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.config.DurableExecutorConfigReadOnly;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
-import com.hazelcast.internal.config.ExternalDataLinkConfigReadOnly;
+import com.hazelcast.internal.config.DataLinkConfigReadOnly;
 import com.hazelcast.internal.config.ListConfigReadOnly;
 import com.hazelcast.internal.config.MapConfigReadOnly;
 import com.hazelcast.internal.config.MemberXmlConfigRootTagRecognizer;
@@ -220,7 +220,7 @@ public class Config {
     private IntegrityCheckerConfig integrityCheckerConfig = new IntegrityCheckerConfig();
 
     // @since 5.2
-    private final Map<String, ExternalDataLinkConfig> externalDataLinkConfigs = new ConcurrentHashMap<>();
+    private final Map<String, DataLinkConfig> dataLinkConfigs = new ConcurrentHashMap<>();
 
     public Config() {
     }
@@ -3100,35 +3100,35 @@ public class Config {
     }
 
     /**
-     * Returns the map of external data link configurations, mapped by config name.
+     * Returns the map of data link configurations, mapped by config name.
      *
      * @since 5.2
      */
     @Beta
-    public Map<String, ExternalDataLinkConfig> getExternalDataLinkConfigs() {
-        return externalDataLinkConfigs;
+    public Map<String, DataLinkConfig> getDataLinkConfigs() {
+        return dataLinkConfigs;
     }
 
     /**
      * Sets the map of external data link configurations, mapped by config name.
      * <p>
      * <p>
-     * Example configuration: see {@link #addExternalDataLinkConfig(ExternalDataLinkConfig)}
+     * Example configuration: see {@link #addDataLinkConfig(DataLinkConfig)}
      *
      * @since 5.2
      */
     @Beta
-    public Config setExternalDataLinkConfigs(Map<String, ExternalDataLinkConfig> externalDataLinkConfigs) {
-        this.externalDataLinkConfigs.clear();
-        this.externalDataLinkConfigs.putAll(externalDataLinkConfigs);
-        for (Entry<String, ExternalDataLinkConfig> entry : externalDataLinkConfigs.entrySet()) {
+    public Config setDataLinkConfigs(Map<String, DataLinkConfig> dataLinkConfigs) {
+        this.dataLinkConfigs.clear();
+        this.dataLinkConfigs.putAll(dataLinkConfigs);
+        for (Entry<String, DataLinkConfig> entry : dataLinkConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;
     }
 
     /**
-     * Adds an external data link configuration.
+     * Adds an data link configuration.
      * <p>
      * <p>
      * Example:
@@ -3138,18 +3138,18 @@ public class Config {
      *      properties.put("jdbcUrl", jdbcUrl);
      *      properties.put("username", username);
      *      properties.put("password", password);
-     *      ExternalDataLinkConfig externalDataLinkConfig = new ExternalDataLinkConfig()
+     *      DataLinkConfig dataLinkConfig = new DataLinkConfig()
      *              .setName("my-jdbc-data-link")
      *              .setClassName(JdbcDataLinkFactory.class.getName())
      *              .setProperties(properties);
-     *      config.addExternalDataLinkConfig(externalDataLinkConfig);
+     *      config.addDataLinkConfig(dataLinkConfig);
      * }</pre>
      *
      * @since 5.2
      */
     @Beta
-    public Config addExternalDataLinkConfig(ExternalDataLinkConfig externalDataLinkConfig) {
-        externalDataLinkConfigs.put(externalDataLinkConfig.getName(), externalDataLinkConfig);
+    public Config addDataLinkConfig(DataLinkConfig dataLinkConfig) {
+        dataLinkConfigs.put(dataLinkConfig.getName(), dataLinkConfig);
         return this;
     }
 
@@ -3168,7 +3168,7 @@ public class Config {
      * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
-     * {@link #addExternalDataLinkConfig(ExternalDataLinkConfig)}.
+     * {@link #addDataLinkConfig(DataLinkConfig)}.
      * <p>
      * Because it adds new configurations if they are not already present,
      * this method is intended to be used before this config is used to
@@ -3176,7 +3176,7 @@ public class Config {
      * may be ignored.
      *
      * @param name data link name
-     * @return external data link configuration
+     * @return data link configuration
      * @throws InvalidConfigurationException if ambiguous configurations are
      *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
@@ -3185,12 +3185,12 @@ public class Config {
      * @since 5.2
      */
     @Beta
-    public ExternalDataLinkConfig getExternalDataLinkConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, externalDataLinkConfigs, name, ExternalDataLinkConfig.class);
+    public DataLinkConfig getDataLinkConfig(String name) {
+        return ConfigUtils.getConfig(configPatternMatcher, dataLinkConfigs, name, DataLinkConfig.class);
     }
 
     /**
-     * Returns a read-only {@link ExternalDataLinkConfig}
+     * Returns a read-only {@link DataLinkConfig}
      * configuration for the given name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
@@ -3199,7 +3199,7 @@ public class Config {
      * with the name {@code default}.
      *
      * @param name name of the external data link
-     * @return the external data link configuration
+     * @return the data link configuration
      * @throws InvalidConfigurationException if ambiguous configurations are
      *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
@@ -3209,13 +3209,13 @@ public class Config {
      * @since 5.2
      */
     @Beta
-    public ExternalDataLinkConfig findExternalDataLinkConfig(String name) {
+    public DataLinkConfig findDataLinkConfig(String name) {
         name = getBaseName(name);
-        ExternalDataLinkConfig config = lookupByPattern(configPatternMatcher, externalDataLinkConfigs, name);
+        DataLinkConfig config = lookupByPattern(configPatternMatcher, dataLinkConfigs, name);
         if (config != null) {
-            return new ExternalDataLinkConfigReadOnly(config);
+            return new DataLinkConfigReadOnly(config);
         }
-        return new ExternalDataLinkConfigReadOnly(getExternalDataLinkConfig("default"));
+        return new DataLinkConfigReadOnly(getDataLinkConfig("default"));
     }
 
     /**
@@ -3281,7 +3281,7 @@ public class Config {
                 + ", jetConfig=" + jetConfig
                 + ", deviceConfigs=" + deviceConfigs
                 + ", integrityCheckerConfig=" + integrityCheckerConfig
-                + ", externalDataLinkConfigs=" + externalDataLinkConfigs
+                + ", dataLinkConfigs=" + dataLinkConfigs
                 + '}';
     }
 }

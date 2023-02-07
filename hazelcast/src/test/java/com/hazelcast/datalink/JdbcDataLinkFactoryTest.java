@@ -16,7 +16,7 @@
 
 package com.hazelcast.datalink;
 
-import com.hazelcast.config.ExternalDataLinkConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.datalink.impl.CloseableDataSource;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -41,11 +41,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class JdbcDataLinkFactoryTest {
 
     private static final String TEST_CONFIG_NAME = JdbcDataLinkFactoryTest.class.getSimpleName();
-    private static final ExternalDataLinkConfig SHARED_EXTERNAL_DATALINK_CONFIG = new ExternalDataLinkConfig()
+    private static final DataLinkConfig SHARED_DATA_LINK_CONFIG = new DataLinkConfig()
             .setName(TEST_CONFIG_NAME)
             .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataLinkFactoryTest.class.getSimpleName() + "_shared")
             .setShared(true);
-    private static final ExternalDataLinkConfig NOT_SHARED_EXTERNAL_DATALINK_CONFIG = new ExternalDataLinkConfig()
+    private static final DataLinkConfig NOT_SHARED_DATA_LINK_CONFIG = new DataLinkConfig()
             .setName(TEST_CONFIG_NAME)
             .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataLinkFactoryTest.class.getSimpleName() + "_not_shared")
             .setShared(false);
@@ -69,14 +69,14 @@ public class JdbcDataLinkFactoryTest {
 
     @Test
     public void should_return_TRUE_when_connection_is_ok() throws Exception {
-        jdbcDataLinkFactory.init(SHARED_EXTERNAL_DATALINK_CONFIG);
+        jdbcDataLinkFactory.init(SHARED_DATA_LINK_CONFIG);
 
         assertThat(jdbcDataLinkFactory.testConnection()).isTrue();
     }
 
     @Test
     public void should_throw_when_data_link_is_closed() throws Exception {
-        jdbcDataLinkFactory.init(SHARED_EXTERNAL_DATALINK_CONFIG);
+        jdbcDataLinkFactory.init(SHARED_DATA_LINK_CONFIG);
 
         jdbcDataLinkFactory.close();
 
@@ -87,7 +87,7 @@ public class JdbcDataLinkFactoryTest {
 
     @Test
     public void should_return_same_datastore_when_shared() {
-        jdbcDataLinkFactory.init(SHARED_EXTERNAL_DATALINK_CONFIG);
+        jdbcDataLinkFactory.init(SHARED_DATA_LINK_CONFIG);
 
         dataSource1 = jdbcDataLinkFactory.getDataLink();
         dataSource2 = jdbcDataLinkFactory.getDataLink();
@@ -99,7 +99,7 @@ public class JdbcDataLinkFactoryTest {
 
     @Test
     public void should_use_custom_hikari_pool_name() throws SQLException {
-        jdbcDataLinkFactory.init(SHARED_EXTERNAL_DATALINK_CONFIG);
+        jdbcDataLinkFactory.init(SHARED_DATA_LINK_CONFIG);
 
         dataSource1 = jdbcDataLinkFactory.getDataLink();
         assertPoolNameEndsWith(dataSource1, TEST_CONFIG_NAME);
@@ -107,7 +107,7 @@ public class JdbcDataLinkFactoryTest {
 
     @Test
     public void should_NOT_return_closing_datastore_when_shared() throws Exception {
-        jdbcDataLinkFactory.init(SHARED_EXTERNAL_DATALINK_CONFIG);
+        jdbcDataLinkFactory.init(SHARED_DATA_LINK_CONFIG);
 
         CloseableDataSource closeableDataSource = (CloseableDataSource) jdbcDataLinkFactory.getDataLink();
         closeableDataSource.close();
@@ -121,7 +121,7 @@ public class JdbcDataLinkFactoryTest {
 
     @Test
     public void should_return_closing_datastore_when_not_shared() throws Exception {
-        jdbcDataLinkFactory.init(NOT_SHARED_EXTERNAL_DATALINK_CONFIG);
+        jdbcDataLinkFactory.init(NOT_SHARED_DATA_LINK_CONFIG);
 
         CloseableDataSource closeableDataSource = (CloseableDataSource) jdbcDataLinkFactory.getDataLink();
         closeableDataSource.close();
@@ -135,7 +135,7 @@ public class JdbcDataLinkFactoryTest {
 
     @Test
     public void should_return_different_datastore_when_NOT_shared() {
-        jdbcDataLinkFactory.init(NOT_SHARED_EXTERNAL_DATALINK_CONFIG);
+        jdbcDataLinkFactory.init(NOT_SHARED_DATA_LINK_CONFIG);
 
         dataSource1 = jdbcDataLinkFactory.getDataLink();
         dataSource2 = jdbcDataLinkFactory.getDataLink();
@@ -147,7 +147,7 @@ public class JdbcDataLinkFactoryTest {
 
     @Test
     public void should_close_shared_datasource_on_close() throws Exception {
-        jdbcDataLinkFactory.init(SHARED_EXTERNAL_DATALINK_CONFIG);
+        jdbcDataLinkFactory.init(SHARED_DATA_LINK_CONFIG);
 
         DataSource dataSource = jdbcDataLinkFactory.getDataLink();
         jdbcDataLinkFactory.close();

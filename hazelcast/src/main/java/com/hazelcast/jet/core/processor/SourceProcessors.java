@@ -19,7 +19,7 @@ package com.hazelcast.jet.core.processor;
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datalink.ExternalDataLinkFactory;
+import com.hazelcast.datalink.DataLinkFactory;
 import com.hazelcast.datalink.JdbcDataLinkFactory;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.BiFunctionEx;
@@ -46,7 +46,7 @@ import com.hazelcast.jet.impl.connector.StreamJmsP;
 import com.hazelcast.jet.impl.connector.StreamSocketP;
 import com.hazelcast.jet.impl.pipeline.SourceBufferImpl;
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.pipeline.ExternalDataLinkRef;
+import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.jet.pipeline.FileSourceBuilder;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.SourceBuilder;
@@ -449,23 +449,23 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for {@link Sources#jdbc(
-     *ExternalDataLinkRef, ToResultSetFunction, FunctionEx)}.
+     *DataLinkRef, ToResultSetFunction, FunctionEx)}.
      *
      * @since 5.2
      */
     public static <T> ProcessorMetaSupplier readJdbcP(
-            @Nonnull ExternalDataLinkRef externalDataLinkRef,
+            @Nonnull DataLinkRef dataLinkRef,
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return ReadJdbcP.supplier(context -> getDataLinkFactory(context, externalDataLinkRef.getName()).getDataLink(),
+        return ReadJdbcP.supplier(context -> getDataLinkFactory(context, dataLinkRef.getName()).getDataLink(),
                 resultSetFn,
                 mapOutputFn);
     }
 
     private static JdbcDataLinkFactory getDataLinkFactory(ProcessorSupplier.Context context, String name) {
         NodeEngineImpl nodeEngine = Util.getNodeEngine(context.hazelcastInstance());
-        ExternalDataLinkFactory<?> dataLinkFactory = nodeEngine.getExternalDataLinkService().getExternalDataLinkFactory(name);
+        DataLinkFactory<?> dataLinkFactory = nodeEngine.getDataLinkService().getDataLinkFactory(name);
         if (!(dataLinkFactory instanceof JdbcDataLinkFactory)) {
             String className = JdbcDataLinkFactory.class.getSimpleName();
             throw new HazelcastException("Data link factory '" + name + "' must be an instance of " + className);

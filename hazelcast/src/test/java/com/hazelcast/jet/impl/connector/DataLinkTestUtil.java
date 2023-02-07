@@ -17,25 +17,25 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ExternalDataLinkConfig;
-import com.hazelcast.datalink.ExternalDataLinkFactory;
+import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.datalink.DataLinkFactory;
 import com.hazelcast.datalink.JdbcDataLinkFactory;
 
 import java.util.Properties;
 
-final class ExternalDataLinkTestUtil {
-    private ExternalDataLinkTestUtil() {
+final class DataLinkTestUtil {
+    private DataLinkTestUtil() {
     }
 
 
     static void configureJdbcDataLink(String name, String jdbcUrl, Config config) {
         Properties properties = new Properties();
         properties.put("jdbcUrl", jdbcUrl);
-        ExternalDataLinkConfig externalDataLinkConfig = new ExternalDataLinkConfig()
+        DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName(name)
                 .setClassName(JdbcDataLinkFactory.class.getName())
                 .setProperties(properties);
-        config.getExternalDataLinkConfigs().put(name, externalDataLinkConfig);
+        config.getDataLinkConfigs().put(name, dataLinkConfig);
     }
 
 
@@ -44,21 +44,21 @@ final class ExternalDataLinkTestUtil {
         properties.put("jdbcUrl", jdbcUrl);
         properties.put("username", username);
         properties.put("password", password);
-        ExternalDataLinkConfig externalDataLinkConfig = new ExternalDataLinkConfig()
+        DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName(name)
                 .setClassName(JdbcDataLinkFactory.class.getName())
                 .setProperties(properties);
-        config.getExternalDataLinkConfigs().put(name, externalDataLinkConfig);
+        config.getDataLinkConfigs().put(name, dataLinkConfig);
     }
 
     static void configureDummyDataLink(String name, Config config) {
-        ExternalDataLinkConfig externalDataLinkConfig = new ExternalDataLinkConfig()
+        DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName(name)
                 .setClassName(DummyDataLinkFactory.class.getName());
-        config.getExternalDataLinkConfigs().put(name, externalDataLinkConfig);
+        config.getDataLinkConfigs().put(name, dataLinkConfig);
     }
 
-    private static class DummyDataLinkFactory implements ExternalDataLinkFactory<Object> {
+    private static class DummyDataLinkFactory implements DataLinkFactory<Object> {
 
         @Override
         public boolean testConnection() {
@@ -71,7 +71,7 @@ final class ExternalDataLinkTestUtil {
         }
 
         @Override
-        public void init(ExternalDataLinkConfig config) {
+        public void init(DataLinkConfig config) {
 
         }
     }

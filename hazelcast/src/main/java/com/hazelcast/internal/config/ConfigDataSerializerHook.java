@@ -35,7 +35,7 @@ import com.hazelcast.config.EurekaConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataLinkConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.HotRestartConfig;
@@ -164,9 +164,9 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int MEMORY_TIER_CONFIG = 65;
     public static final int DISK_TIER_CONFIG = 66;
     public static final int BTREE_INDEX_CONFIG = 67;
-    public static final int EXTERNAL_DATA_LINK_CONFIG = 68;
+    public static final int DATA_LINK_CONFIG = 68;
 
-    private static final int LEN = EXTERNAL_DATA_LINK_CONFIG + 1;
+    private static final int LEN = DATA_LINK_CONFIG + 1;
 
     @Override
     public int getFactoryId() {
@@ -244,7 +244,7 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[MEMORY_TIER_CONFIG] = arg -> new MemoryTierConfig();
         constructors[DISK_TIER_CONFIG] = arg -> new DiskTierConfig();
         constructors[BTREE_INDEX_CONFIG] = arg -> new BTreeIndexConfig();
-        constructors[EXTERNAL_DATA_LINK_CONFIG] = arg -> new ExternalDataLinkConfig();
+        constructors[DATA_LINK_CONFIG] = arg -> new DataLinkConfig();
 
         return new ArrayDataSerializableFactory(constructors);
     }

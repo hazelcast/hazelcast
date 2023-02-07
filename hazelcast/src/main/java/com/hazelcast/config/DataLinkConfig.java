@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.datalink.ExternalDataLinkFactory;
+import com.hazelcast.datalink.DataLinkFactory;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Sink;
@@ -37,7 +37,7 @@ import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
- * Contains configuration of an external data link that can be used as a
+ * Contains configuration of an data link that can be used as a
  * <ul>
  * <li>{@link BatchSource} and {@link Sink} in Jet JDBC connector.</li>
  * <li>Data link for {@link MapStore} and {@link MapLoader} </li>
@@ -46,42 +46,42 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * @since 5.2
  */
 @Beta
-public class ExternalDataLinkConfig implements IdentifiedDataSerializable, NamedConfig {
+public class DataLinkConfig implements IdentifiedDataSerializable, NamedConfig {
 
     private String name;
     private String className;
     private boolean shared = true;
     private Properties properties = new Properties();
 
-    public ExternalDataLinkConfig() {
+    public DataLinkConfig() {
     }
 
-    public ExternalDataLinkConfig(ExternalDataLinkConfig config) {
+    public DataLinkConfig(DataLinkConfig config) {
         name = config.name;
         className = config.className;
         shared = config.shared;
         properties.putAll(config.getProperties());
     }
 
-    public ExternalDataLinkConfig(String name) {
+    public DataLinkConfig(String name) {
         this.name = checkNotNull(name, "Name must not be null");
     }
 
     /**
-     * Sets the name of this external data link, the name must be unique.
+     * Sets the name of this data link, the name must be unique.
      *
-     * @return this ExternalDataLinkConfig
+     * @return this DataLinkConfig
      */
     @Override
-    public ExternalDataLinkConfig setName(String name) {
+    public DataLinkConfig setName(String name) {
         this.name = checkNotNull(name, "Name must not be null");
         return this;
     }
 
     /**
-     * Returns the name of this external data link.
+     * Returns the name of this data link.
      *
-     * @return the name of this external data link
+     * @return the name of this data link
      */
     public String getName() {
         return name;
@@ -89,26 +89,26 @@ public class ExternalDataLinkConfig implements IdentifiedDataSerializable, Named
 
 
     /**
-     * Returns the name of the {@link ExternalDataLinkFactory} implementation class
+     * Returns the name of the {@link DataLinkFactory} implementation class
      *
-     * @return the name of the {@link ExternalDataLinkFactory} implementation class
+     * @return the name of the {@link DataLinkFactory} implementation class
      */
     public String getClassName() {
         return className;
     }
 
     /**
-     * Sets the name for the {@link ExternalDataLinkFactory} implementation class
+     * Sets the name for the {@link DataLinkFactory} implementation class
      *
-     * @param className the name to set for the {@link ExternalDataLinkFactory} implementation class
+     * @param className the name to set for the {@link DataLinkFactory} implementation class
      */
-    public ExternalDataLinkConfig setClassName(@Nonnull String className) {
+    public DataLinkConfig setClassName(@Nonnull String className) {
         this.className = checkHasText(className, "Data link class name must contain text");
         return this;
     }
 
     /**
-     * {@code true} if an instance of the external data link will be reused. {@code false} when on each usage
+     * {@code true} if an instance of the data link will be reused. {@code false} when on each usage
      * the data link instance should be created. The default is {@code true}
      *
      * @return if the data link instance should be reused
@@ -118,13 +118,13 @@ public class ExternalDataLinkConfig implements IdentifiedDataSerializable, Named
     }
 
     /**
-     * {@code true} if an instance of the external data link will be reused. {@code false} when on each usage
+     * {@code true} if an instance of the data link will be reused. {@code false} when on each usage
      * the data link instance should be created
      *
      * @param shared if the data link instance should be reused
-     * @return this ExternalDataLinkConfig
+     * @return this DataLinkConfig
      */
-    public ExternalDataLinkConfig setShared(boolean shared) {
+    public DataLinkConfig setShared(boolean shared) {
         this.shared = shared;
         return this;
     }
@@ -150,26 +150,26 @@ public class ExternalDataLinkConfig implements IdentifiedDataSerializable, Named
     }
 
     /**
-     * Sets a single property. See {@link ExternalDataLinkConfig#setProperties(Properties)}
+     * Sets a single property. See {@link DataLinkConfig#setProperties(Properties)}
      *
      * @param key   the property key
      * @param value the property value
-     * @return this ExternalDataLinkConfig
+     * @return this DataLinkConfig
      */
-    public ExternalDataLinkConfig setProperty(String key, String value) {
+    public DataLinkConfig setProperty(String key, String value) {
         properties.setProperty(key, value);
         return this;
 
     }
 
     /**
-     * Sets the properties of a data link. See implementations of {@link ExternalDataLinkFactory}
+     * Sets the properties of a data link. See implementations of {@link DataLinkFactory}
      * for supported values
      *
      * @param properties the properties to be set
-     * @return this ExternalDataLinkConfig
+     * @return this DataLinkConfig
      */
-    public ExternalDataLinkConfig setProperties(Properties properties) {
+    public DataLinkConfig setProperties(Properties properties) {
         this.properties = checkNotNull(properties, "Data link properties cannot be null!");
         return this;
     }
@@ -182,7 +182,7 @@ public class ExternalDataLinkConfig implements IdentifiedDataSerializable, Named
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ExternalDataLinkConfig that = (ExternalDataLinkConfig) o;
+        DataLinkConfig that = (DataLinkConfig) o;
         return shared == that.shared && Objects.equals(name, that.name)
                 && Objects.equals(className, that.className)
                 && Objects.equals(properties, that.properties);
@@ -195,7 +195,7 @@ public class ExternalDataLinkConfig implements IdentifiedDataSerializable, Named
 
     @Override
     public String toString() {
-        return "ExternalDataLinkConfig{"
+        return "DataLinkConfig{"
                 + "name='" + name + '\''
                 + ", className='" + className + '\''
                 + ", shared=" + shared
@@ -235,6 +235,6 @@ public class ExternalDataLinkConfig implements IdentifiedDataSerializable, Named
 
     @Override
     public int getClassId() {
-        return ConfigDataSerializerHook.EXTERNAL_DATA_LINK_CONFIG;
+        return ConfigDataSerializerHook.DATA_LINK_CONFIG;
     }
 }

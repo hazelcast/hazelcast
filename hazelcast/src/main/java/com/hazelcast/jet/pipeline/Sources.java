@@ -1330,31 +1330,31 @@ public final class Sources {
 
     /**
      * Returns a source which connects to the specified database using the given
-     * {@code externalDataLinkRef}, queries the database and creates a result set
+     * {@code dataLinkRef}, queries the database and creates a result set
      * using the given {@code resultSetFn}. It creates output objects from the
      * {@link ResultSet} using given {@code mapOutputFn} and emits them to
      * downstream.
      * <p>
      * Example:
      * <p>
-     * (Prerequisite) External data link configuration:
+     * (Prerequisite) Data link configuration:
      * <pre>{@code
      *      Config config = smallInstanceConfig();
      *      Properties properties = new Properties();
      *      properties.put("jdbcUrl", jdbcUrl);
      *      properties.put("username", username);
      *      properties.put("password", password);
-     *      ExternalDataLinkConfig externalDataLinkConfig = new ExternalDataLinkConfig()
+     *      DataLinkConfig dataLinkConfig = new DataLinkConfig()
      *              .setName("my-jdbc-data-link")
      *              .setClassName(JdbcDataLinkFactory.class.getName())
      *              .setProperties(properties);
-     *      config.getExternalDataLinkConfigs().put(name, externalDataLinkConfig);
+     *      config.getDataLinkConfigs().put(name, dataLinkConfig);
      * }</pre>
      * </p>
      * <p>Pipeline configuration
      * <pre>{@code
      *     p.readFrom(Sources.jdbc(
-     *         ExternalDataLinkRef.externalDataLinkRef("my-jdbc-data-link"),
+     *         DataLinkRef.dataLinkRef("my-jdbc-data-link"),
      *         (con, parallelism, index) -> {
      *              PreparedStatement stmt = con.prepareStatement("SELECT * FROM TABLE WHERE MOD(id, ?) = ?)");
      *              stmt.setInt(1, parallelism);
@@ -1373,12 +1373,12 @@ public final class Sources {
      */
     @Beta
     public static <T> BatchSource<T> jdbc(
-            @Nonnull ExternalDataLinkRef externalDataLinkRef,
+            @Nonnull DataLinkRef dataLinkRef,
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> createOutputFn
     ) {
         return batchFromProcessor("jdbcSource",
-                SourceProcessors.readJdbcP(externalDataLinkRef, resultSetFn, createOutputFn));
+                SourceProcessors.readJdbcP(dataLinkRef, resultSetFn, createOutputFn));
     }
 
     /**

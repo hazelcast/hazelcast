@@ -42,7 +42,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataLinkConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartClusterDataRecoveryPolicy;
 import com.hazelcast.config.HotRestartConfig;
@@ -186,7 +186,7 @@ import static com.hazelcast.internal.config.ConfigSections.CRDT_REPLICATION;
 import static com.hazelcast.internal.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.DYNAMIC_CONFIGURATION;
 import static com.hazelcast.internal.config.ConfigSections.EXECUTOR_SERVICE;
-import static com.hazelcast.internal.config.ConfigSections.EXTERNAL_DATA_LINK;
+import static com.hazelcast.internal.config.ConfigSections.DATA_LINK;
 import static com.hazelcast.internal.config.ConfigSections.FLAKE_ID_GENERATOR;
 import static com.hazelcast.internal.config.ConfigSections.HOT_RESTART_PERSISTENCE;
 import static com.hazelcast.internal.config.ConfigSections.IMPORT;
@@ -380,8 +380,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleDynamicConfiguration(node);
         } else if (matches(INTEGRITY_CHECKER.getName(), nodeName)) {
             handleIntegrityChecker(node);
-        } else if (matches(EXTERNAL_DATA_LINK.getName(), nodeName)) {
-            handleExternalDataLinks(node);
+        } else if (matches(DATA_LINK.getName(), nodeName)) {
+            handleDataLinks(node);
         } else {
             return true;
         }
@@ -3431,22 +3431,22 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.getIntegrityCheckerConfig().setEnabled(enabled);
     }
 
-    protected void handleExternalDataLinks(Node node) {
+    protected void handleDataLinks(Node node) {
         String name = getAttribute(node, "name");
-        ExternalDataLinkConfig externalDataLinkConfig = ConfigUtils.getByNameOrNew(config.getExternalDataLinkConfigs(),
-                name, ExternalDataLinkConfig.class);
-        handleExternalDataLink(node, externalDataLinkConfig);
+        DataLinkConfig dataLinkConfig = ConfigUtils.getByNameOrNew(config.getDataLinkConfigs(),
+                name, DataLinkConfig.class);
+        handleDataLink(node, dataLinkConfig);
     }
 
-    protected void handleExternalDataLink(Node node, ExternalDataLinkConfig externalDataLinkConfig) {
+    protected void handleDataLink(Node node, DataLinkConfig dataLinkConfig) {
         for (Node child : childElements(node)) {
             String childName = cleanNodeName(child);
             if (matches("class-name", childName)) {
-                externalDataLinkConfig.setClassName(getTextContent(child));
+                dataLinkConfig.setClassName(getTextContent(child));
             } else if (matches("properties", childName)) {
-                fillProperties(child, externalDataLinkConfig.getProperties());
+                fillProperties(child, dataLinkConfig.getProperties());
             } else if (matches("shared", childName)) {
-                externalDataLinkConfig.setShared(getBooleanValue(getTextContent(child)));
+                dataLinkConfig.setShared(getBooleanValue(getTextContent(child)));
             }
         }
     }

@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDataLinkConfigCodec;
 import com.hazelcast.client.impl.protocol.util.PropertiesUtil;
-import com.hazelcast.config.ExternalDataLinkConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
@@ -44,7 +44,7 @@ public class AddDataLinkConfigMessageTask
 
     @Override
     protected IdentifiedDataSerializable getConfig() {
-        ExternalDataLinkConfig config = new ExternalDataLinkConfig(parameters.name);
+        DataLinkConfig config = new DataLinkConfig(parameters.name);
         config.setClassName(parameters.className);
         config.setShared(parameters.shared);
         config.setProperties(PropertiesUtil.fromMap(parameters.properties));
@@ -53,14 +53,14 @@ public class AddDataLinkConfigMessageTask
 
     @Override
     public String getMethodName() {
-        return "addExternalDataLinkConfig";
+        return "addDataLinkConfig";
     }
 
     @Override
     protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
         DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
-        ExternalDataLinkConfig externalDataLinkConfig = (ExternalDataLinkConfig) config;
-        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getExternalDataLinkConfigs(),
-                externalDataLinkConfig.getName(), externalDataLinkConfig);
+        DataLinkConfig dataLinkConfig = (DataLinkConfig) config;
+        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getDataLinkConfigs(),
+                dataLinkConfig.getName(), dataLinkConfig);
     }
 }

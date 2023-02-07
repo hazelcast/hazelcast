@@ -1119,13 +1119,13 @@
                 </hz:properties>
             </hz:auditlog>
             <hz:integrity-checker enabled="false"/>
-            <hz:external-data-link name="${external.datalink.name}">
+            <hz:data-link name="${datalink.name}">
                 <hz:class-name>com.hazelcast.datalink.JdbcDataLinkFactory</hz:class-name>
                 <hz:properties>
-                    <hz:property name="jdbcUrl">${external.datalink.url}</hz:property>
+                    <hz:property name="jdbcUrl">${datalink.url}</hz:property>
                 </hz:properties>
                 <hz:shared>false</hz:shared>
-            </hz:external-data-link>
+            </hz:data-link>
         </hz:config>
     </hz:hazelcast>
 

@@ -23,7 +23,7 @@ import org.junit.Test;
 
 import java.util.Map;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_EXTERNAL_DATA_LINK_REF;
+import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class JdbcIMapTest extends JdbcSqlTestSupport {
@@ -46,7 +46,7 @@ public class JdbcIMapTest extends JdbcSqlTestSupport {
                         + ") "
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
+                        + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
         );
 

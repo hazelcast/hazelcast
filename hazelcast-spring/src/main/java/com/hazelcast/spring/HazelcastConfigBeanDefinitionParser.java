@@ -38,7 +38,7 @@ import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataLinkConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
@@ -247,7 +247,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap<String, AbstractBeanDefinition> pnCounterManagedMap;
         private ManagedMap<EndpointQualifier, AbstractBeanDefinition> endpointConfigsMap;
         private ManagedMap<String, AbstractBeanDefinition> deviceConfigManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> externalDataLinkConfigMap;
+        private ManagedMap<String, AbstractBeanDefinition> dataLinkConfigMap;
 
         private boolean hasNetwork;
         private boolean hasAdvancedNetworkEnabled;
@@ -275,7 +275,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.pnCounterManagedMap = createManagedMap("PNCounterConfigs");
             this.endpointConfigsMap = new ManagedMap<>();
             this.deviceConfigManagedMap = createManagedMap("deviceConfigs");
-            this.externalDataLinkConfigMap = createManagedMap("externalDataLinkConfigs");
+            this.dataLinkConfigMap = createManagedMap("dataLinkConfigs");
         }
 
         private ManagedMap<String, AbstractBeanDefinition> createManagedMap(String configName) {
@@ -383,8 +383,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleDynamicConfiguration(node);
                     } else if ("integrity-checker".equals(nodeName)) {
                         handleIntegrityChecker(node);
-                    } else if ("external-data-link".equals(nodeName)) {
-                        handleExternalDataLink(node);
+                    } else if ("data-link".equals(nodeName)) {
+                        handleDataLink(node);
                     }
                 }
             }
@@ -2320,8 +2320,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("integrityCheckerConfig", builder.getBeanDefinition());
         }
 
-        private void handleExternalDataLink(Node node) {
-            BeanDefinitionBuilder builder = createBeanBuilder(ExternalDataLinkConfig.class);
+        private void handleDataLink(Node node) {
+            BeanDefinitionBuilder builder = createBeanBuilder(DataLinkConfig.class);
             builder.addPropertyValue("name", getAttribute(node, "name"));
             fillValues(node, builder, "properties");
             for (Node child : childElements(node)) {
@@ -2331,7 +2331,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     break;
                 }
             }
-            externalDataLinkConfigMap.put(getAttribute(node, "name"), builder.getBeanDefinition());
+            dataLinkConfigMap.put(getAttribute(node, "name"), builder.getBeanDefinition());
         }
     }
 }

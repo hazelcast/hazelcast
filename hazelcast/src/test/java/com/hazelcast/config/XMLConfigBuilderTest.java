@@ -4513,34 +4513,34 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testExternalDataLinkConfigs() {
+    public void testDataLinkConfigs() {
         String xml = HAZELCAST_START_TAG
-                + "    <external-data-link name=\"mysql-database\">\n"
+                + "    <data-link name=\"mysql-database\">\n"
                 + "        <class-name>com.hazelcast.datalink.JdbcDataLink</class-name>\n"
                 + "        <properties>\n"
                 + "            <property name=\"jdbcUrl\">jdbc:mysql://dummy:3306</property>\n"
                 + "            <property name=\"some.property\">dummy-value</property>\n"
                 + "        </properties>\n"
                 + "      <shared>true</shared>\n"
-                + "    </external-data-link>"
-                + "    <external-data-link name=\"other-database\">\n"
+                + "    </data-link>"
+                + "    <data-link name=\"other-database\">\n"
                 + "        <class-name>com.hazelcast.datalink.OtherDataLink</class-name>\n"
-                + "    </external-data-link>"
+                + "    </data-link>"
                 + HAZELCAST_END_TAG;
 
-        Map<String, ExternalDataLinkConfig> externalDataLinkConfigs = buildConfig(xml).getExternalDataLinkConfigs();
+        Map<String, DataLinkConfig> dataLinkConfigs = buildConfig(xml).getDataLinkConfigs();
 
-        assertThat(externalDataLinkConfigs).hasSize(2);
-        assertThat(externalDataLinkConfigs).containsKey("mysql-database");
-        ExternalDataLinkConfig mysqlDataLinkConfig = externalDataLinkConfigs.get("mysql-database");
+        assertThat(dataLinkConfigs).hasSize(2);
+        assertThat(dataLinkConfigs).containsKey("mysql-database");
+        DataLinkConfig mysqlDataLinkConfig = dataLinkConfigs.get("mysql-database");
         assertThat(mysqlDataLinkConfig.getClassName()).isEqualTo("com.hazelcast.datalink.JdbcDataLink");
         assertThat(mysqlDataLinkConfig.getName()).isEqualTo("mysql-database");
         assertThat(mysqlDataLinkConfig.isShared()).isTrue();
         assertThat(mysqlDataLinkConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
         assertThat(mysqlDataLinkConfig.getProperty("some.property")).isEqualTo("dummy-value");
 
-        assertThat(externalDataLinkConfigs).containsKey("other-database");
-        ExternalDataLinkConfig otherDataLinkConfig = externalDataLinkConfigs.get("other-database");
+        assertThat(dataLinkConfigs).containsKey("other-database");
+        DataLinkConfig otherDataLinkConfig = dataLinkConfigs.get("other-database");
         assertThat(otherDataLinkConfig.getClassName()).isEqualTo("com.hazelcast.datalink.OtherDataLink");
     }
 

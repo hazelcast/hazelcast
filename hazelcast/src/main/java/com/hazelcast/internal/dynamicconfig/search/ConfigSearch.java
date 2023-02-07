@@ -22,7 +22,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataLinkConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.MapConfig;
@@ -321,21 +321,21 @@ public final class ConfigSearch {
             }
         });
 
-        CONFIG_SUPPLIERS.put(ExternalDataLinkConfig.class, new ConfigSupplier<ExternalDataLinkConfig>() {
+        CONFIG_SUPPLIERS.put(DataLinkConfig.class, new ConfigSupplier<DataLinkConfig>() {
             @Override
-            public ExternalDataLinkConfig getDynamicConfig(@Nonnull ConfigurationService configurationService,
-                                                           @Nonnull String name) {
-                return configurationService.findExternalDataLinkConfig(name);
+            public DataLinkConfig getDynamicConfig(@Nonnull ConfigurationService configurationService,
+                                                   @Nonnull String name) {
+                return configurationService.findDataLinkConfig(name);
             }
 
             @Override
-            public ExternalDataLinkConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
-                return staticConfig.getExternalDataLinkConfig(name);
+            public DataLinkConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
+                return staticConfig.getDataLinkConfig(name);
             }
 
             @Override
-            public Map<String, ExternalDataLinkConfig> getStaticConfigs(@Nonnull Config staticConfig) {
-                return staticConfig.getExternalDataLinkConfigs();
+            public Map<String, DataLinkConfig> getStaticConfigs(@Nonnull Config staticConfig) {
+                return staticConfig.getDataLinkConfigs();
             }
         });
     }

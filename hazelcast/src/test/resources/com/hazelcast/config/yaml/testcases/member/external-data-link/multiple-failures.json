@@ -1,7 +1,7 @@
 {
   "instance": {
     "hazelcast": {
-      "external-data-link": {
+      "data-link": {
         "mysql-database": {
           "class-name": 123,
           "properties": [
@@ -13,26 +13,26 @@
     }
   },
   "error": {
-    "schemaLocation": "#/definitions/ExternalDataLinkConfig/additionalProperties",
-    "pointerToViolation": "#/hazelcast/external-data-link/mysql-database",
+    "schemaLocation": "#/definitions/DataLinkConfig/additionalProperties",
+    "pointerToViolation": "#/hazelcast/data-link/mysql-database",
     "causingExceptions": [
       {
-        "schemaLocation": "#/definitions/ExternalDataLinkConfig/additionalProperties/properties/class-name",
-        "pointerToViolation": "#/hazelcast/external-data-link/mysql-database/class-name",
+        "schemaLocation": "#/definitions/DataLinkConfig/additionalProperties/properties/class-name",
+        "pointerToViolation": "#/hazelcast/data-link/mysql-database/class-name",
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: String, found: Integer"
       },
       {
-        "schemaLocation": "#/definitions/ExternalDataLinkConfig/additionalProperties/properties/properties",
-        "pointerToViolation": "#/hazelcast/external-data-link/mysql-database/properties",
+        "schemaLocation": "#/definitions/DataLinkConfig/additionalProperties/properties/properties",
+        "pointerToViolation": "#/hazelcast/data-link/mysql-database/properties",
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: JSONObject, found: JSONArray"
       },
       {
-        "schemaLocation": "#/definitions/ExternalDataLinkConfig/additionalProperties/properties/shared",
-        "pointerToViolation": "#/hazelcast/external-data-link/mysql-database/shared",
+        "schemaLocation": "#/definitions/DataLinkConfig/additionalProperties/properties/shared",
+        "pointerToViolation": "#/hazelcast/data-link/mysql-database/shared",
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: Boolean, found: String"

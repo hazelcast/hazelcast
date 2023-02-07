@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.config.ExternalDataLinkConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.function.ToResultSetFunction;
 import com.hazelcast.spi.annotation.Beta;
@@ -24,30 +24,30 @@ import com.hazelcast.spi.annotation.Beta;
 import java.io.Serializable;
 
 /**
- * Represents a reference to the external data link, used with
- * {@link Sources#jdbc(ExternalDataLinkRef, ToResultSetFunction, FunctionEx)}.
+ * Represents a reference to the data link, used with
+ * {@link Sources#jdbc(DataLinkRef, ToResultSetFunction, FunctionEx)}.
  *
  * @since 5.2
  */
 @Beta
-public class ExternalDataLinkRef implements Serializable {
+public class DataLinkRef implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     private final String name;
 
-    public ExternalDataLinkRef(String name) {
+    public DataLinkRef(String name) {
         this.name = name;
     }
 
     /**
      * Creates a reference to the configured external data link
      *
-     * @param name name of the external data link configured in {@link ExternalDataLinkConfig}
-     * @return the reference to the external data link
+     * @param name name of the data link configured in {@link DataLinkConfig}
+     * @return the reference to the data link
      */
-    public static ExternalDataLinkRef externalDataLinkRef(String name) {
-        return new ExternalDataLinkRef(name);
+    public static DataLinkRef dataLinkRef(String name) {
+        return new DataLinkRef(name);
     }
 
     public String getName() {

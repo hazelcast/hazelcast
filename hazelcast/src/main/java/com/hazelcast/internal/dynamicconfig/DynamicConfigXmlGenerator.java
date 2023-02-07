@@ -35,7 +35,7 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataLinkConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -402,12 +402,12 @@ public final class DynamicConfigXmlGenerator {
         }
     }
 
-    public static void externalDataLinkXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, Config config) {
-        for (ExternalDataLinkConfig externalDataLinkConfig : config.getExternalDataLinkConfigs().values()) {
-            gen.open("external-data-link", "name", externalDataLinkConfig.getName())
-                    .node("class-name", externalDataLinkConfig.getClassName())
-                    .node("shared", externalDataLinkConfig.isShared())
-                    .appendProperties(externalDataLinkConfig.getProperties())
+    public static void dataLinkXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, Config config) {
+        for (DataLinkConfig dataLinkConfig : config.getDataLinkConfigs().values()) {
+            gen.open("data-link", "name", dataLinkConfig.getName())
+                    .node("class-name", dataLinkConfig.getClassName())
+                    .node("shared", dataLinkConfig.isShared())
+                    .appendProperties(dataLinkConfig.getProperties())
                     .close();
         }
     }

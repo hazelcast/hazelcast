@@ -16,11 +16,11 @@
 package com.hazelcast.datalink.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ExternalDataLinkConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.ExternalDataLinkFactory;
-import com.hazelcast.datalink.ExternalDataLinkService;
+import com.hazelcast.datalink.DataLinkFactory;
+import com.hazelcast.datalink.DataLinkService;
 import com.hazelcast.datalink.JdbcDataLinkFactory;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -46,21 +46,21 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ExternalDataLinkServiceImplTest extends HazelcastTestSupport {
-    private static final String TEST_CONFIG_NAME = ExternalDataLinkServiceImplTest.class.getSimpleName();
+public class DataLinkServiceImplTest extends HazelcastTestSupport {
+    private static final String TEST_CONFIG_NAME = DataLinkServiceImplTest.class.getSimpleName();
 
     private final Config config = smallInstanceConfig();
     private final TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory(1);
-    private ExternalDataLinkService externalDataLinkService;
+    private DataLinkService dataLinkService;
 
     @Before
     public void configure() {
-        ExternalDataLinkConfig externalDataLinkConfig = new ExternalDataLinkConfig()
+        DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName(TEST_CONFIG_NAME)
                 .setClassName("com.hazelcast.datalink.JdbcDataLinkFactory")
-                .setProperty("jdbcUrl", "jdbc:h2:mem:" + ExternalDataLinkServiceImplTest.class.getSimpleName());
-        config.addExternalDataLinkConfig(externalDataLinkConfig);
-        externalDataLinkService = getExternalDataLinkService();
+                .setProperty("jdbcUrl", "jdbc:h2:mem:" + DataLinkServiceImplTest.class.getSimpleName());
+        config.addDataLinkConfig(dataLinkConfig);
+        dataLinkService = getDataLinkService();
     }
 
     @After
@@ -71,31 +71,31 @@ public class ExternalDataLinkServiceImplTest extends HazelcastTestSupport {
 
     @Test
     public void test_connection_should_return_TRUE_when_dataLink_exists() throws Exception {
-        ExternalDataLinkConfig externalDSConfig = config.getExternalDataLinkConfig(TEST_CONFIG_NAME);
+        DataLinkConfig externalDSConfig = config.getDataLinkConfig(TEST_CONFIG_NAME);
 
-        assertThat(externalDataLinkService.testConnection(externalDSConfig)).isTrue();
+        assertThat(dataLinkService.testConnection(externalDSConfig)).isTrue();
     }
 
     @Test
     public void test_connection_should_throw_when_no_db_is_present() {
-        ExternalDataLinkConfig externalDSConfig = new ExternalDataLinkConfig()
+        DataLinkConfig externalDSConfig = new DataLinkConfig()
                 .setName(TEST_CONFIG_NAME)
                 .setClassName("com.hazelcast.datalink.JdbcDataLinkFactory")
                 .setProperty("jdbcUrl", "jdbc:h2:file:/random/path;IFEXISTS=TRUE");
 
-        assertThatThrownBy(() -> externalDataLinkService.testConnection(externalDSConfig))
+        assertThatThrownBy(() -> dataLinkService.testConnection(externalDSConfig))
                 .hasMessageContaining("Database \"/random/path\" not found");
     }
 
     @Test
     public void test_connection_should_throw_when_no_suitable_driver_is_present() {
-        ExternalDataLinkConfig externalDSConfig = new ExternalDataLinkConfig()
+        DataLinkConfig externalDSConfig = new DataLinkConfig()
                 .setName(TEST_CONFIG_NAME)
                 .setClassName("com.hazelcast.datalink.JdbcDataLinkFactory")
                 .setProperty("jdbcUrl", "jdbc:mysql:localhost:3306/random_db");
 
 
-        assertThatThrownBy(() -> externalDataLinkService.testConnection(externalDSConfig))
+        assertThatThrownBy(() -> dataLinkService.testConnection(externalDSConfig))
                 .isExactlyInstanceOf(RuntimeException.class)
                 .hasCauseInstanceOf(SQLException.class)
                 .hasRootCauseMessage("No suitable driver");
@@ -103,7 +103,7 @@ public class ExternalDataLinkServiceImplTest extends HazelcastTestSupport {
 
     @Test
     public void should_return_working_dataLink() throws Exception {
-        ExternalDataLinkFactory<?> dataLinkFactory = externalDataLinkService.getExternalDataLinkFactory(TEST_CONFIG_NAME);
+        DataLinkFactory<?> dataLinkFactory = dataLinkService.getDataLinkFactory(TEST_CONFIG_NAME);
         assertInstanceOf(JdbcDataLinkFactory.class, dataLinkFactory);
 
         DataSource dataSource = ((JdbcDataLinkFactory) dataLinkFactory).getDataLink();
@@ -119,24 +119,24 @@ public class ExternalDataLinkServiceImplTest extends HazelcastTestSupport {
 
     @Test
     public void should_fail_when_non_existing_dataLink() {
-        assertThatThrownBy(() -> externalDataLinkService.getExternalDataLinkFactory("non-existing-data-link"))
+        assertThatThrownBy(() -> dataLinkService.getDataLinkFactory("non-existing-data-link"))
                 .isInstanceOf(HazelcastException.class)
-                .hasMessage("External data link factory 'non-existing-data-link' not found");
+                .hasMessage("Data link factory 'non-existing-data-link' not found");
     }
 
     @Test
     public void should_close_factories() {
-        ExternalDataLinkFactory<?> dataLinkFactory = externalDataLinkService.getExternalDataLinkFactory(TEST_CONFIG_NAME);
+        DataLinkFactory<?> dataLinkFactory = dataLinkService.getDataLinkFactory(TEST_CONFIG_NAME);
 
         DataSource dataSource = ((JdbcDataLinkFactory) dataLinkFactory).getDataLink();
-        externalDataLinkService.close();
+        dataLinkService.close();
 
         assertDataSourceClosed(dataSource, TEST_CONFIG_NAME);
     }
 
-    private ExternalDataLinkService getExternalDataLinkService() {
+    private DataLinkService getDataLinkService() {
         HazelcastInstance instance = hazelcastInstanceFactory.newHazelcastInstance(config);
-        return Util.getNodeEngine(instance).getExternalDataLinkService();
+        return Util.getNodeEngine(instance).getDataLinkService();
     }
 
     private ResultSet executeQuery(DataSource dataSource, String sql) throws SQLException {
@@ -144,32 +144,32 @@ public class ExternalDataLinkServiceImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void should_fail_when_datastore_class_DOES_NOT_implements_ExternalDataLinkFactory() {
+    public void should_fail_when_datastore_class_DOES_NOT_implements_DataLinkFactory() {
         Config wrongConfig = smallInstanceConfig();
 
-        ExternalDataLinkConfig externalDataLinkConfig = new ExternalDataLinkConfig()
+        DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName("wrong-class-name")
                 .setClassName("java.lang.Object");
-        wrongConfig.addExternalDataLinkConfig(externalDataLinkConfig);
+        wrongConfig.addDataLinkConfig(dataLinkConfig);
 
         assertThatThrownBy(() -> hazelcastInstanceFactory.newHazelcastInstance(wrongConfig))
                 .isInstanceOf(HazelcastException.class)
-                .hasMessage("External data link 'wrong-class-name' misconfigured: 'java.lang.Object'"
-                        + " must implement 'com.hazelcast.datalink.ExternalDataLinkFactory'");
+                .hasMessage("Data link 'wrong-class-name' misconfigured: 'java.lang.Object'"
+                        + " must implement 'com.hazelcast.datalink.DataLinkFactory'");
     }
 
     @Test
     public void should_fail_when_datalink_class_NON_existing() {
         Config wrongConfig = smallInstanceConfig();
 
-        ExternalDataLinkConfig externalDataLinkConfig = new ExternalDataLinkConfig()
+        DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName("non-existing-class")
                 .setClassName("com.example.NonExistingClass");
-        wrongConfig.addExternalDataLinkConfig(externalDataLinkConfig);
+        wrongConfig.addDataLinkConfig(dataLinkConfig);
 
         assertThatThrownBy(() -> hazelcastInstanceFactory.newHazelcastInstance(wrongConfig))
                 .isInstanceOf(HazelcastException.class)
-                .hasMessage("External data link 'non-existing-class' misconfigured: "
+                .hasMessage("Data link 'non-existing-class' misconfigured: "
                         + "class 'com.example.NonExistingClass' not found");
     }
 }

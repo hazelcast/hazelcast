@@ -1015,7 +1015,7 @@ hazelcast:
   sql:
     statement-timeout-millis: 0
 
-  external-data-link:
+  data-link:
     mysql-database:
       class-name: com.hazelcast.datalink.JdbcDataLinkFactory
       properties:

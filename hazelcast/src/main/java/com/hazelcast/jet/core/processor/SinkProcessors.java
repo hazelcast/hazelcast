@@ -18,7 +18,7 @@ package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datalink.ExternalDataLinkFactory;
+import com.hazelcast.datalink.DataLinkFactory;
 import com.hazelcast.datalink.JdbcDataLinkFactory;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.BiFunctionEx;
@@ -35,7 +35,7 @@ import com.hazelcast.jet.impl.connector.WriteFileP;
 import com.hazelcast.jet.impl.connector.WriteJdbcP;
 import com.hazelcast.jet.impl.connector.WriteJmsP;
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.pipeline.ExternalDataLinkRef;
+import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.security.impl.function.SecuredFunctions;
@@ -411,26 +411,26 @@ public final class SinkProcessors {
     @Beta
     public static <T> ProcessorMetaSupplier writeJdbcP(
             @Nonnull String updateQuery,
-            @Nonnull ExternalDataLinkRef externalDataLinkRef,
+            @Nonnull DataLinkRef dataLinkRef,
             @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
             boolean exactlyOnce,
             int batchLimit
     ) {
         checkNotNull(updateQuery, "updateQuery");
-        checkNotNull(externalDataLinkRef, "externalDataLinkRef");
+        checkNotNull(dataLinkRef, "dataLinkRef");
         checkNotNull(bindFn, "bindFn");
         checkPositive(batchLimit, "batchLimit");
-        return WriteJdbcP.metaSupplier(null, updateQuery, dataSourceSupplier(externalDataLinkRef.getName()),
+        return WriteJdbcP.metaSupplier(null, updateQuery, dataSourceSupplier(dataLinkRef.getName()),
                 bindFn, exactlyOnce, batchLimit);
     }
 
-    private static FunctionEx<ProcessorMetaSupplier.Context, DataSource> dataSourceSupplier(String externalDataLinkName) {
-        return context -> getDataLinkFactory(context, externalDataLinkName).getDataLink();
+    private static FunctionEx<ProcessorMetaSupplier.Context, DataSource> dataSourceSupplier(String dataLinkName) {
+        return context -> getDataLinkFactory(context, dataLinkName).getDataLink();
     }
 
     private static JdbcDataLinkFactory getDataLinkFactory(ProcessorMetaSupplier.Context context, String name) {
         NodeEngineImpl nodeEngine = Util.getNodeEngine(context.hazelcastInstance());
-        ExternalDataLinkFactory<?> dataLinkFactory = nodeEngine.getExternalDataLinkService().getExternalDataLinkFactory(name);
+        DataLinkFactory<?> dataLinkFactory = nodeEngine.getDataLinkService().getDataLinkFactory(name);
         if (!(dataLinkFactory instanceof JdbcDataLinkFactory)) {
             String className = JdbcDataLinkFactory.class.getName();
             throw new HazelcastException("Data link factory '" + name + "' must be an instance of " + className);

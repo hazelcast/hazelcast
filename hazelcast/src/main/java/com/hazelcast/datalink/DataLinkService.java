@@ -16,37 +16,37 @@
 
 package com.hazelcast.datalink;
 
-import com.hazelcast.config.ExternalDataLinkConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.spi.annotation.Beta;
 
 /**
- * Service for accessing external data link factories
+ * Service for accessing data link factories
  *
  * @since 5.2
  */
 @Beta
-public interface ExternalDataLinkService extends AutoCloseable {
+public interface DataLinkService extends AutoCloseable {
 
     /**
-     * Tests external data link configuration.
+     * Tests data link configuration.
      *
      * @param config name of the data link factory
      * @return {@code true} if test was successful
      * @throws Exception if the test operation fails
      * @since 5.3
      */
-    boolean testConnection(ExternalDataLinkConfig config) throws Exception;
+    boolean testConnection(DataLinkConfig config) throws Exception;
 
     /**
-     * Returns external data link factory with given name.
+     * Returns data link factory with given name.
      *
      * @param name name of the data link factory
      * @param <DL> type of the data link
      * @return instance of the factory
      * @throws HazelcastException if the factory with given name is not found or misconfigured*
      */
-    <DL> ExternalDataLinkFactory<DL> getExternalDataLinkFactory(String name);
+    <DL> DataLinkFactory<DL> getDataLinkFactory(String name);
 
     @Override
     void close();

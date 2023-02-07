@@ -16,7 +16,7 @@
 
 package com.hazelcast.datalink;
 
-import com.hazelcast.config.ExternalDataLinkConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.datalink.impl.CloseableDataSource;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.spi.annotation.Beta;
@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Creates a JDBC data link as a {@link DataSource}.
  * <p>
- * Implementation is based on {@link HikariDataSource}. {@link ExternalDataLinkConfig#getProperties()} are passed directly
+ * Implementation is based on {@link HikariDataSource}. {@link DataLinkConfig#getProperties()} are passed directly
  * to {@link HikariConfig}. For available options see
  * <a href="https://github.com/brettwooldridge/HikariCP#gear-configuration-knobs-baby">HikariCP configuration</a>
  * </p>
@@ -39,17 +39,17 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @since 5.2
  */
 @Beta
-public class JdbcDataLinkFactory implements ExternalDataLinkFactory<DataSource> {
+public class JdbcDataLinkFactory implements DataLinkFactory<DataSource> {
 
     private static final int JDBC_TEST_CONNECTION_TIMEOUT_SECONDS = 5;
     private static final AtomicInteger DATA_SOURCE_COUNTER = new AtomicInteger();
 
     protected HikariDataSource sharedDataSource;
     protected CloseableDataSource sharedCloseableDataSource;
-    protected ExternalDataLinkConfig config;
+    protected DataLinkConfig config;
 
     @Override
-    public void init(ExternalDataLinkConfig config) {
+    public void init(DataLinkConfig config) {
         this.config = config;
         if (config.isShared()) {
             sharedDataSource = doCreateDataSource();

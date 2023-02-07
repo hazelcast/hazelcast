@@ -20,7 +20,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.ExternalDataLinkFactory;
+import com.hazelcast.datalink.DataLinkFactory;
 import com.hazelcast.datalink.JdbcDataLinkFactory;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.util.UuidUtil;
@@ -56,7 +56,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_EXTERNAL_DATA_LINK_REF;
+import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
 import static com.hazelcast.sql.SqlRowMetadata.COLUMN_NOT_FOUND;
 import static java.util.Collections.unmodifiableList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -73,8 +73,8 @@ import static java.util.stream.Stream.of;
  * <p>
  * First define external data link, e.g. for JDBC use {@link JdbcDataLinkFactory}:
  * <pre>{@code Config config = new Config();
- * config.addExternalDataLinkConfig(
- *   new ExternalDataLinkConfig("mysql-ref")
+ * config.addDataLinkConfig(
+ *   new DataLinkConfig("mysql-ref")
  *     .setClassName(JdbcDataLinkFactory.class.getName())
  *     .setProperty("jdbcUrl", dbConnectionUrl)
  * );}</pre>
@@ -83,7 +83,7 @@ import static java.util.stream.Stream.of;
  * <pre>{@code MapConfig mapConfig = new MapConfig(mapName);
  * MapStoreConfig mapStoreConfig = new MapStoreConfig();
  * mapStoreConfig.setClassName(GenericMapStore.class.getName());
- * mapStoreConfig.setProperty(OPTION_EXTERNAL_DATA_LINK_REF, "mysql-ref");
+ * mapStoreConfig.setProperty(OPTION_DATA_LINK_REF, "mysql-ref");
  * mapConfig.setMapStoreConfig(mapStoreConfig);
  * instance().getConfig().addMapConfig(mapConfig);}</pre>
  * <p>
@@ -102,7 +102,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
     static final String MAPPING_PREFIX = "__map-store.";
 
-    static final String EXTERNAL_REF_ID_PROPERTY = "external-data-link-ref";
+    static final String DATA_LINK_REF_PROPERTY = "data-link-ref";
     static final String TABLE_NAME_PROPERTY = "table-name";
     static final String MAPPING_TYPE_PROPERTY = "mapping-type";
 
@@ -176,7 +176,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         try {
             String mappingColumns = null;
             if (properties.hasColumns()) {
-                mappingColumns = resolveMappingColumns(properties.tableName, properties.externalDataLinkRef);
+                mappingColumns = resolveMappingColumns(properties.tableName, properties.dataLinkRef);
                 logger.fine("Discovered following mapping columns: " + mappingColumns);
             }
 
@@ -186,7 +186,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
                             + (mappingColumns != null ? " ( " + mappingColumns + " ) " : "")
                             + "TYPE " + deriveMappingType() + " "
                             + "OPTIONS ("
-                            + "    '" + OPTION_EXTERNAL_DATA_LINK_REF + "' = '" + properties.externalDataLinkRef + "' "
+                            + "    '" + OPTION_DATA_LINK_REF + "' = '" + properties.dataLinkRef + "' "
                             + ")"
             ).close();
 
@@ -212,9 +212,9 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         if (properties.mappingType != null) {
             return properties.mappingType;
         } else {
-            ExternalDataLinkFactory<?> factory = nodeEngine()
-                    .getExternalDataLinkService()
-                    .getExternalDataLinkFactory(properties.externalDataLinkRef);
+            DataLinkFactory<?> factory = nodeEngine()
+                    .getDataLinkService()
+                    .getDataLinkFactory(properties.dataLinkRef);
 
             if (factory instanceof JdbcDataLinkFactory) {
                 return "JDBC";
@@ -225,9 +225,9 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         }
     }
 
-    private String resolveMappingColumns(String tableName, String externalDataLinkRef) {
+    private String resolveMappingColumns(String tableName, String dataLinkRef) {
         String tempMapping = "temp_mapping_" + UuidUtil.newUnsecureUuidString();
-        createMapping(tempMapping, tableName, externalDataLinkRef);
+        createMapping(tempMapping, tableName, dataLinkRef);
         SqlRowMetadata rowMetadata = loadMetadataFromMapping(tempMapping);
         columnMetadataList = rowMetadata.getColumns();
         dropMapping(tempMapping);
@@ -240,13 +240,13 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
                      .collect(Collectors.joining(", "));
     }
 
-    private void createMapping(String mappingName, String tableName, String externalDataLinkRef) {
+    private void createMapping(String mappingName, String tableName, String dataLinkRef) {
         sql.execute(
                 "CREATE MAPPING \"" + mappingName + "\""
                         + " EXTERNAL NAME \"" + tableName + "\" "
                         + " TYPE " + deriveMappingType()
                         + " OPTIONS ("
-                        + "    '" + OPTION_EXTERNAL_DATA_LINK_REF + "' = '" + externalDataLinkRef + "' "
+                        + "    '" + OPTION_DATA_LINK_REF + "' = '" + dataLinkRef + "' "
                         + ")"
         ).close();
     }
@@ -567,7 +567,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
     private static class GenericMapStoreProperties {
 
-        final String externalDataLinkRef;
+        final String dataLinkRef;
         final String tableName;
         final String mappingType;
         final String idColumn;
@@ -576,7 +576,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         final String compactTypeName;
 
         GenericMapStoreProperties(Properties properties, String mapName) {
-            externalDataLinkRef = properties.getProperty(EXTERNAL_REF_ID_PROPERTY);
+            dataLinkRef = properties.getProperty(DATA_LINK_REF_PROPERTY);
             tableName = properties.getProperty(TABLE_NAME_PROPERTY, mapName);
             this.mappingType = properties.getProperty(MAPPING_TYPE_PROPERTY);
             idColumn = properties.getProperty(ID_COLUMN_PROPERTY, ID_COLUMN_DEFAULT);

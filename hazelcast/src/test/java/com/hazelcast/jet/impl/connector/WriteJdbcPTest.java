@@ -58,9 +58,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.impl.connector.ExternalDataLinkTestUtil.configureDummyDataLink;
-import static com.hazelcast.jet.impl.connector.ExternalDataLinkTestUtil.configureJdbcDataLink;
-import static com.hazelcast.jet.pipeline.ExternalDataLinkRef.externalDataLinkRef;
+import static com.hazelcast.jet.impl.connector.DataLinkTestUtil.configureDummyDataLink;
+import static com.hazelcast.jet.impl.connector.DataLinkTestUtil.configureJdbcDataLink;
+import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -197,13 +197,13 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_external_data_link_config() throws SQLException {
+    public void test_data_link_config() throws SQLException {
         assertEquals(0, rowCount());
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
                 .map(item -> entry(item, item.toString()))
                 .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
-                        externalDataLinkRef(JDBC_DATA_LINK),
+                        dataLinkRef(JDBC_DATA_LINK),
                         (stmt, item) -> {
                             stmt.setInt(1, item.getKey());
                             stmt.setString(2, item.getValue());

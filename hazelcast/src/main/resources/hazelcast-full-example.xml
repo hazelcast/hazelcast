@@ -3890,21 +3890,21 @@
     <integrity-checker enabled="false"/>
 
     <!--
-      ===== HAZELCAST EXTERNAL DATA LINK CONFIGURATION =====
+      ===== HAZELCAST DATA LINK CONFIGURATION =====
     
-      Configuration element's name is <external-data-link>. Contains configuration of external data links
+      Configuration element's name is <data-link>. Contains configuration of data links
       used by map stores and jdbc sinks and sources
       -->
-    <external-data-link name="mysql-database">
+    <data-link name="mysql-database">
         <class-name>com.hazelcast.datalink.JdbcDataLinkFactory</class-name>
         <properties>
             <property name="jdbcUrl">jdbc:mysql://dummy:3306</property>
         </properties>
         <shared>false</shared>
-    </external-data-link>
+    </data-link>
 
-    <external-data-link name="other-database">
+    <data-link name="other-database">
         <class-name>com.hazelcast.datalink.OtherDataLink</class-name>
-    </external-data-link>
+    </data-link>
 
 </hazelcast>

@@ -16,17 +16,17 @@
 
 package com.hazelcast.datalink;
 
-import com.hazelcast.config.ExternalDataLinkConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.spi.annotation.Beta;
 
 /**
- * Creates external data link. Configuration is provided by {@link #init(ExternalDataLinkConfig)}.
+ * Creates data link. Configuration is provided by {@link #init(DataLinkConfig)}.
  *
  * @param <DL> type of the data link
  * @since 5.2
  */
 @Beta
-public interface ExternalDataLinkFactory<DL> extends AutoCloseable {
+public interface DataLinkFactory<DL> extends AutoCloseable {
 
     /**
      * Returns configured data link. Depending on configuration and implementation it can create new data link
@@ -40,7 +40,7 @@ public interface ExternalDataLinkFactory<DL> extends AutoCloseable {
      *
      * @param config configuration of the given data link
      */
-    void init(ExternalDataLinkConfig config);
+    void init(DataLinkConfig config);
 
     /**
      * Test connection of previously initialized data link.
