@@ -17,7 +17,11 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptCost;
+import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.rel.metadata.RelMetadataQuery;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.List;
 
@@ -27,5 +31,10 @@ public class GetDdlLogicalRel extends GetDdlRel implements LogicalRel {
             RelTraitSet traits,
             List<String> operands) {
         super(cluster, traits, operands);
+    }
+
+    @Override
+    public @Nullable RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+        return planner.getCostFactory().makeTinyCost();
     }
 }

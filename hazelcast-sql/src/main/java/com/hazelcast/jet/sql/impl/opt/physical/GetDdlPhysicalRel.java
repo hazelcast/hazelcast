@@ -27,6 +27,9 @@ import org.apache.calcite.plan.RelTraitSet;
 import java.util.List;
 
 public class GetDdlPhysicalRel extends GetDdlRel implements PhysicalRel {
+    static final String TABLE_NAMESPACE = "table";
+    static final String DATALINK_NAMESPACE = "datalink";
+
     GetDdlPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traits,

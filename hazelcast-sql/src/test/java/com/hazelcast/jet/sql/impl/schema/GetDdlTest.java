@@ -16,11 +16,16 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
+import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Collections;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class GetDdlTest extends SqlTestSupport {
 
@@ -30,7 +35,49 @@ public class GetDdlTest extends SqlTestSupport {
     }
 
     @Test
-    public void test() {
-        assertRowsAnyOrder("SELECT GET_DDL('a', 'b')", Collections.singletonList(new Row("test")));
+    public void when_queryMappingFromTableNamespace_then_success() {
+        createMapping("a", int.class, int.class);
+
+        assertRowsAnyOrder("SELECT GET_DDL('table', 'a')", ImmutableList.of(
+                new Row("CREATE MAPPING \"a\" (\n" +
+                        "  \"__key\" INTEGER EXTERNAL NAME \"__key\",\n" +
+                        "  \"this\" INTEGER EXTERNAL NAME \"this\"\n" +
+                        ")\n" +
+                        "TYPE IMap\n" +
+                        "OPTIONS (\n" +
+                        "  'keyFormat' = 'java',\n" +
+                        "  'keyJavaClass' = 'int',\n" +
+                        "  'valueFormat' = 'java',\n" +
+                        "  'valueJavaClass' = 'int'\n" +
+                        ")"))
+        );
+    }
+
+    @Test
+    public void when_queryViewFromTableNamespace_then_success() {
+        createMapping("a", int.class, int.class);
+        instance().getSql().execute("CREATE VIEW v AS SELECT * FROM a");
+
+        assertRowsAnyOrder("SELECT GET_DDL('table', 'v')", ImmutableList.of(
+                new Row("CREATE VIEW  \"v\" AS\n" +
+                        "SELECT \"a\".\"__key\", \"a\".\"this\"\n" +
+                        "FROM \"hazelcast\".\"public\".\"a\" AS \"a\""))
+        );
+    }
+
+    @
+
+            Test
+    public void when_queryNotSupportedNamespace_then_throws() {
+        assertThatThrownBy(() -> instance().getSql().execute("SELECT GET_DDL('a', 'b')"))
+                .hasCauseInstanceOf(QueryException.class)
+                .hasMessageContaining("Namespace 'a' is not supported.");
+    }
+
+    @Test
+    public void when_queryNonExistingObject_then_throws() {
+        assertThatThrownBy(() -> instance().getSql().execute("SELECT GET_DDL('table', 'bbb')"))
+                .hasCauseInstanceOf(QueryException.class)
+                .hasMessageContaining("Object 'bbb' does not exist");
     }
 }

@@ -18,16 +18,22 @@ package com.hazelcast.jet.sql.impl.parse;
 
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastCreateViewOperator;
+import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.view.View;
 import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperator;
+import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.pretty.SqlPrettyWriter;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 
 import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
 import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.isCatalogObjectNameValid;
@@ -85,6 +91,18 @@ public class SqlCreateView extends SqlCreate {
         writer.keyword("AS");
         writer.newlineAndIndent();
         query.unparse(writer, 0, 0);
+    }
+
+    public static String unparse(View v) {
+        SqlPrettyWriter writer = new SqlPrettyWriter(SqlPrettyWriter.config());
+
+        writer.keyword("CREATE VIEW ");
+        writer.identifier(v.name(), false);
+        writer.keyword("AS");
+        writer.newlineAndIndent();
+        writer.literal(v.query());
+
+        return writer.toString();
     }
 
     @Override
