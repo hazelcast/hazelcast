@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExternalDataStoreConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExternalDataLinkConfigCodec;
 import com.hazelcast.client.impl.protocol.util.PropertiesUtil;
 import com.hazelcast.config.ExternalDataLinkConfig;
 import com.hazelcast.instance.impl.Node;
@@ -26,20 +26,20 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public class AddExternalDataLinkConfigMessageTask
-        extends AbstractAddConfigMessageTask<DynamicConfigAddExternalDataStoreConfigCodec.RequestParameters> {
+        extends AbstractAddConfigMessageTask<DynamicConfigAddExternalDataLinkConfigCodec.RequestParameters> {
 
     public AddExternalDataLinkConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected DynamicConfigAddExternalDataStoreConfigCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return DynamicConfigAddExternalDataStoreConfigCodec.decodeRequest(clientMessage);
+    protected DynamicConfigAddExternalDataLinkConfigCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return DynamicConfigAddExternalDataLinkConfigCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return DynamicConfigAddExternalDataStoreConfigCodec.encodeResponse();
+        return DynamicConfigAddExternalDataLinkConfigCodec.encodeResponse();
     }
 
     @Override
@@ -53,7 +53,7 @@ public class AddExternalDataLinkConfigMessageTask
 
     @Override
     public String getMethodName() {
-        return "addExternalDataStoreConfig";
+        return "addExternalDataLinkConfig";
     }
 
     @Override

@@ -115,7 +115,7 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCacheConfigCodec
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCardinalityEstimatorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDurableExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExecutorConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExternalDataStoreConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExternalDataLinkConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGeneratorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddListConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMapConfigCodec;
@@ -1660,7 +1660,7 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new AddFlakeIdGeneratorConfigMessageTask(cm, node, con));
         factories.put(DynamicConfigAddPNCounterConfigCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new AddPNCounterConfigMessageTask(cm, node, con));
-        factories.put(DynamicConfigAddExternalDataStoreConfigCodec.REQUEST_MESSAGE_TYPE,
+        factories.put(DynamicConfigAddExternalDataLinkConfigCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new AddExternalDataLinkConfigMessageTask(cm, node, con));
     }
 

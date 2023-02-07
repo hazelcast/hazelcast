@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCacheConfigCodec
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCardinalityEstimatorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDurableExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExecutorConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExternalDataStoreConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExternalDataLinkConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGeneratorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddListConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMapConfigCodec;
@@ -1129,7 +1129,7 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config addExternalDataLinkConfig(ExternalDataLinkConfig externalDataLinkConfig) {
-        ClientMessage request = DynamicConfigAddExternalDataStoreConfigCodec.encodeRequest(
+        ClientMessage request = DynamicConfigAddExternalDataLinkConfigCodec.encodeRequest(
                 externalDataLinkConfig.getName(), externalDataLinkConfig.getClassName(),
                 externalDataLinkConfig.isShared(), toMap(externalDataLinkConfig.getProperties()));
         invoke(request);

@@ -5973,15 +5973,15 @@ public class ClientCompatibilityTest_2_6 {
     }
 
     @Test
-    public void test_DynamicConfigAddExternalDataStoreConfigCodec_encodeRequest() {
+    public void test_DynamicConfigAddExternalDataLinkConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 757;
-        ClientMessage encoded = DynamicConfigAddExternalDataStoreConfigCodec.encodeRequest(aString, aString, aBoolean, aMapOfStringToString);
+        ClientMessage encoded = DynamicConfigAddExternalDataLinkConfigCodec.encodeRequest(aString, aString, aBoolean, aMapOfStringToString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
 
     @Test
-    public void test_DynamicConfigAddExternalDataStoreConfigCodec_decodeResponse() {
+    public void test_DynamicConfigAddExternalDataLinkConfigCodec_decodeResponse() {
         int fileClientMessageIndex = 758;
     }
 
@@ -7071,6 +7071,36 @@ public class ClientCompatibilityTest_2_6 {
         int fileClientMessageIndex = 900;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aBoolean, JetIsJobUserCancelledCodec.decodeResponse(fromFile)));
+    }
+
+    @Test
+    public void test_JetUploadJobMetaDataCodec_encodeRequest() {
+        int fileClientMessageIndex = 901;
+        ClientMessage encoded = JetUploadJobMetaDataCodec.encodeRequest(aUUID, aString, aString, aString, aString, aString, aListOfStrings);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetUploadJobMetaDataCodec_decodeResponse() {
+        int fileClientMessageIndex = 902;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aBoolean, JetUploadJobMetaDataCodec.decodeResponse(fromFile)));
+    }
+
+    @Test
+    public void test_JetUploadJobMultipartCodec_encodeRequest() {
+        int fileClientMessageIndex = 903;
+        ClientMessage encoded = JetUploadJobMultipartCodec.encodeRequest(aUUID, anInt, anInt, aByteArray, anInt, aString);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetUploadJobMultipartCodec_decodeResponse() {
+        int fileClientMessageIndex = 904;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aBoolean, JetUploadJobMultipartCodec.decodeResponse(fromFile)));
     }
 
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {

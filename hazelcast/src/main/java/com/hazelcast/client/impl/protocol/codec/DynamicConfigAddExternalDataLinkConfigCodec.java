@@ -34,12 +34,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Adds an external data store configuration.
- * If an external data store configuration with the given {@code name} already exists, then
+ * Adds an external data link configuration.
+ * If an external data link configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("64ade05602ca9a601f8549e15da697ee")
-public final class DynamicConfigAddExternalDataStoreConfigCodec {
+@Generated("743a19495961bb0144de58ea45440072")
+public final class DynamicConfigAddExternalDataLinkConfigCodec {
     //hex: 0x1B1100
     public static final int REQUEST_MESSAGE_TYPE = 1773824;
     //hex: 0x1B1101
@@ -48,30 +48,30 @@ public final class DynamicConfigAddExternalDataStoreConfigCodec {
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_SHARED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
-    private DynamicConfigAddExternalDataStoreConfigCodec() {
+    private DynamicConfigAddExternalDataLinkConfigCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
-         * Name of this external data store, must be unique.
+         * Name of this external data link, must be unique.
          */
         public java.lang.String name;
 
         /**
-         * Name for the ExternalDataStoreFactory implementation class.
+         * Name for the ExternalDataLinkFactory implementation class.
          */
         public java.lang.String className;
 
         /**
-         * {@code true} if an instance of the external data store will be reused. {@code false} when on each usage
-         * the data store instance should be created. The default it {@code true}.
+         * {@code true} if an instance of the external data link will be reused. {@code false} when on each usage
+         * the data link instance should be created. The default it {@code true}.
          */
         public boolean shared;
 
         /**
-         * Properties of the data store configuration.
+         * Properties of the data link configuration.
          */
         public java.util.Map<java.lang.String, java.lang.String> properties;
     }
@@ -79,7 +79,7 @@ public final class DynamicConfigAddExternalDataStoreConfigCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.lang.String className, boolean shared, java.util.Map<java.lang.String, java.lang.String> properties) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("DynamicConfig.AddExternalDataStoreConfig");
+        clientMessage.setOperationName("DynamicConfig.AddExternalDataLinkConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
@@ -91,7 +91,7 @@ public final class DynamicConfigAddExternalDataStoreConfigCodec {
         return clientMessage;
     }
 
-    public static DynamicConfigAddExternalDataStoreConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static DynamicConfigAddExternalDataLinkConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
