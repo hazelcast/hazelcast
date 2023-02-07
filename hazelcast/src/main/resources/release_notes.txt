@@ -5,4 +5,4 @@ This document lists the new features, enhancements, fixed issues and, removed or
 ## Fixes
 
 * Fixed an issue where the JSON Query results were inconsistent, using the data stored as JSON via `HazelcastJsonValue`. #23454
-* Fixed an issue where the WAN replicated entries was expiring on the passive cluster when the entries are accessed on the active cluster. #22294
+* Fixed an issue where the WAN replicated entries were expiring on the passive cluster when the entries are accessed on the active cluster. #22294
