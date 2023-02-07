@@ -40,24 +40,22 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class KafkaConnectRandomIntIntegrationTest extends JetTestSupport {
+public class KafkaConnectDatagenIntegrationTest extends JetTestSupport {
 
-    public static final int ITEM_COUNT = 10_000;
+    public static final int ITEM_COUNT = 1_000;
 
-    private static final String CONNECTOR_URL = "https://hazelcast.jfrog.io/artifactory/libs-snapshot-local/" +
-            "sasakitoa/kafka/connect/random-connector/1.0-SNAPSHOT/random-connector-1.0-20230124.105259-1.jar";
+    private static final String CONNECTOR_URL = "https://hazelcast.jfrog.io/artifactory/download-local/tests/confluentinc-kafka-connect-datagen-0.6.0.zip";
 
     @Test
     public void readFromRandomSource() throws Exception {
         System.setProperty("hazelcast.logging.type", "log4j2");
         Properties randomProperties = new Properties();
-        randomProperties.setProperty("name", "random-source-connector");
-        randomProperties.setProperty("connector.class", "sasakitoa.kafka.connect.random.RandomSourceConnector");
-        randomProperties.setProperty("generator.class", "sasakitoa.kafka.connect.random.generator.RandomInt");
+        randomProperties.setProperty("name", "datagen-connector");
+        randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
         randomProperties.setProperty("tasks.max", "1");
-        randomProperties.setProperty("messages.per.second", "1000");
-        randomProperties.setProperty("topic", "test");
-        randomProperties.setProperty("task.summary.enable", "true");
+        randomProperties.setProperty("max.interval", "1");
+        randomProperties.setProperty("kafka.topic", "users");
+        randomProperties.setProperty("quickstart", "users");
 
         Pipeline pipeline = Pipeline.create();
         StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties))
@@ -69,7 +67,7 @@ public class KafkaConnectRandomIntIntegrationTest extends JetTestSupport {
                         list -> assertEquals(ITEM_COUNT, list.size())));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJar(new URL(CONNECTOR_URL));
+        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
