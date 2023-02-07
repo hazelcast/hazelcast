@@ -6204,12 +6204,11 @@
     <xs:complexType name="alto">
         <xs:annotation>
             <xs:documentation>
-                Configures the Alto-aware client, which is the next generation Hazelcast
-                that uses thread-per-core model.
-                Alto-aware clients will maintain connections to all cluster members
-                along with connections to all Alto cores of each cluster member to
-                route invocations to the correct cores of the correct members in
-                best-effort basis.
+                Configures the client for Alto, which is the next generation Hazelcast that
+                uses thread-per-core model. Alto-aware clients will maintain connections to
+                all cores of all cluster members. The client will rout partition-specific
+                invocations to the correct core of the correct member in the best effort
+                basis.
                 This configuration is introduced as BETA, and it might be subject to
                 changes, or it can be removed in future releases without a prior notice.
             </xs:documentation>
