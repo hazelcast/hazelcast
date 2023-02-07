@@ -45,7 +45,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
 
 @Category({SerialTest.class})
-public class JobUploadFailureTest extends JetTestSupport {
+public class JobUploadClientFailureTest extends JetTestSupport {
 
     @After
     public void resetSingleton() {
@@ -83,12 +83,7 @@ public class JobUploadFailureTest extends JetTestSupport {
 
     @Test
     public void testNullMainClass() {
-        Config config = smallInstanceConfig();
-        JetConfig jetConfig = config.getJetConfig();
-        jetConfig.setResourceUploadEnabled(true);
-
-        createHazelcastInstance(config);
-        HazelcastInstance client = createHazelcastClient();
+        HazelcastInstance client = createResourceUploadEnabledMemberAndClient();
         JetService jetService = client.getJet();
 
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
@@ -101,12 +96,7 @@ public class JobUploadFailureTest extends JetTestSupport {
 
     @Test
     public void testTooLongFileName() {
-        Config config = smallInstanceConfig();
-        JetConfig jetConfig = config.getJetConfig();
-        jetConfig.setResourceUploadEnabled(true);
-
-        createHazelcastInstance(config);
-        HazelcastInstance client = createHazelcastClient();
+        HazelcastInstance client = createResourceUploadEnabledMemberAndClient();
         JetService jetService = client.getJet();
         JetClientInstanceImpl spyJetService = (JetClientInstanceImpl) Mockito.spy(jetService);
 
@@ -128,7 +118,7 @@ public class JobUploadFailureTest extends JetTestSupport {
     }
 
     @Test
-    public void test_client_jarUpload_whenResourceUploadIsNotEnabled() {
+    public void test_jarUpload_whenResourceUploadIsNotEnabled() {
         createHazelcastInstance();
         HazelcastInstance client = createHazelcastClient();
         JetService jetService = client.getJet();
@@ -144,28 +134,8 @@ public class JobUploadFailureTest extends JetTestSupport {
     }
 
     @Test
-    public void test_member_jarUpload_whenResourceUploadIsNotEnabled() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstance();
-        JetService jetService = hazelcastInstance.getJet();
-
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                .setJarPath(getJarPath());
-
-        assertThrows(JetException.class, () ->
-                jetService.submitJobFromJar(submitJobParameters)
-        );
-
-        assertEqualsEventually(() -> jetService.getJobs().size(), 0);
-    }
-
-    @Test
-    public void test_jarUploadByClient_withWrongMainClassname() {
-        Config config = smallInstanceConfig();
-        JetConfig jetConfig = config.getJetConfig();
-        jetConfig.setResourceUploadEnabled(true);
-
-        createHazelcastInstance(config);
-        HazelcastInstance client = createHazelcastClient();
+    public void test_jarUpload_withWrongMainClassname() {
+        HazelcastInstance client = createResourceUploadEnabledMemberAndClient();
         JetService jetService = client.getJet();
 
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
@@ -178,29 +148,8 @@ public class JobUploadFailureTest extends JetTestSupport {
 
 
     @Test
-    public void test_jarUploadByMember_withWrongMainClassname() {
-        Config config = smallInstanceConfig();
-        JetConfig jetConfig = config.getJetConfig();
-        jetConfig.setResourceUploadEnabled(true);
-
-        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
-        JetService jetService = hazelcastInstance.getJet();
-
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                .setJarPath(getJarPath())
-                .setMainClass("org.example.Main1");
-
-        assertThrows(ClassNotFoundException.class, () -> jetService.submitJobFromJar(submitJobParameters));
-    }
-
-    @Test
     public void test_jarUpload_WithIncorrectChecksum() throws IOException, NoSuchAlgorithmException {
-        Config config = smallInstanceConfig();
-        JetConfig jetConfig = config.getJetConfig();
-        jetConfig.setResourceUploadEnabled(true);
-
-        createHazelcastInstance(config);
-        HazelcastInstance client = createHazelcastClient();
+        HazelcastInstance client = createResourceUploadEnabledMemberAndClient();
 
         // Mock the JetClientInstanceImpl to return an incorrect checksum
         JetClientInstanceImpl jetService = (JetClientInstanceImpl) client.getJet();
@@ -219,28 +168,32 @@ public class JobUploadFailureTest extends JetTestSupport {
         assertEqualsEventually(() -> jetService.getJobs().size(), 0);
     }
 
+    private HazelcastInstance createResourceUploadEnabledMemberAndClient() {
+        Config config = smallInstanceConfig();
+        JetConfig jetConfig = config.getJetConfig();
+        jetConfig.setResourceUploadEnabled(true);
+
+        createHazelcastInstance(config);
+        return createHazelcastClient();
+    }
+
     private Path getJarPath() {
-        ClassLoader classLoader = getClass().getClassLoader();
-        URL resource = classLoader.getResource("simplejob-1.0.0.jar");
-        Path result = null;
-        try {
-            assert resource != null;
-            result = Paths.get(resource.toURI());
-        } catch (Exception exception) {
-            fail("Unable to get jar path from :" + resource);
-        }
-        return result;
+        return getPath("simplejob-1.0.0.jar");
     }
 
     private Path getNoManifestJarPath() {
+        return getPath("nomanifestsimplejob-1.0.0 .jar");
+    }
+
+    private Path getPath(String jarName) {
         ClassLoader classLoader = getClass().getClassLoader();
-        URL resource = classLoader.getResource("nomanifestsimplejob-1.0.0 .jar");
+        URL resource = classLoader.getResource(jarName);
         Path result = null;
         try {
             assert resource != null;
             result = Paths.get(resource.toURI());
         } catch (Exception exception) {
-            fail("Unable to get jar path from :" + resource);
+            fail("Unable to get jar path from :" + jarName);
         }
         return result;
     }

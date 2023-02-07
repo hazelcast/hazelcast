@@ -29,7 +29,7 @@ public class MainClassFinderTest {
 
     @Test
     public void testFindMainClassInManifest() throws Exception {
-        String jarPath = getPathOfManifestJar();
+        String jarPath = getPathOfJar("simplejob-1.0.0.jar");
 
         MainClassFinder mainClassFinder = new MainClassFinder();
         mainClassFinder.findMainClass(null, jarPath);
@@ -40,7 +40,7 @@ public class MainClassFinderTest {
 
     @Test
     public void testNoMainClassInManifest() throws Exception {
-        String jarPath = getPathOfNoManifestJar();
+        String jarPath = getPathOfJar("nomanifestsimplejob-1.0.0 .jar");
 
         MainClassFinder mainClassFinder = new MainClassFinder();
         mainClassFinder.findMainClass(null, jarPath);
@@ -53,28 +53,15 @@ public class MainClassFinderTest {
                 .containsIgnoringCase("No Main-Class found in the manifest of ");
     }
 
-    private String getPathOfManifestJar() {
+    private String getPathOfJar(String jarName) {
         ClassLoader classLoader = getClass().getClassLoader();
-        URL resource = classLoader.getResource("simplejob-1.0.0.jar");
+        URL resource = classLoader.getResource(jarName);
         Path result = null;
         try {
             assert resource != null;
             result = Paths.get(resource.toURI());
         } catch (Exception exception) {
-            fail("Unable to get jar path from :" + resource);
-        }
-        return result.toString();
-    }
-
-    private String getPathOfNoManifestJar() {
-        ClassLoader classLoader = getClass().getClassLoader();
-        URL resource = classLoader.getResource("nomanifestsimplejob-1.0.0 .jar");
-        Path result = null;
-        try {
-            assert resource != null;
-            result = Paths.get(resource.toURI());
-        } catch (Exception exception) {
-            fail("Unable to get jar path from :" + resource);
+            fail("Unable to get jar path from :" + jarName);
         }
         return result.toString();
     }
