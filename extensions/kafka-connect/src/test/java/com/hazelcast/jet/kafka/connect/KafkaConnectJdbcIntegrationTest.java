@@ -67,8 +67,8 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
         randomProperties.setProperty("tasks.max", "1");
         String connectionUrl = mysql.getJdbcUrl();
         randomProperties.setProperty("connection.url", connectionUrl);
-        randomProperties.setProperty("connection.user", "mysql");
-        randomProperties.setProperty("connection.password", "mysql");
+        randomProperties.setProperty("connection.user", USERNAME);
+        randomProperties.setProperty("connection.password", PASSWORD);
         randomProperties.setProperty("incrementing.column.name", "id");
         try (Connection conn = DriverManager.getConnection(connectionUrl, USERNAME, PASSWORD);
              Statement stmt = conn.createStatement()
