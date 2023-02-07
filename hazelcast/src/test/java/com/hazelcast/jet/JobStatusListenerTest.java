@@ -264,7 +264,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         assertHasNoListenerEventually(jobIdString, registrationId);
     }
 
-    static void assertHasNoListenerEventually(String jobIdString, UUID registrationId) {
+    protected static void assertHasNoListenerEventually(String jobIdString, UUID registrationId) {
         assertTrueEventually(() -> {
             assertTrue(Arrays.stream(instances()).allMatch(hz ->
                     getEventService(hz).getRegistrations(JobEventService.SERVICE_NAME, jobIdString).isEmpty()));
@@ -278,7 +278,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
      *        StreamSource&lt;Long&gt;} where the first element is {@code 0L}, which is used
      *        to increment the {@linkplain JobStatusLogger#runCount run count} of the job.
      */
-    void testListener(JobConfig config, Object source, BiConsumer<Job, JobStatusLogger> test) {
+    protected void testListener(JobConfig config, Object source, BiConsumer<Job, JobStatusLogger> test) {
         Pipeline p = Pipeline.create();
         int jobId = nextJobId++;
         (source instanceof BatchSource
@@ -294,18 +294,18 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         test.accept(job, listener);
     }
 
-    void testListener(Object source, BiConsumer<Job, JobStatusLogger> test) {
+    protected void testListener(Object source, BiConsumer<Job, JobStatusLogger> test) {
         testListener(new JobConfig(), source, test);
     }
 
-    void testListener(Object source, Consumer<Job> test, String... log) {
+    protected void testListener(Object source, Consumer<Job> test, String... log) {
         testListener(source, (job, listener) -> {
             test.accept(job);
             assertTailEqualsEventually(listener.log, log);
         });
     }
 
-    void testLightListener(Object source, BiConsumer<Job, JobStatusLogger> test) {
+    protected void testLightListener(Object source, BiConsumer<Job, JobStatusLogger> test) {
         Pipeline p = Pipeline.create();
         (source instanceof BatchSource
                     ? p.readFrom((BatchSource<?>) source)
@@ -319,19 +319,19 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         test.accept(job, listener);
     }
 
-    void testLightListener(Object source, Consumer<Job> test, String log) {
+    protected void testLightListener(Object source, Consumer<Job> test, String log) {
         testLightListener(source, (job, listener) -> {
             test.accept(job);
             assertIterableEqualsEventually(listener.log, log);
         });
     }
 
-    static void assertIterableEqualsEventually(Iterable<?> actual, Object... expected) {
+    protected static void assertIterableEqualsEventually(Iterable<?> actual, Object... expected) {
         assertTrueEventually(() -> assertIterableEquals(actual, expected));
     }
 
     @SafeVarargs
-    static <T> void assertTailEqualsEventually(List<T> actual, T... expected) {
+    protected static <T> void assertTailEqualsEventually(List<T> actual, T... expected) {
         assertTrueEventually(() -> {
             assertBetween("length", actual.size(), expected.length - 2, expected.length);
             List<T> tail = asList(expected).subList(expected.length - actual.size(), expected.length);
@@ -339,16 +339,16 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         });
     }
 
-    class JobStatusLogger implements JobStatusListener {
-        final List<String> log = new ArrayList<>();
+    protected class JobStatusLogger implements JobStatusListener {
+        public final List<String> log = new ArrayList<>();
+        public final UUID registrationId;
         final Job job;
-        final UUID registrationId;
         final int jobId;
 
         JobStatusLogger(Job job, int jobId) {
             this.job = job;
-            registrationId = job.addStatusListener(this);
             this.jobId = jobId;
+            registrationId = job.addStatusListener(this);
         }
 
         @Override
@@ -374,7 +374,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         }
     }
 
-    static BatchSource<Long> finiteStream(long period, TimeUnit unit, long maxSequence) {
+    protected static BatchSource<Long> finiteStream(long period, TimeUnit unit, long maxSequence) {
         return SourceBuilder.batch("finiteStream",
                         ctx -> new FiniteStreamSource(period, unit, maxSequence))
                 .fillBufferFn(FiniteStreamSource::fillBuffer)
