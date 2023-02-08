@@ -46,7 +46,7 @@ public class JobUploadMemberSuccessTest extends JetTestSupport {
     @Test
     public void test_jarUpload_whenResourceUploadIsEnabled() throws IOException {
 
-        String memberSimpleJob = "membersimplejob.jar";
+        String memberSimpleJob = "member2.jar";
         Path newPath = copyJar(memberSimpleJob);
 
         Config config = smallInstanceConfig();
@@ -66,7 +66,7 @@ public class JobUploadMemberSuccessTest extends JetTestSupport {
 
     @Test
     public void test_jarUpload_withMainClassname() throws IOException {
-        String memberSimpleJob = "membersimplejob.jar";
+        String memberSimpleJob = "member3.jar";
         Path newPath = copyJar(memberSimpleJob);
 
         Config config = smallInstanceConfig();

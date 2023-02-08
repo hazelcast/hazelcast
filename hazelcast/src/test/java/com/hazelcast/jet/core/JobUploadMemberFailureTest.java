@@ -28,7 +28,10 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import static com.hazelcast.jet.core.JobUploadClientFailureTest.getJarPath;
+import java.io.IOException;
+import java.nio.file.Path;
+
+import static com.hazelcast.jet.core.JobUploadClientFailureTest.copyJar;
 
 @Category({SerialTest.class})
 public class JobUploadMemberFailureTest extends JetTestSupport {
@@ -40,13 +43,14 @@ public class JobUploadMemberFailureTest extends JetTestSupport {
     }
 
     @Test
-    public void test_jarUpload_whenResourceUploadIsNotEnabled() {
+    public void test_jarUpload_whenResourceUploadIsNotEnabled() throws IOException {
         // Create with default configuration
         HazelcastInstance hazelcastInstance = createHazelcastInstance();
         JetService jetService = hazelcastInstance.getJet();
 
+        Path path = copyJar("member1.jar");
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                .setJarPath(getJarPath());
+                .setJarPath(path);
 
         assertThrows(JetException.class, () ->
                 jetService.submitJobFromJar(submitJobParameters)
@@ -56,7 +60,7 @@ public class JobUploadMemberFailureTest extends JetTestSupport {
     }
 
     @Test
-    public void test_jarUploadBy_withWrongMainClassname() {
+    public void test_jarUploadBy_withWrongMainClassname() throws IOException {
         // Create with special configuration
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
@@ -65,8 +69,9 @@ public class JobUploadMemberFailureTest extends JetTestSupport {
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
         JetService jetService = hazelcastInstance.getJet();
 
+        Path path = copyJar("member2.jar");
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                .setJarPath(getJarPath())
+                .setJarPath(path)
                 .setMainClass("org.example.Main1");
 
         assertThrows(JetException.class, () -> jetService.submitJobFromJar(submitJobParameters));
