@@ -48,6 +48,9 @@ import static org.junit.Assert.fail;
 
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
+    public static final String USERNAME = "mysql";
+    public static final String PASSWORD = "mysql";
+
     @ClassRule
     public static final MySQLContainer<?> mysql = new MySQLContainer<>().withUsername(USERNAME).withPassword(PASSWORD);
 
@@ -55,8 +58,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
 
     private static final int ITEM_COUNT = 10_000;
-    private static final String USERNAME = "mysql";
-    private static final String PASSWORD = "mysql";
+
     private static final String CONNECTOR_URL = "https://repository.hazelcast.com/download"
             + "/tests/confluentinc-kafka-connect-jdbc-10.6.3.zip";
 
