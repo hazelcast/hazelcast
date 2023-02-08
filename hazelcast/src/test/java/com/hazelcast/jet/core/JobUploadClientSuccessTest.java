@@ -34,22 +34,21 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.io.IOException;
-import java.net.URL;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static com.hazelcast.jet.core.JobUploadClientFailureTest.getJarPath;
+import static com.hazelcast.jet.core.JobUploadClientFailureTest.jarDoesNotExist;
 import static java.util.Collections.emptyList;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @Category({SerialTest.class})
-public class JobUploadSuccessTest extends JetTestSupport {
+public class JobUploadClientSuccessTest extends JetTestSupport {
 
     @After
     public void resetSingleton() {
@@ -65,7 +64,7 @@ public class JobUploadSuccessTest extends JetTestSupport {
     }
 
     @Test
-    public void test_jarUploadByClient_whenResourceUploadIsEnabled() {
+    public void test_jarUploadByClient_whenResourceUploadIsEnabled() throws IOException {
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
@@ -79,11 +78,11 @@ public class JobUploadSuccessTest extends JetTestSupport {
 
         jetService.submitJobFromJar(submitJobParameters);
 
-        assertEqualsEventually(() -> jetService.getJobs().size(), 1);
+        assertJobIsRunning(jetService);
     }
 
     @Test
-    public void test_jarUploadByNonSmartClient_whenResourceUploadIsEnabled() {
+    public void test_jarUploadByNonSmartClient_whenResourceUploadIsEnabled() throws IOException {
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
@@ -101,11 +100,11 @@ public class JobUploadSuccessTest extends JetTestSupport {
 
         jetService.submitJobFromJar(submitJobParameters);
 
-        assertEqualsEventually(() -> jetService.getJobs().size(), 1);
+        assertJobIsRunning(jetService);
     }
 
     @Test
-    public void test_jarUploadByClient_withMainClassname() {
+    public void test_jarUploadByClient_withMainClassname() throws IOException {
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
@@ -122,47 +121,11 @@ public class JobUploadSuccessTest extends JetTestSupport {
 
         jetService.submitJobFromJar(submitJobParameters);
 
-        assertEqualsEventually(() -> jetService.getJobs().size(), 1);
-    }
-
-
-    @Test
-    public void test_jarUploadByMember_whenResourceUploadIsEnabled() {
-        Config config = smallInstanceConfig();
-        JetConfig jetConfig = config.getJetConfig();
-        jetConfig.setResourceUploadEnabled(true);
-
-        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
-        JetService jetService = hazelcastInstance.getJet();
-
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                .setJarPath(getJarPath());
-
-        jetService.submitJobFromJar(submitJobParameters);
-
-        assertEqualsEventually(() -> jetService.getJobs().size(), 1);
+        assertJobIsRunning(jetService);
     }
 
     @Test
-    public void test_jarUploadByMember_withMainClassname() {
-        Config config = smallInstanceConfig();
-        JetConfig jetConfig = config.getJetConfig();
-        jetConfig.setResourceUploadEnabled(true);
-
-        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
-        JetService jetService = hazelcastInstance.getJet();
-
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                .setJarPath(getJarPath())
-                .setMainClass("org.example.Main");
-
-        jetService.submitJobFromJar(submitJobParameters);
-
-        assertEqualsEventually(() -> jetService.getJobs().size(), 1);
-    }
-
-    @Test
-    public void test_jarUpload_whenResourceUploadIsEnabled_withSmallBuffer() {
+    public void test_jarUpload_whenResourceUploadIsEnabled_withSmallBuffer() throws IOException {
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
@@ -181,7 +144,7 @@ public class JobUploadSuccessTest extends JetTestSupport {
 
         jetService.submitJobFromJar(submitJobParameters);
 
-        assertEqualsEventually(() -> jetService.getJobs().size(), 1);
+        assertJobIsRunning(jetService);
     }
 
     // This test is slow because it is trying to upload a lot of jobs
@@ -248,37 +211,19 @@ public class JobUploadSuccessTest extends JetTestSupport {
         sleepAtLeastSeconds(5);
     }
 
-    private boolean containsName(List<Job> list, String name) {
-        return list.stream().anyMatch(job -> Objects.equals(job.getName(), name));
+    static void assertJobIsRunning(JetService jetService) throws IOException {
+        // Assert job size
+        assertEqualsEventually(() -> jetService.getJobs().size(), 1);
+
+        // Assert job status
+        Job job = jetService.getJobs().get(0);
+        assertJobStatusEventually(job, JobStatus.RUNNING);
+
+        // Assert job jar does is deleted
+        jarDoesNotExist();
     }
 
-    // this jar is only as below
-    // Source is https://github.com/OrcunColak/simplejob.git
-    /*
-     public class Main {
-       public static void main(String[] args) {
-
-         Pipeline pipeline = Pipeline.create();
-         pipeline.readFrom(TestSources.itemStream(10))
-           .withoutTimestamps()
-           .filter(event -> event.sequence() % 2 == 0)
-           .setName("filter out odd numbers")
-           .writeTo(Sinks.logger());
-
-         HazelcastInstance hz = Hazelcast.bootstrappedInstance();
-         hz.getJet().newJob(pipeline);
-       }
-     }*/
-    private Path getJarPath() {
-        ClassLoader classLoader = getClass().getClassLoader();
-        URL resource = classLoader.getResource("simplejob-1.0.0.jar");
-        Path result = null;
-        try {
-            assert resource != null;
-            result = Paths.get(resource.toURI());
-        } catch (Exception exception) {
-            fail("Unable to get jar path from :" + resource);
-        }
-        return result;
+    private boolean containsName(List<Job> list, String name) {
+        return list.stream().anyMatch(job -> Objects.equals(job.getName(), name));
     }
 }

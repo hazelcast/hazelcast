@@ -51,6 +51,8 @@ import static org.mockito.Mockito.when;
 @Category({SerialTest.class})
 public class JobUploadClientFailureTest extends JetTestSupport {
 
+    private static final String SIMPLE_JAR = "simplejob-1.0.0.jar";
+    private static final String NO_MANIFEST_SIMPLE_JAR = "nomanifestsimplejob-1.0.0.jar";
     @After
     public void resetSingleton() {
         // Reset the singleton after the test
@@ -153,9 +155,8 @@ public class JobUploadClientFailureTest extends JetTestSupport {
     @Test
     public void test_jar_isDeleted() throws IOException {
         // Delete left over files before the test
-        Path tempDirectory = Paths.get(System.getProperty("java.io.tmpdir"));
         String newSimpleJob = "newsimplejob.jar";
-        fileAllLeftOverFiles(tempDirectory, newSimpleJob);
+        fileAllLeftOverFiles(newSimpleJob);
 
         HazelcastInstance client = createResourceUploadEnabledMemberAndClient();
         JetService jetService = client.getJet();
@@ -171,36 +172,12 @@ public class JobUploadClientFailureTest extends JetTestSupport {
 
         assertThrows(JetException.class, () -> jetService.submitJobFromJar(submitJobParameters));
 
-        boolean fileDoesNotExist = fileDoesNotExist(tempDirectory, newSimpleJob);
+        boolean fileDoesNotExist = fileDoesNotExist(newSimpleJob);
         assertThat(fileDoesNotExist)
                 .isTrue();
 
         // Delete local new jar
         Files.delete(newPath);
-    }
-
-    private void fileAllLeftOverFiles(Path tempDirectory, String newJarName) throws IOException {
-        try (Stream<Path> stream = Files.list(tempDirectory)) {
-            stream.forEach(fullPath -> {
-                String fileName = fullPath.getFileName().toString();
-                if (fileName.contains(newJarName)) {
-                    try {
-                        Files.delete(fullPath);
-                    } catch (IOException ignored) {
-                    }
-                }
-                ;
-            });
-        }
-    }
-
-    private boolean fileDoesNotExist(Path tempDirectory, String newJarName) throws IOException {
-        try (Stream<Path> stream = Files.list(tempDirectory)) {
-            return stream.noneMatch(fullPath -> {
-                String fileName = fullPath.getFileName().toString();
-                return fileName.contains(newJarName);
-            });
-        }
     }
 
     @Test
@@ -233,16 +210,37 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         return createHazelcastClient();
     }
 
-    private Path getJarPath() {
-        return getPath("simplejob-1.0.0.jar");
+    // this jar is only as below
+    // Source is https://github.com/OrcunColak/simplejob.git
+    /*
+     public class Main {
+       public static void main(String[] args) {
+
+         Pipeline pipeline = Pipeline.create();
+         pipeline.readFrom(TestSources.itemStream(10))
+           .withoutTimestamps()
+           .filter(event -> event.sequence() % 2 == 0)
+           .setName("filter out odd numbers")
+           .writeTo(Sinks.logger());
+
+         HazelcastInstance hz = Hazelcast.bootstrappedInstance();
+         hz.getJet().newJob(pipeline);
+       }
+     }*/
+    static Path getJarPath() {
+        return getPath(SIMPLE_JAR);
+    }
+
+    static boolean jarDoesNotExist() throws IOException {
+        return fileDoesNotExist(SIMPLE_JAR);
     }
 
     private Path getNoManifestJarPath() {
-        return getPath("nomanifestsimplejob-1.0.0.jar");
+        return getPath(NO_MANIFEST_SIMPLE_JAR);
     }
 
-    private Path getPath(String jarName) {
-        ClassLoader classLoader = getClass().getClassLoader();
+    private static Path getPath(String jarName) {
+        ClassLoader classLoader = JobUploadClientFailureTest.class.getClassLoader();
         URL resource = classLoader.getResource(jarName);
         Path result = null;
         try {
@@ -252,5 +250,29 @@ public class JobUploadClientFailureTest extends JetTestSupport {
             fail("Unable to get jar path from :" + jarName);
         }
         return result;
+    }
+
+    private void fileAllLeftOverFiles(String newJarName) throws IOException {
+        Path tempDirectory = Paths.get(System.getProperty("java.io.tmpdir"));
+        try (Stream<Path> stream = Files.list(tempDirectory)) {
+            stream.forEach(fullPath -> {
+                String fileName = fullPath.getFileName().toString();
+                if (fileName.contains(newJarName)) {
+                    try {
+                        Files.delete(fullPath);
+                    } catch (IOException ignored) {
+                    }
+                }
+            });
+        }
+    }
+    private static boolean fileDoesNotExist(String newJarName) throws IOException {
+        Path tempDirectory = Paths.get(System.getProperty("java.io.tmpdir"));
+        try (Stream<Path> stream = Files.list(tempDirectory)) {
+            return stream.noneMatch(fullPath -> {
+                String fileName = fullPath.getFileName().toString();
+                return fileName.contains(newJarName);
+            });
+        }
     }
 }

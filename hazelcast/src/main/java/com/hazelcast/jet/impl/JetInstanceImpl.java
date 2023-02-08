@@ -48,6 +48,7 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.wrapWithJetException;
 import static java.util.Collections.singleton;
 
 /**
@@ -72,15 +73,24 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
     // Called by member to run a job on itself
     @Override
     public void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
-        JobMetaDataParameterObject parameterObject = new JobMetaDataParameterObject();
-        parameterObject.setSnapshotName(submitJobParameters.getSnapshotName());
-        parameterObject.setJobName(submitJobParameters.getJobName());
-        parameterObject.setMainClass(submitJobParameters.getMainClass());
-        parameterObject.setJobParameters(submitJobParameters.getJobParameters());
-        parameterObject.setJarPath(submitJobParameters.getJarPath());
+        try {
+            JobMetaDataParameterObject parameterObject = new JobMetaDataParameterObject();
 
-        JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
-        jetServiceBackend.executeJar(parameterObject);
+            // The jar should be deleted
+            parameterObject.setDeleteJarOnExecution(false);
+
+            parameterObject.setSnapshotName(submitJobParameters.getSnapshotName());
+            parameterObject.setJobName(submitJobParameters.getJobName());
+            parameterObject.setMainClass(submitJobParameters.getMainClass());
+            parameterObject.setJobParameters(submitJobParameters.getJobParameters());
+            parameterObject.setJarPath(submitJobParameters.getJarPath());
+
+            JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
+            jetServiceBackend.executeJar(parameterObject);
+        } catch (Exception exception) {
+            // Only throw a JetException
+            wrapWithJetException(exception);
+        }
     }
 
     @Override
