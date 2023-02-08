@@ -46,7 +46,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static com.hazelcast.mapstore.GenericMapStore.COLUMNS_PROPERTY;
-import static com.hazelcast.mapstore.GenericMapStore.EXTERNAL_REF_ID_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapStore.DATA_LINK_REF_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.ID_COLUMN_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.MAPPING_PREFIX;
 import static com.hazelcast.mapstore.GenericMapStore.TABLE_NAME_PROPERTY;
@@ -197,7 +197,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         executeJdbc("INSERT INTO \"" + mapName + "\" VALUES(0, 'name-0', 42, 'Palo Alto, CA 94306')");
 
         Properties properties = new Properties();
-        properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
         properties.setProperty(COLUMNS_PROPERTY, "id,name,age");
         mapStore = createMapStore(properties, hz);
 
@@ -215,7 +215,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         insertItems(mapName, 1);
 
         Properties properties = new Properties();
-        properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
 
         properties.setProperty("columns", "name,age");
         mapStore = createMapStore(properties, hz);
@@ -234,7 +234,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         // This simulates a second map store on a different instance. The mapping is created, but must be validated
         // (e.g. the config might differ on members)
         Properties secondProps = new Properties();
-        secondProps.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
+        secondProps.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
         secondProps.setProperty(COLUMNS_PROPERTY, "id,name,age");
         mapStore = createMapStore(secondProps, hz, false);
         mapStore.init(hz, secondProps, mapName);
@@ -261,7 +261,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         insertItems(mapName, 1);
 
         Properties properties = new Properties();
-        properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
         properties.setProperty(TYPE_NAME_PROPERTY, "my.Person");
         mapStore = createMapStore(properties, hz);
 
@@ -275,7 +275,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         insertItems(mapName, 1);
 
         Properties properties = new Properties();
-        properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
         properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
         mapStore = createMapStore(properties, hz);
         GenericRecord record = mapStore.load(0);
@@ -290,7 +290,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         insertItems(mapName, 1);
 
         Properties properties = new Properties();
-        properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
         properties.setProperty(COLUMNS_PROPERTY, "name");
         mapStore = createMapStore(properties, hz);
 
@@ -333,7 +333,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         insertItems(mapName, 1);
 
         Properties properties = new Properties();
-        properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
         properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
         mapStore = createMapStore(properties, hz);
         GenericRecord record = mapStore.loadAll(newArrayList(0)).get(0);
@@ -368,7 +368,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         insertItems(mapName, 1);
 
         Properties properties = new Properties();
-        properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
 
         properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
         mapStore = createMapStore(properties, hz);
@@ -391,7 +391,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         createTable(mapName, "\"person-id\" INT PRIMARY KEY", "name VARCHAR(100)");
 
         Properties properties = new Properties();
-        properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
 
         properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
         mapStore = createMapStore(properties, hz);
@@ -446,7 +446,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         insertItems(mapName, 1);
 
         Properties properties = new Properties();
-        properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
 
         properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
         mapStore = createMapStore(properties, hz);
@@ -515,7 +515,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         insertItems(mapName, 2);
 
         Properties properties = new Properties();
-        properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
 
         properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
         mapStore = createMapStore(properties, hz);
@@ -545,7 +545,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         insertItems(mapName, 2);
 
         Properties properties = new Properties();
-        properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
 
         properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
         mapStore = createMapStore(properties, hz);
@@ -581,7 +581,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
 
         mapStore = new GenericMapStore<>();
         Properties properties = new Properties();
-        properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
 
         assertThatThrownBy(() -> mapStore.init(hz, properties, mapName))
                 .isInstanceOf(HazelcastException.class)
@@ -596,7 +596,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         insertItems(tableName, 1);
 
         Properties properties = new Properties();
-        properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
         properties.setProperty(TABLE_NAME_PROPERTY, tableName);
         mapStore = createMapStore(properties, hz);
 
@@ -615,7 +615,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         }
 
         Properties properties = new Properties();
-        properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
 
         properties.setProperty("columns", "id,name");
         mapStore = createMapStore(properties, hz);
@@ -639,7 +639,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
 
     private <K> GenericMapStore<K> createMapStore(HazelcastInstance instance) {
         Properties properties = new Properties();
-        properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
         return createMapStore(properties, instance);
     }
 

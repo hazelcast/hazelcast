@@ -28,6 +28,8 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.SetOperation;
+import com.hazelcast.map.impl.operation.steps.IMapOpStep;
+import com.hazelcast.map.impl.operation.steps.PutOpSteps;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
@@ -47,6 +49,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -131,6 +134,64 @@ public class StepSupplierTest extends HazelcastTestSupport {
         // wait operation end
         assertOpenEventually(latch);
         assertInstanceOf(CallTimeoutResponse.class, expectedResponse.get());
+    }
+
+    @Test
+    public void firstStepIsNotExecuted_whenOperationTimesOut() {
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
+        config.setProperty(MapServiceContext.FORCE_OFFLOAD_ALL_OPERATIONS.getName(), "true");
+        HazelcastInstance node = createHazelcastInstance(config);
+
+        // latch for to be sure operation is executed
+        CountDownLatch latch = new CountDownLatch(1);
+
+        // create and call slow operation
+        Data data = Accessors.getSerializationService(node).toData("data");
+        int partitionId = Accessors.getPartitionService(node).getPartitionId(data);
+
+        MapOperation operation = new SetOperation("test-map", data, data) {
+            @Override
+            protected void innerBeforeRun() throws Exception {
+                super.innerBeforeRun();
+                sleepAtLeastSeconds(2);
+            }
+
+            @Override
+            public Step getStartingStep() {
+                return DummyPutOpSteps.DUMMY_READ;
+            }
+        };
+
+        operation.setNodeEngine(Accessors.getNodeEngineImpl(node));
+        operation.setPartitionId(partitionId);
+        operation.setServiceName(MapService.SERVICE_NAME);
+        operation.setOperationResponseHandler((op, response) -> latch.countDown());
+
+        // set op times out after 1 second
+        OperationAccessor.setCallTimeout(operation, 1000);
+        OperationAccessor.setInvocationTime(operation, Clock.currentTimeMillis());
+        Accessors.getOperationService(node).execute(operation);
+
+        // wait operation end
+        assertOpenEventually(latch);
+        assertFalse(DummyPutOpSteps.executed);
+    }
+
+    private enum DummyPutOpSteps implements IMapOpStep {
+        DUMMY_READ {
+            @Override
+            public void runStep(State state) {
+                executed = true;
+                PutOpSteps.READ.runStep(state);
+            }
+
+            @Override
+            public Step nextStep(State state) {
+                return PutOpSteps.READ.nextStep(state);
+            }
+        };
+
+        private static volatile boolean executed;
     }
 
     @Test

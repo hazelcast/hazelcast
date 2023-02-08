@@ -49,8 +49,7 @@ public final class SeriesGeneratorTableFunction extends HazelcastSpecificTableFu
         super(
                 FUNCTION_NAME,
                 SeriesOperandMetadata.INSTANCE,
-                binding -> toTable0(emptyList()).getRowType(binding.getTypeFactory()),
-                SeriesSqlConnector.INSTANCE
+                binding -> toTable0(emptyList()).getRowType(binding.getTypeFactory())
         );
     }
 
