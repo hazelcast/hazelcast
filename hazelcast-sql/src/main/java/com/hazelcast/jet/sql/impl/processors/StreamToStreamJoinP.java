@@ -80,11 +80,11 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     final Object2LongHashMap<Byte> wmState = new Object2LongHashMap<>(Long.MIN_VALUE);
     final Object2LongHashMap<Byte> lastReceivedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
     final Object2LongHashMap<Byte> lastEmittedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
-    private int[] processorPartitionKeys;
 
     // package-visible for tests
     final StreamToStreamJoinBuffer[] buffer;
 
+    private int[] processorPartitionKeys;
     private final JetJoinInfo joinInfo;
     private final int outerJoinSide;
     private final List<Entry<Byte, ToLongFunctionEx<JetSqlRow>>> leftTimeExtractors;
