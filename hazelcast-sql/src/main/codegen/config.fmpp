@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Default data declarations for parsers.
+# Each of these may be overridden in a parser's config.fmpp file.
+# In addition, each parser must define "package" and "class".
 data: {
   parser: {
-    # Generated parser implementation package and class name.
     package: "com.hazelcast.jet.sql.impl.calcite.parser",
     class: "HazelcastSqlParser",
 
@@ -122,6 +124,7 @@ data: {
       "CURSOR_NAME"
       "DATA"
       "DATABASE"
+      "DATE_TRUNC"
       "DATETIME_INTERVAL_CODE"
       "DATETIME_INTERVAL_PRECISION"
       "DAYS"
@@ -252,6 +255,7 @@ data: {
       "PRIVILEGES"
       "PUBLIC"
       "QUARTER"
+      "QUARTERS"
       "READ"
       "RELATIVE"
       "REPEATABLE"
@@ -353,8 +357,12 @@ data: {
       "TABLE_NAME"
       "TEMPORARY"
       "TIES"
+      "TIME_DIFF"
+      "TIME_TRUNC"
       "TIMESTAMPADD"
       "TIMESTAMPDIFF"
+      "TIMESTAMP_DIFF"
+      "TIMESTAMP_TRUNC"
       "TOP_LEVEL_COUNT"
       "TRANSACTION"
       "TRANSACTIONS_ACTIVE"
@@ -384,6 +392,7 @@ data: {
       "VERSION"
       "VIEW"
       "WEEK"
+      "WEEKS"
       "WORK"
       "WRAPPER"
       "WRITE"
@@ -502,6 +511,7 @@ data: {
     includeCompoundIdentifier: true
     includeBraces: true
     includeAdditionalDeclarations: false
+    includeParsingStringLiteralAsArrayLiteral: false
   }
 }
 
