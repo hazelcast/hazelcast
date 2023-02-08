@@ -45,9 +45,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class KafkaConnectSourceTest {
     @Test
     public void should_create_and_start_source_with_minimal_properties() {
-        KafkaConnectSource kafkaConnectSource = new KafkaConnectSource(minimalProperties());
+        new KafkaConnectSource(minimalProperties());
 
-        assertThat(kafkaConnectSource).isNotNull();
         assertThat(INSTANCE.isInitialized()).isTrue();
         assertThat(INSTANCE.isStarted()).isTrue();
     }
