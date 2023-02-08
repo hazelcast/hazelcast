@@ -114,4 +114,16 @@ public class JobMetaDataParameterObject {
     public void setDeleteJarOnExecution(boolean deleteJarOnExecution) {
         this.deleteJarOnExecution = deleteJarOnExecution;
     }
+
+    // Not all parameters need to be exposed
+    // Convert only parameters that should be with an exception
+    public String exceptionString() {
+        return "SubmittedParameters{" +
+               "fileName='" + fileName + '\'' +
+               ", snapshotName='" + snapshotName + '\'' +
+               ", jobName='" + jobName + '\'' +
+               ", mainClass='" + mainClass + '\'' +
+               ", jobParameters=" + jobParameters +
+               '}';
+    }
 }

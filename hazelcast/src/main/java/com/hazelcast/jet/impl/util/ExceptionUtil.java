@@ -142,20 +142,6 @@ public final class ExceptionUtil {
         return new JetException(t);
     }
 
-    /**
-     * If the exception is not a JetException wrap it with JetException
-     *
-     * @param exception to be checked
-     */
-    public static void wrapWithJetException(Exception exception) {
-        // If exception is not JetException e.g. IOException, FileSystemException etc., wrap it with JetException
-        if (!(exception instanceof JetException)) {
-            rethrow(exception);
-        } else {
-            sneakyThrow(exception);
-        }
-    }
-
     @Nonnull
     public static RuntimeException rethrow(@Nonnull final Throwable t) {
         if (t instanceof Error) {

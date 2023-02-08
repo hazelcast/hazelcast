@@ -46,9 +46,9 @@ import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.impl.JetServiceBackend.wrapWithJetException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.wrapWithJetException;
 import static java.util.Collections.singleton;
 
 /**

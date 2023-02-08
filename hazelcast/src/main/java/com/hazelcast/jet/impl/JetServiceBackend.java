@@ -78,7 +78,6 @@ import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
 import static com.hazelcast.jet.impl.JobRepository.JOB_METRICS_MAP_NAME;
 import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.wrapWithJetException;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static com.hazelcast.spi.properties.ClusterProperty.JOB_RESULTS_TTL_SECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -415,8 +414,13 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         } catch (Exception exception) {
             // Upon exception, remove from the store
             jobUploadStore.remove(jobMetaDataParameterObject.getSessionId());
+
+            // Enrich exception with metadata
+            String exceptionString = jobMetaDataParameterObject.exceptionString();
+            JetException jetExceptionWithMetaData = new JetException(exceptionString, exception);
+
             // Only throw a JetException
-            wrapWithJetException(exception);
+            wrapWithJetException(jetExceptionWithMetaData);
         }
     }
 
@@ -440,6 +444,15 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         return result;
     }
 
+    // If exception is not JetException e.g. IOException, FileSystemException etc., wrap it with JetException
+    static void wrapWithJetException(Exception exception) {
+        // Exception is not JetException
+        if (!(exception instanceof JetException)) {
+            ExceptionUtil.rethrow(exception);
+        } else {
+            sneakyThrow(exception);
+        }
+    }
 
     private void checkResourceUploadEnabled() {
         if (!jetConfig.isResourceUploadEnabled()) {
