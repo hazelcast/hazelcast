@@ -69,6 +69,10 @@ public class JobUploadStatus {
         changeLastUpdatedTime();
     }
 
+    public JobMetaDataParameterObject getJobMetaDataParameterObject() {
+        return jobMetaDataParameterObject;
+    }
+
     /**
      * Returns if this instance is considered expired or not
      *

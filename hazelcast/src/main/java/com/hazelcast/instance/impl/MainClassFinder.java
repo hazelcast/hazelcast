@@ -52,13 +52,13 @@ class MainClassFinder {
 
                 Manifest manifest = jarFile.getManifest();
                 if (manifest == null) {
-                    this.errorMessage = "No manifest file in " + jarPath;
+                    this.errorMessage = "No manifest file in the jar";
                     return;
                 }
                 Attributes mainAttributes = manifest.getMainAttributes();
                 this.mainClassName = mainAttributes.getValue("Main-Class");
                 if (this.mainClassName == null) {
-                    errorMessage = "No Main-Class found in the manifest of " + jarPath;
+                    errorMessage = "No Main-Class found in the manifest of the jar";
                 }
             }
         }

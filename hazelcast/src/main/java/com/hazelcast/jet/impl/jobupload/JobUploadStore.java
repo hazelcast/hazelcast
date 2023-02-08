@@ -52,12 +52,13 @@ public class JobUploadStore {
      *
      * @param sessionId specifies the key to be used
      */
-    public void removeBadSession(UUID sessionId) {
+    public JobUploadStatus removeBadSession(UUID sessionId) {
         JobUploadStatus jobUploadStatus = jobMap.remove(sessionId);
 
         if (jobUploadStatus != null) {
             jobUploadStatus.onRemove();
         }
+        return jobUploadStatus;
     }
 
     /**
