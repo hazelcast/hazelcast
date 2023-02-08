@@ -95,7 +95,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     private ExpressionEvalContext evalContext;
     private int processorIndex;
-
     private Iterator<JetSqlRow> iterator;
     private JetSqlRow currItem;
 
@@ -370,7 +369,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                         leftBufferStream = mapWithIndex(
                                 buffer[0].content().stream(),
                                 (row, index) -> entry(
-                                        broadcastKey(new BufferSnapshotKey(index)),
+                                        broadcastKey(index),
                                         new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 0)
                                 ));
                     } else {
@@ -386,7 +385,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                         rightBufferStream = mapWithIndex(
                                 buffer[1].content().stream(),
                                 (row, index) -> entry(
-                                        broadcastKey(new BufferSnapshotKey(index)),
+                                        broadcastKey(index),
                                         new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 1)
                                 ));
                     } else {
@@ -624,52 +623,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             postponeTimeMap = SerializationUtil.readMap(in);
             leftInputColumnCount = in.readInt();
             rightInputColumnCount = in.readInt();
-        }
-    }
-
-    private static final class BufferSnapshotKey implements DataSerializable {
-        private long id;
-
-        @SuppressWarnings("unused")
-        BufferSnapshotKey() {
-        }
-
-        BufferSnapshotKey(long id) {
-            this.id = id;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeLong(id);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            id = in.readLong();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            BufferSnapshotKey that = (BufferSnapshotKey) o;
-            return id == that.id;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(id);
-        }
-
-        @Override
-        public String toString() {
-            return "BufferSnapshotKey{" +
-                    "id=" + id +
-                    '}';
         }
     }
 
