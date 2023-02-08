@@ -28,8 +28,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
-import static com.hazelcast.jet.core.JobUploadClientFailureTest.getJarPath;
+import static com.hazelcast.jet.core.JobUploadClientFailureTest.copyJar;
 import static com.hazelcast.jet.core.JobUploadClientSuccessTest.assertJobIsRunning;
 
 
@@ -44,6 +45,10 @@ public class JobUploadMemberSuccessTest extends JetTestSupport {
 
     @Test
     public void test_jarUpload_whenResourceUploadIsEnabled() throws IOException {
+
+        String memberSimpleJob = "membersimplejob.jar";
+        Path newPath = copyJar(memberSimpleJob);
+
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
@@ -52,7 +57,7 @@ public class JobUploadMemberSuccessTest extends JetTestSupport {
         JetService jetService = hazelcastInstance.getJet();
 
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                .setJarPath(getJarPath());
+                .setJarPath(newPath);
 
         jetService.submitJobFromJar(submitJobParameters);
 
@@ -61,6 +66,9 @@ public class JobUploadMemberSuccessTest extends JetTestSupport {
 
     @Test
     public void test_jarUpload_withMainClassname() throws IOException {
+        String memberSimpleJob = "membersimplejob.jar";
+        Path newPath = copyJar(memberSimpleJob);
+
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
@@ -69,7 +77,7 @@ public class JobUploadMemberSuccessTest extends JetTestSupport {
         JetService jetService = hazelcastInstance.getJet();
 
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                .setJarPath(getJarPath())
+                .setJarPath(newPath)
                 .setMainClass("org.example.Main");
 
         jetService.submitJobFromJar(submitJobParameters);
