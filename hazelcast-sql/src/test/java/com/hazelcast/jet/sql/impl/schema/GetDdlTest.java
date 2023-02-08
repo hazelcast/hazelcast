@@ -18,12 +18,11 @@ package com.hazelcast.jet.sql.impl.schema;
 
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.Collections;
+import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -82,7 +81,7 @@ public class GetDdlTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_getDdlQueryWithAnotherOperator_then_success() {
+    public void when_queryDdlWithAnotherOperator_then_success() {
         createMapping("a", int.class, int.class);
 
         assertRowsAnyOrder("SELECT SUBSTRING(GET_DDL('table', 'a') FROM 1 FOR 6)",
@@ -94,6 +93,15 @@ public class GetDdlTest extends SqlTestSupport {
                         "|| SUBSTRING(GET_DDL('table', 'a') FROM 1 FOR 3)",
                 ImmutableList.of(new Row("CREATECRE"))
         );
+    }
+
+    @Test
+    public void when_queryDdlWithOtherRels_then_success() {
+        createMapping("a", int.class, int.class);
+
+        assertRowsAnyOrder("SELECT SUBSTRING(GET_DDL('table', 'a') FROM 1 FOR 6)" +
+                        "UNION ALL SELECT SUBSTRING(GET_DDL('table', 'a') FROM 1 FOR 6)",
+                Arrays.asList(new Row("CREATE"), new Row("CREATE")));
     }
 
     @Test

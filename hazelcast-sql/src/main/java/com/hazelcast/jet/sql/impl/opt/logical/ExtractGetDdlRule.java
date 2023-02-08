@@ -41,6 +41,7 @@ import org.immutables.value.Value;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.toList;
 
 @Value.Enclosing
@@ -48,7 +49,7 @@ public class ExtractGetDdlRule extends RelRule<RelRule.Config> {
 
     public static final RelOptRule INSTANCE = new ExtractGetDdlRule(Config.DEFAULT);
 
-    private final GetDdlFunctionFinder finder = new GetDdlFunctionFinder();
+    private GetDdlFunctionFinder finder;
 
     @Value.Immutable
     public interface Config extends RelRule.Config {
@@ -73,6 +74,7 @@ public class ExtractGetDdlRule extends RelRule<RelRule.Config> {
 
     @Override
     public boolean matches(RelOptRuleCall call) {
+        finder = new GetDdlFunctionFinder();
         RelNode rel = call.rel(0);
         rel.accept(finder);
         if (finder.multipleEntries) {
@@ -83,13 +85,15 @@ public class ExtractGetDdlRule extends RelRule<RelRule.Config> {
 
     @Override
     public void onMatch(RelOptRuleCall call) {
+        checkNotNull(finder);
+
         Calc calc = call.rel(0);
         Values values = call.rel(1);
 
-        List<RexNode> functionOperands = calc.getProgram().expandList(finder.functionOperands);
-        assert functionOperands.stream().allMatch(rex -> rex instanceof RexLiteral);
+        List<RexNode> getDdlOperands = calc.getProgram().expandList(finder.functionOperands);
+        assert getDdlOperands.stream().allMatch(rex -> rex instanceof RexLiteral);
 
-        List<String> operands = functionOperands.stream()
+        List<String> operands = getDdlOperands.stream()
                 .map(rex -> ((RexLiteral) rex).getValue())
                 .map(cmp -> ((NlsString) cmp).getValue())
                 .collect(toList());
