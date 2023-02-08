@@ -17,9 +17,11 @@
 package com.hazelcast.jet.sql.impl.type;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
 import com.hazelcast.map.IMap;
@@ -35,6 +37,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -59,6 +62,7 @@ public class AttributePartitioningStrategyTest extends SqlJsonTestSupport {
         Config config = smallInstanceConfig().setProperty(PARTITION_COUNT.getName(), "3");
         config.getMapConfig("test").setPartitioningStrategyConfig(new PartitioningStrategyConfig()
                 .setPartitioningStrategy(STRATEGY));
+        config.getMapConfig("test").addIndexConfig(new IndexConfig(IndexConfig.DEFAULT_TYPE, "__key.org"));
 
         initialize(3, config);
     }
@@ -119,6 +123,31 @@ public class AttributePartitioningStrategyTest extends SqlJsonTestSupport {
         assertEquals(0, nonOwners.get(1).getMap("test").getLocalMapStats().getOwnedEntryCount());
     }
 
+    @Test
+    public void testJsonObject() {
+        final String template = "{"
+                + "\"id\": <id>,"
+                + "\"name\": \"<name>\","
+                + "\"org\": \"<org>\""
+                + "}";
+        final IMap<HazelcastJsonValue, Long> map = instance().getMap("test");
+
+        for (long i = 0; i < 10000; i++) {
+            final String key = template
+                    .replace("<id>", String.valueOf(i))
+                    .replace("<>", "key#" + i)
+                    .replace("<org>", PARTITION_ATTRIBUTE);
+            map.put(json(key), i);
+        }
+
+        final HazelcastInstance owner = getOwner(PARTITION_KEY);
+        final List<HazelcastInstance> nonOwners = getNonOwners(owner);
+
+        assertEquals(10000, owner.getMap("test").getLocalMapStats().getOwnedEntryCount());
+        assertEquals(0, nonOwners.get(0).getMap("test").getLocalMapStats().getOwnedEntryCount());
+        assertEquals(0, nonOwners.get(1).getMap("test").getLocalMapStats().getOwnedEntryCount());
+    }
+
     private HazelcastInstance getOwner(Object partitionKey) {
         final Partition partition = instance().getPartitionService().getPartition(partitionKey);
         if (partition == null) {
@@ -138,10 +167,10 @@ public class AttributePartitioningStrategyTest extends SqlJsonTestSupport {
                 .collect(Collectors.toList());
     }
 
-    public static class JavaKey {
-        public Long id;
-        public String name;
-        public String org;
+    public static class JavaKey implements Serializable {
+        private Long id;
+        private String name;
+        private String org;
 
         public JavaKey() {
         }
@@ -149,6 +178,30 @@ public class AttributePartitioningStrategyTest extends SqlJsonTestSupport {
         public JavaKey(final Long id, final String name, final String org) {
             this.id = id;
             this.name = name;
+            this.org = org;
+        }
+
+        public Long getId() {
+            return id;
+        }
+
+        public void setId(final Long id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(final String name) {
+            this.name = name;
+        }
+
+        public String getOrg() {
+            return org;
+        }
+
+        public void setOrg(final String org) {
             this.org = org;
         }
     }

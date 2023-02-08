@@ -16,13 +16,19 @@
 
 package com.hazelcast.partition.strategy;
 
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.partition.PartitioningStrategy;
+import com.hazelcast.query.impl.getters.JsonGetter;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 @SerializableByConvention
 public class AttributePartitioningStrategy implements PartitioningStrategy {
@@ -37,31 +43,66 @@ public class AttributePartitioningStrategy implements PartitioningStrategy {
     public Object getPartitionKey(final Object key) {
         final Object[] values = new Object[attributes.length];
         if (key instanceof InternalGenericRecord) {
-            GenericRecordQueryReader reader = new GenericRecordQueryReader((InternalGenericRecord) key);
-            for (int i = 0; i < attributes.length; i++) {
-                final String attribute = attributes[i];
-                try {
-                    final Object value = reader.read(attribute);
-                    if (value == null) {
-                        return null;
-                    }
-                    values[i] = value;
-                } catch (IOException exception) {
-                    return null;
-                }
+            if (!extractFromGenericRecord((InternalGenericRecord) key, values)) {
+                return null;
             }
+        } else if (key instanceof HazelcastJsonValue) {
+            if (!extractFromJson(key, values)) {
+                return null;
+            }
+        } else if (key instanceof DataSerializable || key instanceof Serializable) {
+            if (!extractFromPojo(key, values)) {
+                return null;
+            }
+        } else if (key instanceof Portable) {
+            throw new HazelcastException("Portable user-classes are not supported");
         } else {
-            for (int i = 0; i < attributes.length; i++) {
-                final String attribute = attributes[i];
-                final Object value = ReflectionUtils.getFieldValue(attribute, key);
-                if (value == null) {
-                    return null;
-                }
-                values[i] = value;
-            }
+            throw new HazelcastException("Unsupported key format");
         }
 
         return values;
+    }
+
+    private boolean extractFromPojo(final Object key, final Object[] values) {
+        for (int i = 0; i < attributes.length; i++) {
+            final String attribute = attributes[i];
+            final Object value = ReflectionUtils.getFieldValue(attribute, key);
+            if (value == null) {
+                return false;
+            }
+            values[i] = value;
+        }
+        return true;
+    }
+
+    private boolean extractFromJson(final Object key, final Object[] values) {
+        for (int i = 0; i < attributes.length; i++) {
+            final Object value = JsonGetter.INSTANCE.getValue(key, attributes[i]);
+            if (value == null) {
+                return false;
+            }
+
+            values[i] = value;
+        }
+        return true;
+    }
+
+    private boolean extractFromGenericRecord(final InternalGenericRecord key, final Object[] values) {
+        final GenericRecordQueryReader reader = new GenericRecordQueryReader(key);
+        for (int i = 0; i < attributes.length; i++) {
+            final String attribute = attributes[i];
+            try {
+                final Object value = reader.read(attribute);
+                if (value == null) {
+                    return false;
+                }
+                values[i] = value;
+            } catch (IOException exception) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public String[] getPartitioningAttributes() {
