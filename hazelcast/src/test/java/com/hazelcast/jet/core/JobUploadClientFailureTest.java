@@ -156,7 +156,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
     public void test_jar_isDeleted() throws IOException {
         // Delete left over files before the test
         String newSimpleJob = "newsimplejob.jar";
-        fileAllLeftOverFiles(newSimpleJob);
+        deleteLeftOverFilesIfAny(newSimpleJob);
 
         HazelcastInstance client = createResourceUploadEnabledMemberAndClient();
         JetService jetService = client.getJet();
@@ -213,20 +213,31 @@ public class JobUploadClientFailureTest extends JetTestSupport {
     // this jar is only as below
     // Source is https://github.com/OrcunColak/simplejob.git
     /*
-     public class Main {
-       public static void main(String[] args) {
+    public static void main(String[] args) {
 
-         Pipeline pipeline = Pipeline.create();
-         pipeline.readFrom(TestSources.itemStream(10))
-           .withoutTimestamps()
-           .filter(event -> event.sequence() % 2 == 0)
-           .setName("filter out odd numbers")
-           .writeTo(Sinks.logger());
+        String jobName = null;
+        if (args != null && args.length > 0) {
+            jobName = args[0];
+        }
 
-         HazelcastInstance hz = Hazelcast.bootstrappedInstance();
-         hz.getJet().newJob(pipeline);
-       }
-     }*/
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.itemStream(10))
+                .withoutTimestamps()
+                .filter(event -> event.sequence() % 2 == 0)
+                .setName("filter out odd numbers")
+                .writeTo(Sinks.logger());
+
+        HazelcastInstance hz = Hazelcast.bootstrappedInstance();
+
+        if (jobName != null) {
+            JobConfig jobConfig = new JobConfig();
+            jobConfig.setName(jobName);
+            hz.getJet().newJob(pipeline, jobConfig);
+        } else {
+            hz.getJet().newJob(pipeline);
+        }
+    }
+    */
     static Path getJarPath() {
         return getPath(SIMPLE_JAR);
     }
@@ -252,7 +263,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         return result;
     }
 
-    private void fileAllLeftOverFiles(String newJarName) throws IOException {
+    private void deleteLeftOverFilesIfAny(String newJarName) throws IOException {
         Path tempDirectory = Paths.get(System.getProperty("java.io.tmpdir"));
         try (Stream<Path> stream = Files.list(tempDirectory)) {
             stream.forEach(fullPath -> {
@@ -267,11 +278,13 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         }
     }
     private static boolean fileDoesNotExist(String newJarName) throws IOException {
+        // Get default temp directory
         Path tempDirectory = Paths.get(System.getProperty("java.io.tmpdir"));
+
         try (Stream<Path> stream = Files.list(tempDirectory)) {
             return stream.noneMatch(fullPath -> {
-                String fileName = fullPath.getFileName().toString();
-                return fileName.contains(newJarName);
+                Path fileName = fullPath.getFileName();
+                return fileName.startsWith(newJarName);
             });
         }
     }

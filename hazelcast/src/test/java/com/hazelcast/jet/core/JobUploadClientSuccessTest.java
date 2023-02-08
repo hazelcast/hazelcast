@@ -19,6 +19,7 @@ package com.hazelcast.jet.core;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.properties.ClientProperty;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastBootstrap;
@@ -36,6 +37,7 @@ import org.junit.experimental.categories.Category;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
@@ -60,11 +62,11 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
     public void sha256() throws IOException, NoSuchAlgorithmException {
         Path jarPath = getJarPath();
         String sha256Hex = Sha256Util.calculateSha256Hex(jarPath);
-        assertEquals("bba07be19c71bfe5fd51dc681f807ab212efd4d6e7c3f6380dbfcbdcb5deb073", sha256Hex);
+        assertEquals("b1c93019597f7cb6d17d98b720837b3b0b7187b231844c4213f6b372308b118f", sha256Hex);
     }
 
     @Test
-    public void test_jarUploadByClient_whenResourceUploadIsEnabled() throws IOException {
+    public void test_jarUpload_whenResourceUploadIsEnabled() throws IOException {
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
@@ -82,16 +84,49 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
     }
 
     @Test
+    public void test_jarUpload_withJobParameters() throws IOException {
+        Config config = smallInstanceConfig();
+        JetConfig jetConfig = config.getJetConfig();
+        jetConfig.setResourceUploadEnabled(true);
+
+        createHazelcastInstance(config);
+        HazelcastInstance client = createHazelcastClient();
+        JetService jetService = client.getJet();
+
+        // Pass the job argument that will be used as job name
+        String jobName = "myjetjob";
+        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+                .setJarPath(getJarPath())
+                .setJobParameters(Arrays.asList(jobName));
+
+        jetService.submitJobFromJar(submitJobParameters);
+
+        assertJobIsRunning(jetService);
+
+        assertEqualsEventually(() -> {
+            Job job = jetService.getJobs().get(0);
+            return job.getName();
+        }, jobName);
+    }
+
+    @Test
     public void test_jarUploadByNonSmartClient_whenResourceUploadIsEnabled() throws IOException {
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
 
-        createHazelcastInstances(config, 2);
+        HazelcastInstance[] hazelcastInstances = createHazelcastInstances(config, 2);
+        HazelcastInstance targetInstance = hazelcastInstances[1];
+        Address targetAddress = targetInstance.getCluster().getLocalMember().getAddress();
 
         ClientConfig clientConfig = new ClientConfig();
         ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
         networkConfig.setSmartRouting(false);
+
+        List<String> addresses = networkConfig.getAddresses();
+        addresses.clear();
+        addresses.add(targetAddress.getHost() + ":" + targetAddress.getPort());
+
         HazelcastInstance client = createHazelcastClient(clientConfig);
         JetService jetService = client.getJet();
 
@@ -104,7 +139,7 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
     }
 
     @Test
-    public void test_jarUploadByClient_withMainClassname() throws IOException {
+    public void test_jarUpload_withMainClassname() throws IOException {
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
