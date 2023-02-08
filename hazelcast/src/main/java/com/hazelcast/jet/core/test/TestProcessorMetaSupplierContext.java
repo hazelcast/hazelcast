@@ -32,6 +32,8 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import java.net.UnknownHostException;
+import java.security.AccessControlException;
+import java.security.Permission;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -260,5 +262,9 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     public TestProcessorMetaSupplierContext setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
         return this;
+    }
+
+    @Override
+    public void checkPermission(Permission permission) throws AccessControlException {
     }
 }

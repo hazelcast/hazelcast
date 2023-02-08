@@ -25,6 +25,9 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
+
+import java.security.AccessControlException;
+import java.security.Permission;
 import java.util.Map;
 
 /**
@@ -128,5 +131,9 @@ public class TestProcessorContext extends TestProcessorSupplierContext implement
     @Override
     protected String loggerName() {
         return vertexName() + "#" + globalProcessorIndex;
+    }
+
+    @Override
+    public void checkPermission(Permission permission) throws AccessControlException {
     }
 }

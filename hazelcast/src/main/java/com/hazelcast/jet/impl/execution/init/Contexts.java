@@ -35,6 +35,7 @@ import com.hazelcast.jet.impl.metrics.MetricsContext;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
+import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
@@ -44,6 +45,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.Permission;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -203,6 +205,18 @@ public final class Contexts {
         @Override
         public ClassLoader classLoader() {
             return classLoader;
+        }
+
+        @Override
+        public void checkPermission(Permission permission) {
+            if (permission == null || subject == null) {
+                return;
+            }
+            SecurityContext securityContext = nodeEngine.getNode().securityContext;
+            if (securityContext == null) {
+                return;
+            }
+            securityContext.checkPermission(subject, permission);
         }
     }
 

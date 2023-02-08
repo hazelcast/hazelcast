@@ -23,12 +23,12 @@ import com.hazelcast.datalink.JdbcDataLinkFactory;
 
 import java.util.Properties;
 
-final class DataLinkTestUtil {
+public final class DataLinkTestUtil {
     private DataLinkTestUtil() {
     }
 
 
-    static void configureJdbcDataLink(String name, String jdbcUrl, Config config) {
+    public static void configureJdbcDataLink(String name, String jdbcUrl, Config config) {
         Properties properties = new Properties();
         properties.put("jdbcUrl", jdbcUrl);
         DataLinkConfig dataLinkConfig = new DataLinkConfig()
@@ -39,7 +39,7 @@ final class DataLinkTestUtil {
     }
 
 
-    static void configureJdbcDataLink(String name, String jdbcUrl, String username, String password, Config config) {
+    public static void configureJdbcDataLink(String name, String jdbcUrl, String username, String password, Config config) {
         Properties properties = new Properties();
         properties.put("jdbcUrl", jdbcUrl);
         properties.put("username", username);
@@ -51,7 +51,7 @@ final class DataLinkTestUtil {
         config.getDataLinkConfigs().put(name, dataLinkConfig);
     }
 
-    static void configureDummyDataLink(String name, Config config) {
+    public static void configureDummyDataLink(String name, Config config) {
         DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName(name)
                 .setClassName(DummyDataLinkFactory.class.getName());

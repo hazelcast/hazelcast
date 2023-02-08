@@ -77,6 +77,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
     private ILogger logger;
     private XAConnection xaConnection;
     private Connection connection;
+    private Context context;
     private PreparedStatement statement;
     private int idleCount;
     private boolean supportsBatch;
@@ -167,6 +168,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
         // workaround for https://github.com/hazelcast/hazelcast-jet/issues/2603
         DriverManager.getDrivers();
         logger = context.logger();
+        this.context = context;
         connectAndPrepareStatement();
     }
 
@@ -250,6 +252,9 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                 throw new JetException("The dataSource implements neither " + DataSource.class.getName() + " nor "
                         + XADataSource.class.getName());
             }
+
+            String url = connection.getMetaData().getURL();
+            context.checkPermission(ConnectorPermission.jdbc(url, ACTION_WRITE));
 
             supportsBatch = connection.getMetaData().supportsBatchUpdates();
 

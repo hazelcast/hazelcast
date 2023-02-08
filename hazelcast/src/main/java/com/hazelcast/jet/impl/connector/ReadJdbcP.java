@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Traverser;
@@ -124,6 +125,12 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
         // workaround for https://github.com/hazelcast/hazelcast-jet/issues/2603
         DriverManager.getDrivers();
         this.connection = newConnectionFn.get();
+        try {
+            String url = connection.getMetaData().getURL();
+            context.checkPermission(ConnectorPermission.jdbc(url, ACTION_READ));
+        } catch (SQLException e) {
+            throw new HazelcastException(e);
+        }
         this.parallelism = context.totalParallelism();
         this.index = context.globalProcessorIndex();
     }
