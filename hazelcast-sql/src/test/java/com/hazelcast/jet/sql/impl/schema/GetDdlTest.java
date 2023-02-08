@@ -88,6 +88,7 @@ public class GetDdlTest extends SqlTestSupport {
                 ImmutableList.of(new Row("CREATE"))
         );
 
+        // Note: it is allowed, due to Common Subexpression Elimination (CSE).
         assertRowsAnyOrder(
                 "SELECT SUBSTRING(GET_DDL('table', 'a') FROM 1 FOR 6) " +
                         "|| SUBSTRING(GET_DDL('table', 'a') FROM 1 FOR 3)",
