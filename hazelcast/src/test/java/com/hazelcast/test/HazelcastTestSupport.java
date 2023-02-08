@@ -64,6 +64,7 @@ import org.junit.ClassRule;
 import org.junit.ComparisonFailure;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
+import org.junit.function.ThrowingRunnable;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
@@ -1464,7 +1465,7 @@ public abstract class HazelcastTestSupport {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends Throwable> T assertThrows(Class<T> expectedType, Runnable r) {
+    public static <T extends Throwable> T assertThrows(Class<T> expectedType, ThrowingRunnable r) {
         try {
             r.run();
         } catch (Throwable actualException) {

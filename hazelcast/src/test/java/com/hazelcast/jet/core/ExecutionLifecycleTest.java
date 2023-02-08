@@ -233,11 +233,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         //Wait for job to finish
         assertThrows(CompletionException.class, () -> {
-            try {
-                jobFuture.get().getFuture().join();
-            } catch (InterruptedException | ExecutionException exception) {
-                fail("Job failed");
-            }
+            jobFuture.get().getFuture().join();
         });
         assertJobFailed(jobFuture.get(), NON_SERIALIZABLE_EXCEPTION.get());
     }
@@ -252,7 +248,6 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         // When
         runJobExpectNoFailure(dag, false);
-
     }
 
     @Test
@@ -372,11 +367,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         //Wait for job to finish
         assertThrows(CompletionException.class, () -> {
-            try {
-                jobFuture.get().getFuture().join();
-            } catch (InterruptedException | ExecutionException exception) {
-                fail("Job failed");
-            }
+            jobFuture.get().getFuture().join();
         });
         assertJobFailed(jobFuture.get(), NON_SERIALIZABLE_EXCEPTION.get());
     }
