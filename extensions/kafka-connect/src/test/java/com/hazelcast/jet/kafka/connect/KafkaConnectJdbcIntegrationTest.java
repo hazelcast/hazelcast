@@ -57,7 +57,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
     public static MySQLContainer<?> mysql = new MySQLContainer<>().withUsername(USERNAME).withPassword(PASSWORD);
 
     @Test
-    public void readFromRandomSource() throws Exception {
+    public void testReadFromJdbcConnector() throws Exception {
 
         System.setProperty("hazelcast.logging.type", "log4j2");
         Properties randomProperties = new Properties();

@@ -48,7 +48,7 @@ public class KafkaConnectDatagenIntegrationTest extends JetTestSupport {
             + "confluentinc-kafka-connect-datagen-0.6.0.zip";
 
     @Test
-    public void readFromRandomSource() throws Exception {
+    public void testReadFromDatagenConnector() throws Exception {
         System.setProperty("hazelcast.logging.type", "log4j2");
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
