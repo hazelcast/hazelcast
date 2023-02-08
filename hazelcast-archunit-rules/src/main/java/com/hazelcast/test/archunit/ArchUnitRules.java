@@ -26,8 +26,10 @@ import com.tngtech.archunit.lang.SimpleConditionEvent;
 
 import java.io.Serializable;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.test.archunit.ArchUnitRules.SerialVersionUidFieldCondition.haveValidSerialVersionUid;
+import static com.hazelcast.test.archunit.CompletableFutureUsageCondition.useExplicitExecutorServiceInCFAsyncMethods;
 import static com.tngtech.archunit.lang.conditions.ArchConditions.beFinal;
 import static com.tngtech.archunit.lang.conditions.ArchConditions.beStatic;
 import static com.tngtech.archunit.lang.conditions.ArchConditions.haveRawType;
@@ -47,6 +49,13 @@ public final class ArchUnitRules {
             .and().areNotAnonymousClasses()
             .should(haveValidSerialVersionUid())
             .allowEmptyShould(true);
+
+    /**
+     * ArchUnit rule checking that only {@link CompletableFuture} {@code async} methods version with explicitly
+     * defined executor service is used.
+     */
+    public static final ArchRule COMPLETABLE_FUTURE_USED_ONLY_WITH_EXPLICIT_EXECUTOR = classes()
+            .should(useExplicitExecutorServiceInCFAsyncMethods());
 
     private ArchUnitRules() {
     }
