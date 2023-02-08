@@ -26,7 +26,7 @@ import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
-import com.hazelcast.jet.sql.impl.connector.CalciteNode;
+import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -147,8 +147,8 @@ public class TestAllTypesSqlConnector implements SqlConnector {
     @Nonnull @Override
     public Vertex fullScanReader(
             @Nonnull DagBuildContext context,
-            @Nullable CalciteNode predicate,
-            @Nonnull List<CalciteNode> projection,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {

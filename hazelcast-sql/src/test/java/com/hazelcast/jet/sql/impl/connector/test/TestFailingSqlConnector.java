@@ -20,7 +20,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.sql.impl.connector.CalciteNode;
+import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -95,8 +95,8 @@ public class TestFailingSqlConnector implements SqlConnector {
     @Nonnull @Override
     public Vertex fullScanReader(
             @Nonnull DagBuildContext context,
-            @Nullable CalciteNode predicate,
-            @Nonnull List<CalciteNode> projection,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {

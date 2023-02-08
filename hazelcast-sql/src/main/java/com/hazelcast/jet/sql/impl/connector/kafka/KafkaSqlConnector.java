@@ -22,7 +22,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.kafka.KafkaProcessors;
 import com.hazelcast.jet.kafka.impl.StreamKafkaP;
-import com.hazelcast.jet.sql.impl.connector.CalciteNode;
+import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver;
@@ -120,8 +120,8 @@ public class KafkaSqlConnector implements SqlConnector {
     @Nonnull @Override
     public Vertex fullScanReader(
             @Nonnull DagBuildContext context,
-            @Nullable CalciteNode predicate,
-            @Nonnull List<CalciteNode> projection,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         KafkaTable table = (KafkaTable) context.getTable();

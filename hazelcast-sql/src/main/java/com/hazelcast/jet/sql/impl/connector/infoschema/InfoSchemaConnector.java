@@ -24,7 +24,7 @@ import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
-import com.hazelcast.jet.sql.impl.connector.CalciteNode;
+import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
@@ -88,8 +88,8 @@ final class InfoSchemaConnector implements SqlConnector {
     @Nonnull @Override
     public Vertex fullScanReader(
             @Nonnull DagBuildContext context,
-            @Nullable CalciteNode predicate,
-            @Nonnull List<CalciteNode> projection,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {

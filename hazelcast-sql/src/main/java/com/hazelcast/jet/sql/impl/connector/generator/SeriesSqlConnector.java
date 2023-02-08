@@ -22,7 +22,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.pipeline.BatchSource;
-import com.hazelcast.jet.sql.impl.connector.CalciteNode;
+import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
@@ -92,8 +92,8 @@ class SeriesSqlConnector implements SqlConnector {
     @Override
     public Vertex fullScanReader(
             @Nonnull DagBuildContext context,
-            @Nullable CalciteNode predicate,
-            @Nonnull List<CalciteNode> projection,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {

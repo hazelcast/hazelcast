@@ -44,7 +44,6 @@ import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
-import com.hazelcast.jet.sql.impl.connector.CalciteNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
@@ -88,6 +87,7 @@ import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
+import static com.hazelcast.jet.sql.impl.connector.HazelcastRexNode.wrap;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
 import static java.util.Collections.emptyList;
@@ -185,7 +185,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         dagBuildContext.setTable(table);
         dagBuildContext.setRel(rel);
         Vertex vertex = getJetSqlConnector(table).updateProcessor(
-                dagBuildContext, rel.getUpdateColumnList(), CalciteNode.projection(rel.getSourceExpressionList()));
+                dagBuildContext, rel.getUpdateColumnList(), wrap(rel.getSourceExpressionList()));
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }
@@ -229,8 +229,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         dagBuildContext.setRel(rel);
         return getJetSqlConnector(table).fullScanReader(
                 dagBuildContext,
-                CalciteNode.filter(rel.filter()),
-                CalciteNode.projection(rel.projection()),
+                wrap(rel.filter()),
+                wrap(rel.projection()),
                 policyProvider != null
                         ? context -> policyProvider.apply(context, wmKey)
                         : null
@@ -249,8 +249,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                         dagBuildContext,
                         localMemberAddress,
                         rel.getIndex(),
-                        CalciteNode.filter(rel.filter()),
-                        CalciteNode.projection(rel.projection()),
+                        wrap(rel.filter()),
+                        wrap(rel.projection()),
                         rel.getIndexFilter(),
                         rel.getComparator(),
                         rel.isDescending()
@@ -262,11 +262,11 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         RexProgram program = rel.getProgram();
         dagBuildContext.setTable(null);
         dagBuildContext.setRel(rel);
-        List<Expression<?>> projection = dagBuildContext.convertProjection(CalciteNode.projection(rel.projection()));
+        List<Expression<?>> projection = dagBuildContext.convertProjection(wrap(rel.projection()));
 
         Vertex vertex;
         if (program.getCondition() != null) {
-            Expression<Boolean> filterExpr = dagBuildContext.convertFilter(CalciteNode.filter(rel.filter()));
+            Expression<Boolean> filterExpr = dagBuildContext.convertFilter(wrap(rel.filter()));
             vertex = dag.newUniqueVertex("Calc", mapUsingServiceP(
                     ServiceFactories.nonSharedService(ctx ->
                             ExpressionUtil.calcFn(projection, filterExpr, ExpressionEvalContext.from(ctx))),
@@ -480,8 +480,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         dagBuildContext.setRel(rel);
         VertexWithInputConfig vertexWithConfig = getJetSqlConnector(rightTable).nestedLoopReader(
                 dagBuildContext,
-                CalciteNode.filter(rel.rightFilter()),
-                CalciteNode.projection(rel.rightProjection()),
+                wrap(rel.rightFilter()),
+                wrap(rel.rightProjection()),
                 rel.joinInfo(dagBuildContext.getParameterMetadata())
         );
         Vertex vertex = vertexWithConfig.vertex();

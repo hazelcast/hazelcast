@@ -23,7 +23,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.sql.impl.connector.CalciteNode;
+import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -276,8 +276,8 @@ public class JdbcSqlConnector implements SqlConnector {
     @Override
     public Vertex fullScanReader(
             @Nonnull DagBuildContext context,
-            @Nullable CalciteNode predicate,
-            @Nonnull List<CalciteNode> projection,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
@@ -327,7 +327,7 @@ public class JdbcSqlConnector implements SqlConnector {
     public Vertex updateProcessor(
             @Nonnull DagBuildContext context,
             @Nonnull List<String> fieldNames,
-            @Nonnull List<CalciteNode> expressions
+            @Nonnull List<HazelcastRexNode> expressions
     ) {
         JdbcTable table = (JdbcTable) context.getTable();
 
