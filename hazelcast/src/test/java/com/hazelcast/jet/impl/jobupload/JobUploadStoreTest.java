@@ -84,7 +84,7 @@ public class JobUploadStoreTest {
     @Test
     public void testRemove() throws Exception {
         UUID sessionID = UUID.randomUUID();
-        jobUploadStore.remove(sessionID);
+        jobUploadStore.removeBadSession(sessionID);
     }
 
     @Test
@@ -95,7 +95,6 @@ public class JobUploadStoreTest {
         jobUploadStore.processJobMetaData(parameterObject);
 
         assertEquals(1, jobMap.size());
-
     }
 
     @Test
@@ -112,7 +111,6 @@ public class JobUploadStoreTest {
 
         // Send meta data
         jobUploadStore.processJobMetaData(parameterObject);
-
 
         // Send part 1
         JobMultiPartParameterObject parameterObject1 = new JobMultiPartParameterObject();
@@ -141,8 +139,7 @@ public class JobUploadStoreTest {
         assertNotNull(result);
         assertTrue(Files.exists(parameterObject.getJarPath()));
 
-        jobUploadStore.remove(sessionID);
-
+        jobUploadStore.removeBadSession(sessionID);
     }
 
     @NotNull

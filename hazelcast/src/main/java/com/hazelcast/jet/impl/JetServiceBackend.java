@@ -413,7 +413,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
             jobUploadStore.processJobMetaData(jobMetaDataParameterObject);
         } catch (Exception exception) {
             // Upon exception, remove from the store
-            jobUploadStore.remove(jobMetaDataParameterObject.getSessionId());
+            jobUploadStore.removeBadSession(jobMetaDataParameterObject.getSessionId());
 
             // Enrich exception with metadata
             String exceptionString = jobMetaDataParameterObject.exceptionString();
@@ -437,7 +437,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
             result = jobUploadStore.processJobMultipart(jobMultiPartParameterObject);
         } catch (Exception exception) {
             // Upon exception, remove from the store
-            jobUploadStore.remove(jobMultiPartParameterObject.getSessionId());
+            jobUploadStore.removeBadSession(jobMultiPartParameterObject.getSessionId());
             // Only throw a JetException
             wrapWithJetException(exception);
         }

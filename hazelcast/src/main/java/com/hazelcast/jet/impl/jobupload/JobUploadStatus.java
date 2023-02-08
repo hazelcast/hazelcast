@@ -102,9 +102,13 @@ public class JobUploadStatus {
      * @return JobMetaDataParameterObject if upload is complete
      * @throws IOException              in case of I/O error
      * @throws NoSuchAlgorithmException in case of message digest error
+     * @throws JetException             in case of other errors
      */
     public JobMetaDataParameterObject processJobMultipart(JobMultiPartParameterObject parameterObject)
             throws IOException, NoSuchAlgorithmException {
+
+        // Change the timestamp in the beginning to avoid expiration
+        changeLastUpdatedTime();
 
         validateReceivedParameters(parameterObject);
 
@@ -128,8 +132,6 @@ public class JobUploadStatus {
                     Files.size(jarPath));
             LOGGER.info(message);
         }
-
-        changeLastUpdatedTime();
 
         JobMetaDataParameterObject result = null;
         // If parts are complete
