@@ -48,6 +48,7 @@ public class JobUploadMemberFailureTest extends JetTestSupport {
         HazelcastInstance hazelcastInstance = createHazelcastInstance();
         JetService jetService = hazelcastInstance.getJet();
 
+        // Copy the jar because it will be deleted
         Path path = copyJar("member1.jar");
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
                 .setJarPath(path);
@@ -69,6 +70,7 @@ public class JobUploadMemberFailureTest extends JetTestSupport {
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
         JetService jetService = hazelcastInstance.getJet();
 
+        // Copy the jar because it will be deleted
         Path path = copyJar("member2.jar");
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
                 .setJarPath(path)
