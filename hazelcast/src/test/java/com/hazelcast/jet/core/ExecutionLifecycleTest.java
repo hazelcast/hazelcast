@@ -47,7 +47,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -117,9 +116,6 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     private static final int MEMBER_COUNT = 2;
     public static final String MOCK_ERROR_MESSAGE = "mock error";
     private static final SupplierEx<Throwable> MOCK_ERROR = () -> new AssertionError(MOCK_ERROR_MESSAGE);
-
-    private static final JetException JET_EXCEPTION = new JetException("Execution on a member failed");
-    private static final HazelcastSerializationException SERIALIZATION_EXCEPTION = new HazelcastSerializationException("Failed to serialize ");
 
     /**
       * An exception with a non-serializable field
@@ -374,12 +370,19 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             MockPS.unblock();
         }
 
-        Job job = jobFuture.get();
-        assertJobFailed(job, NON_SERIALIZABLE_EXCEPTION.get());
+        //Wait for job to finish
+        assertThrows(CompletionException.class, () -> {
+            try {
+                jobFuture.get().getFuture().join();
+            } catch (InterruptedException | ExecutionException exception) {
+                fail("Job failed");
+            }
+        });
+        assertJobFailed(jobFuture.get(), NON_SERIALIZABLE_EXCEPTION.get());
     }
 
     @Test
-    public void when_psCloseThrowsNonSerializable_then_jobSucceeds() throws ExecutionException, InterruptedException {
+    public void when_psCloseThrowsNonSerializable_then_jobSucceeds() throws Exception {
         // Given
         SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT)
                 .setCloseError(NON_SERIALIZABLE_EXCEPTION);
@@ -396,12 +399,10 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         Job job = jobFuture.get();
         job.join();
-        // When
-        runJobExpectNoFailure(dag, false);
     }
 
     @Test
-    public void when_psNonCooperativeCloseThrowsNonSerializable_then_jobSucceeds() {
+    public void when_psNonCooperativeCloseThrowsNonSerializable_then_jobSucceeds() throws Exception {
         // Given
         SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT)
                 .closeBlocks()
@@ -409,8 +410,16 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPMS(supplier)));
 
-        // When
-        runJobExpectNoFailure(dag, false);
+        Future<Job> jobFuture = spawn(() -> newJob(dag));
+
+        MockPS.waitBlockingSemaphore();
+
+        for (int i = 0; i < MEMBER_COUNT; i++) {
+            MockPS.unblock();
+        }
+
+        Job job = jobFuture.get();
+        job.join();
     }
 
     @Test

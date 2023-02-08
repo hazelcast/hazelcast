@@ -421,7 +421,6 @@ public final class TestProcessors {
             if (closeError != null) {
                 throw sneakyThrow(closeError.get());
             }
-
         }
 
         public static void assertInitCloseCounts() {
