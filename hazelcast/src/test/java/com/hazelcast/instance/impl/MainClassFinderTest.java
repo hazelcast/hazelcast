@@ -40,7 +40,7 @@ public class MainClassFinderTest {
 
     @Test
     public void testNoMainClassInManifest() throws Exception {
-        String jarPath = getPathOfJar("nomanifestsimplejob-1.0.0 .jar");
+        String jarPath = getPathOfJar("nomanifestsimplejob-1.0.0.jar");
 
         MainClassFinder mainClassFinder = new MainClassFinder();
         mainClassFinder.findMainClass(null, jarPath);

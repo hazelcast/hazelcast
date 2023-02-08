@@ -71,7 +71,7 @@ public class JobUploadStore {
         logger.info(message);
 
         if (jobMap.containsKey(sessionId)) {
-            throw  new JetException("Session already exists. sessionID " + sessionId);
+            throw new JetException("Session already exists. sessionID " + sessionId);
         }
 
         // Create a new JobUploadStatus object and save parameters

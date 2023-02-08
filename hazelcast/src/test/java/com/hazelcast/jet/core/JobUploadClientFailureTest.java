@@ -25,7 +25,6 @@ import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.test.SerialTest;
-import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -34,13 +33,18 @@ import org.mockito.Mockito;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.FileSystemException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
 
@@ -61,7 +65,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
 
         SubmitJobParameters submitJobParameters = new SubmitJobParameters();
 
-        Assertions.assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
+        assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
                 .isInstanceOf(JetException.class)
                 .hasMessageContaining("jarPath can not be null");
     }
@@ -76,7 +80,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         submitJobParameters.setJarPath(getJarPath());
         submitJobParameters.setJobParameters(null);
 
-        Assertions.assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
+        assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
                 .isInstanceOf(JetException.class)
                 .hasMessageContaining("jobParameters can not be null");
     }
@@ -89,7 +93,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
                 .setJarPath(getNoManifestJarPath());
 
-        Assertions.assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
+        assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
                 .isInstanceOf(JetException.class)
                 .hasMessageContaining("No Main-Class found in the manifest");
     }
@@ -112,7 +116,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
                 .setJarPath(jarPath);
 
-        Assertions.assertThatThrownBy(() -> spyJetService.submitJobFromJar(submitJobParameters))
+        assertThatThrownBy(() -> spyJetService.submitJobFromJar(submitJobParameters))
                 .isInstanceOf(JetException.class)
                 .hasCauseInstanceOf(FileSystemException.class);
     }
@@ -143,12 +147,64 @@ public class JobUploadClientFailureTest extends JetTestSupport {
                 .setMainClass("org.example.Main1");
 
         assertThrows(JetException.class, () -> jetService.submitJobFromJar(submitJobParameters));
-
     }
 
 
     @Test
-    public void test_jarUpload_WithIncorrectChecksum() throws IOException, NoSuchAlgorithmException {
+    public void test_jar_isDeleted() throws IOException {
+        // Delete left over files before the test
+        Path tempDirectory = Paths.get(System.getProperty("java.io.tmpdir"));
+        String newSimpleJob = "newsimplejob.jar";
+        fileAllLeftOverFiles(tempDirectory, newSimpleJob);
+
+        HazelcastInstance client = createResourceUploadEnabledMemberAndClient();
+        JetService jetService = client.getJet();
+
+        // Copy as new jar to make it unique
+        Path jarPath = getJarPath();
+        Path newPath = jarPath.resolveSibling(newSimpleJob);
+        Files.copy(jarPath, newPath, StandardCopyOption.REPLACE_EXISTING);
+
+        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+                .setJarPath(newPath)
+                .setMainClass("org.example.Main1");
+
+        assertThrows(JetException.class, () -> jetService.submitJobFromJar(submitJobParameters));
+
+        boolean fileDoesNotExist = fileDoesNotExist(tempDirectory, newSimpleJob);
+        assertThat(fileDoesNotExist)
+                .isTrue();
+
+        // Delete local new jar
+        Files.delete(newPath);
+    }
+
+    private void fileAllLeftOverFiles(Path tempDirectory, String newJarName) throws IOException {
+        try (Stream<Path> stream = Files.list(tempDirectory)) {
+            stream.forEach(fullPath -> {
+                String fileName = fullPath.getFileName().toString();
+                if (fileName.contains(newJarName)) {
+                    try {
+                        Files.delete(fullPath);
+                    } catch (IOException ignored) {
+                    }
+                }
+                ;
+            });
+        }
+    }
+
+    private boolean fileDoesNotExist(Path tempDirectory, String newJarName) throws IOException {
+        try (Stream<Path> stream = Files.list(tempDirectory)) {
+            return stream.noneMatch(fullPath -> {
+                String fileName = fullPath.getFileName().toString();
+                return fileName.contains(newJarName);
+            });
+        }
+    }
+
+    @Test
+    public void test_jarUpload_withIncorrectChecksum() throws IOException, NoSuchAlgorithmException {
         HazelcastInstance client = createResourceUploadEnabledMemberAndClient();
 
         // Mock the JetClientInstanceImpl to return an incorrect checksum
@@ -182,7 +238,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
     }
 
     private Path getNoManifestJarPath() {
-        return getPath("nomanifestsimplejob-1.0.0 .jar");
+        return getPath("nomanifestsimplejob-1.0.0.jar");
     }
 
     private Path getPath(String jarName) {

@@ -74,6 +74,7 @@ import com.hazelcast.transaction.TransactionalTask;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -150,18 +151,21 @@ public final class HazelcastBootstrap {
         try {
             mainClass = getMainClass(mainClass, jarPath, calledByMember);
 
-            URL jarUrl = new URL("file:///" + jarPath);
-            URLClassLoader classLoader = AccessController.doPrivileged(
+            URL jarUrl = new File(jarPath).toURI().toURL();
+            // Close the URLClassLoader when finished
+            try (URLClassLoader classLoader = AccessController.doPrivileged(
                     (PrivilegedAction<URLClassLoader>) () ->
                             new URLClassLoader(new URL[]{jarUrl}, HazelcastBootstrap.class.getClassLoader())
-            );
+            )) {
 
-            Class<?> clazz = loadMainClass(classLoader, mainClass);
+                Class<?> clazz = loadMainClass(classLoader, mainClass);
 
-            Method main = getMainMethod(clazz, calledByMember);
-            String[] jobArgs = args.toArray(new String[0]);
-            // upcast args to Object so it's passed as a single array-typed argument
-            main.invoke(null, (Object) jobArgs);
+                Method main = getMainMethod(clazz, calledByMember);
+                String[] jobArgs = args.toArray(new String[0]);
+                // upcast args to Object so it's passed as a single array-typed argument
+                main.invoke(null, (Object) jobArgs);
+
+            }
 
             // Wait for the job to start only if called by the client side
             if (!calledByMember) {
