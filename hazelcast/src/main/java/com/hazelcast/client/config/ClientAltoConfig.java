@@ -27,7 +27,7 @@ import java.util.Objects;
  * Alto is the next generation Hazelcast that uses thread-per-core model.
  * <p>
  * Alto-aware clients will maintain connections to all cores of all cluster
- * members. The client will rout partition-specific invocations to the
+ * members. The client will route partition-specific invocations to the
  * correct core of the correct member in the best effort basis.
  *
  * @since 5.3
