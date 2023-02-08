@@ -44,7 +44,8 @@ public class KafkaConnectDatagenIntegrationTest extends JetTestSupport {
 
     public static final int ITEM_COUNT = 1_000;
 
-    private static final String CONNECTOR_URL = "https://hazelcast.jfrog.io/artifactory/download-local/tests/confluentinc-kafka-connect-datagen-0.6.0.zip";
+    private static final String CONNECTOR_URL = "https://repository.hazelcast.com/download/tests/"
+            + "confluentinc-kafka-connect-datagen-0.6.0.zip";
 
     @Test
     public void readFromRandomSource() throws Exception {

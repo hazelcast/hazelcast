@@ -50,7 +50,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
     private static final int ITEM_COUNT = 10_000;
     private static final String USERNAME = "mysql";
     private static final String PASSWORD = "mysql";
-    private static final String CONNECTOR_URL = "https://hazelcast.jfrog.io/artifactory/download-local"
+    private static final String CONNECTOR_URL = "https://repository.hazelcast.com/download"
             + "/tests/confluentinc-kafka-connect-jdbc-10.6.3.zip";
 
     @ClassRule
