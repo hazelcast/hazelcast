@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.jet.core.metrics.MetricTags;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.sql.metrics.MetricNames;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class SqlClientPartitionAwareRoutingTest extends SqlTestSupport {
@@ -71,6 +73,13 @@ public class SqlClientPartitionAwareRoutingTest extends SqlTestSupport {
     }
 
     private void testQuery(String sql, String metricName, int keysNumber) {
+        // wait for client to receive partition table
+        assertTrueEventually(() -> {
+            for (final Partition partition : client().getPartitionService().getPartitions()) {
+                assertNotNull(partition.getOwner());
+            }
+        });
+
         // warm up cache
         client().getSql().execute(sql, 0);
 
