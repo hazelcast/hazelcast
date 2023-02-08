@@ -80,4 +80,31 @@ public class GetDdlTest extends SqlTestSupport {
                 .hasCauseInstanceOf(QueryException.class)
                 .hasMessageContaining("Object 'bbb' does not exist");
     }
+
+    @Test
+    public void when_getDdlQueryWithAnotherOperator_then_success() {
+        createMapping("a", int.class, int.class);
+
+        assertRowsAnyOrder("SELECT SUBSTRING(GET_DDL('table', 'a') FROM 1 FOR 6)",
+                ImmutableList.of(new Row("CREATE"))
+        );
+
+        assertRowsAnyOrder(
+                "SELECT SUBSTRING(GET_DDL('table', 'a') FROM 1 FOR 6) " +
+                        "|| SUBSTRING(GET_DDL('table', 'a') FROM 1 FOR 3)",
+                ImmutableList.of(new Row("CREATECRE"))
+        );
+    }
+
+    @Test
+    public void when_getMultipleDdlWereQueriedWithinOneProjection_then_throws() {
+        createMapping("a", int.class, int.class);
+        createMapping("b", int.class, int.class);
+
+        assertThatThrownBy(() -> instance().getSql().execute(
+                "SELECT SUBSTRING(GET_DDL('table', 'a') FROM 1 FOR 6) " +
+                        "|| SUBSTRING(GET_DDL('table', 'b') FROM 1 FOR 6)"))
+                .hasCauseInstanceOf(QueryException.class)
+                .hasMessageContaining("Multiple GET_DDL in single query are not allowed");
+    }
 }
