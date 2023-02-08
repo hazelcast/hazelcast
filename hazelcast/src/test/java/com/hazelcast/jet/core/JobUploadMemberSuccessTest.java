@@ -46,6 +46,7 @@ public class JobUploadMemberSuccessTest extends JetTestSupport {
     @Test
     public void test_jarUpload_whenResourceUploadIsEnabled() throws IOException {
 
+        // Copy the jar because it will be deleted
         String memberSimpleJob = "member2.jar";
         Path newPath = copyJar(memberSimpleJob);
 
@@ -66,6 +67,8 @@ public class JobUploadMemberSuccessTest extends JetTestSupport {
 
     @Test
     public void test_jarUpload_withMainClassname() throws IOException {
+
+        // Copy the jar because it will be deleted
         String memberSimpleJob = "member3.jar";
         Path newPath = copyJar(memberSimpleJob);
 
