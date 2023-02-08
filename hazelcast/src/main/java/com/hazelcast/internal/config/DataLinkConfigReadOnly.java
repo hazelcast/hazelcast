@@ -16,19 +16,19 @@
 
 package com.hazelcast.internal.config;
 
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.DataLinkConfig;
 
 import javax.annotation.Nonnull;
 import java.util.Properties;
 
-public class ExternalDataStoreConfigReadOnly extends ExternalDataStoreConfig {
+public class DataLinkConfigReadOnly extends DataLinkConfig {
 
-    public ExternalDataStoreConfigReadOnly(ExternalDataStoreConfig config) {
+    public DataLinkConfigReadOnly(DataLinkConfig config) {
         super(config);
     }
 
     @Override
-    public ExternalDataStoreConfig setName(String name) {
+    public DataLinkConfig setName(String name) {
         throw readOnly();
     }
 
@@ -37,17 +37,17 @@ public class ExternalDataStoreConfigReadOnly extends ExternalDataStoreConfig {
     }
 
     @Override
-    public ExternalDataStoreConfig setClassName(@Nonnull String className) {
+    public DataLinkConfig setClassName(@Nonnull String className) {
         throw readOnly();
     }
 
     @Override
-    public ExternalDataStoreConfig setShared(boolean shared) {
+    public DataLinkConfig setShared(boolean shared) {
         throw readOnly();
     }
 
     @Override
-    public ExternalDataStoreConfig setProperties(Properties properties) {
+    public DataLinkConfig setProperties(Properties properties) {
         throw readOnly();
     }
 }

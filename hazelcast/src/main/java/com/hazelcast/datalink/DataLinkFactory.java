@@ -14,35 +14,36 @@
  * limitations under the License.
  */
 
-package com.hazelcast.datastore;
+package com.hazelcast.datalink;
 
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.spi.annotation.Beta;
 
 /**
- * Creates external datastore. Configuration is provided by {@link #init(ExternalDataStoreConfig)}.
+ * Creates data link. Configuration is provided by {@link #init(DataLinkConfig)}.
  *
- * @param <DS> type of the data store
+ * @param <DL> type of the data link
  * @since 5.2
  */
 @Beta
-public interface ExternalDataStoreFactory<DS> extends AutoCloseable {
+public interface DataLinkFactory<DL> extends AutoCloseable {
+
     /**
-     * Returns configured data store. Depending on configuration and implementation it can create new data store
+     * Returns configured data link. Depending on configuration and implementation it can create new data link
      * or reuse existing one. The implementation <i>must</i> be thread-safe, since this method may be called
      * by multiple threads concurrently.
      */
-    DS getDataStore();
+    DL getDataLink();
 
     /**
      * Initialize factory with the config
      *
-     * @param config configuration of the given datastore
+     * @param config configuration of the given data link
      */
-    void init(ExternalDataStoreConfig config);
+    void init(DataLinkConfig config);
 
     /**
-     * Test connection of previously initialized data store.
+     * Test connection of previously initialized data link.
      *
      * @since 5.3
      */

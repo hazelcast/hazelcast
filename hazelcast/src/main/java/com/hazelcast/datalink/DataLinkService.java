@@ -14,39 +14,39 @@
  * limitations under the License.
  */
 
-package com.hazelcast.datastore;
+package com.hazelcast.datalink;
 
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.spi.annotation.Beta;
 
 /**
- * Service for accessing external data store factories
+ * Service for accessing data link factories
  *
  * @since 5.2
  */
 @Beta
-public interface ExternalDataStoreService extends AutoCloseable {
+public interface DataLinkService extends AutoCloseable {
 
     /**
-     * Tests external data store configuration.
+     * Tests data link configuration.
      *
-     * @param config name of the data store factory
+     * @param config name of the data link factory
      * @return {@code true} if test was successful
      * @throws Exception if the test operation fails
      * @since 5.3
      */
-    boolean testConnection(ExternalDataStoreConfig config) throws Exception;
+    boolean testConnection(DataLinkConfig config) throws Exception;
 
     /**
-     * Returns external data store factory with given name.
+     * Returns data link factory with given name.
      *
-     * @param name name of the data store factory
-     * @param <DS> type of the data store
+     * @param name name of the data link factory
+     * @param <DL> type of the data link
      * @return instance of the factory
      * @throws HazelcastException if the factory with given name is not found or misconfigured*
      */
-    <DS> ExternalDataStoreFactory<DS> getExternalDataStoreFactory(String name);
+    <DL> DataLinkFactory<DL> getDataLinkFactory(String name);
 
     @Override
     void close();

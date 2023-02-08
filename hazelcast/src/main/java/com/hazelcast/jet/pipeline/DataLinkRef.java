@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.function.ToResultSetFunction;
 import com.hazelcast.spi.annotation.Beta;
@@ -24,30 +24,30 @@ import com.hazelcast.spi.annotation.Beta;
 import java.io.Serializable;
 
 /**
- * Represents a reference to the external datastore, used with
- * {@link Sources#jdbc(ExternalDataStoreRef, ToResultSetFunction, FunctionEx)}.
+ * Represents a reference to the data link, used with
+ * {@link Sources#jdbc(DataLinkRef, ToResultSetFunction, FunctionEx)}.
  *
  * @since 5.2
  */
 @Beta
-public class ExternalDataStoreRef implements Serializable {
+public class DataLinkRef implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     private final String name;
 
-    public ExternalDataStoreRef(String name) {
+    public DataLinkRef(String name) {
         this.name = name;
     }
 
     /**
-     * Creates a reference to the configured external datastore
+     * Creates a reference to the configured data link
      *
-     * @param name name of the external datastore configured in {@link ExternalDataStoreConfig}
-     * @return the reference to the external datastore
+     * @param name name of the data link configured in {@link DataLinkConfig}
+     * @return the reference to the data link
      */
-    public static ExternalDataStoreRef externalDataStoreRef(String name) {
-        return new ExternalDataStoreRef(name);
+    public static DataLinkRef dataLinkRef(String name) {
+        return new DataLinkRef(name);
     }
 
     public String getName() {
@@ -56,7 +56,7 @@ public class ExternalDataStoreRef implements Serializable {
 
     @Override
     public String toString() {
-        return "ExternalDataStoreRef{" +
+        return "DataLinkRef{" +
                 "name='" + name + '\'' +
                 '}';
     }

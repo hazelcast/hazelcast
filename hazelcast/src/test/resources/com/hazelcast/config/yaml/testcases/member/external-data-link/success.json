@@ -1,9 +1,9 @@
 {
   "instance": {
     "hazelcast": {
-      "external-data-store": {
+      "data-link": {
         "mysql-database": {
-          "class-name": "com.hazelcast.datastore.JdbcDataStoreFactory",
+          "class-name": "com.hazelcast.datalink.JdbcDataLinkFactory",
           "properties": {
             "jdbcUrl": "jdbc:mysql://dummy:3306"
           },

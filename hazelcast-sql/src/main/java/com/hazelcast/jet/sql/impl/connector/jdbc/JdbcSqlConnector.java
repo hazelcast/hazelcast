@@ -17,8 +17,8 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datastore.ExternalDataStoreFactory;
-import com.hazelcast.datastore.impl.CloseableDataSource;
+import com.hazelcast.datalink.DataLinkFactory;
+import com.hazelcast.datalink.impl.CloseableDataSource;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -62,7 +62,7 @@ public class JdbcSqlConnector implements SqlConnector {
 
     public static final String TYPE_NAME = "JDBC";
 
-    public static final String OPTION_EXTERNAL_DATASTORE_REF = "externalDataStoreRef";
+    public static final String OPTION_DATA_LINK_REF = "dataLinkRef";
     public static final String OPTION_JDBC_BATCH_LIMIT = "jdbc.batch-limit";
 
     public static final String JDBC_BATCH_LIMIT_DEFAULT_VALUE = "100";
@@ -134,11 +134,11 @@ public class JdbcSqlConnector implements SqlConnector {
             Map<String, String> options,
             String externalTableName
     ) {
-        String externalDataStoreRef = requireNonNull(
-                options.get(OPTION_EXTERNAL_DATASTORE_REF),
-                OPTION_EXTERNAL_DATASTORE_REF + " must be set"
+        String dataLinkRef = requireNonNull(
+                options.get(OPTION_DATA_LINK_REF),
+                OPTION_DATA_LINK_REF + " must be set"
         );
-        DataSource dataSource = createDataStore(nodeEngine, externalDataStoreRef);
+        DataSource dataSource = createDataLink(nodeEngine, dataLinkRef);
         try (
                 Connection connection = dataSource.getConnection();
                 Statement statement = connection.createStatement()
@@ -179,10 +179,11 @@ public class JdbcSqlConnector implements SqlConnector {
         }
     }
 
-    private static DataSource createDataStore(NodeEngine nodeEngine, String externalDataStoreRef) {
-        final ExternalDataStoreFactory<DataSource> externalDataStoreFactory = nodeEngine.getExternalDataStoreService()
-                .getExternalDataStoreFactory(externalDataStoreRef);
-        return externalDataStoreFactory.getDataStore();
+    private static DataSource createDataLink(NodeEngine nodeEngine, String dataLinkRef) {
+        final DataLinkFactory<DataSource> dataLinkFactory = nodeEngine
+                .getDataLinkService()
+                .getDataLinkFactory(dataLinkRef);
+        return dataLinkFactory.getDataLink();
     }
 
     private Set<String> readPrimaryKeyColumns(@Nonnull String externalName, Connection connection) {
@@ -229,8 +230,8 @@ public class JdbcSqlConnector implements SqlConnector {
             ));
         }
 
-        String externalDataStoreRef = options.get(OPTION_EXTERNAL_DATASTORE_REF);
-        SqlDialect dialect = resolveDialect(nodeEngine, externalDataStoreRef);
+        String dataLinkRef = options.get(OPTION_DATA_LINK_REF);
+        SqlDialect dialect = resolveDialect(nodeEngine, dataLinkRef);
 
         return new JdbcTable(
                 this,
@@ -240,14 +241,14 @@ public class JdbcSqlConnector implements SqlConnector {
                 mappingName,
                 new ConstantTableStatistics(0),
                 externalName,
-                externalDataStoreRef,
+                dataLinkRef,
                 parseInt(options.getOrDefault(OPTION_JDBC_BATCH_LIMIT, JDBC_BATCH_LIMIT_DEFAULT_VALUE)),
                 nodeEngine.getSerializationService()
         );
     }
 
-    private SqlDialect resolveDialect(NodeEngine nodeEngine, String externalDataStoreRef) {
-        DataSource dataSource = createDataStore(nodeEngine, externalDataStoreRef);
+    private SqlDialect resolveDialect(NodeEngine nodeEngine, String dataLinkRef) {
+        DataSource dataSource = createDataLink(nodeEngine, dataLinkRef);
 
         try (Connection connection = dataSource.getConnection()) {
             SqlDialect dialect = SqlDialectFactoryImpl.INSTANCE.create(connection.getMetaData());
@@ -264,8 +265,8 @@ public class JdbcSqlConnector implements SqlConnector {
             }
 
         } catch (Exception e) {
-            throw new HazelcastException("Could not determine dialect for externalDataStoreRef: "
-                    + externalDataStoreRef, e);
+            throw new HazelcastException("Could not determine dialect for dataLinkRef: "
+                    + dataLinkRef, e);
         } finally {
             closeDataSource(dataSource);
         }
@@ -289,7 +290,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 "Select(" + table.getExternalName() + ")",
                 ProcessorMetaSupplier.forceTotalParallelismOne(
                         new SelectProcessorSupplier(
-                                table.getExternalDataStoreRef(),
+                                table.getDataLinkRef(),
                                 builder.query(),
                                 builder.parameterPositions()
                         ))
@@ -305,7 +306,7 @@ public class JdbcSqlConnector implements SqlConnector {
         return new VertexWithInputConfig(context.getDag().newUniqueVertex(
                 "Insert(" + table.getExternalName() + ")",
                 new InsertProcessorSupplier(
-                        table.getExternalDataStoreRef(),
+                        table.getDataLinkRef(),
                         builder.query(),
                         table.getBatchLimit()
                 )
@@ -338,7 +339,7 @@ public class JdbcSqlConnector implements SqlConnector {
         return context.getDag().newUniqueVertex(
                 "Update(" + table.getExternalName() + ")",
                 new UpdateProcessorSupplier(
-                        table.getExternalDataStoreRef(),
+                        table.getDataLinkRef(),
                         builder.query(),
                         builder.parameterPositions(),
                         table.getBatchLimit()
@@ -360,7 +361,7 @@ public class JdbcSqlConnector implements SqlConnector {
         return context.getDag().newUniqueVertex(
                 "Delete(" + table.getExternalName() + ")",
                 new DeleteProcessorSupplier(
-                        table.getExternalDataStoreRef(),
+                        table.getDataLinkRef(),
                         builder.query(),
                         table.getBatchLimit()
                 )

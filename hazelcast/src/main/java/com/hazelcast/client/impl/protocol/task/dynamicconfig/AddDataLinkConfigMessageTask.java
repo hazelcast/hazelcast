@@ -17,34 +17,34 @@
 package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExternalDataStoreConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDataLinkConfigCodec;
 import com.hazelcast.client.impl.protocol.util.PropertiesUtil;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class AddExternalDataStoreConfigMessageTask
-        extends AbstractAddConfigMessageTask<DynamicConfigAddExternalDataStoreConfigCodec.RequestParameters> {
+public class AddDataLinkConfigMessageTask
+        extends AbstractAddConfigMessageTask<DynamicConfigAddDataLinkConfigCodec.RequestParameters> {
 
-    public AddExternalDataStoreConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public AddDataLinkConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected DynamicConfigAddExternalDataStoreConfigCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return DynamicConfigAddExternalDataStoreConfigCodec.decodeRequest(clientMessage);
+    protected DynamicConfigAddDataLinkConfigCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return DynamicConfigAddDataLinkConfigCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return DynamicConfigAddExternalDataStoreConfigCodec.encodeResponse();
+        return DynamicConfigAddDataLinkConfigCodec.encodeResponse();
     }
 
     @Override
     protected IdentifiedDataSerializable getConfig() {
-        ExternalDataStoreConfig config = new ExternalDataStoreConfig(parameters.name);
+        DataLinkConfig config = new DataLinkConfig(parameters.name);
         config.setClassName(parameters.className);
         config.setShared(parameters.shared);
         config.setProperties(PropertiesUtil.fromMap(parameters.properties));
@@ -53,14 +53,14 @@ public class AddExternalDataStoreConfigMessageTask
 
     @Override
     public String getMethodName() {
-        return "addExternalDataStoreConfig";
+        return "addDataLinkConfig";
     }
 
     @Override
     protected boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config) {
         DynamicConfigurationAwareConfig nodeConfig = (DynamicConfigurationAwareConfig) nodeEngine.getConfig();
-        ExternalDataStoreConfig externalDataStoreConfig = (ExternalDataStoreConfig) config;
-        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getExternalDataStoreConfigs(),
-                externalDataStoreConfig.getName(), externalDataStoreConfig);
+        DataLinkConfig dataLinkConfig = (DataLinkConfig) config;
+        return nodeConfig.checkStaticConfigDoesNotExist(nodeConfig.getStaticConfig().getDataLinkConfigs(),
+                dataLinkConfig.getName(), dataLinkConfig);
     }
 }

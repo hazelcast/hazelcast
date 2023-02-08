@@ -17,48 +17,48 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ExternalDataStoreConfig;
-import com.hazelcast.datastore.ExternalDataStoreFactory;
-import com.hazelcast.datastore.JdbcDataStoreFactory;
+import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.datalink.DataLinkFactory;
+import com.hazelcast.datalink.JdbcDataLinkFactory;
 
 import java.util.Properties;
 
-final class ExternalDataStoreTestUtil {
-    private ExternalDataStoreTestUtil() {
+final class DataLinkTestUtil {
+    private DataLinkTestUtil() {
     }
 
 
-    static void configureJdbcDataStore(String name, String jdbcUrl, Config config) {
+    static void configureJdbcDataLink(String name, String jdbcUrl, Config config) {
         Properties properties = new Properties();
         properties.put("jdbcUrl", jdbcUrl);
-        ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
+        DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName(name)
-                .setClassName(JdbcDataStoreFactory.class.getName())
+                .setClassName(JdbcDataLinkFactory.class.getName())
                 .setProperties(properties);
-        config.getExternalDataStoreConfigs().put(name, externalDataStoreConfig);
+        config.getDataLinkConfigs().put(name, dataLinkConfig);
     }
 
 
-    static void configureJdbcDataStore(String name, String jdbcUrl, String username, String password, Config config) {
+    static void configureJdbcDataLink(String name, String jdbcUrl, String username, String password, Config config) {
         Properties properties = new Properties();
         properties.put("jdbcUrl", jdbcUrl);
         properties.put("username", username);
         properties.put("password", password);
-        ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
+        DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName(name)
-                .setClassName(JdbcDataStoreFactory.class.getName())
+                .setClassName(JdbcDataLinkFactory.class.getName())
                 .setProperties(properties);
-        config.getExternalDataStoreConfigs().put(name, externalDataStoreConfig);
+        config.getDataLinkConfigs().put(name, dataLinkConfig);
     }
 
-    static void configureDummyDataStore(String name, Config config) {
-        ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
+    static void configureDummyDataLink(String name, Config config) {
+        DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName(name)
-                .setClassName(DummyDataStoreFactory.class.getName());
-        config.getExternalDataStoreConfigs().put(name, externalDataStoreConfig);
+                .setClassName(DummyDataLinkFactory.class.getName());
+        config.getDataLinkConfigs().put(name, dataLinkConfig);
     }
 
-    private static class DummyDataStoreFactory implements ExternalDataStoreFactory<Object> {
+    private static class DummyDataLinkFactory implements DataLinkFactory<Object> {
 
         @Override
         public boolean testConnection() {
@@ -66,12 +66,12 @@ final class ExternalDataStoreTestUtil {
         }
 
         @Override
-        public Object getDataStore() {
+        public Object getDataLink() {
             return new Object();
         }
 
         @Override
-        public void init(ExternalDataStoreConfig config) {
+        public void init(DataLinkConfig config) {
 
         }
     }

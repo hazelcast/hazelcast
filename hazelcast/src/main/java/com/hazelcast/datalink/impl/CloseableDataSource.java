@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.datastore.impl;
+package com.hazelcast.datalink.impl;
 
 import com.hazelcast.spi.annotation.Beta;
 

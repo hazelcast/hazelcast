@@ -18,11 +18,11 @@ package com.hazelcast.mapstore;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datastore.JdbcDataStoreFactory;
+import com.hazelcast.datalink.JdbcDataLinkFactory;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
 import com.hazelcast.map.EntryProcessor;
@@ -44,7 +44,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.mapstore.GenericMapStore.EXTERNAL_REF_ID_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapStore.DATA_LINK_REF_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.TYPE_NAME_PROPERTY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -63,9 +63,9 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         // Need to set filtering class loader so the members don't deserialize into class but into GenericRecord
         config.setClassLoader(new FilteringClassLoader(newArrayList("org.example"), null));
 
-        config.addExternalDataStoreConfig(
-                new ExternalDataStoreConfig(TEST_DATABASE_REF)
-                        .setClassName(JdbcDataStoreFactory.class.getName())
+        config.addDataLinkConfig(
+                new DataLinkConfig(TEST_DATABASE_REF)
+                        .setClassName(JdbcDataLinkFactory.class.getName())
                         .setProperty("jdbcUrl", dbConnectionUrl)
         );
 
@@ -85,7 +85,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         MapConfig mapConfig = new MapConfig(tableName);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setClassName(GenericMapStore.class.getName());
-        mapStoreConfig.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
+        mapStoreConfig.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
         mapStoreConfig.setProperty(TYPE_NAME_PROPERTY, "org.example.Person");
         mapConfig.setMapStoreConfig(mapStoreConfig);
         instance().getConfig().addMapConfig(mapConfig);
@@ -143,7 +143,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void testDynamicExternalDataStoreConfig() throws Exception {
+    public void testDynamicDataLinkConfig() throws Exception {
         String randomTableName = randomTableName();
 
         createTable(randomTableName);
@@ -151,15 +151,15 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
         HazelcastInstance client = client();
 
-        client.getConfig().addExternalDataStoreConfig(
-                new ExternalDataStoreConfig("dynamically-added-datastore")
-                        .setClassName(JdbcDataStoreFactory.class.getName())
+        client.getConfig().addDataLinkConfig(
+                new DataLinkConfig("dynamically-added-datalink")
+                        .setClassName(JdbcDataLinkFactory.class.getName())
                         .setProperty("jdbcUrl", dbConnectionUrl)
         );
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setClassName(GenericMapStore.class.getName())
-                .setProperty(EXTERNAL_REF_ID_PROPERTY, "dynamically-added-datastore")
+                .setProperty(DATA_LINK_REF_PROPERTY, "dynamically-added-datalink")
                 .setProperty("table-name", randomTableName);
         MapConfig mapConfig = new MapConfig(randomTableName).setMapStoreConfig(mapStoreConfig);
         client.getConfig().addMapConfig(mapConfig);
