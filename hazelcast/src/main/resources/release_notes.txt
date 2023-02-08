@@ -14,7 +14,7 @@ When you use the default configuration, it now connects to Hazelcast Viridian in
 
 ## Fixes
 
-* Fixed an issue where extensive amount of Kubernetes API calls were being logged when Automatic State Management feature is enabled in a Hazelcast cluster running on Kubernetes. [#23576]
+* Fixed an issue where excessive amount of Kubernetes API calls were being logged when Automatic State Management feature is enabled in a Hazelcast cluster running on Kubernetes. [#23576]
 * Fixed an issue where the JSON Query results were inconsistent, using the data stored as JSON via `HazelcastJsonValue`. [#23453]
 * Fixed an issue where the unordered `mapUsingServiceAsync()` was losing the last items when there are no watermarks. [#23272]
 * Fixed an issue where the message of an exception caused when reading a JDBC table column metadata was showing the data source reference instead of the table name. [#23123]
