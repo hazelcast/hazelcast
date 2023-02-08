@@ -288,7 +288,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
         lastReceivedWm.put(receivedWmKey, watermark.timestamp());
 
-        // 5.1 : update wm state
+        // 5.1: update wm state
         boolean modified = applyToWmState(watermark);
         if (modified) {
             // TODO don't need to clean up particular edge, if nothing was changed for that edge
@@ -364,7 +364,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             } else {
                 MutableInteger keyIndex = new MutableInteger();
 
-                // Note : details are described in TDD : docs/design/sql/15-stream-to-stream-join.md
+                // Note: details are described in TDD: docs/design/sql/15-stream-to-stream-join.md
                 if (joinInfo.isRightOuter()) {
                     if (processorIndex == 0) {
                         leftBufferStream = mapWithIndex(
@@ -500,7 +500,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
         buffer[ordinal].clearExpiredItems(limits, row -> {
             if (outerJoinSide == ordinal && unusedEventsTracker.remove(row)) {
-                // 5.4 : If doing an outer join, emit events removed from the buffer,
+                // 5.4: If doing an outer join, emit events removed from the buffer,
                 // with `null`s for the other side, if the event was never joined.
                 JetSqlRow joinedRow = composeRowWithNulls(row, ordinal);
                 if (joinedRow != null) {
