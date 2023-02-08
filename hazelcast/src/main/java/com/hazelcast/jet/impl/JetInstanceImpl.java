@@ -77,7 +77,7 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
             JobMetaDataParameterObject parameterObject = new JobMetaDataParameterObject();
 
             // The jar should be deleted
-            parameterObject.setDeleteJarOnExecution(false);
+            parameterObject.setDeleteJarAfterExecution(false);
 
             parameterObject.setSnapshotName(submitJobParameters.getSnapshotName());
             parameterObject.setJobName(submitJobParameters.getJobName());

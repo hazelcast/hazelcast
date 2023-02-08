@@ -60,7 +60,6 @@ import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
@@ -407,7 +406,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         checkResourceUploadEnabled();
         try {
             // The jar should be deleted
-            jobMetaDataParameterObject.setDeleteJarOnExecution(true);
+            jobMetaDataParameterObject.setDeleteJarAfterExecution(true);
 
             // Delegate processing to store
             jobUploadStore.processJobMetaData(jobMetaDataParameterObject);
@@ -483,20 +482,10 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         } catch (Exception exception) {
             logger.severe("executeJar caught exception when running the jar", exception);
             // Rethrow the exception back to client to notify  that job did not run
-            sneakyThrow(exception);
+            wrapWithJetException(exception);
         } finally {
-            // We are done with the jar. Delete it
-            if (parameterObject.deleteJarOnExecution()) {
-                deleteJar(parameterObject);
-            }
-        }
-    }
-
-    private void deleteJar(JobMetaDataParameterObject parameterObject) {
-        try {
-            Files.delete(parameterObject.getJarPath());
-        } catch (IOException exception) {
-            logger.severe("executeJar could not delete the jar after running it", exception);
+            // We are done with the jar.
+            parameterObject.afterExecution();
         }
     }
 
