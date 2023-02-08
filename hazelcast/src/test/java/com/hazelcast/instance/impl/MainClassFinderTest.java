@@ -29,7 +29,7 @@ public class MainClassFinderTest {
 
     @Test
     public void testFindMainClassInManifest() throws Exception {
-        String jarPath = getPathOfJar("simplejob-1.0.0.jar");
+        String jarPath = getPathOfJar("simplejob.jar");
 
         MainClassFinder mainClassFinder = new MainClassFinder();
         mainClassFinder.findMainClass(null, jarPath);

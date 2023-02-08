@@ -162,9 +162,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         JetService jetService = client.getJet();
 
         // Copy as new jar to make it unique
-        Path jarPath = getJarPath();
-        Path newPath = jarPath.resolveSibling(newSimpleJob);
-        Files.copy(jarPath, newPath, StandardCopyOption.REPLACE_EXISTING);
+        Path newPath = copyJar(newSimpleJob);
 
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
                 .setJarPath(newPath)
@@ -240,6 +238,13 @@ public class JobUploadClientFailureTest extends JetTestSupport {
     */
     static Path getJarPath() {
         return getPath(SIMPLE_JAR);
+    }
+
+    static Path copyJar(String newJarPath) throws IOException {
+        // Copy as new jar
+        Path jarPath = getJarPath();
+        Path newPath = jarPath.resolveSibling(newJarPath);
+        return Files.copy(jarPath, newPath, StandardCopyOption.REPLACE_EXISTING);
     }
 
     static boolean jarDoesNotExist() throws IOException {
