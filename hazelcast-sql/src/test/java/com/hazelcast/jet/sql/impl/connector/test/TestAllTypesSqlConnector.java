@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.connector.test;
 
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
@@ -41,6 +40,7 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -146,20 +146,21 @@ public class TestAllTypesSqlConnector implements SqlConnector {
 
     @Nonnull @Override
     public Vertex fullScanReader(
-            @Nonnull DAG dag,
-            @Nonnull Table table,
-            @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projection,
+            @Nonnull DagBuildContext context,
+            @Nullable RexNode predicate,
+            @Nonnull List<RexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
             throw QueryException.error("Ordering function are not supported for " + TYPE_NAME + " mappings");
         }
+        Expression<Boolean> convertedPredicate = context.convertFilter(predicate);
+        List<Expression<?>> convertedProjection = context.convertProjection(projection);
 
         BatchSource<JetSqlRow> source = SourceBuilder
                 .batch("batch", ExpressionEvalContext::from)
                 .<JetSqlRow>fillBufferFn((ctx, buf) -> {
-                    JetSqlRow row = ExpressionUtil.evaluate(predicate, projection, VALUES, ctx);
+                    JetSqlRow row = ExpressionUtil.evaluate(convertedPredicate, convertedProjection, VALUES, ctx);
                     if (row != null) {
                         buf.add(row);
                     }
@@ -167,7 +168,7 @@ public class TestAllTypesSqlConnector implements SqlConnector {
                 })
                 .build();
         ProcessorMetaSupplier pms = ((BatchSourceTransform<JetSqlRow>) source).metaSupplier;
-        return dag.newUniqueVertex(table.toString(), pms);
+        return context.getDag().newUniqueVertex(context.getTable().toString(), pms);
     }
 
     private static final class TestAllTypesTable extends JetTable {

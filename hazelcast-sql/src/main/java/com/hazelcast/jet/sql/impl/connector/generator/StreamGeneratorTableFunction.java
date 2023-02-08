@@ -46,8 +46,7 @@ public final class StreamGeneratorTableFunction extends HazelcastSpecificTableFu
         super(
                 FUNCTION_NAME,
                 StreamOperandMetadata.INSTANCE,
-                binding -> toTable0(emptyList()).getRowType(binding.getTypeFactory()),
-                StreamSqlConnector.INSTANCE
+                binding -> toTable0(emptyList()).getRowType(binding.getTypeFactory())
         );
     }
 
