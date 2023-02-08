@@ -25,6 +25,7 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.apache.kafka.connect.data.Values;
@@ -40,12 +41,18 @@ import java.sql.Statement;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
 
+import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
+    @ClassRule
+    public static final MySQLContainer<?> mysql = new MySQLContainer<>().withUsername(USERNAME).withPassword(PASSWORD);
+
+    @ClassRule
+    public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
 
     private static final int ITEM_COUNT = 10_000;
     private static final String USERNAME = "mysql";
@@ -53,13 +60,10 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
     private static final String CONNECTOR_URL = "https://repository.hazelcast.com/download"
             + "/tests/confluentinc-kafka-connect-jdbc-10.6.3.zip";
 
-    @ClassRule
-    public static MySQLContainer<?> mysql = new MySQLContainer<>().withUsername(USERNAME).withPassword(PASSWORD);
+
 
     @Test
     public void testReadFromJdbcConnector() throws Exception {
-
-        System.setProperty("hazelcast.logging.type", "log4j2");
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
         randomProperties.setProperty("connector.class", "io.confluent.connect.jdbc.JdbcSourceConnector");

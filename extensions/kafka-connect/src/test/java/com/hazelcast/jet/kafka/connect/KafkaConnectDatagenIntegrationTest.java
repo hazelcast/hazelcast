@@ -25,9 +25,11 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.connect.data.Values;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -35,13 +37,15 @@ import java.net.URL;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
 
+import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class KafkaConnectDatagenIntegrationTest extends JetTestSupport {
-
+    @ClassRule
+    public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
     public static final int ITEM_COUNT = 1_000;
 
     private static final String CONNECTOR_URL = "https://repository.hazelcast.com/download/tests/"
@@ -49,7 +53,6 @@ public class KafkaConnectDatagenIntegrationTest extends JetTestSupport {
 
     @Test
     public void testReadFromDatagenConnector() throws Exception {
-        System.setProperty("hazelcast.logging.type", "log4j2");
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
         randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
