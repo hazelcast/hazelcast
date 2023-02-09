@@ -32,6 +32,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createArrayOfFixedSizeFieldsDTO;
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createArrayOfFixedSizeFieldsDTOAsNullValues;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createFixedSizeFieldsDTO;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createSerializationService;
 import static com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder.compact;
@@ -131,6 +132,17 @@ public class CompactNullablePrimitiveInteroperabilityTest {
     @Test
     public void testWriteArraysOfPrimitiveReadNullableCustomSerializer() {
         ArrayOfFixedSizeFieldsDTO arrayOfFixedSizeFieldsDTO = createArrayOfFixedSizeFieldsDTO();
+        SerializationService serializationService = createSerializationService(ArrayOfFixedSizeFieldsDTOSerializerReadingNullable::new);
+
+        Data data = serializationService.toData(arrayOfFixedSizeFieldsDTO);
+        ArrayOfFixedSizeFieldsDTO obj = serializationService.toObject(data);
+
+        assertEquals(obj, arrayOfFixedSizeFieldsDTO);
+    }
+
+    @Test
+    public void testWriteArraysOfPrimitiveAsNullReadNullableCustomSerializer() {
+        ArrayOfFixedSizeFieldsDTO arrayOfFixedSizeFieldsDTO = createArrayOfFixedSizeFieldsDTOAsNullValues();
         SerializationService serializationService = createSerializationService(ArrayOfFixedSizeFieldsDTOSerializerReadingNullable::new);
 
         Data data = serializationService.toData(arrayOfFixedSizeFieldsDTO);

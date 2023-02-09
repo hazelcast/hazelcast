@@ -461,14 +461,18 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
-     *                                         in the schema/class definition or
-     *                                         the type of the field does not
+     * @throws HazelcastSerializationException 1. if the field name does not exist
+     *                                         in the schema/class definition.
+     *                                         2. The type of the field does not
      *                                         match the one in the schema/class
-     *                                         definition or the same field is
+     *                                         definition. 3. The same field is
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         4. The type of the generic record is not
+     *                                         the same as the generic record that is
+     *                                         being built. e.g using portable generic
+     *                                         record in a compact generic record builder.
      */
     @Nonnull
     GenericRecordBuilder setGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord value);
@@ -1092,14 +1096,18 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
-     *                                         in the schema/class definition or
-     *                                         the type of the field does not
+     * @throws HazelcastSerializationException 1. if the field name does not exist
+     *                                         in the schema/class definition.
+     *                                         2. The type of the field does not
      *                                         match the one in the schema/class
-     *                                         definition or the same field is
+     *                                         definition. 3. The same field is
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         4. The type of the generic record is not
+     *                                         the same as the generic record that is
+     *                                         being built. e.g using portable generic
+     *                                         record in a compact generic record builder.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord[] value);

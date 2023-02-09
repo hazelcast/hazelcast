@@ -58,9 +58,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.impl.connector.ExternalDataStoreTestUtil.configureDummyDataStore;
-import static com.hazelcast.jet.impl.connector.ExternalDataStoreTestUtil.configureJdbcDataStore;
-import static com.hazelcast.jet.pipeline.ExternalDataStoreRef.externalDataStoreRef;
+import static com.hazelcast.jet.impl.connector.DataLinkTestUtil.configureDummyDataLink;
+import static com.hazelcast.jet.impl.connector.DataLinkTestUtil.configureJdbcDataLink;
+import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -73,8 +73,8 @@ import static org.mockito.Mockito.when;
 @Category({SlowTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public class WriteJdbcPTest extends SimpleTestInClusterSupport {
 
-    private static final String JDBC_DATA_STORE = "jdbc-data-store";
-    private static final String DUMMY_DATA_STORE = "dummy-data-store";
+    private static final String JDBC_DATA_LINK = "jdbc-data-link";
+    private static final String DUMMY_DATA_LINK = "dummy-data-link";
 
     @ClassRule
     @SuppressWarnings({"rawtypes", "resource"})
@@ -95,8 +95,8 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     @BeforeClass
     public static void setupClass() {
         Config config = smallInstanceConfig();
-        configureJdbcDataStore(JDBC_DATA_STORE, container.getJdbcUrl(), container.getUsername(), container.getPassword(), config);
-        configureDummyDataStore(DUMMY_DATA_STORE, config);
+        configureJdbcDataLink(JDBC_DATA_LINK, container.getJdbcUrl(), container.getUsername(), container.getPassword(), config);
+        configureDummyDataLink(DUMMY_DATA_LINK, config);
         initialize(2, config);
     }
 
@@ -197,13 +197,13 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_external_datastore_config() throws SQLException {
+    public void test_data_link_config() throws SQLException {
         assertEquals(0, rowCount());
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
                 .map(item -> entry(item, item.toString()))
                 .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
-                        externalDataStoreRef(JDBC_DATA_STORE),
+                        dataLinkRef(JDBC_DATA_LINK),
                         (stmt, item) -> {
                             stmt.setInt(1, item.getKey());
                             stmt.setString(2, item.getValue());
