@@ -17,6 +17,8 @@
 package com.hazelcast.instance.impl;
 
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.io.IOException;
 import java.util.List;
@@ -26,6 +28,9 @@ import java.util.jar.Manifest;
 
 class MainClassFinder {
 
+    private static final ILogger LOGGER = Logger.getLogger(MainClassFinder.class);
+
+    boolean calledByMember;
     private String errorMessage;
 
     private String mainClassName;
@@ -39,8 +44,11 @@ class MainClassFinder {
     }
 
     // Find the mainClass to be used to execute the jar
-    void findMainClass(String mainClass, String jarPath)
+    void findMainClass(String mainClass, String jarPath, boolean calledByMember)
             throws IOException {
+
+        this.calledByMember = calledByMember;
+
         try (JarFile jarFile = new JarFile(jarPath)) {
             checkHazelcastCodebasePresence(jarFile);
 
@@ -67,9 +75,14 @@ class MainClassFinder {
     private void checkHazelcastCodebasePresence(JarFile jarFile) {
         List<String> classFiles = JarScanner.findClassFiles(jarFile, HazelcastBootstrap.class.getSimpleName());
         if (!classFiles.isEmpty()) {
-            errorMessage = String.format("WARNING: Hazelcast code detected in the jar: %s. "
+            String message = String.format("WARNING: Hazelcast code detected in the jar: %s. "
                                          + "Hazelcast dependency should be set with the 'provided' scope or equivalent.%n",
                     String.join(", ", classFiles));
+            if (calledByMember) {
+                LOGGER.info(message);
+            } else {
+                System.err.print(message);
+            }
         }
     }
 }

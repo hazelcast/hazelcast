@@ -32,7 +32,7 @@ public class MainClassFinderTest {
         String jarPath = getPathOfJar("simplejob-1.0.0.jar");
 
         MainClassFinder mainClassFinder = new MainClassFinder();
-        mainClassFinder.findMainClass(null, jarPath);
+        mainClassFinder.findMainClass(null, jarPath, true);
         String mainClassName = mainClassFinder.getMainClassName();
         Assertions.assertThat(mainClassName)
                 .isEqualTo("org.example.Main");
@@ -43,7 +43,7 @@ public class MainClassFinderTest {
         String jarPath = getPathOfJar("nomanifestsimplejob-1.0.0.jar");
 
         MainClassFinder mainClassFinder = new MainClassFinder();
-        mainClassFinder.findMainClass(null, jarPath);
+        mainClassFinder.findMainClass(null, jarPath, false);
         String mainClassName = mainClassFinder.getMainClassName();
         Assertions.assertThat(mainClassName)
                 .isNull();

@@ -193,7 +193,7 @@ public final class HazelcastBootstrap {
     static String getMainClass(String mainClass, String jarPath, boolean calledByMember)
             throws IOException {
         MainClassFinder mainClassFinder = new MainClassFinder();
-        mainClassFinder.findMainClass(mainClass, jarPath);
+        mainClassFinder.findMainClass(mainClass, jarPath, calledByMember);
 
         // Check if there is an error
         String errorMessage = mainClassFinder.getErrorMessage();
