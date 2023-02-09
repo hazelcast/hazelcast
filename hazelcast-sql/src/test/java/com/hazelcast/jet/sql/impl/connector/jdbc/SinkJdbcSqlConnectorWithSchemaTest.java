@@ -48,6 +48,7 @@ public class SinkJdbcSqlConnectorWithSchemaTest extends JdbcSqlTestSupport {
     }
 
     protected void myCreateMapping(String mappingName) {
+        // Calcite problem !
         // Currently EXTERNAL NAME can not be
         //\"\"schema.with.dot.in.name\".\"table.with.dot.in.name\"\"
         // so use backtick for quoting
@@ -75,5 +76,4 @@ public class SinkJdbcSqlConnectorWithSchemaTest extends JdbcSqlTestSupport {
 
         assertJdbcRowsAnyOrder(tableName, new Row(0, "name-0"));
     }
-
 }

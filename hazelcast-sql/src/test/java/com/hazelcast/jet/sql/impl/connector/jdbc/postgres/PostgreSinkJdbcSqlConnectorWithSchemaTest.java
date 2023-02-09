@@ -51,6 +51,7 @@ public class PostgreSinkJdbcSqlConnectorWithSchemaTest extends JdbcSqlTestSuppor
     }
 
     protected void myCreateMapping(String mappingName) {
+        // Calcite problem !
         // Currently EXTERNAL NAME can not be
         //\"\"schema.with.dot.in.name\".\"table.with.dot.in.name\"\"
         // so use backtick for quoting
