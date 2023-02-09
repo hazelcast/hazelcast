@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.sql.SQLException;
@@ -217,6 +218,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
     }
 
     @Test
+    @Ignore("Requires https://github.com/hazelcast/hazelcast/pull/23634")
     public void joinWithOtherJdbcNonDefaultSchema() throws SQLException {
         String schemaName = randomTableName();
         executeJdbc("CREATE SCHEMA " + schemaName);

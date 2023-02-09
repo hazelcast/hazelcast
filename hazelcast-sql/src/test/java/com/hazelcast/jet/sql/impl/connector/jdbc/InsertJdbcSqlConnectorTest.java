@@ -173,6 +173,7 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
+    @Ignore("Requires https://github.com/hazelcast/hazelcast/pull/23634")
     public void insertIntoTableNonDefaultSchema() throws SQLException {
         createTable(alternativeSchemaTable);
         createMapping(alternativeSchemaTable);
@@ -183,6 +184,7 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
 
     @Test
+    @Ignore("Requires https://github.com/hazelcast/hazelcast/pull/23634")
     public void insertIntoTableWithExternalNameNonDefaultSchema() throws Exception {
         createTable(alternativeSchemaTable);
         String mappingName = "mapping_" + randomName();

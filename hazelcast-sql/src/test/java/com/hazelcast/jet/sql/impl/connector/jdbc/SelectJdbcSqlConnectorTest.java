@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.sql.SQLException;
@@ -219,6 +220,7 @@ public class SelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
+    @Ignore("Requires https://github.com/hazelcast/hazelcast/pull/23634")
     public void selectAllFromTableNonDefaultSchema() throws SQLException {
         String schemaName = randomName();
         executeJdbc("CREATE SCHEMA " + schemaName);
@@ -241,6 +243,7 @@ public class SelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
+    @Ignore("Requires https://github.com/hazelcast/hazelcast/pull/23634")
     public void selectAllFromTableSpaceInSchema() throws SQLException {
         String schemaName = "\"prefix " + randomName() + "\"";
         executeJdbc("CREATE SCHEMA " + schemaName);
