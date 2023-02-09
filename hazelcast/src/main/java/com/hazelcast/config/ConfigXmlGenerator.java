@@ -196,7 +196,7 @@ public class ConfigXmlGenerator {
         factoryWithPropertiesXmlGenerator(gen, "auditlog", config.getAuditlogConfig());
         userCodeDeploymentConfig(gen, config);
         integrityCheckerXmlGenerator(gen, config);
-        externalDataStoreConfiguration(gen, config);
+        dataLinkConfiguration(gen, config);
 
         xml.append("</hazelcast>");
 
@@ -1199,16 +1199,16 @@ public class ConfigXmlGenerator {
         );
     }
 
-    private static void externalDataStoreConfiguration(final XmlGenerator gen, final Config config) {
-        for (ExternalDataStoreConfig externalDataStoreConfig : config.getExternalDataStoreConfigs().values()) {
+    private static void dataLinkConfiguration(final XmlGenerator gen, final Config config) {
+        for (DataLinkConfig dataLinkConfig : config.getDataLinkConfigs().values()) {
             gen.open(
-                            "external-data-store",
+                            "data-link",
                             "name",
-                            externalDataStoreConfig.getName()
+                            dataLinkConfig.getName()
                     )
-                    .node("class-name", externalDataStoreConfig.getClassName())
-                    .node("shared", externalDataStoreConfig.isShared())
-                    .appendProperties(externalDataStoreConfig.getProperties())
+                    .node("class-name", dataLinkConfig.getClassName())
+                    .node("shared", dataLinkConfig.isShared())
+                    .appendProperties(dataLinkConfig.getProperties())
                     .close();
         }
     }

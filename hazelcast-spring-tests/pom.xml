@@ -33,7 +33,7 @@
         <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
 
-        <maven-artifact.version>3.8.7</maven-artifact.version>
+        <maven-artifact.version>3.9.0</maven-artifact.version>
         <hazelcast-hibernate5.version>2.0.0</hazelcast-hibernate5.version>
     </properties>
 
@@ -85,7 +85,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>${http.components.version}</version>
+            <version>${http.client.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

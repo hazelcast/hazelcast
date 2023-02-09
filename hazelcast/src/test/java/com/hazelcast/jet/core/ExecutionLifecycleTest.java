@@ -25,6 +25,7 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
@@ -875,6 +876,40 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         }
         TestProcessors.assertNoErrorsInProcessors();
     }
+
+    @Test
+    public void when_processorThrowsNonSerializable_thenItsWrapped() {
+        // Given
+        SupplierEx<ProcessorSupplier> supplier = PSThrowingNonSerializable::new;
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPMS(supplier)));
+
+        // When
+        try {
+            Job job = newJob(dag);
+            job.join();
+            fail("Job execution should have failed");
+        } catch (Throwable e) {
+            assertContains(e.getMessage(), "boom!");
+        }
+    }
+
+    public static class PSThrowingNonSerializable implements ProcessorSupplier {
+
+        public static class NonSerializableException extends RuntimeException {
+            @SuppressWarnings("unused")
+            private final Object nonSerializableField = new Object();
+
+            public NonSerializableException(String message) {
+                super(message);
+            }
+        }
+
+        @Nonnull @Override
+        public List<Processor> get(int count) {
+            throw new JetException(new NonSerializableException("boom!"));
+        }
+    }
+
 
     public static class NotSerializable_DataSerializable_ProcessorSupplier implements ProcessorSupplier, DataSerializable {
         @Nonnull @Override
