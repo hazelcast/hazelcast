@@ -18,11 +18,12 @@ package com.hazelcast.mapstore;
 
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
+
+import static org.junit.Assert.assertEquals;
 
 public class QueriesTest {
 
@@ -40,48 +41,48 @@ public class QueriesTest {
     public void testLoad() {
         Queries queries = new Queries(mapping, idColumn, columnMetadata);
         String result = queries.load();
-        Assert.assertEquals("SELECT * FROM \"mymapping\" WHERE \"id\" = ?", result);
+        assertEquals("SELECT * FROM \"mymapping\" WHERE \"id\" = ?", result);
     }
 
     @Test
     public void testLoadAll() {
         Queries queries = new Queries(mapping, idColumn, columnMetadata);
         String result = queries.loadAll(2);
-        Assert.assertEquals("SELECT * FROM \"mymapping\" WHERE \"id\" IN (?, ?)", result);
+        assertEquals("SELECT * FROM \"mymapping\" WHERE \"id\" IN (?, ?)", result);
     }
 
     @Test
     public void testLoadAllKeys() {
         Queries queries = new Queries(mapping, idColumn, columnMetadata);
         String result = queries.loadAllKeys();
-        Assert.assertEquals("SELECT \"id\" FROM \"mymapping\"", result);
+        assertEquals("SELECT \"id\" FROM \"mymapping\"", result);
     }
 
     @Test
     public void testStoreSink() {
         Queries queries = new Queries(mapping, idColumn, columnMetadata);
         String result = queries.storeSink();
-        Assert.assertEquals("SINK INTO \"mymapping\" (\"id\", \"name\", \"address\") VALUES (?, ?, ?)", result);
+        assertEquals("SINK INTO \"mymapping\" (\"id\", \"name\", \"address\") VALUES (?, ?, ?)", result);
     }
 
     @Test
     public void testStoreUpdate() {
         Queries queries = new Queries(mapping, idColumn, columnMetadata);
         String result = queries.storeUpdate();
-        Assert.assertEquals("UPDATE \"mymapping\" SET \"name\" = ?, \"address\" = ? WHERE \"id\" = ?", result);
+        assertEquals("UPDATE \"mymapping\" SET \"name\" = ?, \"address\" = ? WHERE \"id\" = ?", result);
     }
 
     @Test
     public void testDelete() {
         Queries queries = new Queries(mapping, idColumn, columnMetadata);
         String result = queries.delete();
-        Assert.assertEquals("DELETE FROM \"mymapping\" WHERE \"id\" = ?", result);
+        assertEquals("DELETE FROM \"mymapping\" WHERE \"id\" = ?", result);
     }
 
     @Test
     public void testDeleteAll() {
         Queries queries = new Queries(mapping, idColumn, columnMetadata);
         String result = queries.deleteAll(2);
-        Assert.assertEquals("DELETE FROM \"mymapping\" WHERE \"id\" IN (?, ?)", result);
+        assertEquals("DELETE FROM \"mymapping\" WHERE \"id\" IN (?, ?)", result);
     }
 }
