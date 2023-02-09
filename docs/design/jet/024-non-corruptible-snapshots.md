@@ -43,7 +43,7 @@ which from the point of view of snapshot data consistency can be summarized as f
 9. Schedule next snapshot.
 
 Snapshotting uses alternating pair of maps `__jet.snapshot.<jobId>.<0 or 1>`:
-one contains the last successful snapshot, the other one contains the snapshot currently being performed (if any).
+one contains the last successful snapshot, the other one contains the snapshot currently in progress (if any).
 They are selected using ongoing data map index.
 These maps also contain `SnapshotVerificationRecord`.
 
@@ -51,7 +51,7 @@ Each "chunk" is tagged with `snapshotId` to which it belongs.
 
 Export-only snapshots are handled specially:
 - they only save state
-- they do not commit or roll back any transactions when they are taken (2nd phase is mostly a no-op) 
+- they do not commit or roll back any transactions when they are taken (2nd phase doesn't run) 
 - they are registered in `exportedSnapshotsCache` so they can be listed, 
   but can be used to start job even if they are not present on the list
   (this applies also for terminal exported snapshots)
@@ -68,7 +68,7 @@ Export-only snapshots are handled specially:
 
 ## Root cause of the corruption issue
 
-During snapshot a many updates to the `IMap`s are made. Loss of any of them
+During snapshot many updates to the `IMap`s are made. Loss of any of them
 due to AP properties of `IMap` causes snapshot corruption
 and there is no easy way to fix such corrupted or incomplete snapshot.
 
@@ -126,7 +126,11 @@ New algorithm uses the fact that some `IMap` operations can end with `Indetermin
 ("indeterminate result" in short). If this happens, depending on stage, the snapshot fails
 or the job is restarted forcefully.
 
-#### Snapshot taking procedure
+Because the snapshot maps are append-only, it is guaranteed that all replicas
+are consistent if all sync backup operations were acked. We do not suffer, for
+example, from operation reordering.
+
+#### New snapshot taking procedure
 
 1. Initiate snapshot: generate new `ongoingSnapshotId` in `JobExecutionRecord`
    (always incremented, never reused, even for exported snapshots).
@@ -136,15 +140,15 @@ or the job is restarted forcefully.
 3. Clear ongoing snapshot map.
    Indeterminate result -> not possible, however operation may not be replicated to all backups.
    Stray records are not a big problem because each record in snapshot map has `snapshotId`
-   and we never reuse the same id in more than 1 attempts that could have a chance to write something to snapshot map. 
+   and we never reuse the same id in more than 1 attempt that could have a chance to write something to snapshot map. 
 4. 1st snapshot phase (`saveSnapshot` + `snapshotCommitPrepare`): 
    Each processor instance writes its state to `IMap` as "chunks".
-   Any indeterminate put -> snapshot failed.
+   If there's any indeterminate put -> snapshot failed.
 5. Write `SnapshotVerificationRecord`.
    Indeterminate result -> snapshot failed.
 6. Make decision: if all processors succeeded in 1st phase and `SnapshotVerificationRecord` was written 
    then the snapshot will be committed in 2nd phase (no-op for export-only snapshot), otherwise it will be rolled back.
-   In case of successful, not export-only snapshot: update in memory last good snapshotId in `JobExecutionRecord` to newly created snapshot
+   In case of successful, not export-only snapshot: update in-memory last good snapshotId in `JobExecutionRecord` to newly created snapshot
    and switch ongoing snapshot map index if it is not an exported snapshot.
 7. Write `JobExecutionRecord` depending on case:
    a) for successful automatic snapshot and successful terminal exported snapshot: using safe method (*).
@@ -165,13 +169,13 @@ or the job is restarted forcefully.
    This step can be performed concurrently with processing of next items and must ultimately succeed.
 10. Schedule next snapshot.
 
-(*) We could repeat for a few times until we obtained different result than indeterminate (can be success or failure).
+(*) The "safe method" is that we repeat for a few times until we obtain a determinate result (success or failure).
 This does not block processing in processors but increases amount of uncommitted work that can be lost.
 This is also more complicated in implementation and may be considered later if needed.
 
-#### Snapshot restore procedure
+#### New snapshot restore procedure
 
-1. Load `JobExecutionRecord` from `IMap` to `MasterContext` (skipped if `MasterContext` exists and the job coordinator has not changed). (*)
+1. Load `JobExecutionRecord` from `IMap` to `MasterContext` (skip if `MasterContext` exists and the job coordinator has not changed). (*)
 2. Write `JobExecutionRecord` using safe method to ensure that it is replicated.
    This is also necessary if `JobExecutionRecord` loaded from `IMap` indicates that there was no completed snapshot yet 
    (there could one with indeterminate result). TODO: still needed?????
