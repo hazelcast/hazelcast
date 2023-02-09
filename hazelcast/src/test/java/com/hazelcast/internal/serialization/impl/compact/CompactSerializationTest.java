@@ -64,6 +64,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -449,6 +450,101 @@ public class CompactSerializationTest {
 
         Data data = service.toData(new UsesSerializableClassAsField(new SerializableEmployeeDTO("John Doe", 42)));
         assertTrue(data.isCompact());
+    }
+
+    @Test
+    public void testCompactWriterThrowsExceptionWhileWritingWhenSchemaDoesNotHaveThatField() {
+        FooBarSerializer serializer = spy(new FooBarSerializer());
+        FooBar fooBar = new FooBar("foo", 42L);
+
+        SerializationService serializationService = createSerializationService(() -> serializer);
+        // Add correct schema to classToSchemaMap
+        serializationService.toData(fooBar);
+        // Change serializer's write method
+        doAnswer(invocation -> {
+            CompactWriter writer = invocation.getArgument(0);
+            FooBar value = invocation.getArgument(1);
+            writer.writeString("foo", value.getFoo());
+            writer.writeInt64("bar", value.getBar());
+            writer.writeString("baz", "a");
+            return null;
+        }).when(serializer).write(any(), any());
+        // This should throw because schema does not have a baz field.
+        assertThatThrownBy(() -> {
+            serializationService.toData(fooBar);
+        }).isInstanceOf(HazelcastSerializationException.class)
+          .hasCauseInstanceOf(HazelcastSerializationException.class)
+          .hasStackTraceContaining("Invalid field name");
+    }
+
+    @Test
+    public void testCompactWriterThrowsExceptionWhileWritingWhenFieldTypeDoesNotMatch() {
+        FooBar fooBar = new FooBar("foo", 42L);
+        FooBarSerializer serializer = spy(new FooBarSerializer());
+
+        SerializationService serializationService = createSerializationService(() -> serializer);
+        // Add correct schema to classToSchemaMap
+        serializationService.toData(fooBar);
+        // Change serializer's write method
+        doAnswer(invocation -> {
+            CompactWriter writer = invocation.getArgument(0);
+            FooBar value = invocation.getArgument(1);
+            writer.writeInt32("foo", 123);
+            writer.writeInt64("bar", value.getBar());
+            return null;
+        }).when(serializer).write(any(), any());
+        // This should throw because in the schema type of foo is not int32.
+        assertThatThrownBy(() -> {
+                serializationService.toData(fooBar);
+        }).isInstanceOf(HazelcastSerializationException.class)
+          .hasCauseInstanceOf(HazelcastSerializationException.class)
+          .hasStackTraceContaining("Invalid field type");
+    }
+
+    private static class FooBar {
+        private final String foo;
+        private final long bar;
+
+        FooBar(String foo, long bar) {
+            this.foo = foo;
+            this.bar = bar;
+        }
+
+        public String getFoo() {
+            return foo;
+        }
+
+        public long getBar() {
+            return bar;
+        }
+    }
+
+    private static class FooBarSerializer implements CompactSerializer<FooBar> {
+        @Nonnull
+        @Override
+        public FooBar read(@Nonnull CompactReader reader) {
+            String foo = reader.readString("foo");
+            long bar = reader.readInt64("bar");
+            return new FooBar(foo, bar);
+        }
+
+        @Override
+        public void write(@Nonnull CompactWriter writer, @Nonnull FooBar object) {
+            writer.writeString("foo", object.foo);
+            writer.writeInt64("bar", object.bar);
+        }
+
+        @Nonnull
+        @Override
+        public String getTypeName() {
+            return "foobar";
+        }
+
+        @Nonnull
+        @Override
+        public Class getCompactClass() {
+            return FooBar.class;
+        }
     }
 
     private static class IntegerSerializer implements CompactSerializer<Integer> {
