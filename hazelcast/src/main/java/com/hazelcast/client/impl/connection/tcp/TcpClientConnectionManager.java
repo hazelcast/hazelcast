@@ -1076,8 +1076,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
             logger.info("TPC Client: Successfully connected to " + tpcSocketChannelAddress);
 
-            tpcSocketChannel.configureBlocking(false);
-
             tpcChannel.start();
 
             // first thing we need to send is the clientUuid so this new socket can be connected
@@ -1091,7 +1089,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             tpcChannels[k] = tpcChannel;
         }
 
-        logger.info("TPC Client: all connections made ");
+        logger.info("TPC Client: All channel connections made for connection: " + connection);
         connection.setTpcChannels(tpcChannels);
     }
 
