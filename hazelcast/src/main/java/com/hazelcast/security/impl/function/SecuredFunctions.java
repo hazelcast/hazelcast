@@ -18,7 +18,7 @@ package com.hazelcast.security.impl.function;
 
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datastore.impl.CloseableDataSource;
+import com.hazelcast.datalink.impl.CloseableDataSource;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;

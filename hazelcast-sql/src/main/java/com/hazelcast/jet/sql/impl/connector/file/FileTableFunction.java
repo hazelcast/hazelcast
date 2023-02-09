@@ -53,7 +53,7 @@ public final class FileTableFunction extends HazelcastDynamicTableFunction {
     );
 
     public FileTableFunction(String name, String format) {
-        super(name, FileOperandMetadata.INSTANCE, arguments -> toTable(arguments, format), FileSqlConnector.INSTANCE);
+        super(name, FileOperandMetadata.INSTANCE, arguments -> toTable(arguments, format));
     }
 
     private static Table toTable(List<Object> arguments, String format) {
