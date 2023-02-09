@@ -31,7 +31,7 @@ import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -60,13 +60,13 @@ public class Slf4jLoggerTest extends AbstractLoggerTest {
     @Test
     public void logAtLevelOff_shouldNotLog() {
         hazelcastLogger.log(Level.OFF, MESSAGE);
-        verifyZeroInteractions(mockLogger);
+        verifyNoInteractions(mockLogger);
     }
 
     @Test
     public void logAtLevelOff_shouldNotLog_withThrowable() {
         hazelcastLogger.log(Level.OFF, MESSAGE, THROWABLE);
-        verifyZeroInteractions(mockLogger);
+        verifyNoInteractions(mockLogger);
     }
 
     @Test

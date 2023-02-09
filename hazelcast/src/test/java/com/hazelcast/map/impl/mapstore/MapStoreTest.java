@@ -709,6 +709,33 @@ public class MapStoreTest extends AbstractMapStoreTest {
         assertEquals("value", map.get("key"));
     }
 
+    @Test
+    public void testMapStoreIsInitializedAndDestroyed() {
+
+        TestMapStore testMapStore = new TestMapStore(2, 2, 2);
+        Config config = newConfig(testMapStore, 0);
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        // Put element and then destroy the map
+        String mapName = "foo";
+        IMap<String, Integer> map = instance.getMap(mapName);
+        map.put("42", 42);
+        // Map store must be initialized
+        assertEquals(1, testMapStore.getInitCount());
+        map.destroy();
+        // Map store must be destroyed
+        assertEquals(1, testMapStore.getDestroyCount());
+
+        // Put element and then destroy the map again
+        map = instance.getMap(mapName);
+        map.put("42", 42);
+        // Map store must be initialized again
+        assertEquals(2, testMapStore.getInitCount());
+        map.destroy();
+        // Map store must be destroyed again
+        assertEquals(2, testMapStore.getDestroyCount());
+    }
+
     @Test(timeout = 120000)
     public void testIssue1019() {
         final String keyWithNullValue = "keyWithNullValue";

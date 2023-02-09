@@ -105,9 +105,10 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     private final Set<PlanObjectKey> objectKeys = new HashSet<>();
     private final NodeEngine nodeEngine;
     private final Address localMemberAddress;
-    private final QueryParameterMetadata parameterMetadata;
     private final WatermarkKeysAssigner watermarkKeysAssigner;
     private long watermarkThrottlingFrameSize = -1;
+
+    private final DagBuildContextImpl dagBuildContext;
 
     public CreateTopLevelDagVisitor(
             NodeEngine nodeEngine,
@@ -118,9 +119,10 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         super(new DAG());
         this.nodeEngine = nodeEngine;
         this.localMemberAddress = nodeEngine.getThisAddress();
-        this.parameterMetadata = parameterMetadata;
         this.watermarkKeysAssigner = watermarkKeysAssigner;
         this.objectKeys.addAll(usedViews);
+
+        dagBuildContext = new DagBuildContextImpl(getDag(), parameterMetadata);
     }
 
     @Override
@@ -145,10 +147,14 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     @Override
     public Vertex onInsert(InsertPhysicalRel rel) {
+        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate((PhysicalRel) rel.getInput());
+
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
 
-        VertexWithInputConfig vertexWithConfig = getJetSqlConnector(table).insertProcessor(dag, table);
+        dagBuildContext.setTable(table);
+        dagBuildContext.setRel(rel);
+        VertexWithInputConfig vertexWithConfig = getJetSqlConnector(table).insertProcessor(dagBuildContext);
         Vertex vertex = vertexWithConfig.vertex();
         connectInput(rel.getInput(), vertex, vertexWithConfig.configureEdgeFn());
         return vertex;
@@ -156,33 +162,43 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     @Override
     public Vertex onSink(SinkPhysicalRel rel) {
+        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate((PhysicalRel) rel.getInput());
+
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
 
-        Vertex vertex = getJetSqlConnector(table).sinkProcessor(dag, table);
+        dagBuildContext.setTable(table);
+        dagBuildContext.setRel(rel);
+        Vertex vertex = getJetSqlConnector(table).sinkProcessor(dagBuildContext);
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }
 
     @Override
     public Vertex onUpdate(UpdatePhysicalRel rel) {
+        // currently it's not possible to have a unbounded UPDATE, but if we do, we'd need this calculation
+        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate((PhysicalRel) rel.getInput());
+
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
 
+        dagBuildContext.setTable(table);
+        dagBuildContext.setRel(rel);
         Vertex vertex = getJetSqlConnector(table).updateProcessor(
-                dag,
-                table,
-                rel.updatesAsRex(),
-                rel.updates(parameterMetadata)
-        );
+                dagBuildContext, rel.getUpdateColumnList(), rel.getSourceExpressionList());
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }
 
     @Override
     public Vertex onDelete(DeletePhysicalRel rel) {
+        // currently it's not possible to have a unbounded DELETE, but if we do, we'd need this calculation
+        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate((PhysicalRel) rel.getInput());
+
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
 
-        Vertex vertex = getJetSqlConnector(table).deleteProcessor(dag, table);
+        dagBuildContext.setTable(table);
+        dagBuildContext.setRel(rel);
+        Vertex vertex = getJetSqlConnector(table).deleteProcessor(dagBuildContext);
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }
@@ -208,12 +224,12 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
             wmKey = null;
         }
 
+        dagBuildContext.setTable(table);
+        dagBuildContext.setRel(rel);
         return getJetSqlConnector(table).fullScanReader(
-                dag,
-                table,
-                hazelcastTable,
-                rel.filter(parameterMetadata),
-                rel.projection(parameterMetadata),
+                dagBuildContext,
+                rel.filter(),
+                rel.projection(),
                 policyProvider != null
                         ? context -> policyProvider.apply(context, wmKey)
                         : null
@@ -225,14 +241,15 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
 
+        dagBuildContext.setTable(table);
+        dagBuildContext.setRel(rel);
         return SqlConnectorUtil.<IMapSqlConnector>getJetSqlConnector(table)
                 .indexScanReader(
-                        dag,
+                        dagBuildContext,
                         localMemberAddress,
-                        table,
                         rel.getIndex(),
-                        rel.filter(parameterMetadata),
-                        rel.projection(parameterMetadata),
+                        rel.filter(),
+                        rel.projection(),
                         rel.getIndexFilter(),
                         rel.getComparator(),
                         rel.isDescending()
@@ -242,12 +259,13 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     @Override
     public Vertex onCalc(CalcPhysicalRel rel) {
         RexProgram program = rel.getProgram();
-        List<Expression<?>> projection = rel.projection(parameterMetadata);
+        dagBuildContext.setTable(null);
+        dagBuildContext.setRel(rel);
+        List<Expression<?>> projection = dagBuildContext.convertProjection(rel.projection());
 
         Vertex vertex;
         if (program.getCondition() != null) {
-            Expression<Boolean> filterExpr = rel.filter(parameterMetadata);
-
+            Expression<Boolean> filterExpr = dagBuildContext.convertFilter(rel.filter());
             vertex = dag.newUniqueVertex("Calc", mapUsingServiceP(
                     ServiceFactories.nonSharedService(ctx ->
                             ExpressionUtil.calcFn(projection, filterExpr, ExpressionEvalContext.from(ctx))),
@@ -457,12 +475,13 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         Table rightTable = rel.getRight().getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(rightTable);
 
+        dagBuildContext.setTable(rightTable);
+        dagBuildContext.setRel(rel);
         VertexWithInputConfig vertexWithConfig = getJetSqlConnector(rightTable).nestedLoopReader(
-                dag,
-                rightTable,
-                rel.rightFilter(parameterMetadata),
-                rel.rightProjection(parameterMetadata),
-                rel.joinInfo(parameterMetadata)
+                dagBuildContext,
+                rel.rightFilter(),
+                rel.rightProjection(),
+                rel.joinInfo(dagBuildContext.getParameterMetadata())
         );
         Vertex vertex = vertexWithConfig.vertex();
         connectInput(rel.getLeft(), vertex, vertexWithConfig.configureEdgeFn());
@@ -471,7 +490,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     @Override
     public Vertex onHashJoin(JoinHashPhysicalRel rel) {
-        JetJoinInfo joinInfo = rel.joinInfo(parameterMetadata);
+        JetJoinInfo joinInfo = rel.joinInfo(dagBuildContext.getParameterMetadata());
 
         Vertex joinVertex = dag.newUniqueVertex(
                 "Hash Join",
@@ -486,7 +505,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     @Override
     public Vertex onStreamToStreamJoin(StreamToStreamJoinPhysicalRel rel) {
-        JetJoinInfo joinInfo = rel.joinInfo(parameterMetadata);
+        JetJoinInfo joinInfo = rel.joinInfo(dagBuildContext.getParameterMetadata());
 
         Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors = new HashMap<>();
         Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = new HashMap<>();
@@ -576,11 +595,11 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         if (input instanceof LimitPhysicalRel) {
             LimitPhysicalRel limit = (LimitPhysicalRel) input;
             if (limit.fetch() != null) {
-                fetch = limit.fetch(parameterMetadata);
+                fetch = limit.fetch(dagBuildContext.getParameterMetadata());
             }
 
             if (limit.offset() != null) {
-                offset = limit.offset(parameterMetadata);
+                offset = limit.offset(dagBuildContext.getParameterMetadata());
             }
             input = limit.getInput();
         }

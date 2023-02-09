@@ -99,7 +99,7 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
                     // the response will not be sent and the operation will hang.
                     // To prevent this from happening, replace the exception with
                     // another exception that can be serialized.
-                    sendResponse(new JetException(stackTraceToString(ex)));
+                    sendResponse(new JetException(stackTraceToString((Throwable) value)));
                 } else {
                     throw e;
                 }

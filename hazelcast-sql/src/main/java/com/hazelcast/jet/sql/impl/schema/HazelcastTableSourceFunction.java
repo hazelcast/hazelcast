@@ -16,28 +16,16 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
-import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import org.apache.calcite.sql.type.SqlOperandMetadata;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 
-import java.util.Objects;
-
 public abstract class HazelcastTableSourceFunction extends HazelcastTableFunction {
-
-    private final SqlConnector connector;
 
     protected HazelcastTableSourceFunction(
             String name,
             SqlOperandMetadata operandMetadata,
-            SqlReturnTypeInference returnTypeInference,
-            SqlConnector connector
+            SqlReturnTypeInference returnTypeInference
     ) {
         super(name, operandMetadata, returnTypeInference);
-
-        this.connector = Objects.requireNonNull(connector);
-    }
-
-    public final boolean isStream() {
-        return connector.isStream();
     }
 }
