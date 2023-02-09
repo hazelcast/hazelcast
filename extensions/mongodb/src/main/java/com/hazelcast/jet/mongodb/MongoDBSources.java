@@ -138,8 +138,8 @@ public final class MongoDBSources {
      * StreamSource<Document> streamSource =
      *         MongoDBSources.stream("batch-source", () -> MongoClients.create("mongodb://127.0.0.1:27017"))
      *                 .into("myDatabase", "myCollection")
-     *                 .filter(new Document("age", new Document("$gt", 10)),
-     *                 .projection(new Document("age", 1))
+     *                 .filter(new Document("fullDocument.age", new Document("$gt", 10)),
+     *                 .projection(new Document("fullDocument.age", 1))
      *         );
      * Pipeline p = Pipeline.create();
      * StreamStage<Document> srcStage = p.readFrom(streamSource);
