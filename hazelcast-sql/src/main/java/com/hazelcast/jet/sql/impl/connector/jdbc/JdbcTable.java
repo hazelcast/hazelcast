@@ -35,10 +35,13 @@ public class JdbcTable extends JetTable {
     private final List<String> dbFieldNames;
     private final List<String> primaryKeyFieldNames;
     private final SqlDialect sqlDialect;
+
+    private final String externalSchemaName;
     private final String externalName;
     private final String dataLinkRef;
     private final int batchLimit;
     private final SerializationService serializationService;
+
 
     public JdbcTable(
             @Nonnull SqlConnector sqlConnector,
@@ -68,7 +71,13 @@ public class JdbcTable extends JetTable {
         this.dbFieldNames = unmodifiableList(dbFieldNames);
         this.primaryKeyFieldNames = unmodifiableList(primaryKeyFieldNames);
         this.sqlDialect = dialect;
-        this.externalName = externalName;
+
+        ExternalNameIdentifiers identifiers = new ExternalNameIdentifiers();
+        identifiers.parseExternalTableName(externalName);
+
+        this.externalSchemaName = identifiers.getSchemaName();
+        this.externalName = identifiers.getTableName();
+
         this.dataLinkRef = dataLinkRef;
         this.batchLimit = batchLimit;
         this.serializationService = serializationService;
@@ -82,6 +91,9 @@ public class JdbcTable extends JetTable {
         return sqlDialect;
     }
 
+    public String getExternalSchemaName() {
+        return externalSchemaName;
+    }
     public String getExternalName() {
         return externalName;
     }

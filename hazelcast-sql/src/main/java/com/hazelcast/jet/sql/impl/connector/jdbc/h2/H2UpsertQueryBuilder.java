@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc.h2;
 
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcTable;
+import com.hazelcast.jet.sql.impl.connector.jdbc.UpsertBuilder;
 import org.apache.calcite.sql.SqlDialect;
 
 import java.util.List;
@@ -29,6 +30,8 @@ public class H2UpsertQueryBuilder {
 
     private final String query;
 
+    private final String schemaName;
+
     private final String quotedTableName;
     private final List<String> quotedColumnNames;
 
@@ -36,6 +39,8 @@ public class H2UpsertQueryBuilder {
 
     public H2UpsertQueryBuilder(JdbcTable jdbcTable) {
         SqlDialect sqlDialect = jdbcTable.sqlDialect();
+
+        schemaName = UpsertBuilder.quoteSchemaName(jdbcTable);
 
         // Quote identifiers
         quotedTableName = sqlDialect.quoteIdentifier(jdbcTable.getExternalName());
@@ -60,6 +65,7 @@ public class H2UpsertQueryBuilder {
 
     void getMergeClause(StringBuilder stringBuilder) {
         stringBuilder.append("MERGE INTO ")
+                .append(schemaName)
                 .append(quotedTableName)
                 .append(" (")
                 .append(String.join(",", quotedColumnNames))

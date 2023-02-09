@@ -143,9 +143,16 @@ public class JdbcSqlConnector implements SqlConnector {
 
             DatabaseMetaData databaseMetaData = connection.getMetaData();
 
-            Set<String> pkColumns = readPrimaryKeyColumns(externalTableName, databaseMetaData);
+            ExternalNameIdentifiers identifiers = new ExternalNameIdentifiers();
+            identifiers.parseExternalTableName(externalTableName);
+            String catalog = identifiers.getCatalog();
+            String schema = identifiers.getSchemaName();
+            String tableName = identifiers.getTableName();
 
-            return readColumns(externalTableName, databaseMetaData, pkColumns);
+
+            Set<String> pkColumns = readPrimaryKeyColumns(catalog, schema, tableName, databaseMetaData);
+
+            return readColumns(catalog, schema, tableName, databaseMetaData, pkColumns);
 
         } catch (Exception e) {
             throw new HazelcastException("Could not execute readDbFields for table " + externalTableName, e);
@@ -154,23 +161,24 @@ public class JdbcSqlConnector implements SqlConnector {
         }
     }
 
-    private static Set<String> readPrimaryKeyColumns(String externalTableName, DatabaseMetaData databaseMetaData) {
+    private static Set<String> readPrimaryKeyColumns(String catalog, String schema, String tableName,
+                                                     DatabaseMetaData databaseMetaData) {
         Set<String> pkColumns = new HashSet<>();
-        try (ResultSet resultSet = databaseMetaData.getPrimaryKeys(null, null, externalTableName)) {
+        try (ResultSet resultSet = databaseMetaData.getPrimaryKeys(catalog, schema, tableName)) {
             while (resultSet.next()) {
                 String columnName = resultSet.getString("COLUMN_NAME");
                 pkColumns.add(columnName);
             }
         } catch (SQLException e) {
-            throw new HazelcastException("Could not read primary key columns for table " + externalTableName, e);
+            throw new HazelcastException("Could not read primary key columns for table " + tableName, e);
         }
         return pkColumns;
     }
 
-    private static Map<String, DbField> readColumns(String externalTableName, DatabaseMetaData databaseMetaData,
-                                                    Set<String> pkColumns) {
+    private static Map<String, DbField> readColumns(String catalog, String schema, String tableName,
+                                                    DatabaseMetaData databaseMetaData, Set<String> pkColumns) {
         Map<String, DbField> fields = new LinkedHashMap<>();
-        try (ResultSet resultSet = databaseMetaData.getColumns(null, null, externalTableName,
+        try (ResultSet resultSet = databaseMetaData.getColumns(catalog, schema, tableName,
                 null)) {
             while (resultSet.next()) {
                 String columnTypeName = resultSet.getString("TYPE_NAME");
@@ -182,7 +190,7 @@ public class JdbcSqlConnector implements SqlConnector {
                         ));
             }
         } catch (SQLException e) {
-            throw new HazelcastException("Could not read columns for table " + externalTableName, e);
+            throw new HazelcastException("Could not read columns for table " + tableName, e);
         }
         return fields;
     }

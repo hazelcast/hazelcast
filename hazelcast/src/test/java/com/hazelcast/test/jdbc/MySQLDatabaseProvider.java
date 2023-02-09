@@ -26,7 +26,7 @@ public class MySQLDatabaseProvider implements TestDatabaseProvider {
 
     @Override
     public String createDatabase(String dbName) {
-        jdbcUrl = "jdbc:tc:mysql:8.0.29:///" + dbName + "?TC_DAEMON=true&sessionVariables=sql_mode=ANSI";
+        jdbcUrl = "jdbc:tc:mysql:8.0.29:///" + dbName + "?user=root?password=test?TC_DAEMON=true&sessionVariables=sql_mode=ANSI";
         waitForDb(jdbcUrl, LOGIN_TIMEOUT);
         return jdbcUrl;
     }
