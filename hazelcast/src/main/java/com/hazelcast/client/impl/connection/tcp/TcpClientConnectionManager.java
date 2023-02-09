@@ -105,7 +105,6 @@ import java.util.function.Function;
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 import static com.hazelcast.client.config.ConnectionRetryConfig.DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS;
 import static com.hazelcast.client.config.ConnectionRetryConfig.FAILOVER_CLIENT_DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS;
-import static com.hazelcast.client.config.impl.ClientConfigHelper.unisocketModeConfigured;
 import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.NOT_ALLOWED_IN_CLUSTER;
 import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
@@ -242,6 +241,14 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         this.asyncStart = config.getConnectionStrategyConfig().isAsyncStart();
         this.reconnectMode = config.getConnectionStrategyConfig().getReconnectMode();
         this.connectionProcessListenerRunner = new ClientConnectionProcessListenerRunner(client);
+    }
+
+    private boolean unisocketModeConfigured(ClientConfig config) {
+        if (config.getAltoConfig().isEnabled()) {
+            return false;
+        }
+
+        return !config.getNetworkConfig().isSmartRouting();
     }
 
     private int initConnectionTimeoutMillis() {
@@ -855,6 +862,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         connectionProcessListenerRunner.addListener(listener);
     }
 
+    @Override
+    public boolean isUnisocketClient() {
+        return isUnisocketClient;
+    }
+
     public Credentials getCurrentCredentials() {
         return currentCredentials;
     }
@@ -953,7 +965,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             connection.setClusterUuid(response.clusterId);
 
             if (!isAltoAwareClient || tpcPorts == null || tpcPorts.isEmpty()) {
-                logger.info("TPC Client: disabled, no TPC ports detected");
+                logger.finest("TPC Client: disabled, no TPC ports detected");
             } else {
                 logger.info("TPC Client: connecting to ports (" + tpcPorts.size() + "): " + tpcPorts);
                 try {

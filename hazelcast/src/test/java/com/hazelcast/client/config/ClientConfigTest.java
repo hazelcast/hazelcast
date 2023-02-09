@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.client.config.impl.ClientConfigHelper.unisocketModeConfigured;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -180,17 +179,5 @@ public class ClientConfigTest {
 
         assertTrue(config.getAltoConfig().isEnabled());
         assertThrows(IllegalArgumentException.class, () -> config.setAltoConfig(null));
-    }
-
-    @Test
-    public void testAltoConfig_overridesSmartRoutingSelection() {
-        ClientConfig config = new ClientConfig();
-        config.getNetworkConfig().setSmartRouting(false);
-
-        assertTrue(unisocketModeConfigured(config));
-
-        config.getAltoConfig().setEnabled(true);
-
-        assertFalse(unisocketModeConfigured(config));
     }
 }

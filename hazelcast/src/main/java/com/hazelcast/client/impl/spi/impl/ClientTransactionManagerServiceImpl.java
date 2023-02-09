@@ -36,7 +36,6 @@ import javax.annotation.Nonnull;
 import javax.transaction.xa.Xid;
 import java.util.Set;
 
-import static com.hazelcast.client.config.impl.ClientConfigHelper.unisocketModeConfigured;
 import static com.hazelcast.internal.util.Clock.currentTimeMillis;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.StringUtil.timeToString;
@@ -150,7 +149,7 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
         if (reconnectMode.equals(ClientConnectionStrategyConfig.ReconnectMode.ASYNC)) {
             throw new HazelcastClientOfflineException();
         }
-        if (!unisocketModeConfigured(clientConfig)) {
+        if (!client.getConnectionManager().isUnisocketClient()) {
             Set<Member> members = client.getCluster().getMembers();
             String msg;
             if (members.isEmpty()) {

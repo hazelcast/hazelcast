@@ -59,7 +59,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 
-import static com.hazelcast.client.config.impl.ClientConfigHelper.unisocketModeConfigured;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_LISTENER_SERVICE_EVENTS_PROCESSED;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_LISTENER_SERVICE_EVENT_QUEUE_SIZE;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_PREFIX_LISTENERS;
@@ -78,7 +77,6 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
 
     public ClientListenerServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
-        this.isUnisocket = unisocketModeConfigured(client.getClientConfig());
         this.logger = client.getLoggingService().getLogger(ClientListenerService.class);
         String name = client.getName();
         HazelcastProperties properties = client.getProperties();
@@ -89,6 +87,7 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         ThreadFactory threadFactory = new SingleExecutorThreadFactory(classLoader, name + ".eventRegistration-");
         this.registrationExecutor = Executors.newSingleThreadExecutor(threadFactory);
         this.clientConnectionManager = client.getConnectionManager();
+        this.isUnisocket = clientConnectionManager.isUnisocketClient();
     }
 
     @Nonnull
