@@ -50,15 +50,10 @@ import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.jet.sql.impl.opt.WatermarkKeysAssigner;
 import com.hazelcast.jet.sql.impl.opt.WatermarkThrottlingFrameSizeCalculator;
-import com.hazelcast.jet.sql.impl.opt.logical.MustNotExecuteLogicalRel;
-import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
-import com.hazelcast.jet.sql.impl.parse.SqlCreateView;
-import com.hazelcast.jet.sql.impl.processors.GetDdlP;
 import com.hazelcast.jet.sql.impl.processors.LateItemsDropP;
 import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinProcessorSupplier;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
-import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -67,9 +62,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.Table;
-import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
@@ -94,7 +87,6 @@ import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
-import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
 import static java.util.Collections.emptyList;
@@ -583,17 +575,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
             dag.edge(edge);
         }
         return merger;
-    }
-
-    @Override
-    public Vertex onGetDdl(GetDdlPhysicalRel rel) {
-        Vertex getDdlVertex = dag.newUniqueVertex(
-                "GetDDL",
-                ProcessorMetaSupplier.forceTotalParallelismOne(
-                        ProcessorSupplier.of(GetDdlP::new)
-                ));
-        connectInput(rel.getInput(), getDdlVertex, null);
-        return getDdlVertex;
     }
 
     @Override

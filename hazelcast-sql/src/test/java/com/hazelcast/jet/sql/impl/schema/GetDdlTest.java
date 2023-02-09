@@ -22,7 +22,6 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.QueryException;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -111,7 +110,6 @@ public class GetDdlTest extends SqlTestSupport {
                 Arrays.asList(new Row("CREATE"), new Row("CREATE")));
     }
 
-    @Ignore
     @Test
     public void when_queryDdlWithInput_then_success() {
         createMapping("a", int.class, String.class);

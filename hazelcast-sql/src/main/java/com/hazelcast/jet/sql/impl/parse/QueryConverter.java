@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.jet.sql.impl.HazelcastSqlToRelConverter;
 import com.hazelcast.jet.sql.impl.opt.logical.CalcMergeRule;
-import com.hazelcast.jet.sql.impl.opt.logical.ExtractGetDdlRule;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
@@ -212,7 +211,6 @@ public class QueryConverter {
         hepProgramBuilder.addRuleInstance(CoreRules.FILTER_TO_CALC);
         hepProgramBuilder.addRuleInstance(CalcMergeRule.INSTANCE);
         hepProgramBuilder.addRuleInstance(CoreRules.CALC_REMOVE);
-        hepProgramBuilder.addRuleInstance(ExtractGetDdlRule.INSTANCE);
 
         // TODO: [sasha] Move more rules to unconditionally rewrite rel tree.
         HepPlanner planner = new HepPlanner(
