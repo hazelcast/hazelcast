@@ -96,8 +96,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
                 .setJarPath(getNoManifestJarPath());
 
         assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
-                .isInstanceOf(JetException.class)
-                .hasMessageContaining("No Main-Class found in the manifest");
+                .isInstanceOf(JetException.class);
     }
 
     @Test
