@@ -17,24 +17,24 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.google.common.collect.ImmutableList;
-import com.hazelcast.jet.sql.impl.opt.logical.GetDdlRel;
+import com.hazelcast.jet.sql.impl.opt.logical.GetDdlLogicalRel;
+import com.hazelcast.jet.sql.impl.opt.logical.LogicalGetDdlRel;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.rel.RelNode;
 
 import java.util.List;
 
-public class GetDdlPhysicalRel extends GetDdlRel implements PhysicalRel {
-    static final String TABLE_NAMESPACE = "table";
-    static final String DATALINK_NAMESPACE = "datalink";
+public class GetDdlPhysicalRel extends LogicalGetDdlRel implements PhysicalRel {
 
     GetDdlPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traits,
-            List<String> operands) {
-        super(cluster, traits, operands);
+            RelNode input) {
+        super(cluster, traits, input);
     }
 
     @Override
@@ -45,5 +45,10 @@ public class GetDdlPhysicalRel extends GetDdlRel implements PhysicalRel {
     @Override
     public <V> V accept(CreateDagVisitor<V> visitor) {
         return visitor.onGetDdl(this);
+    }
+
+    @Override
+    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
+        return new GetDdlPhysicalRel(getCluster(), traitSet, sole(inputs));
     }
 }

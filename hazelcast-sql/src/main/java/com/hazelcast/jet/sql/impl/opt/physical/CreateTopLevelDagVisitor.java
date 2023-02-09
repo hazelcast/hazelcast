@@ -587,37 +587,13 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     @Override
     public Vertex onGetDdl(GetDdlPhysicalRel rel) {
-        // Note: We temporarily do not support 'datalink' namespace, only 'table' is available.
-        // TODO: Support 'datalink' namespace after DATA LINK support.
-        String namespace = rel.getNamespace();
-        if (!namespace.equals(GetDdlPhysicalRel.TABLE_NAMESPACE)) {
-            throw QueryException.error(
-                    "Namespace '" + namespace + "' is not supported. Only 'table' namespace is supported."
-            );
-        }
-        final String ddl;
-        IMap<Object, Object> sqlCatalog = nodeEngine.getHazelcastInstance().getMap(SQL_CATALOG_MAP_NAME);
-        Object obj = sqlCatalog.get(rel.getObjectName());
-
-        if (obj == null) {
-            throw QueryException.error(
-                    "Object '" + rel.getObjectName() + "' does not exist in namespace " + namespace
-            );
-        }
-
-        if (obj instanceof Mapping) {
-            ddl = SqlCreateMapping.unparse((Mapping) obj);
-        } else if (obj instanceof View) {
-            ddl = SqlCreateView.unparse((View) obj);
-        } else {
-            throw new AssertionError("UNREACHABLE");
-        }
-
-        return dag.newUniqueVertex(
+        Vertex getDdlVertex = dag.newUniqueVertex(
                 "GetDDL",
                 ProcessorMetaSupplier.forceTotalParallelismOne(
-                        GetDdlP.getDdlSupplier(ddl))
-        );
+                        ProcessorSupplier.of(GetDdlP::new)
+                ));
+        connectInput(rel.getInput(), getDdlVertex, null);
+        return getDdlVertex;
     }
 
     @Override

@@ -19,35 +19,24 @@ package com.hazelcast.jet.sql.impl.opt.logical;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
-import org.apache.calcite.rel.AbstractRelNode;
-import org.apache.calcite.rel.RelWriter;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFieldImpl;
 import org.apache.calcite.rel.type.RelRecordType;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
-public class GetDdlRel extends AbstractRelNode {
-    private final String namespace;
-    private final String objectName;
-    private final String schemaName;
+public class LogicalGetDdlRel extends SingleRel {
 
-    public GetDdlRel(
+    public LogicalGetDdlRel(
             RelOptCluster cluster,
             RelTraitSet traits,
-            List<String> operands) {
-        super(cluster, traits);
-        namespace = operands.get(0);
-        objectName = operands.get(1);
-        if (operands.size() > 2) {
-            schemaName = operands.get(2);
-        } else {
-            schemaName = null;
-        }
+            RelNode input) {
+        super(cluster, traits, input);
     }
 
     @Override
@@ -59,27 +48,8 @@ public class GetDdlRel extends AbstractRelNode {
         return new RelRecordType(Collections.singletonList(ddlField));
     }
 
-    public List<String> operands() {
-        return Arrays.asList(namespace, objectName, schemaName);
-    }
-
-    public String getNamespace() {
-        return namespace;
-    }
-
-    public String getObjectName() {
-        return objectName;
-    }
-
-    public String getSchemaName() {
-        return schemaName;
-    }
-
     @Override
-    public RelWriter explainTerms(RelWriter pw) {
-        return super.explainTerms(pw)
-                .item("namespace", namespace)
-                .item("object_name", objectName)
-                .itemIf("schema_name", schemaName, schemaName != null);
+    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
+        return new LogicalGetDdlRel(getCluster(), traitSet, sole(inputs));
     }
 }

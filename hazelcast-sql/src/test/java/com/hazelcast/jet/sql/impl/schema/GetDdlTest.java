@@ -17,12 +17,16 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.google.common.collect.ImmutableList;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.QueryException;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -64,20 +68,22 @@ public class GetDdlTest extends SqlTestSupport {
         );
     }
 
-    @
-
-            Test
+    @Test
     public void when_queryNotSupportedNamespace_then_throws() {
-        assertThatThrownBy(() -> instance().getSql().execute("SELECT GET_DDL('a', 'b')"))
+        SqlResult sqlRows = instance().getSql().execute("SELECT GET_DDL('a', 'b')");
+        List<Job> jobs = instance().getJet().getJobs();
+        assertThatThrownBy(() -> sqlRows.iterator().next())
                 .hasCauseInstanceOf(QueryException.class)
                 .hasMessageContaining("Namespace 'a' is not supported.");
     }
 
     @Test
     public void when_queryNonExistingObject_then_throws() {
-        assertThatThrownBy(() -> instance().getSql().execute("SELECT GET_DDL('table', 'bbb')"))
+        SqlResult sqlRows = instance().getSql().execute("SELECT GET_DDL('table', 'bbb')");
+        List<Job> jobs = instance().getJet().getJobs();
+        assertThatThrownBy(() -> sqlRows.iterator().next())
                 .hasCauseInstanceOf(QueryException.class)
-                .hasMessageContaining("Object 'bbb' does not exist");
+                .hasMessageContaining("Object 'bbb' does not exist in namespace 'table'");
     }
 
     @Test
@@ -103,6 +109,16 @@ public class GetDdlTest extends SqlTestSupport {
         assertRowsAnyOrder("SELECT SUBSTRING(GET_DDL('table', 'a') FROM 1 FOR 6)" +
                         "UNION ALL SELECT SUBSTRING(GET_DDL('table', 'a') FROM 1 FOR 6)",
                 Arrays.asList(new Row("CREATE"), new Row("CREATE")));
+    }
+
+    @Ignore
+    @Test
+    public void when_queryDdlWithInput_then_success() {
+        createMapping("a", int.class, String.class);
+        instance().getMap("a").put(1, "a");
+
+        assertRowsAnyOrder("SELECT GET_DDL('table', this) FROM a",
+                ImmutableList.of(new Row("CREATE")));
     }
 
     @Test

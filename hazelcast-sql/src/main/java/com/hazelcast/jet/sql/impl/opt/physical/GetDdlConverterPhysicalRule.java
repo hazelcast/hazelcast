@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.GetDdlLogicalRel;
-import com.hazelcast.jet.sql.impl.opt.logical.GetDdlRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
@@ -30,7 +29,7 @@ public final class GetDdlConverterPhysicalRule extends ConverterRule {
     static final RelOptRule INSTANCE = new GetDdlConverterPhysicalRule();
 
     private GetDdlConverterPhysicalRule() {
-        super(GetDdlRel.class, LOGICAL, PHYSICAL,
+        super(GetDdlLogicalRel.class, LOGICAL, PHYSICAL,
                 GetDdlConverterPhysicalRule.class.getSimpleName()
         );
     }
@@ -41,7 +40,7 @@ public final class GetDdlConverterPhysicalRule extends ConverterRule {
         return new GetDdlPhysicalRel(
                 getDdl.getCluster(),
                 OptUtils.toPhysicalConvention(getDdl.getTraitSet()),
-                getDdl.operands()
+                OptUtils.toPhysicalInput(getDdl.getInput())
         );
     }
 }

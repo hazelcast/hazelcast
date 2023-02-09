@@ -18,70 +18,62 @@ package com.hazelcast.jet.sql.impl.processors;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateView;
+import com.hazelcast.map.IMap;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.view.View;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.util.List;
 
-import static java.util.Collections.singletonList;
+import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
 
 public class GetDdlP extends AbstractProcessor {
-    private transient InternalSerializationService ss;
-    private String ddl;
+    static final String TABLE_NAMESPACE = "table";
+    static final String DATALINK_NAMESPACE = "datalink";
 
-    public GetDdlP(String ddl) {
-        this.ddl = ddl;
+    private transient IMap sqlCatalog;
+    private transient InternalSerializationService ss;
+
+    public GetDdlP() {
     }
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
+        sqlCatalog = context.hazelcastInstance().getMap(SQL_CATALOG_MAP_NAME);
         ExpressionEvalContext evalContext = ExpressionEvalContext.from(context);
         ss = evalContext.getSerializationService();
         super.init(context);
     }
 
     @Override
-    public boolean complete() {
-        return tryEmit(new JetSqlRow(ss, new String[]{ddl}));
-    }
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
+        assert ordinal == 0;
+        assert item instanceof JetSqlRow;
 
-    public static GetDdlProcessorSupplier getDdlSupplier(String ddl) {
-        return new GetDdlProcessorSupplier(ddl);
-    }
+        JetSqlRow row = (JetSqlRow) item;
+        String namespace = row.getRow().get(0);
+        String objectName = row.getRow().get(1);
 
-    static final class GetDdlProcessorSupplier implements ProcessorSupplier, DataSerializable {
-
-        private String ddl;
-
-        @SuppressWarnings("unused")
-        private GetDdlProcessorSupplier() {
+        final String ddl;
+        if (!namespace.equals(TABLE_NAMESPACE)) {
+            throw QueryException.error(
+                    "Namespace '" + namespace + "' is not supported. Only 'table' namespace is supported.");
         }
 
-        private GetDdlProcessorSupplier(@Nonnull final String ddl) {
-            this.ddl = ddl;
+        final Object obj = sqlCatalog.get(objectName);
+        if (obj == null) {
+            throw QueryException.error("Object '" + objectName + "' does not exist in namespace '" + namespace + "'");
+        } else if (obj instanceof Mapping) {
+            ddl = SqlCreateMapping.unparse((Mapping) obj);
+        } else if (obj instanceof View) {
+            ddl = SqlCreateView.unparse((View) obj);
+        } else {
+            throw new AssertionError("UNREACHABLE");
         }
-
-        @Override
-        @Nonnull
-        public List<Processor> get(int count) {
-            return singletonList(new GetDdlP(ddl));
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeString(ddl);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            ddl = in.readString();
-        }
+        return tryEmit(new JetSqlRow(ss, new Object[]{ddl}));
     }
 }

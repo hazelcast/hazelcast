@@ -20,21 +20,27 @@ import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.List;
 
-public class GetDdlLogicalRel extends GetDdlRel implements LogicalRel {
+public class GetDdlLogicalRel extends LogicalGetDdlRel implements LogicalRel {
     public GetDdlLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traits,
-            List<String> operands) {
-        super(cluster, traits, operands);
+            RelNode input) {
+        super(cluster, traits, input);
     }
 
     @Override
     public @Nullable RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
         return planner.getCostFactory().makeTinyCost();
+    }
+
+    @Override
+    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
+        return new GetDdlLogicalRel(getCluster(), traitSet, sole(inputs));
     }
 }

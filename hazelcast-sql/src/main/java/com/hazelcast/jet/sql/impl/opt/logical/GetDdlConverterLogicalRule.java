@@ -28,18 +28,18 @@ public final class GetDdlConverterLogicalRule extends ConverterRule {
     static final RelOptRule INSTANCE = new GetDdlConverterLogicalRule();
 
     private GetDdlConverterLogicalRule() {
-        super(GetDdlRel.class, Convention.NONE, LOGICAL,
+        super(LogicalGetDdlRel.class, Convention.NONE, LOGICAL,
                 GetDdlConverterLogicalRule.class.getSimpleName()
         );
     }
 
     @Override
     public RelNode convert(RelNode rel) {
-        GetDdlRel getDdl = (GetDdlRel) rel;
+        LogicalGetDdlRel getDdl = (LogicalGetDdlRel) rel;
         return new GetDdlLogicalRel(
                 getDdl.getCluster(),
                 OptUtils.toLogicalConvention(getDdl.getTraitSet()),
-                getDdl.operands()
+                OptUtils.toLogicalInput(getDdl.getInput())
         );
     }
 }
