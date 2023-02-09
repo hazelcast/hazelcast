@@ -162,7 +162,7 @@
         <errorprone.version>2.18.0</errorprone.version>
         <awaitility.version>4.2.0</awaitility.version>
         <kubernetes-server-mock.version>6.4.1</kubernetes-server-mock.version>
-        <hikari.version>4.0.3</hikari.version>
+        <hikari.version>5.0.1</hikari.version>
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
 
