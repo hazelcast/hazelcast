@@ -54,7 +54,7 @@
         <maven.compiler.plugin.version>3.10.1</maven.compiler.plugin.version>
         <maven.jar.plugin.version>3.3.0</maven.jar.plugin.version>
         <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
-        <maven.javadoc.plugin.version>3.3.2</maven.javadoc.plugin.version>
+        <maven.javadoc.plugin.version>3.4.1</maven.javadoc.plugin.version>
         <maven.javadoc.plugin.excludePackageNames>
             *.impl:*.impl.*:*.internal:*.internal.*:*.operations:*.proxy:
             com.hazelcast.aws.security:*.handlermigration:*.client.connection.nio:
@@ -118,7 +118,7 @@
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.12.3</parquet.version>
         <picocli.version>4.7.1</picocli.version>
-        <postgresql.version>42.5.2</postgresql.version>
+        <postgresql.version>42.5.3</postgresql.version>
         <prometheus.version>0.17.2</prometheus.version>
 
         <!--
@@ -161,7 +161,7 @@
         <archunit.version>1.0.1</archunit.version>
         <errorprone.version>2.18.0</errorprone.version>
         <awaitility.version>4.2.0</awaitility.version>
-        <kubernetes-server-mock.version>6.4.0</kubernetes-server-mock.version>
+        <kubernetes-server-mock.version>6.4.1</kubernetes-server-mock.version>
         <hikari.version>4.0.3</hikari.version>
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
@@ -1869,7 +1869,7 @@
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.29.0</version>
+                <version>3.30.0</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
@@ -1914,7 +1914,7 @@
             <dependency>
               <groupId>com.google.api-client</groupId>
               <artifactId>google-api-client</artifactId>
-              <version>2.2.0</version>
+              <version>1.32.2</version>
             </dependency>
             <dependency>
               <groupId>com.google.api.grpc</groupId>
