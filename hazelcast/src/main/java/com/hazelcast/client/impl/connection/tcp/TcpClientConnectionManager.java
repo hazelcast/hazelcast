@@ -967,7 +967,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             if (!isAltoAwareClient || tpcPorts == null || tpcPorts.isEmpty()) {
                 logger.finest("TPC Client: disabled, no TPC ports detected");
             } else {
-                logger.info("TPC Client: connecting to ports (" + tpcPorts.size() + "): " + tpcPorts);
+                logger.info("TPC Client: connecting to ports (" + tpcPorts.size() + "): " + tpcPorts
+                        + " for connection: " + connection);
                 try {
                     connectToTpcPorts(connection, tpcPorts);
                 } catch (IOException e) {
