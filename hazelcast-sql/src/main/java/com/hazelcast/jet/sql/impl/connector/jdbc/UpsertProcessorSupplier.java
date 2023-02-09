@@ -37,19 +37,20 @@ import java.util.List;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
 import static java.util.Collections.singletonList;
 
-public class InsertProcessorSupplier
+public class UpsertProcessorSupplier
         extends AbstractJdbcSqlConnectorProcessorSupplier
         implements DataSerializable, SecuredFunction {
 
     private String query;
     private int batchLimit;
 
+    // No-arg constructor for DataSerializable
     @SuppressWarnings("unused")
-    public InsertProcessorSupplier() {
+    public UpsertProcessorSupplier() {
     }
 
-    public InsertProcessorSupplier(String dataLinkRef, String query, int batchLimit) {
-        super(dataLinkRef);
+    public UpsertProcessorSupplier(String externalDataStoreRef, String query, int batchLimit) {
+        super(externalDataStoreRef);
         this.query = query;
         this.batchLimit = batchLimit;
     }
@@ -57,6 +58,7 @@ public class InsertProcessorSupplier
     @Nonnull
     @Override
     public Collection<? extends Processor> get(int count) {
+        // count means local parallelism. Create as many processors as required
         List<Processor> processors = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             Processor processor = new WriteJdbcP<>(
@@ -76,9 +78,6 @@ public class InsertProcessorSupplier
         }
         return processors;
     }
-
-    @SuppressWarnings("BooleanExpressionComplexity")
-
 
     @Nullable
     @Override

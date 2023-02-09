@@ -16,17 +16,14 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
+public class SinkJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     private String tableName;
 
@@ -41,28 +38,28 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void insertIntoTable() throws Exception {
+    public void sinkIntoTable() throws Exception {
         createTable(tableName);
         createMapping(tableName);
 
-        execute("INSERT INTO " + tableName + " VALUES (0, 'name-0')");
+        execute("SINK INTO " + tableName + " VALUES (0, 'name-0')");
 
         assertJdbcRowsAnyOrder(tableName, new Row(0, "name-0"));
     }
 
     @Test
-    public void insertIntoTableWithExternalName() throws Exception {
+    public void sinkIntoTableWithExternalName() throws Exception {
         createTable(tableName);
         String mappingName = "mapping_" + randomName();
         createMapping(tableName, mappingName);
 
-        execute("INSERT INTO " + mappingName + " VALUES (0, 'name-0')");
+        execute("SINK INTO " + mappingName + " VALUES (0, 'name-0')");
 
         assertJdbcRowsAnyOrder(tableName, new Row(0, "name-0"));
     }
 
     @Test
-    public void insertIntoTableColumnHasExternalName() throws Exception {
+    public void sinkIntoTableColumnHasExternalName() throws Exception {
         createTable(tableName);
         execute(
                 "CREATE MAPPING " + tableName + " ("
@@ -75,17 +72,17 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ")"
         );
 
-        execute("INSERT INTO " + tableName + " VALUES (0, 'name-0')");
+        execute("SINK INTO " + tableName + " VALUES (0, 'name-0')");
 
         assertJdbcRowsAnyOrder(tableName, new Row(0, "name-0"));
     }
 
     @Test
-    public void insertIntoTableWithColumns() throws Exception {
+    public void sinkIntoTableWithColumns() throws Exception {
         createTable(tableName);
         createMapping(tableName);
 
-        execute("INSERT INTO " + tableName + " (name, id) VALUES ('name-0', 0), ('name-1', 1)");
+        execute("SINK INTO " + tableName + " (name, id) VALUES ('name-0', 0), ('name-1', 1)");
 
         assertJdbcRowsAnyOrder(tableName,
                 new Row(0, "name-0"),
@@ -94,7 +91,7 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void insertIntoTableWithColumnsColumnHasExternalName() throws Exception {
+    public void sinkIntoTableWithColumnsColumnHasExternalName() throws Exception {
         createTable(tableName);
         execute(
                 "CREATE MAPPING " + tableName + " ("
@@ -107,7 +104,7 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ")"
         );
 
-        execute("INSERT INTO " + tableName + " (fullName, id) VALUES ('name-0', 0), ('name-1', 1)");
+        execute("SINK INTO " + tableName + " (fullName, id) VALUES ('name-0', 0), ('name-1', 1)");
 
         assertJdbcRowsAnyOrder(tableName,
                 new Row(0, "name-0"),
@@ -116,11 +113,11 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void insertIntoTableMultipleValues() throws Exception {
+    public void sinkIntoTableMultipleValues() throws Exception {
         createTable(tableName);
         createMapping(tableName);
 
-        execute("INSERT INTO " + tableName + " SELECT v,'name-' || v FROM TABLE(generate_series(0,4))");
+        execute("SINK INTO " + tableName + " SELECT v,'name-' || v FROM TABLE(generate_series(0,4))");
 
         assertJdbcRowsAnyOrder(tableName,
                 new Row(0, "name-0"),
@@ -131,25 +128,9 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         );
     }
 
-    /**
-     * H2 throws org.h2.jdbc.JdbcBatchUpdateException, after which the insert is retried, we can either handle
-     * java.sql.BatchUpdateException as non-transient exception, or something else, not sure
-     */
-    @Test
-    @Ignore
-    public void insertIntoTableSameValues() throws Exception {
-        createTable(tableName);
-        createMapping(tableName);
-
-        execute("INSERT INTO " + tableName + " VALUES (0, 'name-0')");
-
-        assertThatThrownBy(() ->
-                execute("INSERT INTO " + tableName + " VALUES (0, 'name-0')")
-        ).isInstanceOf(HazelcastSqlException.class);
-    }
 
     @Test
-    public void insertIntoTableReverseColumnOrder() throws Exception {
+    public void sinkIntoTableReverseColumnOrder() throws Exception {
         createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(10)");
         execute(
                 "CREATE MAPPING " + tableName
@@ -159,10 +140,31 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ")"
         );
 
-        execute("INSERT INTO " + tableName + " (name, id) VALUES ('name-0', 0)");
+        execute("SINK INTO " + tableName + " (name, id) VALUES ('name-0', 0)");
 
         assertJdbcRowsAnyOrder(tableName,
                 new Row(0, "name-0")
+        );
+    }
+
+    @Test
+    public void updateTableWithColumns() throws Exception {
+        createTable(tableName);
+        createMapping(tableName);
+
+        // Insert items with JDBC to make sure DB is populated without using Jet
+        insertItems(tableName, 2);
+
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(0, "name-0"),
+                new Row(1, "name-1")
+        );
+
+        execute("SINK INTO " + tableName + " (name, id) VALUES ('name-2', 0), ('name-3', 1)");
+
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(0, "name-2"),
+                new Row(1, "name-3")
         );
     }
 }

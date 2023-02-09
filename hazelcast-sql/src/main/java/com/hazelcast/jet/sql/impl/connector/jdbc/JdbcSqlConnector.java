@@ -43,10 +43,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -139,34 +139,52 @@ public class JdbcSqlConnector implements SqlConnector {
                 OPTION_DATA_LINK_REF + " must be set"
         );
         DataSource dataSource = createDataLink(nodeEngine, dataLinkRef);
-        try (
-                Connection connection = dataSource.getConnection();
-                Statement statement = connection.createStatement()
-        ) {
-            Set<String> pkColumns = readPrimaryKeyColumns(externalTableName, connection);
+        try (Connection connection = dataSource.getConnection()) {
 
-            boolean hasResultSet = statement.execute("SELECT * FROM " + externalTableName + " LIMIT 0");
-            if (!hasResultSet) {
-                throw new IllegalStateException("Could not resolve fields for table " + externalTableName);
+            DatabaseMetaData databaseMetaData = connection.getMetaData();
+
+            Set<String> pkColumns = readPrimaryKeyColumns(externalTableName, databaseMetaData);
+
+            return readColumns(externalTableName, databaseMetaData, pkColumns);
+
+        } catch (Exception e) {
+            throw new HazelcastException("Could not execute readDbFields for table " + externalTableName, e);
+        } finally {
+            closeDataSource(dataSource);
+        }
+    }
+
+    private static Set<String> readPrimaryKeyColumns(String externalTableName, DatabaseMetaData databaseMetaData) {
+        Set<String> pkColumns = new HashSet<>();
+        try (ResultSet resultSet = databaseMetaData.getPrimaryKeys(null, null, externalTableName)) {
+            while (resultSet.next()) {
+                String columnName = resultSet.getString("COLUMN_NAME");
+                pkColumns.add(columnName);
             }
-            ResultSet rs = statement.getResultSet();
-            ResultSetMetaData metaData = rs.getMetaData();
+        } catch (SQLException e) {
+            throw new HazelcastException("Could not read primary key columns for table " + externalTableName, e);
+        }
+        return pkColumns;
+    }
 
-            Map<String, DbField> fields = new LinkedHashMap<>();
-            for (int i = 1; i <= metaData.getColumnCount(); i++) {
-                String columnName = metaData.getColumnName(i);
+    private static Map<String, DbField> readColumns(String externalTableName, DatabaseMetaData databaseMetaData,
+                                                    Set<String> pkColumns) {
+        Map<String, DbField> fields = new LinkedHashMap<>();
+        try (ResultSet resultSet = databaseMetaData.getColumns(null, null, externalTableName,
+                null)) {
+            while (resultSet.next()) {
+                String columnTypeName = resultSet.getString("TYPE_NAME");
+                String columnName = resultSet.getString("COLUMN_NAME");
                 fields.put(columnName,
-                        new DbField(metaData.getColumnTypeName(i),
+                        new DbField(columnTypeName,
                                 columnName,
                                 pkColumns.contains(columnName)
                         ));
             }
-            return fields;
-        } catch (Exception e) {
-            throw new HazelcastException("Could not read column metadata for table " + externalTableName, e);
-        } finally {
-            closeDataSource(dataSource);
+        } catch (SQLException e) {
+            throw new HazelcastException("Could not read columns for table " + externalTableName, e);
         }
+        return fields;
     }
 
     private void closeDataSource(DataSource dataSource) {
@@ -186,24 +204,11 @@ public class JdbcSqlConnector implements SqlConnector {
         return dataLinkFactory.getDataLink();
     }
 
-    private Set<String> readPrimaryKeyColumns(@Nonnull String externalName, Connection connection) {
-        Set<String> primaryKeyColumns = new HashSet<>();
-        try (ResultSet rs = connection.getMetaData().getPrimaryKeys(null, connection.getSchema(), externalName)) {
-            while (rs.next()) {
-                String columnName = rs.getString("COLUMN_NAME");
-                primaryKeyColumns.add(columnName);
-            }
-        } catch (SQLException e) {
-            throw new HazelcastException("Could not read primary key columns for table " + externalName, e);
-        }
-        return primaryKeyColumns;
-    }
-
     private void validateType(MappingField field, DbField dbField) {
         QueryDataType type = resolveType(dbField.columnTypeName);
         if (!field.type().equals(type) && !type.getConverter().canConvertTo(field.type().getTypeFamily())) {
             throw new IllegalStateException("Type " + field.type().getTypeFamily() + " of field " + field.name()
-                    + " does not match db type " + type.getTypeFamily());
+                                            + " does not match db type " + type.getTypeFamily());
         }
     }
 
@@ -266,7 +271,7 @@ public class JdbcSqlConnector implements SqlConnector {
 
         } catch (Exception e) {
             throw new HazelcastException("Could not determine dialect for dataLinkRef: "
-                    + dataLinkRef, e);
+                                         + dataLinkRef, e);
         } finally {
             closeDataSource(dataSource);
         }
@@ -368,6 +373,31 @@ public class JdbcSqlConnector implements SqlConnector {
         );
     }
 
+    @Nonnull
+    @Override
+    public Vertex sinkProcessor(@Nonnull DagBuildContext context) {
+        JdbcTable jdbcTable = (JdbcTable) context.getTable();
+
+        // If dialect is supported
+        if (UpsertBuilder.isUpsertDialectSupported(jdbcTable)) {
+            // Get the upsert statement
+            String upsertStatement = UpsertBuilder.getUpsertStatement(jdbcTable);
+
+            // Create Vertex with the UPSERT statement
+            return context.getDag().newUniqueVertex(
+                    "sinkProcessor(" + jdbcTable.getExternalName() + ")",
+                    new UpsertProcessorSupplier(
+                            jdbcTable.getDataLinkRef(),
+                            upsertStatement,
+                            jdbcTable.getBatchLimit()
+                    )
+            );
+        }
+        // Unsupported dialect. Create Vertex with the INSERT statement
+        VertexWithInputConfig vertexWithInputConfig = insertProcessor(context);
+        return vertexWithInputConfig.vertex();
+    }
+
     /**
      * Using {@link ResultSetMetaData#getColumnTypeName(int)} seems more
      * reliable than {@link ResultSetMetaData#getColumnClassName(int)},
@@ -448,10 +478,10 @@ public class JdbcSqlConnector implements SqlConnector {
         @Override
         public String toString() {
             return "DbField{" +
-                    "name='" + columnName + '\'' +
-                    ", typeName='" + columnTypeName + '\'' +
-                    ", primaryKey=" + primaryKey +
-                    '}';
+                   "name='" + columnName + '\'' +
+                   ", typeName='" + columnTypeName + '\'' +
+                   ", primaryKey=" + primaryKey +
+                   '}';
         }
     }
 }
