@@ -22,9 +22,9 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datastore.HzClientDataStoreFactory;
+import com.hazelcast.datalink.HzClientDataStoreFactory;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.jet.Job;
@@ -73,19 +73,19 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         config.getCacheConfig(JOURNALED_CACHE_PREFIX + '*').getEventJournalConfig().setEnabled(true);
 
         // Read XML and set as ExternalDataStoreConfig
-        ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig(HZ_CLIENT_EXTERNAL_REF);
-        externalDataStoreConfig.setClassName(HzClientDataStoreFactory.class.getName());
+        DataLinkConfig dataLinkConfig = new DataLinkConfig(HZ_CLIENT_EXTERNAL_REF);
+        dataLinkConfig.setClassName(HzClientDataStoreFactory.class.getName());
 
         byte[] bytes = java.nio.file.Files.readAllBytes(Paths.get("src", "test", "resources",
                 "hazelcast-client-test-external.xml"));
         String xmlString = new String(bytes);
-        externalDataStoreConfig.setProperty(HzClientDataStoreFactory.CLIENT_XML, xmlString);
+        dataLinkConfig.setProperty(HzClientDataStoreFactory.CLIENT_XML, xmlString);
 
         // Read YAML and set as ExternalDataStoreConfig
         bytes = java.nio.file.Files.readAllBytes(Paths.get("src", "test", "resources",
                 "hazelcast-client-test-external.yaml"));
         String yamlString = new String(bytes);
-        externalDataStoreConfig.setProperty(HzClientDataStoreFactory.CLIENT_YML, yamlString);
+        dataLinkConfig.setProperty(HzClientDataStoreFactory.CLIENT_YML, yamlString);
 
         remoteHz = createRemoteCluster(config, 2).get(0);
         clientConfig = getClientConfigForRemoteCluster(remoteHz);
@@ -93,7 +93,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         for (HazelcastInstance hazelcastInstance : allHazelcastInstances()) {
             Config hazelcastInstanceConfig = hazelcastInstance.getConfig();
-            hazelcastInstanceConfig.addExternalDataStoreConfig(externalDataStoreConfig);
+            hazelcastInstanceConfig.addDataLinkConfig(dataLinkConfig);
         }
     }
 
@@ -143,7 +143,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         testMapJournal(map, source);
     }
 
-    // Test remoteMapJournal() using default parameters with ExternalDataStoreRef
+    // Test remoteMapJournal() using default parameters with DataLinkRef
     @Test
     public void remoteMapJournal_withExternalConfig() {
         // Given
@@ -151,33 +151,32 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         IMap<String, Integer> map = remoteHz.getMap(mapName);
 
         // When
-        ExternalDataStoreRef externalDataStoreRef = ExternalDataStoreRef.externalDataStoreRef(HZ_CLIENT_EXTERNAL_REF);
+        DataLinkRef dataLinkRef = DataLinkRef.dataLinkRef(HZ_CLIENT_EXTERNAL_REF);
         StreamSource<Entry<String, Integer>> source = Sources.remoteMapJournal(
-                mapName, externalDataStoreRef, START_FROM_OLDEST);
+                mapName, dataLinkRef, START_FROM_OLDEST);
 
         // Then
         testMapJournal(map, source);
     }
 
-    // Test remoteMapJournal() using default parameters with ExternalDataStoreRef
+    // Test remoteMapJournal() using default parameters with DataLinkRef
     @Test
     public void remoteMapJournal_withExternalConfigYaml() {
 
         for (HazelcastInstance hazelcastInstance : allHazelcastInstances()) {
             Config config = hazelcastInstance.getConfig();
-            ExternalDataStoreConfig externalDataStoreConfig = config
-                    .getExternalDataStoreConfig(HZ_CLIENT_EXTERNAL_REF);
+            DataLinkConfig dataLinkConfig = config.getDataLinkConfig(HZ_CLIENT_EXTERNAL_REF);
             // Make XML empty, so that we use yaml in the test
-            externalDataStoreConfig.setProperty(HzClientDataStoreFactory.CLIENT_XML, "");
+            dataLinkConfig.setProperty(HzClientDataStoreFactory.CLIENT_XML, "");
         }
         // Given
         String mapName = JOURNALED_MAP_PREFIX + randomName();
         IMap<String, Integer> map = remoteHz.getMap(mapName);
 
         // When
-        ExternalDataStoreRef externalDataStoreRef = ExternalDataStoreRef.externalDataStoreRef(HZ_CLIENT_EXTERNAL_REF);
+        DataLinkRef dataLinkRef = DataLinkRef.dataLinkRef(HZ_CLIENT_EXTERNAL_REF);
         StreamSource<Entry<String, Integer>> source = Sources.remoteMapJournal(
-                mapName, externalDataStoreRef, START_FROM_OLDEST);
+                mapName, dataLinkRef, START_FROM_OLDEST);
 
         // Then
         testMapJournal(map, source);
@@ -365,7 +364,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         testMapJournal_withPredicateAndProjection(map, source);
     }
 
-    // Test remoteMapJournal() using all  parameters with ExternalDataStoreRef
+    // Test remoteMapJournal() using all  parameters with DataLinkRef
     @Test
     public void remoteMapJournal_withExternalConfigPredicateAndProjectionFn() {
         // Given
@@ -374,9 +373,9 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         PredicateEx<EventJournalMapEvent<String, Integer>> p = e -> e.getNewValue() % 2 == 0;
 
         // When
-        ExternalDataStoreRef externalDataStoreRef = ExternalDataStoreRef.externalDataStoreRef(HZ_CLIENT_EXTERNAL_REF);
+        DataLinkRef dataLinkRef = DataLinkRef.dataLinkRef(HZ_CLIENT_EXTERNAL_REF);
         StreamSource<Integer> source = Sources.remoteMapJournal(
-                mapName, externalDataStoreRef, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, p);
+                mapName, dataLinkRef, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, p);
 
         // Then
         testMapJournal_withPredicateAndProjection(map, source);

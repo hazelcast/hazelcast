@@ -24,10 +24,9 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.datastore.ExternalDataStoreFactory;
-import com.hazelcast.datastore.ExternalDataStoreService;
-import com.hazelcast.datastore.HzClientDataStoreFactory;
-import com.hazelcast.datastore.JdbcDataStoreFactory;
+import com.hazelcast.datalink.DataLinkFactory;
+import com.hazelcast.datalink.DataLinkService;
+import com.hazelcast.datalink.HzClientDataStoreFactory;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.function.SupplierEx;
@@ -48,7 +47,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.pipeline.ExternalDataStoreRef;
+import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -355,14 +354,14 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
     public static HzClientDataStoreFactory getDataStoreFactory(HazelcastInstance hazelcastInstance, String name) {
         NodeEngineImpl nodeEngine = Util.getNodeEngine(hazelcastInstance);
-        ExternalDataStoreService externalDataStoreService = nodeEngine.getExternalDataStoreService();
-        ExternalDataStoreFactory<?> dataStoreFactory = externalDataStoreService.getExternalDataStoreFactory(name);
+        DataLinkService dataLinkService = nodeEngine.getDataLinkService();
+        DataLinkFactory<?> dataLinkFactory = dataLinkService.getDataLinkFactory(name);
 
-        if (!(dataStoreFactory instanceof HzClientDataStoreFactory)) {
-            String className = JdbcDataStoreFactory.class.getSimpleName();
+        if (!(dataLinkFactory instanceof HzClientDataStoreFactory)) {
+            String className = HzClientDataStoreFactory.class.getSimpleName();
             throw new HazelcastException("Data store factory '" + name + "' must be an instance of " + className);
         }
-        return (HzClientDataStoreFactory) dataStoreFactory;
+        return (HzClientDataStoreFactory) dataLinkFactory;
     }
 
     // Creates ClusterProcessorSupplier per member. Each ClusterProcessorSupplier is given a
@@ -374,7 +373,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         private ClusterMetaSupplierParams clusterMetaSupplierParams;
         private final String clientXml;
 
-        private final ExternalDataStoreRef externalDataStoreRef;
+        private final DataLinkRef dataLinkRef;
         private transient int remotePartitionCount;
 
         //Key : Address of the local or remote member
@@ -385,7 +384,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             this.clusterMetaSupplierParams = clusterMetaSupplierParams;
 
             clientXml = clusterMetaSupplierParams.getClientXml();
-            externalDataStoreRef = clusterMetaSupplierParams.getExternalDataStoreRef();
+            dataLinkRef = clusterMetaSupplierParams.getDataLinkRef();
 
         }
 
@@ -397,11 +396,11 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         @Override
         public void init(@Nonnull Context context) {
             // The order is important.
-            // If externalDataStoreRef is specified prefer it to clientXml
-            if (externalDataStoreRef != null) {
+            // If dataLinkConfig is specified prefer it to clientXml
+            if (dataLinkRef != null) {
                 HzClientDataStoreFactory hzClientDataStoreFactory = getDataStoreFactory(context.hazelcastInstance(),
-                        externalDataStoreRef.getName());
-                HazelcastInstance client = hzClientDataStoreFactory.getDataStore();
+                        dataLinkRef.getName());
+                HazelcastInstance client = hzClientDataStoreFactory.getDataLink();
                 findRemotePartitionCount(client);
             } else if (clientXml != null) {
                 findRemotePartitionCountUsingNewClient();
@@ -456,7 +455,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         @Override
         public Permission getRequiredPermission() {
-            if (externalDataStoreRef != null) {
+            if (dataLinkRef != null) {
                 return null;
             }
             if (clientXml != null) {
@@ -478,7 +477,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         private final String clientXml;
 
         @Nullable
-        private final ExternalDataStoreRef externalDataStoreRef;
+        private final DataLinkRef dataLinkRef;
 
         @Nonnull
         private final FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<E>>
@@ -507,7 +506,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             projection = clusterMetaSupplierParams.getProjection();
             initialPos = clusterMetaSupplierParams.getInitialPos();
             eventTimePolicy = clusterMetaSupplierParams.getEventTimePolicy();
-            externalDataStoreRef = clusterMetaSupplierParams.getExternalDataStoreRef();
+            dataLinkRef = clusterMetaSupplierParams.getDataLinkRef();
 
         }
 
@@ -517,12 +516,12 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             HazelcastInstance instance = context.hazelcastInstance();
 
             // The order is important.
-            // If externalDataStoreRef is specified prefer it to clientXml
-            if (externalDataStoreRef != null) {
+            // If dataLinkConfig is specified prefer it to clientXml
+            if (dataLinkRef != null) {
                 // Use cached HazelcastInstance for client
                 HzClientDataStoreFactory hzClientDataStoreFactory = getDataStoreFactory(context.hazelcastInstance(),
-                        externalDataStoreRef.getName());
-                instance = hzClientDataStoreFactory.getDataStore();
+                        dataLinkRef.getName());
+                instance = hzClientDataStoreFactory.getDataLink();
             } else if (clientXml != null) {
                 // Create a new HazelcastInstance for client
                 ClientConfig clientConfig = asClientConfig(clientXml);
@@ -610,12 +609,12 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
     }
 
-    // remoteMapJournal processor that uses the given ExternalDataStoreRef
+    // remoteMapJournal processor that uses the given DataLinkRef
     // K,V are input type
     // R is return type
     public static <K, V, R> ProcessorMetaSupplier streamRemoteMapSupplier(
             @Nonnull String mapName,
-            @Nonnull ExternalDataStoreRef externalDataStoreRef,
+            @Nonnull DataLinkRef dataLinkRef,
             @Nonnull PredicateEx<? super EventJournalMapEvent<K, V>> predicate,
             @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends R> projection,
             @Nonnull JournalInitialPosition initialPos,
@@ -624,7 +623,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         checkSerializable(projection, "projection");
 
         ClusterMetaSupplierParams<EventJournalMapEvent<K, V>, R> params = ClusterMetaSupplierParams
-                .fromExternalDataStoreRef(externalDataStoreRef);
+                .fromDataLinkRef(dataLinkRef);
 
         params.setEventJournalReaderSupplier(SecuredFunctions.mapEventJournalReaderFn(mapName));
         params.setPredicate(predicate);

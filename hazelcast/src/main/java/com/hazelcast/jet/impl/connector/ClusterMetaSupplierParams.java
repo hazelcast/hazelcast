@@ -22,15 +22,18 @@ import com.hazelcast.function.PredicateEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.jet.core.EventTimePolicy;
-import com.hazelcast.jet.pipeline.ExternalDataStoreRef;
+import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.security.Permission;
 
-// T is input type
-// R is return type
+/**
+ *
+ * @param <T> is input type
+ * @param <R> is return type
+ */
 class ClusterMetaSupplierParams<T, R> implements Serializable  {
 
     private static final long serialVersionUID = 1L;
@@ -38,9 +41,9 @@ class ClusterMetaSupplierParams<T, R> implements Serializable  {
     // Optional XML to create a HazelcastInstance which is client that is used to connect to cluster members
     private String clientXml;
 
-    // Optional ExternalDataStoreRef that refers a HzClientDataStoreFactory by name.
+    // Optional DataLinkRef that refers a HzClientDataStoreFactory by name.
     // The HzClientDataStoreFactory owns a HazelcastInstance which is client that is used to connect to cluster members
-    private ExternalDataStoreRef externalDataStoreRef;
+    private DataLinkRef dataLinkRef;
 
     // The function that creates EventJournalReader
     private FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<T>> eventJournalReaderSupplier;
@@ -62,9 +65,9 @@ class ClusterMetaSupplierParams<T, R> implements Serializable  {
         return params;
     }
 
-    public static <E, T> ClusterMetaSupplierParams<E, T> fromExternalDataStoreRef(ExternalDataStoreRef externalDataStoreRef) {
+    public static <E, T> ClusterMetaSupplierParams<E, T> fromDataLinkRef(DataLinkRef dataLinkRef) {
         ClusterMetaSupplierParams<E, T> params = new ClusterMetaSupplierParams<>();
-        params.setExternalDataStoreRef(externalDataStoreRef);
+        params.setDataLinkRef(dataLinkRef);
         return params;
     }
 
@@ -76,12 +79,12 @@ class ClusterMetaSupplierParams<T, R> implements Serializable  {
         this.clientXml = clientXml;
     }
 
-    public ExternalDataStoreRef getExternalDataStoreRef() {
-        return externalDataStoreRef;
+    public DataLinkRef getDataLinkRef() {
+        return dataLinkRef;
     }
 
-    private void setExternalDataStoreRef(@Nonnull ExternalDataStoreRef externalDataStoreRef) {
-        this.externalDataStoreRef = externalDataStoreRef;
+    private void setDataLinkRef(@Nonnull DataLinkRef dataLinkRef) {
+        this.dataLinkRef = dataLinkRef;
     }
 
     @Nonnull

@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.datastore;
+package com.hazelcast.datalink;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.StringUtil;
@@ -32,7 +32,7 @@ import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfigFromYaml;
  * Set the client XML as property using {@link HzClientDataStoreFactory#CLIENT_XML} as property key or
  * Set the client YAML as property using {@link HzClientDataStoreFactory#CLIENT_YML} as property key
  */
-public class HzClientDataStoreFactory implements ExternalDataStoreFactory<HazelcastInstance> {
+public class HzClientDataStoreFactory implements DataLinkFactory<HazelcastInstance> {
 
     /**
      * The constant to be used as property key for XML
@@ -45,13 +45,13 @@ public class HzClientDataStoreFactory implements ExternalDataStoreFactory<Hazelc
     public static final String CLIENT_YML = "client_yml";
 
     // Reference to configuration
-    private ExternalDataStoreConfig externalDataStoreConfig;
+    private DataLinkConfig dataLinkConfig;
 
     // The cached client instance
     private HazelcastInstance hazelcastInstance;
 
     @Override
-    public synchronized HazelcastInstance getDataStore() {
+    public synchronized HazelcastInstance getDataLink() {
         if (hazelcastInstance == null) {
 
             ClientConfig clientConfig = buildClientConfig();
@@ -66,8 +66,8 @@ public class HzClientDataStoreFactory implements ExternalDataStoreFactory<Hazelc
     }
 
     @Override
-    public void init(ExternalDataStoreConfig externalDataStoreConfig) {
-        this.externalDataStoreConfig = externalDataStoreConfig;
+    public void init(DataLinkConfig dataLinkConfig) {
+        this.dataLinkConfig = dataLinkConfig;
     }
 
     @Override
@@ -86,13 +86,13 @@ public class HzClientDataStoreFactory implements ExternalDataStoreFactory<Hazelc
 
     private ClientConfig buildClientConfig() {
         ClientConfig clientConfig = null;
-        String clientXml = externalDataStoreConfig.getProperty(CLIENT_XML);
+        String clientXml = dataLinkConfig.getProperty(CLIENT_XML);
         if (!StringUtil.isNullOrEmpty(clientXml)) {
             // Read ClientConfig from XML
             clientConfig = asClientConfig(clientXml);
         }
 
-        String clientYaml = externalDataStoreConfig.getProperty(CLIENT_YML);
+        String clientYaml = dataLinkConfig.getProperty(CLIENT_YML);
         if (!StringUtil.isNullOrEmpty(clientYaml)) {
             // Read ClientConfig from Yaml
             clientConfig = asClientConfigFromYaml(clientYaml);

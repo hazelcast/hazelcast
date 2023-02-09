@@ -662,20 +662,20 @@ public final class Sources {
     /**
      * The same as the {@link #remoteMapJournal(String, ClientConfig, JournalInitialPosition, FunctionEx, PredicateEx)}
      * method. The only difference is instead of a ClientConfig parameter that is used to connect to remote cluster,
-     * this method receives an ExternalDataStoreRef.
-     * The ExternalDataStoreRef caches the connection to remote cluster, so that it can be re-used
+     * this method receives an DataLinkConfig.
+     * The DataLinkConfig caches the connection to remote cluster, so that it can be re-used
      *  <p>
      *      (Prerequisite) External dataStore configuration: <br/>
-     *      Use {@link com.hazelcast.datastore.HzClientDataStoreFactory#CLIENT_XML} for XML or <br/>
-     *      use {@link com.hazelcast.datastore.HzClientDataStoreFactory#CLIENT_YML} for YAML string
+     *      Use {@link com.hazelcast.datalink.HzClientDataStoreFactory#CLIENT_XML} for XML or <br/>
+     *      use {@link com.hazelcast.datalink.HzClientDataStoreFactory#CLIENT_YML} for YAML string
      *      <pre>{@code
      *            Config config = ...;
      *            String xmlString = ...;
-     *            ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
+     *            DataLinkConfig dataLinkConfig = new DataLinkConfig()
      *                    .setName("my-hzclient-store")
      *                    .setClassName(HzClientDataStoreFactory.class.getName())
      *                    .setProperty(HzClientDataStoreFactory.CLIENT_XML, xmlString);
-     *            config.addExternalDataStoreConfig(externalDataStoreConfig);
+     *            config.addDataLinkConfig(dataLinkConfig);
      *       }</pre>
      *      </p>
      *      </p>
@@ -684,7 +684,7 @@ public final class Sources {
      *           PredicateEx<EventJournalMapEvent<String, Integer>> predicate = ...;
      *           p.readFrom(Sources.remoteMapJournal(
      *               mapName,
-     *               ExternalDataStoreRef.externalDataStoreRef("my-hzclient-store"),
+     *               DataLinkRef.dataLinkRef("my-hzclient-store"),
      *               JournalInitialPosition.START_FROM_OLDEST,
      *               EventJournalMapEvent::getNewValue,
      *               predicate
@@ -696,14 +696,14 @@ public final class Sources {
     @Nonnull
     public static <T, K, V> StreamSource<T> remoteMapJournal(
             @Nonnull String mapName,
-            @Nonnull ExternalDataStoreRef externalDataStoreRef,
+            @Nonnull DataLinkRef dataLinkRef,
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends T> projectionFn,
             @Nonnull PredicateEx<? super EventJournalMapEvent<K, V>> predicateFn
     ) {
         return streamFromProcessorWithWatermarks("remoteMapJournalSource(" + mapName + ')',
                 false,
-                processorMetaSupplier -> StreamEventJournalP.streamRemoteMapSupplier(mapName, externalDataStoreRef, predicateFn,
+                processorMetaSupplier -> StreamEventJournalP.streamRemoteMapSupplier(mapName, dataLinkRef, predicateFn,
                         projectionFn,
                         initialPos,
                         processorMetaSupplier)
@@ -726,7 +726,7 @@ public final class Sources {
     }
 
     /**
-     * Convenience for {@link #remoteMapJournal(String, ExternalDataStoreRef, JournalInitialPosition, FunctionEx, PredicateEx)}
+     * Convenience for {@link #remoteMapJournal(String, DataLinkRef, JournalInitialPosition, FunctionEx, PredicateEx)}
      * which will pass only {@link EntryEventType#ADDED ADDED}
      * and {@link EntryEventType#UPDATED UPDATED} events and will
      * project the event's key and new value into a {@code Map.Entry}.
@@ -735,10 +735,10 @@ public final class Sources {
     @Nonnull
     public static <K, V> StreamSource<Entry<K, V>> remoteMapJournal(
             @Nonnull String mapName,
-            @Nonnull ExternalDataStoreRef externalDataStoreRef,
+            @Nonnull DataLinkRef dataLinkRef,
             @Nonnull JournalInitialPosition initialPos
     ) {
-        return remoteMapJournal(mapName, externalDataStoreRef, initialPos, mapEventToEntry(), mapPutEvents());
+        return remoteMapJournal(mapName, dataLinkRef, initialPos, mapEventToEntry(), mapPutEvents());
     }
 
     /**
