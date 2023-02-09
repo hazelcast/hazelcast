@@ -27,12 +27,12 @@ import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
+import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import org.example.Person;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -56,7 +56,11 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        databaseProvider = new H2DatabaseProvider();
+        initializeBeforeClass(new H2DatabaseProvider());
+    }
+
+    protected static void initializeBeforeClass(TestDatabaseProvider testDatabaseProvider) {
+        databaseProvider = testDatabaseProvider;
         dbConnectionUrl = databaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
 
         Config config = smallInstanceConfig();
@@ -68,7 +72,6 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
                         .setClassName(JdbcDataLinkFactory.class.getName())
                         .setProperty("jdbcUrl", dbConnectionUrl)
         );
-
 
         ClientConfig clientConfig = new ClientConfig();
 
@@ -97,7 +100,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         IMap<Integer, Person> map = client.getMap(tableName);
 
         Person p = map.get(0);
-        assertThat(p.getId()).isEqualTo(0);
+        assertThat(p.getId()).isZero();
         assertThat(p.getName()).isEqualTo("name-0");
     }
 
@@ -170,7 +173,6 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         assertJdbcRowsAnyOrder(randomTableName,
                 new Row(42, "some-name-42")
         );
-
     }
 
     /**
@@ -208,26 +210,21 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void testPutWithColumnMismatch() {
+    public void testPutWithGenericRecordIdColumnIgnored() {
         HazelcastInstance client = client();
         IMap<Integer, GenericRecord> map = client.getMap(tableName);
 
-        assertThatThrownBy(() -> {
-            map.put(42,
-                    GenericRecordBuilder.compact("org.example.Person")
-                            .setString("id", "42")
-                            .setString("name", "name-42")
-                            .build()
-            );
-        })
-                .isInstanceOf(HazelcastSerializationException.class)
-                .hasMessageContaining("Invalid field kind: 'id for Schema" +
-                        " { className = org.example.Person, numberOfComplexFields = 2," +
-                        " primitivesLength = 0, map = {name=FieldDescriptor{" +
-                        "name='name', kind=STRING, index=1, offset=-1, bitOffset=-1}," +
-                        " id=FieldDescriptor{name='id', kind=STRING, index=0, " +
-                        "offset=-1, bitOffset=-1}}}, valid field kinds : " +
-                        "[INT32, NULLABLE_INT32], found : STRING");
+        map.put(400,
+                GenericRecordBuilder.compact("org.example.Person")
+                        .setString("id", "42")
+                        .setString("name", "name-400")
+                        .build()
+        );
+
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(0, "name-0"),
+                new Row(400, "name-400")
+        );
     }
 
     @Test
@@ -250,11 +247,11 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         map.put(42, new Person(42, "name-42"));
         map.evictAll();
 
-        assertThat(map.size()).isEqualTo(0);
+        assertThat(map.size()).isZero();
         assertThat(jdbcRowsTable(tableName)).hasSize(2);
 
         Person p = map.remove(0);
-        assertThat(p.getId()).isEqualTo(0);
+        assertThat(p.getId()).isZero();
         assertThat(p.getName()).isEqualTo("name-0");
 
         assertThat(jdbcRowsTable(tableName)).hasSize(1);
