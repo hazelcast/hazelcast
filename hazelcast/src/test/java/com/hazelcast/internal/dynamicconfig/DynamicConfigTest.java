@@ -35,7 +35,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
@@ -676,22 +676,22 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExternalDataStoreConfig() {
+    public void testDataLinkConfig() {
         Properties properties = new Properties();
         properties.setProperty("prop1", "val1");
         properties.setProperty("prop2", "val2");
-        ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
+        DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName("some-name")
                 .setClassName("some-class-name")
                 .setProperties(properties);
 
 
-        driver.getConfig().addExternalDataStoreConfig(externalDataStoreConfig);
-        assertConfigurationsEqualOnAllMembers(externalDataStoreConfig);
+        driver.getConfig().addDataLinkConfig(dataLinkConfig);
+        assertConfigurationsEqualOnAllMembers(dataLinkConfig);
     }
 
-    private void assertConfigurationsEqualOnAllMembers(ExternalDataStoreConfig expectedConfig) {
-        assertConfigurationsEqualOnAllMembers(expectedConfig, Config::getExternalDataStoreConfig);
+    private void assertConfigurationsEqualOnAllMembers(DataLinkConfig expectedConfig) {
+        assertConfigurationsEqualOnAllMembers(expectedConfig, Config::getDataLinkConfig);
     }
 
     private void assertConfigurationsEqualOnAllMembers(CacheSimpleConfig config) {

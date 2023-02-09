@@ -130,6 +130,10 @@ public final class RestClient {
         return callWithRetries("POST");
     }
 
+    public Response put() {
+        return callWithRetries("PUT");
+    }
+
     private Response callWithRetries(String method) {
         return RetryUtils.retry(() -> call(method), retries);
     }

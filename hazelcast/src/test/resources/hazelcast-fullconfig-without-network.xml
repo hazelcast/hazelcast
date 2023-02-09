@@ -39,7 +39,7 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-5.2.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-5.3.xsd">
 
     <cluster-name>my-cluster</cluster-name>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
@@ -1088,12 +1088,12 @@
         <statement-timeout-millis>0</statement-timeout-millis>
     </sql>
 
-    <external-data-store name="mysql-database">
-        <class-name>com.hazelcast.datastore.JdbcDataStoreFactory</class-name>
+    <data-link name="mysql-database">
+        <class-name>com.hazelcast.datalink.JdbcDataLinkFactory</class-name>
         <properties>
             <property name="jdbcUrl">jdbc:mysql://dummy:3306</property>
         </properties>
         <shared>false</shared>
-    </external-data-store>
+    </data-link>
 
 </hazelcast>
