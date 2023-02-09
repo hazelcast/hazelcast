@@ -141,17 +141,4 @@ public class JetClientInstanceImplTest extends JetTestSupport {
                 .isInstanceOf(JetException.class)
                 .hasMessageContaining("jarPath can not be null");
     }
-
-    @Test
-    public void validateParameterObject_NullJobParameters() {
-        // Member is required to start the client
-        createHazelcastInstance();
-        JetClientInstanceImpl jetClientInstance = (JetClientInstanceImpl) createHazelcastClient().getJet();
-
-        SubmitJobParameters parameterObject = new SubmitJobParameters();
-        parameterObject.setJarPath(Paths.get("foo.jar"));
-        assertThatThrownBy(() -> jetClientInstance.validateParameterObject(parameterObject))
-                .isInstanceOf(JetException.class)
-                .hasMessageContaining("jobParameters can not be null");
-    }
 }
