@@ -17,6 +17,7 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 final class Options {
 
+    static final String DATA_LINK_REF_OPTION = "dataLinkRef";
     static final String CONNECTION_STRING_OPTION = "connectionString";
     static final String DATABASE_NAME_OPTION = "database";
     static final String COLLECTION_NAME_OPTION = "collection";

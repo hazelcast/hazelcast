@@ -16,10 +16,11 @@
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 /**
- * Batch-query MongoDB SQL Connector.
+ * Batch-query version of  MongoDB SQL Connector.
+ *
+ * {@inheritDoc}
  *
  * @see FieldResolver
- * TODO: add more
  */
 public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
 

@@ -33,8 +33,8 @@ import java.util.Map;
  */
 final class BsonTypes {
 
-    private static final Map<String, BsonType> BSON_NAME_TO_TYPE = generateTypes();
-    private static final Map<Class<?>, BsonType> JAVA_TYPE_TO_BSON_TYPE = generateTypesFromJava();
+    private static final Map<String, BsonType> BSON_NAME_TO_TYPE = generateBsonNameToBsonTypeMapping();
+    private static final Map<Class<?>, BsonType> JAVA_TYPE_TO_BSON_TYPE = generateJavaClassToBsonTypeMapping();
 
     private BsonTypes() {
     }
@@ -55,12 +55,13 @@ final class BsonTypes {
         return bsonType;
     }
 
-    private static Map<String, BsonType> generateTypes() {
+    private static Map<String, BsonType> generateBsonNameToBsonTypeMapping() {
         Map<String, BsonType> result = new HashMap<>();
 
         for (BsonType type : BsonType.values()) {
             result.put(type.name().toLowerCase(Locale.ROOT), type);
         }
+
         result.put("int", BsonType.INT32);
         result.put("long", BsonType.INT64);
         result.put("regex", BsonType.REGULAR_EXPRESSION);
@@ -72,7 +73,7 @@ final class BsonTypes {
         return result;
     }
 
-    private static Map<Class<?>, BsonType> generateTypesFromJava() {
+    private static Map<Class<?>, BsonType> generateJavaClassToBsonTypeMapping() {
         Map<Class<?>, BsonType> result = new HashMap<>();
 
         result.put(Integer.class, BsonType.INT32);
@@ -83,6 +84,8 @@ final class BsonTypes {
         result.put(long.class, BsonType.INT64);
         result.put(Double.class, BsonType.DOUBLE);
         result.put(double.class, BsonType.DOUBLE);
+        result.put(float.class, BsonType.DOUBLE);
+        result.put(Float.class, BsonType.DOUBLE);
         result.put(BsonDouble.class, BsonType.DOUBLE);
         result.put(BsonTimestamp.class, BsonType.TIMESTAMP);
         result.put(String.class, BsonType.STRING);

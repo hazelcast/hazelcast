@@ -107,6 +107,17 @@ class MongoTable extends JetTable {
 
     }
 
+    @Override
+    public String toString() {
+        return "MongoTable{" +
+                "databaseName='" + databaseName + '\'' +
+                ", collectionName='" + collectionName + '\'' +
+                ", connectionString='" + connectionString + '\'' +
+                ", options=" + options +
+                ", streaming=" + streaming +
+                '}';
+    }
+
     static final class MongoObjectKey implements PlanObjectKey {
         private final String schemaName;
         private final String tableName;
@@ -130,28 +141,21 @@ class MongoTable extends JetTable {
             if (this == o) {
                 return true;
             }
-            if (o == null || getClass() != o.getClass()) {
+            if (!(o instanceof MongoObjectKey)) {
                 return false;
             }
             MongoObjectKey that = (MongoObjectKey) o;
-            return Objects.equals(databaseName, that.databaseName) && Objects.equals(collectionName,
-                    that.collectionName) && Objects.equals(fields, that.fields) && Objects.equals(options,
-                    that.options);
+            return Objects.equals(schemaName, that.schemaName)
+                    && Objects.equals(tableName, that.tableName)
+                    && Objects.equals(databaseName, that.databaseName)
+                    && Objects.equals(collectionName, that.collectionName)
+                    && Objects.equals(fields, that.fields)
+                    && Objects.equals(options, that.options);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(databaseName, collectionName, fields, options);
-        }
-
-        @Override
-        public String toString() {
-            return "MongoObjectKey{" +
-                    "databaseName='" + databaseName + '\'' +
-                    ", collectionName='" + collectionName + '\'' +
-                    ", fields=" + fields +
-                    ", options=" + options +
-                    '}';
+            return Objects.hash(schemaName, tableName, databaseName, collectionName, fields, options);
         }
     }
 }

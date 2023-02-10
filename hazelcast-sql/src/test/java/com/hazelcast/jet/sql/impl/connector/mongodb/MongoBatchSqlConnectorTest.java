@@ -161,7 +161,7 @@ public class MongoBatchSqlConnectorTest extends SqlTestSupport {
                 false, "Solo");
     }
     @Test
-    public void insertsIntoMongo_parametrized_withoutId() {
+    public void insertsIntoMongo_hardcoded_withoutId() {
         insertsIntoMongo(false, "insert into " + methodName() + "(jedi, firstName, lastName) " +
                 "values (false, 'Han', 'Solo')");
     }

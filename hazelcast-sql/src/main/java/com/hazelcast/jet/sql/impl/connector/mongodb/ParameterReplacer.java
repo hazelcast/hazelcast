@@ -17,17 +17,13 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.jet.core.ProcessorSupplier.Context;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import org.bson.BsonString;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 final class ParameterReplacer {
-    private static final Pattern REPLACE_PARAM_PATTERN = Pattern.compile("/replaceParam:(\\d+)/");
 
     private ParameterReplacer() {
     }
@@ -45,22 +41,17 @@ final class ParameterReplacer {
     static Bson replacePlaceholders(Document doc, ExpressionEvalContext evalContext) {
         assert DynamicParameter.parse(doc) == null;
         for (Entry<String, Object> entry : doc.entrySet()) {
-            if (entry.getValue() instanceof List) {
-                List<?> value = (List<?>) entry.getValue();
-                for (Object val : value) {
-                   if (!(val instanceof Document)) {
-                       throw new UnsupportedOperationException("idk what to do");
-                   }
+            Object entryValue = entry.getValue();
 
-                   Document inner = (Document) val;
-                   replacePlaceholders(inner, evalContext);
+            if (entryValue instanceof List) {
+                for (Object val : (List<?>) entryValue) {
+                   if (val instanceof Document) {
+                       replacePlaceholders((Document) val, evalContext);
+                   }
                 }
-            } else if (entry.getValue() instanceof String) {
-                forString(evalContext, entry);
-            } else if (entry.getValue() instanceof BsonString) {
-                forBsonString(evalContext, entry);
-            } else if (entry.getValue() instanceof Document) {
-                Document value = (Document) entry.getValue();
+
+            } else if (entryValue instanceof Document) {
+                Document value = (Document) entryValue;
                 DynamicParameter param = DynamicParameter.parse(value);
                 if (param != null) {
                     entry.setValue(evalContext.getArgument(param.getIndex()));
@@ -71,25 +62,4 @@ final class ParameterReplacer {
         }
         return doc;
     }
-
-    private static void forBsonString(ExpressionEvalContext evalContext, Entry<String, Object> entry) {
-        String string = ((BsonString) entry.getValue()).asString().toString();
-        Matcher matcher = REPLACE_PARAM_PATTERN.matcher(string);
-        if (matcher.find()) {
-            int number = Integer.parseInt(matcher.group(1));
-            Object argument = evalContext.getArgument(number);
-            entry.setValue(argument);
-        }
-    }
-
-    private static void forString(ExpressionEvalContext evalContext, Entry<String, Object> entry) {
-        String string = entry.getValue().toString();
-        Matcher matcher = REPLACE_PARAM_PATTERN.matcher(string);
-        if (matcher.find()) {
-            int number = Integer.parseInt(matcher.group(1));
-            Object argument = evalContext.getArgument(number);
-            entry.setValue(argument);
-        }
-    }
-
 }
