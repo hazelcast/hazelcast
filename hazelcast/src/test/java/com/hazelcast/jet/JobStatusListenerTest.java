@@ -136,14 +136,14 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
                     assertTailEqualsEventually(listener.log,
                             "Jet: NOT_RUNNING -> STARTING",
                             "Jet: STARTING -> RUNNING",
-                            "User: RUNNING -> SUSPENDED (SUSPEND)",
-                            "User: SUSPENDED -> NOT_RUNNING (RESUME)",
+                            "User: RUNNING -> SUSPENDED (Suspend)",
+                            "User: SUSPENDED -> NOT_RUNNING (Resume)",
                             "Jet: NOT_RUNNING -> STARTING",
                             "Jet: STARTING -> RUNNING",
-                            "User: RUNNING -> NOT_RUNNING (RESTART)",
+                            "User: RUNNING -> NOT_RUNNING (Restart)",
                             "Jet: NOT_RUNNING -> STARTING",
                             "Jet: STARTING -> RUNNING",
-                            "User: RUNNING -> FAILED (CANCEL)");
+                            "User: RUNNING -> FAILED (Cancel)");
                 });
     }
 
@@ -184,7 +184,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
                             "Jet: RUNNING -> NOT_RUNNING (com.hazelcast.jet.RestartableException)",
                             "Jet: NOT_RUNNING -> STARTING",
                             "Jet: STARTING -> RUNNING",
-                            "User: RUNNING -> FAILED (CANCEL)");
+                            "User: RUNNING -> FAILED (Cancel)");
                 });
     }
 
@@ -200,7 +200,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
                             "Jet: NOT_RUNNING -> STARTING",
                             "Jet: STARTING -> RUNNING",
                             "Jet: RUNNING -> SUSPENDED (" + failure + ")",
-                            "User: SUSPENDED -> FAILED (CANCEL)");
+                            "User: SUSPENDED -> FAILED (Cancel)");
                 });
     }
 
@@ -229,7 +229,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     public void testLightListener_cancelJob() {
         testLightListener(TestSources.itemStream(1, (t, s) -> s),
                 Job::cancel,
-                "User: RUNNING -> FAILED (CANCEL)");
+                "User: RUNNING -> FAILED (Cancel)");
     }
 
     @Test

@@ -8019,7 +8019,7 @@ public class MemberCompatibilityNullTest_2_6 {
     @Test
     public void test_JetAddJobStatusListenerCodec_encodeResponse() {
         int fileClientMessageIndex = 906;
-        ClientMessage encoded = JetAddJobStatusListenerCodec.encodeResponse(aUUID);
+        ClientMessage encoded = JetAddJobStatusListenerCodec.encodeResponse(null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

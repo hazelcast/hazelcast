@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the specified job status listener. If there is no such listener
  * added before, this call does no change in the cluster and returns false.
  */
-@Generated("48b60fd302935957034a2feb82eed305")
+@Generated("3b3c4c253322dfc700d90b111d18258a")
 public final class JetRemoveJobStatusListenerCodec {
     //hex: 0xFE1400
     public static final int REQUEST_MESSAGE_TYPE = 16651264;
@@ -56,12 +56,12 @@ public final class JetRemoveJobStatusListenerCodec {
     public static class RequestParameters {
 
         /**
-         * Id of job.
+         * ID of job.
          */
         public long jobId;
 
         /**
-         * Id of registered listener.
+         * ID of registered listener.
          */
         public java.util.UUID registrationId;
     }

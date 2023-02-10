@@ -162,6 +162,25 @@ public interface Job {
      */
     boolean isUserCancelled();
 
+    /**
+     * Associates the given listener to this job. The listener is automatically
+     * removed after a {@linkplain JobStatus#isTerminal terminal event}.
+     *
+     * @return The registration id
+     * @throws UnsupportedOperationException if the cluster version is less than 5.3
+     * @since 5.3
+     */
+    UUID addStatusListener(@Nonnull JobStatusListener listener);
+
+    /**
+     * Stops delivering all events to the listener with the given registration id.
+     *
+     * @return Whether the specified registration was removed
+     * @throws UnsupportedOperationException if the cluster version is less than 5.3
+     * @since 5.3
+     */
+    boolean removeStatusListener(@Nonnull UUID id);
+
     // ### Methods below apply only to normal (non-light) jobs.
 
 
@@ -361,23 +380,4 @@ public interface Job {
      * @throws UnsupportedOperationException if called for a light job
      */
     JobStateSnapshot exportSnapshot(String name);
-
-    /**
-     * Associates the given listener to this job. The listener is automatically
-     * removed after a {@linkplain JobStatus#isTerminal terminal event}.
-     *
-     * @return The registration id
-     * @throws UnsupportedOperationException if the cluster version is less than 5.3
-     * @since 5.3
-     */
-    UUID addStatusListener(@Nonnull JobStatusListener listener);
-
-    /**
-     * Stops delivering all events to the listener with the given registration id.
-     *
-     * @return Whether the specified registration was removed
-     * @throws UnsupportedOperationException if the cluster version is less than 5.3
-     * @since 5.3
-     */
-    boolean removeStatusListener(@Nonnull UUID id);
 }

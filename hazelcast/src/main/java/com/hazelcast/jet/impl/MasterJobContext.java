@@ -410,7 +410,7 @@ public class MasterJobContext {
             terminationRequest = new TerminationRequest(mode, userInitiated);
             // handle cancellation of a suspended job
             if (localStatus == SUSPENDED || localStatus == SUSPENDED_EXPORTING_SNAPSHOT) {
-                mc.setJobStatus(FAILED, mode.actionAfterTerminate().toString(), true);
+                mc.setJobStatus(FAILED, mode.actionAfterTerminate().description(), true);
                 setFinalResult(createCancellationException());
             }
             if (mode.isWithTerminalSnapshot()) {
@@ -714,9 +714,9 @@ public class MasterJobContext {
                         ? ((JobTerminateRequestedException) failure).mode().actionAfterTerminate() : null;
                 mc.snapshotContext().onExecutionTerminated();
 
-                String description = requestedTerminationMode().isPresent()
-                        ? terminationRequest.mode.actionAfterTerminate().toString()
-                        : failure != null ? failure.toString() : null;
+                String description = requestedTerminationMode()
+                        .map(mode -> mode.actionAfterTerminate().description())
+                        .orElse(failure != null ? failure.toString() : null);
                 boolean userRequested = isUserInitiatedTermination();
 
                 // if restart was requested, restart immediately
@@ -883,7 +883,7 @@ public class MasterJobContext {
                 logger.info("Not resuming " + mc.jobIdString() + ": not " + SUSPENDED + ", but " + mc.jobStatus());
                 return;
             }
-            mc.setJobStatus(NOT_RUNNING, "RESUME", true);
+            mc.setJobStatus(NOT_RUNNING, "Resume", true);
         } finally {
             mc.unlock();
         }

@@ -7115,7 +7115,7 @@ public class ClientCompatibilityNullTest_2_6 {
     public void test_JetAddJobStatusListenerCodec_decodeResponse() {
         int fileClientMessageIndex = 906;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aUUID, JetAddJobStatusListenerCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, JetAddJobStatusListenerCodec.decodeResponse(fromFile)));
     }
 
     private static class JetAddJobStatusListenerCodecHandler extends JetAddJobStatusListenerCodec.AbstractEventHandler {

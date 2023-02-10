@@ -211,7 +211,7 @@ public final class LightMasterContext {
                 }
                 jobCompletionFuture.completeExceptionally(fail);
                 jobEventService.publishEvent(jobId, RUNNING, FAILED, requestedTerminationMode != null
-                            ? requestedTerminationMode.actionAfterTerminate().toString() : fail.toString(),
+                            ? requestedTerminationMode.actionAfterTerminate().description() : fail.toString(),
                         userInitiatedTermination);
             }
             jobEventService.removeAllEventListeners(jobId);
