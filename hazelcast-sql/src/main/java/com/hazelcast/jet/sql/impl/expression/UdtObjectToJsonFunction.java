@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.expression;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
@@ -58,17 +59,17 @@ public class UdtObjectToJsonFunction extends UniExpressionWithType<HazelcastJson
             return null;
         }
 
-        if (obj instanceof GenericRecord) {
-            throw QueryException.error("CAST(object AS JSON) is only supported for Java Types");
-        }
-
         final Map<String, Object> value = new HashMap<>();
-        convert(obj, value, queryDataType, newSetFromMap(new IdentityHashMap<>()));
+        if (obj instanceof GenericRecord) {
+            convertGenericRecord((GenericRecord) obj, queryDataType, value);
+        } else {
+            convertPojo(obj, value, queryDataType, newSetFromMap(new IdentityHashMap<>()));
+        }
 
         return new HazelcastJsonValue(JsonCreationUtil.serializeValue(value));
     }
 
-    private void convert(Object source, Map<String, Object> values, QueryDataType dataType, final Set<Object> seenObjects) {
+    private void convertPojo(Object source, Map<String, Object> values, QueryDataType dataType, final Set<Object> seenObjects) {
         if (!seenObjects.add(source)) {
             throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "Cycle detected in row value");
         }
@@ -80,8 +81,79 @@ public class UdtObjectToJsonFunction extends UniExpressionWithType<HazelcastJson
             } else {
                 final Map<String, Object> subFieldValue = new HashMap<>();
                 values.put(field.getName(), subFieldValue);
-                convert(fieldValue, subFieldValue, field.getDataType(), seenObjects);
+                convertPojo(fieldValue, subFieldValue, field.getDataType(), seenObjects);
             }
+        }
+    }
+
+    private void convertGenericRecord(GenericRecord source, QueryDataType dataType, Map<String, Object> values) {
+        for (final QueryDataType.QueryDataTypeField field : dataType.getObjectFields()) {
+            final Object value;
+            switch (field.getDataType().getTypeFamily()) {
+                case VARCHAR:
+                    value = source.getString(field.getName());
+                    break;
+                case BOOLEAN:
+                    value = source.getBoolean(field.getName());
+                    break;
+                case TINYINT:
+                    value = source.getInt8(field.getName());
+                    break;
+                case SMALLINT:
+                    value = source.getInt16(field.getName());
+                    break;
+                case INTEGER:
+                    value = source.getInt32(field.getName());
+                    break;
+                case BIGINT:
+                    value = source.getInt64(field.getName());
+                    break;
+                case DECIMAL:
+                    value = source.getDecimal(field.getName());
+                    break;
+                case REAL:
+                    value = source.getFloat32(field.getName());
+                    break;
+                case DOUBLE:
+                    value = source.getFloat64(field.getName());
+                    break;
+                case TIME:
+                    value = source.getTime(field.getName());
+                    break;
+                case DATE:
+                    value = source.getDate(field.getName());
+                    break;
+                case TIMESTAMP:
+                    value = source.getTimestamp(field.getName());
+                    break;
+                case TIMESTAMP_WITH_TIME_ZONE:
+                    value = source.getTimestampWithTimezone(field.getName());
+                    break;
+                case OBJECT:
+                    if (field.getDataType().isCustomType()) {
+                        value = new HashMap<String, Object>();
+                        convertGenericRecord(
+                                source.getGenericRecord(field.getName()),
+                                field.getDataType(),
+                                (Map<String, Object>) value
+                        );
+                    } else {
+                        throw new HazelcastException("Unsupported field type " + field.getDataType()
+                                + " for field " + field.getName());
+                    }
+                    break;
+                case INTERVAL_YEAR_MONTH:
+                case INTERVAL_DAY_SECOND:
+                case MAP:
+                case JSON:
+                case ROW:
+                case NULL:
+                default:
+                    throw new HazelcastException("Unsupported field type " + field.getDataType()
+                            + " for field " + field.getName());
+            }
+
+            values.put(field.getName(), value);
         }
     }
 

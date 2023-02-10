@@ -17,9 +17,12 @@
 package com.hazelcast.jet.sql.impl.type;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
 import com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.User;
 import com.hazelcast.map.IMap;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -44,6 +47,29 @@ public class UdtObjectToJsonFunctionTest extends SqlJsonTestSupport {
     public static void beforeClass() {
         Config config = smallInstanceConfig()
                 .setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
+
+        final SerializationConfig serializationConfig = config.getSerializationConfig();
+        final ClassDefinition officeType = new ClassDefinitionBuilder(1, 3)
+                .addLongField("id")
+                .addStringField("name")
+                .build();
+
+        final ClassDefinition organizationType = new ClassDefinitionBuilder(1, 2)
+                .addLongField("id")
+                .addStringField("name")
+                .addPortableField("office", officeType)
+                .build();
+
+        final ClassDefinition userType = new ClassDefinitionBuilder(1, 1)
+                .addLongField("id")
+                .addStringField("name")
+                .addPortableField("organization", organizationType)
+                .build();
+
+        serializationConfig.addClassDefinition(officeType);
+        serializationConfig.addClassDefinition(organizationType);
+        serializationConfig.addClassDefinition(userType);
+
         initializeWithClient(3, config, null);
     }
 
@@ -110,6 +136,24 @@ public class UdtObjectToJsonFunctionTest extends SqlJsonTestSupport {
         assertThatThrownBy(() -> instance().getSql().execute("SELECT CAST(CAST((2, 'user', null) AS UserType) as JSON)"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Complex type specifications are not supported");
+    }
+
+    @Test
+    public void test_compact() {
+        setupCompactTypesForNestedQuery(client());
+        client().getSql().execute("INSERT INTO test VALUES (1, 1, 'user1', (10, 'organization1', (100, 'office1')))");
+
+        assertJsonRowsAnyOrder("SELECT CAST(organization AS JSON) FROM test", rows(1,
+                json("{\"name\":\"organization1\",\"id\":10,\"office\":{\"name\":\"office1\",\"id\":100}}")));
+    }
+
+    @Test
+    public void test_portable() {
+        setupPortableTypesForNestedQuery(client());
+        client().getSql().execute("INSERT INTO test VALUES (1, 1, 'user1', (10, 'organization1', (100, 'office1')))");
+
+        assertJsonRowsAnyOrder("SELECT CAST(organization AS JSON) FROM test", rows(1,
+                json("{\"name\":\"organization1\",\"id\":10,\"office\":{\"name\":\"office1\",\"id\":100}}")));
     }
 
     private void initDefault() {

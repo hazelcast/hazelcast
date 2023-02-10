@@ -202,14 +202,12 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                     + " to " + argTypes.get(1).getSqlTypeName());
         }
 
-        assert operands.get(0) instanceof SqlCall;
+        assert operands.get(0) instanceof SqlCall
+                : "CAST column list argument is not an SQL call";
         final SqlCall call = (SqlCall) operands.get(0);
 
-        assert call.getOperator().getKind().equals(SqlKind.ROW);
-        if (!call.getOperator().getKind().equals(SqlKind.ROW)) {
-            super.validateColumnListParams(function, argTypes, operands);
-            return;
-        }
+        assert call.getOperator().getKind().equals(SqlKind.ROW)
+                : "CAST column list argument is not an RowExpression call";
 
         throw QueryException.error("Cannot convert ROW to JSON");
     }
