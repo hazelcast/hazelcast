@@ -28,8 +28,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
 public class ReadMongoParams<I> implements Serializable {
