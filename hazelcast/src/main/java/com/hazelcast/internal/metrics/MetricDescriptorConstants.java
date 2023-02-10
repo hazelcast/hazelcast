@@ -626,8 +626,14 @@ public final class MetricDescriptorConstants {
     public static final String TSTORE_HLOG_COMPACTION_DEAD_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "deadRecords";
     public static final String TSTORE_HLOG_COMPACTION_VISITED_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "visitedRecords";
     public static final String TSTORE_HLOG_COMPACTION_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "count";
+    public static final String TSTORE_HLOG_COMPACTION_QUEUE_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "queue.count";
     public static final String TSTORE_HLOG_COMPACTION_FAILED_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "failed.count";
     public static final String TSTORE_HLOG_COMPACTION_IN_PROGRESS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "inProgress.count";
+
+    public static final String TSTORE_HLOG_COMPACTION_QUEUE_TIME_TOTAL = TSTORE_HLOG_COMPACTION_PREFIX + "queueTime.total";
+    public static final String TSTORE_HLOG_COMPACTION_QUEUE_TIME_MIN = TSTORE_HLOG_COMPACTION_PREFIX + "queueTime.min";
+    public static final String TSTORE_HLOG_COMPACTION_QUEUE_TIME_MAX = TSTORE_HLOG_COMPACTION_PREFIX + "queueTime.max";
+    public static final String TSTORE_HLOG_COMPACTION_QUEUE_TIME_AVG = TSTORE_HLOG_COMPACTION_PREFIX + "queueTime.avg";
 
     public static final String TSTORE_HLOG_COMPACTION_TIME_TOTAL = TSTORE_HLOG_COMPACTION_PREFIX + "time.total";
     public static final String TSTORE_HLOG_COMPACTION_TIME_MIN = TSTORE_HLOG_COMPACTION_PREFIX + "time.min";
