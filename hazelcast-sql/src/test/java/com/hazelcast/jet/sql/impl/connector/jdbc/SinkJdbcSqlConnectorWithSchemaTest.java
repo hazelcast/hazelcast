@@ -65,6 +65,7 @@ public class SinkJdbcSqlConnectorWithSchemaTest extends JdbcSqlTestSupport {
                 + ")"
         );
     }
+
     @Test
     public void sinkIntoTableWithExternalSchemaName() throws Exception {
         createTable(tableName);
