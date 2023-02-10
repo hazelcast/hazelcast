@@ -355,14 +355,12 @@ public class MasterJobContext {
                 mc.writeJobExecutionRecordSafe(true);
             } catch (IndeterminateOperationStateException e) {
                 // JobExecutionRecord is not safe, so we cannot restore from snapshot if it will be needed.
-                // But even it there is no snapshot, the cluster probably is in unsafe state,
+                // But even if there is no snapshot, the cluster probably is in unsafe state,
                 // so it is better to wait with starting the job anyway.
-                // trigger restart via exception, ordinary exception would cause job failure
+                // Trigger a restart via exception, ordinary exception would cause job failure
                 logger.warning("Job " + mc.jobName() +
                         " initial update of JobExecutionRecord was indeterminate." +
                         " Failed to start job. Will retry.");
-                // TODO: this restarts immediately, it would be better to wait/schedule restart in safe state
-                //  the backup ack timeout provides some delay, but blocks coordinator thread.
                 throw new JobTerminateRequestedException(RESTART_FORCEFUL);
             }
 

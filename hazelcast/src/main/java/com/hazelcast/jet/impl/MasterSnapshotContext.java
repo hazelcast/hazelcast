@@ -121,8 +121,8 @@ class MasterSnapshotContext {
         }
 
         /**
-         * Complete snapshot future if any.
-         * @param error Error or null for successful completion.
+         * Complete snapshot future, if any.
+         * @param error Error, or null for successful completion.
          */
         public void completeFuture(@Nullable Throwable error) {
             if (future != null) {

@@ -251,14 +251,14 @@ public class MasterContext {
 
     /**
      * Ensure that {@link JobExecutionRecord} is safe, that is: it is stored in IMap and all backups succeeded.
-     * @param canCreate
+     *
      * @throws IndeterminateOperationStateException when update was attempted and not all backups succeeded
      */
     void writeJobExecutionRecordSafe(boolean canCreate) {
         coordinationService.assertOnCoordinatorThread();
 
         // Note that this is not a true optimistic locking.
-        // However, there is only one instance of MasterContext for given job in cluster
+        // However, there is only one instance of MasterContext for a given job in the cluster
         // so there is no risk of lost updates.
         while (!coordinationService.jobRepository().writeJobExecutionRecord(jobRecord.getJobId(), jobExecutionRecord,
                     canCreate)) {
