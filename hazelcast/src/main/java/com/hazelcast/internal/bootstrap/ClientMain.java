@@ -17,6 +17,7 @@
 package com.hazelcast.internal.bootstrap;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
@@ -34,7 +35,10 @@ public class ClientMain {
         System.setProperty(ALTO_ENABLED.getName(), "true");
         System.setProperty(ALTO_EVENTLOOP_COUNT.getName(), "" + Runtime.getRuntime().availableProcessors());
         HazelcastInstance server = Hazelcast.newHazelcastInstance();
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getAltoConfig().setEnabled(true);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         System.out.println("Client created");
         IMap<Integer, Integer> map = client.getMap("foo");
 

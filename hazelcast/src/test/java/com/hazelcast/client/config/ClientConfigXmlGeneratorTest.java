@@ -777,6 +777,14 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(originalConfig.getResubmissionMode(), generatedConfig.getResubmissionMode());
     }
 
+    @Test
+    public void testAltoConfig() {
+        ClientAltoConfig originalConfig = new ClientAltoConfig().setEnabled(true);
+        clientConfig.setAltoConfig(originalConfig);
+        ClientAltoConfig generatedConfig = newConfigViaGenerator().getAltoConfig();
+        assertEquals(originalConfig, generatedConfig);
+    }
+
     private ClientConfig newConfigViaGenerator() {
         String xml = ClientConfigXmlGenerator.generate(clientConfig, DEBUG ? 5 : -1);
         debug(xml);

@@ -88,4 +88,12 @@ public interface ClientConnectionManager extends ConnectionListenable<ClientConn
     String getConnectionType();
 
     void addClientConnectionProcessListener(ClientConnectionProcessListener listener);
+
+    /**
+     * Returns {@code true} if the client is unisocket, {@code false} otherwise.
+     * <p>
+     * The client operates on the unisocket mode only if the smart routing and
+     * the Alto config is disabled.
+     */
+    boolean isUnisocketClient();
 }

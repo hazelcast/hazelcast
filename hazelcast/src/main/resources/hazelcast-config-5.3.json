@@ -236,6 +236,9 @@
         },
         "sql": {
           "$ref": "#/definitions/ClientSql"
+        },
+        "alto": {
+          "$ref": "#/definitions/ClientAlto"
         }
       }
     },
@@ -4303,6 +4306,18 @@
           "description": "The configuration when to retry query that fails with reasons CONNECTION_PROBLEM, PARTITION_DISTRIBUTION, TOPOLOGY_CHANGE."
         }
       }
+    },
+    "ClientAlto": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enables or disables the Alto-aware mode."
+        }
+      },
+      "required": ["enabled"],
+      "description": "Configures the client for Alto, which is the next generation Hazelcast that uses thread-per-core model. Alto-aware clients will maintain connections to all cores of all cluster members. The client will route partition-specific invocations to the correct core of the correct member in the best effort basis. This configuration is introduced as BETA, and it might be subject to changes, or it can be removed in future releases without a prior notice."
     },
     "OutboundPortDefinition": {
       "anyOf": [

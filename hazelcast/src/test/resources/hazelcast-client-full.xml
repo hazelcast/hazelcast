@@ -351,4 +351,6 @@
     <sql>
         <resubmission-mode>RETRY_SELECTS</resubmission-mode>
     </sql>
+
+    <alto enabled="true"/>
 </hazelcast-client>
