@@ -24,9 +24,23 @@ public class MySQLDatabaseProvider implements TestDatabaseProvider {
 
     private String jdbcUrl;
 
+    private final boolean rootUser;
+
+    public MySQLDatabaseProvider(boolean rootUser) {
+        this.rootUser = rootUser;
+    }
+
+    public MySQLDatabaseProvider() {
+        this.rootUser = false;
+    }
     @Override
     public String createDatabase(String dbName) {
-        jdbcUrl = "jdbc:tc:mysql:8.0.29:///" + dbName + "?user=root?password=test?TC_DAEMON=true&sessionVariables=sql_mode=ANSI";
+        if (rootUser) {
+            // Connect as root user so that this user can create a new DB (aka schema)
+            jdbcUrl = "jdbc:tc:mysql:8.0.29:///" + dbName + "?user=root?password=test?TC_DAEMON=true&sessionVariables=sql_mode=ANSI";
+        } else {
+            jdbcUrl = "jdbc:tc:mysql:8.0.29:///" + dbName + "?TC_DAEMON=true&sessionVariables=sql_mode=ANSI";
+        }
         waitForDb(jdbcUrl, LOGIN_TIMEOUT);
         return jdbcUrl;
     }

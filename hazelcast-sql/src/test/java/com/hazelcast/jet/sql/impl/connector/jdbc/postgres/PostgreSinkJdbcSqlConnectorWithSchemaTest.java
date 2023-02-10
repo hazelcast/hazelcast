@@ -18,30 +18,64 @@ package com.hazelcast.jet.sql.impl.connector.jdbc.postgres;
 
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
-import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
 import static org.junit.Assert.fail;
 
-@Category(NightlyTest.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@Category(QuickTest.class)
 public class PostgreSinkJdbcSqlConnectorWithSchemaTest extends JdbcSqlTestSupport {
 
-    // Quoted table name in the DB
-    private String tableName = "\"table.with.dot.in.name\"";
+    @Parameter
+    public String schemaName;
 
-    // Quoted schema  name in the DB
-    private static final String schemaName = "\"schema.with.dot.in.name\"";
+
+    @Parameter(value = 1)
+    public String tableName;
+
+    @Parameter(value = 2)
+    public String externalTableName;
+
+    @Parameters(name = "{index}: schemaName - {0} tableName - {0}")
+    public static List<Object[]> data() {
+        return Arrays.asList(new Object[][]{
+                {
+                        "schema1",
+                        "schema1.table1",
+                        "schema1.table1"
+                },
+                {
+                        "\"schema.with.dot.in.name\"",
+                        "\"schema.with.dot.in.name\".\"table.with.dot.in.name\"",
+                        // Calcite problem !
+                        // Currently EXTERNAL NAME can not be quoted with " character
+                        // so use backtick for quoting
+                        "`schema.with.dot.in.name`.`table.with.dot.in.name`"
+                }
+        });
+    }
 
     @BeforeClass
     public static void beforeClass() {
         initialize(new PostgresDatabaseProvider());
+    }
+
+    @Before
+    public void setUp() throws Exception {
         try {
             // Create schema for the test suite
             executeJdbc("CREATE SCHEMA IF NOT EXISTS " + schemaName);
@@ -51,13 +85,9 @@ public class PostgreSinkJdbcSqlConnectorWithSchemaTest extends JdbcSqlTestSuppor
     }
 
     protected void myCreateMapping(String mappingName) {
-        // Calcite problem !
-        // Currently EXTERNAL NAME can not be
-        //\"\"schema.with.dot.in.name\".\"table.with.dot.in.name\"\"
-        // so use backtick for quoting
         execute(
                 "CREATE MAPPING \"" + mappingName + "\""
-                + " EXTERNAL NAME \"`schema.with.dot.in.name`.`table.with.dot.in.name`\""
+                + " EXTERNAL NAME \"" + externalTableName + "\""
                 + " ("
                 + " id INT, "
                 + " name VARCHAR "
@@ -69,10 +99,6 @@ public class PostgreSinkJdbcSqlConnectorWithSchemaTest extends JdbcSqlTestSuppor
         );
     }
 
-    @Before
-    public void setUp() throws Exception {
-        tableName = schemaName + "." + tableName;
-    }
 
     @Test
     public void sinkIntoTableWithExternalSchemaName() throws Exception {

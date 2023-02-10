@@ -18,30 +18,64 @@ package com.hazelcast.jet.sql.impl.connector.jdbc.mysql;
 
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
-import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
 import static org.junit.Assert.fail;
 
-@Category(NightlyTest.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@Category(QuickTest.class)
 public class MySQLSinkIntoJdbcSqlConnectorWithSchemaTest extends JdbcSqlTestSupport {
 
-    // Quoted table name in the DB
-    String tableName = "`table.with.dot.in.name`";
+    @Parameter
+    public String schemaName;
 
-    // Quoted schema  name in the DB
-    private static final String schemaName = "`schema.with.dot.in.name`";
+
+    @Parameter(value = 1)
+    public String tableName;
+
+    @Parameter(value = 2)
+    public String externalTableName;
+
+
+    //Single parameter, use Object[]
+    @Parameters(name = "{index}: schemaName - {0} tableName - {0}")
+    public static List<Object[]> data() {
+        return Arrays.asList(new Object[][]{
+                {
+                        "schema1",
+                        "schema1.table1",
+                        "schema1.table1"
+                },
+                {
+                        "`schema.with.dot.in.name`",
+                        "`schema.with.dot.in.name`.`table.with.dot.in.name`",
+                        "`schema.with.dot.in.name`.`table.with.dot.in.name`"
+                }
+        });
+    }
+
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(new MySQLDatabaseProvider());
+        initialize(new MySQLDatabaseProvider(true));
+    }
+
+    @Before
+    public void setUp() throws Exception {
         try {
             // MySQL does not have schema concept. It has DB concept
             // Create DB for the test suite
@@ -51,15 +85,10 @@ public class MySQLSinkIntoJdbcSqlConnectorWithSchemaTest extends JdbcSqlTestSupp
         }
     }
 
-    @Before
-    public void setUp() throws Exception {
-        tableName = schemaName + "." + tableName;
-    }
-
     protected void myCreateMapping(String mappingName) {
         execute(
                 "CREATE MAPPING \"" + mappingName + "\""
-                + " EXTERNAL NAME \"" + tableName + "\""
+                + " EXTERNAL NAME \"" + externalTableName + "\""
                 + " ("
                 + " id INT, "
                 + " name VARCHAR "
@@ -74,7 +103,6 @@ public class MySQLSinkIntoJdbcSqlConnectorWithSchemaTest extends JdbcSqlTestSupp
     @Test
     public void sinkIntoTableWithExternalSchemaName() throws Exception {
         createTable(tableName);
-
 
         String mappingName = "mapping_1";
         myCreateMapping(mappingName);
