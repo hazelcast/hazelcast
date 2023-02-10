@@ -96,7 +96,7 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
     private final boolean isBackupAckToClientEnabled;
     private final ClientConnectionManager connectionManager;
     private final ClientPartitionService partitionService;
-    private final boolean isSmartRoutingEnabled;
+    private final boolean isUnisocketClient;
 
     public ClientInvocationServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
@@ -113,10 +113,10 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
         this.operationBackupTimeoutMillis = properties.getInteger(OPERATION_BACKUP_TIMEOUT_MILLIS);
         this.shouldFailOnIndeterminateOperationState = properties.getBoolean(FAIL_ON_INDETERMINATE_OPERATION_STATE);
         client.getMetricsRegistry().registerStaticMetrics(this, CLIENT_PREFIX_INVOCATIONS);
-        this.isSmartRoutingEnabled = client.getClientConfig().getNetworkConfig().isSmartRouting();
-        this.isBackupAckToClientEnabled = isSmartRoutingEnabled && client.getClientConfig().isBackupAckToClientEnabled();
         this.connectionManager = client.getConnectionManager();
         this.partitionService = client.getClientPartitionService();
+        this.isUnisocketClient = connectionManager.isUnisocketClient();
+        this.isBackupAckToClientEnabled = !isUnisocketClient && client.getClientConfig().isBackupAckToClientEnabled();
     }
 
     private long initInvocationRetryPauseMillis() {
@@ -328,8 +328,8 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
         return shouldFailOnIndeterminateOperationState;
     }
 
-    public boolean isSmartRoutingEnabled() {
-        return isSmartRoutingEnabled;
+    public boolean isUnisocketClient() {
+        return isUnisocketClient;
     }
 
     private class BackupTimeoutTask implements Runnable {

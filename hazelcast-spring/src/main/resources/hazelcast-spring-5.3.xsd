@@ -1698,6 +1698,7 @@
                     <xs:element name="instance-tracking" type="instance-tracking" minOccurs="0"/>
                     <xs:element name="native-memory" type="native-memory" minOccurs="0"/>
                     <xs:element name="sql" type="clientSql" minOccurs="0"/>
+                    <xs:element name="alto" type="alto" minOccurs="0"/>
                 </xs:choice>
             </xs:extension>
         </xs:complexContent>
@@ -6198,6 +6199,27 @@
         </xs:sequence>
         <xs:attribute name="enabled" default="false" type="xs:string"/>
         <xs:attribute name="factory-class-name" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="alto">
+        <xs:annotation>
+            <xs:documentation>
+                Configures the client for Alto, which is the next generation Hazelcast that
+                uses thread-per-core model. Alto-aware clients will maintain connections to
+                all cores of all cluster members. The client will route partition-specific
+                invocations to the correct core of the correct member in the best effort
+                basis.
+                This configuration is introduced as BETA, and it might be subject to
+                changes, or it can be removed in future releases without a prior notice.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="enabled" type="xs:boolean" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Enables or disables the Alto-aware mode.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <!-- SIMPLE TYPES -->

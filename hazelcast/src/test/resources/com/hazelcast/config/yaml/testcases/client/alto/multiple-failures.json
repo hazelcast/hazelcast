@@ -1,0 +1,31 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "alto": {
+        "enabled": "true",
+        "someProperty": true
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/ClientAlto",
+    "pointerToViolation": "#/hazelcast-client/alto",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/ClientAlto",
+        "pointerToViolation": "#/hazelcast-client/alto",
+        "causingExceptions": [],
+        "keyword": "additionalProperties",
+        "message": "extraneous key [someProperty] is not permitted"
+      },
+      {
+        "schemaLocation": "#/definitions/ClientAlto/properties/enabled",
+        "pointerToViolation": "#/hazelcast-client/alto/enabled",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      }
+    ],
+    "message": "2 schema violations found"
+  }
+}
