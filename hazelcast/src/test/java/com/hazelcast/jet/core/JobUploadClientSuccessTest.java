@@ -37,7 +37,7 @@ import org.junit.experimental.categories.Category;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
@@ -67,13 +67,9 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
 
     @Test
     public void test_jarUpload_whenResourceUploadIsEnabled() throws IOException {
-        Config config = smallInstanceConfig();
-        JetConfig jetConfig = config.getJetConfig();
-        jetConfig.setResourceUploadEnabled(true);
+        createCluster();
 
-        createHazelcastInstance(config);
-        HazelcastInstance client = createHazelcastClient();
-        JetService jetService = client.getJet();
+        JetService jetService = getClientJetService();
 
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
                 .setJarPath(getJarPath());
@@ -85,19 +81,14 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
 
     @Test
     public void test_jarUpload_withJobParameters() throws IOException {
-        Config config = smallInstanceConfig();
-        JetConfig jetConfig = config.getJetConfig();
-        jetConfig.setResourceUploadEnabled(true);
-
-        createHazelcastInstance(config);
-        HazelcastInstance client = createHazelcastClient();
-        JetService jetService = client.getJet();
+        createCluster();
+        JetService jetService = getClientJetService();
 
         // Pass the job argument that will be used as job name
         String jobName = "myjetjob";
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
                 .setJarPath(getJarPath())
-                .setJobParameters(Arrays.asList(jobName));
+                .setJobParameters(Collections.singletonList(jobName));
 
         jetService.submitJobFromJar(submitJobParameters);
 
@@ -111,22 +102,22 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
 
     @Test
     public void test_jarUploadByNonSmartClient_whenResourceUploadIsEnabled() throws IOException {
-        Config config = smallInstanceConfig();
-        JetConfig jetConfig = config.getJetConfig();
-        jetConfig.setResourceUploadEnabled(true);
+        HazelcastInstance[] hazelcastInstances = createCluster(2);
 
-        HazelcastInstance[] hazelcastInstances = createHazelcastInstances(config, 2);
+        // Get address of the member that is not Job Coordinator
         HazelcastInstance targetInstance = hazelcastInstances[1];
         Address targetAddress = targetInstance.getCluster().getLocalMember().getAddress();
 
+        // Create a non-smart client
         ClientConfig clientConfig = new ClientConfig();
-        ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
-        networkConfig.setSmartRouting(false);
+        ClientNetworkConfig clientNetworkConfig = clientConfig.getNetworkConfig();
+        clientNetworkConfig.setSmartRouting(false);
 
-        List<String> addresses = networkConfig.getAddresses();
-        addresses.clear();
+        // Set the target address for non-smart client
+        List<String> addresses = clientNetworkConfig.getAddresses();
         addresses.add(targetAddress.getHost() + ":" + targetAddress.getPort());
 
+        // Create client and submit job
         HazelcastInstance client = createHazelcastClient(clientConfig);
         JetService jetService = client.getJet();
 
@@ -140,13 +131,10 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
 
     @Test
     public void test_jarUpload_withMainClassname() throws IOException {
-        Config config = smallInstanceConfig();
-        JetConfig jetConfig = config.getJetConfig();
-        jetConfig.setResourceUploadEnabled(true);
+        createCluster();
 
-        createHazelcastInstance(config);
-        HazelcastInstance client = createHazelcastClient();
-        JetService jetService = client.getJet();
+        // Create client and submit job
+        JetService jetService = getClientJetService();
         List<String> jobParameters = emptyList();
 
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
@@ -161,11 +149,7 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
 
     @Test
     public void test_jarUpload_whenResourceUploadIsEnabled_withSmallBuffer() throws IOException {
-        Config config = smallInstanceConfig();
-        JetConfig jetConfig = config.getJetConfig();
-        jetConfig.setResourceUploadEnabled(true);
-
-        createHazelcastInstance(config);
+        createCluster();
 
         // Change the part buffer size
         ClientConfig clientConfig = new ClientConfig();
@@ -186,11 +170,8 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
     @Category({SlowTest.class})
     @Test
     public void test_stress_jarUpload_whenResourceUploadIsEnabled() {
-        Config config = smallInstanceConfig();
-        JetConfig jetConfig = config.getJetConfig();
-        jetConfig.setResourceUploadEnabled(true);
+        createCluster();
 
-        createHazelcastInstance(config);
         ExecutorService executorService = Executors.newFixedThreadPool(10);
 
         int jobLimit = 50;
@@ -214,11 +195,8 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
 
     @Test
     public void test_multipleJarUploads_whenResourceUploadIsEnabled() {
-        Config config = smallInstanceConfig();
-        JetConfig jetConfig = config.getJetConfig();
-        jetConfig.setResourceUploadEnabled(true);
+        createCluster();
 
-        createHazelcastInstance(config);
         HazelcastInstance client = createHazelcastClient();
         JetService jetService = client.getJet();
 
@@ -241,9 +219,27 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
             assertTrue(containsName(jobs, job1));
             assertTrue(containsName(jobs, job2));
         });
+    }
 
-        // Let the jobs run
-        sleepAtLeastSeconds(5);
+    private void createCluster() {
+        Config config = smallInstanceConfig();
+        JetConfig jetConfig = config.getJetConfig();
+        jetConfig.setResourceUploadEnabled(true);
+
+        createHazelcastInstance(config);
+    }
+
+    private HazelcastInstance[] createCluster(int nodeCount) {
+        Config config = smallInstanceConfig();
+        JetConfig jetConfig = config.getJetConfig();
+        jetConfig.setResourceUploadEnabled(true);
+
+        return createHazelcastInstances(config, nodeCount);
+    }
+
+    private JetService getClientJetService() {
+        HazelcastInstance client = createHazelcastClient();
+        return client.getJet();
     }
 
     static void assertJobIsRunning(JetService jetService) throws IOException {
