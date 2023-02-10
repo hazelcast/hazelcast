@@ -53,6 +53,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
 
     private static final String SIMPLE_JAR = "simplejob-1.0.0.jar";
     private static final String NO_MANIFEST_SIMPLE_JAR = "nomanifestsimplejob-1.0.0.jar";
+
     @After
     public void resetSingleton() {
         // Reset the singleton after the test
@@ -154,28 +155,33 @@ public class JobUploadClientFailureTest extends JetTestSupport {
 
     @Test
     public void test_jar_isDeleted() throws IOException {
-        // Delete left over files before the test
-        String newSimpleJob = "newsimplejob.jar";
-        deleteLeftOverFilesIfAny(newSimpleJob);
+        Path newPath = null;
+        try {
+            // Delete left over files before the test
+            String newSimpleJob = "newsimplejob.jar";
+            deleteLeftOverFilesIfAny(newSimpleJob);
 
-        HazelcastInstance client = createResourceUploadEnabledMemberAndClient();
-        JetService jetService = client.getJet();
+            HazelcastInstance client = createResourceUploadEnabledMemberAndClient();
+            JetService jetService = client.getJet();
 
-        // Copy as new jar to make it unique
-        Path newPath = copyJar(newSimpleJob);
+            // Copy as new jar to make it unique
+            newPath = copyJar(newSimpleJob);
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                .setJarPath(newPath)
-                .setMainClass("org.example.Main1");
+            SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+                    .setJarPath(newPath)
+                    .setMainClass("org.example.Main1");
 
-        assertThrows(JetException.class, () -> jetService.submitJobFromJar(submitJobParameters));
+            assertThrows(JetException.class, () -> jetService.submitJobFromJar(submitJobParameters));
 
-        boolean fileDoesNotExist = fileDoesNotExist(newSimpleJob);
-        assertThat(fileDoesNotExist)
-                .isTrue();
-
-        // Delete local new jar
-        Files.delete(newPath);
+            boolean fileDoesNotExist = fileDoesNotExist(newSimpleJob);
+            assertThat(fileDoesNotExist)
+                    .isTrue();
+        } finally {
+            if (newPath != null) {
+                // Delete local new jar
+                Files.delete(newPath);
+            }
+        }
     }
 
     @Test
@@ -282,6 +288,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
             });
         }
     }
+
     private static boolean fileDoesNotExist(String newJarName) throws IOException {
         // Get default temp directory
         Path tempDirectory = Paths.get(System.getProperty("java.io.tmpdir"));
