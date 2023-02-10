@@ -198,17 +198,13 @@ public class JobRepository {
     }
 
     /**
-     * Configures given IMap to fail on indeterminate operation state.
+     * Configures the given IMap to fail on indeterminate operation state.
      *
      * @param map map to configure
      * @return the same map with applied configuration
      */
     public static <K, V> IMap<K, V> safeImap(IMap<K, V> map) {
-        // On client side there is no setFailOnIndeterminateOperationState method.
-        // Client should only read Jet maps.
-        if (map instanceof MapProxyImpl) {
-            ((MapProxyImpl<K, V>) map).setFailOnIndeterminateOperationState(true);
-        }
+        ((MapProxyImpl<K, V>) map).setFailOnIndeterminateOperationState(true);
         return map;
     }
 
