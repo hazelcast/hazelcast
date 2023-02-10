@@ -33,6 +33,8 @@ import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.util.ImmutableNullableList;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -135,18 +137,21 @@ public class SqlCreateJob extends SqlCreate {
             throw validator.newValidationError(this, RESOURCE.notSupported("OR REPLACE", "CREATE JOB"));
         }
 
-        parsedOptions = parseOptions(options, validator);
+        parsedOptions = parseOptions(options, validator, Collections.emptyList());
         validator.validate(sqlInsert);
     }
 
-    static Map<String, Object> parseOptions(SqlNodeList options, SqlValidator validator) {
+    static Map<String, Object> parseOptions(SqlNodeList options, SqlValidator validator,
+                                            Collection<String> unsupportedOptions) {
         Map<String, Object> parsed = new HashMap<>();
         for (SqlNode option0 : options) {
             SqlOption option = (SqlOption) option0;
             String key = option.keyString();
             String value = option.valueString();
 
-            if (parsed.containsKey(key)) {
+            if (unsupportedOptions.contains(key)) {
+                throw validator.newValidationError(option, RESOURCE.notSupported(key, "CREATE JOB"));
+            } else if (parsed.containsKey(key)) {
                 throw validator.newValidationError(option, RESOURCE.duplicateOption(key));
             }
 

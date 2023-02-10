@@ -159,9 +159,14 @@ public class MasterContext {
 
     public void setJobConfig(JobConfig config) {
         JobConfig currentConfig = jobConfig();
-        if (!Objects.equals(currentConfig.getName(), config.getName())) {
-            throw new UnsupportedOperationException("Job name cannot be changed");
-        }
+        BiConsumer<Function<JobConfig, Object>, String> assertEquals = (accessor, name) -> {
+            if (!Objects.equals(accessor.apply(currentConfig), accessor.apply(config))) {
+                throw new UnsupportedOperationException("Job " + name + " cannot be changed");
+            }
+        };
+        assertEquals.accept(JobConfig::getName, "name");
+        assertEquals.accept(JobConfig::getResourceConfigs, "resources");
+        assertEquals.accept(JobConfig::getProcessingGuarantee, "processing guarantee");
         lock();
         try {
             if (jobStatus != SUSPENDED && jobStatus != SUSPENDED_EXPORTING_SNAPSHOT) {

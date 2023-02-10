@@ -31,6 +31,8 @@ import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.util.ImmutableNullableList;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -41,6 +43,8 @@ public class SqlAlterJob extends SqlAlter {
 
     private static final SqlSpecialOperator OPERATOR =
             new SqlSpecialOperator("ALTER JOB", SqlKind.OTHER_DDL);
+    private static final Collection<String> UNSUPPORTED_OPTIONS =
+            Collections.singletonList("processingGuarantee");
 
     private final SqlIdentifier name;
     private final SqlNodeList options;
@@ -110,7 +114,7 @@ public class SqlAlterJob extends SqlAlter {
 
     @Override
     public void validate(SqlValidator validator, SqlValidatorScope scope) {
-        parsedOptions = parseOptions(options, validator);
+        parsedOptions = parseOptions(options, validator, UNSUPPORTED_OPTIONS);
     }
 
     public enum AlterJobOperation {

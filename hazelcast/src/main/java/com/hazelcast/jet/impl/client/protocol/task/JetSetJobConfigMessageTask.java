@@ -54,6 +54,6 @@ public class JetSetJobConfigMessageTask extends AbstractJetMessageTask<RequestPa
     @Nullable
     @Override
     public String[] actions() {
-        return new String[] {ActionConstants.ACTION_ADD_RESOURCES};
+        return new String[] {ActionConstants.ACTION_RESTART};
     }
 }

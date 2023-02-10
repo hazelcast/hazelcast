@@ -48,6 +48,7 @@ import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -59,6 +60,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
@@ -1054,7 +1056,17 @@ public class JobTest extends SimpleTestInClusterSupport {
         assertThat(job.getSuspensionCause().errorCause())
                 .contains("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
 
+        assertThatThrownBy(() -> job.setConfig(new JobConfig().setName("job")))
+                .hasMessage("Job name cannot be changed");
+        assertThatThrownBy(() -> job.setConfig(new JobConfig().addJar(new URL("http://site/path/to/file.jar"))))
+                .hasMessage("Job resources cannot be changed");
+        assertThatThrownBy(() -> job.setConfig(new JobConfig().setProcessingGuarantee(AT_LEAST_ONCE)))
+                .hasMessage("Job processing guarantee cannot be changed");
+
         job.setConfig(new JobConfig().setMaxProcessorAccumulatedRecords(3));
+        Stream.of(instances()[0], instances()[1], client()).forEach(hz ->
+                assertEquals(3, hz.getJet().getJob(job.getId()).getConfig().getMaxProcessorAccumulatedRecords()));
+
         job.resume();
         job.join();
 
@@ -1087,6 +1099,8 @@ public class JobTest extends SimpleTestInClusterSupport {
         assertThatThrownBy(() -> job.setConfig(new JobConfig())).hasMessage("Job not suspended");
     }
 
+    // ### Tests for light jobs
+
     @Test
     public void test_tryChangingLightJobConfig_then_fail_member() {
         test_tryChangingLightJobConfig_then_fail(instances()[1]);
@@ -1108,8 +1122,6 @@ public class JobTest extends SimpleTestInClusterSupport {
                 .hasMessage("not supported for light jobs: setConfig");
         cancelAndJoin(job);
     }
-
-    // ### Tests for light jobs
 
     @Test
     public void when_lightJob_then_unsupportedMethodsThrow() {
