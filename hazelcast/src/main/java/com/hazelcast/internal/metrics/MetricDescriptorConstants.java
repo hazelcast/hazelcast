@@ -620,16 +620,26 @@ public final class MetricDescriptorConstants {
     public static final String TSTORE_HLOG_PAGING_FREQUENCY_MAX = "tstore.hlog.paging.frequency.max";
 
     public static final String TSTORE_HLOG_COMPACTION_PREFIX = "tstore.hlog.compaction.";
-    public static final String TSTORE_HLOG_COMPACTION_DUMMY_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "dummyRecords.count";
-    public static final String TSTORE_HLOG_COMPACTION_DUMMY_RECORDS_SIZE = TSTORE_HLOG_COMPACTION_PREFIX + "dummyRecords.size";
-    public static final String TSTORE_HLOG_COMPACTION_NON_DUMMY_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "nonDummyRecords.count";
-    public static final String TSTORE_HLOG_COMPACTION_NON_DUMMY_RECORDS_SIZE = TSTORE_HLOG_COMPACTION_PREFIX + "nonDummyRecords.size";
-    public static final String TSTORE_HLOG_COMPACTION_ALIVE_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "aliveRecords.count";
-    public static final String TSTORE_HLOG_COMPACTION_ALIVE_RECORDS_SIZE = TSTORE_HLOG_COMPACTION_PREFIX + "aliveRecords.size";
-    public static final String TSTORE_HLOG_COMPACTION_DEAD_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "deadRecords.count";
-    public static final String TSTORE_HLOG_COMPACTION_DEAD_RECORDS_SIZE = TSTORE_HLOG_COMPACTION_PREFIX + "deadRecords.size";
-    public static final String TSTORE_HLOG_COMPACTION_VISITED_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "visitedRecords.count";
-    public static final String TSTORE_HLOG_COMPACTION_VISITED_RECORDS_SIZE = TSTORE_HLOG_COMPACTION_PREFIX + "visitedRecords.size";
+    public static final String TSTORE_HLOG_COMPACTION_DUMMY_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX
+            + "dummyRecords.count";
+    public static final String TSTORE_HLOG_COMPACTION_DUMMY_RECORDS_SIZE = TSTORE_HLOG_COMPACTION_PREFIX
+            + "dummyRecords.size";
+    public static final String TSTORE_HLOG_COMPACTION_NON_DUMMY_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX
+            + "nonDummyRecords.count";
+    public static final String TSTORE_HLOG_COMPACTION_NON_DUMMY_RECORDS_SIZE = TSTORE_HLOG_COMPACTION_PREFIX
+            + "nonDummyRecords.size";
+    public static final String TSTORE_HLOG_COMPACTION_ALIVE_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX
+            + "aliveRecords.count";
+    public static final String TSTORE_HLOG_COMPACTION_ALIVE_RECORDS_SIZE = TSTORE_HLOG_COMPACTION_PREFIX
+            + "aliveRecords.size";
+    public static final String TSTORE_HLOG_COMPACTION_DEAD_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX
+            + "deadRecords.count";
+    public static final String TSTORE_HLOG_COMPACTION_DEAD_RECORDS_SIZE = TSTORE_HLOG_COMPACTION_PREFIX
+            + "deadRecords.size";
+    public static final String TSTORE_HLOG_COMPACTION_VISITED_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX
+            + "visitedRecords.count";
+    public static final String TSTORE_HLOG_COMPACTION_VISITED_RECORDS_SIZE = TSTORE_HLOG_COMPACTION_PREFIX
+            + "visitedRecords.size";
     public static final String TSTORE_HLOG_COMPACTION_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "count";
     public static final String TSTORE_HLOG_COMPACTION_QUEUE_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "queue.count";
     public static final String TSTORE_HLOG_COMPACTION_FAILED_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "failed.count";
