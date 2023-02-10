@@ -124,7 +124,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
         MongoTable table = context.getTable();
 
-        RexToMongoVisitor visitor = new RexToMongoVisitor(table.fieldNames(), null);
+        RexToMongoVisitor visitor = new RexToMongoVisitor(table.fieldNames());
 
         TranslationResult<String> filter = translateFilter(predicate, visitor);
         TranslationResult<List<String>> projections = translateProjections(projection, context, visitor);
@@ -200,8 +200,8 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             Object result = filterNode.accept(visitor);
             assert result instanceof Bson;
 
-            String expression = ((Bson) result).toBsonDocument(BsonDocument.class, defaultCodecRegistry()).toJson();
-            return new TranslationResult<>(expression, true);
+            BsonDocument expression = ((Bson) result).toBsonDocument(BsonDocument.class, defaultCodecRegistry());
+            return new TranslationResult<>(expression.toJson(), true);
         } catch (Throwable t) {
             return new TranslationResult<>(null, false);
         }

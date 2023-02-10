@@ -33,8 +33,8 @@ final class ParameterReplacer {
     }
 
     /**
-     * Searches for nodes in Document with pattern like in {@linkplain #REPLACE_PARAM_PATTERN}
-     * and replaces it with dynamic parameter.
+     * Searches for nodes in Document with two properties: "objectType" = "DynamicParameter" and
+     * index, that will be resolved as dynamic parameter index.
      *
      * Not all parameters are known at query planning stage, some are
      * visible only in {@link com.hazelcast.jet.core.ProcessorSupplier#init(Context)} method. That's why
@@ -43,6 +43,7 @@ final class ParameterReplacer {
      * so we are binding everything we can in the connector and leave dynamic parameters for this method on PS side.
      */
     static Bson replacePlaceholders(Document doc, ExpressionEvalContext evalContext) {
+        assert DynamicParameter.parse(doc) == null;
         for (Entry<String, Object> entry : doc.entrySet()) {
             if (entry.getValue() instanceof List) {
                 List<?> value = (List<?>) entry.getValue();
@@ -59,7 +60,13 @@ final class ParameterReplacer {
             } else if (entry.getValue() instanceof BsonString) {
                 forBsonString(evalContext, entry);
             } else if (entry.getValue() instanceof Document) {
-                replacePlaceholders((Document) entry.getValue(), evalContext);
+                Document value = (Document) entry.getValue();
+                DynamicParameter param = DynamicParameter.parse(value);
+                if (param != null) {
+                    entry.setValue(evalContext.getArgument(param.getIndex()));
+                } else {
+                    replacePlaceholders(value, evalContext);
+                }
             }
         }
         return doc;

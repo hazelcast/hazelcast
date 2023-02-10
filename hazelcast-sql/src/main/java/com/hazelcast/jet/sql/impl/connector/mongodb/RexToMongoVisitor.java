@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCorrelVariable;
 import org.apache.calcite.rex.RexDynamicParam;
@@ -44,13 +43,9 @@ final class RexToMongoVisitor implements RexVisitor<Object> {
 
     private static final Object[] EMPTY_EXPRESSION_OPERANDS = new Object[0];
 
-    private final boolean dryRun;
     private final String[] fields;
-    private final transient ExpressionEvalContext context;
 
-    RexToMongoVisitor(String[] fields, ExpressionEvalContext context) {
-        this.context = context;
-        this.dryRun = context == null;
+    RexToMongoVisitor(String[] fields) {
         this.fields = fields;
     }
 
@@ -107,12 +102,8 @@ final class RexToMongoVisitor implements RexVisitor<Object> {
 
     @Override
     public Object visitDynamicParam(RexDynamicParam dynamicParam) {
-        if (dryRun) {
-            int index = dynamicParam.getIndex();
-            return "/replaceParam:" + index + "/";
-        }
-
-        return context.getArgument(dynamicParam.getIndex());
+        int index = dynamicParam.getIndex();
+        return new DynamicParameter(index);
     }
 
     @Override
