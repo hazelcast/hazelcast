@@ -51,6 +51,7 @@ import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.mongodb.impl.MongoUtilities.partitionAggregate;
 import static com.mongodb.client.model.Aggregates.sort;
 import static com.mongodb.client.model.Sorts.ascending;
+import static com.mongodb.client.model.changestream.FullDocument.UPDATE_LOOKUP;
 
 /**
  * Processor for reading from MongoDB
@@ -365,7 +366,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
             } else if (startTimestamp != null) {
                 changeStream.startAtOperationTime(new BsonTimestamp(startTimestamp));
             }
-            cursor = changeStream.batchSize(BATCH_SIZE).iterator();
+            cursor = changeStream.batchSize(BATCH_SIZE).fullDocument(UPDATE_LOOKUP).iterator();
         }
 
         @Override

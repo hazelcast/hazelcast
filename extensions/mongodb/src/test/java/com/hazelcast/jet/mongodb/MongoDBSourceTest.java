@@ -44,8 +44,8 @@ import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
-import static com.hazelcast.jet.mongodb.impl.Mappers.streamToClass;
 import static com.hazelcast.jet.mongodb.MongoDBSources.batch;
+import static com.hazelcast.jet.mongodb.impl.Mappers.streamToClass;
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.gte;
