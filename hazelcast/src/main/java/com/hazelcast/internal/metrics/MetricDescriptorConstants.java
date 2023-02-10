@@ -618,6 +618,23 @@ public final class MetricDescriptorConstants {
     public static final String TSTORE_HLOG_PAGING_FREQUENCY_AVG = "tstore.hlog.paging.frequency.avg";
     public static final String TSTORE_HLOG_PAGING_FREQUENCY_MIN = "tstore.hlog.paging.frequency.min";
     public static final String TSTORE_HLOG_PAGING_FREQUENCY_MAX = "tstore.hlog.paging.frequency.max";
+
+    public static final String TSTORE_HLOG_COMPACTION_PREFIX = "tstore.hlog.compaction.";
+    public static final String TSTORE_HLOG_COMPACTION_DUMMY_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "dummyRecords";
+    public static final String TSTORE_HLOG_COMPACTION_NON_DUMMY_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "nonDummyRecords";
+    public static final String TSTORE_HLOG_COMPACTION_ALIVE_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "aliveRecords";
+    public static final String TSTORE_HLOG_COMPACTION_DEAD_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "deadRecords";
+    public static final String TSTORE_HLOG_COMPACTION_VISITED_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "visitedRecords";
+    public static final String TSTORE_HLOG_COMPACTION_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "count";
+    public static final String TSTORE_HLOG_COMPACTION_FAILED_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "failed.count";
+    public static final String TSTORE_HLOG_COMPACTION_IN_PROGRESS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "inProgress.count";
+
+    public static final String TSTORE_HLOG_COMPACTION_TIME_TOTAL = TSTORE_HLOG_COMPACTION_PREFIX + "time.total";
+    public static final String TSTORE_HLOG_COMPACTION_TIME_MIN = TSTORE_HLOG_COMPACTION_PREFIX + "time.min";
+    public static final String TSTORE_HLOG_COMPACTION_TIME_MAX = TSTORE_HLOG_COMPACTION_PREFIX + "time.max";
+    public static final String TSTORE_HLOG_COMPACTION_TIME_AVG = TSTORE_HLOG_COMPACTION_PREFIX + "time.avg";
+    public static final String TSTORE_HLOG_COMPACTION_IO_TIME_TOTAL = TSTORE_HLOG_COMPACTION_PREFIX + "ioTime.total";
+
     // ===[/TSTORE]=====================================================
 
     // ===[WAN]=========================================================
