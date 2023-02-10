@@ -150,15 +150,11 @@ class MasterSnapshotContext {
 
     @SuppressWarnings("SameParameterValue") // used by jet-enterprise
     void enqueueSnapshot(String snapshotName, boolean isTerminal, CompletableFuture<Void> future) {
-        enqueueSnapshot(new SnapshotRequest(snapshotName, isTerminal, future));
+        snapshotQueue.add(new SnapshotRequest(snapshotName, isTerminal, future));
     }
 
-    private void enqueueSnapshot(SnapshotRequest requestedSnapshot) {
-        snapshotQueue.add(requestedSnapshot);
-    }
-
-    private SnapshotRequest regularSnapshot() {
-        return new SnapshotRequest(null, false, null);
+    private void enqueueRegularSnapshot() {
+        enqueueSnapshot(null, false, null);
     }
 
     void startScheduledSnapshot(long executionId) {
@@ -175,7 +171,7 @@ class MasterSnapshotContext {
                         + ". Received execution ID: " + idToString(executionId));
                 return;
             }
-            enqueueSnapshot(regularSnapshot());
+            enqueueRegularSnapshot();
         } finally {
             mc.unlock();
         }
