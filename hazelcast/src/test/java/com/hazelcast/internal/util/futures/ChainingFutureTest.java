@@ -28,12 +28,12 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -189,7 +189,7 @@ public class ChainingFutureTest extends HazelcastTestSupport {
         return InternalCompletableFuture.withExecutor(executor);
     }
 
-    @NotNull
+    @Nonnull
     private <T> ChainingFuture newChainingFuture(CountingIterator<InternalCompletableFuture<T>> iterator, ChainingFuture.ExceptionHandler handler) {
         return new ChainingFuture(iterator, handler) {
             @Override
