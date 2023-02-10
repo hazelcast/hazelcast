@@ -29,7 +29,6 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
@@ -70,6 +69,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowedTypeFirst;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
@@ -282,7 +282,7 @@ abstract class CacheProxySupport<K, V>
                 if (t != null) {
                     logger.warning("Problem in loadAll task", t);
                 }
-            }, ConcurrencyUtil.getDefaultAsyncExecutor());
+            }, CALLER_RUNS);
         } catch (Exception e) {
             if (completionListener != null) {
                 completionListener.onException(e);
