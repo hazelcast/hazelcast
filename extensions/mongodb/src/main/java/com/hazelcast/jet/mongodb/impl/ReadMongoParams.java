@@ -98,8 +98,7 @@ public class ReadMongoParams<I> implements Serializable {
     }
 
     public ReadMongoParams<I> setMapItemFn(@Nonnull FunctionEx<Document, I> mapItemFn) {
-        checkNotNull(mapItemFn, "mapFn argument cannot be null");
-        checkSerializable(mapItemFn, "mapFn must be serializable");
+        checkNonNullAndSerializable(mapItemFn, "mapFn");
         this.mapItemFn = mapItemFn;
         return this;
     }
