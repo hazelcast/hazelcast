@@ -7,7 +7,14 @@ on:
     paths:
       - 'hazelcast/src/main/java/com/hazelcast/azure/**'
       - '.github/terraform/azure/**'
-
+  pull_request_target:
+    types:
+      - labeled
+    branches:
+      - master
+    paths:
+      - 'hazelcast/src/main/java/com/hazelcast/azure/**'
+      - '.github/terraform/azure/**'
 
 jobs:
   build:
@@ -20,7 +27,14 @@ jobs:
       ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'hazelcast'
+    if: >-
+      github.repository_owner == 'hazelcast' && 
+      ( github.event_name == 'push' || 
+        (github.event_name == 'pull_request_target' && 
+          github.event.action == 'labeled' && 
+          github.event.label.name == 'safe-to-discover' 
+        )
+      )
     strategy:
       matrix:
         java: [ '8' ]

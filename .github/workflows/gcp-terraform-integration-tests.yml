@@ -7,6 +7,14 @@ on:
     paths:
       - 'hazelcast/src/main/java/com/hazelcast/gcp/**'
       - '.github/terraform/gcp/**'
+  pull_request_target:
+    types:
+      - labeled
+    branches:
+      - master
+    paths:
+      - 'hazelcast/src/main/java/com/hazelcast/gcp/**'
+      - '.github/terraform/gcp/**'
 
 jobs:
   build:
@@ -16,7 +24,14 @@ jobs:
     env:
       GCP_KEY_FILE: ${{ secrets.GCP_KEY_FILE }}
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'hazelcast'
+    if: >-
+      github.repository_owner == 'hazelcast' && 
+      ( github.event_name == 'push' || 
+        (github.event_name == 'pull_request_target' && 
+          github.event.action == 'labeled' && 
+          github.event.label.name == 'safe-to-discover' 
+        )
+      )
     strategy:
       matrix:
         java: [ '8' ]

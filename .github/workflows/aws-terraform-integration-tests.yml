@@ -7,6 +7,14 @@ on:
     paths:
       - 'hazelcast/src/main/java/com/hazelcast/aws/**'
       - '.github/terraform/aws/**'
+  pull_request_target:
+    types:
+      - labeled
+    branches:
+      - master
+    paths:
+      - 'hazelcast/src/main/java/com/hazelcast/aws/**'
+      - '.github/terraform/aws/**'
 
 jobs:
   build:
@@ -17,7 +25,14 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID:  ${{ secrets.AWS_ACCESS_KEY_ID }}
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'hazelcast'
+    if: >-
+      github.repository_owner == 'hazelcast' && 
+      ( github.event_name == 'push' || 
+        (github.event_name == 'pull_request_target' && 
+          github.event.action == 'labeled' && 
+          github.event.label.name == 'safe-to-discover' 
+        )
+      )
     strategy:
       matrix:
         java: [ '8' ]
