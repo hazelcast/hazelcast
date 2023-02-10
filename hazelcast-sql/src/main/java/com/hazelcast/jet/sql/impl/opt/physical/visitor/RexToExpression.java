@@ -68,6 +68,7 @@ import com.hazelcast.sql.impl.expression.predicate.IsTruePredicate;
 import com.hazelcast.sql.impl.expression.predicate.NotPredicate;
 import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
 import com.hazelcast.sql.impl.expression.predicate.SearchPredicate;
+import com.hazelcast.sql.impl.expression.service.GetDdlFunction;
 import com.hazelcast.sql.impl.expression.string.AsciiFunction;
 import com.hazelcast.sql.impl.expression.string.CharLengthFunction;
 import com.hazelcast.sql.impl.expression.string.ConcatFunction;
@@ -458,6 +459,12 @@ public final class RexToExpression {
                     Expression<?> locale = operands.length > 2 ? operands[2] : null;
 
                     return ToCharFunction.create(input, format, locale);
+                } else if (function == HazelcastSqlOperatorTable.GET_DDL) {
+                    Expression<?> namespace = operands[0];
+                    Expression<?> objectName = operands[1];
+                    Expression<?> schema = operands.length > 2 ? operands[2] : null;
+
+                    return GetDdlFunction.create(namespace, objectName, schema);
                 } else if (function == HazelcastSqlOperatorTable.CONCAT_WS) {
                     return ConcatWSFunction.create(operands);
                 } else if (function == HazelcastSqlOperatorTable.JSON_QUERY) {
@@ -473,7 +480,7 @@ public final class RexToExpression {
                     return JsonParseFunction.create(operands[0]);
                 } else if (function == HazelcastSqlOperatorTable.JSON_VALUE) {
                     final SqlJsonValueEmptyOrErrorBehavior onEmpty = ((SymbolExpression) operands[4]).getSymbol();
-                    final SqlJsonValueEmptyOrErrorBehavior onError =  ((SymbolExpression) operands[5]).getSymbol();
+                    final SqlJsonValueEmptyOrErrorBehavior onError = ((SymbolExpression) operands[5]).getSymbol();
 
                     return JsonValueFunction.create(
                             operands[0],

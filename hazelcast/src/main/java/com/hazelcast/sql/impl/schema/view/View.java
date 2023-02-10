@@ -129,4 +129,8 @@ public class View implements IdentifiedDataSerializable, Versioned {
     public int hashCode() {
         return Objects.hash(name, query, viewColumnNames, viewColumnTypes);
     }
+
+    public String unparse() {
+        return String.format("CREATE VIEW \"%s\" AS\n%s", name(), query());
+    }
 }

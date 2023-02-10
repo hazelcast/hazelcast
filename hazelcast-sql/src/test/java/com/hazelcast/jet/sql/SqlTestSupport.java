@@ -26,6 +26,7 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestSupport;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -684,7 +685,10 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
             args = new Object[0];
         }
 
-        return new ExpressionEvalContext(Arrays.asList(args), new DefaultSerializationServiceBuilder().build());
+        return new ExpressionEvalContext(
+                Arrays.asList(args),
+                new DefaultSerializationServiceBuilder().build(),
+                Util.getNodeEngine(instance()));
     }
 
     public static JetSqlRow jetRow(Object... values) {

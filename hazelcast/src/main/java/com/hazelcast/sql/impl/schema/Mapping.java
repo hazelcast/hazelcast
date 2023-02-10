@@ -127,4 +127,53 @@ public class Mapping implements IdentifiedDataSerializable {
     public int hashCode() {
         return Objects.hash(name, externalName, type, mappingFields, options);
     }
+
+    public String unparse() {
+        StringBuffer buffer = new StringBuffer();
+
+        buffer.append("CREATE MAPPING");
+        buffer.append(" \"").append(name()).append("\" ");
+
+        // external name defaults to mapping name - omit it if it's equal
+        if (externalName() != null && !externalName().equals(name())) {
+            buffer.append("EXTERNAL NAME");
+            buffer.append(" ").append(externalName()).append(" \n");
+        }
+
+        List<MappingField> fields = fields();
+        if (fields.size() > 0) {
+            int fieldsSize = fields.size() - 1;
+            buffer.append("(");
+            for (MappingField field : fields) {
+                buffer.append(field.name()).append(" ");
+                buffer.append(field.type().getTypeFamily().toString());
+                if (field.externalName() != null) {
+                    buffer.append(" ").append("EXTERNAL NAME").append(" ");
+                    buffer.append(field.externalName());
+                }
+                if (fieldsSize-- > 0) {
+                    buffer.append(", ");
+                }
+            }
+            buffer.append(") \n");
+        }
+
+        buffer.append("TYPE").append(" ");
+        buffer.append(type()).append(" \n");
+
+        Map<String, String> options = options();
+        if (options.size() > 0) {
+            buffer.append("OPTIONS").append("( \n");
+            int optionsSize = options.size() - 1;
+            for (Map.Entry<String, String> option : options.entrySet()) {
+                buffer.append(option.getKey()).append(" = ").append(option.getValue());
+                if (optionsSize-- > 0) {
+                    buffer.append(",\n");
+                }
+            }
+            buffer.append(")\n");
+        }
+
+        return buffer.toString();
+    }
 }

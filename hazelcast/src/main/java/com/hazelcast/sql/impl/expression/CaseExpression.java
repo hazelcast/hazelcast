@@ -167,4 +167,20 @@ public class CaseExpression<T> implements Expression<T>, IdentifiedDataSerializa
                 + ", elseExpression=" + elseExpression
                 + '}';
     }
+
+    @Override
+    public boolean isCooperative() {
+        for (Expression<Boolean> e : whenExpressions) {
+            if (!e.isCooperative()) {
+                return false;
+            }
+        }
+        for (Expression<?> e : thenExpressions) {
+            if (!e.isCooperative()) {
+                return false;
+            }
+        }
+
+        return elseExpression.isCooperative();
+    }
 }

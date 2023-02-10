@@ -55,4 +55,9 @@ public class FunctionalPredicateExpression implements Expression<Boolean> {
     public interface NullablePredicate {
         Boolean test(Row row);
     }
+
+    @Override
+    public boolean isCooperative() {
+        return true;
+    }
 }

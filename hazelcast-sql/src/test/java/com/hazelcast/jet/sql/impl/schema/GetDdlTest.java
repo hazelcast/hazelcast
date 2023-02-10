@@ -41,17 +41,14 @@ public class GetDdlTest extends SqlTestSupport {
         createMapping("a", int.class, int.class);
 
         assertRowsAnyOrder("SELECT GET_DDL('table', 'a')", ImmutableList.of(
-                new Row("CREATE MAPPING \"a\" (\n" +
-                        "  \"__key\" INTEGER EXTERNAL NAME \"__key\",\n" +
-                        "  \"this\" INTEGER EXTERNAL NAME \"this\"\n" +
-                        ")\n" +
-                        "TYPE IMap\n" +
-                        "OPTIONS (\n" +
-                        "  'keyFormat' = 'java',\n" +
-                        "  'keyJavaClass' = 'int',\n" +
-                        "  'valueFormat' = 'java',\n" +
-                        "  'valueJavaClass' = 'int'\n" +
-                        ")"))
+                new Row("CREATE MAPPING \"a\" " +
+                        "(__key INTEGER EXTERNAL NAME __key, this INTEGER EXTERNAL NAME this) \n" +
+                        "TYPE IMap \n" +
+                        "OPTIONS( \n" +
+                        "keyFormat = java,\n" +
+                        "keyJavaClass = int,\n" +
+                        "valueFormat = java,\n" +
+                        "valueJavaClass = int)\n"))
         );
     }
 
@@ -61,7 +58,7 @@ public class GetDdlTest extends SqlTestSupport {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM a");
 
         assertRowsAnyOrder("SELECT GET_DDL('table', 'v')", ImmutableList.of(
-                new Row("CREATE VIEW  \"v\" AS\n" +
+                new Row("CREATE VIEW \"v\" AS\n" +
                         "SELECT \"a\".\"__key\", \"a\".\"this\"\n" +
                         "FROM \"hazelcast\".\"public\".\"a\" AS \"a\""))
         );
@@ -116,18 +113,13 @@ public class GetDdlTest extends SqlTestSupport {
         instance().getMap("a").put(1, "a");
 
         assertRowsAnyOrder("SELECT GET_DDL('table', this) FROM a",
-                ImmutableList.of(new Row("CREATE")));
-    }
-
-    @Test
-    public void when_getMultipleDdlWereQueriedWithinOneProjection_then_throws() {
-        createMapping("a", int.class, int.class);
-        createMapping("b", int.class, int.class);
-
-        assertThatThrownBy(() -> instance().getSql().execute(
-                "SELECT SUBSTRING(GET_DDL('table', 'a') FROM 1 FOR 6) " +
-                        "|| SUBSTRING(GET_DDL('table', 'b') FROM 1 FOR 6)"))
-                .hasCauseInstanceOf(QueryException.class)
-                .hasMessageContaining("Multiple GET_DDL in single query are not allowed");
+                ImmutableList.of(new Row("CREATE MAPPING \"a\" " +
+                        "(__key INTEGER EXTERNAL NAME __key, this VARCHAR EXTERNAL NAME this) \n" +
+                        "TYPE IMap \n" +
+                        "OPTIONS( \n" +
+                        "keyFormat = java,\n" +
+                        "keyJavaClass = int,\n" +
+                        "valueFormat = java,\n" +
+                        "valueJavaClass = java.lang.String)\n")));
     }
 }

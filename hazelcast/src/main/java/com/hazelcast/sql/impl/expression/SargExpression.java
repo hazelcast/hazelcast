@@ -106,4 +106,9 @@ public class SargExpression<C extends Comparable<C>> implements Expression<Abstr
     public String toString() {
         return "SearchableExpression{type=" + type + ", searchable=" + sarg + '}';
     }
+
+    @Override
+    public boolean isCooperative() {
+        return true;
+    }
 }

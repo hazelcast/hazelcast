@@ -16,9 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -109,6 +111,7 @@ final class QueryUtil {
         private KvRowProjector.Supplier rightRowProjectorSupplier;
         private List<Object> arguments;
 
+        private transient HazelcastInstance hzInstance;
         private transient ExpressionEvalContext evalContext;
         private transient Extractors extractors;
 
@@ -118,6 +121,7 @@ final class QueryUtil {
 
         private JoinProjection(KvRowProjector.Supplier rightRowProjectorSupplier, ExpressionEvalContext evalContext) {
             this.rightRowProjectorSupplier = rightRowProjectorSupplier;
+            this.hzInstance = evalContext.getNodeEngine().getHazelcastInstance();
             this.evalContext = evalContext;
             this.arguments = evalContext.getArguments();
         }
@@ -129,7 +133,10 @@ final class QueryUtil {
 
         @Override
         public void setSerializationService(SerializationService serializationService) {
-            this.evalContext = new ExpressionEvalContext(arguments, (InternalSerializationService) serializationService);
+            this.evalContext = new ExpressionEvalContext(
+                    arguments,
+                    (InternalSerializationService) serializationService,
+                    Util.getNodeEngine(hzInstance));
             this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
         }
 

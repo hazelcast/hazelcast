@@ -106,4 +106,8 @@ public final class ParameterExpression<T> implements Expression<T>, IdentifiedDa
         return getClass().getSimpleName() + "{index=" + index + '}';
     }
 
+    @Override
+    public boolean isCooperative() {
+        return true;
+    }
 }
