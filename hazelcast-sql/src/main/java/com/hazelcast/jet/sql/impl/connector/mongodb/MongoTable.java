@@ -77,6 +77,14 @@ class MongoTable extends JetTable {
                           .toArray(String[]::new);
     }
 
+    String[] fieldNames() {
+        String[] fields = new String[getFieldCount()];
+        for (int i = 0; i < getFieldCount(); i++) {
+            fields[i] = getField(i).getName();
+        }
+        return fields;
+    }
+
     QueryDataType[] types() {
         return getFields().stream()
                           .map(TableField::getType)
@@ -88,11 +96,6 @@ class MongoTable extends JetTable {
                                           .map(f -> ((MongoTableField) f).externalName)
                                           .collect(toList());
         return () -> new DocumentQueryTarget(fields);
-    }
-
-    boolean hasMappingForId() {
-        return getFields().stream()
-                          .anyMatch(f -> "_id".equalsIgnoreCase(((MongoTableField) f).externalName));
     }
 
     @Override

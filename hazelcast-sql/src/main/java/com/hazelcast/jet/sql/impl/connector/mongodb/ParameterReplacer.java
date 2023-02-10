@@ -40,7 +40,7 @@ final class ParameterReplacer {
      * visible only in {@link com.hazelcast.jet.core.ProcessorSupplier#init(Context)} method. That's why
      * we must postpone the argument matching.
      * We cannot though transport {@linkplain org.apache.calcite.rex.RexNode} over the network, as it's not serializable,
-     * so we are binding everythign we can in the connector and leave dynamic parameters for this method on PS side.
+     * so we are binding everything we can in the connector and leave dynamic parameters for this method on PS side.
      */
     static Bson replacePlaceholders(Document doc, ExpressionEvalContext evalContext) {
         for (Entry<String, Object> entry : doc.entrySet()) {

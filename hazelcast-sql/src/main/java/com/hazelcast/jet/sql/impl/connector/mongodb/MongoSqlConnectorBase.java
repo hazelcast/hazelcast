@@ -31,12 +31,11 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import org.apache.calcite.rex.RexNode;
-import org.bson.Document;
+import org.bson.BsonDocument;
 import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.Serializable;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,12 +48,19 @@ import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.stream.Collectors.toList;
 
 /**
- * Batch-query MongoDB SQL Connector.
+ * Base for MongoDB SQL Connectors.
+ *
+ * Streaming and batch connectors differ in the way of dealing with scans; other functionalities are the same.
+ *
+ * All MongoDB connectors assume one primary key: {@code _id} column, which is mandatory (auto-created if not specified
+ * by user), unique and indexed.
+ *
+ * <p>
+ * While secondary indexes are technically possible, they are not supported right now.
  *
  * @see FieldResolver
- * TODO: add more
  */
-public abstract class MongoSqlConnectorBase implements SqlConnector, Serializable {
+public abstract class MongoSqlConnectorBase implements SqlConnector {
 
     private final FieldResolver fieldResolver = new FieldResolver();
 
@@ -118,12 +124,10 @@ public abstract class MongoSqlConnectorBase implements SqlConnector, Serializabl
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
         MongoTable table = context.getTable();
 
-        ExpressionToMongoVisitor visitor = new ExpressionToMongoVisitor(table, null, true);
+        RexToMongoVisitor visitor = new RexToMongoVisitor(table.fieldNames(), null);
 
-        TranslationResult<String> filter = translateFilter(predicate, context, visitor);
+        TranslationResult<String> filter = translateFilter(predicate, visitor);
         TranslationResult<List<String>> projections = translateProjections(projection, context, visitor);
-
-        DAG dag = context.getDag();
 
         // if not all filters are pushed down, then we cannot push down projection
         // because later filters may use those fields
@@ -141,6 +145,8 @@ public abstract class MongoSqlConnectorBase implements SqlConnector, Serializabl
         } else {
             supplier = new SelectProcessorSupplier(table, filter.result, projectionList);
         }
+
+        DAG dag = context.getDag();
         Vertex sourceVertex = dag.newUniqueVertex(
                 "Select (" + table.getSqlName() + ")", supplier
         );
@@ -162,12 +168,6 @@ public abstract class MongoSqlConnectorBase implements SqlConnector, Serializabl
             return vEnd;
         }
         return sourceVertex;
-    }
-
-    private static List<String> allFieldsExternalNames(MongoTable table) {
-        return table.getFields().stream()
-                    .map(f -> ((MongoTableField) f).externalName)
-                    .collect(toList());
     }
 
     private Long parseStartAt(Map<String, String> options) {
@@ -192,21 +192,15 @@ public abstract class MongoSqlConnectorBase implements SqlConnector, Serializabl
         }
     }
 
-    private static TranslationResult<String> translateFilter(RexNode filterNode, DagBuildContext context,
-                                                             ExpressionToMongoVisitor visitor) {
+    private static TranslationResult<String> translateFilter(RexNode filterNode, RexToMongoVisitor visitor) {
         try {
             if (filterNode == null) {
                 return new TranslationResult<>(null, true);
             }
-            Expression<Boolean> filterExpr = context.convertFilter(filterNode);
-
-            if (filterExpr == null) {
-                return new TranslationResult<>(null, true);
-            }
-            Object result = filterExpr.accept(visitor);
+            Object result = filterNode.accept(visitor);
             assert result instanceof Bson;
 
-            String expression = ((Bson) result).toBsonDocument(Document.class, defaultCodecRegistry()).toJson();
+            String expression = ((Bson) result).toBsonDocument(BsonDocument.class, defaultCodecRegistry()).toJson();
             return new TranslationResult<>(expression, true);
         } catch (Throwable t) {
             return new TranslationResult<>(null, false);
@@ -215,10 +209,9 @@ public abstract class MongoSqlConnectorBase implements SqlConnector, Serializabl
 
     private static TranslationResult<List<String>> translateProjections(List<RexNode> projectionNodes,
                                                                         DagBuildContext context,
-                                                                        ExpressionToMongoVisitor visitor) {
+                                                                        RexToMongoVisitor visitor) {
         try {
-            List<Expression<?>> expressions = context.convertProjection(projectionNodes);
-            List<String> fields = expressions.stream()
+            List<String> fields = projectionNodes.stream()
                                           .map(e -> e.accept(visitor))
                                           .filter(proj -> proj instanceof String)
                                           .map(p -> (String) p)
@@ -235,6 +228,12 @@ public abstract class MongoSqlConnectorBase implements SqlConnector, Serializabl
         } catch (Throwable t) {
             return new TranslationResult<>(allFieldsExternalNames(context.getTable()), false);
         }
+    }
+
+    private static List<String> allFieldsExternalNames(MongoTable table) {
+        return table.getFields().stream()
+                    .map(f -> ((MongoTableField) f).externalName)
+                    .collect(toList());
     }
 
     static final class TranslationResult<T> {
