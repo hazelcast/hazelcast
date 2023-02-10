@@ -17,6 +17,7 @@ package com.hazelcast.jet.mongodb.impl;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Watermark;
@@ -27,7 +28,10 @@ import com.hazelcast.jet.impl.processor.UnboundedTransactionsProcessorUtility;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.jet.retry.impl.RetryTracker;
 import com.hazelcast.logging.ILogger;
+import com.mongodb.MongoBulkWriteException;
 import com.mongodb.MongoException;
+import com.mongodb.MongoServerException;
+import com.mongodb.MongoSocketException;
 import com.mongodb.TransactionOptions;
 import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.ClientSession;
@@ -55,6 +59,7 @@ import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
+import static com.mongodb.MongoException.TRANSIENT_TRANSACTION_ERROR_LABEL;
 import static com.mongodb.client.model.Filters.eq;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
@@ -198,9 +203,18 @@ public class WriteMongoP<I> extends AbstractProcessor {
             for (int i = 0; i < items.size(); i++) {
                 inbox.remove();
             }
-        } catch (Exception e) {
+        } catch (MongoBulkWriteException e) {
+            if (e.hasErrorLabel(TRANSIENT_TRANSACTION_ERROR_LABEL)) {
+                logger.info("Unable to process element: " + e.getMessage());
+                // not removing from inbox, so it will be retried
+            } else {
+                throw new JetException(e);
+            }
+        } catch (MongoSocketException | MongoServerException e) {
             logger.info("Unable to process Mongo Sink: " + e.getMessage());
             // not removing from inbox, so it will be retried
+        } catch (Exception e){
+            throw new JetException(e);
         }
     }
 

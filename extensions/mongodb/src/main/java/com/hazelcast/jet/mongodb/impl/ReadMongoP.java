@@ -23,6 +23,8 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.logging.ILogger;
+import com.mongodb.MongoServerException;
+import com.mongodb.MongoSocketException;
 import com.mongodb.client.ChangeStreamIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -218,7 +220,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
                 }
 
                 onConnect(newClient, snapshotsEnabled);
-            } catch (Exception e) {
+            } catch (MongoSocketException | MongoServerException e) {
                 logger.warning("Could not connect to MongoDB", e);
             }
         }
