@@ -16,7 +16,6 @@
 
 package com.hazelcast;
 
-import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.test.archunit.ArchUnitRules;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
@@ -24,7 +23,6 @@ import org.junit.Test;
 
 import static com.hazelcast.test.archunit.ModuleImportOptions.onlyCurrentModule;
 import static com.tngtech.archunit.base.DescribedPredicate.not;
-import static com.tngtech.archunit.core.domain.JavaClass.Predicates.equivalentTo;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
 import static com.tngtech.archunit.lang.conditions.ArchPredicates.are;
 
@@ -38,7 +36,6 @@ public class HazelcastCompletableFutureAsyncUsageTest {
                 .importPackages(basePackage);
 
         JavaClasses javaClassesFiltered = classes
-                .that(are(not(equivalentTo(NonCompletableFuture.class))))
                 .that(are(not(resideInAPackage("com.hazelcast.jet.."))));
         ArchUnitRules.COMPLETABLE_FUTURE_USED_ONLY_WITH_EXPLICIT_EXECUTOR.check(javaClassesFiltered);
     }

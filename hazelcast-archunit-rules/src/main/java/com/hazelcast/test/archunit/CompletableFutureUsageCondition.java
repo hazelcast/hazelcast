@@ -29,12 +29,15 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.tngtech.archunit.lang.SimpleConditionEvent.violated;
+import static java.util.stream.Collectors.toSet;
 
 /**
+ * Hazelcast internal callbacks shouldn't use the {@code ForkJoinPool#commonPool}, due to the risk of blocking
+ * Hazelcast progress by other misbehaving applications/libraries. <br/>
+ * The following rules should enforce to use of a separate executor for executing dependent stages in a Hazelcast code:
  * <ul>
  * <li> from {@link CompletionStage} create a list of methods that have an {@code Async} counterpart
  * <li> based on this list, filtering all their calls on the {@link CompletableFuture} {@code instanceof} objects
@@ -48,7 +51,7 @@ public class CompletableFutureUsageCondition extends ArchCondition<JavaClass> {
     private static final Set<String> COMPLETION_STAGE_METHODS = new ClassFileImporter().importClass(CompletionStage.class)
             .getMethods().stream()
             .map(JavaMember::getName)
-            .collect(Collectors.toSet());
+            .collect(toSet());
 
     private static final Set<String> SYNC_AND_ASYNC_METHODS = collectSyncAndAsyncCounterpartMethods();
 
@@ -66,7 +69,7 @@ public class CompletableFutureUsageCondition extends ArchCondition<JavaClass> {
                         return Stream.empty();
                     }
                 })
-                .collect(Collectors.toSet());
+                .collect(toSet());
     }
 
     static ArchCondition<? super JavaClass> useExplicitExecutorServiceInCFAsyncMethods() {
