@@ -21,13 +21,17 @@ import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.jobupload.JobMetaDataParameterObject;
 import com.hazelcast.jet.impl.jobupload.JobMultiPartParameterObject;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
-import java.util.concurrent.CompletableFuture;
+import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
 
 /**
  * Resumes the execution of a suspended job.
  */
-public class UploadJobMultiPartOperation extends AsyncJobOperation {
+public class UploadJobMultiPartOperation extends Operation implements IdentifiedDataSerializable {
+
+    Boolean response = false;
 
     JobMultiPartParameterObject jobMultiPartParameterObject;
 
@@ -35,6 +39,7 @@ public class UploadJobMultiPartOperation extends AsyncJobOperation {
     }
 
     public UploadJobMultiPartOperation(JetUploadJobMultipartCodec.RequestParameters parameters) {
+        // Save the parameters received from client
         jobMultiPartParameterObject = new JobMultiPartParameterObject();
         jobMultiPartParameterObject.setSessionId(parameters.sessionId);
         jobMultiPartParameterObject.setCurrentPartNumber(parameters.currentPartNumber);
@@ -44,19 +49,34 @@ public class UploadJobMultiPartOperation extends AsyncJobOperation {
         jobMultiPartParameterObject.setSha256Hex(parameters.sha256Hex);
     }
 
-
     @Override
-    public CompletableFuture<Boolean> doRun() {
-        return CompletableFuture.supplyAsync(() -> {
-            JetServiceBackend jetServiceBackend = getJetServiceBackend();
-            JobMetaDataParameterObject partsComplete = jetServiceBackend.storeJobMultiPart(jobMultiPartParameterObject);
-            if (partsComplete != null) {
-                jetServiceBackend.executeJar(partsComplete);
-            }
-            return true;
-        });
+    public Object getResponse() {
+        return response;
     }
 
+    @Override
+    public void run() {
+        // Delegate to JetServiceBackend
+        JetServiceBackend jetServiceBackend = getJetServiceBackend();
+        JobMetaDataParameterObject partsComplete = jetServiceBackend.storeJobMultiPart(jobMultiPartParameterObject);
+        // If JetServiceBackend returns that parts are complete
+        if (partsComplete != null) {
+            // Execute the jar
+            jetServiceBackend.executeJar(partsComplete);
+        }
+        response = true;
+    }
+
+    protected JetServiceBackend getJetServiceBackend() {
+        checkJetIsEnabled(getNodeEngine());
+        assert getServiceName().equals(JetServiceBackend.SERVICE_NAME) : "Service is not Jet Service";
+        return getService();
+    }
+
+    @Override
+    public final int getFactoryId() {
+        return JetInitDataSerializerHook.FACTORY_ID;
+    }
 
     @Override
     public int getClassId() {
