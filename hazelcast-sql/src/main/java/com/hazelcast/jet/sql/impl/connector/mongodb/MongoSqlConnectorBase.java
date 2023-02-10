@@ -124,7 +124,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
         MongoTable table = context.getTable();
 
-        RexToMongoVisitor visitor = new RexToMongoVisitor(table.fieldNames());
+        RexToMongoVisitor visitor = new RexToMongoVisitor(table.paths());
 
         TranslationResult<String> filter = translateFilter(predicate, visitor);
         TranslationResult<List<String>> projections = translateProjections(projection, context, visitor);
@@ -258,10 +258,14 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
 
     @Nonnull
     @Override
-    public Vertex updateProcessor(@Nonnull DagBuildContext context, @Nonnull List<String> fieldNames,
+    public Vertex updateProcessor(@Nonnull DagBuildContext context,
+                                  @Nonnull List<String> fieldNames,
                                   @Nonnull List<RexNode> expressions) {
         MongoTable table = context.getTable();
-        List<Expression<?>> updates = context.convertProjection(expressions);
+        RexToMongoVisitor visitor = new RexToMongoVisitor(table.paths());
+        List<Object> updates = expressions.stream()
+                .map(e -> e.accept(visitor))
+                .collect(toList());
 
         Vertex vertex = context.getDag().newUniqueVertex(
                 "Update(" + table.getSqlName() + ")",

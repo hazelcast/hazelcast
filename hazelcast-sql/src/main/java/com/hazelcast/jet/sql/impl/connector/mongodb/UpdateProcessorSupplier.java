@@ -20,7 +20,6 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.mongodb.WriteMode;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.Table;
@@ -41,6 +40,7 @@ import java.util.List;
 
 import static com.hazelcast.jet.mongodb.MongoDBSinkBuilder.DEFAULT_COMMIT_RETRY_STRATEGY;
 import static com.hazelcast.jet.mongodb.MongoDBSinkBuilder.DEFAULT_TRANSACTION_OPTION;
+import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 import static java.util.Arrays.asList;
 
 /**
@@ -53,11 +53,11 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     private final String databaseName;
     private final String collectionName;
     private final List<String> fieldNames;
-    private final List<Expression<?>> updates;
+    private final List<Object> updates;
     private final List<String> pkFields;
-    private final ExpressionToMongoVisitor visitor;
+    private ExpressionEvalContext evalContext;
 
-    UpdateProcessorSupplier(MongoTable table, List<String> fieldNames, List<Expression<?>> updates) {
+    UpdateProcessorSupplier(MongoTable table, List<String> fieldNames, List<Object> updates) {
         this.connectionString = table.connectionString;
         this.databaseName = table.databaseName;
         this.collectionName = table.collectionName;
@@ -66,13 +66,11 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
         this.fieldNames = fieldNames;
         this.updates = updates;
         this.pkFields = Collections.singletonList("_id");
-        this.visitor = new ExpressionToMongoVisitor(table, null, false);
     }
 
     @Override
     public void init(@Nonnull Context context) throws Exception {
-        ExpressionEvalContext evalContext = ExpressionEvalContext.from(context);
-        visitor.setContext(evalContext);
+        evalContext = ExpressionEvalContext.from(context);
     }
 
     @Nonnull
@@ -105,10 +103,17 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
         List<Bson> updateToPerform = new ArrayList<>();
         for (int i = 0; i < fieldNames.size(); i++) {
             String fieldName = fieldNames.get(i);
-            Expression<?> updateExpr = updates.get(i);
-            Object value = updateExpr.accept(visitor);
+            Object updateExpr = updates.get(i);
+            if (updateExpr instanceof Bson) {
+                Document document = Document.parse(((Bson) updateExpr)
+                                            .toBsonDocument(Document.class, defaultCodecRegistry()).toJson());
+                ParameterReplacer.replacePlaceholders(document, evalContext);
+                updateExpr = document;
+            } else if (updateExpr instanceof DynamicParameter) {
+                updateExpr = evalContext.getArgument(((DynamicParameter) updateExpr).getIndex());
+            }
 
-            updateToPerform.add(Updates.set(fieldName, value));
+            updateToPerform.add(Updates.set(fieldName, updateExpr));
         }
 
         List<Bson> all = new ArrayList<>();

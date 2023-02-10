@@ -2,12 +2,13 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import org.bson.Document;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
 import static java.util.Arrays.asList;
 
-public class DynamicParameter {
+public class DynamicParameter implements Serializable {
 
     private static final List<String> NODES = asList("index", "objectType");
     private static final String DYNAMIC_PARAMETER_DISCRIMINATOR = "DynamicParameter";
