@@ -83,7 +83,7 @@ class MasterSnapshotContext {
          * (regular snapshot). This name is without
          * {@link JobRepository#EXPORTED_SNAPSHOTS_PREFIX} prefix.
          */
-        final String snapshotMapName;
+        final String snapshotName;
         /**
          * If true, execution will be terminated after the snapshot.
          */
@@ -94,14 +94,14 @@ class MasterSnapshotContext {
          */
         final CompletableFuture<Void> future;
 
-        SnapshotRequest(@Nullable String snapshotMapName, boolean isTerminal, @Nullable CompletableFuture<Void> future) {
-            this.snapshotMapName = snapshotMapName;
+        SnapshotRequest(@Nullable String snapshotName, boolean isTerminal, @Nullable CompletableFuture<Void> future) {
+            this.snapshotName = snapshotName;
             this.isTerminal = isTerminal;
             this.future = future;
         }
 
         public boolean isExport() {
-            return snapshotMapName != null;
+            return snapshotName != null;
         }
 
         /**
@@ -116,7 +116,7 @@ class MasterSnapshotContext {
         }
 
         public String finalMapName() {
-            return isExport() ? exportedSnapshotMapName(snapshotMapName)
+            return isExport() ? exportedSnapshotMapName(snapshotName)
                     : snapshotDataMapName(mc.jobId(), mc.jobExecutionRecord().ongoingDataMapIndex());
         }
 
@@ -149,8 +149,8 @@ class MasterSnapshotContext {
     }
 
     @SuppressWarnings("SameParameterValue") // used by jet-enterprise
-    void enqueueSnapshot(String snapshotMapName, boolean isTerminal, CompletableFuture<Void> future) {
-        enqueueSnapshot(new SnapshotRequest(snapshotMapName, isTerminal, future));
+    void enqueueSnapshot(String snapshotName, boolean isTerminal, CompletableFuture<Void> future) {
+        enqueueSnapshot(new SnapshotRequest(snapshotName, isTerminal, future));
     }
 
     private void enqueueSnapshot(SnapshotRequest requestedSnapshot) {
@@ -206,7 +206,7 @@ class MasterSnapshotContext {
                     return;
                 }
                 snapshotInProgress = true;
-                mc.jobExecutionRecord().startNewSnapshot(requestedSnapshot.snapshotMapName);
+                mc.jobExecutionRecord().startNewSnapshot(requestedSnapshot.snapshotName);
                 localExecutionId = mc.executionId();
             } finally {
                 mc.unlock();
@@ -229,7 +229,7 @@ class MasterSnapshotContext {
 
             logFine(logger, "Starting snapshot %d for %s, flags: %s, writing to: %s",
                     newSnapshotId, jobNameAndExecutionId(mc.jobName(), localExecutionId),
-                    SnapshotFlags.toString(snapshotFlags), requestedSnapshot.snapshotMapName);
+                    SnapshotFlags.toString(snapshotFlags), requestedSnapshot.snapshotName);
 
             Function<ExecutionPlan, Operation> factory = plan ->
                     new SnapshotPhase1Operation(mc.jobId(), localExecutionId, newSnapshotId, finalMapName, snapshotFlags);
@@ -356,7 +356,7 @@ class MasterSnapshotContext {
 
                     if (requestedSnapshot.isExport()) {
                         // update also for failed snapshots because the map may have contained different snapshot before
-                        mc.jobRepository().cacheValidationRecord(requestedSnapshot.snapshotMapName, validationRecord);
+                        mc.jobRepository().cacheValidationRecord(requestedSnapshot.snapshotName, validationRecord);
                     }
                     if (oldValue != null) {
                         logger.severe("SnapshotValidationRecord overwritten after writing to '" + finalMapName

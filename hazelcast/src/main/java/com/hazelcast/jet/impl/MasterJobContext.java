@@ -255,9 +255,9 @@ public class MasterJobContext {
                   final long snapshotId = jobExecRec.snapshotId();
                   // name without internal prefix
                   final String snapshotName;
-                  final String mapName;
+                  final String snapshotMapName;
 
-                  // check if there is snapshot to restore. It could be in order:
+                  // Check if there is a snapshot to restore. We use snapshots in this order:
                   // 1. exported terminal snapshot when the job is restarted due to failure during it
                   // 2. most recent automatic snapshot
                   // 3. configured initialSnapshotName
@@ -266,18 +266,18 @@ public class MasterJobContext {
                       // job restarts with existing snapshot: could be automatic or exported terminal.
                       // Initial snapshot from Job config, if any, is ignored, because the job has made
                       // its own snapshots.
-                      snapshotName = jobExecRec.exportedSnapshotMapName();
-                      mapName = jobExecRec.successfulSnapshotDataMapName();
+                      snapshotName = jobExecRec.exportedSnapshotName();
+                      snapshotMapName = jobExecRec.successfulSnapshotDataMapName();
                   } else {
                       // there was no snapshot performed before restart or this is a new job
                       snapshotName = mc.jobConfig().getInitialSnapshotName();
-                      mapName = snapshotName != null
+                      snapshotMapName = snapshotName != null
                               ? exportedSnapshotMapName(snapshotName)
                               : null;
                   }
 
-                  if (mapName != null) {
-                      rewriteDagWithSnapshotRestore(dag, snapshotId, mapName, snapshotName);
+                  if (snapshotMapName != null) {
+                      rewriteDagWithSnapshotRestore(dag, snapshotId, snapshotMapName, snapshotName);
                   } else {
                       logger.info("Didn't find any snapshot to restore for " + mc.jobIdString());
                   }

@@ -54,29 +54,34 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
     private volatile JobSuspensionCause suspensionCause;
     private volatile long snapshotId = NO_SNAPSHOT;
     private volatile int dataMapIndex = -1;
+
     /**
-     * Id of most recently attempted snapshot (if no snapshot is in progress)
+     * ID of the most recently attempted snapshot (if no snapshot is in progress)
      * or id of current snapshot in progress.
      * <p>
-     * The same id cannot be reused for different snapshot attempts, even if
+     * The same id should not be reused for different snapshot attempts, even if
      * they failed.
      */
     private volatile long ongoingSnapshotId = NO_SNAPSHOT;
+
     private volatile long ongoingSnapshotStartTime = Long.MIN_VALUE;
+
     /**
      * Name of target map for current snapshot being exported. The value is
-     * not-null while the job is exporting a state snapshot. The value is null
-     * when writing a normal snapshot or when no snapshot is in progress.
+     * not-null while the job is exporting a state snapshot, terminal or not.
+     * The value is null when writing a normal snapshot or when no snapshot is
+     * in progress.
      * <p>
-     * This value is not needed after coordinator restart.
+     * This value is not needed after coordinator restart, so it's transient.
      * <p>
-     * {@link #ongoingSnapshotId} and {@link #ongoingExportedSnapshotMapName}
+     * {@link #ongoingSnapshotId} and {@link #ongoingExportedSnapshotName}
      * define target of current snapshot (if any).
-     * {@link #snapshotId} and {@link #exportedSnapshotMapName} define last
+     * {@link #snapshotId} and {@link #exportedSnapshotName} define the last
      * successful snapshot (if any).
      */
-    private transient volatile String ongoingExportedSnapshotMapName;
-    private volatile String exportedSnapshotMapName;
+    private transient volatile String ongoingExportedSnapshotName;
+
+    private volatile String exportedSnapshotName;
     @Nullable
     private volatile String lastSnapshotFailure;
     @Nullable
@@ -141,21 +146,22 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
     @SuppressWarnings("NonAtomicOperationOnVolatileField")
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "all updates to ongoingSnapshotId are synchronized")
-    public void startNewSnapshot(String exportedSnapshotMapName) {
+    public void startNewSnapshot(String exportedSnapshotName) {
         ongoingSnapshotId++;
         ongoingSnapshotStartTime = Clock.currentTimeMillis();
-        this.ongoingExportedSnapshotMapName = exportedSnapshotMapName;
+        this.ongoingExportedSnapshotName = exportedSnapshotName;
     }
 
     public SnapshotStats ongoingSnapshotDone(
             long numBytes, long numKeys, long numChunks, @Nullable String failureText,
-            boolean isTerminal) {
+            boolean isTerminal
+    ) {
         lastSnapshotFailure = failureText;
         SnapshotStats res = new SnapshotStats(
                 ongoingSnapshotId, ongoingSnapshotStartTime, Clock.currentTimeMillis(), numBytes, numKeys, numChunks
         );
         if (failureText == null) {
-            boolean isExport = ongoingExportedSnapshotMapName != null;
+            boolean isExport = ongoingExportedSnapshotName != null;
             boolean isExportOnly = isExport && !isTerminal;
 
             if (!isExport) {
@@ -163,15 +169,15 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
                 dataMapIndex = ongoingDataMapIndex();
             }
 
-            // for snapshots other than export-only remember map to which the snapshot has been written
+            // for snapshots other than export-only remember the map to which the snapshot has been written
             // (set to null for automatic snapshots performed after restart from terminal exported snapshot)
             if (!isExportOnly) {
-                exportedSnapshotMapName = ongoingExportedSnapshotMapName;
+                exportedSnapshotName = ongoingExportedSnapshotName;
                 snapshotId = ongoingSnapshotId;
                 snapshotStats = res;
             }
         }
-        ongoingExportedSnapshotMapName = null;
+        ongoingExportedSnapshotName = null;
         ongoingSnapshotStartTime = Long.MIN_VALUE;
         return res;
     }
@@ -221,12 +227,12 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
     }
 
     /**
-     * Name of the exported map if the last valid snapshot was terminal
+     * Name of the exported map, if the last valid snapshot was a terminal
      * exported snapshot. Null otherwise.
      */
     @Nullable
-    public String exportedSnapshotMapName() {
-        return exportedSnapshotMapName;
+    public String exportedSnapshotName() {
+        return exportedSnapshotName;
     }
 
     /**
@@ -272,8 +278,8 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
         if (snapshotId() < 0) {
             throw new IllegalStateException("No successful snapshot");
         }
-        return exportedSnapshotMapName() != null
-                ? JobRepository.exportedSnapshotMapName(exportedSnapshotMapName())
+        return exportedSnapshotName() != null
+                ? JobRepository.exportedSnapshotMapName(exportedSnapshotName())
                 : snapshotDataMapName(getJobId(), dataMapIndex());
     }
 
@@ -298,7 +304,7 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
         // use writeObject instead of writeUTF to allow for nulls
         out.writeObject(lastSnapshotFailure);
         out.writeObject(snapshotStats);
-        out.writeObject(exportedSnapshotMapName);
+        out.writeObject(exportedSnapshotName);
         out.writeObject(suspensionCause);
         out.writeBoolean(executed);
         out.writeLong(timestamp.get());
@@ -314,7 +320,7 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
         ongoingSnapshotStartTime = in.readLong();
         lastSnapshotFailure = in.readObject();
         snapshotStats = in.readObject();
-        exportedSnapshotMapName = in.readObject();
+        exportedSnapshotName = in.readObject();
         suspensionCause = in.readObject();
         executed = in.readBoolean();
         timestamp.set(in.readLong());

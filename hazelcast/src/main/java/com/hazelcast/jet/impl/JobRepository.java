@@ -680,7 +680,8 @@ public class JobRepository {
     }
 
     /**
-     * Returns map name in the form {@code "_jet.exportedSnapshot.<jobId>.<dataMapIndex>"}.
+     * Returns the map name in which an exported snapshot with the given `name`
+     * is stored. It's {@code "_jet.exportedSnapshot.<name>"}.
      */
     public static String exportedSnapshotMapName(String name) {
         return JobRepository.EXPORTED_SNAPSHOTS_PREFIX + name;
