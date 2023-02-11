@@ -338,7 +338,7 @@ public class ClientMapNearCacheInvalidationTest extends ClientTestSupport {
         long invalidationsBefore = nearCachestats.getInvalidations();
         PredicateBuilder.EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
         Predicate predicate = e.get("salary").equal(0);
-        map.executeOnEntries(new TestObjectBasedReadOnlyProcessor(),predicate);
+        map.executeOnEntries(new TestObjectBasedReadOnlyProcessor(), predicate);
         long invalidationsAfter = nearCachestats.getInvalidations();
         assertEquals("There should be no invalidation after getting keys from read only entry processor", invalidationsBefore, invalidationsAfter);
     }

@@ -282,7 +282,7 @@ public class NearCacheTest extends NearCacheTestSupport {
         for (int i = 0; i < mapSize; i++) {
             set.add(i);
         }
-        map.executeOnKeys(set,new TestReadOnlyProcessor());
+        map.executeOnKeys(set, new TestReadOnlyProcessor());
         long invalidationsAfter = stats.getInvalidations();
         assertEquals("There should be no invalidation after getting keys from read only entry processor", invalidationsBefore, invalidationsAfter);
     }
@@ -347,7 +347,7 @@ public class NearCacheTest extends NearCacheTestSupport {
         for (int i = 0; i < mapSize; i++) {
             set.add(i);
         }
-        map.submitToKeys(set,new TestReadOnlyProcessor());
+        map.submitToKeys(set, new TestReadOnlyProcessor());
         long invalidationsAfter = stats.getInvalidations();
         assertEquals("There should be no invalidation after getting keys from read only entry processor", invalidationsBefore, invalidationsAfter);
     }
