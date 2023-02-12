@@ -266,7 +266,8 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
         } catch (Throwable e) {
             handleOperationError(op, e);
         } finally {
-             if (publishCurrentTask) {
+            op.afterRunFinal();
+            if (publishCurrentTask) {
                 currentTask = null;
             }
             record(op, startNanos);
