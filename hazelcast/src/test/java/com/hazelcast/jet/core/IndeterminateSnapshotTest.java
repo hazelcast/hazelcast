@@ -126,16 +126,6 @@ public class IndeterminateSnapshotTest {
             instances = createHazelcastInstances(getConfig(), NODE_COUNT);
         }
 
-        protected void setupJetTests(int allowedSnapshotsCount) {
-            SnapshotInstrumentationP.allowedSnapshotsCount = allowedSnapshotsCount;
-            SnapshotInstrumentationP.snapshotCommitFinishConsumer = success -> {
-                // allow normal snapshot after job restart
-                SnapshotInstrumentationP.saveSnapshotConsumer = null;
-                SnapshotInstrumentationP.snapshotCommitPrepareConsumer = null;
-                snapshotDone.countDown();
-            };
-        }
-
         private int getActiveNodesCount() {
             int terminatedCount = (instances != null && instances[0].getLifecycleService().isRunning()) ? 0 : 1;
             return NODE_COUNT - terminatedCount;
@@ -146,12 +136,12 @@ public class IndeterminateSnapshotTest {
         }
 
         /**
-         * Executes given action once when invoked multiple times from many instances of processor.
-         */
-        /**
          * Returns a consumer that will pass on to the `delegate` consumer at
          * most once. Subsequent calls do nothing, except that they block until
          * the first call is complete, if they are concurrent.
+         *
+         * @param delegate consumer that should be invoked once
+         * @return wrapping consumer
          */
         protected static <T> Consumer<T> singleExecutionConsumer(Consumer<T> delegate) {
             boolean[] executed = {false};
@@ -165,12 +155,20 @@ public class IndeterminateSnapshotTest {
             };
         }
 
-        protected <T> Consumer<T> lastExecutionConsumer(Consumer<T> snapshotAction) {
+        /**
+         * Returns a consumer that will pass on to the `delegate` consumer on the last
+         * execution. It assumes that there will be {@link #LOCAL_PARALLELISM} invocations
+         * on each active node.
+         *
+         * @param delegate consumer that should be invoked once
+         * @return wrapping consumer
+         */
+        protected <T> Consumer<T> lastExecutionConsumer(Consumer<T> delegate) {
             AtomicInteger executed = new AtomicInteger();
             return (idx) -> {
                 int activeNodesCount = getActiveNodesCount();
                 if (executed.incrementAndGet() >= activeNodesCount * LOCAL_PARALLELISM) {
-                    snapshotAction.accept(idx);
+                    delegate.accept(idx);
                 }
             };
         }
@@ -196,7 +194,7 @@ public class IndeterminateSnapshotTest {
         protected void assertSnapshotNotCommitted() {
             assertThat(snapshotDone.getCount())
                     .as("Snapshot must not be committed when indeterminate")
-                    .isEqualTo(NODE_COUNT * LOCAL_PARALLELISM);
+                    .isEqualTo(getActiveNodesCount() * LOCAL_PARALLELISM);
         }
 
         /**
@@ -293,9 +291,14 @@ public class IndeterminateSnapshotTest {
             failingInstanceFuture = new CompletableFuture<>();
         }
 
-        @Override
         protected void setupJetTests(int allowedSnapshotsCount) {
-            super.setupJetTests(allowedSnapshotsCount);
+            SnapshotInstrumentationP.allowedSnapshotsCount = allowedSnapshotsCount;
+            SnapshotInstrumentationP.snapshotCommitFinishConsumer = success -> {
+                // allow normal snapshot after job restart
+                SnapshotInstrumentationP.saveSnapshotConsumer = null;
+                SnapshotInstrumentationP.snapshotCommitPrepareConsumer = null;
+                snapshotDone.countDown();
+            };
 
             setupPartitions();
         }
@@ -652,6 +655,60 @@ public class IndeterminateSnapshotTest {
                 }
             }
         }
+
+        //region MapBackupPacketDropFilter
+
+        public static void setBackupPacketDropFilter(HazelcastInstance instance, float blockRatio, HazelcastInstance... blockSync) {
+            setBackupPacketDropFilter(instance, blockRatio, Arrays.stream(blockSync).map(Accessors::getAddress).collect(Collectors.toSet()));
+        }
+
+        public static void setBackupPacketDropFilter(HazelcastInstance instance, float blockRatio, Set<Address> blockSync) {
+            Node node = getNode(instance);
+            FirewallingServer.FirewallingServerConnectionManager cm = (FirewallingServer.FirewallingServerConnectionManager)
+                    node.getServer().getConnectionManager(EndpointQualifier.MEMBER);
+            cm.setPacketFilter(new MapBackupPacketDropFilter(node.getThisAddress(), node.getSerializationService(), blockRatio, blockSync));
+        }
+
+        private static class MapBackupPacketDropFilter extends OperationPacketFilter {
+            private final ILogger logger = Logger.getLogger(getClass());
+
+            private final Address thisAddress;
+            private final float blockRatio;
+            private final Set<Address> blockSyncTo;
+
+            MapBackupPacketDropFilter(Address thisAddress, InternalSerializationService serializationService, float blockRatio, Set<Address> blockSyncTo) {
+                super(serializationService);
+                this.thisAddress = thisAddress;
+                this.blockRatio = blockRatio;
+                this.blockSyncTo = blockSyncTo;
+            }
+
+            @Override
+            protected Action filterOperation(Address endpoint, int factory, int type) {
+                boolean isBackup = factory == SpiDataSerializerHook.F_ID && type == SpiDataSerializerHook.BACKUP;
+
+                boolean isSync = factory == PartitionDataSerializerHook.F_ID
+                        // REPLICA_SYNC_REQUEST_OFFLOADABLE is sent when backup replica detects
+                        // that is it out-of-date because there is never version in partition table
+                        && (type == PartitionDataSerializerHook.REPLICA_SYNC_REQUEST_OFFLOADABLE
+                );
+
+                Action action;
+                if (isBackup) {
+                    action = (Math.random() >= blockRatio ? Action.ALLOW : Action.DROP);
+                    logger.info(thisAddress + " sending backup packet to " + endpoint + " action: " + action);
+                } else if (isSync) {
+                    action = blockSyncTo.contains(endpoint) ? Action.DROP : Action.ALLOW;
+                    logger.info(thisAddress + " sending sync packet (type=" + type + ") to " + endpoint + " action: " + action);
+                } else {
+                    action = Action.ALLOW;
+                }
+
+                return action;
+            }
+        }
+
+        //endregion
     }
 
     /**
@@ -700,7 +757,7 @@ public class IndeterminateSnapshotTest {
 
             new SuccessfulSnapshots(initialSnapshotsCount)
                     .then(new IndeterminateLostPut())
-                    .then(new SuccessfulSnapshots(100))
+                    .then(new SuccessfulIgnoredSnapshots(100))
                     .start();
 
             Job job = createJob(initialSnapshotsCount + 3);
@@ -785,7 +842,7 @@ public class IndeterminateSnapshotTest {
 
             new SuccessfulSnapshots(initialSnapshotsCount)
                     .then(new IndeterminateLostPut())
-                    .then(new SuccessfulSnapshots(100))
+                    .then(new SuccessfulIgnoredSnapshots(100))
                     .start();
 
             Job job = createJob(initialSnapshotsCount + 3);
@@ -835,7 +892,7 @@ public class IndeterminateSnapshotTest {
             new SuccessfulSnapshots(initialSnapshotsCount)
                     // snapshot during suspend will be indeterminate until coordinator is terminated
                     .then(new IndeterminateLostPutsUntil(coordinatorTerminated))
-                    .then(new SuccessfulSnapshots(100))
+                    .then(new SuccessfulIgnoredSnapshots(100))
                     .start();
 
             Job job = createJob(initialSnapshotsCount + 3);
@@ -886,7 +943,7 @@ public class IndeterminateSnapshotTest {
 
             new SuccessfulSnapshots(initialSnapshotsCount)
                     .then(new IndeterminateLostPut())
-                    .then(new SuccessfulSnapshots(100))
+                    .then(new SuccessfulIgnoredSnapshots(100))
                     .start();
 
             Job job = createJob(initialSnapshotsCount + 3);
@@ -916,42 +973,25 @@ public class IndeterminateSnapshotTest {
             return instances[NODE_COUNT - 1].getMap(JOB_EXECUTION_RECORDS_MAP_NAME);
         }
 
-        private void singleIndeterminatePutLost() {
-            // affects put and also executeOnKey
-            MapInterceptor mockInt = mock(MapInterceptor.class, withSettings().serializable());
-            when(mockInt.interceptPut(any(), any()))
-                    .thenThrow(new IndeterminateOperationStateException("Simulated lost IMap update"))
-                    .thenAnswer(returnsSecondArg());
-            getJobExecutionRecordIMap().addInterceptor(mockInt);
-        }
-
-        private String allIndeterminatePutsLost() {
-            // affects put and also executeOnKey
-            MapInterceptor mockInt = mock(MapInterceptor.class, withSettings().serializable());
-            when(mockInt.interceptPut(any(), any()))
-                    // delay to prevent to many retries
-                    .thenAnswer(answersWithDelay(1000,
-                            new ThrowsException(new IndeterminateOperationStateException("Simulated lost IMap update"))));
-            return getJobExecutionRecordIMap().addInterceptor(mockInt);
-        }
-
-        private void singleIndeterminatePutNotLost() {
-            // affects put and also executeOnKey
-            MapInterceptor mockInt = mock(MapInterceptor.class, withSettings().serializable());
-            Mockito.doThrow(new IndeterminateOperationStateException("Simulated not lost IMap update"))
-                    .doReturn(null)
-                    .when(mockInt).afterPut(any());
-            getJobExecutionRecordIMap().addInterceptor(mockInt);
-        }
-
         // region Snapshot scenarios
+
+        /**
+         * Base class for defining snapshot failure scenarios. Allows to
+         * precisely inject failure at correct moment. The scenario is defined
+         * at the beginning of the test and runs automatically afterwards after
+         * it is started using {@link #start()}.
+         * <p>
+         * Scenario steps use {@link SnapshotInstrumentationP} to inject
+         * failures at appropriate stages of processing.
+         */
         private abstract class AbstractScenarioStep {
             @Nullable
             private AbstractScenarioStep next;
             @Nullable
             protected AbstractScenarioStep prev;
             /**
-             * Null means step that adds some action, but does not increase number of completed snapshots
+             * Null means step that adds some action, but does not increase
+             * number of completed snapshots
              */
             protected Integer repetitions = 1;
 
@@ -967,7 +1007,8 @@ public class IndeterminateSnapshotTest {
             }
 
             /**
-             * Configure {@link SnapshotInstrumentationP} according to this step
+             * Configure {@link SnapshotInstrumentationP} according to
+             * definition of this step.
              */
             public final void apply() {
                 if (repetitions == null || repetitions > 0) {
@@ -1003,6 +1044,8 @@ public class IndeterminateSnapshotTest {
             protected void goToNextStep() {
                 if (next != null) {
                     next.apply();
+                } else {
+                    logger.info("End of scenario");
                 }
             }
 
@@ -1023,6 +1066,10 @@ public class IndeterminateSnapshotTest {
             }
         }
 
+        /**
+         * Allow given number of successful snapshots before proceeding to next step.
+         * Proceeds to next step when last snapshot is committed. Updates {@link #snapshotDone}.
+         */
         protected class SuccessfulSnapshots extends AbstractScenarioStep {
             SuccessfulSnapshots() {
                 super();
@@ -1056,6 +1103,11 @@ public class IndeterminateSnapshotTest {
             }
         }
 
+        /**
+         * Allow given number of successful snapshots before proceeding to next
+         * step. Proceeds to next step when last snapshot is committed. Does
+         * not update {@link #snapshotDone}.
+         */
         protected class SuccessfulIgnoredSnapshots extends AbstractScenarioStep {
             SuccessfulIgnoredSnapshots() {
                 super();
@@ -1065,6 +1117,7 @@ public class IndeterminateSnapshotTest {
                 this();
                 repeat(repetitions);
             }
+
             @Override
             protected void doApply() {
                 // nothing to break
@@ -1077,7 +1130,9 @@ public class IndeterminateSnapshotTest {
         }
 
         /**
-         * 1 lost indeterminate IMap update, then successes (configured number of repetitions)
+         * Inject 1 lost indeterminate JobExecutionRecord IMap update after
+         * last snapshot chunk is saved and go to next step after injecting the
+         * error.
          */
         protected class IndeterminateLostPut extends AbstractScenarioStep {
             public IndeterminateLostPut() {
@@ -1088,6 +1143,7 @@ public class IndeterminateSnapshotTest {
             @Override
             protected void doApply() {
                 initSnapshotDoneCounter();
+                // break update of JobExecutionRecord after last snapshot chunk is saved
                 SnapshotInstrumentationP.saveSnapshotConsumer =
                         SnapshotFailureTests.this.<Integer>
                                         breakSnapshotConsumer("snapshot save",
@@ -1105,12 +1161,17 @@ public class IndeterminateSnapshotTest {
         }
 
         /**
-         * Lost indeterminate IMap updates until condition is satisfied
+         * Inject indeterminate JobExecutionRecord IMap updates until condition is satisfied.
+         * Go to next step after the condition is satisfied and IMap updates are restored.
          */
         protected class IndeterminateLostPutsUntil extends AbstractScenarioStep {
 
             private final CompletableFuture<String> registration = new CompletableFuture<>();
 
+            /**
+             * @param condition Future indicating when IMap puts should be fixed. It will happen
+             *                  when the future is completed.
+             */
             public <T> IndeterminateLostPutsUntil(CompletableFuture<T> condition) {
                 super();
                 repeat(null);
@@ -1138,59 +1199,42 @@ public class IndeterminateSnapshotTest {
             }
         }
 
+
+        private void singleIndeterminatePutLost() {
+            // affects put and also executeOnKey
+            MapInterceptor mockInt = mock(MapInterceptor.class, withSettings().serializable());
+            when(mockInt.interceptPut(any(), any()))
+                    .thenThrow(new IndeterminateOperationStateException("Simulated lost IMap update"))
+                    .thenAnswer(returnsSecondArg());
+            getJobExecutionRecordIMap().addInterceptor(mockInt);
+        }
+
+        private String allIndeterminatePutsLost() {
+            // affects put and also executeOnKey
+            MapInterceptor mockInt = mock(MapInterceptor.class, withSettings().serializable());
+            when(mockInt.interceptPut(any(), any()))
+                    // delay to prevent to many retries
+                    .thenAnswer(answersWithDelay(1000,
+                            new ThrowsException(new IndeterminateOperationStateException("Simulated lost IMap update"))));
+            return getJobExecutionRecordIMap().addInterceptor(mockInt);
+        }
+
+        private void singleIndeterminatePutNotLost() {
+            // affects put and also executeOnKey
+            MapInterceptor mockInt = mock(MapInterceptor.class, withSettings().serializable());
+            Mockito.doThrow(new IndeterminateOperationStateException("Simulated not lost IMap update"))
+                    .doReturn(null)
+                    .when(mockInt).afterPut(any());
+            getJobExecutionRecordIMap().addInterceptor(mockInt);
+        }
+
         //endregion
     }
 
-    public static void setBackupPacketDropFilter(HazelcastInstance instance, float blockRatio, HazelcastInstance... blockSync) {
-        setBackupPacketDropFilter(instance, blockRatio, Arrays.stream(blockSync).map(Accessors::getAddress).collect(Collectors.toSet()));
-    }
-
-    public static void setBackupPacketDropFilter(HazelcastInstance instance, float blockRatio, Set<Address> blockSync) {
-        Node node = getNode(instance);
-        FirewallingServer.FirewallingServerConnectionManager cm = (FirewallingServer.FirewallingServerConnectionManager)
-                node.getServer().getConnectionManager(EndpointQualifier.MEMBER);
-        cm.setPacketFilter(new MapBackupPacketDropFilter(node.getThisAddress(), node.getSerializationService(), blockRatio, blockSync));
-    }
-
-    private static class MapBackupPacketDropFilter extends OperationPacketFilter {
-        private final ILogger logger = Logger.getLogger(getClass());
-
-        private final Address thisAddress;
-        private final float blockRatio;
-        private final Set<Address> blockSyncTo;
-
-        MapBackupPacketDropFilter(Address thisAddress, InternalSerializationService serializationService, float blockRatio, Set<Address> blockSyncTo) {
-            super(serializationService);
-            this.thisAddress = thisAddress;
-            this.blockRatio = blockRatio;
-            this.blockSyncTo = blockSyncTo;
-        }
-
-        @Override
-        protected Action filterOperation(Address endpoint, int factory, int type) {
-            boolean isBackup = factory == SpiDataSerializerHook.F_ID && type == SpiDataSerializerHook.BACKUP;
-
-            boolean isSync = factory == PartitionDataSerializerHook.F_ID
-                    // REPLICA_SYNC_REQUEST_OFFLOADABLE is sent when backup replica detects
-                    // that is it out-of-date because there is never version in partition table
-                    && (type == PartitionDataSerializerHook.REPLICA_SYNC_REQUEST_OFFLOADABLE
-            );
-
-            Action action;
-            if (isBackup) {
-                action = (Math.random() >= blockRatio ? Action.ALLOW : Action.DROP);
-                logger.info(thisAddress + " sending backup packet to " + endpoint + " action: " + action);
-            } else if (isSync) {
-                action = blockSyncTo.contains(endpoint) ? Action.DROP : Action.ALLOW;
-                logger.info(thisAddress + " sending sync packet (type=" + type + ") to " + endpoint + " action: " + action);
-            } else {
-                action = Action.ALLOW;
-            }
-
-            return action;
-        }
-    }
-
+    /**
+     * Processor that provides hooks for snapshot taking stages and tracks data
+     * saved to and restored from snapshots.
+     */
     @Ignore("test processor used by EE tests")
     public static final class SnapshotInstrumentationP extends AbstractProcessor {
         static final ConcurrentMap<Integer, Integer> savedCounters = new ConcurrentHashMap<>();
