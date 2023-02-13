@@ -22,6 +22,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.datalink.HzClientDataLinkFactory;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.function.SupplierEx;
@@ -665,16 +666,16 @@ public final class Sources {
      * this method receives an DataLinkConfig.
      * The DataLinkConfig caches the connection to remote cluster, so that it can be re-used
      *  <p>
-     *      (Prerequisite) External dataStore configuration: <br/>
-     *      Use {@link com.hazelcast.datalink.HzClientDataStoreFactory#CLIENT_XML} for XML or <br/>
-     *      use {@link com.hazelcast.datalink.HzClientDataStoreFactory#CLIENT_YML} for YAML string
+     *      (Prerequisite) External dataLink configuration: <br/>
+     *      Use {@link HzClientDataLinkFactory#CLIENT_XML} for XML or <br/>
+     *      use {@link HzClientDataLinkFactory#CLIENT_YML} for YAML string
      *      <pre>{@code
      *            Config config = ...;
      *            String xmlString = ...;
      *            DataLinkConfig dataLinkConfig = new DataLinkConfig()
-     *                    .setName("my-hzclient-store")
-     *                    .setClassName(HzClientDataStoreFactory.class.getName())
-     *                    .setProperty(HzClientDataStoreFactory.CLIENT_XML, xmlString);
+     *                    .setName("my-hzclient-datalink")
+     *                    .setClassName(HzClientDataLinkFactory.class.getName())
+     *                    .setProperty(HzClientDataLinkFactory.CLIENT_XML, xmlString);
      *            config.addDataLinkConfig(dataLinkConfig);
      *       }</pre>
      *      </p>
@@ -684,7 +685,7 @@ public final class Sources {
      *           PredicateEx<EventJournalMapEvent<String, Integer>> predicate = ...;
      *           p.readFrom(Sources.remoteMapJournal(
      *               mapName,
-     *               DataLinkRef.dataLinkRef("my-hzclient-store"),
+     *               DataLinkRef.dataLinkRef("my-hzclient-datalink"),
      *               JournalInitialPosition.START_FROM_OLDEST,
      *               EventJournalMapEvent::getNewValue,
      *               predicate

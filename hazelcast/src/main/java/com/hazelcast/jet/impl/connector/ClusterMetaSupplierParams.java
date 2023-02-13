@@ -30,45 +30,69 @@ import java.io.Serializable;
 import java.security.Permission;
 
 /**
- *
+ * Parameter object class
  * @param <T> is input type
  * @param <R> is return type
  */
-class ClusterMetaSupplierParams<T, R> implements Serializable  {
+class ClusterMetaSupplierParams<T, R> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    // Optional XML to create a HazelcastInstance which is client that is used to connect to cluster members
+    /**
+     * Optional XML to create a HazelcastInstance which is client that is used to connect to cluster members
+     */
     private String clientXml;
 
-    // Optional DataLinkRef that refers a HzClientDataStoreFactory by name.
-    // The HzClientDataStoreFactory owns a HazelcastInstance which is client that is used to connect to cluster members
+    /**
+     * Optional DataLinkRef that refers a HzClientDataLinkFactory by name.
+     * The HzClientDataLinkFactory owns a HazelcastInstance which is client that is used to connect to cluster members
+     */
     private DataLinkRef dataLinkRef;
 
-    // The function that creates EventJournalReader
+    /**
+     * The function that creates EventJournalReader
+     */
     private FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<T>> eventJournalReaderSupplier;
 
-    // The predicate and projection for
-    // eventJournalReader.readFromEventJournal(offset, 1, MAX_FETCH_SIZE, partition, predicate, projection)
+    /**
+     * The predicate and projection for
+     * <pre>{@code
+     * eventJournalReader.readFromEventJournal(offset, 1, MAX_FETCH_SIZE, partition, predicate, projection)
+     * }</pre>
+     */
     private PredicateEx<? super T> predicate;
     private FunctionEx<? super T, ? extends R> projection;
     private JournalInitialPosition initialPos;
-
-    // The parameter for StreamEventJournalP
-    // eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
+    /**
+     * The parameter for StreamEventJournalP
+     * <pre> {@code
+     * eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
+     * }
+     * </pre>
+     */
     private EventTimePolicy<? super R> eventTimePolicy;
     private SupplierEx<Permission> permissionFn;
 
-    public static <E, T> ClusterMetaSupplierParams<E, T> fromXML(String clientXml) {
+    /**
+     * Create parameter object for connecting to a remote cluster using given XML
+     */
+    public static <E, T> ClusterMetaSupplierParams<E, T> fromXML(@Nonnull String clientXml) {
         ClusterMetaSupplierParams<E, T> params = new ClusterMetaSupplierParams<>();
         params.setClientXml(clientXml);
         return params;
     }
 
-    public static <E, T> ClusterMetaSupplierParams<E, T> fromDataLinkRef(DataLinkRef dataLinkRef) {
+    /**
+     * Create parameter object for connecting to a remote cluster using given DataLinkRef
+     */
+    public static <E, T> ClusterMetaSupplierParams<E, T> fromDataLinkRef(@Nonnull DataLinkRef dataLinkRef) {
         ClusterMetaSupplierParams<E, T> params = new ClusterMetaSupplierParams<>();
         params.setDataLinkRef(dataLinkRef);
         return params;
+    }
+
+    public static <E, T> ClusterMetaSupplierParams<E, T> empty() {
+        return new ClusterMetaSupplierParams<>();
     }
 
     public String getClientXml() {

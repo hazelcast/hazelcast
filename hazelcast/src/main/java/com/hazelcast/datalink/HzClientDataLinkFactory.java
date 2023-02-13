@@ -27,12 +27,12 @@ import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfigFromYaml;
 
 /**
- * Creates a HazelcastInstance data store.
+ * Creates a HazelcastInstance that is shared to connect to a remote cluster.
  * <p>
- * Set the client XML as property using {@link HzClientDataStoreFactory#CLIENT_XML} as property key or
- * Set the client YAML as property using {@link HzClientDataStoreFactory#CLIENT_YML} as property key
+ * Set the client XML as property using {@link HzClientDataLinkFactory#CLIENT_XML} as property key or
+ * Set the client YAML as property using {@link HzClientDataLinkFactory#CLIENT_YML} as property key
  */
-public class HzClientDataStoreFactory implements DataLinkFactory<HazelcastInstance> {
+public class HzClientDataLinkFactory implements DataLinkFactory<HazelcastInstance> {
 
     /**
      * The constant to be used as property key for XML
@@ -44,10 +44,14 @@ public class HzClientDataStoreFactory implements DataLinkFactory<HazelcastInstan
      */
     public static final String CLIENT_YML = "client_yml";
 
-    // Reference to configuration
+    /**
+     * Reference to configuration
+     */
     private DataLinkConfig dataLinkConfig;
 
-    // The cached client instance
+    /**
+     * The cached client instance
+     */
     private HazelcastInstance hazelcastInstance;
 
     @Override
@@ -60,7 +64,7 @@ public class HzClientDataStoreFactory implements DataLinkFactory<HazelcastInstan
                 hazelcastInstance = HazelcastClient.newHazelcastClient(clientConfig);
                 return hazelcastInstance;
             }
-            throw new HazelcastException("XML or YAML in HzClientDataStoreFactory is null");
+            throw new HazelcastException("XML or YAML in HzClientDataLinkFactory is null");
         }
         return hazelcastInstance;
     }

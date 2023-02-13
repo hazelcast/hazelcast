@@ -26,7 +26,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.datalink.DataLinkFactory;
 import com.hazelcast.datalink.DataLinkService;
-import com.hazelcast.datalink.HzClientDataStoreFactory;
+import com.hazelcast.datalink.HzClientDataLinkFactory;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.function.SupplierEx;
@@ -352,16 +352,16 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
                                  .toCompletableFuture();
     }
 
-    public static HzClientDataStoreFactory getDataStoreFactory(HazelcastInstance hazelcastInstance, String name) {
+    public static HzClientDataLinkFactory getDataStoreFactory(HazelcastInstance hazelcastInstance, String name) {
         NodeEngineImpl nodeEngine = Util.getNodeEngine(hazelcastInstance);
         DataLinkService dataLinkService = nodeEngine.getDataLinkService();
         DataLinkFactory<?> dataLinkFactory = dataLinkService.getDataLinkFactory(name);
 
-        if (!(dataLinkFactory instanceof HzClientDataStoreFactory)) {
-            String className = HzClientDataStoreFactory.class.getSimpleName();
+        if (!(dataLinkFactory instanceof HzClientDataLinkFactory)) {
+            String className = HzClientDataLinkFactory.class.getSimpleName();
             throw new HazelcastException("Data store factory '" + name + "' must be an instance of " + className);
         }
-        return (HzClientDataStoreFactory) dataLinkFactory;
+        return (HzClientDataLinkFactory) dataLinkFactory;
     }
 
     // Creates ClusterProcessorSupplier per member. Each ClusterProcessorSupplier is given a
@@ -398,14 +398,13 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             // The order is important.
             // If dataLinkConfig is specified prefer it to clientXml
             if (dataLinkRef != null) {
-                HzClientDataStoreFactory hzClientDataStoreFactory = getDataStoreFactory(context.hazelcastInstance(),
+                HzClientDataLinkFactory hzClientDataLinkFactory = getDataStoreFactory(context.hazelcastInstance(),
                         dataLinkRef.getName());
-                HazelcastInstance client = hzClientDataStoreFactory.getDataLink();
+                HazelcastInstance client = hzClientDataLinkFactory.getDataLink();
                 findRemotePartitionCount(client);
             } else if (clientXml != null) {
                 findRemotePartitionCountUsingNewClient();
             } else {
-
                 FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<E>>
                         eventJournalReaderSupplier = clusterMetaSupplierParams.getEventJournalReaderSupplier();
                 PermissionsUtil.checkPermission(eventJournalReaderSupplier, context);
@@ -519,9 +518,9 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             // If dataLinkConfig is specified prefer it to clientXml
             if (dataLinkRef != null) {
                 // Use cached HazelcastInstance for client
-                HzClientDataStoreFactory hzClientDataStoreFactory = getDataStoreFactory(context.hazelcastInstance(),
+                HzClientDataLinkFactory hzClientDataLinkFactory = getDataStoreFactory(context.hazelcastInstance(),
                         dataLinkRef.getName());
-                instance = hzClientDataStoreFactory.getDataLink();
+                instance = hzClientDataLinkFactory.getDataLink();
             } else if (clientXml != null) {
                 // Create a new HazelcastInstance for client
                 ClientConfig clientConfig = asClientConfig(clientXml);
@@ -561,6 +560,9 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         }
     }
 
+    /**
+     * ProcessorMetaSupplier for MapJournal that accesses local cluster
+     */
     public static <K, V, R> ProcessorMetaSupplier streamMapSupplier(
             @Nonnull String mapName,
             @Nonnull PredicateEx<? super EventJournalMapEvent<K, V>> predicate,
@@ -571,8 +573,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         checkSerializable(predicate, "predicate");
         checkSerializable(projection, "projection");
 
-        ClusterMetaSupplierParams<EventJournalMapEvent<K, V>, R> params = ClusterMetaSupplierParams
-                .fromXML(null);
+        ClusterMetaSupplierParams<EventJournalMapEvent<K, V>, R> params = ClusterMetaSupplierParams.empty();
 
         params.setEventJournalReaderSupplier(SecuredFunctions.mapEventJournalReaderFn(mapName));
         params.setPredicate(predicate);
@@ -584,7 +585,9 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         return new ClusterMetaSupplier<>(params);
     }
 
-    // remoteMapJournal processor that uses the given clientXml
+    /**
+     * ProcessorMetaSupplier for MapJournal that uses the given clientXml to access remote cluster
+     */
     public static <K, V, R> ProcessorMetaSupplier streamRemoteMapSupplier(
             @Nonnull String mapName,
             @Nonnull String clientXml,
@@ -609,9 +612,9 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
     }
 
-    // remoteMapJournal processor that uses the given DataLinkRef
-    // K,V are input type
-    // R is return type
+    /**
+     * ProcessorMetaSupplier for MapJournal that uses the given DataLinkRef to access remote cluster
+     */
     public static <K, V, R> ProcessorMetaSupplier streamRemoteMapSupplier(
             @Nonnull String mapName,
             @Nonnull DataLinkRef dataLinkRef,
@@ -635,7 +638,9 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         return new ClusterMetaSupplier<>(params);
     }
 
-    // cacheJournal processor
+    /**
+     * ProcessorMetaSupplier for CacheJournal that accesses local cluster
+     */
     public static <K, V, R> ProcessorMetaSupplier streamCacheSupplier(
             @Nonnull String cacheName,
             @Nonnull PredicateEx<? super EventJournalCacheEvent<K, V>> predicate,
@@ -645,8 +650,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         checkSerializable(predicate, "predicate");
         checkSerializable(projection, "projection");
 
-        ClusterMetaSupplierParams<EventJournalCacheEvent<K, V>, R> params = ClusterMetaSupplierParams
-                .fromXML(null);
+        ClusterMetaSupplierParams<EventJournalCacheEvent<K, V>, R> params = ClusterMetaSupplierParams.empty();
 
         params.setEventJournalReaderSupplier(SecuredFunctions.cacheEventJournalReaderFn(cacheName));
         params.setPredicate(predicate);
@@ -658,6 +662,9 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         return new ClusterMetaSupplier<>(params);
     }
 
+    /**
+     * ProcessorMetaSupplier for CacheJournal that uses the given XML to access remote cluster
+     */
     // remoteCacheJournal processor that uses the given clientXml
     public static <K, V, R> ProcessorMetaSupplier streamRemoteCacheSupplier(
             @Nonnull String cacheName,
