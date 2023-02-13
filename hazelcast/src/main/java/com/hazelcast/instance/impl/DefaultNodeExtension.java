@@ -96,6 +96,7 @@ import com.hazelcast.internal.util.phonehome.PhoneHome;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.JobEventService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.MemberSocketInterceptor;
@@ -114,6 +115,7 @@ import com.hazelcast.wan.impl.WanReplicationServiceImpl;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -435,7 +437,10 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public Map<String, Object> createExtensionServices() {
         if (jetServiceBackend != null) {
-            return Collections.singletonMap(JetServiceBackend.SERVICE_NAME, jetServiceBackend);
+            Map<String, Object> services = new HashMap<>();
+            services.put(JetServiceBackend.SERVICE_NAME, jetServiceBackend);
+            services.put(JobEventService.SERVICE_NAME, new JobEventService(node.getNodeEngine()));
+            return services;
         }
         return Collections.emptyMap();
     }
