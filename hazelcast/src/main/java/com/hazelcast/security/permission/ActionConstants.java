@@ -83,6 +83,9 @@ public final class ActionConstants {
     public static final String ACTION_DROP_VIEW = "drop-view";
     public static final String ACTION_CREATE_TYPE = "create-type";
     public static final String ACTION_DROP_TYPE = "drop-type";
+    public static final String ACTION_VIEW_LINK = "view-link";
+    public static final String ACTION_CREATE_LINK = "create-link";
+    public static final String ACTION_DROP_LINK = "drop-link";
 
     private static final Map<String, PermissionFactory> PERMISSION_FACTORY_MAP = new HashMap<>();
 

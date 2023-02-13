@@ -53,6 +53,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_LINK;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_TYPE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_VIEW;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_DESTROY;
@@ -62,6 +63,7 @@ import static com.hazelcast.security.permission.ActionConstants.ACTION_INDEX;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_REMOVE;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_VIEW_LINK;
 
 abstract class SqlPlanImpl extends SqlPlan {
 
@@ -254,6 +256,11 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            context.checkPermission(new SqlPermission(name, ACTION_VIEW_LINK, ACTION_CREATE_LINK));
+        }
+
+        @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             SqlPlanImpl.ensureNoArguments("CREATE DATA LINK", arguments);
             SqlPlanImpl.ensureNoTimeout("CREATE DATA LINK", timeout);
@@ -294,13 +301,14 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new SqlPermission(name, ACTION_DESTROY));
+            context.checkPermission(new SqlPermission(name, ACTION_VIEW_LINK, ACTION_CREATE_LINK));
         }
 
         @Override
         public boolean producesRows() {
             return false;
         }
+
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
