@@ -33,7 +33,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeTrue;
 
-public abstract class AsyncServerSocketConfigTest {
+public abstract class AsyncServerSocketOptionsTest {
 
     private final List<Reactor> reactors = new ArrayList<>();
 
