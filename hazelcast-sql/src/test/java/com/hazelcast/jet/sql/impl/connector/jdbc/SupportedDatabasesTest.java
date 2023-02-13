@@ -23,15 +23,17 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
-public class UpsertBuilderTest {
+public class SupportedDatabasesTest {
 
     @Mock
     JdbcTable jdbcTable;
 
+    // Create mock dialects for JdbcTable
     @Mock
     SybaseSqlDialect sybaseSqlDialect;
 
@@ -48,7 +50,8 @@ public class UpsertBuilderTest {
 
         when(jdbcTable.sqlDialect()).thenReturn(sybaseSqlDialect);
 
-        boolean result = UpsertBuilder.isUpsertDialectSupported(jdbcTable);
+        SupportedDatabases supportedDatabases = new SupportedDatabases();
+        boolean result = supportedDatabases.isDialectSupported(jdbcTable);
         assertFalse(result);
     }
 
@@ -57,8 +60,22 @@ public class UpsertBuilderTest {
 
         when(jdbcTable.sqlDialect()).thenReturn(mysqlSqlDialect);
 
-        boolean result = UpsertBuilder.isUpsertDialectSupported(jdbcTable);
+        SupportedDatabases supportedDatabases = new SupportedDatabases();
+        boolean result = supportedDatabases.isDialectSupported(jdbcTable);
         assertTrue(result);
     }
 
+    @Test
+    public void logByProductName_supportedDB() {
+        SupportedDatabases supportedDatabases = new SupportedDatabases();
+        boolean newDB = supportedDatabases.logOnceByProductName("mysql");
+        assertThat(newDB).isFalse();
+    }
+
+    @Test
+    public void logByProductName_notSupportedDB() {
+        SupportedDatabases supportedDatabases = new SupportedDatabases();
+        boolean newDB = supportedDatabases.logOnceByProductName("cassandra");
+        assertThat(newDB).isTrue();
+    }
 }
