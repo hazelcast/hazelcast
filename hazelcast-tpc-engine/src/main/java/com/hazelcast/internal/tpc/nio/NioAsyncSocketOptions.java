@@ -63,7 +63,7 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
             } else if (SO_RCVBUF.equals(option)) {
                 return (T) channel.getOption(StandardSocketOptions.SO_RCVBUF);
             } else if (SO_SNDBUF.equals(option)) {
-                return (T) channel.getOption(StandardSocketOptions.SO_RCVBUF);
+                return (T) channel.getOption(StandardSocketOptions.SO_SNDBUF);
             } else if (SO_KEEPALIVE.equals(option)) {
                 return (T) channel.getOption(StandardSocketOptions.SO_KEEPALIVE);
             } else if (SO_REUSEADDR.equals(option)) {
