@@ -37,11 +37,8 @@ import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlKind;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.IntStream;
 
 import static com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER;
-import static java.util.stream.Collectors.toMap;
 
 public class UpdateByKeyMapPhysicalRel extends AbstractRelNode implements PhysicalRel {
 
@@ -83,10 +80,7 @@ public class UpdateByKeyMapPhysicalRel extends AbstractRelNode implements Physic
 
     public UpdatingEntryProcessor.Supplier updaterSupplier(QueryParameterMetadata parameterMetadata) {
         List<Expression<?>> projects = project(OptUtils.schema(table), sourceExpressions, parameterMetadata);
-        Map<String, Expression<?>> updates = IntStream.range(0, projects.size())
-                .boxed()
-                .collect(toMap(updatedColumns::get, projects::get));
-        return UpdatingEntryProcessor.supplier(table(), updates);
+        return UpdatingEntryProcessor.supplier(table(), updatedColumns, projects);
     }
 
     private PartitionedMapTable table() {

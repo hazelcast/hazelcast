@@ -148,7 +148,7 @@ public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
         // l.time=r.time
         postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
-        ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1));
+        ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1, true));
 
         TestSupport.verifyProcessor(processorSupplier)
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
@@ -180,7 +180,7 @@ public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
         leftExtractors.put((byte) 1, l -> l.getRow().get(1));
         rightExtractors = singletonMap((byte) 2, r -> r.getRow().get(0));
 
-        SupplierEx<Processor> supplier = createProcessor(2, 1);
+        SupplierEx<Processor> supplier = createProcessor(2, 1, false);
 
         TestSupport.verifyProcessor(supplier)
                 .hazelcastInstance(instance())
@@ -237,7 +237,7 @@ public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
         rightExtractors.put((byte) 2, r -> r.getRow().get(0));
         rightExtractors.put((byte) 3, r -> r.getRow().get(1));
 
-        SupplierEx<Processor> supplier = createProcessor(2, 2);
+        SupplierEx<Processor> supplier = createProcessor(2, 2, false);
 
         TestSupport.verifyProcessor(supplier)
                 .hazelcastInstance(instance())
@@ -308,10 +308,11 @@ public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
         postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
 
-        ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(2, 1, 0, 2));
+        ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(2, 1, true, 1, 2));
 
         TestSupport.verifyProcessor(processorSupplier)
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
+                .cooperativeTimeout(0) // todo remove
                 .expectExactOutput(
                         in(0, jetRow(1L, 42)),
                         in(0, jetRow(1L, 43)),
@@ -335,7 +336,7 @@ public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
         leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
         rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
 
-        SupplierEx<Processor> supplier = createProcessor(1, 1);
+        SupplierEx<Processor> supplier = createProcessor(1, 1, false);
 
         TestSupport.verifyProcessor(supplier)
                 .hazelcastInstance(instance())
@@ -356,7 +357,7 @@ public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
         // l.time=r.time
         postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
-        ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1));
+        ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1, true));
 
         TestSupport.verifyProcessor(processorSupplier)
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
@@ -384,7 +385,7 @@ public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
         leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
         rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
 
-        SupplierEx<Processor> supplier = createProcessor(1, 1);
+        SupplierEx<Processor> supplier = createProcessor(1, 1, false);
 
         TestSupport.verifyProcessor(supplier)
                 .hazelcastInstance(instance())
@@ -430,24 +431,7 @@ public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
             wmKeyToColumnIndexMap.put((byte) wmKeyToColumnIndex[i], (byte) wmKeyToColumnIndex[i + 1]);
         }
 
-        // specific case for simple equi-join: l.time == r.time
-        if (postponeTimeMap.size() == 2
-                && postponeTimeMap.get((byte) 0).get((byte) 1) == 0L
-                && postponeTimeMap.get((byte) 1).get((byte) 0) == 0L) {
-            int leftIndex = 0;
-            int rightIndex = 1;
-            if (wmKeyToColumnIndex.length > 0) {
-                leftIndex = wmKeyToColumnIndex[0];
-                rightIndex = wmKeyToColumnIndex[1];
-            }
-            return ComparisonPredicate.create(
-                    ColumnExpression.create(leftIndex, BIGINT),
-                    ColumnExpression.create(rightIndex, BIGINT),
-                    ComparisonMode.EQUALS);
-        }
-
         List<Expression<Boolean>> conditions = new ArrayList<>();
-
         for (Entry<Byte, Map<Byte, Long>> enOuter : postponeTimeMap.entrySet()) {
             for (Entry<Byte, Long> enInner : enOuter.getValue().entrySet()) {
                 int leftColumnIndex = wmKeyToColumnIndexMap.getOrDefault(enOuter.getKey(), enOuter.getKey());
@@ -465,15 +449,11 @@ public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
         return AndPredicate.create(conditions.toArray(new Expression[0]));
     }
 
-    private SupplierEx<Processor> createProcessor(int leftColumnCount, int rightColumnCount, int... wmKeyToColumnIndex) {
+    private SupplierEx<Processor> createProcessor(int leftColumnCount, int rightColumnCount, boolean assumeEquiJoin,
+            int... wmKeyToColumnIndex) {
         Expression<Boolean> condition = createConditionFromPostponeTimeMap(postponeTimeMap, wmKeyToColumnIndex);
-        int[] left = new int[0];
-        int[] right = new int[0];
-        if (condition instanceof ComparisonPredicate) {
-            left = new int[]{0};
-            right = new int[]{0};
-        }
-        JetJoinInfo joinInfo = new JetJoinInfo(INNER, left, right, condition, condition);
+        int[] equiJoinIndices = new int[assumeEquiJoin ? 1 : 0];
+        JetJoinInfo joinInfo = new JetJoinInfo(INNER, equiJoinIndices, equiJoinIndices, condition, condition);
         return () -> new StreamToStreamJoinP(
                 joinInfo,
                 leftExtractors,

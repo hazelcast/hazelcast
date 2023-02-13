@@ -19,9 +19,13 @@ package com.hazelcast.serialization.compact.record;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
+import com.hazelcast.nio.serialization.compact.CompactReader;
+import com.hazelcast.nio.serialization.compact.CompactSerializer;
+import com.hazelcast.nio.serialization.compact.CompactWriter;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -35,10 +39,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
+import java.time.Instant;
+import java.util.Arrays;
 import java.util.LinkedList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -208,9 +216,80 @@ public class RecordSerializationTest extends HazelcastTestSupport {
                 .hasStackTraceContaining("which uses this class in its fields");
     }
 
+    @Test
+    public void testSerializingRecordReflectively_withUnsupportedFieldType_whenThereIsExplicitSerializerForTheType() {
+        SerializationService serializationService = CompactTestUtil.createSerializationService(InstantSerializer::new);
+        RecordWithInstant object = new RecordWithInstant(Instant.ofEpochSecond(123, 456));
+        Data data = serializationService.toData(object);
+        RecordWithInstant deserialized = serializationService.toObject(data);
+        assertEquals(object, deserialized);
+    }
+
+    @Test
+    public void testSerializingRecordReflectively_withUnsupportedArrayItemType_whenThereIsExplicitSerializerForComponentType() {
+        SerializationService serializationService = CompactTestUtil.createSerializationService(InstantSerializer::new);
+        RecordWithArrayOfInstant object = new RecordWithArrayOfInstant(new Instant[]{
+                Instant.ofEpochSecond(123, 456), Instant.ofEpochSecond(789123, 2112356)
+        });
+        Data data = serializationService.toData(object);
+        RecordWithArrayOfInstant deserialized = serializationService.toObject(data);
+        assertEquals(object, deserialized);
+    }
+
+
     private record RecordWithUnsupportedField(LinkedList<String> list) {
     }
 
     private record RecordWithUnsupportedArrayField(LinkedList<String>[] lists) {
+    }
+
+    private record RecordWithInstant(Instant instant) {
+    }
+
+    private record RecordWithArrayOfInstant(Instant[] lists) {
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            RecordWithArrayOfInstant that = (RecordWithArrayOfInstant) o;
+            return Arrays.equals(lists, that.lists);
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(lists);
+        }
+    }
+
+    private static class InstantSerializer implements CompactSerializer<Instant> {
+        @Nonnull
+        @Override
+        public Instant read(@Nonnull CompactReader reader) {
+            long epoch = reader.readInt64("epoch");
+            int nano = reader.readInt32("nano");
+            return Instant.ofEpochSecond(epoch, nano);
+        }
+
+        @Override
+        public void write(@Nonnull CompactWriter writer, @Nonnull Instant object) {
+            writer.writeInt64("epoch", object.getEpochSecond());
+            writer.writeInt32("nano", object.getNano());
+        }
+
+        @Nonnull
+        @Override
+        public String getTypeName() {
+            return "instant";
+        }
+
+        @Nonnull
+        @Override
+        public Class<Instant> getCompactClass() {
+            return Instant.class;
+        }
     }
 }

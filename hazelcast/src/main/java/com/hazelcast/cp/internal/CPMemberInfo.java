@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.net.UnknownHostException;
 import java.util.UUID;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -86,7 +87,11 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
         endpoint = new RaftEndpointImpl(uuid);
         String host = in.readUTF();
         int port = in.readInt();
-        address = new Address(host, port);
+        try {
+            address = new Address(host, port);
+        } catch (UnknownHostException ex) {
+            address = Address.createUnresolvedAddress(host, port);
+        }
     }
 
     @Override

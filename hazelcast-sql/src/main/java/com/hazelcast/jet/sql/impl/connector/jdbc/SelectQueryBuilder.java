@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.rel.rel2sql.SqlImplementor.SimpleContext;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
@@ -34,8 +34,8 @@ class SelectQueryBuilder {
     private final ParamCollectingVisitor paramCollectingVisitor = new ParamCollectingVisitor();
 
     @SuppressWarnings("ExecutableStatementCount")
-    SelectQueryBuilder(HazelcastTable hzTable) {
-        JdbcTable table = hzTable.getTarget();
+    SelectQueryBuilder(Table table0, RexNode filter, List<RexNode> projects) {
+        JdbcTable table = (JdbcTable) table0;
         SqlDialect dialect = table.sqlDialect();
 
         SimpleContext simpleContext = new SimpleContext(dialect, value -> {
@@ -43,7 +43,6 @@ class SelectQueryBuilder {
             return new SqlIdentifier(field.externalName(), SqlParserPos.ZERO);
         });
 
-        RexNode filter = hzTable.getFilter();
         String predicateFragment = null;
         if (filter != null) {
             SqlNode sqlNode = simpleContext.toSql(null, filter);
@@ -52,7 +51,6 @@ class SelectQueryBuilder {
         }
 
         String projectionFragment = null;
-        List<RexNode> projects = hzTable.getProjects();
         if (!projects.isEmpty()) {
             projectionFragment = projects.stream()
                                          .map(proj -> simpleContext.toSql(null, proj).toSqlString(dialect).toString())
