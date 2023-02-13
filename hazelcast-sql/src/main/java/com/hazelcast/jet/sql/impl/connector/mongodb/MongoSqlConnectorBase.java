@@ -19,7 +19,6 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.mongodb.WriteMode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlProcessors;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -50,7 +49,8 @@ import static java.util.stream.Collectors.toList;
 /**
  * Base for MongoDB SQL Connectors.
  *
- * Streaming and batch connectors differ in the way of dealing with scans; other functionalities are the same.
+ * Streaming and batch connectors have similar way of dealing with scans with few exceptions (like the requirement
+ * for {@code _id field}).
  *
  * All MongoDB connectors assume one primary key: {@code _id} column, which is mandatory (auto-created if not specified
  * by user), unique and indexed.
@@ -244,45 +244,5 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             this.result = result;
             this.allProceeded = allProceeded;
         }
-    }
-
-    @Nonnull
-    @Override
-    public VertexWithInputConfig insertProcessor(@Nonnull DagBuildContext context) {
-        Vertex vertex = context.getDag().newUniqueVertex(
-                "Insert(" + context.getTable().getSqlName() + ")",
-                new InsertProcessorSupplier(context.getTable(), WriteMode.INSERT_ONLY)
-        );
-        return new VertexWithInputConfig(vertex);
-    }
-
-    @Nonnull
-    @Override
-    public Vertex updateProcessor(@Nonnull DagBuildContext context,
-                                  @Nonnull List<String> fieldNames,
-                                  @Nonnull List<RexNode> expressions) {
-        MongoTable table = context.getTable();
-        RexToMongoVisitor visitor = new RexToMongoVisitor(table.paths());
-        List<Object> updates = expressions.stream()
-                .map(e -> e.accept(visitor))
-                .collect(toList());
-
-        Vertex vertex = context.getDag().newUniqueVertex(
-                "Update(" + table.getSqlName() + ")",
-                new UpdateProcessorSupplier(table, fieldNames, updates)
-        );
-        return vertex;
-    }
-
-    @Nonnull
-    @Override
-    public Vertex sinkProcessor(@Nonnull DagBuildContext context) {
-        MongoTable table = context.getTable();
-
-        Vertex vertex = context.getDag().newUniqueVertex(
-                "Update(" + table.getSqlName() + ")",
-                new InsertProcessorSupplier(table, WriteMode.UPSERT)
-        );
-        return vertex;
     }
 }

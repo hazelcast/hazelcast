@@ -15,6 +15,15 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.mongodb.WriteMode;
+import org.apache.calcite.rex.RexNode;
+
+import javax.annotation.Nonnull;
+import java.util.List;
+
+import static java.util.stream.Collectors.toList;
+
 /**
  * Batch-query version of  MongoDB SQL Connector.
  *
@@ -32,6 +41,46 @@ public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
     @Override
     public boolean isStream() {
         return false;
+    }
+
+    @Nonnull
+    @Override
+    public VertexWithInputConfig insertProcessor(@Nonnull DagBuildContext context) {
+        Vertex vertex = context.getDag().newUniqueVertex(
+                "Insert(" + context.getTable().getSqlName() + ")",
+                new InsertProcessorSupplier(context.getTable(), WriteMode.INSERT_ONLY)
+        );
+        return new VertexWithInputConfig(vertex);
+    }
+
+    @Nonnull
+    @Override
+    public Vertex updateProcessor(@Nonnull DagBuildContext context,
+                                  @Nonnull List<String> fieldNames,
+                                  @Nonnull List<RexNode> expressions) {
+        MongoTable table = context.getTable();
+        RexToMongoVisitor visitor = new RexToMongoVisitor(table.paths());
+        List<Object> updates = expressions.stream()
+                                          .map(e -> e.accept(visitor))
+                                          .collect(toList());
+
+        Vertex vertex = context.getDag().newUniqueVertex(
+                "Update(" + table.getSqlName() + ")",
+                new UpdateProcessorSupplier(table, fieldNames, updates)
+        );
+        return vertex;
+    }
+
+    @Nonnull
+    @Override
+    public Vertex sinkProcessor(@Nonnull DagBuildContext context) {
+        MongoTable table = context.getTable();
+
+        Vertex vertex = context.getDag().newUniqueVertex(
+                "Update(" + table.getSqlName() + ")",
+                new InsertProcessorSupplier(table, WriteMode.UPSERT)
+        );
+        return vertex;
     }
 
 }
