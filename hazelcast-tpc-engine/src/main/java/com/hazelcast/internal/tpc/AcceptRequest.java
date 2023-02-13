@@ -19,11 +19,13 @@ package com.hazelcast.internal.tpc;
 import java.util.function.Consumer;
 
 /**
- * Contains an accept request when a socket connects to the {@link AsyncServerSocket}.
- * For more information see {@link AsyncServerSocket#accept(Consumer)}.
+ * Contains an accept request when a socket connects to the {@link AsyncServerSocket}. Is
+ * processed by setting the {@link AsyncServerSocketBuilder#setAcceptConsumer(Consumer)}.
  * <p/>
  * Currently it is just a dumb placeholder so that we can pass the appropriate resource
- * (e.g. the accepted SocketChannel) to the constructor of the AsyncSocket.
+ * (e.g. the accepted SocketChannel) to the constructor of the AsyncSocket in a typesafe
+ * manner.
  */
 public interface AcceptRequest {
+
 }

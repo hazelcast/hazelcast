@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.tpc.TpcEngine.State.SHUTDOWN;
 import static com.hazelcast.internal.tpc.TpcEngine.State.TERMINATED;
+import static com.hazelcast.internal.tpc.TpcTestSupport.assertTrueEventually;
 import static com.hazelcast.internal.tpc.TpcTestSupport.sleepMillis;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -78,7 +79,7 @@ public class TpcEngineTest {
     public void shutdown_whenNew() {
         engine = new TpcEngine();
         engine.shutdown();
-        assertEquals(TERMINATED, engine.state());
+        assertTrueEventually(() -> assertEquals(TERMINATED, engine.state()));
     }
 
     @Test
@@ -115,6 +116,6 @@ public class TpcEngineTest {
         engine.shutdown();
 
         engine.shutdown();
-        assertEquals(TERMINATED, engine.state());
+        assertTrueEventually(() -> assertEquals(TERMINATED, engine.state()));
     }
 }

@@ -19,6 +19,8 @@ package com.hazelcast.internal.tpc;
 import com.hazelcast.internal.util.ThreadAffinity;
 import org.junit.Test;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
@@ -61,14 +63,17 @@ public abstract class ReactorBuilderTest {
     }
 
     @Test
-    public void test_setThreadFactory() {
+    public void test_setThreadFactory() throws ExecutionException, InterruptedException {
         ReactorBuilder builder = newBuilder();
-
-        Thread thread = new Thread();
-        builder.setThreadFactory(r -> thread);
-
+        CompletableFuture<Runnable> future = new CompletableFuture<>();
+        builder.setThreadFactory(r -> {
+            Thread thread = new Thread(r);
+            future.complete(thread);
+            return thread;
+        });
         Reactor reactor = builder.build();
-        assertEquals(thread, reactor.eventloopThread);
+        future.join();
+        assertEquals(future.get(), reactor.eventloopThread);
     }
 
     @Test

@@ -44,7 +44,7 @@ class NioEventloop extends Eventloop {
     }
 
     @Override
-    protected void eventloop() throws Exception {
+    protected void run() throws Exception {
         final NanoClock nanoClock = this.nanoClock;
         final boolean spin = this.spin;
         final Selector selector = this.selector;
@@ -97,7 +97,7 @@ class NioEventloop extends Eventloop {
     }
 
     @Override
-    protected void afterEventloop() {
+    protected void destroy() {
         for (SelectionKey key : selector.keys()) {
             NioHandler handler = (NioHandler) key.attachment();
 

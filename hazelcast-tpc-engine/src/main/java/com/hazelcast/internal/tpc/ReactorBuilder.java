@@ -67,6 +67,7 @@ public abstract class ReactorBuilder {
     int scheduledTaskQueueCapacity;
     int batchSize;
     int clockRefreshPeriod;
+    TpcEngine engine;
 
     protected ReactorBuilder(ReactorType type) {
         this.type = checkNotNull(type);

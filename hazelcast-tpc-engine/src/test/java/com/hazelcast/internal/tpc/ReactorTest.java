@@ -40,11 +40,20 @@ import static org.junit.Assert.assertTrue;
 
 public abstract class ReactorTest {
 
-    public final List<Reactor> reactors = new ArrayList<>();
+    private final List<Reactor> reactors = new ArrayList<>();
 
-    public abstract Reactor newReactor();
+    public abstract ReactorBuilder newReactorBuilder();
 
-    public abstract ReactorType getType();
+    public Reactor newReactor() {
+        ReactorBuilder builder = newReactorBuilder();
+        Reactor reactor = builder.build();
+        reactors.add(reactor);
+        return reactor;
+    }
+
+    public ReactorType getType() {
+        return newReactorBuilder().type;
+    }
 
     @After
     public void after() throws InterruptedException {
@@ -166,12 +175,15 @@ public abstract class ReactorTest {
     public void test_shutdown_thenAsyncServerSocketsClosed() {
         Reactor reactor = newReactor();
         reactor.start();
-        AsyncServerSocket serverSocket = reactor.openTcpAsyncServerSocket();
-        serverSocket.setReusePort(true);
+        AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
+                .set(AsyncSocketOptions.SO_REUSEPORT, true)
+                .setAcceptConsumer(acceptRequest -> {
+                })
+                .build();
+
         SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
         serverSocket.bind(local);
-        serverSocket.accept(socket -> {
-        });
+        serverSocket.start();
 
         reactor.shutdown();
         assertTrueEventually(() -> assertTrue(serverSocket.isClosed()));
@@ -181,21 +193,25 @@ public abstract class ReactorTest {
     public void test_shutdown_thenAsyncSocketClosed() {
         Reactor serverReactor = newReactor();
         serverReactor.start();
-        AsyncServerSocket serverSocket = serverReactor.openTcpAsyncServerSocket();
+        AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
+                .set(AsyncSocketOptions.SO_REUSEPORT, true)
+                .setAcceptConsumer(acceptRequest -> {
+                })
+                .build();
+
         SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
-        serverSocket.setReusePort(true);
         serverSocket.bind(serverAddress);
-        serverSocket.accept(socket -> {
-        });
+        serverSocket.start();
 
         Reactor clientReactor = newReactor();
-        AsyncSocket clientSocket = clientReactor.openTcpAsyncSocket();
-        clientSocket.setReadHandler(new ReadHandler() {
-            @Override
-            public void onRead(ByteBuffer receiveBuffer) {
-            }
-        });
         clientReactor.start();
+        AsyncSocket clientSocket = clientReactor.newAsyncSocketBuilder()
+                .setReadHandler(new ReadHandler() {
+                    @Override
+                    public void onRead(ByteBuffer receiveBuffer) {
+                    }
+                })
+                .build();
         clientSocket.start();
         clientSocket.connect(serverAddress);
 

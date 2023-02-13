@@ -16,21 +16,23 @@
 
 package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.AsyncServerSocket;
-import com.hazelcast.internal.tpc.AsyncSocket;
 import com.hazelcast.internal.tpc.AcceptRequest;
+import com.hazelcast.internal.tpc.AsyncServerSocketBuilder;
+import com.hazelcast.internal.tpc.AsyncSocketBuilder;
 import com.hazelcast.internal.tpc.Eventloop;
 import com.hazelcast.internal.tpc.Reactor;
 import com.hazelcast.internal.tpc.ReactorBuilder;
 
 import java.nio.channels.Selector;
 
+import static com.hazelcast.internal.tpc.util.Preconditions.checkInstanceOf;
+
 /**
  * Nio implementation of the {@link Reactor}.
  */
 public final class NioReactor extends Reactor {
 
-    Selector selector;
+    final Selector selector;
 
     public NioReactor() {
         this(new NioReactorBuilder());
@@ -38,28 +40,34 @@ public final class NioReactor extends Reactor {
 
     public NioReactor(NioReactorBuilder builder) {
         super(builder);
+        this.selector = ((NioEventloop) eventloop()).selector;
     }
 
     @Override
-    public AsyncServerSocket openTcpAsyncServerSocket() {
-        return new NioAsyncServerSocket(this);
+    public AsyncSocketBuilder newAsyncSocketBuilder() {
+        verifyRunning();
+
+        return new NioAsyncSocketBuilder(this, null);
     }
 
     @Override
-    public AsyncSocket openTcpAsyncSocket() {
-        return new NioAsyncSocket(this);
+    public AsyncSocketBuilder newAsyncSocketBuilder(AcceptRequest acceptRequest) {
+        verifyRunning();
+
+        NioAcceptRequest nioAcceptRequest = checkInstanceOf(NioAcceptRequest.class, acceptRequest, "acceptRequest");
+        return new NioAsyncSocketBuilder(this, nioAcceptRequest);
     }
 
     @Override
-    public AsyncSocket openAsyncSocket(AcceptRequest request) {
-        return new NioAsyncSocket(this, (NioAcceptRequest) request);
+    public AsyncServerSocketBuilder newAsyncServerSocketBuilder() {
+        verifyRunning();
+
+        return new NioAsyncServerSocketBuilder(this);
     }
 
     @Override
-    protected Eventloop createEventloop(ReactorBuilder builder) {
-        NioEventloop eventloop =  new NioEventloop(this, (NioReactorBuilder) builder);
-        selector = eventloop.selector;
-        return eventloop;
+    protected Eventloop newEventloop(ReactorBuilder builder) {
+        return new NioEventloop(this, (NioReactorBuilder) builder);
     }
 
     @Override

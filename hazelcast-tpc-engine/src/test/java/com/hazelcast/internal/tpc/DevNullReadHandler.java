@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc.nio;
+package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.ReactorBuilder;
-import com.hazelcast.internal.tpc.ReactorTest;
+import java.nio.ByteBuffer;
 
-public class NioReactorTest extends ReactorTest {
 
+/**
+ * A {@link ReadHandler} that disposes any bytes on the receive buffer.
+ */
+public class DevNullReadHandler extends ReadHandler {
     @Override
-    public ReactorBuilder newReactorBuilder() {
-        return new NioReactorBuilder();
+    public void onRead(ByteBuffer receiveBuffer) {
+        receiveBuffer.position(receiveBuffer.limit());
     }
 }

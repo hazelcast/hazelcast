@@ -23,8 +23,6 @@ public class NioAsyncSocket_LargePayloadTest extends AsyncSocket_LargePayloadTes
 
     @Override
     public Reactor newReactor() {
-        Reactor reactor = new NioReactor();
-        reactor.start();
-        return reactor;
+        return new NioReactor().start();
     }
 }

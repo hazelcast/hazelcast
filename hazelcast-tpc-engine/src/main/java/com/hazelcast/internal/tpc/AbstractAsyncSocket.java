@@ -29,16 +29,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 
 /**
- * The socket for TPC engine.
+ * The socket for TPC engine that captures common functionality for the
+ * {@link AsyncSocket} and {@link AsyncServerSocket}.
  */
-public abstract class Socket implements Closeable {
+public abstract class AbstractAsyncSocket implements Closeable {
 
-    /**
-     * Allows for objects to be bound to this socket. Useful for the lookup of
-     * services and other dependencies.
-     */
-    @SuppressWarnings("checkstyle:VisibilityModifier")
-    public final ConcurrentMap<?, ?> context = new ConcurrentHashMap<>();
+    protected final ConcurrentMap<?, ?> context = new ConcurrentHashMap<>();
 
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
     protected final AtomicReference<State> state = new AtomicReference<>(State.OPEN);
@@ -47,6 +43,14 @@ public abstract class Socket implements Closeable {
     private CloseListener closeListener;
     private Executor closeExecutor;
     private boolean closeListenerChecked;
+
+    /**
+     * Allows for objects to be bound to this AbstractAsyncSocket. Useful for the lookup
+     * of services and other dependencies.
+     */
+    public final ConcurrentMap<?, ?> context() {
+        return context;
+    }
 
     /**
      * Configures the close listener.
@@ -178,7 +182,7 @@ public abstract class Socket implements Closeable {
     private void notifyCloseListener(CloseListener closeListener, Executor closeExecutor) {
         closeExecutor.execute(() -> {
             try {
-                closeListener.onClose(Socket.this);
+                closeListener.onClose(AbstractAsyncSocket.this);
             } catch (Exception e) {
                 logger.warning(e);
             }
@@ -237,6 +241,6 @@ public abstract class Socket implements Closeable {
      * A Listener that allows you to listen to the socket closing.
      */
     public interface CloseListener {
-        void onClose(Socket socket);
+        void onClose(AbstractAsyncSocket socket);
     }
 }

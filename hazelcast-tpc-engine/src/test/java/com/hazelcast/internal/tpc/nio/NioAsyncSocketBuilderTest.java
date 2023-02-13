@@ -16,11 +16,10 @@
 
 package com.hazelcast.internal.tpc.nio;
 
+import com.hazelcast.internal.tpc.AsyncSocketBuilderTest;
 import com.hazelcast.internal.tpc.ReactorBuilder;
-import com.hazelcast.internal.tpc.ReactorTest;
 
-public class NioReactorTest extends ReactorTest {
-
+public class NioAsyncSocketBuilderTest extends AsyncSocketBuilderTest {
     @Override
     public ReactorBuilder newReactorBuilder() {
         return new NioReactorBuilder();
