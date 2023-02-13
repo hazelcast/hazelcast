@@ -11,7 +11,8 @@ on:
     types:
       - labeled
     branches:
-      - master
+      - "master"
+      - "*.z"
     paths:
       - 'hazelcast/src/main/java/com/hazelcast/azure/**'
       - '.github/terraform/azure/**'
@@ -49,12 +50,16 @@ jobs:
           architecture: ${{ matrix.architecture }}
           distribution: ${{ matrix.distribution }}
 
-      - run: java -version
+      - name: JDK info
+        run: java -version
 
       # BUILD HAZELCAST AZURE SNAPSHOT
-      - uses: actions/checkout@v3.3.0
+      - name: Checkout
+        uses: actions/checkout@v3.3.0
         with:
           path: hazelcast
+          ref: ${{steps.decide-ref.outputs.ref}}
+          fetch-depth: 0
 
       - name: Build hazelcast jar
         run: |
