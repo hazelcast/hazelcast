@@ -225,6 +225,12 @@ public interface NodeEngine {
     boolean isRunning();
 
     /**
+     * @return      {@code true} if this {@code Node} has completed startup, {@code false} otherwise.
+     * @see         com.hazelcast.instance.impl.NodeExtension#isStartCompleted()
+     */
+    boolean isStartCompleted();
+
+    /**
      * Returns the HazelcastInstance that this {@link NodeEngine} belongs to.
      *
      * @return the HazelcastInstance
