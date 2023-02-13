@@ -84,6 +84,9 @@ import static java.util.stream.Collectors.toList;
  *                 </executions>
  *             </plugin>
  * }</pre>
+ *
+ * Make sure that {@code hazelcast-sql} and {@code org.apache.calcite:calcite-core} are declared
+ * with {@code provided} scope, so that they won't be included in final jar.
  */
 public final class HazelcastRexNode {
     private final RexNode node;
