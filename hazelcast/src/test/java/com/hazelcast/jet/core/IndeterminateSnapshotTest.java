@@ -149,13 +149,18 @@ public class IndeterminateSnapshotTest {
         /**
          * Executes given action once when invoked multiple times from many instances of processor.
          */
-        protected <T> Consumer<T> singleExecutionConsumer(Consumer<T> snapshotAction) {
-            AtomicBoolean executed = new AtomicBoolean(false);
-            return (idx) -> {
-                // synchronize so all snapshot chunk operations have broken replication
+        /**
+         * Returns a consumer that will pass on to the `delegate` consumer at
+         * most once. Subsequent calls do nothing, except that they block until
+         * the first call is complete, if they are concurrent.
+         */
+        protected static <T> Consumer<T> singleExecutionConsumer(Consumer<T> delegate) {
+            boolean[] executed = {false};
+            return (arg) -> {
                 synchronized (executed) {
-                    if (executed.compareAndSet(false, true)) {
-                        snapshotAction.accept(idx);
+                    if (!executed[0]) {
+                        executed[0] = true;
+                        delegate.accept(arg);
                     }
                 }
             };
