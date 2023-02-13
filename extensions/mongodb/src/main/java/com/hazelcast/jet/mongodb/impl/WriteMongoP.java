@@ -213,7 +213,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
         } catch (MongoSocketException | MongoServerException e) {
             logger.info("Unable to process Mongo Sink: " + e.getMessage());
             // not removing from inbox, so it will be retried
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new JetException(e);
         }
     }
