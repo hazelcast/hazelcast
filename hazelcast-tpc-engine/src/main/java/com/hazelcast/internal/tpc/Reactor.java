@@ -237,18 +237,16 @@ public abstract class Reactor implements Executor {
             switch (oldState) {
                 case NEW:
                     if (STATE.compareAndSet(this, oldState, TERMINATED)) {
-                        terminationLatch.countDown();
-                        if (engine != null) {
-                            engine.notifyReactorTerminated();
-                        }
+                        // the eventloop thread is waiting on the startLatch, so we need to
+                        // wake it up. It will then check the status and terminate if needed.
+                        startLatch.countDown();
                         return;
                     }
 
                     break;
                 case RUNNING:
                     if (STATE.compareAndSet(this, oldState, SHUTDOWN)) {
-                        externalTaskQueue.add((Runnable) () -> eventloop.stop = true);
-                        wakeup();
+                        execute(() -> eventloop.stop = true);
                         return;
                     }
                     break;
@@ -338,7 +336,7 @@ public abstract class Reactor implements Executor {
         private final CompletableFuture<Eventloop> future;
         private final ReactorBuilder builder;
 
-        public EventloopTask(CompletableFuture<Eventloop> future, ReactorBuilder builder) {
+        private EventloopTask(CompletableFuture<Eventloop> future, ReactorBuilder builder) {
             this.future = future;
             this.builder = builder;
         }
@@ -352,11 +350,12 @@ public abstract class Reactor implements Executor {
                     future.complete(eventloop);
 
                     startLatch.await();
-
-                    try {
-                        eventloop.run();
-                    } finally {
-                        eventloop.destroy();
+                    if (state == RUNNING) {
+                        try {
+                            eventloop.run();
+                        } finally {
+                            eventloop.destroy();
+                        }
                     }
                 } catch (Throwable e) {
                     future.completeExceptionally(e);
