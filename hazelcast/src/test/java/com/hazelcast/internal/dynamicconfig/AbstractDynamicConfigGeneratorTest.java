@@ -40,7 +40,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
@@ -878,23 +878,23 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
     }
 
 
-    // EXTERNAL DATA STORE
+    // DATA LINK
 
     @Test
-    public void testExternalDataStore() {
+    public void testDataLink() {
         Properties properties = new Properties();
         properties.setProperty("prop1", "val1");
         properties.setProperty("prop2", "val2");
-        ExternalDataStoreConfig expectedConfig = new ExternalDataStoreConfig()
+        DataLinkConfig expectedConfig = new DataLinkConfig()
                 .setName("some-name")
                 .setClassName("some-class-name")
                 .setProperties(properties);
 
-        Config config = new Config().addExternalDataStoreConfig(expectedConfig);
+        Config config = new Config().addDataLinkConfig(expectedConfig);
 
         Config decConfig = getNewConfigViaGenerator(config);
 
-        ExternalDataStoreConfig actualConfig = decConfig.getExternalDataStoreConfig(expectedConfig.getName());
+        DataLinkConfig actualConfig = decConfig.getDataLinkConfig(expectedConfig.getName());
         assertEquals(expectedConfig, actualConfig);
     }
 

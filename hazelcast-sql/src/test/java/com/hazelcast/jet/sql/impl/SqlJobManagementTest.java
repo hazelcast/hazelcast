@@ -108,14 +108,35 @@ public class SqlJobManagementTest extends SqlTestSupport {
     }
 
     @Test
-    public void testJobSubmitAndCancel() {
+    public void when_jobSubmitted_then_exists() {
+        // given
+        createMapping("dest", Long.class, Long.class);
+
+        // when
+        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
+
+        // then
+        Job testJob = instance().getJet().getJob("testJob");
+        assertNotNull("job doesn't exist", testJob);
+
+        // cleanup
+        sqlService.execute("DROP JOB testJob");
+    }
+
+    @Test
+    public void when_jobDropped_then_markedAsUserCancelled() {
+        // given
         createMapping("dest", Long.class, Long.class);
 
         sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
-        assertNotNull("job doesn't exist", instance().getJet().getJob("testJob"));
-
+        // when
         sqlService.execute("DROP JOB testJob");
+
+        // then
+        Job testJob = instance().getJet().getJob("testJob");
+        assertNotNull("job doesn't exist", testJob);
+        assertTrue("job not user cancelled", testJob.isUserCancelled());
     }
 
     @Test

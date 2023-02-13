@@ -61,6 +61,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Contains the configuration specific to one Hazelcast Jet job.
+ * <p>
+ * Serialized form of this class should not be changed due to backward
+ * compatibility for {@link com.hazelcast.jet.impl.JobResult}.
  *
  * @since Jet 3.0
  */
