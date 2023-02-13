@@ -249,6 +249,7 @@ public final class ServiceFactory<C, S> implements Serializable, Cloneable {
         return setCooperative(false);
     }
 
+    @Nonnull
     public ServiceFactory<C, S> setCooperative(boolean cooperative) {
         ServiceFactory<C, S> copy = clone();
         copy.isCooperative = cooperative;

@@ -95,11 +95,14 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 
 public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
-    private static final int LOW_PRIORITY = 10;
-    private static final int HIGH_PRIORITY = 1;
-
     // TODO https://github.com/hazelcast/hazelcast/issues/20383
-    ExpressionEvalContext mockEec;
+    // Note: it is used only in CreateTopLevelDagVisitor, and initialized here.
+    // We don't want to serialize it, but we initialize it during the runtime.
+    @SuppressWarnings({"checkstyle:StaticVariableName", "checkstyle:VisibilityModifier"})
+    public static ExpressionEvalContext MOCK_EEC;
+
+    private static final int HIGH_PRIORITY = 1;
+    private static final int LOW_PRIORITY = 10;
 
     private final Set<PlanObjectKey> objectKeys = new HashSet<>();
     private final NodeEngine nodeEngine;
@@ -123,7 +126,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
         dagBuildContext = new DagBuildContextImpl(getDag(), parameterMetadata);
 
-        mockEec = new ExpressionEvalContext(
+        MOCK_EEC = new ExpressionEvalContext(
                 emptyList(),
                 new DefaultSerializationServiceBuilder().build(),
                 (NodeEngineImpl) nodeEngine);
@@ -152,7 +155,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     @Override
     public Vertex onInsert(InsertPhysicalRel rel) {
         watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(
-                (PhysicalRel) rel.getInput(), mockEec);
+                (PhysicalRel) rel.getInput(), MOCK_EEC);
 
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
@@ -168,7 +171,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     @Override
     public Vertex onSink(SinkPhysicalRel rel) {
         watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(
-                (PhysicalRel) rel.getInput(), mockEec);
+                (PhysicalRel) rel.getInput(), MOCK_EEC);
 
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
@@ -184,7 +187,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     public Vertex onUpdate(UpdatePhysicalRel rel) {
         // currently it's not possible to have a unbounded UPDATE, but if we do, we'd need this calculation
         watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(
-                (PhysicalRel) rel.getInput(), mockEec);
+                (PhysicalRel) rel.getInput(), MOCK_EEC);
 
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
 
@@ -200,7 +203,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     public Vertex onDelete(DeletePhysicalRel rel) {
         // currently it's not possible to have a unbounded DELETE, but if we do, we'd need this calculation
         watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(
-                (PhysicalRel) rel.getInput(), mockEec);
+                (PhysicalRel) rel.getInput(), MOCK_EEC);
 
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
 
@@ -423,8 +426,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
         Expression<?> timestampExpression = rel.timestampExpression();
         ToLongFunctionEx<JetSqlRow> timestampFn = row ->
-                WindowUtils.extractMillis(timestampExpression.eval(row.getRow(), mockEec));
-        SlidingWindowPolicy windowPolicy = rel.windowPolicyProvider().apply(mockEec);
+                WindowUtils.extractMillis(timestampExpression.eval(row.getRow(), MOCK_EEC));
+        SlidingWindowPolicy windowPolicy = rel.windowPolicyProvider().apply(MOCK_EEC);
 
         KeyedWindowResultFunction<? super Object, ? super JetSqlRow, ?> resultMapping =
                 rel.outputValueMapping();
@@ -594,7 +597,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     @Override
     public Vertex onRoot(RootRel rootRel) {
         watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(
-                (PhysicalRel) rootRel.getInput(), mockEec);
+                (PhysicalRel) rootRel.getInput(), MOCK_EEC);
 
         RelNode input = rootRel.getInput();
 
