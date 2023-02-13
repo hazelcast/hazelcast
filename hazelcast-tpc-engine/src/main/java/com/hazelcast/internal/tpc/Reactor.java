@@ -350,12 +350,14 @@ public abstract class Reactor implements Executor {
                     future.complete(eventloop);
 
                     startLatch.await();
-                    if (state == RUNNING) {
-                        try {
+                    try {
+                        // it could be that the thread wakes up due to termination. So we need
+                        // to check the state first before running.
+                        if (state == RUNNING) {
                             eventloop.run();
-                        } finally {
-                            eventloop.destroy();
                         }
+                    } finally {
+                        eventloop.destroy();
                     }
                 } catch (Throwable e) {
                     future.completeExceptionally(e);
