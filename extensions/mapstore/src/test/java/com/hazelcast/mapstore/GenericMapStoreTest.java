@@ -21,6 +21,7 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
 import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
@@ -56,6 +57,8 @@ import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * This test runs the MapStore methods directly, but it runs within real Hazelcast instance
@@ -86,6 +89,24 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
             mapStore.destroy();
             mapStore = null;
         }
+    }
+
+    @Test
+    public void validIntegrityConstraintViolation() {
+        SQLException sqlException = new SQLException("reason", "2300");
+        JetException jetException = new JetException(sqlException);
+
+        boolean integrityConstraintViolation = GenericMapStore.isIntegrityConstraintViolation(jetException);
+        assertTrue(integrityConstraintViolation);
+    }
+
+    @Test
+    public void invalidIntegrityConstraintViolation() {
+        SQLException sqlException = new SQLException("reason", "2000");
+        JetException jetException = new JetException(sqlException);
+
+        boolean integrityConstraintViolation = GenericMapStore.isIntegrityConstraintViolation(jetException);
+        assertFalse(integrityConstraintViolation);
     }
 
     @Test
@@ -160,7 +181,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         mapStore = createMapStore();
         GenericRecord record = mapStore.load(0);
 
-        assertThat(record.getInt32("id")).isEqualTo(0);
+        assertThat(record.getInt32("id")).isZero();
         assertThat(record.getString("name")).isEqualTo("name-0");
     }
 
@@ -172,7 +193,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         mapStore = createMapStore();
         GenericRecord record = mapStore.load(0);
 
-        assertThat(record.getInt32("id")).isEqualTo(0);
+        assertThat(record.getInt32("id")).isZero();
         assertThat(record.getString("name")).isEqualTo("name-0");
         assertThat(record.getInt32("age")).isEqualTo(42);
         assertThat(record.getString("address")).isEqualTo("Palo Alto, CA 94306");
@@ -203,7 +224,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
 
         GenericRecord record = mapStore.load(0);
 
-        assertThat(record.getInt32("id")).isEqualTo(0);
+        assertThat(record.getInt32("id")).isZero();
         assertThat(record.getString("name")).isEqualTo("name-0");
         assertThat(record.getInt32("age")).isEqualTo(42);
         assertThat(record.getFieldKind("address")).isEqualTo(NOT_AVAILABLE);
@@ -280,7 +301,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         mapStore = createMapStore(properties, hz);
         GenericRecord record = mapStore.load(0);
 
-        assertThat(record.getInt32("person-id")).isEqualTo(0);
+        assertThat(record.getInt32("person-id")).isZero();
         assertThat(record.getString("name")).isEqualTo("name-0");
     }
 
@@ -323,7 +344,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
 
         GenericRecord record = records.values().iterator().next();
         records.values().iterator().next();
-        assertThat(record.getInt32("id")).isEqualTo(0);
+        assertThat(record.getInt32("id")).isZero();
         assertThat(record.getString("name")).isEqualTo("name-0");
     }
 
@@ -338,7 +359,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         mapStore = createMapStore(properties, hz);
         GenericRecord record = mapStore.loadAll(newArrayList(0)).get(0);
 
-        assertThat(record.getInt32("person-id")).isEqualTo(0);
+        assertThat(record.getInt32("person-id")).isZero();
         assertThat(record.getString("name")).isEqualTo("name-0");
     }
 

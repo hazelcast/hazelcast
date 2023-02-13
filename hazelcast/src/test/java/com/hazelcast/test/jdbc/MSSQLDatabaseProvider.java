@@ -18,7 +18,7 @@ package com.hazelcast.test.jdbc;
 
 import org.testcontainers.jdbc.ContainerDatabaseDriver;
 
-public class MySQLDatabaseProvider implements TestDatabaseProvider {
+public class MSSQLDatabaseProvider implements TestDatabaseProvider {
 
     private static final int LOGIN_TIMEOUT = 120;
 
@@ -26,7 +26,7 @@ public class MySQLDatabaseProvider implements TestDatabaseProvider {
 
     @Override
     public String createDatabase(String dbName) {
-        jdbcUrl = "jdbc:tc:mysql:8.0.29:///" + dbName + "?TC_DAEMON=true&sessionVariables=sql_mode=ANSI&user=root&password=";
+        jdbcUrl = "jdbc:tc:sqlserver:latest:///" + dbName;
         waitForDb(jdbcUrl, LOGIN_TIMEOUT);
         return jdbcUrl;
     }
