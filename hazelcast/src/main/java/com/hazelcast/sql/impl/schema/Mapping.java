@@ -166,7 +166,13 @@ public class Mapping implements IdentifiedDataSerializable {
             buffer.append("OPTIONS").append("( \n");
             int optionsSize = options.size() - 1;
             for (Map.Entry<String, String> option : options.entrySet()) {
-                buffer.append(option.getKey()).append(" = ").append(option.getValue());
+                buffer.append("'")
+                        .append(option.getKey())
+                        .append("'")
+                        .append(" = ")
+                        .append("'")
+                        .append(option.getValue())
+                        .append("'");
                 if (optionsSize-- > 0) {
                     buffer.append(",\n");
                 }

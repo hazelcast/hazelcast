@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.google.common.collect.ImmutableList;
-import com.hazelcast.jet.Job;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.QueryException;
@@ -25,7 +24,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -45,10 +43,10 @@ public class GetDdlTest extends SqlTestSupport {
                         "(__key INTEGER EXTERNAL NAME __key, this INTEGER EXTERNAL NAME this) \n" +
                         "TYPE IMap \n" +
                         "OPTIONS( \n" +
-                        "keyFormat = java,\n" +
-                        "keyJavaClass = int,\n" +
-                        "valueFormat = java,\n" +
-                        "valueJavaClass = int)\n"))
+                        "'keyFormat' = 'java',\n" +
+                        "'keyJavaClass' = 'int',\n" +
+                        "'valueFormat' = 'java',\n" +
+                        "'valueJavaClass' = 'int')\n"))
         );
     }
 
@@ -67,7 +65,7 @@ public class GetDdlTest extends SqlTestSupport {
     @Test
     public void when_queryNotSupportedNamespace_then_throws() {
         SqlResult sqlRows = instance().getSql().execute("SELECT GET_DDL('a', 'b')");
-        List<Job> jobs = instance().getJet().getJobs();
+
         assertThatThrownBy(() -> sqlRows.iterator().next())
                 .hasCauseInstanceOf(QueryException.class)
                 .hasMessageContaining("Namespace 'a' is not supported.");
@@ -76,7 +74,6 @@ public class GetDdlTest extends SqlTestSupport {
     @Test
     public void when_queryNonExistingObject_then_throws() {
         SqlResult sqlRows = instance().getSql().execute("SELECT GET_DDL('table', 'bbb')");
-        List<Job> jobs = instance().getJet().getJobs();
         assertThatThrownBy(() -> sqlRows.iterator().next())
                 .hasCauseInstanceOf(QueryException.class)
                 .hasMessageContaining("Object 'bbb' does not exist in namespace 'table'");
@@ -90,7 +87,6 @@ public class GetDdlTest extends SqlTestSupport {
                 ImmutableList.of(new Row("CREATE"))
         );
 
-        // Note: it is allowed, due to Common Subexpression Elimination (CSE).
         assertRowsAnyOrder(
                 "SELECT SUBSTRING(GET_DDL('table', 'a') FROM 1 FOR 6) " +
                         "|| SUBSTRING(GET_DDL('table', 'a') FROM 1 FOR 3)",
@@ -117,9 +113,9 @@ public class GetDdlTest extends SqlTestSupport {
                         "(__key INTEGER EXTERNAL NAME __key, this VARCHAR EXTERNAL NAME this) \n" +
                         "TYPE IMap \n" +
                         "OPTIONS( \n" +
-                        "keyFormat = java,\n" +
-                        "keyJavaClass = int,\n" +
-                        "valueFormat = java,\n" +
-                        "valueJavaClass = java.lang.String)\n")));
+                        "'keyFormat' = 'java',\n" +
+                        "'keyJavaClass' = 'int',\n" +
+                        "'valueFormat' = 'java',\n" +
+                        "'valueJavaClass' = 'java.lang.String')\n")));
     }
 }
