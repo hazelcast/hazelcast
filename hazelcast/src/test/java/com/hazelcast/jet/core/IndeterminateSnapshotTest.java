@@ -1252,11 +1252,14 @@ public class IndeterminateSnapshotTest {
 
         @Override
         public boolean saveToSnapshot() {
+            if (!tryEmitToSnapshot(broadcastKey(globalIndex), snapshotCounter)) {
+                return false;
+            }
             if (saveSnapshotConsumer != null && snapshotCounter >= allowedSnapshotsCount) {
                 saveSnapshotConsumer.accept(globalIndex);
             }
             savedCounters.put(globalIndex, snapshotCounter);
-            return tryEmitToSnapshot(broadcastKey(globalIndex), snapshotCounter);
+            return true;
         }
 
         @Override
