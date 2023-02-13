@@ -33,6 +33,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.internal.tpc.AsyncSocketOptions.SO_RCVBUF;
+import static com.hazelcast.internal.tpc.AsyncSocketOptions.SO_SNDBUF;
+import static com.hazelcast.internal.tpc.AsyncSocketOptions.TCP_NODELAY;
 import static com.hazelcast.internal.tpc.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_LONG;
@@ -231,26 +234,97 @@ public abstract class AsyncSocket_RpcTest {
         AsyncSocket clientSocket = newClient(serverAddress);
 
         AtomicLong callIdGenerator = new AtomicLong();
-        List<WorkerThread> threads = new ArrayList<>();
+        List<LoadGeneratorThread> threads = new ArrayList<>();
         int requestPerThread = iterations / concurrency;
         for (int k = 0; k < concurrency; k++) {
-            WorkerThread thread = new WorkerThread(requestPerThread, payloadSize, callIdGenerator, clientSocket);
+            LoadGeneratorThread thread = new LoadGeneratorThread(requestPerThread, payloadSize, callIdGenerator, clientSocket);
             threads.add(thread);
             thread.start();
         }
 
-        for (WorkerThread thread : threads) {
+        for (LoadGeneratorThread thread : threads) {
             thread.join();
         }
     }
 
-    public class WorkerThread extends Thread {
+    private AsyncSocket newClient(SocketAddress serverAddress) {
+        AsyncSocket clientSocket = clientReactor.newAsyncSocketBuilder()
+                .set(TCP_NODELAY, true)
+                .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
+                .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
+                .setReadHandler(new ClientReadHandler())
+                .build();
+
+        clientSocket.start();
+        clientSocket.connect(serverAddress).join();
+        return clientSocket;
+    }
+
+    private AsyncServerSocket newServer(SocketAddress serverAddress) {
+        AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
+                .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
+                .setAcceptConsumer(acceptRequest -> {
+                    AsyncSocket socket = serverReactor.newAsyncSocketBuilder(acceptRequest)
+                            .set(TCP_NODELAY, true)
+                            .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
+                            .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
+                            .setReadHandler(new ServerReadHandler())
+                            .build();
+                    socket.start();
+                })
+                .build();
+
+        serverSocket.bind(serverAddress);
+        serverSocket.start();
+        return serverSocket;
+    }
+
+    private static class ServerReadHandler extends ReadHandler {
+        private ByteBuffer payloadBuffer;
+        private long callId;
+        private int payloadSize = -1;
+        private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
+
+        @Override
+        public void onRead(ByteBuffer receiveBuffer) {
+            for (; ; ) {
+                if (payloadSize == -1) {
+                    if (receiveBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
+                        break;
+                    }
+                    payloadSize = receiveBuffer.getInt();
+                    callId = receiveBuffer.getLong();
+                    payloadBuffer = ByteBuffer.allocate(payloadSize);
+                }
+
+                put(payloadBuffer, receiveBuffer);
+                if (payloadBuffer.remaining() > 0) {
+                    // not all bytes have been received.
+                    break;
+                }
+
+                payloadBuffer.flip();
+                IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
+                responseBuf.writeInt(payloadSize);
+                responseBuf.writeLong(callId);
+                responseBuf.write(payloadBuffer);
+                responseBuf.flip();
+
+                if (!socket.unsafeWriteAndFlush(responseBuf)) {
+                    throw new RuntimeException("Socket has no space");
+                }
+                payloadSize = -1;
+            }
+        }
+    }
+
+    public class LoadGeneratorThread extends Thread {
         private final int requests;
         private final byte[] payload;
         private final AtomicLong callIdGenerator;
         private final AsyncSocket clientSocket;
 
-        public WorkerThread(int requests, int payloadSize, AtomicLong callIdGenerator, AsyncSocket clientSocket) {
+        public LoadGeneratorThread(int requests, int payloadSize, AtomicLong callIdGenerator, AsyncSocket clientSocket) {
             this.requests = requests;
             this.payload = new byte[payloadSize];
             this.callIdGenerator = callIdGenerator;
@@ -279,101 +353,38 @@ public abstract class AsyncSocket_RpcTest {
         }
     }
 
-    private AsyncSocket newClient(SocketAddress serverAddress) {
-        AsyncSocket clientSocket = clientReactor.openTcpAsyncSocket();
-        clientSocket.setTcpNoDelay(true);
-        clientSocket.setSendBufferSize(SOCKET_BUFFER_SIZE);
-        clientSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
-        clientSocket.setReadHandler(new ReadHandler() {
-            private ByteBuffer payloadBuffer;
-            private long callId;
-            private int payloadSize = -1;
+    private class ClientReadHandler extends ReadHandler {
+        private ByteBuffer payloadBuffer;
+        private long callId;
+        private int payloadSize = -1;
 
-            @Override
-            public void onRead(ByteBuffer receiveBuffer) {
-                for (; ; ) {
-                    if (payloadSize == -1) {
-                        if (receiveBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
-                            break;
-                        }
-
-                        payloadSize = receiveBuffer.getInt();
-                        callId = receiveBuffer.getLong();
-                        payloadBuffer = ByteBuffer.allocate(payloadSize);
-                    }
-
-                    put(payloadBuffer, receiveBuffer);
-
-                    if (payloadBuffer.remaining() > 0) {
-                        // not all bytes have been received.
+        @Override
+        public void onRead(ByteBuffer receiveBuffer) {
+            for (; ; ) {
+                if (payloadSize == -1) {
+                    if (receiveBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
                         break;
                     }
-                    payloadBuffer.flip();
-                    CompletableFuture future = futures.remove(callId);
-                    if (future == null) {
-                        throw new RuntimeException();
-                    }
-                    future.complete(null);
-                    payloadSize = -1;
+
+                    payloadSize = receiveBuffer.getInt();
+                    callId = receiveBuffer.getLong();
+                    payloadBuffer = ByteBuffer.allocate(payloadSize);
                 }
+
+                put(payloadBuffer, receiveBuffer);
+
+                if (payloadBuffer.remaining() > 0) {
+                    // not all bytes have been received.
+                    break;
+                }
+                payloadBuffer.flip();
+                CompletableFuture future = futures.remove(callId);
+                if (future == null) {
+                    throw new RuntimeException();
+                }
+                future.complete(null);
+                payloadSize = -1;
             }
-        });
-        clientSocket.start();
-        clientSocket.connect(serverAddress).join();
-        return clientSocket;
-    }
-
-    private AsyncServerSocket newServer(SocketAddress serverAddress) {
-        AsyncServerSocket serverSocket = serverReactor.openTcpAsyncServerSocket();
-        serverSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
-        serverSocket.bind(serverAddress);
-
-        serverSocket.accept(acceptRequest -> {
-            AsyncSocket socket = serverReactor.openAsyncSocket(acceptRequest);
-            socket.setTcpNoDelay(true);
-            socket.setSendBufferSize(SOCKET_BUFFER_SIZE);
-            socket.setReceiveBufferSize(serverSocket.getReceiveBufferSize());
-            socket.setReadHandler(new ReadHandler() {
-                private ByteBuffer payloadBuffer;
-                private long callId;
-                private int payloadSize = -1;
-                private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
-
-                @Override
-                public void onRead(ByteBuffer receiveBuffer) {
-                    for (; ; ) {
-                        if (payloadSize == -1) {
-                            if (receiveBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
-                                break;
-                            }
-                            payloadSize = receiveBuffer.getInt();
-                            callId = receiveBuffer.getLong();
-                            payloadBuffer = ByteBuffer.allocate(payloadSize);
-                        }
-
-                        put(payloadBuffer, receiveBuffer);
-                        if (payloadBuffer.remaining() > 0) {
-                            // not all bytes have been received.
-                            break;
-                        }
-
-                        payloadBuffer.flip();
-                        IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
-                        responseBuf.writeInt(payloadSize);
-                        responseBuf.writeLong(callId);
-                        responseBuf.write(payloadBuffer);
-                        responseBuf.flip();
-
-                        if (!socket.unsafeWriteAndFlush(responseBuf)) {
-                            throw new RuntimeException("Socket has no space");
-                        }
-                        payloadSize = -1;
-                    }
-                }
-            });
-            socket.start();
-        });
-
-        return serverSocket;
+        }
     }
 }

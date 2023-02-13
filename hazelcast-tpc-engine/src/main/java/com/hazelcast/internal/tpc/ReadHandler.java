@@ -24,9 +24,19 @@ import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 public abstract class ReadHandler {
 
     protected AsyncSocket socket;
+    protected Reactor reactor;
+    protected Eventloop eventloop;
 
+    /**
+     * Initializes the ReadHandler. This method is called once and from the
+     * eventloop thread that owns the socket.
+     *
+     * @param socket the socket this ReadHandler belongs to.
+     */
     public void init(AsyncSocket socket) {
         this.socket = checkNotNull(socket);
+        this.reactor = socket.reactor();
+        this.eventloop = reactor.eventloop();
     }
 
     public abstract void onRead(ByteBuffer receiveBuffer);

@@ -23,15 +23,12 @@ import com.hazelcast.internal.tpc.util.CachedNanoClock;
 import com.hazelcast.internal.tpc.util.CircularQueue;
 import com.hazelcast.internal.tpc.util.NanoClock;
 import com.hazelcast.internal.tpc.util.StandardNanoClock;
-import com.hazelcast.internal.util.ThreadAffinityHelper;
 import org.jctools.queues.MpmcArrayQueue;
 
-import java.util.BitSet;
 import java.util.PriorityQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.internal.tpc.Reactor.State.TERMINATED;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 
@@ -45,23 +42,24 @@ import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
  * is a no-go.
  */
 @SuppressWarnings({"checkstyle:DeclarationOrder", "checkstyle:VisibilityModifier", "rawtypes"})
-public abstract class Eventloop implements Runnable {
+public abstract class Eventloop {
     private static final int INITIAL_ALLOCATOR_CAPACITY = 1024;
 
     protected final MpmcArrayQueue externalTaskQueue;
     protected final PriorityQueue<ScheduledTask> scheduledTaskQueue;
     public final CircularQueue localTaskQueue;
-    public final Reactor reactor;
+    protected final Reactor reactor;
     protected final boolean spin;
     protected final int batchSize;
-    private final ReactorBuilder builder;
-    protected long earliestDeadlineNanos = -1;
-    protected Scheduler scheduler;
-    protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
-    public final NanoClock nanoClock;
+    protected final ReactorBuilder builder;
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
+    protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
+    protected final NanoClock nanoClock;
+    protected final PromiseAllocator promiseAllocator;
+    protected final Scheduler scheduler;
+
+    protected long earliestDeadlineNanos = -1;
     protected boolean stop;
-    public final PromiseAllocator promiseAllocator;
 
     public Eventloop(Reactor reactor, ReactorBuilder builder) {
         this.reactor = reactor;
@@ -75,85 +73,26 @@ public abstract class Eventloop implements Runnable {
         this.nanoClock = builder.clockRefreshPeriod == 0
                 ? new StandardNanoClock()
                 : new CachedNanoClock(builder.clockRefreshPeriod);
+        this.scheduler = builder.schedulerSupplier.get();
+        scheduler.init(this);
     }
 
     /**
-     * Is called before the {@link #eventloop()} is called.
-     * <p>
-     * This method can be used to initialize resources.
-     * <p>
-     * Is called from the reactor thread.
-     */
-    protected void beforeEventloop() throws Exception {
-    }
-
-    /**
-     * Executes the actual eventloop.
+     * Runs the actual eventloop.
      * <p/>
      * Is called from the reactor thread.
      *
-     * @throws Exception
+     * @throws Exception if something fails while running the eventloop. The reactor
+     *                   terminates when this happens.
      */
-    protected abstract void eventloop() throws Exception;
+    protected abstract void run() throws Exception;
 
     /**
-     * Is called after the {@link #eventloop()} is called.
-     * <p>
-     * This method can be used to cleanup resources.
+     * Destroys the resources of this Eventloop. Is called after the {@link #run()}.
      * <p>
      * Is called from the reactor thread.
      */
-    protected void afterEventloop() throws Exception {
-    }
-
-    @Override
-    public void run() {
-        try {
-            try {
-                configureAffinity();
-                this.scheduler = builder.schedulerSupplier.get();
-                scheduler.init(this);
-                try {
-                    beforeEventloop();
-                    eventloop();
-                } finally {
-                    afterEventloop();
-                }
-            } catch (Throwable e) {
-                logger.severe(e);
-            } finally {
-                reactor.state = TERMINATED;
-
-                reactor.terminationLatch.countDown();
-
-                if (reactor.engine != null) {
-                    reactor.engine.notifyReactorTerminated();
-                }
-
-                if (logger.isInfoEnabled()) {
-                    logger.info(Thread.currentThread().getName() + " terminated");
-                }
-            }
-        } catch (Throwable e) {
-            // log whatever wasn't caught so that we don't swallow throwables.
-            logger.severe(e);
-        }
-    }
-
-    private void configureAffinity() {
-        BitSet allowedCpus = builder.threadAffinity == null ? null : builder.threadAffinity.nextAllowedCpus();
-        if (allowedCpus != null) {
-            ThreadAffinityHelper.setAffinity(allowedCpus);
-            BitSet actualCpus = ThreadAffinityHelper.getAffinity();
-            if (!actualCpus.equals(allowedCpus)) {
-                logger.warning(Thread.currentThread().getName() + " affinity was not applied successfully. "
-                        + "Expected CPUs:" + allowedCpus + ". Actual CPUs:" + actualCpus);
-            } else {
-                if (logger.isFineEnabled()) {
-                    logger.fine(Thread.currentThread().getName() + " has affinity for CPUs:" + allowedCpus);
-                }
-            }
-        }
+    protected void destroy() throws Exception {
     }
 
     protected final boolean runScheduledTasks() {

@@ -35,157 +35,157 @@ public class SocketTest {
 
     @Test
     public void test_construction() {
-        MockSocket socket = new MockSocket();
+        MockChannel channel = new MockChannel();
 
-        assertNull(socket.getCloseCause());
-        assertNull(socket.getCloseCause());
-        assertFalse(socket.isClosed());
+        assertNull(channel.getCloseCause());
+        assertNull(channel.getCloseCause());
+        assertFalse(channel.isClosed());
     }
 
     @Test
     public void test_setCloseListener_whenAlreadySet() {
-        MockSocket socket = new MockSocket();
-        Socket.CloseListener oldCloseListener = mock(Socket.CloseListener.class);
+        MockChannel channel = new MockChannel();
+        AbstractAsyncSocket.CloseListener oldCloseListener = mock(AbstractAsyncSocket.CloseListener.class);
         Executor oldExecutor = mock(Executor.class);
-        socket.setCloseListener(oldCloseListener, oldExecutor);
+        channel.setCloseListener(oldCloseListener, oldExecutor);
 
-        assertThrows(IllegalStateException.class, () -> socket.setCloseListener(mock(Socket.CloseListener.class), mock(Executor.class)));
+        assertThrows(IllegalStateException.class, () -> channel.setCloseListener(mock(AbstractAsyncSocket.CloseListener.class), mock(Executor.class)));
     }
 
     @Test
     public void test_setCloseListener_whenListenerNull() {
-        MockSocket socket = new MockSocket();
+        MockChannel channel = new MockChannel();
 
-        assertThrows(NullPointerException.class, () -> socket.setCloseListener(null, mock(Executor.class)));
+        assertThrows(NullPointerException.class, () -> channel.setCloseListener(null, mock(Executor.class)));
     }
 
     @Test
     public void test_setCloseListener_whenExecutorNull() {
-        MockSocket socket = new MockSocket();
+        MockChannel channel = new MockChannel();
 
-        assertThrows(NullPointerException.class, () -> socket.setCloseListener(mock(Socket.CloseListener.class), null));
+        assertThrows(NullPointerException.class, () -> channel.setCloseListener(mock(AbstractAsyncSocket.CloseListener.class), null));
     }
 
     @Test
     public void test_close_whenCloseListenerConfigured() {
-        MockSocket socket = new MockSocket();
+        MockChannel channel = new MockChannel();
         Executor executor = command -> {
             command.run();
         };
-        Socket.CloseListener listener = mock(Socket.CloseListener.class);
-        socket.setCloseListener(listener, executor);
+        AbstractAsyncSocket.CloseListener listener = mock(AbstractAsyncSocket.CloseListener.class);
+        channel.setCloseListener(listener, executor);
 
-        socket.close();
+        channel.close();
 
-        verify(listener).onClose(socket);
+        verify(listener).onClose(channel);
     }
 
     @Test
-    public void test_close_whenCloseListenerConfiguredAndSocketAlreadyClosed() {
-        MockSocket socket = new MockSocket();
-        socket.close();
+    public void test_close_whenCloseListenerConfiguredAndchannelAlreadyClosed() {
+        MockChannel channel = new MockChannel();
+        channel.close();
 
         Executor executor = command -> {
             command.run();
         };
-        Socket.CloseListener listener = mock(Socket.CloseListener.class);
-        socket.setCloseListener(listener, executor);
+        AbstractAsyncSocket.CloseListener listener = mock(AbstractAsyncSocket.CloseListener.class);
+        channel.setCloseListener(listener, executor);
 
-        verify(listener).onClose(socket);
+        verify(listener).onClose(channel);
     }
 
     @Test
     public void test_close_whenCloseListenerThrowsException_thenIgnore() {
-        MockSocket socket = new MockSocket();
+        MockChannel channel = new MockChannel();
         Executor executor = command -> {
             command.run();
         };
-        Socket.CloseListener listener = mock(Socket.CloseListener.class);
-        socket.setCloseListener(listener, executor);
+        AbstractAsyncSocket.CloseListener listener = mock(AbstractAsyncSocket.CloseListener.class);
+        channel.setCloseListener(listener, executor);
 
-        doThrow(new RuntimeException()).when(listener).onClose(socket);
-        socket.close();
+        doThrow(new RuntimeException()).when(listener).onClose(channel);
+        channel.close();
 
-        socket.close();
-        assertTrue(socket.isClosed());
+        channel.close();
+        assertTrue(channel.isClosed());
     }
 
     @Test
     public void test_close_whenClose0ThrowsException_thenIgnore() throws IOException {
-        MockSocket socket = new MockSocket();
-        socket.exceptionToThrow = new IOException();
+        MockChannel channel = new MockChannel();
+        channel.exceptionToThrow = new IOException();
 
-        socket.close();
+        channel.close();
 
-        assertTrue(socket.isClosed());
+        assertTrue(channel.isClosed());
     }
 
     @Test
     public void test_close() {
-        MockSocket socket = new MockSocket();
-        socket.close();
+        MockChannel channel = new MockChannel();
+        channel.close();
 
-        assertTrue(socket.isClosed());
-        assertNull(socket.getCloseCause());
-        assertNull(socket.getCloseReason());
-        assertEquals(1, socket.closeCalls);
+        assertTrue(channel.isClosed());
+        assertNull(channel.getCloseCause());
+        assertNull(channel.getCloseReason());
+        assertEquals(1, channel.closeCalls);
     }
 
     @Test
     public void test_close_withReasonAndCause() {
-        MockSocket socket = new MockSocket();
+        MockChannel channel = new MockChannel();
         String reason = "foo";
         Throwable cause = new Exception();
-        socket.close(reason, cause);
+        channel.close(reason, cause);
 
-        assertTrue(socket.isClosed());
-        assertSame(cause, socket.getCloseCause());
-        assertSame(reason, socket.getCloseReason());
-        assertEquals(1, socket.closeCalls);
+        assertTrue(channel.isClosed());
+        assertSame(cause, channel.getCloseCause());
+        assertSame(reason, channel.getCloseReason());
+        assertEquals(1, channel.closeCalls);
     }
 
     @Test
     public void test_close_withReasonOnly() {
-        MockSocket socket = new MockSocket();
+        MockChannel channel = new MockChannel();
         String reason = "foo";
-        socket.close(reason, null);
+        channel.close(reason, null);
 
-        assertTrue(socket.isClosed());
-        assertNull(socket.getCloseCause());
-        assertSame(reason, socket.getCloseReason());
-        assertEquals(1, socket.closeCalls);
+        assertTrue(channel.isClosed());
+        assertNull(channel.getCloseCause());
+        assertSame(reason, channel.getCloseReason());
+        assertEquals(1, channel.closeCalls);
     }
 
     @Test
     public void test_close_withCauseOnly() {
-        MockSocket socket = new MockSocket();
+        MockChannel channel = new MockChannel();
         Throwable cause = new Exception();
-        socket.close(null, cause);
+        channel.close(null, cause);
 
-        assertTrue(socket.isClosed());
-        assertNull(socket.getCloseReason());
-        assertSame(cause, socket.getCloseCause());
-        assertEquals(1, socket.closeCalls);
+        assertTrue(channel.isClosed());
+        assertNull(channel.getCloseReason());
+        assertSame(cause, channel.getCloseCause());
+        assertEquals(1, channel.closeCalls);
     }
 
 
     @Test
     public void test_close_whenAlreadyClosed() {
-        MockSocket socket = new MockSocket();
+        MockChannel channel = new MockChannel();
         String reason = "foo";
         Throwable cause = new Exception();
-        socket.close(reason, cause);
+        channel.close(reason, cause);
 
-        socket.close();
+        channel.close();
 
-        assertTrue(socket.isClosed());
-        assertSame(cause, socket.getCloseCause());
-        assertSame(reason, socket.getCloseReason());
-        assertEquals(1, socket.closeCalls);
+        assertTrue(channel.isClosed());
+        assertSame(cause, channel.getCloseCause());
+        assertSame(reason, channel.getCloseReason());
+        assertEquals(1, channel.closeCalls);
     }
 
 
-    public static class MockSocket extends Socket {
+    public static class MockChannel extends AbstractAsyncSocket {
         int closeCalls;
         IOException exceptionToThrow;
 

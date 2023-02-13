@@ -26,12 +26,14 @@ import java.util.function.Consumer;
  * A server socket that is asynchronous. So accepting incoming connections does not block,
  * but are executed on an {@link Reactor}.
  */
-public abstract class AsyncServerSocket extends Socket {
+public abstract class AsyncServerSocket extends AbstractAsyncSocket {
 
     protected final ProgressIndicator accepted = new ProgressIndicator();
 
     protected AsyncServerSocket() {
     }
+
+    public abstract AsyncSocketOptions options();
 
     /**
      * Returns the number of sockets that have been accepted.
@@ -79,60 +81,6 @@ public abstract class AsyncServerSocket extends Socket {
     public abstract int getLocalPort();
 
     /**
-     * Checks if the SO_REUSEPORT option has been set.
-     * <p/>
-     * When SO_REUSEPORT isn't supported, false is returned.
-     *
-     * @return true if SO_REUSEPORT is enabled.
-     * @throws UncheckedIOException if something failed with configuring the socket
-     */
-    public abstract boolean isReusePort();
-
-    /**
-     * Sets the SO_REUSEPORT option.
-     * <p/>
-     * It could be that this call is ignored (e.g. Nio + Java 8).
-     *
-     * @param reusePort if the SO_REUSEPORT option should be enabled.
-     * @throws UncheckedIOException if something failed with configuring the socket
-     */
-    public abstract void setReusePort(boolean reusePort);
-
-    /**
-     * Checks if the SO_REUSEADDR option has been set.
-     *
-     * @return true if SO_REUSEADDR is enabled.
-     * @throws UncheckedIOException if something failed with configuring the socket
-     */
-    public abstract boolean isReuseAddress();
-
-    /**
-     * Sets the SO_REUSEADDR option.
-     *
-     * @param reuseAddress if the SO_REUSEADDR option should be enabled.
-     * @throws UncheckedIOException if something failed with configuring the socket
-     */
-    public abstract void setReuseAddress(boolean reuseAddress);
-
-    /**
-     * Sets the receive buffer size in bytes (SO_RCVBUF). The value is a hint, the
-     * operating system or implementation could pick a different value.
-     *
-     * @param size the receive buffer size in bytes.
-     * @throws IllegalArgumentException when the size isn't positive.
-     * @throws UncheckedIOException     if something failed with configuring the socket
-     */
-    public abstract void setReceiveBufferSize(int size);
-
-    /**
-     * Gets the receive buffer size in bytes.
-     *
-     * @return the size of the receive buffer.
-     * @throws UncheckedIOException if something failed with configuring the socket
-     */
-    public abstract int getReceiveBufferSize();
-
-    /**
      * Binds this AsyncServerSocket to the localAddress address. This method is equivalent to calling
      * {@link #bind(SocketAddress, int)} with an Integer.MAX_VALUE backlog.
      * <p/>
@@ -158,7 +106,7 @@ public abstract class AsyncServerSocket extends Socket {
      * </ol>
      * This can be made on any thread, but it isn't threadsafe.
      * <p>
-     * This call needs to be made before {@link #accept(Consumer)}.
+     * This call needs to be made before {@link #start(Consumer)}.
      * <p/>
      * Bind should only be called once, otherwise an UncheckedIOException is thrown.
      *
@@ -181,10 +129,8 @@ public abstract class AsyncServerSocket extends Socket {
      * <p/>
      * Before accept is called, bind needs to be called.
      *
-     * @param consumer a function that is called when a socket has connected.
-     * @throws NullPointerException if consumer is null.
-     */
-    public abstract void accept(Consumer<AcceptRequest> consumer);
+      */
+    public abstract void start();
 
     @Override
     public String toString() {

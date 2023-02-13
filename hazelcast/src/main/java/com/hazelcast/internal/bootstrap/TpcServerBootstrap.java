@@ -50,6 +50,11 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
+import static com.hazelcast.internal.tpc.AsyncSocketOptions.SO_KEEPALIVE;
+import static com.hazelcast.internal.tpc.AsyncSocketOptions.SO_RCVBUF;
+import static com.hazelcast.internal.tpc.AsyncSocketOptions.SO_REUSEPORT;
+import static com.hazelcast.internal.tpc.AsyncSocketOptions.SO_SNDBUF;
+import static com.hazelcast.internal.tpc.AsyncSocketOptions.TCP_NODELAY;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -163,22 +168,23 @@ public class TpcServerBootstrap {
                     () -> new ClientAsyncReadHandler(nodeEngine.getNode().clientEngine);
             readHandlerSuppliers.put(reactor, readHandlerSupplier);
 
-            AsyncServerSocket serverSocket = reactor.openTcpAsyncServerSocket();
+            AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
+                    .set(SO_RCVBUF, clientSocketConfig.getReceiveBufferSizeKB() * KILO_BYTE)
+                    .set(SO_REUSEPORT, true)
+                    .setAcceptConsumer(acceptRequest -> {
+                        AsyncSocket socket = reactor.newAsyncSocketBuilder(acceptRequest)
+                                .setReadHandler(readHandlerSuppliers.get(reactor).get())
+                                .set(SO_SNDBUF, clientSocketConfig.getSendBufferSizeKB() * KILO_BYTE)
+                                .set(SO_RCVBUF, clientSocketConfig.getReceiveBufferSizeKB() * KILO_BYTE)
+                                .set(TCP_NODELAY, tcpNoDelay)
+                                .set(SO_KEEPALIVE, true)
+                                .build();
+                        socket.start();
+                    })
+                    .build();
             serverSockets.add(serverSocket);
-            int receiveBufferSize = clientSocketConfig.getReceiveBufferSizeKB() * KILO_BYTE;
-            int sendBufferSize = clientSocketConfig.getSendBufferSizeKB() * KILO_BYTE;
-            serverSocket.setReceiveBufferSize(receiveBufferSize);
-            serverSocket.setReuseAddress(true);
             port = bind(serverSocket, port, limit);
-            serverSocket.accept(acceptRequest -> {
-                AsyncSocket socket = reactor.openAsyncSocket(acceptRequest);
-                socket.setReadHandler(readHandlerSuppliers.get(reactor).get());
-                socket.setSendBufferSize(sendBufferSize);
-                socket.setReceiveBufferSize(receiveBufferSize);
-                socket.setTcpNoDelay(tcpNoDelay);
-                socket.setKeepAlive(true);
-                socket.start();
-            });
+            serverSocket.start();
         }
     }
 

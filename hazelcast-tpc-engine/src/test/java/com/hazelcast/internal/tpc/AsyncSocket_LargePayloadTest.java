@@ -28,6 +28,9 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.internal.tpc.AsyncSocketOptions.SO_RCVBUF;
+import static com.hazelcast.internal.tpc.AsyncSocketOptions.SO_SNDBUF;
+import static com.hazelcast.internal.tpc.AsyncSocketOptions.TCP_NODELAY;
 import static com.hazelcast.internal.tpc.TpcTestSupport.assertOpenEventually;
 import static com.hazelcast.internal.tpc.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_INT;
@@ -191,9 +194,9 @@ public abstract class AsyncSocket_LargePayloadTest {
 
         AsyncServerSocket serverSocket = newServer(serverAddress);
 
-        CountDownLatch latch = new CountDownLatch(concurrency);
+        CountDownLatch completionLatch = new CountDownLatch(concurrency);
 
-        AsyncSocket clientSocket = newClient(serverAddress, latch);
+        AsyncSocket clientSocket = newClient(serverAddress, completionLatch);
 
         System.out.println("Starting");
 
@@ -210,128 +213,140 @@ public abstract class AsyncSocket_LargePayloadTest {
         }
         clientSocket.flush();
 
-        assertOpenEventually(latch);
+        assertOpenEventually(completionLatch);
     }
 
-    private AsyncSocket newClient(SocketAddress serverAddress, CountDownLatch latch) {
-        AsyncSocket clientSocket = clientReactor.openTcpAsyncSocket();
-        clientSocket.setTcpNoDelay(true);
-        clientSocket.setSendBufferSize(SOCKET_BUFFER_SIZE);
-        clientSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
-        clientSocket.setReadHandler(new ReadHandler() {
-            private ByteBuffer payloadBuffer;
-            private long round;
-            private int payloadSize = -1;
-            private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
+    private AsyncSocket newClient(SocketAddress serverAddress, CountDownLatch completionLatch) {
+        AsyncSocket clientSocket = clientReactor.newAsyncSocketBuilder()
+                .set(TCP_NODELAY, true)
+                .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
+                .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
+                .setReadHandler(new ClientReadHandler(completionLatch))
+                .build();
 
-            @Override
-            public void onRead(ByteBuffer receiveBuffer) {
-                for (; ; ) {
-                    if (payloadSize == -1) {
-                        if (receiveBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
-                            break;
-                        }
-
-                        payloadSize = receiveBuffer.getInt();
-                        round = receiveBuffer.getLong();
-                        if (round < 0) {
-                            throw new RuntimeException("round can't be smaller than 0, found:" + round);
-                        }
-                        payloadBuffer = ByteBuffer.allocate(payloadSize);
-                    }
-
-                    put(payloadBuffer, receiveBuffer);
-
-                    if (payloadBuffer.remaining() > 0) {
-                        // not all bytes have been received.
-                        break;
-                    }
-                    payloadBuffer.flip();
-
-                    if (round % 100 == 0) {
-                        System.out.println("client round:" + round);
-                    }
-
-                    if (round == 0) {
-                        latch.countDown();
-                    } else {
-                        IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
-                        responseBuf.writeInt(payloadSize);
-                        responseBuf.writeLong(round);
-                        responseBuf.write(payloadBuffer);
-                        responseBuf.flip();
-                        if (!socket.unsafeWriteAndFlush(responseBuf)) {
-                            throw new RuntimeException();
-                        }
-                    }
-                    payloadSize = -1;
-                }
-            }
-        });
         clientSocket.start();
         clientSocket.connect(serverAddress).join();
-
         return clientSocket;
     }
 
     private AsyncServerSocket newServer(SocketAddress serverAddress) {
-        AsyncServerSocket serverSocket = serverReactor.openTcpAsyncServerSocket();
-        serverSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
+        AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
+                .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
+                .setAcceptConsumer(acceptRequest -> {
+                    AsyncSocketBuilder channelBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest);
+                    channelBuilder.set(TCP_NODELAY, true);
+                    channelBuilder.set(SO_SNDBUF, SOCKET_BUFFER_SIZE);
+                    channelBuilder.set(SO_RCVBUF, SOCKET_BUFFER_SIZE);
+                    channelBuilder.setReadHandler(new ServerReadHandler());
+                    AsyncSocket socket = channelBuilder.build();
+                    socket.start();
+                })
+                .build();
         serverSocket.bind(serverAddress);
+        serverSocket.start();
+        return serverSocket;
+    }
 
-        serverSocket.accept(acceptRequest -> {
-            AsyncSocket socket = serverReactor.openAsyncSocket(acceptRequest);
-            socket.setTcpNoDelay(true);
-            socket.setSendBufferSize(SOCKET_BUFFER_SIZE);
-            socket.setReceiveBufferSize(serverSocket.getReceiveBufferSize());
-            socket.setReadHandler(new ReadHandler() {
-                private ByteBuffer payloadBuffer;
-                private long round;
-                private int payloadSize = -1;
-                private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
+    private static class ServerReadHandler extends ReadHandler {
+        private ByteBuffer payloadBuffer;
+        private long round;
+        private int payloadSize = -1;
+        private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
 
-                @Override
-                public void onRead(ByteBuffer receiveBuffer) {
+        @Override
+        public void onRead(ByteBuffer receiveBuffer) {
+            for (; ; ) {
+                if (payloadSize == -1) {
+                    if (receiveBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
+                        break;
+                    }
+                    payloadSize = receiveBuffer.getInt();
+                    round = receiveBuffer.getLong();
+                    if (round < 0) {
+                        throw new RuntimeException("round can't be smaller than 0, found:" + round);
+                    }
+                    payloadBuffer = ByteBuffer.allocate(payloadSize);
+                }
 
-                    for (; ; ) {
-                        if (payloadSize == -1) {
-                            if (receiveBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
-                                break;
-                            }
-                            payloadSize = receiveBuffer.getInt();
-                            round = receiveBuffer.getLong();
-                            if (round < 0) {
-                                throw new RuntimeException("round can't be smaller than 0, found:" + round);
-                            }
-                            payloadBuffer = ByteBuffer.allocate(payloadSize);
-                        }
+                put(payloadBuffer, receiveBuffer);
+                if (payloadBuffer.remaining() > 0) {
+                    // not all bytes have been received.
+                    break;
+                }
 
-                        put(payloadBuffer, receiveBuffer);
-                        if (payloadBuffer.remaining() > 0) {
-                            // not all bytes have been received.
-                            break;
-                        }
+                if (round % 100 == 0) {
+                    System.out.println("server round:" + round);
+                }
 
-                        if (round % 100 == 0) {
-                            System.out.println("server round:" + round);
-                        }
+                payloadBuffer.flip();
+                IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
+                responseBuf.writeInt(payloadSize);
+                responseBuf.writeLong(round - 1);
+                responseBuf.write(payloadBuffer);
+                responseBuf.flip();
+                if (!socket.unsafeWriteAndFlush(responseBuf)) {
+                    throw new RuntimeException("Socket has no space");
+                }
+                payloadSize = -1;
+            }
+        }
+    }
 
-                        payloadBuffer.flip();
-                        IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
-                        responseBuf.writeInt(payloadSize);
-                        responseBuf.writeLong(round - 1);
-                        responseBuf.write(payloadBuffer);
-                        responseBuf.flip();
-                        if (!socket.unsafeWriteAndFlush(responseBuf)) {
-                            throw new RuntimeException("Socket has no space");
-                        }
-                        payloadSize = -1;
+    private static class ClientReadHandler extends ReadHandler {
+        private final CountDownLatch latch;
+        private ByteBuffer payloadBuffer;
+        private long round;
+        private int payloadSize;
+        private final IOBufferAllocator responseAllocator;
+
+        ClientReadHandler(CountDownLatch latch) {
+            this.latch = latch;
+            payloadSize = -1;
+            responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
+        }
+
+        @Override
+        public void onRead(ByteBuffer receiveBuffer) {
+            for (; ; ) {
+                if (payloadSize == -1) {
+                    if (receiveBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
+                        break;
+                    }
+
+                    payloadSize = receiveBuffer.getInt();
+                    round = receiveBuffer.getLong();
+                    if (round < 0) {
+                        throw new RuntimeException("round can't be smaller than 0, found:" + round);
+                    }
+                    payloadBuffer = ByteBuffer.allocate(payloadSize);
+                }
+
+                put(payloadBuffer, receiveBuffer);
+
+                if (payloadBuffer.remaining() > 0) {
+                    // not all bytes have been received.
+                    break;
+                }
+                payloadBuffer.flip();
+
+                if (round % 100 == 0) {
+                    System.out.println("client round:" + round);
+                }
+
+                if (round == 0) {
+                    latch.countDown();
+                } else {
+                    IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
+                    responseBuf.writeInt(payloadSize);
+                    responseBuf.writeLong(round);
+                    responseBuf.write(payloadBuffer);
+                    responseBuf.flip();
+                    if (!socket.unsafeWriteAndFlush(responseBuf)) {
+                        throw new RuntimeException();
                     }
                 }
-            });
-            socket.start();
-        });
-
-        return serverSocket;
+                payloadSize = -1;
+            }
+        }
     }
 }

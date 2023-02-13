@@ -58,19 +58,22 @@ public abstract class AsyncSocket_ReadableTest {
     @Test
     public void test() {
         SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
-
-        AsyncServerSocket serverSocket = serverReactor.openTcpAsyncServerSocket();
         CompletableFuture<AsyncSocket> remoteSocketFuture = new CompletableFuture<>();
+        AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
+                .setAcceptConsumer(acceptRequest -> {
+                    AsyncSocket asyncSocket = serverReactor.newAsyncSocketBuilder(acceptRequest)
+                            .setReadHandler(new NullReadHandler())
+                            .build();
+                    asyncSocket.start();
+                    remoteSocketFuture.complete(asyncSocket);
+                })
+                .build();
         serverSocket.bind(serverAddress);
-        serverSocket.accept(acceptRequest -> {
-            AsyncSocket asyncSocket = serverReactor.openAsyncSocket(acceptRequest);
-            asyncSocket.setReadHandler(new NullReadHandler());
-            asyncSocket.start();
-            remoteSocketFuture.complete(asyncSocket);
-        });
+        serverSocket.start();
 
-        AsyncSocket localSocket = clientReactor.openTcpAsyncSocket();
-        localSocket.setReadHandler(new NullReadHandler());
+        AsyncSocket localSocket = clientReactor.newAsyncSocketBuilder()
+                .setReadHandler(new NullReadHandler())
+                .build();
         localSocket.start();
         localSocket.connect(serverAddress).join();
 
