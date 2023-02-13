@@ -40,7 +40,7 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
     final SocketChannel socketChannel;
     final NioAcceptRequest acceptRequest;
     final boolean clientSide;
-    boolean regularSchedule;
+    boolean regularSchedule = true;
     boolean writeThrough;
     boolean receiveBufferIsDirect = true;
     int unflushedBufsCapacity = DEFAULT_UNFLUSHED_BUFS_CAPACITY;
