@@ -17,18 +17,17 @@
 package com.hazelcast.jet.sql.impl.connector.file;
 
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlProcessors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
+import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -130,32 +129,31 @@ public class FileSqlConnector implements SqlConnector {
     @Nonnull
     @Override
     public Vertex fullScanReader(
-            @Nonnull DAG dag,
-            @Nonnull Table table0,
-            @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projections,
+            @Nonnull DagBuildContext context,
+            @Nullable RexNode predicate,
+            @Nonnull List<RexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
             throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
         }
 
-        FileTable table = (FileTable) table0;
+        FileTable table = (FileTable) context.getTable();
 
-        Vertex vStart = dag.newUniqueVertex(table.toString(), table.processorMetaSupplier());
+        Vertex vStart = context.getDag().newUniqueVertex(table.toString(), table.processorMetaSupplier());
 
-        Vertex vEnd = dag.newUniqueVertex(
+        Vertex vEnd = context.getDag().newUniqueVertex(
                 "Project(" + table + ")",
                 SqlProcessors.rowProjector(
                         table.paths(),
                         table.types(),
                         table.queryTargetSupplier(),
-                        predicate,
-                        projections
+                        context.convertFilter(predicate),
+                        context.convertProjection(projection)
                 )
         );
 
-        dag.edge(between(vStart, vEnd).isolated());
+        context.getDag().edge(between(vStart, vEnd).isolated());
         return vEnd;
     }
 }
