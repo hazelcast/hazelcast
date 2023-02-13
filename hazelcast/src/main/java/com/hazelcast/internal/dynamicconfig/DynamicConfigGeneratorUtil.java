@@ -22,7 +22,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.MapConfig;
@@ -50,7 +50,7 @@ import static com.hazelcast.internal.config.ConfigSections.CACHE;
 import static com.hazelcast.internal.config.ConfigSections.CARDINALITY_ESTIMATOR;
 import static com.hazelcast.internal.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.EXECUTOR_SERVICE;
-import static com.hazelcast.internal.config.ConfigSections.EXTERNAL_DATA_STORE;
+import static com.hazelcast.internal.config.ConfigSections.DATA_LINK;
 import static com.hazelcast.internal.config.ConfigSections.FLAKE_ID_GENERATOR;
 import static com.hazelcast.internal.config.ConfigSections.LIST;
 import static com.hazelcast.internal.config.ConfigSections.MAP;
@@ -246,12 +246,12 @@ public final class DynamicConfigGeneratorUtil {
         );
     }
 
-    public static String externalDataStoreConfigGenerator(ExternalDataStoreConfig subConfig, boolean configIsXml, int indent) {
+    public static String dataLinkConfigGenerator(DataLinkConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
-                EXTERNAL_DATA_STORE.getName(),
-                Config::addExternalDataStoreConfig,
-                DynamicConfigXmlGenerator::externalDataStoreXmlGenerator,
-                DynamicConfigYamlGenerator::externalDataStoreYamlGenerator
+                DATA_LINK.getName(),
+                Config::addDataLinkConfig,
+                DynamicConfigXmlGenerator::dataLinkXmlGenerator,
+                DynamicConfigYamlGenerator::dataLinkYamlGenerator
         );
     }
 
