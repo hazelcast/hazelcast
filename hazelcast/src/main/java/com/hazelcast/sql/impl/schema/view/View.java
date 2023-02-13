@@ -23,13 +23,15 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.schema.DdlUnparseable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
-public class View implements IdentifiedDataSerializable, Versioned {
+public class View implements IdentifiedDataSerializable, Versioned, DdlUnparseable {
 
     private String name;
     private String query;
@@ -130,6 +132,8 @@ public class View implements IdentifiedDataSerializable, Versioned {
         return Objects.hash(name, query, viewColumnNames, viewColumnTypes);
     }
 
+    @Override
+    @Nonnull
     public String unparse() {
         return String.format("CREATE VIEW \"%s\" AS\n%s", name(), query());
     }

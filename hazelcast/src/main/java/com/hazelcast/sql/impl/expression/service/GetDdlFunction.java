@@ -24,16 +24,14 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.TriExpression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.schema.Mapping;
-import com.hazelcast.sql.impl.schema.type.Type;
-import com.hazelcast.sql.impl.schema.view.View;
+import com.hazelcast.sql.impl.schema.DdlUnparseable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
 import static com.hazelcast.sql.impl.expression.string.StringFunctionUtils.asVarchar;
 
 public class GetDdlFunction extends TriExpression<String> implements IdentifiedDataSerializable {
-    static final String TABLE_NAMESPACE = "table";
+    static final String RELATION_NAMESPACE = "relation";
     static final String DATALINK_NAMESPACE = "datalink";
 
     public GetDdlFunction() {
@@ -55,24 +53,21 @@ public class GetDdlFunction extends TriExpression<String> implements IdentifiedD
             return null;
         }
 
-        // Ignore schema for now, the only supported schema at the moment is 'public'.
+        // Ignore schema for now, the only supported schema at the moment is 'hazelcast.public'.
 
         IMap sqlCatalog = context.getNodeEngine().getHazelcastInstance().getMap(SQL_CATALOG_MAP_NAME);
         final String ddl;
-        if (!namespace.equals(TABLE_NAMESPACE)) {
+        if (!namespace.equals(RELATION_NAMESPACE)) {
             throw QueryException.error(
-                    "Namespace '" + namespace + "' is not supported. Only 'table' namespace is supported.");
+                    "Namespace '" + namespace + "' is not supported."
+                            + " Only '" + RELATION_NAMESPACE + "' namespace is supported.");
         }
 
         final Object obj = sqlCatalog.get(objectName);
         if (obj == null) {
             throw QueryException.error("Object '" + objectName + "' does not exist in namespace '" + namespace + "'");
-        } else if (obj instanceof Mapping) {
-            ddl = ((Mapping) obj).unparse();
-        } else if (obj instanceof View) {
-            ddl = ((View) obj).unparse();
-        } else if (obj instanceof Type) {
-            ddl = ((Type) obj).unparse();
+        } else if (obj instanceof DdlUnparseable) {
+            ddl = ((DdlUnparseable) obj).unparse();
         } else {
             throw new AssertionError("Object must not be present in information_schema");
         }

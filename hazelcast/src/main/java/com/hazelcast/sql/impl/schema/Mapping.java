@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -34,7 +35,7 @@ import java.util.Objects;
  * represent a mapping.
  */
 @SuppressWarnings("JavadocReference")
-public class Mapping implements IdentifiedDataSerializable {
+public class Mapping implements IdentifiedDataSerializable, DdlUnparseable {
 
     private String name;
     private String externalName;
@@ -128,6 +129,8 @@ public class Mapping implements IdentifiedDataSerializable {
         return Objects.hash(name, externalName, type, mappingFields, options);
     }
 
+    @Override
+    @Nonnull
     public String unparse() {
         StringBuffer buffer = new StringBuffer();
 

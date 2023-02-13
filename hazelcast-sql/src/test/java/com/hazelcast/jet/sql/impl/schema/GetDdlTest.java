@@ -43,7 +43,7 @@ public class GetDdlTest extends SqlTestSupport {
     public void when_queryMappingFromTableNamespace_then_success() {
         createMapping("a", int.class, int.class);
 
-        assertRowsAnyOrder("SELECT GET_DDL('table', 'a')", ImmutableList.of(
+        assertRowsAnyOrder("SELECT GET_DDL('relation', 'a')", ImmutableList.of(
                 new Row("CREATE MAPPING \"a\" " +
                         "(__key INTEGER EXTERNAL NAME __key, this INTEGER EXTERNAL NAME this) \n" +
                         "TYPE IMap \n" +
@@ -60,7 +60,7 @@ public class GetDdlTest extends SqlTestSupport {
         createMapping("a", int.class, int.class);
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM a");
 
-        assertRowsAnyOrder("SELECT GET_DDL('table', 'v')", ImmutableList.of(
+        assertRowsAnyOrder("SELECT GET_DDL('relation', 'v')", ImmutableList.of(
                 new Row("CREATE VIEW \"v\" AS\n" +
                         "SELECT \"a\".\"__key\", \"a\".\"this\"\n" +
                         "FROM \"hazelcast\".\"public\".\"a\" AS \"a\""))
@@ -74,7 +74,7 @@ public class GetDdlTest extends SqlTestSupport {
                 + "'portableClassId' = '3', 'portableClassVersion' = '0')\n";
 
         instance().getSql().execute(createTypeQuery);
-        assertRowsAnyOrder("SELECT GET_DDL('table', 't')", ImmutableList.of(new Row(createTypeQuery)));
+        assertRowsAnyOrder("SELECT GET_DDL('relation', 't')", ImmutableList.of(new Row(createTypeQuery)));
     }
 
     @Test
@@ -88,23 +88,23 @@ public class GetDdlTest extends SqlTestSupport {
 
     @Test
     public void when_queryNonExistingObject_then_throws() {
-        SqlResult sqlRows = instance().getSql().execute("SELECT GET_DDL('table', 'bbb')");
+        SqlResult sqlRows = instance().getSql().execute("SELECT GET_DDL('relation', 'bbb')");
         assertThatThrownBy(() -> sqlRows.iterator().next())
                 .hasCauseInstanceOf(QueryException.class)
-                .hasMessageContaining("Object 'bbb' does not exist in namespace 'table'");
+                .hasMessageContaining("Object 'bbb' does not exist in namespace 'relation'");
     }
 
     @Test
     public void when_queryDdlWithAnotherOperator_then_success() {
         createMapping("a", int.class, int.class);
 
-        assertRowsAnyOrder("SELECT SUBSTRING(GET_DDL('table', 'a') FROM 1 FOR 6)",
+        assertRowsAnyOrder("SELECT SUBSTRING(GET_DDL('relation', 'a') FROM 1 FOR 6)",
                 ImmutableList.of(new Row("CREATE"))
         );
 
         assertRowsAnyOrder(
-                "SELECT SUBSTRING(GET_DDL('table', 'a') FROM 1 FOR 6) " +
-                        "|| SUBSTRING(GET_DDL('table', 'a') FROM 1 FOR 3)",
+                "SELECT SUBSTRING(GET_DDL('relation', 'a') FROM 1 FOR 6) " +
+                        "|| SUBSTRING(GET_DDL('relation', 'a') FROM 1 FOR 3)",
                 ImmutableList.of(new Row("CREATECRE"))
         );
     }
@@ -113,8 +113,8 @@ public class GetDdlTest extends SqlTestSupport {
     public void when_queryDdlWithOtherRels_then_success() {
         createMapping("a", int.class, int.class);
 
-        assertRowsAnyOrder("SELECT SUBSTRING(GET_DDL('table', 'a') FROM 1 FOR 6)" +
-                        "UNION ALL SELECT SUBSTRING(GET_DDL('table', 'a') FROM 1 FOR 6)",
+        assertRowsAnyOrder("SELECT SUBSTRING(GET_DDL('relation', 'a') FROM 1 FOR 6)" +
+                        "UNION ALL SELECT SUBSTRING(GET_DDL('relation', 'a') FROM 1 FOR 6)",
                 Arrays.asList(new Row("CREATE"), new Row("CREATE")));
     }
 
@@ -123,7 +123,7 @@ public class GetDdlTest extends SqlTestSupport {
         createMapping("a", int.class, String.class);
         instance().getMap("a").put(1, "a");
 
-        assertRowsAnyOrder("SELECT GET_DDL('table', this) FROM a",
+        assertRowsAnyOrder("SELECT GET_DDL('relation', this) FROM a",
                 ImmutableList.of(new Row("CREATE MAPPING \"a\" " +
                         "(__key INTEGER EXTERNAL NAME __key, this VARCHAR EXTERNAL NAME this) \n" +
                         "TYPE IMap \n" +

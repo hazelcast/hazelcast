@@ -20,12 +20,14 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.schema.DdlUnparseable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -37,7 +39,7 @@ import java.util.List;
  * <p>
  * It can represent a java class, or a portable/compact type, see {@link #kind}.
  */
-public class Type implements IdentifiedDataSerializable, Serializable {
+public class Type implements IdentifiedDataSerializable, Serializable, DdlUnparseable {
     private String name;
     private TypeKind kind = TypeKind.JAVA;
     private String javaClassName;
@@ -114,6 +116,8 @@ public class Type implements IdentifiedDataSerializable, Serializable {
         this.compactTypeName = compactTypeName;
     }
 
+    @Override
+    @Nonnull
     public String unparse() {
         StringBuffer buffer = new StringBuffer();
 
