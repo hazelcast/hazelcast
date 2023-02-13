@@ -25,6 +25,7 @@ import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.internal.tpc.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpc.TpcTestSupport.terminateAll;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -151,49 +152,46 @@ public abstract class AsyncServerSocketTest {
         socket.close();
     }
 
-//    @Test
-//    public void test_accept_whenConsumerNull() {
-//        Reactor reactor = newReactor();
-//        AsyncServerSocket socket = reactor.newAsyncServerSocketBuilder().build();
-//
-//        SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
-//        socket.bind(local);
-//
-//        assertThrows(NullPointerException.class, () -> socket.start(null));
-//
-//        socket.close();
-//    }
-//
-//    @Test
-//    public void test_createCloseLoop_withSamereactor() {
-//        SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
-//        Reactor reactor = newReactor();
-//        for (int k = 0; k < 1000; k++) {
-//            System.out.println("at:" + k);
-//            AsyncServerSocket socket = reactor.newAsyncServerSocketBuilder()
-//                    .set(AsyncSocketOptions.SO_REUSEPORT,true)
-//                    .build();
-//            socket.bind(local);
-//            socket.start(socket1 -> {
-//            });
-//            socket.close();
-//        }
-//    }
-//
-//    @Test
-//    public void test_createCloseLoop_withNewreactor() {
-//        SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
-//        for (int k = 0; k < 1000; k++) {
-//            System.out.println("at:" + k);
-//            Reactor reactor = newReactor();
-//            reactors.remove(reactor);
-//            AsyncServerSocket socket = reactor.newAsyncServerSocketBuilder()
-//                    .set(AsyncSocketOptions.SO_REUSEPORT,true)
-//                    .build();
-//            socket.bind(local);
-//            socket.start(socket1 -> {
-//            });
-//            terminate(reactor);
-//        }
-//    }
+    @Test
+    public void test_createCloseLoop_withSamereactor() {
+        SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
+        Reactor reactor = newReactor();
+        for (int k = 0; k < 1000; k++) {
+            System.out.println("at:" + k);
+            AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
+                    .setAcceptConsumer(acceptRequest -> {
+                        AsyncSocket clientSocket = reactor.newAsyncSocketBuilder(acceptRequest)
+                                .setReadHandler(new DevNullReadHandler())
+                                .build();
+                        clientSocket.start();
+                    })
+                    .set(AsyncSocketOptions.SO_REUSEPORT, true)
+                    .build();
+            serverSocket.bind(local);
+            serverSocket.start();
+            serverSocket.close();
+        }
+    }
+
+    @Test
+    public void test_createCloseLoop_withNewReactor() {
+        SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
+        for (int k = 0; k < 1000; k++) {
+            System.out.println("at:" + k);
+            Reactor reactor = newReactor();
+            reactors.remove(reactor);
+            AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
+                    .setAcceptConsumer(acceptRequest -> {
+                        AsyncSocket clientSocket = reactor.newAsyncSocketBuilder(acceptRequest)
+                                .setReadHandler(new DevNullReadHandler())
+                                .build();
+                        clientSocket.start();
+                    })
+                    .set(AsyncSocketOptions.SO_REUSEPORT, true)
+                    .build();
+            serverSocket.bind(local);
+            serverSocket.start();
+            terminate(reactor);
+        }
+    }
 }
