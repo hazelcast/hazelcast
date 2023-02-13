@@ -47,7 +47,8 @@ public class Type implements IdentifiedDataSerializable, Serializable {
     private Integer portableVersion;
     private List<TypeField> fields;
 
-    public Type() { }
+    public Type() {
+    }
 
     public String getName() {
         return name;
@@ -111,6 +112,80 @@ public class Type implements IdentifiedDataSerializable, Serializable {
 
     public void setCompactTypeName(final String compactTypeName) {
         this.compactTypeName = compactTypeName;
+    }
+
+    public String unparse() {
+        StringBuffer buffer = new StringBuffer();
+
+        buffer.append("CREATE TYPE");
+        buffer.append(" \"").append(name).append("\" ");
+
+        if (fields.size() > 0) {
+            int fieldsSize = fields.size() - 1;
+            buffer.append("(");
+            for (TypeField field : fields) {
+                buffer.append(field.getName()).append(" ");
+                buffer.append(field.getQueryDataType().getTypeFamily().toString());
+                if (fieldsSize-- > 0) {
+                    buffer.append(", ");
+                }
+            }
+            buffer.append(") ");
+        }
+
+        buffer.append("OPTIONS").append(" (\n");
+        if (javaClassName != null) {
+            appendOption(buffer, "format", "java", true);
+            appendOption(buffer, "javaClass", javaClassName, false);
+        }
+
+        if (compactTypeName != null) {
+            appendOption(buffer, "format", "compact", true);
+            appendOption(buffer, "compactTypeName", compactTypeName, false);
+        }
+
+        if (portableFactoryId != null) {
+            appendOption(buffer, "format", "portable", true);
+            appendOption(buffer, "portableFactoryId", portableFactoryId, false);
+            appendOption(buffer, "portableClassId", portableClassId, false);
+            if (portableVersion != null) {
+                appendOption(buffer, "portableClassVersion", portableVersion, false);
+            }
+        }
+
+        buffer.append(")\n");
+
+        return buffer.toString();
+    }
+
+    private static void appendOption(StringBuffer buffer, String optionKey, String optionValue, boolean first) {
+        if (first) {
+            buffer.append("'");
+        } else {
+            buffer.append(", '");
+        }
+
+        buffer.append(optionKey)
+                .append("'")
+                .append(" = ")
+                .append("'")
+                .append(optionValue)
+                .append("'");
+    }
+
+    private static void appendOption(StringBuffer buffer, String optionKey, Integer optionValue, boolean first) {
+        if (first) {
+            buffer.append("'");
+        } else {
+            buffer.append(", '");
+        }
+
+        buffer.append(optionKey)
+                .append("'")
+                .append(" = ")
+                .append("'")
+                .append(optionValue)
+                .append("'");
     }
 
     @Override
@@ -180,7 +255,8 @@ public class Type implements IdentifiedDataSerializable, Serializable {
         private String name;
         private QueryDataType queryDataType;
 
-        public TypeField() { }
+        public TypeField() {
+        }
 
         public TypeField(final String name, final QueryDataType queryDataType) {
             this.name = name;

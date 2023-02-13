@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.TriExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -70,8 +71,10 @@ public class GetDdlFunction extends TriExpression<String> implements IdentifiedD
             ddl = ((Mapping) obj).unparse();
         } else if (obj instanceof View) {
             ddl = ((View) obj).unparse();
+        } else if (obj instanceof Type) {
+            ddl = ((Type) obj).unparse();
         } else {
-            throw new AssertionError("UNREACHABLE");
+            throw new AssertionError("Object must not be present in information_schema");
         }
         return ddl;
     }

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.google.common.collect.ImmutableList;
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.QueryException;
@@ -25,13 +26,17 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
+import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class GetDdlTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() throws Exception {
-        initialize(1, null);
+        Config config = smallInstanceConfig()
+                .setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
+
+        initialize(1, config);
     }
 
     @Test
@@ -60,6 +65,16 @@ public class GetDdlTest extends SqlTestSupport {
                         "SELECT \"a\".\"__key\", \"a\".\"this\"\n" +
                         "FROM \"hazelcast\".\"public\".\"a\" AS \"a\""))
         );
+    }
+
+    @Test
+    public void when_queryTypeFromTableNamespace_then_success() {
+        String createTypeQuery = "CREATE TYPE \"t\" (a INTEGER, b INTEGER) OPTIONS (\n"
+                + "'format' = 'portable', 'portableFactoryId' = '1', "
+                + "'portableClassId' = '3', 'portableClassVersion' = '0')\n";
+
+        instance().getSql().execute(createTypeQuery);
+        assertRowsAnyOrder("SELECT GET_DDL('table', 't')", ImmutableList.of(new Row(createTypeQuery)));
     }
 
     @Test
