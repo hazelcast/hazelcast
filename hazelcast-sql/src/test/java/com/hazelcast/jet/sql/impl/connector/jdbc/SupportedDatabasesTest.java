@@ -50,8 +50,7 @@ public class SupportedDatabasesTest {
 
         when(jdbcTable.sqlDialect()).thenReturn(sybaseSqlDialect);
 
-        SupportedDatabases supportedDatabases = new SupportedDatabases();
-        boolean result = supportedDatabases.isDialectSupported(jdbcTable);
+        boolean result = SupportedDatabases.isDialectSupported(jdbcTable);
         assertFalse(result);
     }
 
@@ -60,22 +59,19 @@ public class SupportedDatabasesTest {
 
         when(jdbcTable.sqlDialect()).thenReturn(mysqlSqlDialect);
 
-        SupportedDatabases supportedDatabases = new SupportedDatabases();
-        boolean result = supportedDatabases.isDialectSupported(jdbcTable);
+        boolean result = SupportedDatabases.isDialectSupported(jdbcTable);
         assertTrue(result);
     }
 
     @Test
     public void logByProductName_supportedDB() {
-        SupportedDatabases supportedDatabases = new SupportedDatabases();
-        boolean newDB = supportedDatabases.logOnceByProductName("mysql");
+        boolean newDB = SupportedDatabases.logOnceByProductName("mysql");
         assertThat(newDB).isFalse();
     }
 
     @Test
     public void logByProductName_notSupportedDB() {
-        SupportedDatabases supportedDatabases = new SupportedDatabases();
-        boolean newDB = supportedDatabases.logOnceByProductName("cassandra");
+        boolean newDB = SupportedDatabases.logOnceByProductName("cassandra");
         assertThat(newDB).isTrue();
     }
 }

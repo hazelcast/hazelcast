@@ -65,8 +65,6 @@ public class JdbcSqlConnector implements SqlConnector {
 
     public static final String JDBC_BATCH_LIMIT_DEFAULT_VALUE = "100";
 
-    private final SupportedDatabases supportedDatabases = new SupportedDatabases();
-
     @Override
     public String typeName() {
         return TYPE_NAME;
@@ -256,7 +254,7 @@ public class JdbcSqlConnector implements SqlConnector {
         try (Connection connection = dataSource.getConnection()) {
             DatabaseMetaData databaseMetaData = connection.getMetaData();
             SqlDialect dialect = SqlDialectFactoryImpl.INSTANCE.create(databaseMetaData);
-            supportedDatabases.logOnceIfDatabaseNotSupported(databaseMetaData);
+            SupportedDatabases.logOnceIfDatabaseNotSupported(databaseMetaData);
             return dialect;
         } catch (Exception e) {
             throw new HazelcastException("Could not determine dialect for dataLinkRef: "
@@ -368,7 +366,7 @@ public class JdbcSqlConnector implements SqlConnector {
         JdbcTable jdbcTable = (JdbcTable) context.getTable();
 
         // If dialect is supported
-        if (supportedDatabases.isDialectSupported(jdbcTable)) {
+        if (SupportedDatabases.isDialectSupported(jdbcTable)) {
             // Get the upsert statement
             String upsertStatement = UpsertBuilder.getUpsertStatement(jdbcTable);
 

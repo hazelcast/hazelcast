@@ -29,30 +29,33 @@ import java.sql.SQLException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-class SupportedDatabases {
+final class SupportedDatabases {
 
     private static final ILogger LOGGER = Logger.getLogger(SupportedDatabases.class);
 
-    private final Set<String> databaseNames = ConcurrentHashMap.newKeySet();
+    private static final Set<String> DATABASE_NAMES = ConcurrentHashMap.newKeySet();
 
-    SupportedDatabases() {
+    static {
         // Add supported database names in upper case
-        databaseNames.add("MYSQL");
-        databaseNames.add("POSTGRESQL");
-        databaseNames.add("H2");
+        DATABASE_NAMES.add("MYSQL");
+        DATABASE_NAMES.add("POSTGRESQL");
+        DATABASE_NAMES.add("H2");
     }
 
-    void logOnceIfDatabaseNotSupported(DatabaseMetaData databaseMetaData) throws SQLException {
+    private SupportedDatabases() {
+    }
+
+    static void logOnceIfDatabaseNotSupported(DatabaseMetaData databaseMetaData) throws SQLException {
         // Get product name from the JDBC driver
         String databaseProductName = databaseMetaData.getDatabaseProductName();
         logOnceByProductName(databaseProductName);
     }
 
-    boolean logOnceByProductName(String databaseProductName) {
+    static boolean logOnceByProductName(String databaseProductName) {
         // Make the DB name upper case
         String uppercaseProductName = StringUtil.upperCaseInternal(databaseProductName);
 
-        boolean newDatabaseName = databaseNames.add(uppercaseProductName);
+        boolean newDatabaseName = DATABASE_NAMES.add(uppercaseProductName);
         if (newDatabaseName) {
             // If this Database name is new, log a message
             LOGGER.warning("Database " + uppercaseProductName + " is not officially supported");
@@ -60,7 +63,7 @@ class SupportedDatabases {
         return newDatabaseName;
     }
 
-    boolean isDialectSupported(JdbcTable jdbcTable) {
+    static boolean isDialectSupported(JdbcTable jdbcTable) {
         SqlDialect dialect = jdbcTable.sqlDialect();
         return dialect instanceof MysqlSqlDialect ||
                dialect instanceof PostgresqlSqlDialect ||
