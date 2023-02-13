@@ -38,7 +38,7 @@ import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
  */
 public class UploadJobMetaDataOperation extends Operation implements IdentifiedDataSerializable {
 
-    Boolean response = false;
+    boolean response;
     JobMetaDataParameterObject jobMetaDataParameterObject;
 
     public UploadJobMetaDataOperation() {

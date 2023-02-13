@@ -27,6 +27,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+
 import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
 
 import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
@@ -37,7 +38,7 @@ import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
  */
 public class UploadJobMultiPartOperation extends Operation implements IdentifiedDataSerializable {
 
-    Boolean response = false;
+    boolean response;
 
     JobMultiPartParameterObject jobMultiPartParameterObject;
 
@@ -63,12 +64,10 @@ public class UploadJobMultiPartOperation extends Operation implements Identified
     @Override
     public void run() {
         // Delegate to JetServiceBackend
-        // Delegate to JetServiceBackend
-            JetServiceBackend jetServiceBackend = getJetServiceBackend();
-            JobMetaDataParameterObject partsComplete = jetServiceBackend.storeJobMultiPart(jobMultiPartParameterObject);
-            // If JetServiceBackend returns that parts are complete
-            if (partsComplete != null) {
-                // Execute the jar
+        JetServiceBackend jetServiceBackend = getJetServiceBackend();
+        JobMetaDataParameterObject partsComplete = jetServiceBackend.storeJobMultiPart(jobMultiPartParameterObject);
+        // If JetServiceBackend returns that parts are complete
+        if (partsComplete != null) {
             // Execute the jar
             jetServiceBackend.executeJar(partsComplete);
         }
