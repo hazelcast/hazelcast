@@ -1248,7 +1248,7 @@ public class IndeterminateSnapshotTest {
          */
         private int snapshotCounter;
         /**
-         * Id of first snapshot for which {@link #saveSnapshotConsumer} and other hooks are called.
+         * ID of first snapshot for which {@link #saveSnapshotConsumer} and other hooks are called.
          * Snapshot ids are assigned starting with 0.
          */
         public static volatile int allowedSnapshotsCount = 0;
@@ -1288,7 +1288,7 @@ public class IndeterminateSnapshotTest {
         @Override
         public boolean complete() {
             // emit current snapshot counter
-            // finish when requested number of items was emitted
+            // finish when the requested number of items was emitted
             return tryEmit(10000 * (globalIndex + 1) + snapshotCounter)
                     && snapshotCounter == numItems;
         }

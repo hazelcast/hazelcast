@@ -115,7 +115,7 @@ class MasterSnapshotContext {
             return SnapshotFlags.create(isTerminal, isExport());
         }
 
-        public String finalMapName() {
+        public String mapName() {
             return isExport() ? exportedSnapshotMapName(snapshotName)
                     : snapshotDataMapName(mc.jobId(), mc.jobExecutionRecord().ongoingDataMapIndex());
         }
@@ -210,11 +210,11 @@ class MasterSnapshotContext {
 
             long newSnapshotId = mc.jobExecutionRecord().ongoingSnapshotId();
             int snapshotFlags = requestedSnapshot.snapshotFlags();
-            String finalMapName = requestedSnapshot.finalMapName();
+            String mapName = requestedSnapshot.mapName();
 
             try {
                 mc.writeJobExecutionRecordSafe(false);
-                mc.nodeEngine().getHazelcastInstance().getMap(finalMapName).clear();
+                mc.nodeEngine().getHazelcastInstance().getMap(mapName).clear();
             } catch (Exception e) {
                 logger.warning(String.format("Failed to start snapshot %d for %s",
                         newSnapshotId, jobNameAndExecutionId(mc.jobName(), localExecutionId)),
@@ -228,7 +228,7 @@ class MasterSnapshotContext {
                     SnapshotFlags.toString(snapshotFlags), requestedSnapshot.snapshotName);
 
             Function<ExecutionPlan, Operation> factory = plan ->
-                    new SnapshotPhase1Operation(mc.jobId(), localExecutionId, newSnapshotId, finalMapName, snapshotFlags);
+                    new SnapshotPhase1Operation(mc.jobId(), localExecutionId, newSnapshotId, mapName, snapshotFlags);
 
             // Need to take a copy of executionId: we don't cancel the scheduled task when the execution
             // finalizes. If a new execution is started in the meantime, we'll use the execution ID to detect it.
@@ -325,10 +325,10 @@ class MasterSnapshotContext {
                     }
                 }
 
+                String mapName = requestedSnapshot.mapName();
                 // Snapshot IMap proxy instance may be shared, but we always want it
                 // to have failOnIndeterminateOperationState enabled.
-                String finalMapName = requestedSnapshot.finalMapName();
-                IMap<Object, Object> snapshotMap = safeImap(mc.nodeEngine().getHazelcastInstance().getMap(finalMapName));
+                IMap<Object, Object> snapshotMap = safeImap(mc.nodeEngine().getHazelcastInstance().getMap(mapName));
                 try {
                     SnapshotValidationRecord validationRecord = new SnapshotValidationRecord(snapshotId,
                             mergedResult.getNumChunks(), mergedResult.getNumBytes(),
@@ -340,22 +340,23 @@ class MasterSnapshotContext {
                     // record is inserted into the cache below.
                     //
                     // Error during update for JobExecutionRecord does not invalidate the _exported_ snapshot.
-                    // JobExecutionRecord data in IMap become stale (indicate that the exported snapshot is in progress)
-                    // but it should not cause problems. They may be overwritten later (in memory values will be correct)
+                    // JobExecutionRecord data in IMap becomes stale (indicates that the exported snapshot is in progress)
+                    // but it should not cause problems. They may be overwritten later (in-memory values will be correct)
                     // or ignored when JobExecutionRecord is loaded from IMap.
                     //
-                    // Terminal exported snapshot is formally valid from this point, but it is safe to use it
+                    // Terminal exported snapshot is formally valid from this point on, but it is safe to use it
                     // to restore from only after and only if the job was cleanly terminated due to _this_ snapshot request.
                     // On API level, using this snapshot is not safe if cancelAndExportSnapshot throws exception
                     // and the job will not be cancelled but restarted.
                     Object oldValue = snapshotMap.put(SnapshotValidationRecord.KEY, validationRecord);
 
                     if (requestedSnapshot.isExport()) {
+                        assert requestedSnapshot.snapshotName != null;
                         // update also for failed snapshots because the map may have contained different snapshot before
                         mc.jobRepository().cacheValidationRecord(requestedSnapshot.snapshotName, validationRecord);
                     }
                     if (oldValue != null) {
-                        logger.severe("SnapshotValidationRecord overwritten after writing to '" + finalMapName
+                        logger.severe("SnapshotValidationRecord overwritten after writing to '" + mapName
                                 + "' for " + mc.jobIdString() + ": snapshot data might be corrupted");
                     }
                 } catch (Exception e) {
@@ -368,7 +369,7 @@ class MasterSnapshotContext {
                         mergedResult.getNumBytes(), mergedResult.getNumKeys(), mergedResult.getNumChunks(),
                         mergedResult.getError(), requestedSnapshot.isTerminal);
 
-                // There is no need to restart job in case of failed snapshot:
+                // There is no need to restart job in case of a failed snapshot:
                 // - ongoingSnapshotId is safe in IMap, because it was written at the beginning
                 // - snapshotId was not updated
                 // - we can roll back transactions now (2nd phase) if needed, we would do it anyway after restart
@@ -381,19 +382,19 @@ class MasterSnapshotContext {
                 // _non-terminal_ exported snapshots.
                 if (isSuccess && !requestedSnapshot.isExportOnly()) {
                     try {
-                        // the decision moment for regular snapshots: after this the snapshot is ready to be restored from
-                        // the decision moment also for terminal exported snapshot: after this
-                        // job can be cleanly terminated without any prepared transactions in unknown state
+                        // The decision moment for regular snapshots: after this the snapshot is ready to be restored from.
+                        // The decision moment also for terminal exported snapshot: after this the
+                        // job can be cleanly terminated without any prepared transactions in unknown state,
                         // and the snapshot can be used to safely start a new job.
                         mc.writeJobExecutionRecordSafe(false);
                     } catch (IndeterminateOperationStateException indeterminate) {
                         skipPhase2 = true;
-                        logger.warning(mc.jobIdString() + " snapshot " + snapshotId +
-                                " update of JobExecutionRecord was indeterminate. Will restart job forcefully.");
+                        logger.warning(mc.jobIdString() + " snapshot " + snapshotId + " update of JobExecutionRecord " +
+                                "was indeterminate. Will restart the job forcefully.", indeterminate);
                     } catch (Exception otherError) {
                         skipPhase2 = true;
                         logger.warning(mc.jobIdString() + " snapshot " + snapshotId +
-                                " update of JobExecutionRecord failed. Will restart job forcefully.", otherError);
+                                " update of JobExecutionRecord failed. Will restart the job forcefully.", otherError);
                     }
                 } else {
                     mc.writeJobExecutionRecord(false);
@@ -405,7 +406,7 @@ class MasterSnapshotContext {
                             snapshotId, mc.jobIdString(),
                             (skipPhase2 ? "INDETERMINATE/" : "") + (isSuccess ? "SUCCESS" : "FAILURE"),
                             stats.duration(), stats.numBytes(), stats.numKeys(), stats.numChunks(),
-                            finalMapName,
+                            mapName,
                             (skipPhase2 ? ", skipping " : ", proceeding to ") + "phase 2"));
                 }
 
@@ -418,7 +419,7 @@ class MasterSnapshotContext {
                         // can never be used for restore.
                         snapshotMap.clear();
                     } catch (Exception e) {
-                        logger.warning(mc.jobIdString() + ": failed to clear snapshot map '" + finalMapName
+                        logger.warning(mc.jobIdString() + ": failed to clear snapshot map '" + mapName
                                 + "' after a failure", e);
                     }
                 }
