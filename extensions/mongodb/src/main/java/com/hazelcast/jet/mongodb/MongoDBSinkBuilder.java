@@ -211,6 +211,63 @@ public final class MongoDBSinkBuilder<T> {
     }
 
     /**
+     * Provides an option to adjust options used in replace action.
+     * By default {@linkplain ReplaceOptions#upsert(boolean) upsert} is only enabled.
+     */
+    @Nonnull
+    public MongoDBSinkBuilder<T> withCustomReplaceOptions(@Nonnull ConsumerEx<ReplaceOptions> adjustConsumer) {
+        params.setReplaceOptionAdjuster(checkNonNullAndSerializable(adjustConsumer, "adjustConsumer"));
+        return this;
+    }
+
+    /**
+     * Sets the filter that decides which document in the collection is equal to processed document.
+     * @param fieldName field name in the collection, that will be used for comparison
+     * @param documentIdentityFn function that extracts ID from given item; will be compared against {@code fieldName}
+     */
+    @Nonnull
+    public MongoDBSinkBuilder<T> identifyDocumentBy(
+            @Nonnull String fieldName,
+            @Nonnull FunctionEx<T, Object> documentIdentityFn) {
+        checkNotNull(fieldName, "fieldName cannot be null");
+        checkSerializable(documentIdentityFn, "documentIdentityFn");
+        params.setDocumentIdentityFieldName(fieldName);
+        params.setDocumentIdentityFn(documentIdentityFn);
+        return this;
+    }
+
+    /**
+     * Sets the retry strategy in case of commit failure.
+     * <p>
+     * MongoDB by default retries simple operations, but commits must be retried manually.
+     * <p>
+     * This option is taken into consideration only if
+     * {@linkplain com.hazelcast.jet.config.ProcessingGuarantee#EXACTLY_ONCE} is used.
+     * <p>
+     * Default value is {@linkplain #DEFAULT_COMMIT_RETRY_STRATEGY}.
+     */
+    @Nonnull
+    public MongoDBSinkBuilder<T> commitRetryStrategy(@Nonnull RetryStrategy commitRetryStrategy) {
+        params.setCommitRetryStrategy(commitRetryStrategy);
+        return this;
+    }
+
+
+    /**
+     * Sets options which will be used by MongoDB transaction mechanism.
+     * <p>
+     * This option is taken into consideration only if
+     * {@linkplain com.hazelcast.jet.config.ProcessingGuarantee#EXACTLY_ONCE} is used.
+     * <p>
+     * Default value is {@linkplain #DEFAULT_TRANSACTION_OPTION}.
+     */
+    @Nonnull
+    public MongoDBSinkBuilder<T> transactionOptions(@Nonnull SupplierEx<TransactionOptions> transactionOptionsSup) {
+        params.setTransactionOptions(transactionOptionsSup);
+        return this;
+    }
+
+    /**
      * Creates and returns the MongoDB {@link Sink} with the components you
      * supplied to this builder.
      */

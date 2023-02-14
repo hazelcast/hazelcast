@@ -23,6 +23,8 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.logging.ILogger;
+import com.mongodb.MongoServerException;
+import com.mongodb.MongoSocketException;
 import com.mongodb.client.ChangeStreamIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -51,6 +53,7 @@ import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.mongodb.impl.MongoUtilities.partitionAggregate;
 import static com.mongodb.client.model.Aggregates.sort;
 import static com.mongodb.client.model.Sorts.ascending;
+import static com.mongodb.client.model.changestream.FullDocument.UPDATE_LOOKUP;
 
 /**
  * Processor for reading from MongoDB
@@ -217,7 +220,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
                 }
 
                 onConnect(newClient, snapshotsEnabled);
-            } catch (Exception e) {
+            } catch (MongoSocketException | MongoServerException e) {
                 logger.warning("Could not connect to MongoDB", e);
             }
         }
@@ -365,7 +368,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
             } else if (startTimestamp != null) {
                 changeStream.startAtOperationTime(new BsonTimestamp(startTimestamp));
             }
-            cursor = changeStream.batchSize(BATCH_SIZE).iterator();
+            cursor = changeStream.batchSize(BATCH_SIZE).fullDocument(UPDATE_LOOKUP).iterator();
         }
 
         @Override

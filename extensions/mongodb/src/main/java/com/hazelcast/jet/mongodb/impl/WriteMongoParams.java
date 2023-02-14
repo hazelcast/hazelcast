@@ -160,7 +160,7 @@ public class WriteMongoParams<I> implements Serializable {
     }
 
     @Nonnull
-    public WriteMongoParams<I> setTransactionOptionsSup(SupplierEx<TransactionOptions> transactionOptionsSup) {
+    public WriteMongoParams<I> setTransactionOptions(SupplierEx<TransactionOptions> transactionOptionsSup) {
         this.transactionOptionsSup = transactionOptionsSup;
         return this;
     }
