@@ -23,15 +23,22 @@ import com.hazelcast.jet.impl.jobupload.JobMetaDataParameterObject;
 import com.hazelcast.jet.impl.jobupload.JobMultiPartParameterObject;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
+import java.io.IOException;
 
 import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
+
+import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
+import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
 
 /**
  * Resumes the execution of a suspended job.
  */
 public class UploadJobMultiPartOperation extends Operation implements IdentifiedDataSerializable {
 
-    Boolean response = false;
+    boolean response;
 
     JobMultiPartParameterObject jobMultiPartParameterObject;
 
@@ -81,5 +88,26 @@ public class UploadJobMultiPartOperation extends Operation implements Identified
     @Override
     public int getClassId() {
         return JetInitDataSerializerHook.UPLOAD_JOB_MULTIPART_OP;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        writeUUID(out, jobMultiPartParameterObject.getSessionId());
+        out.writeInt(jobMultiPartParameterObject.getCurrentPartNumber());
+        out.writeInt(jobMultiPartParameterObject.getTotalPartNumber());
+        out.writeByteArray(jobMultiPartParameterObject.getPartData());
+        out.writeInt(jobMultiPartParameterObject.getPartSize());
+        out.writeString(jobMultiPartParameterObject.getSha256Hex());
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        jobMultiPartParameterObject = new JobMultiPartParameterObject();
+        jobMultiPartParameterObject.setSessionId(readUUID(in));
+        jobMultiPartParameterObject.setCurrentPartNumber(in.readInt());
+        jobMultiPartParameterObject.setTotalPartNumber(in.readInt());
+        jobMultiPartParameterObject.setPartData(in.readByteArray());
+        jobMultiPartParameterObject.setPartSize(in.readInt());
+        jobMultiPartParameterObject.setSha256Hex(in.readString());
     }
 }

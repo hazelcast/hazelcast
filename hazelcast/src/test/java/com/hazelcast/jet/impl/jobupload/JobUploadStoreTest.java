@@ -29,6 +29,7 @@ import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.security.MessageDigest;
@@ -83,18 +84,17 @@ public class JobUploadStoreTest {
     @Test
     public void testRemove() throws Exception {
         UUID sessionID = UUID.randomUUID();
-        jobUploadStore.remove(sessionID);
+        jobUploadStore.removeBadSession(sessionID);
     }
 
     @Test
-    public void testProcessJarMetaData() {
+    public void testProcessJarMetaData() throws IOException {
         UUID sessionID = UUID.randomUUID();
         JobMetaDataParameterObject parameterObject = new JobMetaDataParameterObject();
         parameterObject.setSessionId(sessionID);
         jobUploadStore.processJobMetaData(parameterObject);
 
         assertEquals(1, jobMap.size());
-
     }
 
     @Test
@@ -111,7 +111,6 @@ public class JobUploadStoreTest {
 
         // Send meta data
         jobUploadStore.processJobMetaData(parameterObject);
-
 
         // Send part 1
         JobMultiPartParameterObject parameterObject1 = new JobMultiPartParameterObject();
@@ -140,8 +139,7 @@ public class JobUploadStoreTest {
         assertNotNull(result);
         assertTrue(Files.exists(parameterObject.getJarPath()));
 
-        jobUploadStore.remove(sessionID);
-
+        jobUploadStore.removeBadSession(sessionID);
     }
 
     @NotNull
