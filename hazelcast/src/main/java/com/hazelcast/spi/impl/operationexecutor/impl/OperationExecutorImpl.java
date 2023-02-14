@@ -120,16 +120,6 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
                                  OperationRunnerFactory runnerFactory,
                                  NodeExtension nodeExtension,
                                  String hzName,
-                                 ClassLoader configClassLoader) {
-        this(properties, loggerService, thisAddress, runnerFactory, nodeExtension, hzName, configClassLoader, null);
-    }
-
-    public OperationExecutorImpl(HazelcastProperties properties,
-                                 LoggingService loggerService,
-                                 Address thisAddress,
-                                 OperationRunnerFactory runnerFactory,
-                                 NodeExtension nodeExtension,
-                                 String hzName,
                                  ClassLoader configClassLoader,
                                  TpcEngine tpcEngine) {
         this.tpcEngine = tpcEngine;
