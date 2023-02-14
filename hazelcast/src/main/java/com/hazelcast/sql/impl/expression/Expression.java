@@ -71,7 +71,4 @@ public interface Expression<T> extends DataSerializable, Serializable {
      */
     QueryDataType getType();
 
-    default <R> R accept(ExpressionVisitor<R> visitor) {
-        throw new UnsupportedOperationException("visitor is not supported by " + getClass().getSimpleName());
-    }
 }

@@ -67,10 +67,6 @@ public final class ParameterExpression<T> implements Expression<T>, IdentifiedDa
         return type;
     }
 
-    public int getIndex() {
-        return index;
-    }
-
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(index);
@@ -110,8 +106,4 @@ public final class ParameterExpression<T> implements Expression<T>, IdentifiedDa
         return getClass().getSimpleName() + "{index=" + index + '}';
     }
 
-    @Override
-    public <R> R accept(ExpressionVisitor<R> visitor) {
-        return visitor.visit(this);
-    }
 }
