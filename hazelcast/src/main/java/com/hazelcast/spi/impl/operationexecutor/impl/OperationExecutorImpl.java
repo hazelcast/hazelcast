@@ -22,6 +22,8 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.tpc.Reactor;
+import com.hazelcast.internal.tpc.TpcEngine;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
@@ -57,8 +59,8 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_EXECUTOR_RUNNING_PARTITION_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.internal.util.ThreadAffinity.newSystemThreadAffinity;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ThreadAffinity.newSystemThreadAffinity;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier.getIdleStrategy;
 import static com.hazelcast.spi.properties.ClusterProperty.GENERIC_OPERATION_THREAD_COUNT;
@@ -97,7 +99,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     private final ILogger logger;
 
     // all operations for specific partitions will be executed on these threads, e.g. map.put(key, value)
-    private final PartitionOperationThreadImpl[] partitionThreads;
+    private final PartitionOperationThread[] partitionThreads;
     private final OperationRunner[] partitionOperationRunners;
 
     private final OperationQueue genericQueue
@@ -110,6 +112,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     private final Address thisAddress;
     private final OperationRunner adHocOperationRunner;
     private final int priorityThreadCount;
+    private final TpcEngine tpcEngine;
 
     public OperationExecutorImpl(HazelcastProperties properties,
                                  LoggingService loggerService,
@@ -117,15 +120,20 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
                                  OperationRunnerFactory runnerFactory,
                                  NodeExtension nodeExtension,
                                  String hzName,
-                                 ClassLoader configClassLoader) {
+                                 ClassLoader configClassLoader,
+                                 TpcEngine tpcEngine) {
+        this.tpcEngine = tpcEngine;
         this.thisAddress = thisAddress;
         this.logger = loggerService.getLogger(OperationExecutorImpl.class);
 
         this.adHocOperationRunner = runnerFactory.createAdHocRunner();
 
         this.partitionOperationRunners = initPartitionOperationRunners(properties, runnerFactory);
-        this.partitionThreads = initPartitionThreads(properties, hzName, nodeExtension, configClassLoader);
-
+        if (tpcEngine == null) {
+            this.partitionThreads = initClassicPartitionThreads(properties, hzName, nodeExtension, configClassLoader);
+        } else {
+            this.partitionThreads = initAltoPartitionThreads(tpcEngine, hzName, nodeExtension, configClassLoader);
+        }
         this.priorityThreadCount = properties.getInteger(PRIORITY_GENERIC_OPERATION_THREAD_COUNT);
         this.genericOperationRunners = initGenericOperationRunners(properties, runnerFactory);
         this.genericThreads = initGenericThreads(hzName, nodeExtension, configClassLoader);
@@ -150,8 +158,8 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         return operationRunners;
     }
 
-    private PartitionOperationThreadImpl[] initPartitionThreads(HazelcastProperties properties, String hzName,
-                                                                NodeExtension nodeExtension, ClassLoader configClassLoader) {
+    private PartitionOperationThread[] initClassicPartitionThreads(HazelcastProperties properties, String hzName,
+                                                                   NodeExtension nodeExtension, ClassLoader configClassLoader) {
 
         int threadCount = properties.getInteger(PARTITION_OPERATION_THREAD_COUNT);
         if (threadAffinity.isEnabled()) {
@@ -159,7 +167,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         }
 
         IdleStrategy idleStrategy = getIdleStrategy(properties, IDLE_STRATEGY);
-        PartitionOperationThreadImpl[] threads = new PartitionOperationThreadImpl[threadCount];
+        PartitionOperationThread[] threads = new PartitionOperationThread[threadCount];
         for (int threadId = 0; threadId < threads.length; threadId++) {
             String threadName = createThreadPoolName(hzName, "partition-operation") + threadId;
             // the normalQueue will be a blocking queue. We don't want to idle, because there are many operation threads.
@@ -167,7 +175,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
 
             OperationQueue operationQueue = new OperationQueueImpl(normalQueue, new ConcurrentLinkedQueue<>());
 
-            PartitionOperationThreadImpl partitionThread = new PartitionOperationThreadImpl(threadName, threadId,
+            PartitionOperationThread partitionThread = new PartitionOperationThread(threadName, threadId,
                     operationQueue, logger, nodeExtension, partitionOperationRunners, configClassLoader);
             partitionThread.setThreadAffinity(threadAffinity);
             threads[threadId] = partitionThread;
@@ -180,6 +188,41 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
             Thread thread = threads[threadId];
             OperationRunner runner = partitionOperationRunners[partitionId];
             runner.setCurrentThread(thread);
+        }
+
+        return threads;
+    }
+
+    private PartitionOperationThread[] initAltoPartitionThreads(TpcEngine tpcEngine,
+                                                                String hzName,
+                                                                NodeExtension nodeExtension,
+                                                                ClassLoader configClassLoader) {
+        int threadCount = tpcEngine.reactorCount();
+
+        PartitionOperationThread[] threads = new PartitionOperationThread[threadCount];
+        for (int threadId = 0; threadId < threads.length; threadId++) {
+            Reactor reactor = tpcEngine.reactor(threadId);
+            AltoPartitionOperationThread partitionThread = (AltoPartitionOperationThread) reactor.eventloopThread();
+
+            partitionThread.setName(createThreadPoolName(hzName, "partition-operation") + threadId);
+
+            // the AltoOperationQueue is unbound just like HZ classic. Since we do not have any back pressure mechanism between
+            // members, there is no proper way to prevent overload. So we keep the same bad bad behavior for now.
+            partitionThread.queue = new AltoOperationQueue(reactor, new MPSCQueue<>(null), new ConcurrentLinkedQueue<>());
+            partitionThread.threadId = threadId;
+            partitionThread.logger = logger;
+            partitionThread.nodeExtension = nodeExtension;
+            partitionThread.partitionOperationRunners = partitionOperationRunners;
+            partitionThread.setContextClassLoader(configClassLoader);
+            partitionThread.setThreadAffinity(threadAffinity);
+            threads[threadId] = partitionThread;
+        }
+
+        // we need to assign the PartitionOperationThreads to all OperationRunners they own
+        for (int partitionId = 0; partitionId < partitionOperationRunners.length; partitionId++) {
+            int threadId = getPartitionThreadId(partitionId, threadCount);
+            OperationRunner runner = partitionOperationRunners[partitionId];
+            runner.setCurrentThread(threads[threadId]);
         }
 
         return threads;
@@ -289,7 +332,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     @Probe(name = OPERATION_METRIC_EXECUTOR_QUEUE_SIZE, level = MANDATORY)
     public int getQueueSize() {
         int size = 0;
-        for (PartitionOperationThreadImpl partitionThread : partitionThreads) {
+        for (PartitionOperationThread partitionThread : partitionThreads) {
             size += partitionThread.queue.normalSize();
         }
         size += genericQueue.normalSize();
@@ -300,7 +343,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     @Probe(name = OPERATION_METRIC_EXECUTOR_PRIORITY_QUEUE_SIZE, level = MANDATORY)
     public int getPriorityQueueSize() {
         int size = 0;
-        for (PartitionOperationThreadImpl partitionThread : partitionThreads) {
+        for (PartitionOperationThread partitionThread : partitionThreads) {
             size += partitionThread.queue.prioritySize();
         }
         size += genericQueue.prioritySize();
@@ -361,7 +404,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         checkNotNull(taskFactory, "taskFactory can't be null");
         checkNotNull(partitions, "partitions can't be null");
 
-        for (PartitionOperationThreadImpl partitionThread : partitionThreads) {
+        for (PartitionOperationThread partitionThread : partitionThreads) {
             TaskBatch batch = new TaskBatch(taskFactory, partitions, partitionThread.threadId, partitionThreads.length);
             partitionThread.queue.add(batch, false);
         }
@@ -459,11 +502,11 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         }
 
         // we are only allowed to execute partition aware actions on an OperationThread
-        if (currentThread.getClass() != PartitionOperationThreadImpl.class) {
+        if (!(currentThread instanceof PartitionOperationThread)) {
             return false;
         }
 
-        PartitionOperationThreadImpl partitionThread = (PartitionOperationThreadImpl) currentThread;
+        PartitionOperationThread partitionThread = (PartitionOperationThread) currentThread;
 
         // so it's a partition operation thread, now we need to make sure that this operation thread is allowed
         // to execute operations for this particular partitionId
@@ -492,11 +535,11 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         }
 
         // allowed to invoke from non PartitionOperationThreads (including GenericOperationThread)
-        if (currentThread.getClass() != PartitionOperationThreadImpl.class) {
+        if (!(currentThread instanceof PartitionOperationThread)) {
             return true;
         }
 
-        PartitionOperationThreadImpl partitionThread = (PartitionOperationThreadImpl) currentThread;
+        PartitionOperationThread partitionThread = (PartitionOperationThread) currentThread;
         OperationRunner runner = partitionThread.currentRunner;
         if (runner != null) {
             // non null runner means it's a nested call
@@ -516,9 +559,13 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     public void start() {
         if (logger.isFineEnabled()) {
             logger.fine("Starting " + partitionThreads.length + " partition threads and "
-                  + genericThreads.length + " generic threads (" + priorityThreadCount + " dedicated for priority tasks)");
+                    + genericThreads.length + " generic threads (" + priorityThreadCount + " dedicated for priority tasks)");
         }
-        startAll(partitionThreads);
+
+        // When tpc is enabled, the partitionThread are manged bu the tpcEngine.
+        if (tpcEngine == null) {
+            startAll(partitionThreads);
+        }
         startAll(genericThreads);
     }
 
@@ -530,9 +577,14 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
 
     @Override
     public void shutdown() {
-        shutdownAll(partitionThreads);
+        // when tpc is enabled, the partitionThread are manged bu the tpcEngine.
+        if (tpcEngine == null) {
+            shutdownAll(partitionThreads);
+        }
         shutdownAll(genericThreads);
-        awaitTermination(partitionThreads);
+        if (tpcEngine == null) {
+            awaitTermination(partitionThreads);
+        }
         awaitTermination(genericThreads);
     }
 
