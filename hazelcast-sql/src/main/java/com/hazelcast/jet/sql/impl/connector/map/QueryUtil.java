@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
@@ -106,7 +107,8 @@ final class QueryUtil {
             justification = "the class is never java-serialized"
     )
     private static final class JoinProjection
-            implements Projection<Entry<Object, Object>, JetSqlRow>, DataSerializable, SerializationServiceAware {
+            implements Projection<Entry<Object, Object>, JetSqlRow>, DataSerializable,
+            HazelcastInstanceAware, SerializationServiceAware {
 
         private KvRowProjector.Supplier rightRowProjectorSupplier;
         private List<Object> arguments;
@@ -129,6 +131,11 @@ final class QueryUtil {
         @Override
         public JetSqlRow transform(Entry<Object, Object> entry) {
             return rightRowProjectorSupplier.get(evalContext, extractors).project(entry.getKey(), entry.getValue());
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.hzInstance = hazelcastInstance;
         }
 
         @Override
