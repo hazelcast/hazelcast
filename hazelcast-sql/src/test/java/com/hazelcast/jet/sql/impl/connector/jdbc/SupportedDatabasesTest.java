@@ -65,8 +65,12 @@ public class SupportedDatabasesTest {
 
     @Test
     public void logByProductName_supportedDB() {
-        boolean newDB = SupportedDatabases.logOnceByProductName("mysql");
-        assertThat(newDB).isFalse();
+        String dbName = "mysql";
+        boolean newDB1 = SupportedDatabases.logOnceByProductName(dbName);
+        assertThat(newDB1).isFalse();
+
+        boolean newDB2 = SupportedDatabases.logOnceByProductName(dbName);
+        assertThat(newDB2).isFalse();
     }
 
     @Test
