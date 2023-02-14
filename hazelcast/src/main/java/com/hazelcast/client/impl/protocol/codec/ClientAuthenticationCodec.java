@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Makes an authentication request to the cluster.
  */
-@Generated("8c897ed3987c8263f59d6bb871e1fb4d")
+@Generated("a3a97902ea6b31a9f7d0fa308b15e49a")
 public final class ClientAuthenticationCodec {
     //hex: 0x000100
     public static final int REQUEST_MESSAGE_TYPE = 256;
@@ -188,18 +188,18 @@ public final class ClientAuthenticationCodec {
         public boolean failoverSupported;
 
         /**
-         * Returns a list of TPC ports. Null if TPC not enabled
+         * Returns the list of Alto ports or null if Alto is disabled.
          */
-        public @Nullable java.util.List<java.lang.Integer> tpcPorts;
+        public @Nullable java.util.List<java.lang.Integer> altoPorts;
 
         /**
-         * True if the tpcPorts is received from the member, false otherwise.
-         * If this is false, tpcPorts has the default value for its type.
+         * True if the altoPorts is received from the member, false otherwise.
+         * If this is false, altoPorts has the default value for its type.
          */
-        public boolean isTpcPortsExists;
+        public boolean isAltoPortsExists;
     }
 
-    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported, @Nullable java.util.Collection<java.lang.Integer> tpcPorts) {
+    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported, @Nullable java.util.Collection<java.lang.Integer> altoPorts) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
@@ -213,7 +213,7 @@ public final class ClientAuthenticationCodec {
 
         CodecUtil.encodeNullable(clientMessage, address, AddressCodec::encode);
         StringCodec.encode(clientMessage, serverHazelcastVersion);
-        CodecUtil.encodeNullable(clientMessage, tpcPorts, ListIntegerCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, altoPorts, ListIntegerCodec::encode);
         return clientMessage;
     }
 
@@ -230,10 +230,10 @@ public final class ClientAuthenticationCodec {
         response.address = CodecUtil.decodeNullable(iterator, AddressCodec::decode);
         response.serverHazelcastVersion = StringCodec.decode(iterator);
         if (iterator.hasNext()) {
-            response.tpcPorts = CodecUtil.decodeNullable(iterator, ListIntegerCodec::decode);
-            response.isTpcPortsExists = true;
+            response.altoPorts = CodecUtil.decodeNullable(iterator, ListIntegerCodec::decode);
+            response.isAltoPortsExists = true;
         } else {
-            response.isTpcPortsExists = false;
+            response.isAltoPortsExists = false;
         }
         return response;
     }
