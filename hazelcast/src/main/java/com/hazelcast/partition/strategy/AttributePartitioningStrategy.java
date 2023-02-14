@@ -16,14 +16,12 @@
 
 package com.hazelcast.partition.strategy;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.getters.JsonGetter;
 
@@ -54,10 +52,9 @@ public class AttributePartitioningStrategy implements PartitioningStrategy {
             if (!extractFromPojo(key, values)) {
                 return null;
             }
-        } else if (key instanceof Portable) {
-            throw new HazelcastException("Portable user-classes are not supported");
         } else {
-            throw new HazelcastException("Unsupported key format");
+            // revert to default strategy for Portable and Compact POJOs
+            return null;
         }
 
         return values;
@@ -76,13 +73,12 @@ public class AttributePartitioningStrategy implements PartitioningStrategy {
     }
 
     private boolean extractFromJson(final Object key, final Object[] values) {
-        for (int i = 0; i < attributes.length; i++) {
-            final Object value = JsonGetter.INSTANCE.getValue(key, attributes[i]);
+        final Object[] extractedValues = JsonGetter.INSTANCE.getValues(key, attributes);
+        for (int i = 0; i < extractedValues.length; i++) {
+            final Object value = extractedValues[i];
             if (value == null) {
                 return false;
             }
-
-            values[i] = value;
         }
         return true;
     }

@@ -105,43 +105,61 @@ public abstract class AbstractJsonGetter extends Getter {
 
     @Override
     public Object getValue(Object obj, String attributePath) {
-        JsonPathCursor pathCursor = getPath(attributePath);
-
         try (JsonParser parser = createParser(obj)) {
-            parser.nextToken();
-            while (pathCursor.getNext() != null) {
-                if (pathCursor.isArray()) {
-
-                    if (pathCursor.isAny()) {
-                        return getMultiValue(parser, pathCursor);
-                    }
-
-                    JsonToken token = parser.currentToken();
-                    if (token != JsonToken.START_ARRAY) {
-                        return null;
-                    }
-                    token = parser.nextToken();
-                    int arrayIndex = pathCursor.getArrayIndex();
-                    for (int j = 0; j < arrayIndex; j++) {
-                        if (token == JsonToken.END_ARRAY) {
-                            return null;
-                        }
-                        parser.skipChildren();
-                        token = parser.nextToken();
-                    }
-
-                } else {
-                    // non array case
-                    if (!findAttribute(parser, pathCursor, false)) {
-                        return null;
-                    }
-                }
-            }
-            return convertJsonTokenToValue(parser);
+            return getValue(obj, attributePath, parser);
         } catch (IOException e) {
             // Just return null in case of exception. Json strings are allowed to be invalid.
             return null;
         }
+    }
+
+    public Object[] getValues(Object obj, String[] attributePaths) {
+        try (JsonParser parser = createParser(obj)) {
+            final Object[] values = new Object[attributePaths.length];
+            for (int i = 0; i < attributePaths.length; i++) {
+                final String attributePath = attributePaths[i];
+                values[i] = getValue(obj, attributePath, parser);
+            }
+            return values;
+        } catch (IOException e) {
+            // Just return null in case of exception. Json strings are allowed to be invalid.
+            return null;
+        }
+    }
+
+    public Object getValue(Object obj, String attributePath, JsonParser parser) throws IOException {
+        JsonPathCursor pathCursor = getPath(attributePath);
+        parser.nextToken();
+        while (pathCursor.getNext() != null) {
+            if (pathCursor.isArray()) {
+
+                if (pathCursor.isAny()) {
+                    return getMultiValue(parser, pathCursor);
+                }
+
+                JsonToken token = parser.currentToken();
+                if (token != JsonToken.START_ARRAY) {
+                    return null;
+                }
+                token = parser.nextToken();
+                int arrayIndex = pathCursor.getArrayIndex();
+                for (int j = 0; j < arrayIndex; j++) {
+                    if (token == JsonToken.END_ARRAY) {
+                        return null;
+                    }
+                    parser.skipChildren();
+                    token = parser.nextToken();
+                }
+
+            } else {
+                // non array case
+                if (!findAttribute(parser, pathCursor, false)) {
+                    return null;
+                }
+            }
+        }
+
+        return convertJsonTokenToValue(parser);
     }
 
     @Override
