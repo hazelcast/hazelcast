@@ -47,7 +47,6 @@ import com.mongodb.client.model.Updates;
 import com.mongodb.client.model.WriteModel;
 import org.bson.BsonDocument;
 import org.bson.BsonValue;
-import com.mongodb.client.model.WriteModel;
 import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;

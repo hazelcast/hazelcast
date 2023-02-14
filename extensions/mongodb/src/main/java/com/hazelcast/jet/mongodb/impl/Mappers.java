@@ -16,19 +16,14 @@
 package com.hazelcast.jet.mongodb.impl;
 
 import com.hazelcast.function.FunctionEx;
-
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
+import org.bson.BsonDocument;
 import org.bson.BsonDocumentReader;
+import org.bson.BsonDocumentWriter;
 import org.bson.Document;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
-
-import com.mongodb.client.model.changestream.ChangeStreamDocument;
-import org.bson.BsonDocumentReader;
-import org.bson.Document;
-import org.bson.codecs.DecoderContext;
-
 import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;

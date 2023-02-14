@@ -355,7 +355,7 @@ public final class MongoDBSourceBuilder {
          * @return this builder
          */
         @Nonnull @Override
-        public Stream<T> database(@Nullable String database) {
+        public Stream<T> database(@Nonnull String database) {
             params.setDatabaseName(database);
             return this;
         }
@@ -377,7 +377,7 @@ public final class MongoDBSourceBuilder {
          * @return this builder
          */
         @Nonnull @Override
-        public Stream<Document> collection(@Nullable String collectionName) {
+        public Stream<Document> collection(@Nonnull String collectionName) {
             return collection(collectionName, Document.class);
         }
 
@@ -409,7 +409,7 @@ public final class MongoDBSourceBuilder {
         @Nonnull
         @SuppressWarnings("unchecked")
         @Override
-        public <T_NEW> Stream<T_NEW> collection(@Nullable String collectionName, @Nonnull Class<T_NEW> mongoType) {
+        public <T_NEW> Stream<T_NEW> collection(@Nonnull String collectionName, @Nonnull Class<T_NEW> mongoType) {
             Stream<T_NEW> newThis = (Stream<T_NEW>) this;
             newThis.params.setCollectionName(collectionName);
             newThis.params.setMapStreamFn(streamToClass(mongoType));
