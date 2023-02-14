@@ -57,7 +57,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
-import org.mockito.Mockito;
 import org.mockito.internal.stubbing.answers.ThrowsException;
 
 import javax.annotation.Nonnull;
@@ -165,8 +164,11 @@ public class IndeterminateSnapshotTest {
         protected <T> Consumer<T> lastExecutionConsumer(Consumer<T> delegate) {
             AtomicInteger executed = new AtomicInteger();
             return (idx) -> {
-                int activeNodesCount = getActiveNodesCount();
-                if (executed.incrementAndGet() >= activeNodesCount * LOCAL_PARALLELISM) {
+                int executionNumber = executed.incrementAndGet();
+                int expectedExecutionNumber = getActiveNodesCount() * LOCAL_PARALLELISM;
+                assert executionNumber <= expectedExecutionNumber;
+                if (executionNumber == expectedExecutionNumber) {
+                    // this is the last execution
                     delegate.accept(idx);
                 }
             };
@@ -737,7 +739,8 @@ public class IndeterminateSnapshotTest {
 
         // fixes problem with mock deserialization on cluster side.
         // probably registers generated mockito classes in classloader that is shared with the HZ instances.
-        private MapInterceptor registerMockInClassloader = mock(MapInterceptor.class, withSettings().serializable());
+        @SuppressWarnings("unused")
+        private final MapInterceptor registerMockInClassloader = mock(MapInterceptor.class, withSettings().serializable());
 
         @Test
         public void whenNextSnapshotUpdateLostSameCoordinator_thenRestartFromFirstSnapshot() {
@@ -1226,15 +1229,6 @@ public class IndeterminateSnapshotTest {
                     .thenAnswer(answersWithDelay(1000,
                             new ThrowsException(new IndeterminateOperationStateException("Simulated lost IMap update"))));
             return getJobExecutionRecordIMap().addInterceptor(mockInt);
-        }
-
-        private void singleIndeterminatePutNotLost() {
-            // affects put and also executeOnKey
-            MapInterceptor mockInt = mock(MapInterceptor.class, withSettings().serializable());
-            Mockito.doThrow(new IndeterminateOperationStateException("Simulated not lost IMap update"))
-                    .doReturn(null)
-                    .when(mockInt).afterPut(any());
-            getJobExecutionRecordIMap().addInterceptor(mockInt);
         }
 
         //endregion
