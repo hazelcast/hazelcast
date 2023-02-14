@@ -90,7 +90,8 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
     protected OperationExecutorImpl initExecutor() {
         props = new HazelcastProperties(config);
         executor = new OperationExecutorImpl(
-                props, loggingService, thisAddress, handlerFactory, nodeExtension, "hzName", Thread.currentThread().getContextClassLoader());
+                props, loggingService, thisAddress, handlerFactory, nodeExtension,
+                "hzName", Thread.currentThread().getContextClassLoader(), null);
         executor.start();
         return executor;
     }

@@ -154,7 +154,8 @@ public abstract class Reactor implements Executor {
     }
 
     /**
-     * Returns the {@link Thread} that runs the eventloop.
+     * Returns the {@link Thread} that runs the eventloop. The eventloop thread is created
+     * when the Reactor is created.
      * <p>
      * This method is thread-safe.
      *
@@ -272,7 +273,7 @@ public abstract class Reactor implements Executor {
     /**
      * Wakes up the {@link Reactor} when it is blocked and needs to be woken up.
      */
-    protected abstract void wakeup();
+    public abstract void wakeup();
 
     @Override
     public void execute(Runnable command) {

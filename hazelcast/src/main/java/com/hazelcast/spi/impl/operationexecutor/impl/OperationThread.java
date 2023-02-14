@@ -58,11 +58,14 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 @ExcludedMetricTargets(MANAGEMENT_CENTER)
 public abstract class OperationThread extends HazelcastManagedThread implements StaticMetricsProvider {
 
-    final int threadId;
-    final OperationQueue queue;
+    int threadId;
+    OperationQueue queue;
     // This field wil only be accessed by the thread itself when doing 'self'
     // calls. So no need for any form of synchronization.
     OperationRunner currentRunner;
+    NodeExtension nodeExtension;
+    ILogger logger;
+    volatile boolean shutdown;
 
     // All these counters are updated by this OperationThread (so a single writer)
     // and are read by the MetricsRegistry.
@@ -81,10 +84,7 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
     @Probe(name = OPERATION_METRIC_THREAD_COMPLETED_OPERATION_BATCH_COUNT)
     private final SwCounter completedOperationBatchCount = newSwCounter();
 
-    private final boolean priority;
-    private final NodeExtension nodeExtension;
-    private final ILogger logger;
-    private volatile boolean shutdown;
+    private boolean priority;
 
     public OperationThread(String name,
                            int threadId,
@@ -102,6 +102,9 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
         this.priority = priority;
     }
 
+    public OperationThread() {
+    }
+
     public int getThreadId() {
         return threadId;
     }
@@ -112,16 +115,7 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
     public final void executeRun() {
         nodeExtension.onThreadStart(this);
         try {
-            while (!shutdown) {
-                Object task;
-                try {
-                    task = queue.take(priority);
-                } catch (InterruptedException e) {
-                    continue;
-                }
-
-                process(task);
-            }
+            loop();
         } catch (Throwable t) {
             inspectOutOfMemoryError(t);
             logger.severe(t);
@@ -130,7 +124,20 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
         }
     }
 
-    private void process(Object task) {
+    protected void loop() {
+        while (!shutdown) {
+            Object task;
+            try {
+                task = queue.take(priority);
+            } catch (InterruptedException e) {
+                continue;
+            }
+
+            process(task);
+        }
+    }
+
+    void process(Object task) {
         try {
             boolean putBackInQueue = false;
             if (task.getClass() == Packet.class) {
@@ -249,7 +256,12 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
         interrupt();
     }
 
+    public boolean isShutdown() {
+        return shutdown;
+    }
+
     public final void awaitTermination(int timeout, TimeUnit unit) throws InterruptedException {
         join(unit.toMillis(timeout));
     }
+
 }
