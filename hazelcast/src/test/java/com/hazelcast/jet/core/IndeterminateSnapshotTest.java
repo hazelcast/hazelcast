@@ -21,13 +21,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IndeterminateOperationStateException;
-import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.server.FirewallingServer;
+import com.hazelcast.internal.partition.operation.PartitionReplicaSyncRequestOffloadable;
 import com.hazelcast.internal.server.OperationPacketFilter;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
@@ -39,11 +36,12 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
+import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.PacketFiltersUtil;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.Repeat;
@@ -325,9 +323,7 @@ public class IndeterminateSnapshotTest {
             int backupPartitionInstanceIdx = partitionForKey.getReplica(1).address().getPort() - BASE_PORT;
             int noPartitionInstanceIdx = partitionForKey.getReplica(2).address().getPort() - BASE_PORT;
 
-            setBackupPacketDropFilter(instances[masterPartitionInstanceIdx], 1f);
-            setBackupPacketDropFilter(instances[backupPartitionInstanceIdx], 0f, instances[masterPartitionInstanceIdx]);
-            setBackupPacketDropFilter(instances[noPartitionInstanceIdx], 0f);
+            disableBackupsFrom(masterPartitionInstanceIdx);
 
             // String value = map.put("Hello", "World");
             String value = map.putAsync("Hello", "World").toCompletableFuture().get();
@@ -401,9 +397,7 @@ public class IndeterminateSnapshotTest {
             assertEquals(1 + numExtraPuts, map.size());
 
             // break network
-            setBackupPacketDropFilter(instances[masterPartitionInstanceIdx], 1f);
-            setBackupPacketDropFilter(instances[backupPartitionInstanceIdx], 0f, instances[masterPartitionInstanceIdx]);
-            setBackupPacketDropFilter(instances[noPartitionInstanceIdx], 0f);
+            disableBackupsFrom(masterPartitionInstanceIdx);
 
             map.clear();
 
@@ -465,9 +459,9 @@ public class IndeterminateSnapshotTest {
         private void when_shutDown(int allowedSnapshotsCount) {
 
             // We need to keep replicated SVR KEY and JobExecutionRecord for jobId.
-            // Each can be in different partition that can be on different instance
+            // Each can be in a different partition that can be on a different instance
             // (primary and backup), so we need to have at least 5 nodes, so one
-            // of them can be broken to corrupt snapshot data but not affect job metadata
+            // of them can be broken to corrupt the snapshot data, but not affect job metadata
             // (JobExecutionRecord and SnapshotValidationRecord.KEY).
             assertTrue(NODE_COUNT >= 5);
 
@@ -633,14 +627,13 @@ public class IndeterminateSnapshotTest {
          * Breaks backups that should be stored on failing instance.
          */
         private void breakFailingInstance() {
+            Integer failingInstanceIdx;
             try {
-                Integer failingInstanceIdx = failingInstanceFuture.get();
-                for (int i = 0; i < NODE_COUNT; ++i) {
-                    setBackupPacketDropFilter(instances[i], i != failingInstanceIdx ? 0f : 1f, instances[failingInstanceIdx]);
-                }
+                failingInstanceIdx = failingInstanceFuture.get();
             } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e);
             }
+            disableBackupsFrom(failingInstanceIdx);
         }
 
         private void restoreNetwork() {
@@ -659,53 +652,51 @@ public class IndeterminateSnapshotTest {
 
         //region MapBackupPacketDropFilter
 
-        public static void setBackupPacketDropFilter(HazelcastInstance instance, float blockRatio, HazelcastInstance... blockSync) {
-            setBackupPacketDropFilter(instance, blockRatio, Arrays.stream(blockSync).map(Accessors::getAddress).collect(Collectors.toSet()));
-        }
-
-        public static void setBackupPacketDropFilter(HazelcastInstance instance, float blockRatio, Set<Address> blockSync) {
-            Node node = getNode(instance);
-            FirewallingServer.FirewallingServerConnectionManager cm = (FirewallingServer.FirewallingServerConnectionManager)
-                    node.getServer().getConnectionManager(EndpointQualifier.MEMBER);
-            cm.setPacketFilter(new MapBackupPacketDropFilter(node.getThisAddress(), node.getSerializationService(), blockRatio, blockSync));
+        /**
+         * Installs a packet filter to all instances. The filter will drop
+         * {@link PartitionReplicaSyncRequestOffloadable} operation on all
+         * members, and will drop the {@link Backup} operation only on the
+         * member with `noBackupInstanceIndex`.
+         */
+        private void disableBackupsFrom(int noBackupInstanceIndex) {
+            for (int i = 0; i < instances.length; i++) {
+                PacketFiltersUtil.setCustomFilter(instances[i],
+                        new MapBackupPacketDropFilter(instances[i], noBackupInstanceIndex == i ? 1 : 0));
+            }
         }
 
         private static class MapBackupPacketDropFilter extends OperationPacketFilter {
             private final ILogger logger = Logger.getLogger(getClass());
 
-            private final Address thisAddress;
+            private final Address sourceAddress;
             private final float blockRatio;
-            private final Set<Address> blockSyncTo;
 
-            MapBackupPacketDropFilter(Address thisAddress, InternalSerializationService serializationService, float blockRatio, Set<Address> blockSyncTo) {
-                super(serializationService);
-                this.thisAddress = thisAddress;
+            /**
+             * @param blockRatio 0 - block none, 1 - block all, 0.5 - block random 50%
+             */
+            MapBackupPacketDropFilter(HazelcastInstance instance, float blockRatio) {
+                super(getNode(instance).getSerializationService());
+                this.sourceAddress = instance.getCluster().getLocalMember().getAddress();
                 this.blockRatio = blockRatio;
-                this.blockSyncTo = blockSyncTo;
             }
 
             @Override
-            protected Action filterOperation(Address endpoint, int factory, int type) {
-                boolean isBackup = factory == SpiDataSerializerHook.F_ID && type == SpiDataSerializerHook.BACKUP;
-
-                boolean isSync = factory == PartitionDataSerializerHook.F_ID
-                        // REPLICA_SYNC_REQUEST_OFFLOADABLE is sent when backup replica detects
-                        // that is it out-of-date because there is never version in partition table
-                        && (type == PartitionDataSerializerHook.REPLICA_SYNC_REQUEST_OFFLOADABLE
-                );
-
-                Action action;
-                if (isBackup) {
-                    action = (Math.random() >= blockRatio ? Action.ALLOW : Action.DROP);
-                    logger.info(thisAddress + " sending backup packet to " + endpoint + " action: " + action);
-                } else if (isSync) {
-                    action = blockSyncTo.contains(endpoint) ? Action.DROP : Action.ALLOW;
-                    logger.info(thisAddress + " sending sync packet (type=" + type + ") to " + endpoint + " action: " + action);
-                } else {
-                    action = Action.ALLOW;
+            protected Action filterOperation(Address targetAddress, int factory, int type) {
+                // REPLICA_SYNC_REQUEST_OFFLOADABLE is sent when backup replica detects
+                // that is it out-of-date because there is a newer version in partition table
+                if (factory == PartitionDataSerializerHook.F_ID
+                        && type == PartitionDataSerializerHook.REPLICA_SYNC_REQUEST_OFFLOADABLE) {
+                    return Action.DROP;
                 }
 
-                return action;
+                if (factory == SpiDataSerializerHook.F_ID && type == SpiDataSerializerHook.BACKUP) {
+                    Action action = (Math.random() >= blockRatio ? Action.ALLOW : Action.DROP);
+                    logger.info(sourceAddress + " sending backup packet to " + targetAddress + ", action: " + action);
+                    return action;
+                }
+
+                // allow the rest
+                return Action.ALLOW;
             }
         }
 
