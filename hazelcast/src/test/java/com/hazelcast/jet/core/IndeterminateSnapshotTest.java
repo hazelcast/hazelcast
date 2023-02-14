@@ -81,7 +81,6 @@ import java.util.stream.IntStream;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.JetTestSupport.getNode;
 import static com.hazelcast.jet.core.TestUtil.throttle;
 import static com.hazelcast.jet.impl.JobRepository.JOB_EXECUTION_RECORDS_MAP_NAME;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
@@ -990,12 +989,16 @@ public class IndeterminateSnapshotTest {
             @Nullable
             protected AbstractScenarioStep prev;
             /**
-             * Null means step that adds some action, but does not increase
+             * Null means a step that adds some action, but does not increase the
              * number of completed snapshots
              */
-            protected Integer repetitions = 1;
+            @Nullable
+            private Integer repetitions = 1;
 
-            public AbstractScenarioStep repeat(Integer repetitions) {
+            public AbstractScenarioStep repeat(@Nullable Integer repetitions) {
+                if (repetitions != null && repetitions < 0) {
+                    throw new IllegalArgumentException("must be >0, but is " + repetitions);
+                }
                 this.repetitions = repetitions;
                 return this;
             }
@@ -1007,7 +1010,7 @@ public class IndeterminateSnapshotTest {
             }
 
             /**
-             * Configure {@link SnapshotInstrumentationP} according to
+             * Configure {@link SnapshotInstrumentationP} according to the
              * definition of this step.
              */
             public final void apply() {
@@ -1034,6 +1037,7 @@ public class IndeterminateSnapshotTest {
 
                     doApply();
                 } else {
+                    assert repetitions == 0;
                     logger.info("Skipping scenario step " + this);
                     goToNextStep();
                 }
@@ -1064,6 +1068,11 @@ public class IndeterminateSnapshotTest {
                 }
                 return first;
             }
+
+            @Nullable
+            public Integer getRepetitions() {
+                return repetitions;
+            }
         }
 
         /**
@@ -1084,7 +1093,7 @@ public class IndeterminateSnapshotTest {
              * Snapshot counter will be reused. Most often this is the case after restore.
              */
             public SuccessfulSnapshots reusedCounter() {
-                repeat(repetitions > 1 ? repetitions - 1 : null);
+                repeat(getRepetitions() > 1 ? getRepetitions() - 1 : null);
                 return this;
             }
 
@@ -1099,7 +1108,7 @@ public class IndeterminateSnapshotTest {
 
             @Override
             public String toString() {
-                return String.format("Successful %d Snapshots", repetitions);
+                return String.format("Successful %d Snapshots", getRepetitions());
             }
         }
 
@@ -1125,7 +1134,7 @@ public class IndeterminateSnapshotTest {
 
             @Override
             public String toString() {
-                return String.format("Successful %d Snapshots - do not count", repetitions);
+                return String.format("Successful %d Snapshots - do not count", getRepetitions());
             }
         }
 
@@ -1248,7 +1257,7 @@ public class IndeterminateSnapshotTest {
          */
         private int snapshotCounter;
         /**
-         * ID of first snapshot for which {@link #saveSnapshotConsumer} and other hooks are called.
+         * ID of the first snapshot for which {@link #saveSnapshotConsumer} and other hooks are called.
          * Snapshot ids are assigned starting with 0.
          */
         public static volatile int allowedSnapshotsCount = 0;
