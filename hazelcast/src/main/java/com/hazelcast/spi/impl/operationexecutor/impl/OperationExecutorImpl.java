@@ -562,7 +562,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
                     + genericThreads.length + " generic threads (" + priorityThreadCount + " dedicated for priority tasks)");
         }
 
-        // when tpc is enabled, the partitionThread are manged bu the tpcEngine.
+        // When tpc is enabled, the partitionThread are manged bu the tpcEngine.
         if (tpcEngine == null) {
             startAll(partitionThreads);
         }
