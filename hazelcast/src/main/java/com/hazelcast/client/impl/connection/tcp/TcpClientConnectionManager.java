@@ -800,7 +800,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             // TODO: Socket interceptor for Alto?
             channel.start();
             return channel;
-        } catch (Exception e){
+        } catch (Exception e) {
             closeResource(socketChannel);
             logger.finest(e);
             throw rethrow(e);
