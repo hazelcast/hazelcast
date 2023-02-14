@@ -35,7 +35,7 @@ import java.util.Objects;
 import static com.hazelcast.internal.util.Sha256Util.calculateSha256Hex;
 
 /**
- * Holds the details of a job that is being uploaded
+ * Used by the member side to hold the details of a job that is being uploaded
  */
 public class JobUploadStatus {
 

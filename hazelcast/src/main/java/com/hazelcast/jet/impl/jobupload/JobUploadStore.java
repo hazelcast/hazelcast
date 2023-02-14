@@ -26,7 +26,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Holds the state of jobs that are being uploaded. Once the upload is complete the
+ * Used by the member side as to hold the state of jobs that are being uploaded. Once the upload is complete the
  * state is removed. If upload is abandoned the state is removed after it expires.
  */
 public class JobUploadStore {

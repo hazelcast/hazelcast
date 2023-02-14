@@ -24,6 +24,7 @@ import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
+import com.hazelcast.jet.impl.JobUploadCall;
 import com.hazelcast.jet.test.SerialTest;
 import org.junit.After;
 import org.junit.Test;
@@ -39,14 +40,12 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.stream.Stream;
 
-import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doAnswer;
 
 @Category({SerialTest.class})
 public class JobUploadClientFailureTest extends JetTestSupport {
@@ -102,7 +101,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
     }
 
     @Test
-    public void testTooLongFileName() {
+    public void testTooLongFileName() throws IOException, NoSuchAlgorithmException {
         HazelcastInstance client = createResourceUploadEnabledMemberAndClient();
         JetService jetService = client.getJet();
         JetClientInstanceImpl spyJetService = (JetClientInstanceImpl) Mockito.spy(jetService);
@@ -113,8 +112,13 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         char[] charArray = new char[300];
         Arrays.fill(charArray, 'a');
         String longFileName = new String(charArray);
-        // JetClientInstanceImpl.getFileNameWithoutExtension return the long file name
-        when(spyJetService.getFileNameWithoutExtension(jarPath)).thenReturn(longFileName);
+
+        doAnswer(invocation -> {
+            JobUploadCall jobUploadCall = (JobUploadCall) invocation.callRealMethod();
+            jobUploadCall.setFileNameWithoutExtension(longFileName);
+            return jobUploadCall;
+        }).when(spyJetService).initializeJobUploadCall(jarPath);
+
 
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
                 .setJarPath(jarPath);
@@ -193,12 +197,15 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         JetClientInstanceImpl spyJetService = Mockito.spy(jetService);
 
         Path jarPath = getJarPath();
-        when(spyJetService.calculateSha256Hex(jarPath)).thenReturn("1");
-        List<String> jobParameters = emptyList();
+        doAnswer(invocation -> {
+            JobUploadCall jobUploadCall = (JobUploadCall) invocation.callRealMethod();
+            jobUploadCall.setSha256Hex("1");
+            return jobUploadCall;
+        }).when(spyJetService).initializeJobUploadCall(jarPath);
+
 
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                .setJarPath(getJarPath())
-                .setJobParameters(jobParameters);
+                .setJarPath(getJarPath());
 
         assertThrows(JetException.class, () -> spyJetService.submitJobFromJar(submitJobParameters));
 
