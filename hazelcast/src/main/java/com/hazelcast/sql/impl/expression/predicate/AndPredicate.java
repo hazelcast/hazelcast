@@ -60,5 +60,4 @@ public final class AndPredicate extends VariExpression<Boolean> implements Ident
     public QueryDataType getType() {
         return QueryDataType.BOOLEAN;
     }
-
 }

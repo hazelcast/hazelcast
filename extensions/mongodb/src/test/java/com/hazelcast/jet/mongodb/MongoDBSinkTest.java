@@ -53,6 +53,7 @@ import java.util.concurrent.CompletionException;
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.jet.mongodb.MongoDBSinks.builder;
 import static com.hazelcast.jet.mongodb.MongoDBSinks.mongodb;
+import static com.hazelcast.jet.mongodb.WriteMode.INSERT_ONLY;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.pipeline.Sources.mapJournal;
 import static com.hazelcast.jet.pipeline.test.TestSources.items;
@@ -128,6 +129,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
                         .identifyDocumentBy("key", o -> o.key)
                         .into(i -> defaultDatabase, i -> "col_" + (i.key % 2))
                         .withCustomReplaceOptions(opt -> opt.upsert(true))
+                        .writeMode(INSERT_ONLY)
                         .build()
                 );
 

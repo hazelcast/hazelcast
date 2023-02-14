@@ -84,4 +84,5 @@ public abstract class VariExpression<T> implements Expression<T> {
     public String toString() {
         return getClass().getSimpleName() + "{operands=" + Arrays.toString(operands) + '}';
     }
+
 }
