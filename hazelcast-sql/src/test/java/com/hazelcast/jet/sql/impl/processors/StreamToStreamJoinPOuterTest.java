@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql.impl.processors;
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ToLongFunctionEx;
-import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.test.TestSupport;
@@ -33,6 +33,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -56,7 +57,12 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-public class StreamToStreamJoinPOuterTest extends JetTestSupport {
+public class StreamToStreamJoinPOuterTest extends SimpleTestInClusterSupport {
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        initialize(1, null);
+    }
 
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
@@ -95,6 +101,7 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
         SupplierEx<Processor> supplier = createProcessor(1, 1);
 
         TestSupport.verifyProcessor(supplier)
+                .hazelcastInstance(instance())
                 .outputChecker(SAME_ITEMS_ANY_ORDER_EQUIVALENT_WMS)
                 .expectExactOutput(
                         in(0, wm(1L, (byte) 0)),
@@ -118,6 +125,7 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
 
         TestSupport.verifyProcessor(isLeft ? createProcessor(1, 2) : createProcessor(2, 1))
+                .hazelcastInstance(instance())
                 .expectExactOutput(
                         in(ordinal0, jetRow(3L)),
                         in(ordinal0, jetRow(4L)),
@@ -142,6 +150,7 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
         SupplierEx<Processor> supplier = createProcessor(1, 1);
 
         TestSupport.verifyProcessor(supplier)
+                .hazelcastInstance(instance())
                 .expectExactOutput(
                         in(ordinal1, wm(10, ordinal1)),
                         processorAssertion((StreamToStreamJoinP p) ->
@@ -163,6 +172,7 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
         ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1));
 
         TestSupport.verifyProcessor(processorSupplier)
+                .hazelcastInstance(instance())
                 .expectExactOutput(
                         in(ordinal1, jetRow(0L)),
                         in(ordinal1, wm(10L, ordinal1)),
@@ -196,6 +206,7 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
         SupplierEx<Processor> supplier = createProcessor(2, 1);
 
         TestSupport.verifyProcessor(supplier)
+                .hazelcastInstance(instance())
                 .expectExactOutput(
                         in(1, wm(10, (byte) 2)),
                         in(0, wm(10, (byte) 1)),
@@ -216,6 +227,7 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
         SupplierEx<Processor> supplier = createProcessor(1, 1);
 
         TestSupport.verifyProcessor(supplier)
+                .hazelcastInstance(instance())
                 .cooperativeTimeout(0)
                 .expectExactOutput(
                         in(ordinal1, jetRow(42L)),

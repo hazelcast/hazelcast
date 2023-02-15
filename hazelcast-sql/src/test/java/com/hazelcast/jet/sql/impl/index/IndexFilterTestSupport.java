@@ -21,6 +21,7 @@ import com.hazelcast.query.impl.CompositeValue;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.junit.BeforeClass;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,6 +31,10 @@ import java.util.Collections;
  */
 @SuppressWarnings("rawtypes")
 public abstract class IndexFilterTestSupport extends SqlTestSupport {
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        initialize(1, null);
+    }
 
     public static ConstantExpression constant(Object value, QueryDataType type) {
         return ConstantExpression.create(value, type);
@@ -45,8 +50,8 @@ public abstract class IndexFilterTestSupport extends SqlTestSupport {
 
     protected static IndexFilterValue intValue(Integer value, boolean allowNull) {
         return new IndexFilterValue(
-            Collections.singletonList(constant(value, QueryDataType.INT)),
-            Collections.singletonList(allowNull)
+                Collections.singletonList(constant(value, QueryDataType.INT)),
+                Collections.singletonList(allowNull)
         );
     }
 
@@ -55,14 +60,14 @@ public abstract class IndexFilterTestSupport extends SqlTestSupport {
     }
 
     protected static IndexFilterValue intValues(
-        Integer value1,
-        boolean allowNull1,
-        Integer value2,
-        boolean allowNull2
+            Integer value1,
+            boolean allowNull1,
+            Integer value2,
+            boolean allowNull2
     ) {
         return new IndexFilterValue(
-            Arrays.asList(constant(value1, QueryDataType.INT), constant(value2, QueryDataType.INT)),
-            Arrays.asList(allowNull1, allowNull2)
+                Arrays.asList(constant(value1, QueryDataType.INT), constant(value2, QueryDataType.INT)),
+                Arrays.asList(allowNull1, allowNull2)
         );
     }
 }
