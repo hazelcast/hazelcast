@@ -1,4 +1,3 @@
-package com.hazelcast.jet.impl;
 /*
  * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
@@ -14,6 +13,8 @@ package com.hazelcast.jet.impl;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;

@@ -190,7 +190,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                 JetUploadJobMetaDataCodec::decodeResponse);
     }
 
-    private void sendJobMultipart(JobUploadCall jobUploadCall,Path jarPath)
+    private void sendJobMultipart(JobUploadCall jobUploadCall, Path jarPath)
             throws IOException, NoSuchAlgorithmException {
 
 
@@ -213,7 +213,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                         currentPartNumber,
                         jobUploadCall.getTotalParts(), partBuffer, bytesRead, sha256Hex);
 
-                boolean result = invokeRequestAndDecodeResponse(jobUploadCall.getMemberUuid(),jobDataRequest,
+                boolean result = invokeRequestAndDecodeResponse(jobUploadCall.getMemberUuid(), jobDataRequest,
                         JetUploadJobMultipartCodec::decodeResponse);
                 if (result) {
                     logFine(getLogger(), "Submitted Job Part successfully for jarPath: %s PartNumber %d",
