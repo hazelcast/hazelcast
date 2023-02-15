@@ -86,7 +86,7 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
             String fieldName = paths[i];
             Object value = values[i];
             if (fieldName.equals("_id") && value instanceof String) {
-                // only field that need explicit coertion
+                // the only field that needs explicit coercion
                 value = new ObjectId((String) value);
             }
             doc = doc.append(fieldName, value);

@@ -25,7 +25,7 @@ import java.util.List;
 import static java.util.stream.Collectors.toList;
 
 /**
- * Batch-query version of  MongoDB SQL Connector.
+ * Batch-query version of MongoDB SQL Connector.
  *
  * {@inheritDoc}
  *

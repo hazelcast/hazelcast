@@ -73,13 +73,13 @@ import static java.util.stream.Collectors.toList;
 
 /**
  * Processor for writing to MongoDB
- *
+ * <p>
  * For each chunk of items, processor will choose proper collection and write ReplaceOne or InsertOne operation,
  * depending on the existence of a document with given {@link #documentIdentityFieldName} in the collection.
- *
+ * <p>
  * All writes are postponed until transaction commit. This is on purpose, so that - in case of any
  * MongoDB's WriteError - we will be able to retry the commit.
- *
+ * <p>
  * Transactional guarantees are provided using {@linkplain UnboundedTransactionsProcessorUtility}.
  *
  * @param <IN> input type
@@ -265,6 +265,7 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
             return update(id, item, new UpdateOptions().upsert(true));
         }
     }
+
     WriteModel<I> replace(Object id, I item) {
         if (id == null) {
             return new InsertOneModel<>(item);

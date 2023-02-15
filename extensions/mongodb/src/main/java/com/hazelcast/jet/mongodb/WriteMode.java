@@ -20,23 +20,23 @@ package com.hazelcast.jet.mongodb;
  */
 public enum WriteMode {
     /**
-     * All items will be inserted to mongo; in case of id clash, error will be thrown.
+     * Items will be inserted to MongoDB; in case of ID clash, error will be thrown.
      */
     INSERT_ONLY,
     /**
-     * Performs update. Entity with given {@code _id} should already exist, otherwise error will be thrown.
+     * Performs update. Entity with the given {@code _id} must already exist, otherwise an error will be thrown.
      */
     UPDATE_ONLY,
     /**
-     * Performs update. If entity with given {@code _id} does not exist, it will be created.
+     * Performs update. If the entity with the given {@code _id} does not exist, it will be created.
      */
     UPSERT,
     /**
-     * Performs replace. If entity with given {@code _id} does not exist, it will be created (if it was not
+     * Performs replace. If the entity with the given {@code _id} does not exist, it will be created (if it was not
      * overridden by the user).
-     *
-     * Replace is different from UPSERT in regard to missing fields. Replace will set such to null,
-     * while update won't affect such fields in collection.
+     * <p>
+     * Replace is different from UPSERT in handling of missing fields. Replace will set them to null,
+     * while update won't affect such fields in the entity.
      */
     REPLACE
 }

@@ -104,7 +104,6 @@ class MongoTable extends JetTable {
                           .filter(field -> ((MongoTableField) field).externalName.equals("_id"))
                           .map(TableField::getName)
                           .collect(toList());
-
     }
 
     @Override

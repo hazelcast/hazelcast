@@ -48,13 +48,12 @@ import static java.util.stream.Collectors.toList;
 
 /**
  * Base for MongoDB SQL Connectors.
- *
- * Streaming and batch connectors have similar way of dealing with scans with few exceptions (like the requirement
+ * <p>
+ * Streaming and batch connectors have similar way of dealing with scans with a few exceptions (like the requirement
  * for {@code _id field}).
- *
+ * <p>
  * All MongoDB connectors assume one primary key: {@code _id} column, which is mandatory (auto-created if not specified
  * by user), unique and indexed.
- *
  * <p>
  * While secondary indexes are technically possible, they are not supported right now.
  *

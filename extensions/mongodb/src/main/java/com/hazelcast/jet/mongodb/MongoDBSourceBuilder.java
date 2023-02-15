@@ -160,7 +160,7 @@ public final class MongoDBSourceBuilder {
 
         /**
          * Adds sort aggregate to this builder.
-         *
+         * <p>
          * Example usage:
          * <pre>{@code
          *  import static com.mongodb.client.model.Sorts.ascending;
@@ -247,7 +247,7 @@ public final class MongoDBSourceBuilder {
          * Specifies from which collection connector will read documents. If not invoked,
          * then connector will look at all collections in given database. All documents read will be automatically
          * parsed to user-defined type using
-         * {@linkplain com.mongodb.MongoClientSettings#getDefaultCodecRegistry mongo's standard codec registry}
+         * {@linkplain com.mongodb.MongoClientSettings#getDefaultCodecRegistry MongoDB's standard codec registry}
          * with pojo support added.
          * <p>
          * Example usage:
@@ -332,7 +332,7 @@ public final class MongoDBSourceBuilder {
         /**
          * Adds filter aggregate to this builder, which allows to filter documents in MongoDB, without
          * the need to download all documents.
-         *
+         * <p>
          * Example usage:
          * <pre>{@code
          *  import static com.mongodb.client.model.Filters.eq;
@@ -363,7 +363,7 @@ public final class MongoDBSourceBuilder {
         /**
          * Specifies from which collection connector will read documents. If not invoked,
          * then connector will look at all collections in given database.
-         *
+         * <p>
          * Example usage:
          * <pre>{@code
          *  MongoDBSourceBuilder.stream(name, supplier)
@@ -385,9 +385,9 @@ public final class MongoDBSourceBuilder {
          * Specifies from which collection connector will read documents. If not invoked,
          * then connector will look at all collections in given database. All documents read will be automatically
          * parsed to user-defined type using
-         * {@linkplain com.mongodb.MongoClientSettings#getDefaultCodecRegistry mongo's standard codec registry}
+         * {@linkplain com.mongodb.MongoClientSettings#getDefaultCodecRegistry MongoDB's standard codec registry}
          * with pojo support added.
-         *
+         * <p>
          * Example usage:
          * <pre>{@code
          *  MongoDBSourceBuilder.stream(name, supplier)

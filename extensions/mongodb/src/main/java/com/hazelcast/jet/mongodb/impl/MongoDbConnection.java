@@ -33,7 +33,7 @@ import java.util.function.Consumer;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.retry.IntervalFunction.exponentialBackoffWithCap;
 
-/***
+/**
  * Manages connection to MongoDB, reconnects if necessary.
  */
 class MongoDbConnection {

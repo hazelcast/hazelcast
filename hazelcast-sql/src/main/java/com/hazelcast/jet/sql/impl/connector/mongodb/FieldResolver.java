@@ -31,11 +31,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.resolveTypeByName;
+import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.resolveTypeFromJava;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.COLLECTION_NAME_OPTION;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.CONNECTION_STRING_OPTION;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.DATABASE_NAME_OPTION;
-import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.resolveTypeByName;
-import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.resolveTypeFromJava;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.DATA_LINK_REF_OPTION;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static com.mongodb.client.model.Filters.eq;
@@ -44,9 +44,10 @@ import static java.util.Objects.requireNonNull;
 class FieldResolver {
 
     /**
-     * Resolves fields based on the options passed to the connector and schema provided by user (if any)
+     * Resolves fields based on the options passed to the connector and schema provided by user (if any).
+     *
      * @param options options provided for the connector
-     * @param userFields user-defined field list
+     * @param userFields user-provided field list
      * @return resolved fields - all fields from collection or user provided fields with resolved types
      *
      * @throws IllegalArgumentException if given column type won't be resolved or field from user mapping won't exist
