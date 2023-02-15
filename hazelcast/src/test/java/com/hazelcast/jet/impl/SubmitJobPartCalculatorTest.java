@@ -37,8 +37,21 @@ public class SubmitJobPartCalculatorTest {
 
         HazelcastProperties hazelcastProperties = new HazelcastProperties(properties);
 
-        int partSize = submitJobPartCalculator.calculatePartBufferSize(hazelcastProperties);
+        long jarSize = 2_000;
+        int partSize = submitJobPartCalculator.calculatePartBufferSize(hazelcastProperties, jarSize);
         assertEquals(1_000, partSize);
+    }
+
+    @Test
+    public void calculatePartBufferSize_when_JarIsSmall() {
+        SubmitJobPartCalculator submitJobPartCalculator = new SubmitJobPartCalculator();
+
+        Properties properties = new Properties();
+        HazelcastProperties hazelcastProperties = new HazelcastProperties(properties);
+
+        long jarSize = 2_000;
+        int partSize = submitJobPartCalculator.calculatePartBufferSize(hazelcastProperties, jarSize);
+        assertEquals(2_000, partSize);
     }
 
     @Test
@@ -53,8 +66,9 @@ public class SubmitJobPartCalculatorTest {
 
         HazelcastProperties hazelcastProperties = new HazelcastProperties(properties);
 
+        long jarSize = 2_000;
         assertThrows(NumberFormatException.class,
-                () -> submitJobPartCalculator.calculatePartBufferSize(hazelcastProperties));
+                () -> submitJobPartCalculator.calculatePartBufferSize(hazelcastProperties, jarSize));
 
     }
 

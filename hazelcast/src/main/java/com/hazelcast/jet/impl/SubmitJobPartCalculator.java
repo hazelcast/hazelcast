@@ -25,8 +25,14 @@ public class SubmitJobPartCalculator {
     /**
      * Calculate the part buffer size from properties if defined, otherwise use default value
      */
-    int calculatePartBufferSize(HazelcastProperties hazelcastProperties) {
-        return hazelcastProperties.getInteger(JOB_UPLOAD_PART_SIZE);
+    int calculatePartBufferSize(HazelcastProperties hazelcastProperties, long jarSize) {
+        int partBufferSize = hazelcastProperties.getInteger(JOB_UPLOAD_PART_SIZE);
+
+        // If jar size is smaller than buffer size use it
+        if (jarSize < partBufferSize) {
+            partBufferSize = (int) jarSize;
+        }
+        return partBufferSize;
     }
 
     /**

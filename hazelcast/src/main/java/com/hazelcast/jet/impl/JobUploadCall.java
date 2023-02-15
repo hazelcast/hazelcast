@@ -36,7 +36,7 @@ public class JobUploadCall {
 
     private String fileNameWithoutExtension;
 
-    private String sha256Hex;
+    private String sha256HexOfJar;
 
     private int partSize;
 
@@ -56,14 +56,15 @@ public class JobUploadCall {
         this.fileNameWithoutExtension = findFileNameWithoutExtension(jarPath);
 
         // Calculate digest for jar
-        this.sha256Hex = Sha256Util.calculateSha256Hex(jarPath);
+        this.sha256HexOfJar = Sha256Util.calculateSha256Hex(jarPath);
 
-        // Calculate the buffer size and the total size for job upload
+        // Read jar's size
+        long jarSize = Files.size(jarPath);
+
+        // Calculate the part buffer size and the total parts for job upload
         SubmitJobPartCalculator calculator = new SubmitJobPartCalculator();
         HazelcastProperties hazelcastProperties = client.getProperties();
-        this.partSize = calculator.calculatePartBufferSize(hazelcastProperties);
-
-        long jarSize = Files.size(jarPath);
+        this.partSize = calculator.calculatePartBufferSize(hazelcastProperties, jarSize);
         this.totalParts = calculator.calculateTotalParts(jarSize, partSize);
 
         // Find the destination member
@@ -97,13 +98,13 @@ public class JobUploadCall {
         this.fileNameWithoutExtension = fileNameWithoutExtension;
     }
 
-    String getSha256Hex() {
-        return sha256Hex;
+    String getSha256HexOfJar() {
+        return sha256HexOfJar;
     }
 
     // This method is public for testing purposes.
-    public void setSha256Hex(String sha256Hex) {
-        this.sha256Hex = sha256Hex;
+    public void setSha256HexOfJar(String sha256HexOfJar) {
+        this.sha256HexOfJar = sha256HexOfJar;
     }
 
     int getTotalParts() {

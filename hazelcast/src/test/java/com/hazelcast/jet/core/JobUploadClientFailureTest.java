@@ -199,7 +199,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         Path jarPath = getJarPath();
         doAnswer(invocation -> {
             JobUploadCall jobUploadCall = (JobUploadCall) invocation.callRealMethod();
-            jobUploadCall.setSha256Hex("1");
+            jobUploadCall.setSha256HexOfJar("1");
             return jobUploadCall;
         }).when(spyJetService).initializeJobUploadCall(jarPath);
 

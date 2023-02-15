@@ -180,7 +180,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         ClientMessage jobMetaDataRequest = JetUploadJobMetaDataCodec.encodeRequest(
                 jobUploadCall.getSessionId(),
                 jobUploadCall.getFileNameWithoutExtension(),
-                jobUploadCall.getSha256Hex(),
+                jobUploadCall.getSha256HexOfJar(),
                 submitJobParameters.getSnapshotName(),
                 submitJobParameters.getJobName(),
                 submitJobParameters.getMainClass(),
