@@ -85,4 +85,14 @@ public abstract class VariExpression<T> implements Expression<T> {
         return getClass().getSimpleName() + "{operands=" + Arrays.toString(operands) + '}';
     }
 
+    @Override
+    public boolean isCooperative() {
+        for (Expression<?> operand : operands) {
+            if (!operand.isCooperative()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }

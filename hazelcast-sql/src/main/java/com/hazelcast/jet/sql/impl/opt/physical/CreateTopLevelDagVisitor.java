@@ -55,6 +55,7 @@ import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinProcessorSupplier;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -94,13 +95,14 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 
 public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
-
     // TODO https://github.com/hazelcast/hazelcast/issues/20383
-    public static final ExpressionEvalContext MOCK_EEC =
-            new ExpressionEvalContext(emptyList(), new DefaultSerializationServiceBuilder().build());
+    // Note: it is used only in CreateTopLevelDagVisitor, and initialized here.
+    // We don't want to serialize it, but we initialize it during the runtime.
+    @SuppressWarnings({"checkstyle:StaticVariableName", "checkstyle:VisibilityModifier"})
+    public static ExpressionEvalContext MOCK_EEC;
 
-    private static final int LOW_PRIORITY = 10;
     private static final int HIGH_PRIORITY = 1;
+    private static final int LOW_PRIORITY = 10;
 
     private final Set<PlanObjectKey> objectKeys = new HashSet<>();
     private final NodeEngine nodeEngine;
@@ -123,6 +125,11 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         this.objectKeys.addAll(usedViews);
 
         dagBuildContext = new DagBuildContextImpl(getDag(), parameterMetadata);
+
+        MOCK_EEC = new ExpressionEvalContext(
+                emptyList(),
+                new DefaultSerializationServiceBuilder().build(),
+                (NodeEngineImpl) nodeEngine);
     }
 
     @Override
@@ -147,7 +154,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     @Override
     public Vertex onInsert(InsertPhysicalRel rel) {
-        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate((PhysicalRel) rel.getInput());
+        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(
+                (PhysicalRel) rel.getInput(), MOCK_EEC);
 
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
@@ -162,7 +170,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     @Override
     public Vertex onSink(SinkPhysicalRel rel) {
-        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate((PhysicalRel) rel.getInput());
+        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(
+                (PhysicalRel) rel.getInput(), MOCK_EEC);
 
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
@@ -177,7 +186,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     @Override
     public Vertex onUpdate(UpdatePhysicalRel rel) {
         // currently it's not possible to have a unbounded UPDATE, but if we do, we'd need this calculation
-        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate((PhysicalRel) rel.getInput());
+        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(
+                (PhysicalRel) rel.getInput(), MOCK_EEC);
 
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
 
@@ -192,7 +202,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     @Override
     public Vertex onDelete(DeletePhysicalRel rel) {
         // currently it's not possible to have a unbounded DELETE, but if we do, we'd need this calculation
-        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate((PhysicalRel) rel.getInput());
+        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(
+                (PhysicalRel) rel.getInput(), MOCK_EEC);
 
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
 
@@ -268,7 +279,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
             Expression<Boolean> filterExpr = dagBuildContext.convertFilter(rel.filter());
             vertex = dag.newUniqueVertex("Calc", mapUsingServiceP(
                     ServiceFactories.nonSharedService(ctx ->
-                            ExpressionUtil.calcFn(projection, filterExpr, ExpressionEvalContext.from(ctx))),
+                                    ExpressionUtil.calcFn(projection, filterExpr, ExpressionEvalContext.from(ctx)))
+                            .setCooperative(projection.stream().allMatch(Expression::isCooperative)),
                     (Function<JetSqlRow, JetSqlRow> calcFn, JetSqlRow row) -> calcFn.apply(row)));
         } else {
             vertex = dag.newUniqueVertex("Project", mapUsingServiceP(
@@ -584,7 +596,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     @Override
     public Vertex onRoot(RootRel rootRel) {
-        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate((PhysicalRel) rootRel.getInput());
+        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(
+                (PhysicalRel) rootRel.getInput(), MOCK_EEC);
 
         RelNode input = rootRel.getInput();
 

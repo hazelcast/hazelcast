@@ -74,4 +74,9 @@ public abstract class UniExpression<T> implements Expression<T> {
     public String toString() {
         return getClass().getSimpleName() + "{operand=" + operand + '}';
     }
+
+    @Override
+    public boolean isCooperative() {
+        return operand.isCooperative();
+    }
 }

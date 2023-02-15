@@ -83,4 +83,9 @@ public final class SymbolExpression implements Expression<Object>, IdentifiedDat
     private static UnsupportedOperationException unsupported() {
         throw new UnsupportedOperationException("Should not be called");
     }
+
+    @Override
+    public boolean isCooperative() {
+        return true;
+    }
 }

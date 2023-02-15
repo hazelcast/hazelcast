@@ -59,6 +59,11 @@ import static org.junit.Assert.assertEquals;
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 public class StreamToStreamJoinPOuterTest extends SimpleTestInClusterSupport {
 
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        initialize(1, null);
+    }
+
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
     private final Map<Byte, Map<Byte, Long>> postponeTimeMap = new HashMap<>();
@@ -125,7 +130,8 @@ public class StreamToStreamJoinPOuterTest extends SimpleTestInClusterSupport {
         postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
 
-        TestSupport.verifyProcessor(isLeft ? createProcessor(1, 2, true) : createProcessor(2, 1, true))
+        TestSupport.verifyProcessor(isLeft ? createProcessor(1, 2) : createProcessor(2, 1))
+                .hazelcastInstance(instance())
                 .expectExactOutput(
                         in(ordinal0, jetRow(3L)),
                         in(ordinal0, jetRow(4L)),
@@ -172,6 +178,7 @@ public class StreamToStreamJoinPOuterTest extends SimpleTestInClusterSupport {
         ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1, true));
 
         TestSupport.verifyProcessor(processorSupplier)
+                .hazelcastInstance(instance())
                 .expectExactOutput(
                         in(ordinal1, jetRow(0L)),
                         in(ordinal1, wm(10L, ordinal1)),
@@ -226,6 +233,7 @@ public class StreamToStreamJoinPOuterTest extends SimpleTestInClusterSupport {
         SupplierEx<Processor> supplier = createProcessor(1, 1, true);
 
         TestSupport.verifyProcessor(supplier)
+                .hazelcastInstance(instance())
                 .cooperativeTimeout(0)
                 .expectExactOutput(
                         in(ordinal1, jetRow(42L)),

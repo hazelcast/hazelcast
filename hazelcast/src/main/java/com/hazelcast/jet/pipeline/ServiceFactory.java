@@ -246,10 +246,16 @@ public final class ServiceFactory<C, S> implements Serializable, Cloneable {
      */
     @Nonnull
     public ServiceFactory<C, S> toNonCooperative() {
+        return setCooperative(false);
+    }
+
+    @Nonnull
+    public ServiceFactory<C, S> setCooperative(boolean cooperative) {
         ServiceFactory<C, S> copy = clone();
-        copy.isCooperative = false;
+        copy.isCooperative = cooperative;
         return copy;
     }
+
 
     /**
      * Attaches a file to this service factory under the given ID. It will

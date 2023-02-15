@@ -16,12 +16,9 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,27 +35,24 @@ public class TernaryLogicTest {
 
     private static final Row ROW = new MockRow();
     private static final ExpressionEvalContext CONTEXT = mock(ExpressionEvalContext.class);
-    private static final Expression<Boolean> FALSE = new MockBooleanExpression(false);
-    private static final Expression<Boolean> TRUE = new MockBooleanExpression(true);
-    private static final Expression<Boolean> NULL = new MockBooleanExpression(null);
 
     @SuppressWarnings("SimplifiableJUnitAssertion")
     @Test
     public void testAnd() {
         assertEquals(true, TernaryLogic.and(ROW, CONTEXT));
 
-        assertEquals(false, TernaryLogic.and(ROW, CONTEXT, FALSE, FALSE));
-        assertEquals(false, TernaryLogic.and(ROW, CONTEXT, FALSE, TRUE));
-        assertEquals(false, TernaryLogic.and(ROW, CONTEXT, TRUE, FALSE));
-        assertEquals(true, TernaryLogic.and(ROW, CONTEXT, TRUE, TRUE));
+        assertEquals(false, TernaryLogic.and(ROW, CONTEXT, ConstantExpression.FALSE, ConstantExpression.FALSE));
+        assertEquals(false, TernaryLogic.and(ROW, CONTEXT, ConstantExpression.FALSE, ConstantExpression.TRUE));
+        assertEquals(false, TernaryLogic.and(ROW, CONTEXT, ConstantExpression.TRUE, ConstantExpression.FALSE));
+        assertEquals(true, TernaryLogic.and(ROW, CONTEXT, ConstantExpression.TRUE, ConstantExpression.TRUE));
 
-        assertEquals(false, TernaryLogic.and(ROW, CONTEXT, NULL, FALSE));
-        assertEquals(false, TernaryLogic.and(ROW, CONTEXT, FALSE, NULL));
+        assertEquals(false, TernaryLogic.and(ROW, CONTEXT, ConstantExpression.NULL, ConstantExpression.FALSE));
+        assertEquals(false, TernaryLogic.and(ROW, CONTEXT, ConstantExpression.FALSE, ConstantExpression.NULL));
 
-        assertEquals(null, TernaryLogic.and(ROW, CONTEXT, NULL, TRUE));
-        assertEquals(null, TernaryLogic.and(ROW, CONTEXT, TRUE, NULL));
+        assertEquals(null, TernaryLogic.and(ROW, CONTEXT, ConstantExpression.NULL, ConstantExpression.TRUE));
+        assertEquals(null, TernaryLogic.and(ROW, CONTEXT, ConstantExpression.TRUE, ConstantExpression.NULL));
 
-        assertEquals(null, TernaryLogic.and(ROW, CONTEXT, NULL, NULL));
+        assertEquals(null, TernaryLogic.and(ROW, CONTEXT, ConstantExpression.NULL, ConstantExpression.NULL));
     }
 
     @SuppressWarnings("SimplifiableJUnitAssertion")
@@ -66,18 +60,18 @@ public class TernaryLogicTest {
     public void testOr() {
         assertEquals(false, TernaryLogic.or(ROW, CONTEXT));
 
-        assertEquals(false, TernaryLogic.or(ROW, CONTEXT, FALSE, FALSE));
-        assertEquals(true, TernaryLogic.or(ROW, CONTEXT, FALSE, TRUE));
-        assertEquals(true, TernaryLogic.or(ROW, CONTEXT, TRUE, FALSE));
-        assertEquals(true, TernaryLogic.or(ROW, CONTEXT, TRUE, TRUE));
+        assertEquals(false, TernaryLogic.or(ROW, CONTEXT, ConstantExpression.FALSE, ConstantExpression.FALSE));
+        assertEquals(true, TernaryLogic.or(ROW, CONTEXT, ConstantExpression.FALSE, ConstantExpression.TRUE));
+        assertEquals(true, TernaryLogic.or(ROW, CONTEXT, ConstantExpression.TRUE, ConstantExpression.FALSE));
+        assertEquals(true, TernaryLogic.or(ROW, CONTEXT, ConstantExpression.TRUE, ConstantExpression.TRUE));
 
-        assertEquals(null, TernaryLogic.or(ROW, CONTEXT, NULL, FALSE));
-        assertEquals(null, TernaryLogic.or(ROW, CONTEXT, FALSE, NULL));
+        assertEquals(null, TernaryLogic.or(ROW, CONTEXT, ConstantExpression.NULL, ConstantExpression.FALSE));
+        assertEquals(null, TernaryLogic.or(ROW, CONTEXT, ConstantExpression.FALSE, ConstantExpression.NULL));
 
-        assertEquals(true, TernaryLogic.or(ROW, CONTEXT, NULL, TRUE));
-        assertEquals(true, TernaryLogic.or(ROW, CONTEXT, TRUE, NULL));
+        assertEquals(true, TernaryLogic.or(ROW, CONTEXT, ConstantExpression.NULL, ConstantExpression.TRUE));
+        assertEquals(true, TernaryLogic.or(ROW, CONTEXT, ConstantExpression.TRUE, ConstantExpression.NULL));
 
-        assertEquals(null, TernaryLogic.or(ROW, CONTEXT, NULL, NULL));
+        assertEquals(null, TernaryLogic.or(ROW, CONTEXT, ConstantExpression.NULL, ConstantExpression.NULL));
     }
 
     @SuppressWarnings({"ConstantConditions", "SimplifiableJUnitAssertion"})
@@ -151,35 +145,4 @@ public class TernaryLogicTest {
         }
 
     }
-
-    private static class MockBooleanExpression implements Expression<Boolean> {
-
-        private final Boolean value;
-
-        MockBooleanExpression(Boolean value) {
-            this.value = value;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Boolean eval(Row row, ExpressionEvalContext context) {
-            return value;
-        }
-
-        @Override
-        public QueryDataType getType() {
-            return QueryDataType.BOOLEAN;
-        }
-
-    }
-
 }

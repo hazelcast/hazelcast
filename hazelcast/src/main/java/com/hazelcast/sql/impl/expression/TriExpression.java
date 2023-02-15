@@ -79,4 +79,9 @@ public abstract class TriExpression<T> implements Expression<T> {
         result = 31 * result + (operand3 != null ? operand3.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public boolean isCooperative() {
+        return operand1.isCooperative() && operand2.isCooperative() && operand3.isCooperative();
+    }
 }

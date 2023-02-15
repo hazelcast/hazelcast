@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt;
 
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.DropLateItemsPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
@@ -55,7 +56,10 @@ public final class WatermarkThrottlingFrameSizeCalculatorTest extends OptimizerT
     @BeforeClass
     public static void beforeClass() {
         initialize(1, null);
-        MOCK_EEC = new ExpressionEvalContext(emptyList(), new DefaultSerializationServiceBuilder().build());
+        MOCK_EEC = new ExpressionEvalContext(
+                emptyList(),
+                new DefaultSerializationServiceBuilder().build(),
+                Util.getNodeEngine(instance()));
     }
 
     @Test
@@ -73,7 +77,8 @@ public final class WatermarkThrottlingFrameSizeCalculatorTest extends OptimizerT
         ));
 
         assertThat(optimizedPhysicalRel.getInput(0)).isInstanceOf(FullScanPhysicalRel.class);
-        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel)).isEqualTo(S2S_JOIN_MAX_THROTTLING_INTERVAL);
+        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel, MOCK_EEC))
+                .isEqualTo(S2S_JOIN_MAX_THROTTLING_INTERVAL);
     }
 
     @Test
@@ -90,7 +95,8 @@ public final class WatermarkThrottlingFrameSizeCalculatorTest extends OptimizerT
 
         assertPlan(optimizedPhysicalRel, plan(planRow(0, ShouldNotExecuteRel.class)));
 
-        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel)).isEqualTo(S2S_JOIN_MAX_THROTTLING_INTERVAL);
+        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel, MOCK_EEC))
+                .isEqualTo(S2S_JOIN_MAX_THROTTLING_INTERVAL);
 
         ShouldNotExecuteRel sneRel = (ShouldNotExecuteRel) optimizedPhysicalRel;
         assertThat(sneRel.message()).contains("Streaming aggregation is supported only for window aggregation");
@@ -116,7 +122,8 @@ public final class WatermarkThrottlingFrameSizeCalculatorTest extends OptimizerT
                 planRow(3, FullScanPhysicalRel.class)
         ));
 
-        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel)).isEqualTo(3L);
+        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel, MOCK_EEC))
+                .isEqualTo(3L);
     }
 
     @Test
@@ -148,7 +155,8 @@ public final class WatermarkThrottlingFrameSizeCalculatorTest extends OptimizerT
         ));
 
         // GCD(15, 6) = 3
-        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel)).isEqualTo(1L);
+        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel, MOCK_EEC))
+                .isEqualTo(1L);
     }
 
     @Test
@@ -187,7 +195,8 @@ public final class WatermarkThrottlingFrameSizeCalculatorTest extends OptimizerT
         ));
 
         // GCD(48, 36, 24) = 12
-        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel)).isEqualTo(expectedGcd);
+        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel, MOCK_EEC))
+                .isEqualTo(expectedGcd);
     }
 
     @Test
@@ -220,7 +229,8 @@ public final class WatermarkThrottlingFrameSizeCalculatorTest extends OptimizerT
         ));
 
         // GCD(100, 40) = 4
-        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optPhysicalRel)).isEqualTo(expectedWindowSize);
+        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optPhysicalRel, MOCK_EEC))
+                .isEqualTo(expectedWindowSize);
     }
 
     @SuppressWarnings("SameParameterValue")

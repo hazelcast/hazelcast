@@ -16,9 +16,12 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.map.EntryProcessor;
@@ -47,12 +50,14 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 public final class UpdatingEntryProcessor
-        implements EntryProcessor<Object, Object, Long>, SerializationServiceAware, DataSerializable {
+        implements EntryProcessor<Object, Object, Long>, DataSerializable,
+        HazelcastInstanceAware, SerializationServiceAware {
 
     private KvRowProjector.Supplier rowProjectorSupplier;
     private Projector.Supplier valueProjectorSupplier;
     private List<Object> arguments;
 
+    private transient HazelcastInstance hzInstance;
     private transient ExpressionEvalContext evalContext;
     private transient Extractors extractors;
 
@@ -63,11 +68,13 @@ public final class UpdatingEntryProcessor
     private UpdatingEntryProcessor(
             KvRowProjector.Supplier rowProjectorSupplier,
             Projector.Supplier valueProjectorSupplier,
-            List<Object> arguments
+            List<Object> arguments,
+            HazelcastInstance hzInstance
     ) {
         this.rowProjectorSupplier = rowProjectorSupplier;
         this.valueProjectorSupplier = valueProjectorSupplier;
         this.arguments = arguments;
+        this.hzInstance = hzInstance;
     }
 
     @Override
@@ -87,8 +94,16 @@ public final class UpdatingEntryProcessor
     }
 
     @Override
+    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+        this.hzInstance = hazelcastInstance;
+    }
+
+    @Override
     public void setSerializationService(SerializationService serializationService) {
-        this.evalContext = new ExpressionEvalContext(arguments, (InternalSerializationService) serializationService);
+        this.evalContext = new ExpressionEvalContext(
+                arguments,
+                (InternalSerializationService) serializationService,
+                Util.getNodeEngine(hzInstance));
         this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
 
@@ -173,8 +188,8 @@ public final class UpdatingEntryProcessor
             this.valueProjectorSupplier = valueProjectorSupplier;
         }
 
-        public EntryProcessor<Object, Object, Long> get(List<Object> arguments) {
-            return new UpdatingEntryProcessor(rowProjectorSupplier, valueProjectorSupplier, arguments);
+        public EntryProcessor<Object, Object, Long> get(List<Object> arguments, HazelcastInstance hzInstance) {
+            return new UpdatingEntryProcessor(rowProjectorSupplier, valueProjectorSupplier, arguments, hzInstance);
         }
 
         @Override

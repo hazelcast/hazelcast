@@ -21,6 +21,8 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
 import com.hazelcast.jet.impl.execution.init.Contexts;
+import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -40,13 +42,16 @@ public class ExpressionEvalContext {
 
     private final List<Object> arguments;
     private final InternalSerializationService serializationService;
+    private final NodeEngineImpl nodeEngine;
 
     public ExpressionEvalContext(
             @Nonnull List<Object> arguments,
-            @Nonnull InternalSerializationService serializationService
+            @Nonnull InternalSerializationService serializationService,
+            @Nonnull NodeEngineImpl nodeEngine
     ) {
         this.arguments = requireNonNull(arguments);
         this.serializationService = requireNonNull(serializationService);
+        this.nodeEngine = requireNonNull(nodeEngine);
     }
 
     public static ExpressionEvalContext from(ProcessorSupplier.Context ctx) {
@@ -55,11 +60,15 @@ public class ExpressionEvalContext {
             if (arguments == null) {
                 arguments = new ArrayList<>();
             }
-            return new ExpressionEvalContext(arguments, new DefaultSerializationServiceBuilder().build());
+            return new ExpressionEvalContext(
+                    arguments,
+                    new DefaultSerializationServiceBuilder().build(),
+                    Util.getNodeEngine(ctx.hazelcastInstance()));
         } else {
             return new ExpressionEvalContext(
                     requireNonNull(arguments),
-                    ((Contexts.ProcSupplierCtx) ctx).serializationService());
+                    ((Contexts.ProcSupplierCtx) ctx).serializationService(),
+                    ((Contexts.ProcSupplierCtx) ctx).nodeEngine());
         }
     }
 
@@ -83,5 +92,12 @@ public class ExpressionEvalContext {
      */
     public InternalSerializationService getSerializationService() {
         return serializationService;
+    }
+
+    /**
+     * @return node engine
+     */
+    public NodeEngineImpl getNodeEngine() {
+        return nodeEngine;
     }
 }
