@@ -60,7 +60,6 @@ import org.mockito.internal.stubbing.answers.ThrowsException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -132,14 +131,14 @@ public class IndeterminateSnapshotTest {
         }
 
         /**
-         * Returns a consumer that will pass on to the `delegate` consumer at
-         * most once. Subsequent calls do nothing, except that they block until
-         * the first call is complete, if they are concurrent.
+         * Returns a consumer that will pass on to the `delegate` on the first
+         * call. Subsequent calls do nothing, except that they block until the
+         * first call is complete, if they are concurrent.
          *
          * @param delegate consumer that should be invoked once
          * @return wrapping consumer
          */
-        protected static <T> Consumer<T> singleExecutionConsumer(Consumer<T> delegate) {
+        protected static <T> Consumer<T> firstExecutionConsumer(Consumer<T> delegate) {
             boolean[] executed = {false};
             return (arg) -> {
                 synchronized (executed) {
@@ -162,10 +161,10 @@ public class IndeterminateSnapshotTest {
         protected <T> Consumer<T> lastExecutionConsumer(Consumer<T> delegate) {
             AtomicInteger executed = new AtomicInteger();
             return (idx) -> {
-                int executionNumber = executed.incrementAndGet();
-                int expectedExecutionNumber = getActiveNodesCount() * LOCAL_PARALLELISM;
-                assert executionNumber <= expectedExecutionNumber;
-                if (executionNumber == expectedExecutionNumber) {
+                int currentExecutionCount = executed.incrementAndGet();
+                int totalExecutionCount = getActiveNodesCount() * LOCAL_PARALLELISM;
+                assert currentExecutionCount <= totalExecutionCount;
+                if (currentExecutionCount == totalExecutionCount) {
                     // this is the last execution
                     delegate.accept(idx);
                 }
@@ -173,7 +172,7 @@ public class IndeterminateSnapshotTest {
         }
 
         protected <T> Consumer<T> breakSnapshotConsumer(String message, Runnable snapshotAction) {
-            return singleExecutionConsumer((idx) -> {
+            return firstExecutionConsumer((idx) -> {
                 logger.info("Breaking replication in " + message + " for " + idx);
                 snapshotAction.run();
                 logger.finest("Proceeding with " + message + " " + idx + " after breaking replication");
@@ -212,10 +211,10 @@ public class IndeterminateSnapshotTest {
         }
 
         /**
-         * @param snapshotId snapshot id for last snapshot (including in progress)
+         * @param snapshotId snapshot id for the last snapshot (including in progress),
          *                   or -1 if no snapshot is expected
          */
-        protected static void assumePresentLastSnapshot(int snapshotId) {
+        protected static void assumeLastSnapshotPresent(int snapshotId) {
             if (snapshotId >= 0) {
                 assumeThat(SnapshotInstrumentationP.savedCounters.values())
                         .as("Current snapshot is different than expected")
@@ -259,16 +258,16 @@ public class IndeterminateSnapshotTest {
 
     /**
      * Tests that break replication in the cluster. More realistic, but slower,
-     * and sometimes it is hard to get correct partitions assignment.
+     * and sometimes it is hard to get correct partition assignment.
      */
     // this test needs mock network
     @Category({QuickTest.class, ParallelJVMTest.class})
     @RunWith(HazelcastSerialClassRunner.class)
     public static class ReplicationBreakingTests extends IndeterminateSnapshotTestBase {
-        // SnapshotVerificationKey
+        // the instance indexes which store the primary and backup copy of the SnapshotValidationRecord
         private int masterKeyPartitionInstanceIdx;
         private int backupKeyPartitionInstanceIdx;
-        // Job
+        // the instance indexes which store the primary and backup copy of JobRecord/JobExecutionRecord/JobResult
         private Integer masterJobPartitionInstanceIdx;
         private Integer backupJobPartitionInstanceIdx;
 
@@ -440,9 +439,9 @@ public class IndeterminateSnapshotTest {
 
         private void setupPartitions() {
             InternalPartition partitionForKey = getPartitionForKey(SnapshotValidationRecord.KEY);
-            logger.info("SVR KEY partition id:" + partitionForKey.getPartitionId());
+            logger.info("SVR KEY partition id: " + partitionForKey.getPartitionId());
             for (int i = 0; i < 3; ++i) {
-                logger.info("SVR KEY partition addr:" + partitionForKey.getReplica(i));
+                logger.info("SVR KEY partition addr: " + partitionForKey.getReplica(i));
             }
             masterKeyPartitionInstanceIdx = partitionForKey.getReplica(0).address().getPort() - BASE_PORT;
             backupKeyPartitionInstanceIdx = partitionForKey.getReplica(1).address().getPort() - BASE_PORT;
@@ -457,12 +456,11 @@ public class IndeterminateSnapshotTest {
         }
 
         private void when_shutDown(int allowedSnapshotsCount) {
-
             // We need to keep replicated SVR KEY and JobExecutionRecord for jobId.
             // Each can be in a different partition that can be on a different instance
             // (primary and backup), so we need to have at least 5 nodes, so one
             // of them can be broken to corrupt the snapshot data, but not affect job metadata
-            // (JobExecutionRecord and SnapshotValidationRecord.KEY).
+            // (JobExecutionRecord and SnapshotValidationRecord).
             assertTrue(NODE_COUNT >= 5);
 
             setupJetTests(allowedSnapshotsCount);
@@ -531,7 +529,6 @@ public class IndeterminateSnapshotTest {
         }
 
         private void when_shutDownAfter1stPhase(int allowedSnapshotsCount) {
-
             setupJetTests(allowedSnapshotsCount);
 
             // Scenario:
@@ -563,7 +560,7 @@ public class IndeterminateSnapshotTest {
                     // and not restart Jet master
                     .as("Should not restart Jet master").isNotEqualTo(0);
 
-            int failingInstance = chooseConstantFailingNode(masterKeyPartitionInstanceIdx);
+            int failingInstance = chooseConstantFailingInstance(masterKeyPartitionInstanceIdx);
             int liveInstance = backupKeyPartitionInstanceIdx;
 
             // ensure that job started
@@ -608,23 +605,24 @@ public class IndeterminateSnapshotTest {
          * @return chosen failing instance
          */
         private int chooseFailingInstance(Integer... safeNodes) {
-            Set<Integer> nodes = IntStream.range(0, NODE_COUNT).boxed().collect(Collectors.toCollection(HashSet::new));
+            Set<Integer> nodes = IntStream.range(0, NODE_COUNT).boxed().collect(Collectors.toSet());
             // note that `safeNodes` must be `Integer` not `int` so asList does not return List<int[]>
             Arrays.asList(safeNodes).forEach(nodes::remove);
             logger.info("Replicas that can be broken: " + nodes);
             assertThat(nodes).isNotEmpty();
             int failingInstance = nodes.stream().findAny().get();
-            return chooseConstantFailingNode(failingInstance);
+            return chooseConstantFailingInstance(failingInstance);
         }
 
-        private int chooseConstantFailingNode(int failingInstance) {
+        private int chooseConstantFailingInstance(int failingInstance) {
             logger.info("Failing instance selected: " + failingInstance);
             failingInstanceFuture.complete(failingInstance);
             return failingInstance;
         }
 
         /**
-         * Breaks backups that should be stored on failing instance.
+         * Sets a packet filter that drops all backups from the instance in
+         * {@link #failingInstanceFuture}.
          */
         private void breakFailingInstance() {
             Integer failingInstanceIdx;
@@ -637,14 +635,8 @@ public class IndeterminateSnapshotTest {
         }
 
         private void restoreNetwork() {
-            int failingInstanceIdx;
-            try {
-                failingInstanceIdx = failingInstanceFuture.get();
-            } catch (InterruptedException | ExecutionException e) {
-                throw new RuntimeException(e);
-            }
             for (int i = 0; i < NODE_COUNT; ++i) {
-                if (i != failingInstanceIdx) {
+                if (instances[i].getLifecycleService().isRunning()) {
                     resetPacketFiltersFrom(instances[i]);
                 }
             }
@@ -775,7 +767,7 @@ public class IndeterminateSnapshotTest {
         private void whenSnapshotUpdateLostChangedCoordinator(int initialSnapshotsCount) {
             // JobExecutionRecord update during snapshot commit is indeterminate and lost,
             // and is indeterminate until original coordinator is terminated.
-            // Job is restart on different coordinator and indeterminate snapshot turns out to be lost.
+            // Job is restarted on a different coordinator and indeterminate snapshot turns out to be lost.
 
             CompletableFuture<Void> coordinatorTerminated = new CompletableFuture<>();
 
@@ -847,10 +839,10 @@ public class IndeterminateSnapshotTest {
                 waitForSnapshot();
             }
 
-            // there is a race between suspend and regular snapshots,
-            // but we want the test to be executed when there is no snapshot in progress
-            // try to detect slow execution and skip test if there is unexpected snapshot
-            assumePresentLastSnapshot(initialSnapshotsCount - 1);
+            // There is a race between suspend and regular snapshots,
+            // but we want the test to be executed when there is no snapshot in progress.
+            // Try to detect slow execution and skip test if there is unexpected snapshot.
+            assumeLastSnapshotPresent(initialSnapshotsCount - 1);
 
             // suspend should fail and job should be restarted
             job.suspend();
@@ -949,7 +941,7 @@ public class IndeterminateSnapshotTest {
             // there is a race between suspend and regular snapshots,
             // but we want the test to be executed when there is no snapshot in progress
             // try to detect slow execution and skip test if there is unexpected snapshot
-            assumePresentLastSnapshot(initialSnapshotsCount - 1);
+            assumeLastSnapshotPresent(initialSnapshotsCount - 1);
             ((JobProxy) job).restart(true);
 
             logger.info("Joining job...");
@@ -970,7 +962,7 @@ public class IndeterminateSnapshotTest {
 
         /**
          * Base class for defining snapshot failure scenarios. Allows to
-         * precisely inject failure at correct moment. The scenario is defined
+         * precisely inject failure at a correct moment. The scenario is defined
          * at the beginning of the test and runs automatically afterwards after
          * it is started using {@link #start()}.
          * <p>
@@ -1015,7 +1007,7 @@ public class IndeterminateSnapshotTest {
                         SnapshotInstrumentationP.allowedSnapshotsCount += repetitions;
                         if (first) {
                             // snapshot ids start from 0
-                            // correct counter so repetitions are intuitive
+                            // adjust the counter so repetitions are intuitive
                             SnapshotInstrumentationP.allowedSnapshotsCount--;
                         }
                     }
@@ -1107,7 +1099,7 @@ public class IndeterminateSnapshotTest {
         }
 
         /**
-         * Allow given number of successful snapshots before proceeding to next
+         * Allow given number of successful snapshots before proceeding to the next
          * step. Proceeds to next step when last snapshot is committed. Does
          * not update {@link #snapshotDone}.
          */
@@ -1201,7 +1193,6 @@ public class IndeterminateSnapshotTest {
                 return "IndeterminateLostPutsUntil";
             }
         }
-
 
         private void singleIndeterminatePutLost() {
             // affects put and also executeOnKey
