@@ -16,15 +16,10 @@
 
 package com.hazelcast.sql.impl.expression;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
-import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
-import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.query.impl.getters.CompactGetter;
-import com.hazelcast.query.impl.getters.PortableGetter;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.row.Row;
@@ -71,7 +66,7 @@ public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSe
     @Override
     public T eval(final Row row, final ExpressionEvalContext context, boolean useLazyDeserialization) {
         // Use lazy deserialization for nested queries. Only the last access should be eager.
-        Object res = ref.eval(row, context, true);
+        final Object res = ref.eval(row, context, true);
         if (res == null) {
             return null;
         }
@@ -80,46 +75,11 @@ public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSe
             throw QueryException.error("Field Access expression can not be applied to primitive types");
         }
 
+        final Extractors extractors = Extractors.newBuilder(context.getSerializationService()).build();
         try {
-            if (res instanceof PortableGenericRecord) {
-                return (T) type.convert(extractPortableField(
-                        (PortableGenericRecord) res,
-                        name,
-                        context.getSerializationService(),
-                        useLazyDeserialization
-                ));
-            } else if (res instanceof CompactGenericRecord) {
-                return (T) type.convert(extractCompactField(
-                        (CompactGenericRecord) res,
-                        name,
-                        context.getSerializationService(),
-                        useLazyDeserialization
-                ));
-            } else {
-                return (T) type.convert(ReflectionUtils.getFieldValue(name, res));
-            }
+            return (T) type.convert(extractors.extract(res, name, useLazyDeserialization));
         } catch (Exception e) {
             throw QueryException.error("Failed to extract field");
-        }
-    }
-
-    private Object extractPortableField(PortableGenericRecord portable, String name, InternalSerializationService ss,
-                                        boolean useLazyDeserialization) {
-        final PortableGetter getter = new PortableGetter(ss);
-        try {
-            return getter.getValue(portable, name, useLazyDeserialization);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private Object extractCompactField(CompactGenericRecord compact, String name, InternalSerializationService ss,
-                                      boolean useLazyDeserialization) {
-        final CompactGetter getter = new CompactGetter(ss);
-        try {
-            return getter.getValue(compact, name, useLazyDeserialization);
-        } catch (Exception e) {
-            return null;
         }
     }
 
