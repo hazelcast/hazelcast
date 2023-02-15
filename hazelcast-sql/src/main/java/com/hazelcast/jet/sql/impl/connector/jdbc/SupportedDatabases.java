@@ -42,7 +42,7 @@ final class SupportedDatabases {
         SUPPORTED_DATABASE_NAMES.add("POSTGRESQL");
         SUPPORTED_DATABASE_NAMES.add("H2");
         // Uncomment when officially supported
-        // DATABASE_NAMES.add("MICROSOFT SQL SERVER");
+        // SUPPORTED_DATABASE_NAMES.add("MICROSOFT SQL SERVER");
     }
 
     private SupportedDatabases() {
