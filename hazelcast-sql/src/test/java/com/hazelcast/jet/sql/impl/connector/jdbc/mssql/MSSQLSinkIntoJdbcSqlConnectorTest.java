@@ -29,7 +29,7 @@ public class MSSQLSinkIntoJdbcSqlConnectorTest extends SinkJdbcSqlConnectorTest 
     public static void beforeClass() {
         initialize(new MSSQLDatabaseProvider());
     }
-
+    //Disable this test by overriding it until official MSSQL supported
     @Override
     public void updateTableWithColumns() {
     }
