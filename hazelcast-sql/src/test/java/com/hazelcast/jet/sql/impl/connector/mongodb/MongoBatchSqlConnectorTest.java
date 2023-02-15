@@ -33,6 +33,7 @@ import org.bson.Document;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -153,6 +154,28 @@ public class MongoBatchSqlConnectorTest extends SqlTestSupport {
         try (SqlResult ignored = sqlService.execute(sql, arguments)) {
             EmptyStatement.ignore(null);
         }
+    }
+
+    @Test
+    @Ignore("TODO type coertion")
+    public void readWithTypeCoertion() {
+        final String collectionName = methodName();
+
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
+
+        createMapping(true);
+        collection.insertOne(new Document("firstName", "Han").append("lastName", "Solo").append("jedi", "false"));
+        collection.insertOne(new Document("firstName", "Anakin").append("lastName", "Skywalker").append("jedi", "true"));
+
+        assertRowsAnyOrder("select firstName, lastName, jedi from " + methodName()
+                        + " where lastName = ?",
+                singletonList("Skywalker"),
+                asList(
+                        new Row("Luke", "Skywalker", true),
+                        new Row("Anakin", "Skywalker", true)
+                )
+        );
     }
 
     @Test
