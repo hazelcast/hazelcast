@@ -26,6 +26,7 @@ import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
 
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -33,7 +34,7 @@ final class SupportedDatabases {
 
     private static final ILogger LOGGER = Logger.getLogger(SupportedDatabases.class);
 
-    private static final Set<String> SUPPORTED_DATABASE_NAMES = ConcurrentHashMap.newKeySet();
+    private static final Set<String> SUPPORTED_DATABASE_NAMES = new HashSet<>();
     private static final Set<String> DETECTED_DATABASE_NAMES = ConcurrentHashMap.newKeySet();
 
     static {
@@ -53,15 +54,12 @@ final class SupportedDatabases {
 
         boolean newDatabaseName = isNewDatabase(uppercaseProductName);
         if (newDatabaseName) {
-            // If this Database name is new, log a message
             LOGGER.warning("Database " + uppercaseProductName + " is not officially supported");
         }
     }
 
     private static String getProductName(DatabaseMetaData databaseMetaData) throws SQLException {
-        // Get product name from the JDBC driver
         String productName = databaseMetaData.getDatabaseProductName();
-        // Make the name upper case
         return StringUtil.upperCaseInternal(productName);
     }
 

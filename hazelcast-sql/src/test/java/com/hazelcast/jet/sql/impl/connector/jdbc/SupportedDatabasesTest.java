@@ -47,7 +47,6 @@ public class SupportedDatabasesTest {
 
     @Test
     public void testUpsertDialectNotSupported() {
-
         when(jdbcTable.sqlDialect()).thenReturn(sybaseSqlDialect);
 
         boolean result = SupportedDatabases.isDialectSupported(jdbcTable);
@@ -56,7 +55,6 @@ public class SupportedDatabasesTest {
 
     @Test
     public void testUpsertDialectSupported() {
-
         when(jdbcTable.sqlDialect()).thenReturn(mysqlSqlDialect);
 
         boolean result = SupportedDatabases.isDialectSupported(jdbcTable);
