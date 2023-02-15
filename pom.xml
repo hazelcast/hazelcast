@@ -444,6 +444,8 @@
                                         It is a test dependency and can be ignored.
                                         -->
                                         <exclude>com.tngtech.archunit:archunit</exclude>
+                                        <!-- Standalone Nashorn requires Java 11 -->
+                                        <exclude>org.openjdk.nashorn:nashorn-core</exclude>
                                     </excludes>
                                     <ignoreClasses>
                                         <!--
