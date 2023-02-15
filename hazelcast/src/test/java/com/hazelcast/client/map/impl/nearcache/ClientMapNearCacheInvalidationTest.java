@@ -180,7 +180,7 @@ public class ClientMapNearCacheInvalidationTest extends ClientTestSupport {
         factory.newHazelcastInstance(config);
 
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
-        makeSureConnectedToServers(client, 1);
+        makeSureConnectedToServers(client, 2);
 
         IMap<Integer, Integer> serverMap = server.getMap(mapName);
         IMap<Integer, Integer> clientMap = client.getMap(mapName);
@@ -215,7 +215,7 @@ public class ClientMapNearCacheInvalidationTest extends ClientTestSupport {
         factory.newHazelcastInstance(config);
 
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
-        makeSureConnectedToServers(client, 1);
+        makeSureConnectedToServers(client, 2);
 
         IMap<Integer, Integer> serverMap = server.getMap(mapName);
         IMap<Integer, Integer> clientMap = client.getMap(mapName);
@@ -250,7 +250,7 @@ public class ClientMapNearCacheInvalidationTest extends ClientTestSupport {
         factory.newHazelcastInstance(config);
 
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
-        makeSureConnectedToServers(client, 1);
+        makeSureConnectedToServers(client, 2);
 
         IMap<Integer, Integer> serverMap = server.getMap(mapName);
         IMap<Integer, Integer> clientMap = client.getMap(mapName);
@@ -286,7 +286,7 @@ public class ClientMapNearCacheInvalidationTest extends ClientTestSupport {
         factory.newHazelcastInstance(config);
 
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
-        makeSureConnectedToServers(client, 1);
+        makeSureConnectedToServers(client, 2);
 
         IMap<Integer, Integer> serverMap = server.getMap(mapName);
         IMap<Integer, Integer> clientMap = client.getMap(mapName);
@@ -322,7 +322,7 @@ public class ClientMapNearCacheInvalidationTest extends ClientTestSupport {
         factory.newHazelcastInstance(config);
 
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
-        makeSureConnectedToServers(client, 1);
+        makeSureConnectedToServers(client, 2);
 
         int mapSize = 100;
 
@@ -354,7 +354,7 @@ public class ClientMapNearCacheInvalidationTest extends ClientTestSupport {
         factory.newHazelcastInstance(config);
 
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
-        makeSureConnectedToServers(client, 1);
+        makeSureConnectedToServers(client, 2);
 
         int mapSize = 100;
 
