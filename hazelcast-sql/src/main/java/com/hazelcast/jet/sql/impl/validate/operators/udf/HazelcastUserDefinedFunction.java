@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ public final class HazelcastUserDefinedFunction extends HazelcastFunction {
 
     @Override
     public boolean checkOperandTypes(HazelcastCallBinding callBinding, boolean throwOnFailure) {
-        for (int i=0;i<arguments.length;++i) {
+        for (int i = 0; i < arguments.length; ++i) {
             // TODO: precreate operand checkers
             if (!TypedOperandChecker.forType(arguments[i]).check(callBinding, throwOnFailure, i)) {
                 return false;

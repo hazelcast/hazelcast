@@ -500,7 +500,7 @@ public final class RexToExpression {
                 } else if (function == HazelcastSqlOperatorTable.TO_ROW) {
                     return ToRowFunction.create(operands[0]);
                 } else if (function instanceof HazelcastUserDefinedFunction) {
-                    return ((HazelcastUserDefinedFunction)function).convertCall(operands);
+                    return ((HazelcastUserDefinedFunction) function).convertCall(operands);
                 }
 
                 break;
