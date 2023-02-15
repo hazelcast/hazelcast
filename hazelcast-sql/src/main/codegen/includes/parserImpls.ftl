@@ -58,6 +58,52 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
     }
 }
 
+SqlCreate SqlCreateFunction(Span span, boolean replace) :
+{
+    SqlParserPos startPos = span.pos();
+    SqlIdentifier name;
+    SqlDataType returnType;
+    SqlNodeList parameters = SqlNodeList.EMPTY;
+    SqlNode language, body;
+    SqlNodeList sqlOptions = SqlNodeList.EMPTY;
+    boolean ifNotExists = false;
+}
+{
+    <FUNCTION>
+    [
+        <IF> <NOT> <EXISTS> { ifNotExists = true; }
+    ]
+    name = SimpleIdentifier()
+    parameters = TypeColumns()
+
+    <RETURNS>
+    returnType = SqlDataType()
+
+    <LANGUAGE>
+    language = StringLiteral()
+
+    [ <BODY> ]
+    body = StringLiteral()
+
+    [
+        <OPTIONS>
+        sqlOptions = SqlOptions()
+    ]
+    {
+        return new SqlCreateFunction(
+            name,
+            parameters,
+            returnType,
+            language,
+            body,
+            sqlOptions,
+            replace,
+            ifNotExists,
+            startPos.plus(getPos())
+        );
+    }
+}
+
 SqlCreate SqlCreateType(Span span, boolean replace) :
 {
     SqlParserPos startPos = span.pos();
@@ -341,6 +387,28 @@ SqlDrop SqlDropType(Span span, boolean replace) :
         return new SqlDropType(name, ifExists, pos.plus(getPos()));
     }
 }
+
+/**
+ * Parses DROP FUNCTION statement.
+ */
+SqlDrop SqlDropFunction(Span span, boolean replace) :
+{
+    SqlParserPos pos = span.pos();
+
+    SqlIdentifier name;
+    boolean ifExists = false;
+}
+{
+    <FUNCTION>
+    [
+        <IF> <EXISTS> { ifExists = true; }
+    ]
+    name = SimpleIdentifier()
+    {
+        return new SqlDropFunction(name, ifExists, pos.plus(getPos()));
+    }
+}
+
 
 /**
 * Parses CREATE INDEX statement.

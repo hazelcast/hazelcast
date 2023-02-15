@@ -24,7 +24,9 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.connector.map.UpdatingEntryProcessor;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob.AlterJobOperation;
+import com.hazelcast.jet.sql.impl.parse.SqlDataType;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
+import com.hazelcast.jet.sql.impl.parse.SqlTypeColumn;
 import com.hazelcast.jet.sql.impl.schema.TypeDefinitionColumn;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.security.permission.SqlPermission;
@@ -1404,6 +1406,145 @@ abstract class SqlPlanImpl extends SqlPlan {
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             SqlPlanImpl.ensureNoArguments("CREATE TYPE", arguments);
             SqlPlanImpl.ensureNoTimeout("CREATE TYPE", timeout);
+            return planExecutor.execute(this);
+        }
+    }
+
+
+    static class CreateFunctionPlan extends SqlPlanImpl {
+        private final String name;
+        private final boolean replace;
+        private final boolean ifNotExists;
+        private final List<SqlTypeColumn> parameters;
+        private final SqlDataType returnType;
+        private final String language;
+        private final String body;
+        private final Map<String, String> options;
+        private final PlanExecutor planExecutor;
+
+        CreateFunctionPlan(PlanKey planKey, String name,
+                                  boolean replace, boolean ifNotExists,
+                                  List<SqlTypeColumn> parameters, SqlDataType returnType,
+                                  String language, String body,
+                                  Map<String, String> options, PlanExecutor planExecutor) {
+            super(planKey);
+            this.name = name;
+            this.replace = replace;
+            this.ifNotExists = ifNotExists;
+            this.parameters = parameters;
+            this.returnType = returnType;
+            this.language = language;
+            this.body = body;
+            this.options = options;
+            this.planExecutor = planExecutor;
+        }
+
+        public String name() {
+            return name;
+        }
+
+        public Map<String, String> options() {
+            return options;
+        }
+
+        public String option(String name) {
+            return options.get(name);
+        }
+
+        public boolean replace() {
+            return replace;
+        }
+
+        public boolean ifNotExists() {
+            return ifNotExists;
+        }
+
+        public List<SqlTypeColumn> getParameters() {
+            return parameters;
+        }
+
+        public SqlDataType getReturnType() {
+            return returnType;
+        }
+
+        public String getLanguage() {
+            return language;
+        }
+
+        public String getBody() {
+            return body;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            // TODO: separate permission
+            context.checkPermission(new SqlPermission(name, ACTION_CREATE_TYPE));
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            SqlPlanImpl.ensureNoArguments("CREATE FUNCTION", arguments);
+            SqlPlanImpl.ensureNoTimeout("CREATE FUNCTION", timeout);
+            return planExecutor.execute(this);
+        }
+    }
+
+    static class DropFunctionPlan extends SqlPlanImpl {
+        private final String name;
+        private final boolean ifExists;
+        private final PlanExecutor planExecutor;
+
+        DropFunctionPlan(
+                PlanKey planKey,
+                String name,
+                boolean ifExists,
+                PlanExecutor planExecutor
+        ) {
+            super(planKey);
+
+            this.name = name;
+            this.ifExists = ifExists;
+            this.planExecutor = planExecutor;
+        }
+
+        String name() {
+            return name;
+        }
+
+        boolean isIfExists() {
+            return ifExists;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            // TODO: separate permission
+            context.checkPermission(new SqlPermission(name, ACTION_DROP_TYPE));
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            SqlPlanImpl.ensureNoArguments("DROP FUNCTION", arguments);
+            SqlPlanImpl.ensureNoTimeout("DROP FUNCTION", timeout);
             return planExecutor.execute(this);
         }
     }

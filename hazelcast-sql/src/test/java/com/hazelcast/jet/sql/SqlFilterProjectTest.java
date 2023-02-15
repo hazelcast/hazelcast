@@ -68,12 +68,38 @@ public class SqlFilterProjectTest extends SqlTestSupport {
         );
     }
 
-    @Test
-    public void test_valuesSelectScriptUdf() {
+    @BeforeClass
+    public static void setUpScripts() {
         // init scripts with tests classloader, job class loader may not see it
         // TODO: will it happen in normal execution?
+        // Needed in Java >= 15?
         ScriptEngineManagerContext.getScriptEngineManager();
+    }
 
+    @Test
+    public void test_valuesSelectScriptUdf() {
+        sqlService.execute("create function myfunjs(x varchar) RETURNS varchar\n"
+                + "LANGUAGE 'js' \n"
+                + "BODY 'x + ''/'' + x'");
+
+        assertRowsAnyOrder(
+                "SELECT myfunjs(x) as c FROM (VALUES ('a'), ('b')) AS t (x)",
+                asList(new Row("a/a"), new Row("b/b"))
+        );
+    }
+
+    @Test
+    public void test_dropUdf() {
+        sqlService.execute("create function myfunjs(x varchar) RETURNS varchar\n"
+                + "LANGUAGE 'js' \n"
+                + "BODY 'x + ''/'' + x'");
+        sqlService.execute("drop function myfunjs");
+        assertThatThrownBy(() -> sqlService.execute("SELECT myfunjs(x) as c FROM (VALUES ('a'), ('b')) AS t (x)"))
+                .hasMessageContaining("Function 'myfunjs' does not exist");
+    }
+
+    @Test
+    public void test_valuesSelectScriptUdf_directCreate() {
         UserDefinedFunction function = new UserDefinedFunction("myfunjs", "js",
                 QueryDataType.VARCHAR,
                 singletonList("x"), singletonList(QueryDataType.VARCHAR),
@@ -89,10 +115,6 @@ public class SqlFilterProjectTest extends SqlTestSupport {
 
     @Test
     public void test_valuesSelectScriptUdfNested() {
-        // init scripts with tests classloader, job class loader may not see it
-        // TODO: will it happen in normal execution?
-        ScriptEngineManagerContext.getScriptEngineManager();
-
         UserDefinedFunction function = new UserDefinedFunction("factorial", "js",
                 QueryDataType.INT,
                 singletonList("x"), singletonList(QueryDataType.INT),
@@ -121,10 +143,6 @@ public class SqlFilterProjectTest extends SqlTestSupport {
 
     @Test
     public void test_valuesSelectScriptUdfWithSql() {
-        // init scripts with tests classloader, job class loader may not see it
-        // TODO: will it happen in normal execution?
-        ScriptEngineManagerContext.getScriptEngineManager();
-
         UserDefinedFunction function = new UserDefinedFunction("myfunjs", "js",
                 QueryDataType.VARCHAR,
                 singletonList("x"), singletonList(QueryDataType.VARCHAR),

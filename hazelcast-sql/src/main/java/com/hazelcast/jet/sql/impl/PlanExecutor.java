@@ -30,6 +30,7 @@ import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateFunctionPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
@@ -37,6 +38,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateSnapshotPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateTypePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateViewPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropFunctionPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropSnapshotPlan;
@@ -51,6 +53,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.parse.SqlTypeColumn;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.TypeDefinitionColumn;
 import com.hazelcast.jet.sql.impl.schema.TypesUtils;
@@ -76,6 +79,7 @@ import com.hazelcast.sql.impl.UpdateSqlResultImpl;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.schema.function.UserDefinedFunction;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.schema.view.View;
@@ -569,6 +573,21 @@ public class PlanExecutor {
 
         catalog.createType(type, plan.replace(), plan.ifNotExists());
 
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
+    }
+
+    SqlResult execute(CreateFunctionPlan plan) {
+        UserDefinedFunction definition = new UserDefinedFunction(plan.name(),
+                plan.getLanguage(), plan.getReturnType().type(),
+                plan.getParameters().stream().map(SqlTypeColumn::name).collect(Collectors.toList()),
+                plan.getParameters().stream().map(SqlTypeColumn::type).collect(Collectors.toList()),
+                plan.getBody());
+        catalog.createFunction(definition, plan.replace(), plan.ifNotExists());
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
+    }
+
+    SqlResult execute(DropFunctionPlan plan) {
+        catalog.removeFunction(plan.name(), plan.isIfExists());
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 

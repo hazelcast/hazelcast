@@ -184,7 +184,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int ROW_VALUE = 66;
     public static final int QUERY_DATA_TYPE_FIELD = 67;
     public static final int EXPRESSION_GET_DDL = 68;
-    public static final int UDF = 68;
+    public static final int UDF = 69;
 
     public static final int LEN = UDF + 1;
 

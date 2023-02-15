@@ -29,6 +29,7 @@ data: {
       "com.hazelcast.jet.sql.impl.parse.SqlCreateSnapshot"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateType"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateView"
+      "com.hazelcast.jet.sql.impl.parse.SqlCreateFunction"
       "com.hazelcast.jet.sql.impl.parse.SqlDataType"
       "com.hazelcast.jet.sql.impl.parse.SqlDropIndex"
       "com.hazelcast.jet.sql.impl.parse.SqlDropJob"
@@ -36,6 +37,7 @@ data: {
       "com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot"
       "com.hazelcast.jet.sql.impl.parse.SqlDropType"
       "com.hazelcast.jet.sql.impl.parse.SqlDropView"
+      "com.hazelcast.jet.sql.impl.parse.SqlDropFunction"
       "com.hazelcast.jet.sql.impl.parse.SqlExplainStatement"
       "com.hazelcast.jet.sql.impl.parse.SqlExtendedInsert"
       "com.hazelcast.jet.sql.impl.parse.SqlMappingColumn"
@@ -52,6 +54,7 @@ data: {
     # List of new keywords. Example: "DATABASES", "TABLES". If the keyword is
     # not a reserved keyword, add it to the 'nonReservedKeywords' section.
     keywords: [
+      "BODY"
       "IF"
       "INDEX"
       "JOB"
@@ -392,6 +395,7 @@ data: {
       "ZONE"
 
       # added by Hazelcast
+      "BODY"
       "EXTERNAL"
       "JOB"
       "JOBS"
@@ -465,6 +469,7 @@ data: {
       "SqlCreateSnapshot"
       "SqlCreateType"
       "SqlCreateView"
+      "SqlCreateFunction"
     ]
 
     # List of methods for parsing extensions to "DROP" calls.
@@ -477,6 +482,7 @@ data: {
       "SqlDropSnapshot"
       "SqlDropType"
       "SqlDropView"
+      "SqlDropFunction"
     ]
 
     # Binary operators tokens.

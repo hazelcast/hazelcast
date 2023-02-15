@@ -154,6 +154,8 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.COLUMN_DECL);
         SUPPORTED_KINDS.add(SqlKind.CREATE_TYPE);
         SUPPORTED_KINDS.add(SqlKind.DROP_TYPE);
+        SUPPORTED_KINDS.add(SqlKind.CREATE_FUNCTION);
+        SUPPORTED_KINDS.add(SqlKind.DROP_FUNCTION);
 
         SUPPORTED_KINDS.add(SqlKind.ROW);
         SUPPORTED_KINDS.add(SqlKind.VALUES);

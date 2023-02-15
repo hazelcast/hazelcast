@@ -244,7 +244,7 @@ public class TableResolverImpl implements TableResolver {
     }
 
     public void removeFunction(String name, boolean ifExists) {
-        if (tableStorage.removeType(name) == null && !ifExists) {
+        if (tableStorage.removeFunction(name) == null && !ifExists) {
             throw QueryException.error("Function does not exist: " + name);
         }
     }

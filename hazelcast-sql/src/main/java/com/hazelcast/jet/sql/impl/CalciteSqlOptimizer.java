@@ -23,9 +23,11 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateSnapshotPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateFunctionPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateTypePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateViewPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropFunctionPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropSnapshotPlan;
@@ -66,12 +68,14 @@ import com.hazelcast.jet.sql.impl.opt.physical.UpdateByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateFunction;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateIndex;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateSnapshot;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateType;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateView;
+import com.hazelcast.jet.sql.impl.parse.SqlDropFunction;
 import com.hazelcast.jet.sql.impl.parse.SqlDropIndex;
 import com.hazelcast.jet.sql.impl.parse.SqlDropJob;
 import com.hazelcast.jet.sql.impl.parse.SqlDropMapping;
@@ -312,6 +316,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             return toExplainStatementPlan(planKey, context, parseResult);
         } else if (node instanceof SqlCreateType) {
             return toCreateTypePlan(planKey, (SqlCreateType) node);
+        } else if (node instanceof SqlCreateFunction) {
+            return toCreateFunctionPlan(planKey, (SqlCreateFunction) node);
+        } else if (node instanceof SqlDropFunction) {
+            return toDropFunctionPlan(planKey, (SqlDropFunction) node);
         } else {
             QueryConvertResult convertResult = context.convert(parseResult.getNode());
             return toPlan(
@@ -476,6 +484,25 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 sqlNode.options(),
                 planExecutor
         );
+    }
+
+    private SqlPlan toCreateFunctionPlan(PlanKey planKey, SqlCreateFunction sqlNode) {
+        return new CreateFunctionPlan(
+                planKey,
+                sqlNode.getName(),
+                sqlNode.getReplace(),
+                sqlNode.ifNotExists(),
+                sqlNode.parameters().collect(toList()),
+                sqlNode.getReturnType(),
+                sqlNode.getLanguage(),
+                sqlNode.getBody(),
+                sqlNode.options(),
+                planExecutor
+        );
+    }
+
+    private SqlPlan toDropFunctionPlan(PlanKey planKey, SqlDropFunction sqlNode) {
+        return new DropFunctionPlan(planKey, sqlNode.name(), sqlNode.ifExists(), planExecutor);
     }
 
     private SqlPlanImpl toPlan(
