@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ public interface PreJoinAwareService<T extends Operation & AllowedDuringPassiveS
      * locks, no database interaction are allowed. Additionally, a pre-join operation is executed while the cluster
      * lock is being held on the joining member, so it is important that the operation finishes quickly and does not
      * interact with other locks.
-     *
+     * <p>
      * The {@link Operation#getPartitionId()} method should return a negative value.
      * This means that the operations should not implement {@link PartitionAwareOperation}.
      * <p>

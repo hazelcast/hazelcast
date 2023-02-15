@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,22 @@ import org.junit.runners.model.Statement;
  * Use as a replacement for {@link Parameterized}
  */
 public class HazelcastParametrizedRunner extends Parameterized {
+
+    static {
+        // Ensure that AbstractHazelcastClassRunner static initialization is run,
+        // to configure global logger.
+        //
+        // If a test class inherits HazelcastTestSupport (as most do),
+        // HazelcastParametrizedRunner causes the test class to be initialized in its constructor.
+        // However, at the time when HazelcastParametrizedRunner is created,
+        // AbstractHazelcastClassRunner may not have been initialized yet.
+        // Due to that TestLoggerFactory configured by AbstractHazelcastClassRunner is ignored
+        // because HazelcastTestSupport.LOGGER obtains logger earlier and creates NoLogFactory.
+        //
+        // This does not affect users of LoggingService, because it creates a new LoggerFactory when needed.
+        // This affects cases when com.hazelcast.logging.Logger.getLogger() method is used directly.
+        AbstractHazelcastClassRunner.getTestMethodName();
+    }
 
     public HazelcastParametrizedRunner(Class<?> klass) throws Throwable {
         super(klass);

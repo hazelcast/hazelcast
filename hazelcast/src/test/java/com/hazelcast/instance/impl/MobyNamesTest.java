@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ public class MobyNamesTest extends HazelcastTestSupport {
             String randomName = MobyNames.getRandomName(i);
             namesCounts.computeIfAbsent(randomName, (key) -> new AtomicInteger(0)).incrementAndGet();
         }
-        assertEquals(namesCounts.size(), totalCombinations);
+        assertEquals(totalCombinations, namesCounts.size());
         assertTrue(namesCounts.keySet().stream().noneMatch(StringUtil::isNullOrEmptyAfterTrim));
         for (Map.Entry<String, AtomicInteger> entry : namesCounts.entrySet()) {
             assertEquals(entry.getKey(), 2, entry.getValue().get());

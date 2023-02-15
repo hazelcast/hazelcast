@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -509,22 +509,22 @@ public class CompactStreamSerializerTest {
     public void testFieldOrderFixedSize() {
         Schema schema = CompactTestUtil.getSchemasFor(EmployeeDTO.class).iterator().next();
 
-        assertEquals(schema.getField("id").getOffset(), 0);
-        assertEquals(schema.getField("id").getIndex(), -1);
+        assertEquals(0, schema.getField("id").getOffset());
+        assertEquals(-1, schema.getField("id").getIndex());
 
-        assertEquals(schema.getField("age").getOffset(), 8);
-        assertEquals(schema.getField("age").getIndex(), -1);
+        assertEquals(8, schema.getField("age").getOffset());
+        assertEquals(-1, schema.getField("age").getIndex());
 
-        assertEquals(schema.getField("rank").getOffset(), 12);
-        assertEquals(schema.getField("rank").getIndex(), -1);
+        assertEquals(12, schema.getField("rank").getOffset());
+        assertEquals(-1, schema.getField("rank").getIndex());
 
-        assertEquals(schema.getField("isFired").getOffset(), 16);
-        assertEquals(schema.getField("isFired").getBitOffset(), 0);
-        assertEquals(schema.getField("isFired").getIndex(), -1);
+        assertEquals(16, schema.getField("isFired").getOffset());
+        assertEquals(0, schema.getField("isFired").getBitOffset());
+        assertEquals(-1, schema.getField("isFired").getIndex());
 
-        assertEquals(schema.getField("isHired").getOffset(), 16);
-        assertEquals(schema.getField("isHired").getBitOffset(), 1);
-        assertEquals(schema.getField("isHired").getIndex(), -1);
+        assertEquals(16, schema.getField("isHired").getOffset());
+        assertEquals(1, schema.getField("isHired").getBitOffset());
+        assertEquals(-1, schema.getField("isHired").getIndex());
     }
 
     @Test

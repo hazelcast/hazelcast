@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,11 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.impl.jobupload.JobMetaDataParameterObject;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.logging.ILogger;
@@ -44,6 +46,7 @@ import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.impl.JetServiceBackend.wrapWithJetException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.Collections.singleton;
@@ -61,9 +64,33 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
         this.config = config;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public JetConfig getConfig() {
         return config;
+    }
+
+    // Called by member to run a job on itself
+    @Override
+    public void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
+        try {
+            JobMetaDataParameterObject parameterObject = new JobMetaDataParameterObject();
+
+            // The jar should not be deleted
+            parameterObject.setDeleteJarAfterExecution(true);
+
+            parameterObject.setSnapshotName(submitJobParameters.getSnapshotName());
+            parameterObject.setJobName(submitJobParameters.getJobName());
+            parameterObject.setMainClass(submitJobParameters.getMainClass());
+            parameterObject.setJobParameters(submitJobParameters.getJobParameters());
+            parameterObject.setJarPath(submitJobParameters.getJarPath());
+
+            JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
+            jetServiceBackend.executeJar(parameterObject);
+        } catch (Exception exception) {
+            // Only throw a JetException
+            wrapWithJetException(exception);
+        }
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -707,6 +707,33 @@ public class MapStoreTest extends AbstractMapStoreTest {
         map.put("key", "value");
         Thread.sleep(2000);
         assertEquals("value", map.get("key"));
+    }
+
+    @Test
+    public void testMapStoreIsInitializedAndDestroyed() {
+
+        TestMapStore testMapStore = new TestMapStore(2, 2, 2);
+        Config config = newConfig(testMapStore, 0);
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        // Put element and then destroy the map
+        String mapName = "foo";
+        IMap<String, Integer> map = instance.getMap(mapName);
+        map.put("42", 42);
+        // Map store must be initialized
+        assertEquals(1, testMapStore.getInitCount());
+        map.destroy();
+        // Map store must be destroyed
+        assertEquals(1, testMapStore.getDestroyCount());
+
+        // Put element and then destroy the map again
+        map = instance.getMap(mapName);
+        map.put("42", 42);
+        // Map store must be initialized again
+        assertEquals(2, testMapStore.getInitCount());
+        map.destroy();
+        // Map store must be destroyed again
+        assertEquals(2, testMapStore.getDestroyCount());
     }
 
     @Test(timeout = 120000)

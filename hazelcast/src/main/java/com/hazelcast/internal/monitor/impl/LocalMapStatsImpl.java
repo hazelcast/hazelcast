@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,8 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_BACKUP_ENTRY_MEMORY_COST;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_CREATION_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_DIRTY_ENTRY_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_EVICTION_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_EXPIRATION_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_GET_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_HEAP_COST;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_HITS;
@@ -86,7 +88,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> REMOVE_COUNT =
             newUpdater(LocalMapStatsImpl.class, "removeCount");
 
-    // The resolution is in nano seconds for the following latencies
+    // The resolution is in nanoseconds for the following latencies
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> TOTAL_GET_LATENCIES =
             newUpdater(LocalMapStatsImpl.class, "totalGetLatenciesNanos");
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> TOTAL_PUT_LATENCIES =
@@ -128,6 +130,11 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private volatile long setCount;
     @Probe(name = MAP_METRIC_REMOVE_COUNT)
     private volatile long removeCount;
+    @Probe(name = MAP_METRIC_EVICTION_COUNT)
+    private volatile long evictionCount;
+    @Probe(name = MAP_METRIC_EXPIRATION_COUNT)
+    private volatile long expirationCount;
+
     private volatile long totalGetLatenciesNanos;
     private volatile long totalPutLatenciesNanos;
     private volatile long totalSetLatenciesNanos;
@@ -262,6 +269,24 @@ public class LocalMapStatsImpl implements LocalMapStats {
 
     public void setHits(long hits) {
         this.hits = hits;
+    }
+
+    @Override
+    public long getExpirationCount() {
+        return expirationCount;
+    }
+
+    public void setExpirationCount(long expirationCount) {
+        this.expirationCount = expirationCount;
+    }
+
+    @Override
+    public long getEvictionCount() {
+        return evictionCount;
+    }
+
+    public void setEvictionCount(long evictionCount) {
+        this.evictionCount = evictionCount;
     }
 
     @Override
@@ -518,6 +543,8 @@ public class LocalMapStatsImpl implements LocalMapStats {
                 + ", putCount=" + putCount
                 + ", setCount=" + setCount
                 + ", removeCount=" + removeCount
+                + ", evictionCount=" + evictionCount
+                + ", expirationCount=" + expirationCount
                 + ", totalGetLatencies=" + convertNanosToMillis(totalGetLatenciesNanos)
                 + ", totalPutLatencies=" + convertNanosToMillis(totalPutLatenciesNanos)
                 + ", totalSetLatencies=" + convertNanosToMillis(totalSetLatenciesNanos)

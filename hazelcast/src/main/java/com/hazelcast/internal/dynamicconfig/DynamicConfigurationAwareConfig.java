@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.DynamicConfigurationConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
@@ -64,7 +64,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
 import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
-import com.hazelcast.internal.config.ExternalDataStoreConfigReadOnly;
+import com.hazelcast.internal.config.DataLinkConfigReadOnly;
 import com.hazelcast.internal.config.FlakeIdGeneratorConfigReadOnly;
 import com.hazelcast.internal.config.ListConfigReadOnly;
 import com.hazelcast.internal.config.MapConfigReadOnly;
@@ -1220,39 +1220,39 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public Map<String, ExternalDataStoreConfig> getExternalDataStoreConfigs() {
-        Map<String, ExternalDataStoreConfig> staticConfigs = staticConfig.getExternalDataStoreConfigs();
-        Map<String, ExternalDataStoreConfig> dynamicConfigs = configurationService.getExternalDataStoreConfigs();
+    public Map<String, DataLinkConfig> getDataLinkConfigs() {
+        Map<String, DataLinkConfig> staticConfigs = staticConfig.getDataLinkConfigs();
+        Map<String, DataLinkConfig> dynamicConfigs = configurationService.getDataLinkConfigs();
 
         return aggregate(staticConfigs, dynamicConfigs);
     }
 
     @Override
-    public Config setExternalDataStoreConfigs(Map<String, ExternalDataStoreConfig> externalDataStoreConfigs) {
+    public Config setDataLinkConfigs(Map<String, DataLinkConfig> dataLinkConfigs) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 
     @Override
-    public Config addExternalDataStoreConfig(ExternalDataStoreConfig externalDataStoreConfig) {
-        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getExternalDataStoreConfigs(),
-                externalDataStoreConfig.getName(), externalDataStoreConfig);
+    public Config addDataLinkConfig(DataLinkConfig dataLinkConfig) {
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getDataLinkConfigs(),
+                dataLinkConfig.getName(), dataLinkConfig);
         if (staticConfigDoesNotExist) {
-            configurationService.broadcastConfig(externalDataStoreConfig);
+            configurationService.broadcastConfig(dataLinkConfig);
         }
         return this;
     }
 
     @Override
-    public ExternalDataStoreConfig getExternalDataStoreConfig(String name) {
-        return getExternalDataStoreConfigInternal(name, name);
+    public DataLinkConfig getDataLinkConfig(String name) {
+        return getDataLinkConfigInternal(name, name);
     }
 
-    private ExternalDataStoreConfig getExternalDataStoreConfigInternal(String name, String fallbackName) {
-        return (ExternalDataStoreConfig) configSearcher.getConfig(name, fallbackName, supplierFor(ExternalDataStoreConfig.class));
+    private DataLinkConfig getDataLinkConfigInternal(String name, String fallbackName) {
+        return (DataLinkConfig) configSearcher.getConfig(name, fallbackName, supplierFor(DataLinkConfig.class));
     }
 
     @Override
-    public ExternalDataStoreConfig findExternalDataStoreConfig(String name) {
-        return new ExternalDataStoreConfigReadOnly(getExternalDataStoreConfigInternal(name, "default"));
+    public DataLinkConfig findDataLinkConfig(String name) {
+        return new DataLinkConfigReadOnly(getDataLinkConfigInternal(name, "default"));
     }
 }

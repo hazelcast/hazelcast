@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -140,13 +140,13 @@ public class StepSupplier implements Supplier<Runnable> {
         boolean metWithPreconditions = true;
         try {
             try {
-                if (runningOnPartitionThread && state.getThrowable() == null && firstStep) {
-                    metWithPreconditions = operationRunner.metWithPreconditions(state.getOperation());
-                    if (!metWithPreconditions) {
-                        return;
-                    }
+                if (runningOnPartitionThread && state.getThrowable() == null) {
+                    metWithPreconditions = metWithPreconditions();
                 }
-                step.runStep(state);
+
+                if (metWithPreconditions) {
+                    step.runStep(state);
+                }
             } catch (NativeOutOfMemoryError e) {
                 assertRunningOnPartitionThread();
 
@@ -170,6 +170,20 @@ public class StepSupplier implements Supplier<Runnable> {
         }
     }
 
+    private boolean metWithPreconditions() {
+        assert isRunningOnPartitionThread();
+
+        // check node and cluster health before running each step
+        operationRunner.ensureNodeAndClusterHealth(state.getOperation());
+
+        // check timeout for only first step, as in no-offload flows
+        if (firstStep && operationRunner.timeout(state.getOperation())) {
+            return false;
+        }
+
+        return true;
+    }
+
     /**
      * In case of exception, sets next step as {@link UtilSteps#HANDLE_ERROR},
      * otherwise finds next step by calling {@link Step#nextStep}
@@ -189,7 +203,12 @@ public class StepSupplier implements Supplier<Runnable> {
 
     public void handleOperationError(Throwable throwable) {
         state.setThrowable(throwable);
-        UtilSteps.HANDLE_ERROR.runStep(state);
+        currentRunnable = null;
+        currentStep = UtilSteps.HANDLE_ERROR;
+    }
+
+    public MapOperation getOperation() {
+        return state.getOperation();
     }
 
     private interface ExecutorNameAwareRunnable extends Runnable, Offloadable {

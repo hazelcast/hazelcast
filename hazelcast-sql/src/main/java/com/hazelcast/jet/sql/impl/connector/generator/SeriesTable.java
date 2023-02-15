@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,7 +113,7 @@ class SeriesTable extends JetTable {
             this.iterator = IntStream.iterate(start, i -> i + step)
                     .limit(numberOfItems(start, stop, step))
                     .mapToObj(i -> ExpressionUtil.projection(predicate, projections,
-                            new CounterRow(i), evalContext))
+                            new SingleIntRow(i), evalContext))
                     .filter(Objects::nonNull)
                     .iterator();
         }

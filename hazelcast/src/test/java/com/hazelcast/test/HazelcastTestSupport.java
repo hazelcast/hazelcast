@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.test;
 
 import classloading.ThreadLocalLeakTestUtils;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
@@ -311,6 +312,16 @@ public abstract class HazelcastTestSupport {
         } else {
             return nodeCount == null ? new TestHazelcastInstanceFactory() : new TestHazelcastInstanceFactory(nodeCount);
         }
+    }
+
+    protected void assertNoRunningInstancesEventually(String methodName, TestHazelcastFactory hazelcastFactory) {
+        // check for running Hazelcast instances
+        assertTrueEventually(() -> {
+            Collection<HazelcastInstance> instances = hazelcastFactory.getAllHazelcastInstances();
+            if (!instances.isEmpty()) {
+                fail("After " + methodName + " following instances haven't been shut down: " + instances);
+            }
+        });
     }
 
     // ###########################################
@@ -1256,7 +1267,9 @@ public abstract class HazelcastTestSupport {
         int sleepMillis = 200;
         long iterations = timeoutSeconds * 5;
         long deadline = System.currentTimeMillis() + SECONDS.toMillis(timeoutSeconds);
-        for (int i = 0; i < iterations && System.currentTimeMillis() < deadline; i++) {
+        boolean passedTheDeadline = false;
+        for (int i = 0; i < iterations && !passedTheDeadline; i++) {
+            passedTheDeadline = System.currentTimeMillis() > deadline;
             try {
                 try {
                     task.run();
@@ -1267,7 +1280,9 @@ public abstract class HazelcastTestSupport {
             } catch (AssertionError e) {
                 error = e;
             }
-            sleepMillis(sleepMillis);
+            if (!passedTheDeadline) {
+                sleepMillis(sleepMillis);
+            }
         }
         if (error != null) {
             throw error;

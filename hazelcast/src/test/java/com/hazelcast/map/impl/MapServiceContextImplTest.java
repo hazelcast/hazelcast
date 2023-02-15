@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.spi.impl.operationservice.Operation.GENERIC_PARTITION_ID;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -42,6 +43,16 @@ public class MapServiceContextImplTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance();
         MapService service = getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
         mapServiceContext = service.getMapServiceContext();
+    }
+
+    @Test
+    public void testMapContainer_withoutMapStoreDestroyed() {
+        String mapName = "test";
+        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        //Test that mapServiceContext handles null MapStore
+        mapServiceContext.destroyMap(mapName);
+
+        assertTrue(mapContainer.isDestroyed());
     }
 
     @Test(expected = AssertionError.class)

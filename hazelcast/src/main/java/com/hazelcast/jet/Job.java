@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -149,6 +149,17 @@ public interface Job {
      */
     @Nonnull
     JobStatus getStatus();
+
+    /**
+     * Returns true, if the job is user-cancelled. Returns false, if it
+     * completed normally or failed due to another error. Jobs running in
+     * clusters before version 5.3 lack this information and will always return
+     * false.
+     *
+     * @throws IllegalStateException if the job is not done.
+     * @since 5.3
+     */
+    boolean isUserCancelled();
 
     // ### Methods below apply only to normal (non-light) jobs.
 

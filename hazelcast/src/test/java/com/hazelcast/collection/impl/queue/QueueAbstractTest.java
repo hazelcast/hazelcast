@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -175,7 +175,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
         }
 
         assertTrue(queue.remove(new VersionedObject<>("item4", 4)));
-        assertEquals(queue.size(), 9);
+        assertEquals(9, queue.size());
     }
 
     @Test
@@ -384,7 +384,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
         }
 
         assertTrue(queue.addAll(list));
-        assertEquals(queue.size(), 10);
+        assertEquals(10, queue.size());
     }
 
     @Test
@@ -447,7 +447,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
         arrayList.add(new VersionedObject<>("item4"));
         arrayList.add(new VersionedObject<>("item31"));
         assertTrue(queue.retainAll(arrayList));
-        assertEquals(queue.size(), 2);
+        assertEquals(2, queue.size());
     }
 
     @Test
@@ -501,7 +501,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
         arrayList.add(new VersionedObject<>("item4"));
         arrayList.add(new VersionedObject<>("item5"));
         assertTrue(queue.removeAll(arrayList));
-        assertEquals(queue.size(), 0);
+        assertEquals(0, queue.size());
     }
 
     @Test(expected = NullPointerException.class)
@@ -536,7 +536,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
         }
         @SuppressWarnings("unchecked")
         VersionedObject<String>[] arr = queue.toArray(new VersionedObject[0]);
-        assertEquals(arr.length, 10);
+        assertEquals(10, arr.length);
         for (int i = 0; i < arr.length; i++) {
             Object o = arr[i];
             int id = i++;

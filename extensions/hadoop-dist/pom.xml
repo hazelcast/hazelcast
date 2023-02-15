@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2021 Hazelcast Inc.
+  ~ Copyright 2023 Hazelcast Inc.
   ~
   ~ Licensed under the Hazelcast Community License (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -58,19 +58,19 @@
                         <relocations>
                             <relocation>
                                 <pattern>com.fasterxml.jackson.jr</pattern>
-                                <shadedPattern>com.hazelcast.com.fasterxml.jackson.jr</shadedPattern>
+                                <shadedPattern>${relocation.root}.com.fasterxml.jackson.jr</shadedPattern>
                             </relocation>
                             <relocation>
                                 <pattern>com.fasterxml.jackson.core</pattern>
-                                <shadedPattern>com.hazelcast.com.fasterxml.jackson.core</shadedPattern>
+                                <shadedPattern>${relocation.root}.com.fasterxml.jackson.core</shadedPattern>
                             </relocation>
                             <relocation>
                                 <pattern>com.fasterxml.jackson.databind</pattern>
-                                <shadedPattern>com.hazelcast.com.fasterxml.jackson.databind</shadedPattern>
+                                <shadedPattern>${relocation.root}.com.fasterxml.jackson.databind</shadedPattern>
                             </relocation>
                             <relocation>
                                 <pattern>com.fasterxml.jackson.dataformat</pattern>
-                                <shadedPattern>com.hazelcast.com.fasterxml.jackson.dataformat</shadedPattern>
+                                <shadedPattern>${relocation.root}.com.fasterxml.jackson.dataformat</shadedPattern>
                             </relocation>
                         </relocations>
                     </configuration>

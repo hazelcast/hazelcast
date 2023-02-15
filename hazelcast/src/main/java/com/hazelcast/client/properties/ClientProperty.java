@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -310,6 +310,12 @@ public final class ClientProperty {
      */
     public static final HazelcastProperty METRICS_COLLECTION_FREQUENCY
             = new HazelcastProperty("hazelcast.client.metrics.collection.frequency", 5);
+
+    /**
+     * The default size of multipart job upload
+     */
+    public static final HazelcastProperty JOB_UPLOAD_PART_SIZE
+            = new HazelcastProperty("hazelcast.jobupload.partsize", 10_000_000);
 
 
     private ClientProperty() {

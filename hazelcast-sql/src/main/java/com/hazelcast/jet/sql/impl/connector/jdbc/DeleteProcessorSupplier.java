@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,10 +49,10 @@ public class DeleteProcessorSupplier
     public DeleteProcessorSupplier() {
     }
 
-    public DeleteProcessorSupplier(String externalDataStoreRef,
+    public DeleteProcessorSupplier(String dataLinkRef,
                                    String query,
                                    int batchLimit) {
-        super(externalDataStoreRef);
+        super(dataLinkRef);
         this.query = query;
         this.batchLimit = batchLimit;
     }
@@ -81,19 +81,19 @@ public class DeleteProcessorSupplier
     @Nullable
     @Override
     public List<Permission> permissions() {
-        return singletonList(ConnectorPermission.jdbc(externalDataStoreRef, ACTION_WRITE));
+        return singletonList(ConnectorPermission.jdbc(dataLinkRef, ACTION_WRITE));
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeString(externalDataStoreRef);
+        out.writeString(dataLinkRef);
         out.writeString(query);
         out.writeInt(batchLimit);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        externalDataStoreRef = in.readString();
+        dataLinkRef = in.readString();
         query = in.readString();
         batchLimit = in.readInt();
     }

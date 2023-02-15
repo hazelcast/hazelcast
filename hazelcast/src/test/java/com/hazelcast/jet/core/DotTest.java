@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,14 +123,14 @@ public class DotTest {
               .writeTo(Sinks.logger());
 
         String actualPipeline = p.toDotString();
-        assertEquals(actualPipeline, "digraph Pipeline {\n" +
+        assertEquals("digraph Pipeline {\n" +
                 "\t\"mapSource(source1)\" -> \"aggregateToCount\";\n" +
                 "\t\"mapSource(source1)\" -> \"aggregateToSet\";\n" +
                 "\t\"mapSource(source1)\" -> \"filter\";\n" +
                 "\t\"aggregateToCount\" -> \"loggerSink\";\n" +
                 "\t\"aggregateToSet\" -> \"loggerSink-2\";\n" +
                 "\t\"filter\" -> \"loggerSink-3\";\n" +
-                "}");
+                "}", actualPipeline);
 
         String actualDag = p.toDag().toDotString();
         System.out.println(actualDag);

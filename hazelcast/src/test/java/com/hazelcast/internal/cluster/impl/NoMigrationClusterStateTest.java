@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,8 +100,10 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
         assertClusterSizeEventually(2, instances[2]);
         assertAllPartitionsAreAssigned(instances[2], 1);
 
-        assertEquals(getPartitionService(instances[1]).getPartitionStateStamp(),
-                getPartitionService(instances[2]).getPartitionStateStamp());
+        assertTrueEventually(() -> {
+            assertEquals(getPartitionService(instances[1]).getPartitionStateStamp(),
+                    getPartitionService(instances[2]).getPartitionStateStamp());
+        });
     }
 
     @Test

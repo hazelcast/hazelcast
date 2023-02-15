@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.concurrent.CancellationException;
 
 import static com.hazelcast.jet.core.TestProcessors.MockP;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JobTimeoutTest extends JetTestSupport {
@@ -42,6 +43,7 @@ public class JobTimeoutTest extends JetTestSupport {
 
         assertThrows(CancellationException.class, job::join);
         assertEquals(JobStatus.FAILED, job.getStatus());
+        assertFalse(job.isUserCancelled());
     }
 
     @Test
@@ -54,6 +56,7 @@ public class JobTimeoutTest extends JetTestSupport {
 
         assertThrows(CancellationException.class, job::join);
         assertEquals(JobStatus.FAILED, job.getStatus());
+        assertFalse(job.isUserCancelled());
     }
 
     @Test
@@ -66,6 +69,7 @@ public class JobTimeoutTest extends JetTestSupport {
 
         job.join();
         assertEquals(JobStatus.COMPLETED, job.getStatus());
+        assertFalse(job.isUserCancelled());
     }
 
     @Test
@@ -78,6 +82,7 @@ public class JobTimeoutTest extends JetTestSupport {
 
         job.join();
         assertEquals(JobStatus.COMPLETED, job.getStatus());
+        assertFalse(job.isUserCancelled());
     }
 
     @Test
@@ -96,6 +101,7 @@ public class JobTimeoutTest extends JetTestSupport {
 
         assertThrows(CancellationException.class, job::join);
         assertEquals(JobStatus.FAILED, job.getStatus());
+        assertFalse(job.isUserCancelled());
     }
 
     @Test
@@ -113,5 +119,6 @@ public class JobTimeoutTest extends JetTestSupport {
 
         assertThrows(CancellationException.class, job::join);
         assertEquals(JobStatus.FAILED, job.getStatus());
+        assertFalse(job.isUserCancelled());
     }
 }

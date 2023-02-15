@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,7 +121,7 @@ public class StreamTable extends JetTable {
             long emitValuesUpTo = (now - startTime) / NANOS_PER_MICRO * rate / MICROS_PER_SECOND;
             for (int i = 0; i < MAX_BATCH_SIZE && sequence < emitValuesUpTo; i++) {
                 JetSqlRow row = ExpressionUtil.projection(predicate, projections,
-                        new LongCounterRow(sequence), evalContext);
+                        new SingleLongRow(sequence), evalContext);
                 if (row != null) {
                     buffer.add(row);
                 }
