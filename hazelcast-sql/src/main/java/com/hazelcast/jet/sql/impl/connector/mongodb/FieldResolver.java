@@ -16,6 +16,7 @@
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.mongodb.client.MongoClient;
@@ -63,17 +64,13 @@ class FieldResolver {
         List<MappingField> resolvedFields = new ArrayList<>();
         if (userFields.isEmpty()) {
             for (DocumentField documentField : dbFields.values()) {
-                try {
-                    MappingField mappingField = new MappingField(
-                            documentField.columnName,
-                            resolveType(documentField.columnType),
-                            documentField.columnName
-                    );
-                    mappingField.setPrimaryKey(isId(documentField.columnName, stream));
-                    resolvedFields.add(mappingField);
-                } catch (IllegalArgumentException e) {
-                    throw new IllegalArgumentException("Could not load column class " + documentField.columnType, e);
-                }
+                MappingField mappingField = new MappingField(
+                        documentField.columnName,
+                        resolveType(documentField.columnType),
+                        documentField.columnName
+                );
+                mappingField.setPrimaryKey(isId(documentField.columnName, stream));
+                resolvedFields.add(mappingField);
             }
         } else {
             for (MappingField f : userFields) {
@@ -107,13 +104,14 @@ class FieldResolver {
             case DOUBLE: return QueryDataType.DOUBLE;
             case BOOLEAN: return QueryDataType.BOOLEAN;
             case TIMESTAMP:
-            case DATE_TIME:
                 return QueryDataType.TIMESTAMP;
+            case DATE_TIME:
+                return QueryDataType.DATE;
             case STRING:
             case OBJECT_ID:
                 return VARCHAR;
             case DECIMAL128: return QueryDataType.DECIMAL;
-            default:  throw new UnsupportedOperationException("Cannot resolve type for BSON type " + columnType);
+            default:  throw QueryException.error("BSON type " + columnType + " is not yet supported");
         }
     }
 

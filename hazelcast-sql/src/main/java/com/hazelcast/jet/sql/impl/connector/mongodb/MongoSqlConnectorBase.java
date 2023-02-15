@@ -84,10 +84,9 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
     @Nonnull
     @Override
     public Table createTable(@Nonnull NodeEngine nodeEngine, @Nonnull String schemaName, @Nonnull String mappingName,
-                             @Nonnull String externalName, @Nonnull Map<String, String> options,
+                             @Nonnull String collectionName, @Nonnull Map<String, String> options,
                              @Nonnull List<MappingField> resolvedFields) {
         String databaseName = options.get(Options.DATABASE_NAME_OPTION);
-        String collectionName = options.get(Options.COLLECTION_NAME_OPTION);
         ConstantTableStatistics stats = new ConstantTableStatistics(0);
 
         List<TableField> fields = new ArrayList<>(resolvedFields.size());

@@ -71,8 +71,9 @@ public class MappingField implements IdentifiedDataSerializable {
         return requireNonNull((QueryDataType) properties.get(TYPE), "missing type property");
     }
 
-    public void setType(QueryDataType type) {
+    public MappingField setType(QueryDataType type) {
         properties.put(TYPE, type);
+        return this;
     }
 
     /**

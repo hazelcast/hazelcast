@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 /**
  * Stream-query MongoDB SQL Connector.
  *
- * {@inheritDoc}
+ * @see MongoSqlConnectorBase
  *
  * @see FieldResolver
  */

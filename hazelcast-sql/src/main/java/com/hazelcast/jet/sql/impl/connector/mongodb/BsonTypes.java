@@ -15,6 +15,7 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import org.bson.BsonDateTime;
 import org.bson.BsonDecimal128;
 import org.bson.BsonDouble;
 import org.bson.BsonInt32;
@@ -24,6 +25,8 @@ import org.bson.BsonType;
 import org.bson.types.ObjectId;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -69,6 +72,7 @@ final class BsonTypes {
         result.put("decimal", BsonType.DECIMAL128);
         result.put("minKey", BsonType.MIN_KEY);
         result.put("maxKey", BsonType.MAX_KEY);
+        result.put("date", BsonType.DATE_TIME);
 
         return result;
     }
@@ -87,7 +91,10 @@ final class BsonTypes {
         result.put(float.class, BsonType.DOUBLE);
         result.put(Float.class, BsonType.DOUBLE);
         result.put(BsonDouble.class, BsonType.DOUBLE);
+        result.put(BsonDateTime.class, BsonType.DATE_TIME);
+        result.put(Date.class, BsonType.DATE_TIME);
         result.put(BsonTimestamp.class, BsonType.TIMESTAMP);
+        result.put(Timestamp.class, BsonType.TIMESTAMP);
         result.put(String.class, BsonType.STRING);
         result.put(Object[].class, BsonType.ARRAY);
         result.put(BigDecimal.class, BsonType.DECIMAL128);

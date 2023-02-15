@@ -88,7 +88,7 @@ public class MongoStreamSqlConnectorTest extends SqlTestSupport {
     public void readsFromMongo(boolean includeIdInMapping, boolean forceTwoSteps) {
         final String databaseName = "sqlConnectorTest";
         final String collectionName = testName.getMethodName();
-        final String tableName = "people_" + testName.getMethodName();
+        final String tableName = testName.getMethodName();
         final String connectionString = mongoContainer.getConnectionString();
 
         AtomicBoolean projectAndFilterFound = new AtomicBoolean(false);
