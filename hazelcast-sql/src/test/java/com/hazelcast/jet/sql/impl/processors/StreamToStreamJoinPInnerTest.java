@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.processors;
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ToLongFunctionEx;
-import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
@@ -71,12 +70,7 @@ import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
-public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        initialize(1, null);
-    }
+public class StreamToStreamJoinPInnerTest extends SqlTestSupport {
 
     /**
      * An output checker that will consider the actual and expected object lists
@@ -459,7 +453,7 @@ public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
     }
 
     private SupplierEx<Processor> createProcessor(int leftColumnCount, int rightColumnCount, boolean assumeEquiJoin,
-            int... wmKeyToColumnIndex) {
+                                                  int... wmKeyToColumnIndex) {
         Expression<Boolean> condition = createConditionFromPostponeTimeMap(postponeTimeMap, wmKeyToColumnIndex);
         int[] equiJoinIndices = new int[assumeEquiJoin ? 1 : 0];
         JetJoinInfo joinInfo = new JetJoinInfo(INNER, equiJoinIndices, equiJoinIndices, condition, condition);
