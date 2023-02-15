@@ -40,6 +40,7 @@ final class SupportedDatabases {
         DATABASE_NAMES.add("MYSQL");
         DATABASE_NAMES.add("POSTGRESQL");
         DATABASE_NAMES.add("H2");
+        //DATABASE_NAMES.add("MICROSOFT SQL SERVER");
     }
 
     private SupportedDatabases() {
@@ -68,5 +69,6 @@ final class SupportedDatabases {
         return dialect instanceof MysqlSqlDialect ||
                dialect instanceof PostgresqlSqlDialect ||
                dialect instanceof H2SqlDialect;
+               //dialect instanceof MssqlSqlDialect
     }
 }

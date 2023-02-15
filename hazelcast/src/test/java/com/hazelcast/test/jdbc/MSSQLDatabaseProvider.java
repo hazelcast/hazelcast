@@ -26,7 +26,7 @@ public class MSSQLDatabaseProvider implements TestDatabaseProvider {
 
     @Override
     public String createDatabase(String dbName) {
-        jdbcUrl = "jdbc:tc:sqlserver:latest:///" + dbName;
+        jdbcUrl = "jdbc:tc:sqlserver:2017-CU12:///" + dbName;
         waitForDb(jdbcUrl, LOGIN_TIMEOUT);
         return jdbcUrl;
     }
