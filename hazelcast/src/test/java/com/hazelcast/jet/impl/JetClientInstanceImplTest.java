@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -34,6 +35,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -126,5 +128,17 @@ public class JetClientInstanceImplTest extends JetTestSupport {
 
         Path jarPath2 = Paths.get("foo");
         assertThrows(JetException.class, () -> jetClientInstance.getFileNameWithoutExtension(jarPath2));
+    }
+
+    @Test
+    public void validateParameterObject_NullJarPath() {
+        // Member is required to start the client
+        createHazelcastInstance();
+        JetClientInstanceImpl jetClientInstance = (JetClientInstanceImpl) createHazelcastClient().getJet();
+
+        SubmitJobParameters parameterObject = new SubmitJobParameters();
+        assertThatThrownBy(() -> jetClientInstance.validateParameterObject(parameterObject))
+                .isInstanceOf(JetException.class)
+                .hasMessageContaining("jarPath can not be null");
     }
 }
