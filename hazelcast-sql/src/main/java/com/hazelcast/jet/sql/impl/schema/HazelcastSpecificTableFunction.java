@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
-import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.sql.impl.expression.Expression;
 import org.apache.calcite.sql.type.SqlOperandMetadata;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
@@ -31,10 +30,9 @@ public abstract class HazelcastSpecificTableFunction extends HazelcastTableSourc
     protected HazelcastSpecificTableFunction(
             String name,
             SqlOperandMetadata operandMetadata,
-            SqlReturnTypeInference returnTypeInference,
-            SqlConnector connector
+            SqlReturnTypeInference returnTypeInference
     ) {
-        super(name, operandMetadata, returnTypeInference, connector);
+        super(name, operandMetadata, returnTypeInference);
     }
 
     public abstract HazelcastTable toTable(List<Expression<?>> argumentExpressions);

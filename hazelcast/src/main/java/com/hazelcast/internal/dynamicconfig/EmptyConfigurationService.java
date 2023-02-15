@@ -21,7 +21,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.MapConfig;
@@ -209,12 +209,12 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
-    public ExternalDataStoreConfig findExternalDataStoreConfig(String baseName) {
+    public DataLinkConfig findDataLinkConfig(String baseName) {
         return null;
     }
 
     @Override
-    public Map<String, ExternalDataStoreConfig> getExternalDataStoreConfigs() {
+    public Map<String, DataLinkConfig> getDataLinkConfigs() {
         return emptyMap();
     }
 

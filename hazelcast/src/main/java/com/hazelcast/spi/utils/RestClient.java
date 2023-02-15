@@ -58,7 +58,7 @@ public final class RestClient {
      */
     public static final int HTTP_NOT_FOUND = 404;
 
-    private static final String WATCH_FORMAT = "?watch=1&resourceVersion=%s";
+    private static final String WATCH_FORMAT = "watch=1&resourceVersion=%s";
 
     private final String url;
     private final List<Parameter> headers = new ArrayList<>();
@@ -130,6 +130,10 @@ public final class RestClient {
         return callWithRetries("POST");
     }
 
+    public Response put() {
+        return callWithRetries("PUT");
+    }
+
     private Response callWithRetries(String method) {
         return RetryUtils.retry(() -> call(method), retries);
     }
@@ -181,7 +185,9 @@ public final class RestClient {
     public WatchResponse watch(String resourceVersion) {
         HttpURLConnection connection = null;
         try {
-            String completeUrl = url + String.format(WATCH_FORMAT, resourceVersion);
+            String appendWatchParameter = (url.contains("?") ? "&" : "?")
+                    + String.format(WATCH_FORMAT, resourceVersion);
+            String completeUrl = url + appendWatchParameter;
             URL urlToConnect = new URL(completeUrl);
             connection = (HttpURLConnection) urlToConnect.openConnection();
             if (connection instanceof HttpsURLConnection && caCertificate != null) {

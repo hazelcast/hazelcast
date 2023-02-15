@@ -216,6 +216,11 @@ public final class CompactTestUtil {
                 new float[]{12312.123f, 12312.123f}, new double[]{1111.1111111123123, 1111.1111111123123});
     }
 
+    @Nonnull
+    static ArrayOfFixedSizeFieldsDTO createArrayOfFixedSizeFieldsDTOAsNullValues() {
+        return new ArrayOfFixedSizeFieldsDTO(null, null, null, null, null, null, null);
+    }
+
     public static SerializationService createSerializationService() {
         SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
         return new DefaultSerializationServiceBuilder()

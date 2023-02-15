@@ -16,17 +16,17 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.internal.util.JavaVersion.FutureJavaVersion;
+import com.hazelcast.internal.util.JavaVersion.UnknownVersion;
+
 /**
- * Interface used by {@link JavaVersion} and
- * {@link JavaVersion.FutureJavaVersion}. This interface is needed only
- * to do version comparison safely on runtime environments with versions
- * not listed in {@link JavaVersion}.
+ * Interface used by {@link JavaVersion}, {@link UnknownVersion} and {@link
+ * FutureJavaVersion}. This interface is needed only to do version comparison
+ * safely on runtime environments with versions not listed in {@link JavaVersion}.
  */
 public interface JavaMajorVersion {
     /**
-     * Returns the major version.
-     *
-     * @return the major version
+     * Returns the major version or null if the version is unknown.
      */
-    int getMajorVersion();
+    Integer getMajorVersion();
 }

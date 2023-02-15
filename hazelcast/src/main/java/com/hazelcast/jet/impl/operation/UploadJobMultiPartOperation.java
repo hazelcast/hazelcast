@@ -21,13 +21,24 @@ import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.jobupload.JobMetaDataParameterObject;
 import com.hazelcast.jet.impl.jobupload.JobMultiPartParameterObject;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-import java.util.concurrent.CompletableFuture;
+import java.io.IOException;
+
+import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
+
+import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
+import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
 
 /**
  * Resumes the execution of a suspended job.
  */
-public class UploadJobMultiPartOperation extends AsyncJobOperation {
+public class UploadJobMultiPartOperation extends Operation implements IdentifiedDataSerializable {
+
+    boolean response;
 
     JobMultiPartParameterObject jobMultiPartParameterObject;
 
@@ -35,6 +46,7 @@ public class UploadJobMultiPartOperation extends AsyncJobOperation {
     }
 
     public UploadJobMultiPartOperation(JetUploadJobMultipartCodec.RequestParameters parameters) {
+        // Save the parameters received from client
         jobMultiPartParameterObject = new JobMultiPartParameterObject();
         jobMultiPartParameterObject.setSessionId(parameters.sessionId);
         jobMultiPartParameterObject.setCurrentPartNumber(parameters.currentPartNumber);
@@ -44,22 +56,58 @@ public class UploadJobMultiPartOperation extends AsyncJobOperation {
         jobMultiPartParameterObject.setSha256Hex(parameters.sha256Hex);
     }
 
-
     @Override
-    public CompletableFuture<Boolean> doRun() {
-        return CompletableFuture.supplyAsync(() -> {
-            JetServiceBackend jetServiceBackend = getJetServiceBackend();
-            JobMetaDataParameterObject partsComplete = jetServiceBackend.storeJobMultiPart(jobMultiPartParameterObject);
-            if (partsComplete != null) {
-                jetServiceBackend.executeJar(partsComplete);
-            }
-            return true;
-        });
+    public Object getResponse() {
+        return response;
     }
 
+    @Override
+    public void run() {
+        // Delegate to JetServiceBackend
+        JetServiceBackend jetServiceBackend = getJetServiceBackend();
+        JobMetaDataParameterObject partsComplete = jetServiceBackend.storeJobMultiPart(jobMultiPartParameterObject);
+        // If JetServiceBackend returns that parts are complete
+        if (partsComplete != null) {
+            // Execute the jar
+            jetServiceBackend.executeJar(partsComplete);
+        }
+        response = true;
+    }
+
+    protected JetServiceBackend getJetServiceBackend() {
+        checkJetIsEnabled(getNodeEngine());
+        assert getServiceName().equals(JetServiceBackend.SERVICE_NAME) : "Service is not Jet Service";
+        return getService();
+    }
+
+    @Override
+    public final int getFactoryId() {
+        return JetInitDataSerializerHook.FACTORY_ID;
+    }
 
     @Override
     public int getClassId() {
         return JetInitDataSerializerHook.UPLOAD_JOB_MULTIPART_OP;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        writeUUID(out, jobMultiPartParameterObject.getSessionId());
+        out.writeInt(jobMultiPartParameterObject.getCurrentPartNumber());
+        out.writeInt(jobMultiPartParameterObject.getTotalPartNumber());
+        out.writeByteArray(jobMultiPartParameterObject.getPartData());
+        out.writeInt(jobMultiPartParameterObject.getPartSize());
+        out.writeString(jobMultiPartParameterObject.getSha256Hex());
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        jobMultiPartParameterObject = new JobMultiPartParameterObject();
+        jobMultiPartParameterObject.setSessionId(readUUID(in));
+        jobMultiPartParameterObject.setCurrentPartNumber(in.readInt());
+        jobMultiPartParameterObject.setTotalPartNumber(in.readInt());
+        jobMultiPartParameterObject.setPartData(in.readByteArray());
+        jobMultiPartParameterObject.setPartSize(in.readInt());
+        jobMultiPartParameterObject.setSha256Hex(in.readString());
     }
 }

@@ -41,7 +41,6 @@ abstract class StreamToStreamJoinBuffer implements Iterable<JetSqlRow> {
 
     public abstract boolean isEmpty();
 
-    // for testing purposes only
     abstract Collection<JetSqlRow> content();
 
     /**

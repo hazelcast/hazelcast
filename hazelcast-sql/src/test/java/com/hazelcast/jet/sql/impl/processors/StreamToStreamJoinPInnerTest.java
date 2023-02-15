@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.processors;
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ToLongFunctionEx;
+import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
@@ -70,7 +71,7 @@ import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
-public class StreamToStreamJoinPInnerTest extends SqlTestSupport {
+public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -142,12 +143,17 @@ public class StreamToStreamJoinPInnerTest extends SqlTestSupport {
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
     private final Map<Byte, Map<Byte, Long>> postponeTimeMap = new HashMap<>();
 
+    @BeforeClass
+    public static void beforeClass() {
+        initialize(1, null);
+    }
+
     @Test
     public void test_equalTimes_singleWmKeyPerInput() {
         // l.time=r.time
         postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
-        ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1));
+        ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1, true));
 
         TestSupport.verifyProcessor(processorSupplier)
                 .hazelcastInstance(instance())
@@ -180,7 +186,7 @@ public class StreamToStreamJoinPInnerTest extends SqlTestSupport {
         leftExtractors.put((byte) 1, l -> l.getRow().get(1));
         rightExtractors = singletonMap((byte) 2, r -> r.getRow().get(0));
 
-        SupplierEx<Processor> supplier = createProcessor(2, 1);
+        SupplierEx<Processor> supplier = createProcessor(2, 1, false);
 
         TestSupport.verifyProcessor(supplier)
                 .hazelcastInstance(instance())
@@ -237,9 +243,10 @@ public class StreamToStreamJoinPInnerTest extends SqlTestSupport {
         rightExtractors.put((byte) 2, r -> r.getRow().get(0));
         rightExtractors.put((byte) 3, r -> r.getRow().get(1));
 
-        SupplierEx<Processor> supplier = createProcessor(2, 2);
+        SupplierEx<Processor> supplier = createProcessor(2, 2, false);
 
         TestSupport.verifyProcessor(supplier)
+                .hazelcastInstance(instance())
                 .outputChecker(SAME_ITEMS_ANY_ORDER_EQUIVALENT_WMS)
                 .hazelcastInstance(instance())
                 .expectExactOutput(
@@ -308,11 +315,12 @@ public class StreamToStreamJoinPInnerTest extends SqlTestSupport {
         postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
 
-        ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(2, 1, 1, 2));
+        ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(2, 1, true, 1, 2));
 
         TestSupport.verifyProcessor(processorSupplier)
                 .hazelcastInstance(instance())
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
+                .cooperativeTimeout(0) // todo remove
                 .expectExactOutput(
                         in(0, jetRow(1L, 42)),
                         in(0, jetRow(1L, 43)),
@@ -336,7 +344,7 @@ public class StreamToStreamJoinPInnerTest extends SqlTestSupport {
         leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
         rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
 
-        SupplierEx<Processor> supplier = createProcessor(1, 1);
+        SupplierEx<Processor> supplier = createProcessor(1, 1, false);
 
         TestSupport.verifyProcessor(supplier)
                 .hazelcastInstance(instance())
@@ -357,7 +365,7 @@ public class StreamToStreamJoinPInnerTest extends SqlTestSupport {
         // l.time=r.time
         postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
-        ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1));
+        ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1, true));
 
         TestSupport.verifyProcessor(processorSupplier)
                 .hazelcastInstance(instance())
@@ -386,7 +394,7 @@ public class StreamToStreamJoinPInnerTest extends SqlTestSupport {
         leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
         rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
 
-        SupplierEx<Processor> supplier = createProcessor(1, 1);
+        SupplierEx<Processor> supplier = createProcessor(1, 1, false);
 
         TestSupport.verifyProcessor(supplier)
                 .hazelcastInstance(instance())
@@ -450,9 +458,11 @@ public class StreamToStreamJoinPInnerTest extends SqlTestSupport {
         return AndPredicate.create(conditions.toArray(new Expression[0]));
     }
 
-    private SupplierEx<Processor> createProcessor(int leftColumnCount, int rightColumnCount, int... wmKeyToColumnIndex) {
+    private SupplierEx<Processor> createProcessor(int leftColumnCount, int rightColumnCount, boolean assumeEquiJoin,
+            int... wmKeyToColumnIndex) {
         Expression<Boolean> condition = createConditionFromPostponeTimeMap(postponeTimeMap, wmKeyToColumnIndex);
-        JetJoinInfo joinInfo = new JetJoinInfo(INNER, new int[0], new int[0], condition, condition);
+        int[] equiJoinIndices = new int[assumeEquiJoin ? 1 : 0];
+        JetJoinInfo joinInfo = new JetJoinInfo(INNER, equiJoinIndices, equiJoinIndices, condition, condition);
         return () -> new StreamToStreamJoinP(
                 joinInfo,
                 leftExtractors,
