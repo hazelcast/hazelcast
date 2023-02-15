@@ -18,10 +18,11 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.jet.JetException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class SubmitJobTargetMemberFinder {
 
@@ -30,7 +31,15 @@ public class SubmitJobTargetMemberFinder {
      */
     UUID getRandomMemberId(HazelcastClientInstanceImpl client) {
         ArrayList<Member> memberList = new ArrayList<>(client.getClientClusterService().getMemberList());
-        Member member = memberList.get(ThreadLocalRandom.current().nextInt(memberList.size()));
+        return getRandomIdFromList(memberList);
+    }
+
+    UUID getRandomIdFromList(ArrayList<Member> memberList) {
+        if (memberList.isEmpty()) {
+            throw new JetException("Cluster member list is empty");
+        }
+        Collections.shuffle(memberList);
+        Member member = memberList.get(0);
         return member.getUuid();
     }
 }
