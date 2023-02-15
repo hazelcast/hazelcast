@@ -77,6 +77,7 @@ final class SupportedDatabases {
         return dialect instanceof MysqlSqlDialect ||
                dialect instanceof PostgresqlSqlDialect ||
                dialect instanceof H2SqlDialect;
-        //dialect instanceof MssqlSqlDialect
+        // Uncomment when officially supported
+        // dialect instanceof MssqlSqlDialect
     }
 }
