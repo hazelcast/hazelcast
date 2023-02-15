@@ -33,35 +33,43 @@ final class SupportedDatabases {
 
     private static final ILogger LOGGER = Logger.getLogger(SupportedDatabases.class);
 
-    private static final Set<String> DATABASE_NAMES = ConcurrentHashMap.newKeySet();
+    private static final Set<String> SUPPORTED_DATABASE_NAMES = ConcurrentHashMap.newKeySet();
+    private static final Set<String> DETECTED_DATABASE_NAMES = ConcurrentHashMap.newKeySet();
 
     static {
         // Add supported database names in upper case
-        DATABASE_NAMES.add("MYSQL");
-        DATABASE_NAMES.add("POSTGRESQL");
-        DATABASE_NAMES.add("H2");
-        //DATABASE_NAMES.add("MICROSOFT SQL SERVER");
+        SUPPORTED_DATABASE_NAMES.add("MYSQL");
+        SUPPORTED_DATABASE_NAMES.add("POSTGRESQL");
+        SUPPORTED_DATABASE_NAMES.add("H2");
+        // Uncomment when officially supported
+        // DATABASE_NAMES.add("MICROSOFT SQL SERVER");
     }
 
     private SupportedDatabases() {
     }
 
     static void logOnceIfDatabaseNotSupported(DatabaseMetaData databaseMetaData) throws SQLException {
-        // Get product name from the JDBC driver
-        String databaseProductName = databaseMetaData.getDatabaseProductName();
-        logOnceByProductName(databaseProductName);
-    }
+        String uppercaseProductName = getProductName(databaseMetaData);
 
-    static boolean logOnceByProductName(String databaseProductName) {
-        // Make the DB name upper case
-        String uppercaseProductName = StringUtil.upperCaseInternal(databaseProductName);
-
-        boolean newDatabaseName = DATABASE_NAMES.add(uppercaseProductName);
+        boolean newDatabaseName = isNewDatabase(uppercaseProductName);
         if (newDatabaseName) {
             // If this Database name is new, log a message
             LOGGER.warning("Database " + uppercaseProductName + " is not officially supported");
         }
-        return newDatabaseName;
+    }
+
+    private static String getProductName(DatabaseMetaData databaseMetaData) throws SQLException {
+        // Get product name from the JDBC driver
+        String productName = databaseMetaData.getDatabaseProductName();
+        // Make the name upper case
+        return StringUtil.upperCaseInternal(productName);
+    }
+
+    static boolean isNewDatabase(String uppercaseProductName) {
+        if (SUPPORTED_DATABASE_NAMES.contains(uppercaseProductName)) {
+            return false;
+        }
+        return DETECTED_DATABASE_NAMES.add(uppercaseProductName);
     }
 
     static boolean isDialectSupported(JdbcTable jdbcTable) {
@@ -69,6 +77,6 @@ final class SupportedDatabases {
         return dialect instanceof MysqlSqlDialect ||
                dialect instanceof PostgresqlSqlDialect ||
                dialect instanceof H2SqlDialect;
-               //dialect instanceof MssqlSqlDialect
+        //dialect instanceof MssqlSqlDialect
     }
 }

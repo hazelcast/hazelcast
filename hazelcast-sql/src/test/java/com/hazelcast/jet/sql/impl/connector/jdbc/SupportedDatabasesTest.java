@@ -64,18 +64,30 @@ public class SupportedDatabasesTest {
     }
 
     @Test
-    public void logByProductName_supportedDB() {
-        String dbName = "mysql";
-        boolean newDB1 = SupportedDatabases.logOnceByProductName(dbName);
+    public void testMySQL() {
+        String dbName = "MYSQL";
+        boolean newDB1 = SupportedDatabases.isNewDatabase(dbName);
         assertThat(newDB1).isFalse();
-
-        boolean newDB2 = SupportedDatabases.logOnceByProductName(dbName);
-        assertThat(newDB2).isFalse();
     }
 
     @Test
-    public void logByProductName_notSupportedDB() {
-        boolean newDB = SupportedDatabases.logOnceByProductName("cassandra");
+    public void testPostgreSQL() {
+        String dbName = "POSTGRESQL";
+        boolean newDB = SupportedDatabases.isNewDatabase(dbName);
+        assertThat(newDB).isFalse();
+    }
+
+    @Test
+    public void testH2() {
+        String dbName = "H2";
+        boolean newDB = SupportedDatabases.isNewDatabase(dbName);
+        assertThat(newDB).isFalse();
+    }
+
+    @Test
+    public void test_notSupportedDB() {
+        String dbName = "cassandra";
+        boolean newDB = SupportedDatabases.isNewDatabase(dbName);
         assertThat(newDB).isTrue();
     }
 }
