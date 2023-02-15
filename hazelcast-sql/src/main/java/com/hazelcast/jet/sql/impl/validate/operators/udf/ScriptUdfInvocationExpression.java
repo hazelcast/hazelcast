@@ -67,8 +67,8 @@ class ScriptUdfInvocationExpression extends VariExpression<Object> {
             scriptEngine.put(definition.getParameterNames().get(i), parameterValues[i]);
         }
         try {
-            // TODO: convert return value?
-            return scriptEngine.eval(definition.getBody());
+            Object rawResult = scriptEngine.eval(definition.getBody());
+            return definition.getReturnType().convert(rawResult);
         } catch (ScriptException e) {
             // ScriptException's cause is not serializable - we don't need the cause
             HazelcastException hazelcastException = new HazelcastException(e.getMessage());

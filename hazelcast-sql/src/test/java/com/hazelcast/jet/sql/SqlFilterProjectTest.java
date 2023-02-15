@@ -40,6 +40,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.math.BigDecimal;
+
 import static com.hazelcast.jet.core.TestUtil.createMap;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -82,6 +84,38 @@ public class SqlFilterProjectTest extends SqlTestSupport {
         assertRowsAnyOrder(
                 "SELECT myfunjs(x) as c FROM (VALUES ('a'), ('b')) AS t (x)",
                 asList(new Row("a/a"), new Row("b/b"))
+        );
+    }
+
+    @Test
+    public void test_valuesSelectScriptUdfNested() {
+        // init scripts with tests classloader, job class loader may not see it
+        // TODO: will it happen in normal execution?
+        ScriptEngineManagerContext.getScriptEngineManager();
+
+        UserDefinedFunction function = new UserDefinedFunction("factorial", "js",
+                QueryDataType.INT,
+                singletonList("x"), singletonList(QueryDataType.INT),
+                "function factorial_impl(v) {\n" +
+                        "    var result = 1;\n" +
+                        "    for(var i=2;i<=v;i++)\n" +
+                        "        result *= i;\n" +
+                        "    return result;\n" +
+                        "}\n" +
+                        "factorial_impl(x);"
+        );
+        createFunction(function);
+
+        assertRowsAnyOrder(
+                "SELECT factorial(v) as c FROM TABLE (generate_series(0,5))",
+                asList(new Row(1), new Row(1),
+                        new Row(2), new Row(6),
+                        new Row(24), new Row(120))
+        );
+
+        assertRowsAnyOrder(
+                "SELECT avg(factorial(v)) as c FROM TABLE (generate_series(1,5))",
+                asList(new Row(BigDecimal.valueOf(30.6)))
         );
     }
 
