@@ -103,7 +103,7 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
      * Returns scalar value of the query. The result must have exactly one column and one row.
      * Automatically closes {@link SqlResult} after invocation.
      */
-    default Object scalar() {
+    default <T> T scalar() {
         try {
             Iterator<SqlRow> iterator = iterator();
             if (!iterator.hasNext()) {

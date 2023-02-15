@@ -108,7 +108,7 @@ public class SqlCreateFunction extends SqlCreate {
         writer.keyword("LANGUAGE");
         language.unparse(writer, leftPrec, rightPrec);
 
-        writer.keyword("BODY");
+        writer.keyword("AS");
         body.unparse(writer, leftPrec, rightPrec);
 
         if (options().isEmpty()) {

@@ -35,6 +35,7 @@ import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.assertj.core.data.Offset;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -80,12 +81,32 @@ public class SqlFilterProjectTest extends SqlTestSupport {
     public void test_valuesSelectScriptUdf() {
         sqlService.execute("create function myfunjs(x varchar) RETURNS varchar\n"
                 + "LANGUAGE 'js' \n"
-                + "BODY 'x + ''/'' + x'");
+                + "AS 'x + ''/'' + x'");
 
         assertRowsAnyOrder(
                 "SELECT myfunjs(x) as c FROM (VALUES ('a'), ('b')) AS t (x)",
                 asList(new Row("a/a"), new Row("b/b"))
         );
+    }
+
+    @Test
+    public void test_valuesSelectScriptUdfNoParameters() {
+        sqlService.execute("create function now() RETURNS bigint\n"
+                + "LANGUAGE 'js' \n"
+                + "AS 'java.lang.System.currentTimeMillis()'");
+
+        assertThat(sqlService.execute("SELECT now()").<Long>scalar())
+                .isCloseTo(System.currentTimeMillis(), Offset.offset(10000L));
+    }
+
+    @Test
+    public void test_valuesSelectScriptUdfNoParametersNoParentheses() {
+        sqlService.execute("create function now RETURNS bigint\n"
+                + "LANGUAGE 'js' \n"
+                + "AS 'java.lang.System.currentTimeMillis()'");
+
+        assertThat(sqlService.execute("SELECT now()").<Long>scalar())
+                .isCloseTo(System.currentTimeMillis(), Offset.offset(10000L));
     }
 
     @Test

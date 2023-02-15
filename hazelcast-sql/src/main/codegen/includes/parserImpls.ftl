@@ -74,7 +74,7 @@ SqlCreate SqlCreateFunction(Span span, boolean replace) :
         <IF> <NOT> <EXISTS> { ifNotExists = true; }
     ]
     name = SimpleIdentifier()
-    parameters = TypeColumns()
+    parameters = FunctionParameters()
 
     <RETURNS>
     returnType = SqlDataType()
@@ -82,7 +82,7 @@ SqlCreate SqlCreateFunction(Span span, boolean replace) :
     <LANGUAGE>
     language = StringLiteral()
 
-    [ <BODY> ]
+    [ <AS> ]
     body = StringLiteral()
 
     [
@@ -101,6 +101,34 @@ SqlCreate SqlCreateFunction(Span span, boolean replace) :
             ifNotExists,
             startPos.plus(getPos())
         );
+    }
+}
+
+SqlNodeList FunctionParameters():
+{
+    SqlParserPos pos = getPos();
+    SqlTypeColumn column;
+    List<SqlNode> columns = new ArrayList<SqlNode>();
+}
+{
+    <LPAREN>
+    {  pos = getPos(); }
+
+    [
+        column = TypeColumn()
+        {
+            columns.add(column);
+        }
+        (
+            <COMMA> column = TypeColumn()
+            {
+                columns.add(column);
+            }
+        )*
+    ]
+    <RPAREN>
+    {
+        return new SqlNodeList(columns, pos.plus(getPos()));
     }
 }
 
