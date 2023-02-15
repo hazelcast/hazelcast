@@ -22,6 +22,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapEvent;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.function.UserDefinedFunction;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 
@@ -49,6 +50,10 @@ public class TablesStorage {
         storage().put(name, type);
     }
 
+    void put(String name, UserDefinedFunction function) {
+        storage().put(name, function);
+    }
+
     boolean putIfAbsent(String name, Mapping mapping) {
         return storage().putIfAbsent(name, mapping) == null;
     }
@@ -59,6 +64,10 @@ public class TablesStorage {
 
     boolean putIfAbsent(String name, Type type) {
         return storage().putIfAbsent(name, type) == null;
+    }
+
+    boolean putIfAbsent(String name, UserDefinedFunction function) {
+        return storage().putIfAbsent(name, function) == null;
     }
 
     Mapping removeMapping(String name) {
@@ -82,6 +91,26 @@ public class TablesStorage {
 
     public Type removeType(String name) {
         return (Type) storage().remove(name);
+    }
+
+
+    public Collection<UserDefinedFunction> getAllFunctions() {
+        return storage().values().stream()
+                .filter(o -> o instanceof UserDefinedFunction)
+                .map(o -> (UserDefinedFunction) o)
+                .collect(Collectors.toList());
+    }
+
+    public UserDefinedFunction getFunction(final String name) {
+        Object obj = storage().get(name);
+        if (obj instanceof UserDefinedFunction) {
+            return (UserDefinedFunction) obj;
+        }
+        return null;
+    }
+
+    public UserDefinedFunction removeFunction(String name) {
+        return (UserDefinedFunction) storage().remove(name);
     }
 
     View removeView(String name) {
@@ -113,6 +142,14 @@ public class TablesStorage {
                 .stream()
                 .filter(t -> t instanceof Type)
                 .map(t -> ((Type) t).getName())
+                .collect(Collectors.toList());
+    }
+
+    Collection<String> functionNames() {
+        return storage().values()
+                .stream()
+                .filter(t -> t instanceof UserDefinedFunction)
+                .map(t -> ((UserDefinedFunction) t).getName())
                 .collect(Collectors.toList());
     }
 

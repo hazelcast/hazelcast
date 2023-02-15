@@ -35,6 +35,7 @@ import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
+import com.hazelcast.sql.impl.schema.function.UserDefinedFunction;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 
@@ -222,6 +223,34 @@ public class TableResolverImpl implements TableResolver {
 
     // endregion
 
+    // region UDF
+
+    public Collection<String> getFunctionNames() {
+        return tableStorage.functionNames();
+    }
+
+    public Collection<UserDefinedFunction> getFunctions() {
+        return tableStorage.getAllFunctions();
+    }
+
+    public void createFunction(UserDefinedFunction function, boolean replace, boolean ifNotExists) {
+        if (ifNotExists) {
+            tableStorage.putIfAbsent(function.getName(), function);
+        } else if (replace) {
+            tableStorage.put(function.getName(), function);
+        } else if (!tableStorage.putIfAbsent(function.getName(), function)) {
+            throw QueryException.error("Function already exists: " + function.getName());
+        }
+    }
+
+    public void removeFunction(String name, boolean ifExists) {
+        if (tableStorage.removeType(name) == null && !ifExists) {
+            throw QueryException.error("Function does not exist: " + name);
+        }
+    }
+
+    // endregion
+
     @Nonnull
     @Override
     public List<List<String>> getDefaultSearchPaths() {
@@ -252,6 +281,9 @@ public class TableResolverImpl implements TableResolver {
                 views.add((View) o);
             } else if (o instanceof Type) {
                 types.add((Type) o);
+            } else if (o instanceof UserDefinedFunction) {
+                // ignore here
+                continue;
             } else {
                 throw new RuntimeException("Unexpected: " + o);
             }

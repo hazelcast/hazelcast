@@ -95,7 +95,7 @@ public class UnparseTest extends SqlTestSupport {
                 emptyList(),
                 emptyList(),
                 1,
-                name -> null
-        );
+                name -> null,
+                null);
     }
 }

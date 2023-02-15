@@ -16,14 +16,22 @@
 
 package com.hazelcast.jet.sql;
 
+import com.hazelcast.internal.management.ScriptEngineManagerContext;
+import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
+import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
+import com.hazelcast.jet.sql.impl.schema.TablesStorage;
 import com.hazelcast.map.IMap;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.schema.function.UserDefinedFunction;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -59,11 +67,51 @@ public class SqlFilterProjectTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_valuesSelectUdf() {
+    public void test_valuesSelectScriptUdf() {
+        // init scripts with tests classloader, job class loader may not see it
+        // TODO: will it happen in normal execution?
+        ScriptEngineManagerContext.getScriptEngineManager();
+
+        UserDefinedFunction function = new UserDefinedFunction("myfunjs", "js",
+                QueryDataType.VARCHAR,
+                singletonList("x"), singletonList(QueryDataType.VARCHAR),
+                "x + '/' + x"
+        );
+        createFunction(function);
+
         assertRowsAnyOrder(
-                "SELECT myfun(x) as c FROM (VALUES ('a'), ('b')) AS t (x)",
+                "SELECT myfunjs(x) as c FROM (VALUES ('a'), ('b')) AS t (x)",
                 asList(new Row("a/a"), new Row("b/b"))
         );
+    }
+
+    @Test
+    public void test_valuesSelectScriptUdfWithSql() {
+        // init scripts with tests classloader, job class loader may not see it
+        // TODO: will it happen in normal execution?
+        ScriptEngineManagerContext.getScriptEngineManager();
+
+        UserDefinedFunction function = new UserDefinedFunction("myfunjs", "js",
+                QueryDataType.VARCHAR,
+                singletonList("x"), singletonList(QueryDataType.VARCHAR),
+                "sql.execute('select UPPER(?) || ?', x, x).scalar()"
+        );
+        createFunction(function);
+
+        assertRowsAnyOrder(
+                "SELECT myfunjs(x) as c FROM (VALUES ('a'), ('b')) AS t (x)",
+                asList(new Row("Aa"), new Row("Bb"))
+        );
+    }
+
+    private static void createFunction(UserDefinedFunction function) {
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(instance());
+        TablesStorage tablesStorage = new TablesStorage(nodeEngine);
+        SqlConnectorCache connectorCache = new SqlConnectorCache(nodeEngine);
+        TableResolverImpl tableResolver = new TableResolverImpl(nodeEngine, tablesStorage, connectorCache);
+        tableResolver.createFunction(
+                function,
+                true, false);
     }
 
     @Test

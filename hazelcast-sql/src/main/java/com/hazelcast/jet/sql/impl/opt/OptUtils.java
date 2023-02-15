@@ -332,6 +332,10 @@ public final class OptUtils {
     public static RelDataType convert(TableField field, RelDataTypeFactory typeFactory) {
         QueryDataType fieldType = field.getType();
 
+        return convert(fieldType, typeFactory);
+    }
+
+    public static RelDataType convert(QueryDataType fieldType, RelDataTypeFactory typeFactory) {
         SqlTypeName sqlTypeName = HazelcastTypeUtils.toCalciteType(fieldType);
         if (sqlTypeName == null) {
             throw new IllegalStateException("Unsupported type family: " + fieldType

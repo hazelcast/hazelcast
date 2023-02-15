@@ -784,6 +784,13 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- JavaScript -->
+        <dependency>
+            <groupId>org.openjdk.nashorn</groupId>
+            <artifactId>nashorn-core</artifactId>
+            <version>15.3</version>
+            <scope>test</scope>
+        </dependency>
         <!--
         HDFS (via hadoop-minicluster) and kafka-schema-registry depend on different versions of jetty.
         Listing hadoop-common here brings it further up the dependency tree (it is a transitive dependency of

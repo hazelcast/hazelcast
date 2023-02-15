@@ -28,6 +28,7 @@ import com.hazelcast.jet.sql.impl.parse.QueryParser;
 import com.hazelcast.jet.sql.impl.schema.HazelcastCalciteCatalogReader;
 import com.hazelcast.jet.sql.impl.schema.HazelcastSchema;
 import com.hazelcast.jet.sql.impl.schema.HazelcastSchemaUtils;
+import com.hazelcast.jet.sql.impl.schema.TablesStorage;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.logging.ILogger;
@@ -100,8 +101,9 @@ public final class OptimizerContext {
     /**
      * Create the optimization context.
      *
-     * @param searchPaths Search paths to support "current schema" feature.
-     * @param memberCount Number of member that is important for distribution-related rules and converters.
+     * @param searchPaths  Search paths to support "current schema" feature.
+     * @param memberCount  Number of member that is important for distribution-related rules and converters.
+     * @param tableStorage
      * @return Context.
      */
     public static OptimizerContext create(
@@ -109,12 +111,12 @@ public final class OptimizerContext {
             List<List<String>> searchPaths,
             List<Object> arguments,
             int memberCount,
-            IMapResolver iMapResolver
-    ) {
+            IMapResolver iMapResolver,
+            TablesStorage tableStorage) {
         // Resolve tables.
         HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(schema);
 
-        return create(rootSchema, searchPaths, arguments, memberCount, iMapResolver);
+        return create(rootSchema, searchPaths, arguments, memberCount, iMapResolver, tableStorage);
     }
 
     public static OptimizerContext create(
@@ -122,10 +124,10 @@ public final class OptimizerContext {
             List<List<String>> schemaPaths,
             List<Object> arguments,
             int memberCount,
-            IMapResolver iMapResolver
-    ) {
+            IMapResolver iMapResolver,
+            TablesStorage tableStorage) {
         Prepare.CatalogReader catalogReader = createCatalogReader(rootSchema, schemaPaths);
-        HazelcastSqlValidator validator = new HazelcastSqlValidator(catalogReader, arguments, iMapResolver);
+        HazelcastSqlValidator validator = new HazelcastSqlValidator(catalogReader, arguments, iMapResolver, tableStorage);
         VolcanoPlanner volcanoPlanner = createPlanner();
 
         HazelcastRelOptCluster cluster = createCluster(volcanoPlanner);

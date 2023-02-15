@@ -257,7 +257,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 task.getSearchPaths(),
                 task.getArguments(),
                 memberCount,
-                iMapResolver);
+                iMapResolver, tablesStorage);
 
         try {
             OptimizerContext.setThreadContext(context);

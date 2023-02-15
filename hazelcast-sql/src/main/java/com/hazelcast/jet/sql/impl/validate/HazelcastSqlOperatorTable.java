@@ -79,8 +79,6 @@ import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastReplaceFunc
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastStringFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastSubstringFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastTrimFunction;
-import com.hazelcast.jet.sql.impl.validate.operators.udf.HazelcastUserDefinedFunction;
-import com.hazelcast.jet.sql.impl.validate.operators.udf.MyFun;
 import org.apache.calcite.runtime.CalciteException;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlBinaryOperator;
@@ -338,7 +336,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     static {
         INSTANCE.init();
         // TODO: init dynamically and/or read UDFs from Catalog
-        INSTANCE.register(new HazelcastUserDefinedFunction(new MyFun()));
+//        INSTANCE.register(new HazelcastUserDefinedFunction(new MyFun()));
     }
 
     private HazelcastSqlOperatorTable() {

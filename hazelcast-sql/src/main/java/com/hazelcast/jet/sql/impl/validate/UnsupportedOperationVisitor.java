@@ -24,6 +24,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot;
 import com.hazelcast.jet.sql.impl.parse.SqlOption;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastDynamicTableFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.udf.HazelcastScriptUserDefinedFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.udf.HazelcastUserDefinedFunction;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.runtime.CalciteContextException;
@@ -499,6 +500,10 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         }
 
         if (operator instanceof HazelcastUserDefinedFunction) {
+            return;
+        }
+
+        if (operator instanceof HazelcastScriptUserDefinedFunction) {
             return;
         }
 

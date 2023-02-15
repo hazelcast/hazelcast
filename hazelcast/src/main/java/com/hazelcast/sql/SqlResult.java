@@ -98,4 +98,26 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
      */
     @Override
     void close();
+
+    /**
+     * Returns scalar value of the query. The result must have exactly one column and one row.
+     * Automatically closes {@link SqlResult} after invocation.
+     */
+    default Object scalar() {
+        try {
+            if (!iterator().hasNext()) {
+                throw new HazelcastSqlException("Scalar value missing", null);
+            }
+            SqlRow next = iterator().next();
+            if (iterator().hasNext()) {
+                throw new HazelcastSqlException("More than one row where scalar value expected", null);
+            }
+            if (next.getMetadata().getColumnCount() != 1) {
+                throw new HazelcastSqlException("Scalar value result set must have single column", null);
+            }
+            return next.getObject(0);
+        } finally {
+            close();
+        }
+    }
 }

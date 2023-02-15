@@ -82,6 +82,7 @@ import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.function.UserDefinedFunction;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -183,8 +184,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int ROW_VALUE = 66;
     public static final int QUERY_DATA_TYPE_FIELD = 67;
     public static final int EXPRESSION_GET_DDL = 68;
+    public static final int UDF = 68;
 
-    public static final int LEN = EXPRESSION_GET_DDL + 1;
+    public static final int LEN = UDF + 1;
 
     @Override
     public int getFactoryId() {
@@ -280,6 +282,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[QUERY_DATA_TYPE_FIELD] = arg -> new QueryDataType.QueryDataTypeField();
 
         constructors[EXPRESSION_GET_DDL] = arg -> new GetDdlFunction();
+        constructors[UDF] = arg -> new UserDefinedFunction();
 
         return new ArrayDataSerializableFactory(constructors);
     }

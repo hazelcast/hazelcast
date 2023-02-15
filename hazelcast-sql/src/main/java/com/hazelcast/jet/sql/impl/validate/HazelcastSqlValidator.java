@@ -23,7 +23,9 @@ import com.hazelcast.jet.sql.impl.parse.SqlDropView;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.schema.TablesStorage;
 import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
+import com.hazelcast.jet.sql.impl.validate.operators.udf.HazelcastScriptUserDefinedFunction;
 import com.hazelcast.jet.sql.impl.validate.param.AbstractParameterConverter;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeCoercion;
@@ -52,11 +54,13 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
+import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUpdate;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
+import org.apache.calcite.sql.util.SqlOperatorTables;
 import org.apache.calcite.sql.validate.SelectScope;
 import org.apache.calcite.sql.validate.SqlQualified;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
@@ -74,6 +78,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
@@ -119,13 +124,22 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     public HazelcastSqlValidator(
             SqlValidatorCatalogReader catalogReader,
             List<Object> arguments,
-            IMapResolver iMapResolver
-    ) {
-        super(HazelcastSqlOperatorTable.instance(), catalogReader, HazelcastTypeFactory.INSTANCE, CONFIG);
+            IMapResolver iMapResolver,
+            TablesStorage tableStorage) {
+        super(SqlOperatorTables.chain(HazelcastSqlOperatorTable.instance(), udfs(tableStorage)),
+                catalogReader, HazelcastTypeFactory.INSTANCE, CONFIG);
 
         this.rewriteVisitor = new HazelcastSqlOperatorTable.RewriteVisitor(this);
         this.arguments = arguments;
         this.iMapResolver = iMapResolver;
+    }
+
+    private static SqlOperatorTable udfs(TablesStorage functionsStorage) {
+        if (functionsStorage == null) {
+            return SqlOperatorTables.of();
+        }
+        return SqlOperatorTables.of(functionsStorage.getAllFunctions().stream()
+                .map(f -> new HazelcastScriptUserDefinedFunction(f)).collect(Collectors.toList()));
     }
 
     @Override

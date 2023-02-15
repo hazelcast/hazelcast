@@ -206,8 +206,8 @@ public class ParserOperationsTest extends SqlTestSupport {
                 searchPaths,
                 emptyList(),
                 1,
-                name -> null
-        );
+                name -> null,
+                null);
     }
 
     private static TableField field(String name) {

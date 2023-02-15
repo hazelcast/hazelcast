@@ -125,8 +125,8 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
                 QueryUtils.prepareSearchPaths(null, null),
                 emptyList(),
                 1,
-                name -> null
-        );
+                name -> null,
+                null);
 
         ParameterConverter[] parameterConverters = IntStream.range(0, parameterTypes.length)
                 .mapToObj(i -> new StrictParameterConverter(i, SqlParserPos.ZERO, parameterTypes[i]))
