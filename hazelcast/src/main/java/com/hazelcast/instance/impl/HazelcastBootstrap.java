@@ -79,8 +79,6 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -153,10 +151,9 @@ public final class HazelcastBootstrap {
 
             URL jarUrl = new File(jarPath).toURI().toURL();
             // Close the URLClassLoader when finished
-            try (URLClassLoader classLoader = AccessController.doPrivileged(
-                    (PrivilegedAction<URLClassLoader>) () ->
-                            new URLClassLoader(new URL[]{jarUrl}, HazelcastBootstrap.class.getClassLoader())
-            )) {
+            try (URLClassLoader classLoader = URLClassLoader.newInstance(
+                    new URL[]{jarUrl},
+                    HazelcastBootstrap.class.getClassLoader())) {
 
                 Class<?> clazz = loadMainClass(classLoader, mainClass);
 
@@ -229,9 +226,8 @@ public final class HazelcastBootstrap {
 
     private static void resetJetParametersIfNecessary(String jar, String snapshotName, String jobName, boolean calledByMember) {
         if (calledByMember) {
-            // BootstrappedInstanceProxy has a HazelcastInstance and BootstrappedJetProxy member fields
-            // and BootstrappedJetProxy has a Jet instance and jarName,snapshotName,jobName parameters
-            // Change cached jarName,snapshotName,jobName properties
+            // BootstrappedInstanceProxy is a singleton that owns a HazelcastInstance and BootstrappedJetProxy
+            // Change cached jarName,snapshotName,jobName properties of the singleton on the member
             BootstrappedInstanceProxy bootstrappedInstanceProxy = supplier.get();
             BootstrappedJetProxy bootstrappedJetProxy = bootstrappedInstanceProxy.getJet();
             bootstrappedJetProxy.setJarName(jar);
