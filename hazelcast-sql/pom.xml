@@ -798,6 +798,13 @@
             <version>3.0.15</version>
             <scope>test</scope>
         </dependency>
+        <!-- Python (Jython) -->
+        <dependency>
+            <groupId>org.python</groupId>
+            <artifactId>jython-standalone</artifactId>
+            <version>2.7.3</version>
+            <scope>test</scope>
+        </dependency>
 
         <!--
         HDFS (via hadoop-minicluster) and kafka-schema-registry depend on different versions of jetty.

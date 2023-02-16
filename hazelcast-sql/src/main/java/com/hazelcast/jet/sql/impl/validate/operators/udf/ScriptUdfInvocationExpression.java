@@ -51,8 +51,10 @@ class ScriptUdfInvocationExpression extends VariExpression<Object> {
                 .map(ex -> ExpressionUtil.evaluate(ex, row, context))
                 .toArray();
 
+        // TODO: create only once. Thread safety? Expression can be probably evaluated from async calls.
         TablesStorage ts = new TablesStorage(context.getNodeEngine());
         UserDefinedFunction definition = ts.getFunction(name);
+        context.getNodeEngine().getLogger(ScriptUdfInvocationExpression.class).info("Initializing script for function " + name);
 
         ScriptEngine scriptEngine;
 
@@ -80,12 +82,27 @@ class ScriptUdfInvocationExpression extends VariExpression<Object> {
         }
         try {
             Object rawResult = scriptEngine.eval(definition.getBody());
+            if (definition.getLanguage().equals("python")) {
+                // Jython returns null from script. Use last assigned variable instead.
+                // See org.springframework.integration.scripting.jsr223.PythonScriptExecutor
+                String lastVariable = PythonVariableParser.parseReturnVariable(definition.getBody());
+                rawResult = scriptEngine.get(lastVariable);
+            }
             return definition.getReturnType().convert(rawResult);
         } catch (ScriptException e) {
             // ScriptException's cause is not serializable - we don't need the cause
             HazelcastException hazelcastException = new HazelcastException(e.getMessage());
             hazelcastException.setStackTrace(e.getStackTrace());
             throw hazelcastException;
+        }
+    }
+
+    public static class PythonVariableParser {
+        public static String parseReturnVariable(String script) {
+            String[] lines = script.trim().split("\n");
+            String lastLine = lines[lines.length - 1];
+            String[] tokens = lastLine.split("=");
+            return tokens[0].trim();
         }
     }
 

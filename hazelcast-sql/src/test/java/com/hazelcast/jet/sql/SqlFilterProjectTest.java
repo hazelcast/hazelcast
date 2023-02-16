@@ -177,6 +177,24 @@ public class SqlFilterProjectTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_valuesSelectScriptUdfPython() {
+        sqlService.execute("create function getval(num DOUBLE) RETURNS VARCHAR\n"
+                + "LANGUAGE 'python' \n"
+                + "AS `num_sqrt = num ** 0.5\n"
+                + "result = 'Square root of %0.3f is %0.3f'%(num ,num_sqrt)\n`");
+
+        assertRowsAnyOrder(
+                "SELECT v, getval(v) FROM TABLE (generate_series(1,6))",
+                asList(new Row(1, "Square root of 1.000 is 1.000"),
+                        new Row(2, "Square root of 2.000 is 1.414"),
+                        new Row(3, "Square root of 3.000 is 1.732"),
+                        new Row(4, "Square root of 4.000 is 2.000"),
+                        new Row(5, "Square root of 5.000 is 2.236"),
+                        new Row(6, "Square root of 6.000 is 2.449"))
+        );
+    }
+
+    @Test
     public void test_valuesSelectScriptUdfWithSql() {
         UserDefinedFunction function = new UserDefinedFunction("myfunjs", "js",
                 QueryDataType.VARCHAR,
