@@ -77,7 +77,6 @@ class ScriptUdfInvocationExpression extends VariExpression<Object> {
         scriptEngine.put("sql", context.getNodeEngine().getHazelcastInstance().getSql());
 
         for (int i = 0; i < definition.getParameterNames().size(); ++i) {
-            // TODO: convert types?
             scriptEngine.put(definition.getParameterNames().get(i), parameterValues[i]);
         }
         try {
@@ -97,7 +96,7 @@ class ScriptUdfInvocationExpression extends VariExpression<Object> {
         }
     }
 
-    public static class PythonVariableParser {
+    private static class PythonVariableParser {
         public static String parseReturnVariable(String script) {
             String[] lines = script.trim().split("\n");
             String lastLine = lines[lines.length - 1];

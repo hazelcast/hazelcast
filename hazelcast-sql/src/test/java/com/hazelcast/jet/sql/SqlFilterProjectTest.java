@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql;
 
-import com.hazelcast.internal.management.ScriptEngineManagerContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
@@ -67,14 +66,6 @@ public class SqlFilterProjectTest extends SqlTestSupport {
                 "SELECT * FROM (VALUES ('a'), ('b'))",
                 asList(new Row("a"), new Row("b"))
         );
-    }
-
-    @BeforeClass
-    public static void setUpScripts() {
-        // init scripts with tests classloader, job class loader may not see it
-        // TODO: will it happen in normal execution?
-        // Needed in Java >= 15?
-        ScriptEngineManagerContext.getScriptEngineManager();
     }
 
     @Test

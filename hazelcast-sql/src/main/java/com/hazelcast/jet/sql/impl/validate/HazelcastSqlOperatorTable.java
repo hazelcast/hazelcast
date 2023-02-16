@@ -335,8 +335,6 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     static {
         INSTANCE.init();
-        // TODO: init dynamically and/or read UDFs from Catalog
-//        INSTANCE.register(new HazelcastUserDefinedFunction(new MyFun()));
     }
 
     private HazelcastSqlOperatorTable() {
