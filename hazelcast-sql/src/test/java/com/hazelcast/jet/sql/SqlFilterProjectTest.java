@@ -161,6 +161,22 @@ public class SqlFilterProjectTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_valuesSelectScriptUdfGroovy() {
+        sqlService.execute("create function is_prime(n BIGINT) RETURNS varchar\n"
+                + "LANGUAGE 'groovy' \n"
+                + "AS `def isPrime(i) { i <=2 || (2..Math.sqrt(i)).every { i % it != 0 } }\n" +
+                "\n" +
+                "isPrime(n) ? \"prime\" : \"composite\"`");
+
+        assertRowsAnyOrder(
+                "SELECT v, is_prime(v) FROM TABLE (generate_series(1,6))",
+                asList(new Row(1, "prime"), new Row(2, "prime"),
+                        new Row(3, "prime"), new Row(4, "composite"),
+                        new Row(5, "prime"), new Row(6, "composite"))
+        );
+    }
+
+    @Test
     public void test_valuesSelectScriptUdfWithSql() {
         UserDefinedFunction function = new UserDefinedFunction("myfunjs", "js",
                 QueryDataType.VARCHAR,

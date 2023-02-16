@@ -109,7 +109,10 @@ public class SqlCreateFunction extends SqlCreate {
         language.unparse(writer, leftPrec, rightPrec);
 
         writer.keyword("AS");
+        writer.print("`");
+        // TODO: escape backticks
         body.unparse(writer, leftPrec, rightPrec);
+        writer.print("`");
 
         if (options().isEmpty()) {
             return;

@@ -54,14 +54,26 @@ class ScriptUdfInvocationExpression extends VariExpression<Object> {
         TablesStorage ts = new TablesStorage(context.getNodeEngine());
         UserDefinedFunction definition = ts.getFunction(name);
 
-        ScriptEngineManager scriptEngineManager = ScriptEngineManagerContext.getScriptEngineManager();
-        ScriptEngine scriptEngine = scriptEngineManager.getEngineByName(definition.getLanguage());
-        if (scriptEngine == null) {
-            throw new IllegalArgumentException("Could not find ScriptEngine named '" + definition.getLanguage() + "'."
-                    + " Please add the corresponding ScriptEngine to the classpath of this Hazelcast member");
+        ScriptEngine scriptEngine;
+
+        // Groovy JSR-223 uses getContextClassLoader() which is null in Jet threads
+        Thread currentThread = Thread.currentThread();
+        ClassLoader oldContextClassLoader = currentThread.getContextClassLoader();
+        currentThread.setContextClassLoader(getClass().getClassLoader());
+        try {
+            ScriptEngineManager scriptEngineManager = ScriptEngineManagerContext.getScriptEngineManager();
+            scriptEngine = scriptEngineManager.getEngineByName(definition.getLanguage());
+            if (scriptEngine == null) {
+                throw new IllegalArgumentException("Could not find ScriptEngine named '" + definition.getLanguage() + "'."
+                        + " Please add the corresponding ScriptEngine to the classpath of this Hazelcast member");
+            }
+        } finally {
+            currentThread.setContextClassLoader(oldContextClassLoader);
         }
+
         scriptEngine.put("hazelcast", context.getNodeEngine().getHazelcastInstance());
         scriptEngine.put("sql", context.getNodeEngine().getHazelcastInstance().getSql());
+
         for (int i = 0; i < definition.getParameterNames().size(); ++i) {
             // TODO: convert types?
             scriptEngine.put(definition.getParameterNames().get(i), parameterValues[i]);
