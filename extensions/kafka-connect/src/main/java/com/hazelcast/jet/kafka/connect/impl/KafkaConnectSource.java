@@ -18,6 +18,8 @@ package com.hazelcast.jet.kafka.connect.impl;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.pipeline.SourceBuilder;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import org.apache.kafka.connect.connector.ConnectorContext;
 import org.apache.kafka.connect.source.SourceConnector;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -25,20 +27,30 @@ import org.apache.kafka.connect.source.SourceTask;
 import org.apache.kafka.connect.source.SourceTaskContext;
 import org.apache.kafka.connect.storage.OffsetStorageReader;
 
-import java.util.HashMap;
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.client.impl.protocol.util.PropertiesUtil.toMap;
 import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 public class KafkaConnectSource {
+    private static final ILogger LOGGER = Logger.getLogger(KafkaConnectSource.class);
+    private static final int AWAIT_STOP_TIMEOUT = 1_000;
 
     private final SourceConnector connector;
-    private final SourceTask task;
-    private final Map<String, String> taskConfig;
+
+    private CountDownLatch taskStoppedLatch = new CountDownLatch(1);
+
+    private SourceTask task;
+
+
     /**
      * Key represents the partition which the record originated from. Value
      * represents the offset within that partition. Kafka Connect represents
@@ -46,19 +58,24 @@ public class KafkaConnectSource {
      * stored as map.
      * See {@link SourceRecord} for more information regarding the format.
      */
-    private Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new HashMap<>();
-    private boolean taskInitialized;
+    private Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new ConcurrentHashMap<>();
+    private final AtomicBoolean taskRunning = new AtomicBoolean();
+
+    private volatile boolean taskReconfigurationRequested = false;
+
 
     public KafkaConnectSource(Properties properties) {
-        try {
-            String connectorClazz = checkRequiredProperty(properties, "connector.class");
-            Class<?> connectorClass = loadConnectorClass(connectorClazz);
-            this.connector = (SourceConnector) connectorClass.getConstructor().newInstance();
-            this.connector.initialize(new JetConnectorContext());
-            this.connector.start(toMap(properties));
+        String connectorClazz = checkRequiredProperty(properties, "connector.class");
+        Class<?> connectorClass = loadConnectorClass(connectorClazz);
+        this.connector = (SourceConnector) newInstance(connectorClass);
+        this.connector.initialize(new JetConnectorContext());
+        this.connector.start(toMap(properties));
+    }
 
-            this.taskConfig = connector.taskConfigs(1).get(0);
-            this.task = (SourceTask) connector.taskClass().getConstructor().newInstance();
+    @Nonnull
+    private <T> T newInstance(Class<? extends T> clazz) {
+        try {
+            return clazz.getConstructor().newInstance();
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -74,17 +91,15 @@ public class KafkaConnectSource {
     }
 
     public void fillBuffer(SourceBuilder.TimestampedSourceBuffer<SourceRecord> buf) {
-        if (!taskInitialized) {
-            task.initialize(new JetSourceTaskContext());
-            task.start(taskConfig);
-            taskInitialized = true;
-        }
+        restartTaskIfNeeded();
         try {
             List<SourceRecord> records = task.poll();
             if (records == null) {
                 return;
             }
-
+            if (LOGGER.isFineEnabled()) {
+                LOGGER.fine("Get " + records.size() + " records from task poll");
+            }
             for (SourceRecord record : records) {
                 addToBuffer(record, buf);
                 partitionsToOffset.put(record.sourcePartition(), record.sourceOffset());
@@ -95,6 +110,53 @@ public class KafkaConnectSource {
         }
     }
 
+    private void restartTaskIfNeeded() {
+        if (taskReconfigurationRequested) {
+            taskReconfigurationRequested = false;
+            stopTaskAndAwait();
+        }
+        if (taskRunning.get()) {
+            LOGGER.info("Not starting task, already running");
+            return;
+        }
+        startTaskIfNotRunning();
+    }
+
+    private void startTaskIfNotRunning() {
+        LOGGER.info("Starting tasks if the previous not running");
+        if (taskRunning.compareAndSet(false, true)) {
+            LOGGER.info("Starting tasks");
+
+            List<Map<String, String>> taskConfigs = connector.taskConfigs(1);
+            if (!taskConfigs.isEmpty()) {
+                Map<String, String> taskConfig = taskConfigs.get(0);
+                this.task = newInstance(connector.taskClass().asSubclass(SourceTask.class));
+                LOGGER.info("Initializing task: " + task);
+                task.initialize(new JetSourceTaskContext(taskConfig));
+                LOGGER.info("Starting task: " + task + " with task config: " + taskConfig);
+                task.start(taskConfig);
+            } else {
+                LOGGER.info("No task configs!");
+            }
+        }
+    }
+
+    private void stopTaskAndAwait() {
+        stopTaskIfRunning();
+        if (!awaitStop()) {
+            LOGGER.info("Waiting for stopping task timed-out");
+        }
+    }
+
+    private boolean awaitStop() {
+        try {
+            LOGGER.info("Waiting for stopping the previous task");
+            return taskStoppedLatch.await(AWAIT_STOP_TIMEOUT, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            return false;
+        }
+    }
+
     private void addToBuffer(SourceRecord record, SourceBuilder.TimestampedSourceBuffer<SourceRecord> buf) {
         long ts = record.timestamp() == null ? 0 : record.timestamp();
         buf.add(record, ts);
@@ -102,7 +164,7 @@ public class KafkaConnectSource {
 
     public void destroy() {
         try {
-            task.stop();
+            stopTaskIfRunning();
         } finally {
             connector.stop();
         }
@@ -116,19 +178,44 @@ public class KafkaConnectSource {
         this.partitionsToOffset = snapshots.get(0);
     }
 
-    private static class JetConnectorContext implements ConnectorContext {
+    private class JetConnectorContext implements ConnectorContext {
+
         @Override
         public void requestTaskReconfiguration() {
-            // no-op since it is not supported
+            LOGGER.info("Task reconfiguration requested");
+            taskReconfigurationRequested = true;
         }
 
         @Override
         public void raiseError(Exception e) {
-            rethrow(e);
+            throw rethrow(e);
+        }
+    }
+
+    private void stopTaskIfRunning() {
+        LOGGER.info("Stopping task if running");
+        if (taskRunning.compareAndSet(true, false)) {
+            try {
+                if (task != null) {
+                    LOGGER.fine("Stopping task");
+                    task.stop();
+                    LOGGER.fine("Task stopped");
+                }
+            } finally {
+                taskStoppedLatch.countDown();
+                taskStoppedLatch = new CountDownLatch(1);
+                task = null;
+            }
         }
     }
 
     private class JetSourceTaskContext implements SourceTaskContext {
+        private final Map<String, String> taskConfig;
+
+        private JetSourceTaskContext(Map<String, String> taskConfig) {
+            this.taskConfig = taskConfig;
+        }
+
         @Override
         public Map<String, String> configs() {
             return taskConfig;
