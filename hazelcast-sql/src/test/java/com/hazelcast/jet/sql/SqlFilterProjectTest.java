@@ -195,6 +195,18 @@ public class SqlFilterProjectTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_valuesSelectScriptUdf_getDDL() {
+        sqlService.execute("create function myfunjs(x varchar) RETURNS varchar\n"
+                + "LANGUAGE 'js' \n"
+                + "AS `x + '/' + x`");
+
+        assertThat(sqlService.execute("SELECT get_ddl('relation', 'myfunjs')").<String>scalar())
+                .isEqualTo("CREATE FUNCTION \"myfunjs\" (x VARCHAR) RETURNS VARCHAR\n" +
+                                "LANGUAGE 'js'\n" +
+                                "AS `x + '/' + x`");
+    }
+
+    @Test
     public void test_valuesSelectScriptUdfWithSql() {
         UserDefinedFunction function = new UserDefinedFunction("myfunjs", "js",
                 QueryDataType.VARCHAR,

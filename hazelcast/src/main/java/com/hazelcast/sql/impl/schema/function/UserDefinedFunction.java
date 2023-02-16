@@ -67,51 +67,34 @@ public class UserDefinedFunction implements IdentifiedDataSerializable, Serializ
     @Override
     @Nonnull
     public String unparse() {
-        throw new UnsupportedOperationException();
-        /*
         StringBuffer buffer = new StringBuffer();
 
-        buffer.append("CREATE TYPE");
+        buffer.append("CREATE FUNCTION");
         buffer.append(" \"").append(name).append("\" ");
 
-        if (fields.size() > 0) {
-            int fieldsSize = fields.size() - 1;
-            buffer.append("(");
-            for (TypeField field : fields) {
-                buffer.append(field.getName()).append(" ");
-                buffer.append(field.getQueryDataType().getTypeFamily().toString());
-                if (fieldsSize-- > 0) {
+        buffer.append("(");
+        if (parameterNames.size() > 0) {
+            for (int i = 0; i < parameterNames.size(); ++i) {
+                buffer.append(parameterNames.get(i)).append(" ");
+                buffer.append(parameterTypes.get(i).getTypeFamily().toString());
+                if (i > 0) {
                     buffer.append(", ");
                 }
             }
-            buffer.append(") ");
         }
+        buffer.append(") ");
 
-        buffer.append("OPTIONS").append(" (\n");
-        if (javaClassName != null) {
-            appendOption(buffer, "format", "java", true);
-            appendOption(buffer, "javaClass", javaClassName, false);
-        }
-
-        if (compactTypeName != null) {
-            appendOption(buffer, "format", "compact", true);
-            appendOption(buffer, "compactTypeName", compactTypeName, false);
-        }
-
-        if (portableFactoryId != null) {
-            appendOption(buffer, "format", "portable", true);
-            appendOption(buffer, "portableFactoryId", portableFactoryId, false);
-            appendOption(buffer, "portableClassId", portableClassId, false);
-            if (portableVersion != null) {
-                appendOption(buffer, "portableClassVersion", portableVersion, false);
-            }
-        }
-
-        buffer.append(")\n");
+        buffer.append("RETURNS ");
+        buffer.append(returnType.getTypeFamily().toString());
+        buffer.append("\n");
+        buffer.append("LANGUAGE '");
+        buffer.append(language);
+        buffer.append("'\nAS `");
+        // TODO: escape backticks
+        buffer.append(body);
+        buffer.append("`");
 
         return buffer.toString();
-
-         */
     }
 
     private static void appendOption(StringBuffer buffer, String optionKey, String optionValue, boolean first) {
