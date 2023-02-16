@@ -31,16 +31,23 @@ public class MembersViewMetadata implements IdentifiedDataSerializable {
     private UUID memberUuid;
     private Address masterAddress;
     private int memberListVersion;
+    private long lastHeartbeatTime;
 
     public MembersViewMetadata() {
     }
 
     public MembersViewMetadata(Address memberAddress, UUID memberUuid,
                                Address masterAddress, int memberListVersion) {
+        this(memberAddress, memberUuid, masterAddress, memberListVersion, -1);
+    }
+
+    public MembersViewMetadata(Address memberAddress, UUID memberUuid,
+                               Address masterAddress, int memberListVersion, long lastHeartbeatTime) {
         this.memberAddress = memberAddress;
         this.memberUuid = memberUuid;
         this.masterAddress = masterAddress;
         this.memberListVersion = memberListVersion;
+        this.lastHeartbeatTime = lastHeartbeatTime;
     }
 
     public Address getMemberAddress() {
@@ -59,6 +66,10 @@ public class MembersViewMetadata implements IdentifiedDataSerializable {
         return memberListVersion;
     }
 
+    public long getLastHeartbeatTime() {
+        return lastHeartbeatTime;
+    }
+
     @Override
     public int getFactoryId() {
         return ClusterDataSerializerHook.F_ID;
@@ -75,6 +86,8 @@ public class MembersViewMetadata implements IdentifiedDataSerializable {
         UUIDSerializationUtil.writeUUID(out, memberUuid);
         out.writeObject(masterAddress);
         out.writeInt(memberListVersion);
+        // TODO RU versions
+        out.writeLong(lastHeartbeatTime);
     }
 
     @Override
@@ -83,6 +96,8 @@ public class MembersViewMetadata implements IdentifiedDataSerializable {
         memberUuid = UUIDSerializationUtil.readUUID(in);
         masterAddress = in.readObject();
         memberListVersion = in.readInt();
+        // TODO RU versions
+        lastHeartbeatTime = in.readLong();
     }
 
     @Override

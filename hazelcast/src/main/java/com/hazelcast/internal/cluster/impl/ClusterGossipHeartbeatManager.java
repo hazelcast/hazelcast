@@ -31,10 +31,10 @@ import com.hazelcast.internal.cluster.impl.operations.HeartbeatOp;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -54,6 +54,7 @@ import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.CLUSTER_EXECUTOR_NAME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_METRIC_HEARTBEAT_MANAGER_LAST_HEARTBEAT;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 import static com.hazelcast.internal.util.StringUtil.timeToString;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -74,7 +75,9 @@ public class ClusterGossipHeartbeatManager {
 
     private static final long CLOCK_JUMP_THRESHOLD = MINUTES.toMillis(2);
     private static final int HEART_BEAT_INTERVAL_FACTOR = 10;
-    private static final int GOSSIP_TARGETS_TO_DISSEMINATE_COUNT = 2;
+    private static final int GOSSIP_TARGETS_TO_DISSEMINATE_COUNT = 3;
+    // TODO limit number if metadata to send
+    private static final int GOSSIP_MEMBER_VIEW_METADATA_COUNT = 3;
 
     private final ILogger logger;
     private final Lock clusterServiceLock;
@@ -150,37 +153,45 @@ public class ClusterGossipHeartbeatManager {
                 heartbeatIntervalMillis, heartbeatIntervalMillis, TimeUnit.MILLISECONDS);
     }
 
-    public void handleHeartbeat(List<MembersViewMetadata> receivedMembersMetadata,
-                                UUID receiverUuid, long timestamp,
-                                Collection<MemberInfo> suspectedMembers, UUID callerUuid) {
+    public List<MembersViewMetadata> handleHeartbeat(List<MembersViewMetadata> receivedMembersMetadata,
+                                                     UUID receiverUuid, long timestamp,
+                                                     Collection<MemberInfo> suspectedMembers, UUID callerUuid) {
         try {
             long timeout = Math.min(TimeUnit.SECONDS.toMillis(1), heartbeatIntervalMillis / 2);
             if (!clusterServiceLock.tryLock(timeout, MILLISECONDS)) {
                 logger.warning("Cannot handle heartbeat from " + callerUuid + ", could not acquire lock in time.");
-                return;
+                return null;
             }
         } catch (InterruptedException e) {
             logger.warning("Cannot handle heartbeat from " + callerUuid + ", thread interrupted.");
             Thread.currentThread().interrupt();
-            return;
+            return null;
         }
+
+        List<MembersViewMetadata> membersViewMetadata = new ArrayList<>();
         try {
-            for (MembersViewMetadata metadata : receivedMembersMetadata) {
-                handleHeartbeat(metadata, receiverUuid, timestamp, suspectedMembers);
+            for (MembersViewMetadata received : receivedMembersMetadata) {
+                MembersViewMetadata local = handleHeartbeat(received, receiverUuid, timestamp, suspectedMembers);
+                if (local != null && local.getLastHeartbeatTime() > received.getLastHeartbeatTime()) {
+                    membersViewMetadata.add(local);
+                }
             }
         } finally {
             clusterServiceLock.unlock();
         }
+
+        return membersViewMetadata;
     }
 
-    public void handleHeartbeat(MembersViewMetadata senderMembersViewMetadata, UUID receiverUuid, long timestamp,
-                                Collection<MemberInfo> suspectedMembers) {
+    public MembersViewMetadata handleHeartbeat(MembersViewMetadata senderMembersViewMetadata,
+                                               UUID receiverUuid, long timestamp,
+                                               Collection<MemberInfo> suspectedMembers) {
         Address senderAddress = senderMembersViewMetadata.getMemberAddress();
         if (!clusterService.isJoined()) {
             if (clusterService.getThisUuid().equals(receiverUuid)) {
                 logger.fine("Ignoring heartbeat of sender: " + senderMembersViewMetadata + ", because node is not joined!");
             }
-            return;
+            return null;
         }
 
         MembershipManager membershipManager = clusterService.getMembershipManager();
@@ -192,7 +203,7 @@ public class ClusterGossipHeartbeatManager {
                     membershipManager.handleReceivedSuspectedMembers(member, clusterClock.getClusterTime(), suspectedMembers);
                 }
 
-                return;
+                return newMembersViewMetadata(member);
             }
 
             logger.warning("Local UUID mismatch on received heartbeat. local UUID: " + clusterService.getThisUuid()
@@ -200,6 +211,7 @@ public class ClusterGossipHeartbeatManager {
         }
 
         onInvalidHeartbeat(senderMembersViewMetadata);
+        return null;
     }
 
     private void onInvalidHeartbeat(MembersViewMetadata senderMembersViewMetadata) {
@@ -450,8 +462,7 @@ public class ClusterGossipHeartbeatManager {
      */
     private void heartbeatWhenMaster(long now) {
         Collection<Member> members = clusterService.getMembers(NON_LOCAL_MEMBER_SELECTOR);
-        MembershipManager membershipManager = clusterService.getMembershipManager();
-        List<MembersViewMetadata> locallyKnownMembersMetadata = new ArrayList<>();
+        List<MembersViewMetadata> localMembersMetadata = new ArrayList<>();
 
         for (Member member : members) {
             try {
@@ -460,15 +471,13 @@ public class ClusterGossipHeartbeatManager {
                     continue;
                 }
 
-                MembersViewMetadata memberViewMetadata
-                        = membershipManager.createMemberViewMetadata(member);
-                locallyKnownMembersMetadata.add(memberViewMetadata);
+                localMembersMetadata.add(newMembersViewMetadata(member));
             } catch (Throwable t) {
                 logger.severe(t);
             }
         }
 
-        sendHeartbeat(locallyKnownMembersMetadata, members);
+        sendHeartbeat(localMembersMetadata, members);
 
         clusterService.getMembershipManager().checkPartialDisconnectivity(now);
     }
@@ -482,8 +491,7 @@ public class ClusterGossipHeartbeatManager {
      */
     private void heartbeatWhenSlave(long now) {
         Collection<Member> members = clusterService.getMembers(NON_LOCAL_MEMBER_SELECTOR);
-        MembershipManager membershipManager = clusterService.getMembershipManager();
-        List<MembersViewMetadata> locallyKnownMembersMetadata = new ArrayList<>();
+        List<MembersViewMetadata> localMembersMetadata = new ArrayList<>();
 
         for (Member member : members) {
             try {
@@ -492,19 +500,24 @@ public class ClusterGossipHeartbeatManager {
                     continue;
                 }
 
-                if (membershipManager.isMemberSuspected((MemberImpl) member)) {
+                if (clusterService.getMembershipManager()
+                        .isMemberSuspected((MemberImpl) member)) {
                     continue;
                 }
 
-                MembersViewMetadata memberViewMetadata
-                        = membershipManager.createMemberViewMetadata(member);
-                locallyKnownMembersMetadata.add(memberViewMetadata);
+                localMembersMetadata.add(newMembersViewMetadata(member));
             } catch (Throwable t) {
                 logger.severe(t);
             }
         }
 
-        sendHeartbeat(locallyKnownMembersMetadata, members);
+        sendHeartbeat(localMembersMetadata, members);
+    }
+
+    private MembersViewMetadata newMembersViewMetadata(Member member) {
+        MembershipManager membershipManager = clusterService.getMembershipManager();
+        long lastHeartbeatTime = heartbeatFailureDetector.lastHeartbeat(member);
+        return membershipManager.createMemberViewMetadata(member, lastHeartbeatTime);
     }
 
     private boolean isMaster(MemberImpl member) {
@@ -513,26 +526,55 @@ public class ClusterGossipHeartbeatManager {
 
     private void sendHeartbeat(List<MembersViewMetadata> localMembersMetadata,
                                Collection<Member> members) {
-        if (CollectionUtil.isEmpty(localMembersMetadata)) {
+        if (isEmpty(localMembersMetadata)) {
             return;
         }
 
-        List<Member> randomizedMembers = new ArrayList<>(members);
-        Collections.shuffle(randomizedMembers);
+        // Send random-subset of member-metadata to random-subset of all members
+        ArrayList<Member> randomMembers = new ArrayList<>(members);
+        Collections.shuffle(randomMembers);
+        List<MembersViewMetadata> packedMemberMetadata = randomMembersToPack(localMembersMetadata);
+        // add local member metadata
+        packedMemberMetadata.add(clusterService.getMembershipManager().createLocalMembersViewMetadata());
 
         int sentTargetCount = 0;
-        for (Member target : randomizedMembers) {
+        for (Member target : randomMembers) {
             long clusterTime = clusterClock.getClusterTime();
             // TODO Add suspected members
-            Operation op = new GossipHeartbeatOp(localMembersMetadata,
+            Operation op = new GossipHeartbeatOp(packedMemberMetadata,
                     target.getUuid(), clusterTime, Collections.emptySet());
             op.setCallerUuid(clusterService.getThisUuid());
-            node.nodeEngine.getOperationService().send(op, target.getAddress());
+            InvocationBuilder invocationBuilder = node.nodeEngine.getOperationService()
+                    .createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME, op, target.getAddress());
+            invocationBuilder.invoke().whenCompleteAsync((o, throwable) -> {
+                if (o != null) {
+                    List<MembersViewMetadata> diff = (List<MembersViewMetadata>) o;
+                    for (MembersViewMetadata metadata : diff) {
+                        handleHeartbeat(metadata, clusterService.getThisUuid(),
+                                metadata.getLastHeartbeatTime(), Collections.emptySet());
+                    }
+                }
+            });
 
             if (++sentTargetCount == GOSSIP_TARGETS_TO_DISSEMINATE_COUNT) {
                 break;
             }
         }
+    }
+
+    private static List<MembersViewMetadata> randomMembersToPack(List<MembersViewMetadata> localMembersMetadata) {
+        List<MembersViewMetadata> randomizedMembers = new ArrayList<>(localMembersMetadata);
+        List<MembersViewMetadata> packetMembers = new ArrayList<>(localMembersMetadata);
+        Collections.shuffle(randomizedMembers);
+
+        for (MembersViewMetadata randomizedMember : randomizedMembers) {
+            packetMembers.add(randomizedMember);
+            // -1 because we will also add local member to the list
+            if (packetMembers.size() == GOSSIP_MEMBER_VIEW_METADATA_COUNT - 1) {
+                break;
+            }
+        }
+        return randomizedMembers;
     }
 
     /**

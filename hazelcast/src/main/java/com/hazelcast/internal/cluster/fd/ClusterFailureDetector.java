@@ -18,6 +18,8 @@ package com.hazelcast.internal.cluster.fd;
 
 import com.hazelcast.cluster.Member;
 
+import java.util.List;
+
 /**
  * Cluster failure detector tracks heartbeats of the members and decides liveness/availability of them.
  */
@@ -65,5 +67,7 @@ public interface ClusterFailureDetector {
      * Clear all state kept by this failure detector
      */
     void reset();
+
+    List<Member> getLeastRecentlySeen(long nowMillis);
 
 }

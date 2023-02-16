@@ -597,6 +597,11 @@ public class MembershipManager {
                 clusterService.getMasterAddress(), getMemberListVersion());
     }
 
+    public MembersViewMetadata createMemberViewMetadata(Member member, long lastHeartbeatTime) {
+        return new MembersViewMetadata(member.getAddress(), member.getUuid(),
+                clusterService.getMasterAddress(), getMemberListVersion(), lastHeartbeatTime);
+    }
+
     boolean validateMembersViewMetadata(MembersViewMetadata membersViewMetadata) {
         MemberImpl sender = getMember(membersViewMetadata.getMemberAddress(), membersViewMetadata.getMemberUuid());
         return sender != null && node.getThisAddress().equals(membersViewMetadata.getMasterAddress());

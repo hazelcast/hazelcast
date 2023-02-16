@@ -18,6 +18,9 @@ package com.hazelcast.internal.cluster.fd;
 
 import com.hazelcast.cluster.Member;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -64,5 +67,18 @@ public class DeadlineClusterFailureDetector implements ClusterFailureDetector {
     @Override
     public void reset() {
         heartbeatTimes.clear();
+    }
+
+    @Override
+    public List<Member> getLeastRecentlySeen(long nowMillis) {
+        List<Member> members = new ArrayList<>();
+        long leastTime = nowMillis - maxNoHeartbeatMillis;
+        for (Map.Entry<Member, Long> entry : heartbeatTimes.entrySet()) {
+            if (leastTime > entry.getValue()) {
+                members.add(entry.getKey());
+            }
+        }
+
+        return members;
     }
 }

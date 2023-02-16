@@ -24,13 +24,13 @@ public class GossipTest extends HazelcastTestSupport {
 
     @Test
     public void name() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(5);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(20);
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 20; i++) {
             factory.newHazelcastInstance();
         }
 
 
-        sleepSeconds(100);
+        sleepSeconds(30);
     }
 }

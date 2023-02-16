@@ -40,18 +40,20 @@ public final class GossipHeartbeatOp extends AbstractClusterOperation {
 
     private static final AtomicInteger INSTANCE_COUNTER = new AtomicInteger();
 
-    private List<MembersViewMetadata> localMembersMetadata;
+    private List<MembersViewMetadata> incomingMembersMetadata;
     private UUID targetUuid;
     private long timestamp;
     private Collection<MemberInfo> suspectedMembers;
 
+    private List<MembersViewMetadata> diffMetadata;
+
     public GossipHeartbeatOp() {
     }
 
-    public GossipHeartbeatOp(List<MembersViewMetadata> localMembersMetadata,
+    public GossipHeartbeatOp(List<MembersViewMetadata> incomingMembersMetadata,
                              UUID targetUuid, long timestamp,
                              Collection<MemberInfo> suspectedMembers) {
-        this.localMembersMetadata = localMembersMetadata;
+        this.incomingMembersMetadata = incomingMembersMetadata;
         this.targetUuid = targetUuid;
         this.timestamp = timestamp;
         this.suspectedMembers = suspectedMembers;
@@ -59,15 +61,27 @@ public final class GossipHeartbeatOp extends AbstractClusterOperation {
 
     @Override
     public void run() {
-        ClusterServiceImpl service = getService();
-        ClusterGossipHeartbeatManager heartbeatManager = service.getClusterGossipHeartbeatManager();
+        // TODO count this operation as heartbeat for callerUuid
+        ClusterServiceImpl clusterService = getService();
+        ClusterGossipHeartbeatManager heartbeatManager = clusterService.getClusterGossipHeartbeatManager();
         UUID callerUuid = getCallerUuid();
-        heartbeatManager.handleHeartbeat(localMembersMetadata,
+
+        diffMetadata = heartbeatManager.handleHeartbeat(incomingMembersMetadata,
                 targetUuid, timestamp, suspectedMembers, callerUuid);
 
 //        getLogger().severe(String.format("callerUuid: %s, targetUuid: %s, localMembersMetadata.size: %d [%s]",
 //                callerUuid, targetUuid, localMembersMetadata.size(), localMembersMetadata));
 //        getLogger().severe(String.format("---> instance count: %d", INSTANCE_COUNTER.incrementAndGet()));
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
+    }
+
+    @Override
+    public Object getResponse() {
+        return diffMetadata;
     }
 
     @Override
@@ -79,8 +93,8 @@ public final class GossipHeartbeatOp extends AbstractClusterOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
-        out.writeInt(localMembersMetadata.size());
-        for (MembersViewMetadata mvm : localMembersMetadata) {
+        out.writeInt(incomingMembersMetadata.size());
+        for (MembersViewMetadata mvm : incomingMembersMetadata) {
             out.writeObject(mvm);
         }
         UUIDSerializationUtil.writeUUID(out, targetUuid);
@@ -99,7 +113,7 @@ public final class GossipHeartbeatOp extends AbstractClusterOperation {
         for (int i = 0; i < mvmSize; i++) {
             mvmList.add(in.readObject());
         }
-        localMembersMetadata = mvmList;
+        incomingMembersMetadata = mvmList;
         targetUuid = UUIDSerializationUtil.readUUID(in);
         timestamp = in.readLong();
         int suspectedMemberCount = in.readInt();

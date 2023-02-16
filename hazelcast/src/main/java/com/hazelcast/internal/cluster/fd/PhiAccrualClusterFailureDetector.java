@@ -17,10 +17,11 @@
 package com.hazelcast.internal.cluster.fd;
 
 import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.internal.util.ConstructorFunction;
 
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -112,5 +113,11 @@ public class PhiAccrualClusterFailureDetector implements ClusterFailureDetector 
     @Override
     public void reset() {
         failureDetectors.clear();
+    }
+
+    // TODO implement
+    @Override
+    public List<Member> getLeastRecentlySeen(long nowMillis) {
+       throw new UnsupportedOperationException("Not implemented yet");
     }
 }
