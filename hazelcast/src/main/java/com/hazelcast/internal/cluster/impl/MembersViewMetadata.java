@@ -28,17 +28,15 @@ import java.util.UUID;
 public class MembersViewMetadata implements IdentifiedDataSerializable {
 
     private Address memberAddress;
-
     private UUID memberUuid;
-
     private Address masterAddress;
-
     private int memberListVersion;
 
     public MembersViewMetadata() {
     }
 
-    public MembersViewMetadata(Address memberAddress, UUID memberUuid, Address masterAddress, int memberListVersion) {
+    public MembersViewMetadata(Address memberAddress, UUID memberUuid,
+                               Address masterAddress, int memberListVersion) {
         this.memberAddress = memberAddress;
         this.memberUuid = memberUuid;
         this.masterAddress = masterAddress;

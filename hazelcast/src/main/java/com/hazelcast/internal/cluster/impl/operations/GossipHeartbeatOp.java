@@ -18,32 +18,37 @@ package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
+import com.hazelcast.internal.cluster.impl.ClusterGossipHeartbeatManager;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersViewMetadata;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.UUID;
 
 /**
  * A heartbeat sent from one cluster member to another. The sent timestamp is the cluster clock time of the sending member
  */
-public final class HeartbeatOp extends AbstractClusterOperation {
+public final class GossipHeartbeatOp extends AbstractClusterOperation {
 
-    private MembersViewMetadata senderMembersViewMetadata;
+    private List<MembersViewMetadata> localMembersMetadata;
     private UUID targetUuid;
     private long timestamp;
     private Collection<MemberInfo> suspectedMembers;
 
-    public HeartbeatOp() {
+    public GossipHeartbeatOp() {
     }
 
-    public HeartbeatOp(MembersViewMetadata senderMembersViewMetadata, UUID targetUuid, long timestamp,
-                       Collection<MemberInfo> suspectedMembers) {
-        this.senderMembersViewMetadata = senderMembersViewMetadata;
+    public GossipHeartbeatOp(List<MembersViewMetadata> localMembersMetadata,
+                             UUID targetUuid, long timestamp,
+                             Collection<MemberInfo> suspectedMembers) {
+        this.localMembersMetadata = localMembersMetadata;
         this.targetUuid = targetUuid;
         this.timestamp = timestamp;
         this.suspectedMembers = suspectedMembers;
@@ -51,21 +56,29 @@ public final class HeartbeatOp extends AbstractClusterOperation {
 
     @Override
     public void run() {
-        throw new UnsupportedOperationException("No call is expected");
-//        ClusterServiceImpl service = getService();
-//        ClusterHeartbeatManager heartbeatManager = service.getClusterHeartbeatManager();
-//        heartbeatManager.handleHeartbeat(senderMembersViewMetadata, targetUuid, timestamp, suspectedMembers);
+        ClusterServiceImpl service = getService();
+        ClusterGossipHeartbeatManager heartbeatManager = service.getClusterGossipHeartbeatManager();
+        UUID callerUuid = getCallerUuid();
+        heartbeatManager.handleHeartbeat(localMembersMetadata,
+                targetUuid, timestamp, suspectedMembers, callerUuid);
+
+        getLogger().severe(String.format("callerUuid: %s, targetUuid: %s, localMembersMetadata.size: %d [%s]",
+                callerUuid, targetUuid, localMembersMetadata.size(), localMembersMetadata));
     }
 
     @Override
     public int getClassId() {
-        return ClusterDataSerializerHook.HEARTBEAT;
+        return ClusterDataSerializerHook.GOSSIP_HEARTBEAT;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(senderMembersViewMetadata);
+
+        out.writeInt(localMembersMetadata.size());
+        for (MembersViewMetadata mvm : localMembersMetadata) {
+            out.writeObject(mvm);
+        }
         UUIDSerializationUtil.writeUUID(out, targetUuid);
         out.writeLong(timestamp);
         out.writeInt(suspectedMembers.size());
@@ -77,7 +90,12 @@ public final class HeartbeatOp extends AbstractClusterOperation {
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        senderMembersViewMetadata = in.readObject();
+        int mvmSize = in.readInt();
+        List<MembersViewMetadata> mvmList = new ArrayList<>(mvmSize);
+        for (int i = 0; i < mvmSize; i++) {
+            mvmList.add(in.readObject());
+        }
+        localMembersMetadata = mvmList;
         targetUuid = UUIDSerializationUtil.readUUID(in);
         timestamp = in.readLong();
         int suspectedMemberCount = in.readInt();

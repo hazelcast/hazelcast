@@ -18,7 +18,7 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.cluster.impl.ClusterHeartbeatManager;
+import com.hazelcast.internal.cluster.impl.ClusterGossipHeartbeatManager;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -99,7 +99,8 @@ public class MemberHeartbeatPlugin extends DiagnosticsPlugin {
     }
 
     private void render(DiagnosticsLogWriter writer, ClusterServiceImpl clusterService) {
-        ClusterHeartbeatManager clusterHeartbeatManager = clusterService.getClusterHeartbeatManager();
+//        ClusterHeartbeatManager clusterHeartbeatManager = clusterService.getClusterHeartbeatManager();
+        ClusterGossipHeartbeatManager clusterHeartbeatManager = clusterService.getClusterGossipHeartbeatManager();
         long expectedIntervalMillis = clusterHeartbeatManager.getHeartbeatIntervalMillis();
 
         long nowMillis = System.currentTimeMillis();

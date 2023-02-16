@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
-import com.hazelcast.internal.cluster.impl.ClusterHeartbeatManager;
+import com.hazelcast.internal.cluster.impl.ClusterGossipHeartbeatManager;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersViewMetadata;
 import com.hazelcast.nio.ObjectDataInput;
@@ -43,7 +43,8 @@ public class HeartbeatComplaintOp extends AbstractClusterOperation {
     @Override
     public void run() throws Exception {
         ClusterServiceImpl service = getService();
-        ClusterHeartbeatManager heartbeatManager = service.getClusterHeartbeatManager();
+//        ClusterHeartbeatManager heartbeatManager = service.getClusterHeartbeatManager();
+        ClusterGossipHeartbeatManager heartbeatManager = service.getClusterGossipHeartbeatManager();
         heartbeatManager.handleHeartbeatComplaint(receiverMembersViewMetadata, senderMembersViewMetadata);
     }
 

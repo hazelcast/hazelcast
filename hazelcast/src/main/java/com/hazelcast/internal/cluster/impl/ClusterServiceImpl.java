@@ -115,7 +115,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     private final MembershipManager membershipManager;
     private final ClusterJoinManager clusterJoinManager;
     private final ClusterStateManager clusterStateManager;
-    private final ClusterHeartbeatManager clusterHeartbeatManager;
+//    private final ClusterHeartbeatManager clusterHeartbeatManager;
+    private final ClusterGossipHeartbeatManager clusterGossipHeartbeatManager;
     private final ReentrantLock clusterServiceLock = new ReentrantLock();
     private final AtomicReference<JoinHolder> joined =
             new AtomicReference<>(new JoinHolder(false));
@@ -144,7 +145,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         membershipManager = new MembershipManager(node, this, clusterServiceLock);
         clusterStateManager = new ClusterStateManager(node, clusterServiceLock);
         clusterJoinManager = new ClusterJoinManager(node, this, clusterServiceLock);
-        clusterHeartbeatManager = new ClusterHeartbeatManager(node, this, clusterServiceLock);
+//        clusterHeartbeatManager = new ClusterHeartbeatManager(node, this, clusterServiceLock);
+        clusterGossipHeartbeatManager = new ClusterGossipHeartbeatManager(node, this, clusterServiceLock);
 
         node.getServer().getConnectionManager(MEMBER).addConnectionListener(this);
         ExecutionService executionService = nodeEngine.getExecutionService();
@@ -159,7 +161,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     private void registerMetrics() {
         MetricsRegistry metricsRegistry = node.nodeEngine.getMetricsRegistry();
         metricsRegistry.registerStaticMetrics(clusterClock, CLUSTER_PREFIX_CLOCK);
-        metricsRegistry.registerStaticMetrics(clusterHeartbeatManager, CLUSTER_PREFIX_HEARTBEAT);
+//        metricsRegistry.registerStaticMetrics(clusterHeartbeatManager, CLUSTER_PREFIX_HEARTBEAT);
+        metricsRegistry.registerStaticMetrics(clusterGossipHeartbeatManager, CLUSTER_PREFIX_HEARTBEAT);
         metricsRegistry.registerStaticMetrics(this, CLUSTER_PREFIX);
     }
 
@@ -175,7 +178,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 mergeFirstRunDelayMs, mergeNextRunDelayMs, TimeUnit.MILLISECONDS);
 
         membershipManager.init();
-        clusterHeartbeatManager.init();
+//        clusterHeartbeatManager.init();
+        clusterGossipHeartbeatManager.init();
     }
 
     public void sendLocalMembershipEvent() {
@@ -411,7 +415,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             }
 
             membershipManager.updateMembers(membersView);
-            clusterHeartbeatManager.heartbeat();
+            clusterGossipHeartbeatManager.heartbeat();
+
             setJoined(true);
             node.getNodeExtension().getAuditlogService()
                 .eventBuilder(AuditlogTypeIds.CLUSTER_MEMBER_ADDED)
@@ -614,7 +619,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         clusterServiceLock.lock();
         try {
             membershipManager.reset();
-            clusterHeartbeatManager.reset();
+//            clusterHeartbeatManager.reset();
+            clusterGossipHeartbeatManager.reset();
             clusterStateManager.reset();
             clusterJoinManager.reset();
             resetJoinState();
@@ -1005,8 +1011,12 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return clusterJoinManager;
     }
 
-    public ClusterHeartbeatManager getClusterHeartbeatManager() {
-        return clusterHeartbeatManager;
+//    public ClusterHeartbeatManager getClusterHeartbeatManager() {
+//        return clusterHeartbeatManager;
+//    }
+
+    public ClusterGossipHeartbeatManager getClusterGossipHeartbeatManager() {
+        return clusterGossipHeartbeatManager;
     }
 
     @Override

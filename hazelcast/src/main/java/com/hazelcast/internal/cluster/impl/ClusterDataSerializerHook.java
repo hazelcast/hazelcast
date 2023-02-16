@@ -28,6 +28,7 @@ import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.FetchMembersViewOp;
 import com.hazelcast.internal.cluster.impl.operations.FinalizeJoinOp;
 import com.hazelcast.internal.cluster.impl.operations.ClusterMismatchOp;
+import com.hazelcast.internal.cluster.impl.operations.GossipHeartbeatOp;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatComplaintOp;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatOp;
 import com.hazelcast.internal.cluster.impl.operations.JoinMastershipClaimOp;
@@ -100,8 +101,9 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int HEARTBEAT_COMPLAINT = 38;
     public static final int PROMOTE_LITE_MEMBER = 39;
     public static final int VECTOR_CLOCK = 40;
+    public static final int GOSSIP_HEARTBEAT = 41;
 
-    static final int LEN = VECTOR_CLOCK + 1;
+    static final int LEN = GOSSIP_HEARTBEAT + 1;
 
     @Override
     public int getFactoryId() {
@@ -153,6 +155,7 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         constructors[PROMOTE_LITE_MEMBER] = arg -> new PromoteLiteMemberOp();
         constructors[VECTOR_CLOCK] = arg -> new VectorClock();
         constructors[ENDPOINT_QUALIFIER] = arg -> new EndpointQualifier();
+        constructors[GOSSIP_HEARTBEAT] = arg -> new GossipHeartbeatOp();
         return new ArrayDataSerializableFactory(constructors);
     }
 }
