@@ -85,7 +85,8 @@ public class JobUploadCall {
         return sessionId;
     }
 
-    UUID getMemberUuid() {
+    // This method is public for testing purposes.
+    public UUID getMemberUuid() {
         return memberUuid;
     }
 
