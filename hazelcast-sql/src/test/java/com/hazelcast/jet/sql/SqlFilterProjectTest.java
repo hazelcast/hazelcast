@@ -81,7 +81,7 @@ public class SqlFilterProjectTest extends SqlTestSupport {
     public void test_valuesSelectScriptUdf() {
         sqlService.execute("create function myfunjs(x varchar) RETURNS varchar\n"
                 + "LANGUAGE 'js' \n"
-                + "AS 'x + ''/'' + x'");
+                + "AS `x + '/' + x`");
 
         assertRowsAnyOrder(
                 "SELECT myfunjs(x) as c FROM (VALUES ('a'), ('b')) AS t (x)",
@@ -93,7 +93,7 @@ public class SqlFilterProjectTest extends SqlTestSupport {
     public void test_valuesSelectScriptUdfNoParameters() {
         sqlService.execute("create function now() RETURNS bigint\n"
                 + "LANGUAGE 'js' \n"
-                + "AS 'java.lang.System.currentTimeMillis()'");
+                + "AS `java.lang.System.currentTimeMillis()`");
 
         assertThat(sqlService.execute("SELECT now()").<Long>scalar())
                 .isCloseTo(System.currentTimeMillis(), Offset.offset(10000L));
@@ -101,19 +101,17 @@ public class SqlFilterProjectTest extends SqlTestSupport {
 
     @Test
     public void test_valuesSelectScriptUdfNoParametersNoParentheses() {
-        sqlService.execute("create function now RETURNS bigint\n"
+        assertThatThrownBy(() -> sqlService.execute("create function now RETURNS bigint\n"
                 + "LANGUAGE 'js' \n"
-                + "AS 'java.lang.System.currentTimeMillis()'");
-
-        assertThat(sqlService.execute("SELECT now()").<Long>scalar())
-                .isCloseTo(System.currentTimeMillis(), Offset.offset(10000L));
+                + "AS `java.lang.System.currentTimeMillis()`"))
+                .hasMessageContaining("Encountered \"RETURNS\"");
     }
 
     @Test
     public void test_dropUdf() {
         sqlService.execute("create function myfunjs(x varchar) RETURNS varchar\n"
                 + "LANGUAGE 'js' \n"
-                + "BODY 'x + ''/'' + x'");
+                + "AS `x + '/' + x`");
         sqlService.execute("drop function myfunjs");
         assertThatThrownBy(() -> sqlService.execute("SELECT myfunjs(x) as c FROM (VALUES ('a'), ('b')) AS t (x)"))
                 .hasMessageContaining("Function 'myfunjs' does not exist");

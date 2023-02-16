@@ -14,6 +14,23 @@
 // limitations under the License.
 -->
 
+<DEFAULT, DQID, BTID, BQID, BQHID> TOKEN : {
+    < FUNCTION_BODY_LITERAL: "`" ( (~["`"]) | ("``"))+ "`" >
+}
+
+SqlNode FunctionBodyLiteral() :
+{
+}
+{
+    <FUNCTION_BODY_LITERAL> {
+        return SqlLiteral.createCharString(
+            SqlParserUtil.stripQuotes(getToken(0).image, "`", "`", "``", quotedCasing),
+            null,
+            getPos());
+
+    }
+}
+
 /**
  * Parses CREATE EXTERNAL MAPPING statement.
  */
@@ -64,7 +81,8 @@ SqlCreate SqlCreateFunction(Span span, boolean replace) :
     SqlIdentifier name;
     SqlDataType returnType;
     SqlNodeList parameters = SqlNodeList.EMPTY;
-    SqlNode language, body;
+    SqlNode language;
+    SqlNode body;
     SqlNodeList sqlOptions = SqlNodeList.EMPTY;
     boolean ifNotExists = false;
 }
@@ -83,7 +101,7 @@ SqlCreate SqlCreateFunction(Span span, boolean replace) :
     language = StringLiteral()
 
     [ <AS> ]
-    body = StringLiteral()
+    body = FunctionBodyLiteral()
 
     [
         <OPTIONS>
@@ -111,6 +129,7 @@ SqlNodeList FunctionParameters():
     List<SqlNode> columns = new ArrayList<SqlNode>();
 }
 {
+    // parentheses are mandatory for function parameters
     <LPAREN>
     {  pos = getPos(); }
 
