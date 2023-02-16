@@ -69,4 +69,12 @@ public final class HazelcastScriptUserDefinedFunction extends HazelcastFunction 
         return new ScriptUdfInvocationExpression(getName(), returnType, operands);
     }
 
+    @Override
+    public boolean isDeterministic() {
+        // TODO: use options
+        // assume UDFs are not deterministic, however support in Calcite has issues:
+        // https://issues.apache.org/jira/browse/CALCITE-3760,
+        // https://issues.apache.org/jira/browse/CALCITE-2348.
+        return false;
+    }
 }
