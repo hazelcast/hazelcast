@@ -21,6 +21,7 @@ import com.hazelcast.jet.SubmitJobParameters;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Objects;
 
 public class SubmitJobParametersValidator {
@@ -28,18 +29,18 @@ public class SubmitJobParametersValidator {
     // Validate the parameters used by the client
     void validateParameterObject(SubmitJobParameters parameterObject) throws IOException {
         // Check that parameter is not null, because it is used to access the file
-        if (Objects.isNull(parameterObject.getJarPath())) {
+        Path jarPath = parameterObject.getJarPath();
+        if (Objects.isNull(jarPath)) {
             throw new JetException("jarPath can not be null");
+        }
+        long jarSize = Files.size(jarPath);
+        if (jarSize == 0) {
+            throw new JetException("Jar size can not be 0");
         }
 
         // Check that parameter is not null, because it is used by the JetUploadJobMetaDataCodec
         if (Objects.isNull(parameterObject.getJobParameters())) {
             throw new JetException("jobParameters can not be null");
         }
-        long jarSize = Files.size(parameterObject.getJarPath());
-        if (jarSize == 0) {
-            throw new JetException("Jar size can not be 0");
-        }
-
     }
 }

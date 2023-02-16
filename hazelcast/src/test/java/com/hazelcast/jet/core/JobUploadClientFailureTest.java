@@ -333,7 +333,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         }
     }
     */
-    static Path getJarPath() {
+    public static Path getJarPath() {
         return getPath(SIMPLE_JAR);
     }
 

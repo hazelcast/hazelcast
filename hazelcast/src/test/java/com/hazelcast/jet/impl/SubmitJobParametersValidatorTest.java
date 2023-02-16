@@ -23,6 +23,7 @@ import org.junit.Test;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 
+import static com.hazelcast.jet.core.JobUploadClientFailureTest.getJarPath;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SubmitJobParametersValidatorTest {
@@ -45,5 +46,17 @@ public class SubmitJobParametersValidatorTest {
         parameterObject.setJarPath(Paths.get("nosuchfile.jar"));
         assertThatThrownBy(() -> validator.validateParameterObject(parameterObject))
                 .isInstanceOf(NoSuchFileException.class);
+    }
+
+    @Test
+    public void nullJobParameters() {
+        SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
+
+        SubmitJobParameters parameterObject = new SubmitJobParameters();
+        parameterObject.setJarPath(getJarPath());
+        parameterObject.setJobParameters(null);
+        assertThatThrownBy(() -> validator.validateParameterObject(parameterObject))
+                .isInstanceOf(JetException.class)
+                .hasMessageContaining("jobParameters can not be null");
     }
 }
