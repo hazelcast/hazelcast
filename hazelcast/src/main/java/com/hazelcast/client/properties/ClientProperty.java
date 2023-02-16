@@ -315,7 +315,7 @@ public final class ClientProperty {
      * The default size of multipart job upload
      */
     public static final HazelcastProperty JOB_UPLOAD_PART_SIZE
-            = new HazelcastProperty("hazelcast.jobupload.partsize", 10_000_000);
+            = new HazelcastProperty("hazelcast.client.jobupload.partsize", 10_000_000);
 
 
     private ClientProperty() {
