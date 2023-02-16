@@ -27,11 +27,14 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A heartbeat sent from one cluster member to another. The sent timestamp is the cluster clock time of the sending member
  */
 public final class HeartbeatOp extends AbstractClusterOperation {
+
+    private static final AtomicInteger INSTANCE_COUNTER = new AtomicInteger();
 
     private MembersViewMetadata senderMembersViewMetadata;
     private UUID targetUuid;
@@ -55,6 +58,8 @@ public final class HeartbeatOp extends AbstractClusterOperation {
 //        ClusterServiceImpl service = getService();
 //        ClusterHeartbeatManager heartbeatManager = service.getClusterHeartbeatManager();
 //        heartbeatManager.handleHeartbeat(senderMembersViewMetadata, targetUuid, timestamp, suspectedMembers);
+//        getLogger().severe(String.format("callerUuid: %s, targetUuid: %s ", getCallerUuid(), targetUuid));
+
     }
 
     @Override

@@ -31,6 +31,6 @@ public class GossipTest extends HazelcastTestSupport {
         }
 
 
-        sleepSeconds(1000);
+        sleepSeconds(100);
     }
 }

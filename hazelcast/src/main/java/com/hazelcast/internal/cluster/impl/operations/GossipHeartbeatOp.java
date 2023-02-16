@@ -31,11 +31,14 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A heartbeat sent from one cluster member to another. The sent timestamp is the cluster clock time of the sending member
  */
 public final class GossipHeartbeatOp extends AbstractClusterOperation {
+
+    private static final AtomicInteger INSTANCE_COUNTER = new AtomicInteger();
 
     private List<MembersViewMetadata> localMembersMetadata;
     private UUID targetUuid;
@@ -62,8 +65,9 @@ public final class GossipHeartbeatOp extends AbstractClusterOperation {
         heartbeatManager.handleHeartbeat(localMembersMetadata,
                 targetUuid, timestamp, suspectedMembers, callerUuid);
 
-        getLogger().severe(String.format("callerUuid: %s, targetUuid: %s, localMembersMetadata.size: %d [%s]",
-                callerUuid, targetUuid, localMembersMetadata.size(), localMembersMetadata));
+//        getLogger().severe(String.format("callerUuid: %s, targetUuid: %s, localMembersMetadata.size: %d [%s]",
+//                callerUuid, targetUuid, localMembersMetadata.size(), localMembersMetadata));
+//        getLogger().severe(String.format("---> instance count: %d", INSTANCE_COUNTER.incrementAndGet()));
     }
 
     @Override
