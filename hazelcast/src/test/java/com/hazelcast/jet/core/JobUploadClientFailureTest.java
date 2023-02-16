@@ -22,6 +22,8 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.impl.HazelcastBootstrap;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
+import com.hazelcast.jet.Job;
+import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
@@ -42,11 +44,15 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.doAnswer;
 
@@ -215,6 +221,37 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         assertEqualsEventually(() -> jetService.getJobs().size(), 0);
     }
 
+    @Test
+    public void test_jobAlreadyExists() {
+        createCluster();
+
+        HazelcastInstance client = createHazelcastClient();
+        JetService jetService = client.getJet();
+
+        String job1 = "job1";
+        SubmitJobParameters submitJobParameters1 = new SubmitJobParameters()
+                .setJarPath(getJarPath())
+                .setJobName(job1);
+
+        jetService.submitJobFromJar(submitJobParameters1);
+
+
+        String job2 = "job1";
+        SubmitJobParameters submitJobParameters2 = new SubmitJobParameters()
+                .setJarPath(getJarPath())
+                .setJobName(job2);
+
+        assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters2))
+                .isInstanceOf(JetException.class)
+                .hasRootCauseInstanceOf(JobAlreadyExistsException.class);
+
+        assertTrueEventually(() -> {
+            List<Job> jobs = jetService.getJobs();
+            assertEquals(1, jobs.size());
+            assertTrue(containsName(jobs, job1));
+        });
+    }
+
     // This test is slow because it is trying to connect to a shutdown member
     @Category({SlowTest.class})
     @Test
@@ -245,7 +282,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
                 .setJarPath(getJarPath());
 
-        assertThrows(OperationTimeoutException.class, () ->  spyJetService.submitJobFromJar(submitJobParameters));
+        assertThrows(OperationTimeoutException.class, () -> spyJetService.submitJobFromJar(submitJobParameters));
     }
 
     private HazelcastInstance createCluster() {
@@ -350,5 +387,9 @@ public class JobUploadClientFailureTest extends JetTestSupport {
                 return fileName.startsWith(newJarName);
             });
         }
+    }
+
+    static boolean containsName(List<Job> list, String name) {
+        return list.stream().anyMatch(job -> Objects.equals(job.getName(), name));
     }
 }

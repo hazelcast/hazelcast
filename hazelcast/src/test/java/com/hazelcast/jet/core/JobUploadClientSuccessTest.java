@@ -39,10 +39,10 @@ import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static com.hazelcast.jet.core.JobUploadClientFailureTest.containsName;
 import static com.hazelcast.jet.core.JobUploadClientFailureTest.getJarPath;
 import static com.hazelcast.jet.core.JobUploadClientFailureTest.jarDoesNotExist;
 import static java.util.Collections.emptyList;
@@ -252,9 +252,5 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
 
         // Assert job jar does is deleted
         jarDoesNotExist();
-    }
-
-    private boolean containsName(List<Job> list, String name) {
-        return list.stream().anyMatch(job -> Objects.equals(job.getName(), name));
     }
 }
