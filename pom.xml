@@ -75,7 +75,7 @@
         <maven.surefire.plugin.version>3.0.0-M8</maven.surefire.plugin.version>
         <maven.checkstyle.plugin.version>3.2.1</maven.checkstyle.plugin.version>
         <maven.jacoco.plugin.version>0.8.8</maven.jacoco.plugin.version>
-        <maven.failsafe.plugin.version>${maven.surefire.plugin.version}</maven.failsafe.plugin.version>
+        <maven.failsafe.plugin.version>3.0.0-M9</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
         <maven.enforcer.plugin.version>3.2.1</maven.enforcer.plugin.version>
         <maven.os.plugin.version>1.7.1</maven.os.plugin.version>
