@@ -77,7 +77,7 @@ public class UserDefinedFunction implements IdentifiedDataSerializable, Serializ
             for (int i = 0; i < parameterNames.size(); ++i) {
                 buffer.append(parameterNames.get(i)).append(" ");
                 buffer.append(parameterTypes.get(i).getTypeFamily().toString());
-                if (i > 0) {
+                if (i < parameterNames.size() - 1) {
                     buffer.append(", ");
                 }
             }
