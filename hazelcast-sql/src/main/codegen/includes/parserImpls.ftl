@@ -71,7 +71,7 @@ SqlCreate SqlCreateType(Span span, boolean replace) :
     [
         <IF> <NOT> <EXISTS> { ifNotExists = true; }
     ]
-    name = SimpleIdentifier()
+    name = CompoundIdentifier()
     columns = TypeColumns()
     <OPTIONS>
     sqlOptions = SqlOptions()

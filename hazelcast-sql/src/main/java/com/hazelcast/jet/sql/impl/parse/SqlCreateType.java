@@ -29,11 +29,15 @@ import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.util.ImmutableNullableList;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
+import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.isCatalogObjectNameValid;
 import static java.util.Objects.requireNonNull;
 
 public class SqlCreateType extends SqlCreate {
@@ -69,6 +73,29 @@ public class SqlCreateType extends SqlCreate {
 
     @Override
     public void validate(final SqlValidator validator, final SqlValidatorScope scope) {
+        if (getReplace() && ifNotExists) {
+            throw validator.newValidationError(this, RESOURCE.orReplaceWithIfNotExistsNotSupported());
+        }
+
+        if (!isCatalogObjectNameValid(name)) {
+            throw validator.newValidationError(name, RESOURCE.typeIncorrectSchema());
+        }
+
+        final Set<String> columnNames = new HashSet<>();
+        for (SqlNode column : columns.getList()) {
+            String name = ((SqlTypeColumn) column).name();
+            if (!columnNames.add(name)) {
+                throw validator.newValidationError(column, RESOURCE.duplicateColumn(name));
+            }
+        }
+
+        final Set<String> optionNames = new HashSet<>();
+        for (SqlNode option : options.getList()) {
+            String name = ((SqlOption) option).keyString();
+            if (!optionNames.add(name)) {
+                throw validator.newValidationError(option, RESOURCE.duplicateOption(name));
+            }
+        }
     }
 
     @Override
@@ -107,7 +134,7 @@ public class SqlCreateType extends SqlCreate {
     }
 
     public String getName() {
-        return name.getSimple();
+        return name.names.get(name.names.size() - 1);
     }
 
     public boolean ifNotExists() {

@@ -37,6 +37,9 @@ public interface ParserResource {
     @BaseMessage("The view must be created in the \"public\" schema")
     ExInst<SqlValidatorException> viewIncorrectSchema();
 
+    @BaseMessage("The type must be created in the \"public\" schema")
+    ExInst<SqlValidatorException> typeIncorrectSchema();
+
     @BaseMessage("Column ''{0}'' specified more than once")
     ExInst<SqlValidatorException> duplicateColumn(String columnName);
 

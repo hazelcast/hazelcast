@@ -32,6 +32,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENAB
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class NestedTypesDDLTest extends SqlTestSupport {
@@ -86,6 +87,45 @@ public class NestedTypesDDLTest extends SqlTestSupport {
                 .hasMessage("Type does not exist: Foo");
 
         execute("DROP TYPE IF EXISTS Foo");
+    }
+
+    @Test
+    public void test_failOnDuplicateColumnName() {
+        assertThatThrownBy(() -> execute("CREATE TYPE TestType (id BIGINT, id BIGINT) "
+                + "OPTIONS ('format'='compact', 'compactTypeName'='TestType')"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Column 'id' specified more than once");
+    }
+
+    @Test
+    public void test_failOnReplaceAndIfNotExists() {
+        assertThatThrownBy(() -> execute("CREATE OR REPLACE TYPE IF NOT EXISTS TestType (id BIGINT, name VARCHAR) "
+                + "OPTIONS ('format'='compact', 'compactTypeName'='TestType')"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("OR REPLACE in conjunction with IF NOT EXISTS not supported");
+    }
+
+    @Test
+    public void test_fullyQualifiedTypeName() {
+        execute(format("CREATE TYPE hazelcast.public.FirstType OPTIONS ('format'='java','javaClass'='%s')",
+                FirstType.class.getName()));
+        assertNotNull(storage.getType("FirstType"));
+    }
+
+    @Test
+    public void test_failOnNonPublicSchemaType() {
+        assertThatThrownBy(() -> execute("CREATE TYPE information_schema.TestType (id BIGINT, name VARCHAR) "
+                + "OPTIONS ('format'='compact', 'compactTypeName'='TestType')"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("The type must be created in the \"public\" schema");
+    }
+
+    @Test
+    public void test_failOnDuplicateOptions() {
+        assertThatThrownBy(() -> execute("CREATE TYPE TestType (id BIGINT, name VARCHAR) "
+                + "OPTIONS ('format'='compact', 'compactTypeName'='TestType', 'compactTypeName'='TestType2')"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Option 'compactTypeName' specified more than once");
     }
 
     void execute(String sql) {
