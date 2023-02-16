@@ -33,11 +33,11 @@ public class SubmitJobParametersValidator {
         if (Objects.isNull(jarPath)) {
             throw new JetException("jarPath can not be null");
         }
+        // Check that the file exists and its size is not 0
         long jarSize = Files.size(jarPath);
         if (jarSize == 0) {
             throw new JetException("Jar size can not be 0");
         }
-
         // Check that parameter is not null, because it is used by the JetUploadJobMetaDataCodec
         if (Objects.isNull(parameterObject.getJobParameters())) {
             throw new JetException("jobParameters can not be null");
