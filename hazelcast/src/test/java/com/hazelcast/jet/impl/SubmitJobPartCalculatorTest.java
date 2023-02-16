@@ -20,13 +20,45 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
+@RunWith(value = Parameterized.class)
 public class SubmitJobPartCalculatorTest {
+
+    @Parameter
+    public long jarSize;
+
+    @Parameter(value = 1)
+    public long partSize;
+
+    @Parameter(value = 2)
+    public int totalParts;
+
+    @Parameters
+    public static Collection<Object> parameters() {
+        return Arrays.asList(new Object[][]{
+                // {jarSize,partSize,totalParts}
+                {0, 10_000_000, 0},
+                {1, 10_000_000, 1},
+                {3_500, 1_000, 4},
+                {30_720, 10_000_000, 1},
+                {999_9999, 10_000_000, 1},
+                {10_000_000, 10_000_000, 1},
+                {10_000_001, 10_000_000, 2},
+                {100_999_999, 10_000_000, 11},
+                {100_999_999_001L, 1_000, 101_000_000},
+        });
+    }
 
     @Test
     public void calculatePartBufferSize_when_validProperty() {
@@ -74,12 +106,9 @@ public class SubmitJobPartCalculatorTest {
 
     @Test
     public void calculateTotalParts() {
-        long jarSize = 10_000_000;
-        int partSize = 10_000_000;
-
         SubmitJobPartCalculator submitJobPartCalculator = new SubmitJobPartCalculator();
 
-        int totalParts = submitJobPartCalculator.calculateTotalParts(jarSize, partSize);
-        assertEquals(1, totalParts);
+        int calculatedTotalParts = submitJobPartCalculator.calculateTotalParts(jarSize, partSize);
+        assertEquals(totalParts, calculatedTotalParts);
     }
 }

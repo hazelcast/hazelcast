@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.UUID;
 
 public class JobUploadCall {
@@ -44,6 +45,18 @@ public class JobUploadCall {
 
     public byte[] allocatePartBuffer() {
         return new byte[partSize];
+    }
+
+    public byte[] getDataToSend(byte[] partBuffer, int bytesRead) {
+        byte[] dataToSend;
+        if (bytesRead != partBuffer.length) {
+            // If read less data, resize the array
+            dataToSend = Arrays.copyOf(partBuffer, bytesRead);
+        } else {
+            // Otherwise use the full array
+            dataToSend = partBuffer;
+        }
+        return dataToSend;
     }
 
     public void initializeJobUploadCall(HazelcastClientInstanceImpl client, Path jarPath)

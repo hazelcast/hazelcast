@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OperationTimeoutException;
@@ -29,7 +31,6 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JobUploadCall;
 import com.hazelcast.jet.test.SerialTest;
-import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -252,14 +253,15 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         });
     }
 
-    // This test is slow because it is trying to connect to a shutdown member
-    @Category({SlowTest.class})
     @Test
     public void test_jarUpload_whenMemberShutsDown() throws IOException, NoSuchAlgorithmException {
         HazelcastInstance[] cluster = createCluster(2);
 
+        // Speed up the test by waiting less on invocation timeout
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "10");
+        HazelcastInstance client = createHazelcastClient(clientConfig);
 
-        HazelcastInstance client = createHazelcastClient();
         JetClientInstanceImpl jetService = (JetClientInstanceImpl) client.getJet();
         JetClientInstanceImpl spyJetService = Mockito.spy(jetService);
 
@@ -282,6 +284,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
                 .setJarPath(getJarPath());
 
+        // Should throw OperationTimeoutException because target instance was shut down
         assertThrows(OperationTimeoutException.class, () -> spyJetService.submitJobFromJar(submitJobParameters));
     }
 

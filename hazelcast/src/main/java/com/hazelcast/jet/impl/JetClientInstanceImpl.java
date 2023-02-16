@@ -203,17 +203,18 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
             // Start from part #1
             for (int currentPartNumber = 1; currentPartNumber <= jobUploadCall.getTotalParts(); currentPartNumber++) {
 
-                // Read data
                 int bytesRead = fileInputStream.read(partBuffer);
 
-                String sha256Hex = Sha256Util.calculateSha256Hex(partBuffer, bytesRead);
+                byte[] dataToSend = jobUploadCall.getDataToSend(partBuffer, bytesRead);
+
+                String sha256Hex = Sha256Util.calculateSha256Hex(dataToSend);
                 //Send the part
-                ClientMessage jobDataRequest = JetUploadJobMultipartCodec.encodeRequest(
+                ClientMessage jobMultipartRequest = JetUploadJobMultipartCodec.encodeRequest(
                         jobUploadCall.getSessionId(),
                         currentPartNumber,
-                        jobUploadCall.getTotalParts(), partBuffer, bytesRead, sha256Hex);
+                        jobUploadCall.getTotalParts(), dataToSend, bytesRead, sha256Hex);
 
-                boolean result = invokeRequestAndDecodeResponseNoRetryOnRandom(jobUploadCall.getMemberUuid(), jobDataRequest,
+                boolean result = invokeRequestAndDecodeResponseNoRetryOnRandom(jobUploadCall.getMemberUuid(), jobMultipartRequest,
                         JetUploadJobMultipartCodec::decodeResponse);
                 if (result) {
                     logFine(getLogger(), "Submitted Job Part successfully for jarPath: %s PartNumber %d",
@@ -222,6 +223,8 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
             }
         }
     }
+
+
 
     @Override
     public ILogger getLogger() {

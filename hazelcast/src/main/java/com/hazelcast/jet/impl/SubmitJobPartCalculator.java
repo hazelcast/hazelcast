@@ -23,12 +23,14 @@ import static com.hazelcast.client.properties.ClientProperty.JOB_UPLOAD_PART_SIZ
 public class SubmitJobPartCalculator {
 
     /**
-     * Calculate the part buffer size from properties if defined, otherwise use default value
+     * Calculate the part buffer size finding minimum of <br/>
+     * 1. size from the properties if defined, or the default value <br/>
+     * 2. jarSize
      */
     int calculatePartBufferSize(HazelcastProperties hazelcastProperties, long jarSize) {
         int partBufferSize = hazelcastProperties.getInteger(JOB_UPLOAD_PART_SIZE);
 
-        // If jar size is smaller than buffer size use it
+        // If jar size is smaller, then use it
         if (jarSize < partBufferSize) {
             partBufferSize = (int) jarSize;
         }
@@ -38,10 +40,10 @@ public class SubmitJobPartCalculator {
     /**
      * Calculate the total parts required for the job upload
      */
-    int calculateTotalParts(long jarSize, int partSize) {
-        if (jarSize == partSize) {
-            return 1;
-        }
-        return (int) Math.ceil(jarSize / (double) partSize);
+    int calculateTotalParts(long jarSize, long partSize) {
+        long mod = jarSize % partSize;
+        int remainder = (mod == 0L) ? 0 : 1;
+        int result = (int) (jarSize / partSize);
+        return result + remainder;
     }
 }
