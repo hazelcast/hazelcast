@@ -399,6 +399,28 @@
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
+
+        <!-- Scripting -->
+        <!-- JavaScript -->
+        <dependency>
+            <groupId>org.openjdk.nashorn</groupId>
+            <artifactId>nashorn-core</artifactId>
+            <version>15.3</version>
+        </dependency>
+        <!-- Groovy -->
+        <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-jsr223</artifactId>
+            <version>3.0.15</version>
+        </dependency>
+        <!-- Python (Jython) -->
+        <dependency>
+            <groupId>org.python</groupId>
+            <artifactId>jython-standalone</artifactId>
+            <!-- in 2.7.3 there are some problems with network access -->
+            <version>2.7.2</version>
+        </dependency>
+
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
