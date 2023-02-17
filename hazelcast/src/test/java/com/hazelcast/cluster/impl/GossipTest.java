@@ -32,14 +32,20 @@ public class GossipTest extends HazelcastTestSupport {
         Config config = smallInstanceConfig().setProperty(MAX_NO_HEARTBEAT_SECONDS.getName(), "15")
                 .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), "5");
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(20);
+        int nodeCount = 50;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < nodeCount; i++) {
             factory.newHazelcastInstance(config);
         }
-        assertClusterSizeEventually(10, factory.getAllHazelcastInstances());
+        assertClusterSizeEventually(nodeCount, factory.getAllHazelcastInstances());
         GossipHeartbeatOp.ENABLE.set(true);
-        sleepSeconds(30);
+        int seconds = 30;
+        sleepSeconds(seconds);
         GossipHeartbeatOp.ENABLE.set(false);
+
+        System.out.println(String.format("----> Total number of heartbeats in %d seconds is %d",
+                seconds, GossipHeartbeatOp.INSTANCE_COUNTER.get()));
+        sleepSeconds(100);
     }
 }

@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class GossipHeartbeatOp extends AbstractClusterOperation {
 
     public static final AtomicBoolean ENABLE = new AtomicBoolean();
-    private static final AtomicInteger INSTANCE_COUNTER = new AtomicInteger();
+    public static final AtomicInteger INSTANCE_COUNTER = new AtomicInteger();
 
     private List<MembersViewMetadata> incomingMembersMetadata;
     private UUID targetUuid;
