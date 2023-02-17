@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.core.JobStatus.FAILED;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static java.util.Arrays.asList;
@@ -61,8 +62,8 @@ import static org.junit.Assert.assertTrue;
 @Category(NightlyTest.class)
 public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport {
     private static final int INITIAL_PARTITION_COUNT = 1;
-    private static final int EVENTS_PER_SINK = 2000;
-    private static final int SINK_ATTEMPTS = 50;
+    private static final int EVENTS_PER_SINK = 500;
+    private static final int SINK_ATTEMPTS = 500;
     protected static final int EVENTS_TO_PROCESS = EVENTS_PER_SINK * SINK_ATTEMPTS;
     protected static final int SNAPSHOT_TIMEOUT_SECONDS = 30;
 
@@ -142,11 +143,9 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
 
         // Left & right sides of the JOIN
         sqlService.execute("CREATE VIEW s1 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + sourceTopicName + " , DESCRIPTOR(__key), 10))");
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + sourceTopicName + " , DESCRIPTOR(__key), 3))");
         sqlService.execute("CREATE VIEW s2 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + sourceTopicName + " , DESCRIPTOR(__key), 5))");
-
-        Thread.sleep(15_000L); // time to feed Kafka
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + sourceTopicName + " , DESCRIPTOR(__key), 4))");
     }
 
     @Test
@@ -239,11 +238,8 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
                     return;
                 }
                 AbstractJobProxy job = (AbstractJobProxy) jetService.getJob(JOB_NAME);
-                try {
-                    waitForNextSnapshot(jetBackend.getJobRepository(), job.getId(), SNAPSHOT_TIMEOUT_SECONDS, false);
-                } catch (Exception e) {
-                    ex = e;
-                }
+
+                waitForNextSnapshot(jetBackend.getJobRepository(), job.getId(), SNAPSHOT_TIMEOUT_SECONDS, true);
                 job.restart(restartGraceful);
             }
         }
@@ -251,6 +247,7 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
         public void finish() {
             Job job = jetService.getJob(JOB_NAME);
             assertNotNull(job);
+            assertJobStatusEventually(job, RUNNING);
             job.cancel();
             assertJobStatusEventually(job, FAILED);
             this.finish = true;
@@ -273,4 +270,10 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
             System.err.println("Items sank " + itemsSank);
         }
     }
+
+//    private void createTopicData(String topicName) {
+//        for (int i = 0; i < EVENTS_TO_PROCESS; i++) {
+//            kafkaTestSupport.produce(topicName, i, "value-" + i);
+//        }
+//    }
 }
