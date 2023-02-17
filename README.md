@@ -16,3 +16,7 @@ Exponential                                      Gossip(fan-out is 5)
 Problem is mostly visible in large clusters and in
 there, message noise prevents spreading live-ness info. 
 
+# Source
+Gossip simulator:
+https://flopezluis.github.io/gossip-simulator/
+
