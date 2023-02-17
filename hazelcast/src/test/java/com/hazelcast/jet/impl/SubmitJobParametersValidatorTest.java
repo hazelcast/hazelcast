@@ -21,6 +21,7 @@ import com.hazelcast.jet.SubmitJobParameters;
 import org.junit.Test;
 
 import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static com.hazelcast.jet.core.JobUploadClientFailureTest.getJarPath;
@@ -46,6 +47,19 @@ public class SubmitJobParametersValidatorTest {
         parameterObject.setJarPath(Paths.get("nosuchfile.jar"));
         assertThatThrownBy(() -> validator.validateParameterObject(parameterObject))
                 .isInstanceOf(NoSuchFileException.class);
+    }
+
+    @Test
+    public void invalidFileExtension() {
+        SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
+
+        Path jarPath1 = Paths.get("/mnt/foo");
+        assertThatThrownBy(() -> validator.validateFileExtension(jarPath1))
+                .isInstanceOf(JetException.class);
+
+        Path jarPath2 = Paths.get("foo");
+        assertThatThrownBy(() -> validator.validateFileExtension(jarPath2))
+                .isInstanceOf(JetException.class);
     }
 
     @Test

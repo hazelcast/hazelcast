@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.internal.util.Sha256Util;
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.jet.JetException;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.io.IOException;
@@ -87,10 +86,11 @@ public class JobUploadCall {
 
     String findFileNameWithoutExtension(Path jarPath) {
         String fileName = jarPath.getFileName().toString();
-        if (!fileName.endsWith(".jar")) {
-            throw new JetException("File name extension should be .jar");
+        // Exclude the extension from filename
+        int endIndex = fileName.lastIndexOf('.');
+        if (endIndex != -1) {
+            fileName = fileName.substring(0, endIndex);
         }
-        fileName = fileName.substring(0, fileName.lastIndexOf('.'));
         return fileName;
     }
 
