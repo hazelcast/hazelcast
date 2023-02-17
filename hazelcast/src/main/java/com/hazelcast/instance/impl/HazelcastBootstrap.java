@@ -142,10 +142,12 @@ public final class HazelcastBootstrap {
         // Method is synchronized, so it is safe to do null check
         if (supplier == null) {
             supplier = new ConcurrentMemoizingSupplier<>(() ->
-                    new BootstrappedInstanceProxy(supplierOfInstance.get(), jarPath, snapshotName, jobName));
+                    BootstrappedInstanceProxy.createWithJetProxy(supplierOfInstance.get(), jarPath, snapshotName, jobName));
         }
 
-        resetJetParametersIfNecessary(jarPath, snapshotName, jobName, calledByMember);
+        if (calledByMember) {
+            resetJetParametersForMember(jarPath, snapshotName, jobName);
+        }
 
         try {
             mainClassName = findMainClassNameForJar(mainClassName, jarPath, calledByMember);
@@ -211,16 +213,17 @@ public final class HazelcastBootstrap {
         return mainMethodFinder.getMainMethod();
     }
 
-    private static void resetJetParametersIfNecessary(String jar, String snapshotName, String jobName, boolean calledByMember) {
-        if (calledByMember) {
-            // BootstrappedInstanceProxy is a singleton that owns a HazelcastInstance and BootstrappedJetProxy
-            // Change cached jarName,snapshotName,jobName properties of the singleton on the member
-            BootstrappedInstanceProxy bootstrappedInstanceProxy = supplier.get();
-            BootstrappedJetProxy bootstrappedJetProxy = bootstrappedInstanceProxy.getJet();
-            bootstrappedJetProxy.setJarName(jar);
-            bootstrappedJetProxy.setSnapshotName(snapshotName);
-            bootstrappedJetProxy.setJobName(jobName);
-        }
+    private static void resetJetParametersForMember(String jar, String snapshotName, String jobName) {
+        // BootstrappedInstanceProxy is a singleton that owns a HazelcastInstance and BootstrappedJetProxy
+        // Change the state of the singleton
+        BootstrappedInstanceProxy bootstrappedInstanceProxy = supplier.get();
+
+        BootstrappedJetProxy bootstrappedJetProxy = bootstrappedInstanceProxy.getJet();
+        // Clear all previously submitted jobs to avoid memory leak
+        bootstrappedJetProxy.clearSubmittedJobs();
+        bootstrappedJetProxy.setJarName(jar);
+        bootstrappedJetProxy.setSnapshotName(snapshotName);
+        bootstrappedJetProxy.setJobName(jobName);
     }
 
 
@@ -291,7 +294,8 @@ public final class HazelcastBootstrap {
     @Nonnull
     public static synchronized HazelcastInstance getInstance() {
         if (supplier == null) {
-            supplier = new ConcurrentMemoizingSupplier<>(() -> new BootstrappedInstanceProxy(createStandaloneInstance()));
+            supplier = new ConcurrentMemoizingSupplier<>(() ->
+                    BootstrappedInstanceProxy.createWithoutJetProxy(createStandaloneInstance()));
         }
         return supplier.get();
     }
@@ -365,6 +369,19 @@ public final class HazelcastBootstrap {
         ) {
             this.instance = instance;
             this.jetProxy = new BootstrappedJetProxy(instance.getJet(), jar, snapshotName, jobName);
+        }
+
+        static BootstrappedInstanceProxy createWithoutJetProxy(@Nonnull HazelcastInstance instance) {
+            return new BootstrappedInstanceProxy(instance);
+        }
+
+        static BootstrappedInstanceProxy createWithJetProxy(
+                @Nonnull HazelcastInstance instance,
+                @Nullable String jar,
+                @Nullable String snapshotName,
+                @Nullable String jobName
+        ) {
+            return new BootstrappedInstanceProxy(instance, jar, snapshotName, jobName);
         }
 
         @Nonnull
@@ -599,7 +616,7 @@ public final class HazelcastBootstrap {
         private String jar;
         private String snapshotName;
         private String jobName;
-        private final Collection<Job> submittedJobs = new CopyOnWriteArrayList<>();
+        private final CopyOnWriteArrayList<Job> submittedJobs = new CopyOnWriteArrayList<>();
 
         BootstrappedJetProxy(
                 @Nonnull JetService jet,
@@ -641,19 +658,19 @@ public final class HazelcastBootstrap {
         @Nonnull
         @Override
         public Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-            return remember(jet.newJob(pipeline, updateJobConfig(config)));
+            return addToSubmittedJobs(jet.newJob(pipeline, updateJobConfig(config)));
         }
 
         @Nonnull
         @Override
         public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
-            return remember(jet.newJob(dag, updateJobConfig(config)));
+            return addToSubmittedJobs(jet.newJob(dag, updateJobConfig(config)));
         }
 
         @Nonnull
         @Override
         public Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-            return remember(jet.newJobIfAbsent(pipeline, updateJobConfig(config)));
+            return addToSubmittedJobs(jet.newJobIfAbsent(pipeline, updateJobConfig(config)));
         }
 
         @Override
@@ -664,14 +681,18 @@ public final class HazelcastBootstrap {
         @Nonnull
         @Override
         public Job newJobIfAbsent(@Nonnull DAG dag, @Nonnull JobConfig config) {
-            return remember(jet.newJobIfAbsent(dag, updateJobConfig(config)));
+            return addToSubmittedJobs(jet.newJobIfAbsent(dag, updateJobConfig(config)));
+        }
+
+        void clearSubmittedJobs() {
+            submittedJobs.clear();
         }
 
         List<Job> submittedJobs() {
             return new ArrayList<>(submittedJobs);
         }
 
-        private Job remember(@Nonnull Job job) {
+        private Job addToSubmittedJobs(@Nonnull Job job) {
             submittedJobs.add(job);
             return job;
         }
