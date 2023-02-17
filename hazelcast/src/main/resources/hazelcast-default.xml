@@ -513,7 +513,7 @@
         <statement-timeout-millis>0</statement-timeout-millis>
     </sql>
 
-    <jet enabled="false" resource-upload-enabled="false">
+    <jet enabled="true" resource-upload-enabled="false">
         <!-- time spacing of flow-control (ack) packets -->
         <flow-control-period>100</flow-control-period>
         <!-- number of backup copies to configure for Hazelcast IMaps used internally in a Jet job -->

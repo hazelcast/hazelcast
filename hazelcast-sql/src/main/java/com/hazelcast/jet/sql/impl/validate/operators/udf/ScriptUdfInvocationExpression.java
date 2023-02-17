@@ -42,6 +42,7 @@ class ScriptUdfInvocationExpression extends VariExpression<Object> {
     ScriptUdfInvocationExpression(String name, QueryDataType returnType, Expression<?>[] operands) {
         super(operands);
         this.name = name;
+        // return type is needed before first evaluation so it cannot be obtained from function definition
         this.returnType = returnType;
     }
 
@@ -59,6 +60,7 @@ class ScriptUdfInvocationExpression extends VariExpression<Object> {
         ScriptEngine scriptEngine;
 
         // Groovy JSR-223 uses getContextClassLoader() which is null in Jet threads
+        // It seems that without this also other JSR223 implementations cannot be found.
         Thread currentThread = Thread.currentThread();
         ClassLoader oldContextClassLoader = currentThread.getContextClassLoader();
         currentThread.setContextClassLoader(getClass().getClassLoader());
@@ -87,6 +89,7 @@ class ScriptUdfInvocationExpression extends VariExpression<Object> {
                 String lastVariable = PythonVariableParser.parseReturnVariable(definition.getBody());
                 rawResult = scriptEngine.get(lastVariable);
             }
+            // adapt result from script to expected type
             return definition.getReturnType().convert(rawResult);
         } catch (ScriptException e) {
             // ScriptException's cause is not serializable - we don't need the cause
@@ -107,6 +110,7 @@ class ScriptUdfInvocationExpression extends VariExpression<Object> {
 
     @Override
     public boolean isCooperative() {
+        // TODO: get from Options
         // script functions are not invoked in asynch way
         return false;
     }

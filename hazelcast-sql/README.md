@@ -1,4 +1,24 @@
-# Example user defined function queries
+# Script user defined functions
+
+## Requirements
+
+JSR223 libraries need to be added to member classpath, the same was as for Cluster Scripts support
+(https://docs.hazelcast.com/management-center/5.2/tools/scripting#scripting-languages).
+In case of Jython, version 2.7.2 is recommended as there were some issues with network access in 2.7.3.
+
+Configuration in `hazelcast-distribution` project has them added to make it easier to try this out.
+`hazelcast-default.xml` configuration is sufficient, only Jet has to be enabled in it.
+
+## Available features
+
+- languages tested: Javascript, Groovy, Python2
+- full language support including defining functions, classes in scripts
+- additional features available in JSR223 bindings like easy importing of Java classes
+- script function return value is a value of last statement (js, groovy) or last assigned variable (Python) in script
+- `sql` - access to `SqlService`
+- `hazelcast` - access to `HazelcastInstance`
+
+## Example user defined function queries
 
 ```sql
 create function myfunjs(x varchar) RETURNS varchar
@@ -78,3 +98,10 @@ SELECT * FROM sqlCatalog
 SELECT __key, get_ddl('relation', __key) FROM sqlCatalog
 
 ```
+
+## Implementation
+
+Main implementation classes:
+- `UserDefinedFunction` - SQL catalog metadata 
+- `ScriptUdfInvocationExpression` - script execution as node of `Expression`
+- `HazelcastScriptUserDefinedFunction` - Calcite binding for UDFs
