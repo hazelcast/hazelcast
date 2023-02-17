@@ -171,8 +171,8 @@ public class ClusterGossipHeartbeatManager {
         List<MembersViewMetadata> membersViewMetadata = new ArrayList<>();
         try {
             for (MembersViewMetadata received : receivedMembersMetadata) {
-                long t = received.getMemberUuid().equals(callerUuid) ? timestamp : received.getLastHeartbeatTime();
-                MembersViewMetadata local = handleHeartbeat(received, receiverUuid, t, suspectedMembers);
+//                long t = received.getMemberUuid().equals(callerUuid) ? timestamp : received.getLastHeartbeatTime();
+                MembersViewMetadata local = handleHeartbeat(received, receiverUuid, timestamp, suspectedMembers);
                 if (local != null && local.getLastHeartbeatTime() > received.getLastHeartbeatTime()) {
                     membersViewMetadata.add(local);
                 }

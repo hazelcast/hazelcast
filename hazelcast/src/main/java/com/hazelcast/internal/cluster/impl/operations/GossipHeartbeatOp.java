@@ -31,6 +31,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -38,6 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class GossipHeartbeatOp extends AbstractClusterOperation {
 
+    public static final AtomicBoolean ENABLE = new AtomicBoolean();
     private static final AtomicInteger INSTANCE_COUNTER = new AtomicInteger();
 
     private List<MembersViewMetadata> incomingMembersMetadata;
@@ -71,7 +73,9 @@ public final class GossipHeartbeatOp extends AbstractClusterOperation {
 
 //        getLogger().severe(String.format("callerUuid: %s, targetUuid: %s, localMembersMetadata.size: %d [%s]",
 //                callerUuid, targetUuid, localMembersMetadata.size(), localMembersMetadata));
-        getLogger().severe(String.format("---> instance count: %d", INSTANCE_COUNTER.incrementAndGet()));
+        if (ENABLE.get()) {
+            getLogger().severe(String.format("---> instance count: %d", INSTANCE_COUNTER.incrementAndGet()));
+        }
     }
 
     @Override

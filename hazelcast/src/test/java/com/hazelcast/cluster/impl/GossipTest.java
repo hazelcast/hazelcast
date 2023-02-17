@@ -17,6 +17,7 @@
 package com.hazelcast.cluster.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.internal.cluster.impl.operations.GossipHeartbeatOp;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.Test;
@@ -33,11 +34,12 @@ public class GossipTest extends HazelcastTestSupport {
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(20);
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 10; i++) {
             factory.newHazelcastInstance(config);
         }
-
-
+        assertClusterSizeEventually(10, factory.getAllHazelcastInstances());
+        GossipHeartbeatOp.ENABLE.set(true);
         sleepSeconds(30);
+        GossipHeartbeatOp.ENABLE.set(false);
     }
 }
