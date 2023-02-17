@@ -138,6 +138,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             call.transformTo(
                     fail(join, "A stream-to-stream join must have a join condition constraining the maximum " +
                             "difference between time values of the joined tables in both directions"));
+            return;
         }
 
         call.transformTo(
