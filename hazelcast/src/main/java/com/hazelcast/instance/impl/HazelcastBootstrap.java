@@ -132,36 +132,40 @@ public final class HazelcastBootstrap {
         supplier = null;
     }
 
-    public static synchronized void executeJar(@Nonnull Supplier<HazelcastInstance> supplierOfInstance,
-                                               @Nonnull String jarPath, @Nullable String snapshotName,
-                                               @Nullable String jobName, @Nullable String mainClass, @Nonnull List<String> args,
-                                               boolean calledByMember
+    public static void executeJar(@Nonnull Supplier<HazelcastInstance> supplierOfInstance,
+                                  @Nonnull String jarPath,
+                                  @Nullable String snapshotName,
+                                  @Nullable String jobName,
+                                  @Nullable String mainClassName,
+                                  @Nonnull List<String> args,
+                                  boolean calledByMember
     ) throws Exception {
 
-        // Method is synchronized, so it is safe to do null check
-        if (supplier == null) {
-            supplier = new ConcurrentMemoizingSupplier<>(() ->
-                    new BootstrappedInstanceProxy(supplierOfInstance.get(), jarPath, snapshotName, jobName));
+        // Reset singleton in synchronized block
+        synchronized (HazelcastBootstrap.class) {
+            if (supplier == null) {
+                supplier = new ConcurrentMemoizingSupplier<>(() ->
+                        new BootstrappedInstanceProxy(supplierOfInstance.get(), jarPath, snapshotName, jobName));
+            }
+            if (calledByMember) {
+                resetJetParameters(jarPath, snapshotName, jobName);
+            }
         }
 
-        resetJetParametersIfNecessary(jarPath, snapshotName, jobName, calledByMember);
-
         try {
-            mainClass = getMainClass(mainClass, jarPath, calledByMember);
+            mainClassName = getMainClassNameFromJar(mainClassName, jarPath, calledByMember);
 
             URL jarUrl = new File(jarPath).toURI().toURL();
-            // Close the URLClassLoader when finished
             try (URLClassLoader classLoader = URLClassLoader.newInstance(
                     new URL[]{jarUrl},
                     HazelcastBootstrap.class.getClassLoader())) {
 
-                Class<?> clazz = loadMainClass(classLoader, mainClass);
+                Class<?> clazz = loadMainClassFromJar(classLoader, mainClassName);
 
                 Method main = getMainMethod(clazz, calledByMember);
                 String[] jobArgs = args.toArray(new String[0]);
-                // upcast args to Object so it's passed as a single array-typed argument
+                // upcast args to Object, so it's passed as a single array-typed argument
                 main.invoke(null, (Object) jobArgs);
-
             }
 
             // Wait for the job to start only if called by the client side
@@ -170,16 +174,15 @@ public final class HazelcastBootstrap {
             }
 
         } finally {
-            // HazelcastInstance should be closed if called by client side
-            // HazelcastInstance should not be closed if called by member side
+            // HazelcastInstance should be closed only if it is called by the client side
             if (!calledByMember) {
                 HazelcastInstance remembered = HazelcastBootstrap.supplier.remembered();
                 if (remembered != null) {
                     try {
                         remembered.shutdown();
-                    } catch (Throwable t) {
+                    } catch (Exception exception) {
                         System.err.println("Shutdown failed with:");
-                        t.printStackTrace();
+                        exception.printStackTrace();
                     }
                 }
                 resetSupplier();
@@ -187,7 +190,7 @@ public final class HazelcastBootstrap {
         }
     }
 
-    static String getMainClass(String mainClass, String jarPath, boolean calledByMember)
+    static String getMainClassNameFromJar(String mainClass, String jarPath, boolean calledByMember)
             throws IOException {
         MainClassFinder mainClassFinder = new MainClassFinder();
         mainClassFinder.findMainClass(mainClass, jarPath, calledByMember);
@@ -224,16 +227,14 @@ public final class HazelcastBootstrap {
         return main;
     }
 
-    private static void resetJetParametersIfNecessary(String jar, String snapshotName, String jobName, boolean calledByMember) {
-        if (calledByMember) {
-            // BootstrappedInstanceProxy is a singleton that owns a HazelcastInstance and BootstrappedJetProxy
-            // Change cached jarName,snapshotName,jobName properties of the singleton on the member
-            BootstrappedInstanceProxy bootstrappedInstanceProxy = supplier.get();
-            BootstrappedJetProxy bootstrappedJetProxy = bootstrappedInstanceProxy.getJet();
-            bootstrappedJetProxy.setJarName(jar);
-            bootstrappedJetProxy.setSnapshotName(snapshotName);
-            bootstrappedJetProxy.setJobName(jobName);
-        }
+    private static void resetJetParameters(String jar, String snapshotName, String jobName) {
+        // BootstrappedInstanceProxy is a singleton that owns a HazelcastInstance and BootstrappedJetProxy
+        // Change cached jarName,snapshotName,jobName properties of the singleton on the member
+        BootstrappedInstanceProxy bootstrappedInstanceProxy = supplier.get();
+        BootstrappedJetProxy bootstrappedJetProxy = bootstrappedInstanceProxy.getJet();
+        bootstrappedJetProxy.setJarName(jar);
+        bootstrappedJetProxy.setSnapshotName(snapshotName);
+        bootstrappedJetProxy.setJobName(jobName);
     }
 
 
@@ -288,7 +289,7 @@ public final class HazelcastBootstrap {
         }
     }
 
-    private static Class<?> loadMainClass(ClassLoader classLoader, String mainClass) throws ClassNotFoundException {
+    private static Class<?> loadMainClassFromJar(ClassLoader classLoader, String mainClass) throws ClassNotFoundException {
         try {
             return classLoader.loadClass(mainClass);
         } catch (ClassNotFoundException e) {
