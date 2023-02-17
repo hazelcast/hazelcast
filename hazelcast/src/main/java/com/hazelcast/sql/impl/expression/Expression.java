@@ -34,8 +34,8 @@ public interface Expression<T> extends DataSerializable, Serializable {
      * Evaluates this expression, guaranteeing that this is a top-level call.
      *
      * @param row the row to evaluate this expression on
-     *            * @param context the expression evaluation context
-     *            * @return the result produced by the evaluation
+     * @param context the expression evaluation context
+     * @return the result produced by the evaluation
      */
     default Object evalTop(Row row, ExpressionEvalContext context) {
         // If we are evaluating the expression as top, don't use lazy deserialization because

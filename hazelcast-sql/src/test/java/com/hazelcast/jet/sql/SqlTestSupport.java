@@ -34,6 +34,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
@@ -94,6 +95,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
@@ -687,8 +689,8 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
         return new ExpressionEvalContext(
                 Arrays.asList(args),
-                new DefaultSerializationServiceBuilder().build(),
-                Util.getNodeEngine(instance()));
+                TEST_SS,
+                instances() != null ? Util.getNodeEngine(instance()) : mock(NodeEngine.class));
     }
 
     public static JetSqlRow jetRow(Object... values) {

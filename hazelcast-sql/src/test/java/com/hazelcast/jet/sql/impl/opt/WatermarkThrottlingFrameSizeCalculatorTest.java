@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.opt;
 
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.DropLateItemsPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
@@ -45,21 +43,17 @@ import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public final class WatermarkThrottlingFrameSizeCalculatorTest extends OptimizerTestSupport {
-    static ExpressionEvalContext MOCK_EEC;
+    private static ExpressionEvalContext MOCK_EEC;
 
     @BeforeClass
     public static void beforeClass() {
         initialize(1, null);
-        MOCK_EEC = new ExpressionEvalContext(
-                emptyList(),
-                new DefaultSerializationServiceBuilder().build(),
-                Util.getNodeEngine(instance()));
+        MOCK_EEC = createExpressionEvalContext();
     }
 
     @Test

@@ -36,11 +36,11 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
 import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
@@ -50,12 +50,7 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class KvRowProjectorTest extends SqlTestSupport {
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        initialize(1, null);
-    }
+public class KvRowProjectorTest {
 
     @Test
     public void test_project() {

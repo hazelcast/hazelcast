@@ -21,7 +21,6 @@ import com.hazelcast.query.impl.CompositeValue;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import org.junit.BeforeClass;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,10 +30,6 @@ import java.util.Collections;
  */
 @SuppressWarnings("rawtypes")
 public abstract class IndexFilterTestSupport extends SqlTestSupport {
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        initialize(1, null);
-    }
 
     public static ConstantExpression constant(Object value, QueryDataType type) {
         return ConstantExpression.create(value, type);

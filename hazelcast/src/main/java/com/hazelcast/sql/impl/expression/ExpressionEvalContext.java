@@ -22,7 +22,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
 import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -42,12 +42,12 @@ public class ExpressionEvalContext {
 
     private final List<Object> arguments;
     private final InternalSerializationService serializationService;
-    private final NodeEngineImpl nodeEngine;
+    private final NodeEngine nodeEngine;
 
     public ExpressionEvalContext(
             @Nonnull List<Object> arguments,
             @Nonnull InternalSerializationService serializationService,
-            @Nonnull NodeEngineImpl nodeEngine
+            @Nonnull NodeEngine nodeEngine
     ) {
         this.arguments = requireNonNull(arguments);
         this.serializationService = requireNonNull(serializationService);
@@ -97,7 +97,7 @@ public class ExpressionEvalContext {
     /**
      * @return node engine
      */
-    public NodeEngineImpl getNodeEngine() {
+    public NodeEngine getNodeEngine() {
         return nodeEngine;
     }
 }

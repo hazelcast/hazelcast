@@ -256,7 +256,6 @@ public final class ServiceFactory<C, S> implements Serializable, Cloneable {
         return copy;
     }
 
-
     /**
      * Attaches a file to this service factory under the given ID. It will
      * become a part of the Jet job and available to {@link #createContextFn()}
