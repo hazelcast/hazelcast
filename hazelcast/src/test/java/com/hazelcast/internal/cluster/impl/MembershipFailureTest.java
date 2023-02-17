@@ -55,6 +55,7 @@ import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.chang
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.EXPLICIT_SUSPICION;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.FETCH_MEMBER_LIST_STATE;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.F_ID;
+import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.GOSSIP_HEARTBEAT;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.HEARTBEAT;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.HEARTBEAT_COMPLAINT;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
@@ -257,7 +258,8 @@ public class MembershipFailureTest extends HazelcastTestSupport {
 
     @Test
     public void slave_heartbeat_timeout() {
-        Config config = smallInstanceConfig().setProperty(MAX_NO_HEARTBEAT_SECONDS.getName(), "15")
+        Config config = smallInstanceConfigWithoutJetAndMetrics()
+                .setProperty(MAX_NO_HEARTBEAT_SECONDS.getName(), "15")
                 .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
         HazelcastInstance master = newHazelcastInstance(config);
         HazelcastInstance slave1 = newHazelcastInstance(config);
@@ -266,7 +268,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         assertClusterSize(3, master, slave2);
         assertClusterSizeEventually(3, slave1);
 
-        dropOperationsFrom(slave2, F_ID, singletonList(HEARTBEAT));
+        dropOperationsFrom(slave2, F_ID, singletonList(GOSSIP_HEARTBEAT));
 
         assertClusterSizeEventually(2, master, slave1);
         assertClusterSizeEventually(1, slave2);
@@ -274,7 +276,8 @@ public class MembershipFailureTest extends HazelcastTestSupport {
 
     @Test
     public void master_heartbeat_timeout() {
-        Config config = smallInstanceConfig().setProperty(MAX_NO_HEARTBEAT_SECONDS.getName(), "15")
+        Config config = smallInstanceConfigWithoutJetAndMetrics()
+                .setProperty(MAX_NO_HEARTBEAT_SECONDS.getName(), "15")
                 .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
                 .setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "3");
         HazelcastInstance master = newHazelcastInstance(config);
@@ -284,7 +287,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         assertClusterSize(3, master, slave2);
         assertClusterSizeEventually(3, slave1);
 
-        dropOperationsFrom(master, F_ID, singletonList(HEARTBEAT));
+        dropOperationsFrom(master, F_ID, singletonList(GOSSIP_HEARTBEAT));
         dropOperationsFrom(slave1, F_ID, singletonList(HEARTBEAT_COMPLAINT));
         dropOperationsFrom(slave2, F_ID, singletonList(HEARTBEAT_COMPLAINT));
 
@@ -304,7 +307,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         assertClusterSizeEventually(3, slave1);
 
         // prevent heartbeat from master to slave to prevent suspect to be removed
-        dropOperationsBetween(master, slave1, F_ID, singletonList(HEARTBEAT));
+        dropOperationsBetween(master, slave1, F_ID, singletonList(GOSSIP_HEARTBEAT));
         suspectMember(slave1, master);
 
         assertClusterSizeEventually(2, master, slave2);

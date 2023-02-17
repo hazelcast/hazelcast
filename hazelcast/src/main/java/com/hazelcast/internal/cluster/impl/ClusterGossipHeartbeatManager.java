@@ -171,7 +171,8 @@ public class ClusterGossipHeartbeatManager {
         List<MembersViewMetadata> membersViewMetadata = new ArrayList<>();
         try {
             for (MembersViewMetadata received : receivedMembersMetadata) {
-                MembersViewMetadata local = handleHeartbeat(received, receiverUuid, timestamp, suspectedMembers);
+                long t = received.getMemberUuid().equals(callerUuid) ? timestamp : received.getLastHeartbeatTime();
+                MembersViewMetadata local = handleHeartbeat(received, receiverUuid, t, suspectedMembers);
                 if (local != null && local.getLastHeartbeatTime() > received.getLastHeartbeatTime()) {
                     membersViewMetadata.add(local);
                 }
@@ -342,7 +343,7 @@ public class ClusterGossipHeartbeatManager {
         if (isMaster(member)) {
             clusterClock.setMasterTime(timestamp);
         }
-        heartbeatFailureDetector.heartbeat(member, clusterClock.getClusterTime());
+        heartbeatFailureDetector.heartbeat(member, timestamp);
 
         MembershipManager membershipManager = clusterService.getMembershipManager();
         membershipManager.clearMemberSuspicion(member, "Valid heartbeat");

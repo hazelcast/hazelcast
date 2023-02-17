@@ -35,7 +35,7 @@ import java.util.concurrent.CountDownLatch;
 import static com.hazelcast.cluster.impl.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.F_ID;
-import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.HEARTBEAT;
+import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.GOSSIP_HEARTBEAT;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.SPLIT_BRAIN_MERGE_VALIDATION;
 import static com.hazelcast.internal.cluster.impl.MemberMap.SINGLETON_MEMBER_LIST_VERSION;
 import static com.hazelcast.internal.cluster.impl.MembershipUpdateTest.assertMemberViewsAreSame;
@@ -111,7 +111,7 @@ public class MemberListJoinVersionTest extends HazelcastTestSupport {
             }
         });
 
-        rejectOperationsFrom(member3, F_ID, asList(HEARTBEAT, SPLIT_BRAIN_MERGE_VALIDATION));
+        rejectOperationsFrom(member3, F_ID, asList(GOSSIP_HEARTBEAT, SPLIT_BRAIN_MERGE_VALIDATION));
 
         assertClusterSizeEventually(2, member1, member2);
 

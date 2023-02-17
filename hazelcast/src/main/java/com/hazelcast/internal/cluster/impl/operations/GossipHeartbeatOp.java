@@ -71,7 +71,7 @@ public final class GossipHeartbeatOp extends AbstractClusterOperation {
 
 //        getLogger().severe(String.format("callerUuid: %s, targetUuid: %s, localMembersMetadata.size: %d [%s]",
 //                callerUuid, targetUuid, localMembersMetadata.size(), localMembersMetadata));
-//        getLogger().severe(String.format("---> instance count: %d", INSTANCE_COUNTER.incrementAndGet()));
+        getLogger().severe(String.format("---> instance count: %d", INSTANCE_COUNTER.incrementAndGet()));
     }
 
     @Override

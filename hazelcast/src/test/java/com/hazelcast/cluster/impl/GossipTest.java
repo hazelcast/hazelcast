@@ -16,18 +16,25 @@
 
 package com.hazelcast.cluster.impl;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.Test;
+
+import static com.hazelcast.spi.properties.ClusterProperty.HEARTBEAT_INTERVAL_SECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.MAX_NO_HEARTBEAT_SECONDS;
 
 public class GossipTest extends HazelcastTestSupport {
 
     @Test
     public void name() {
+        Config config = smallInstanceConfig().setProperty(MAX_NO_HEARTBEAT_SECONDS.getName(), "15")
+                .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), "5");
+
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(20);
 
-        for (int i = 0; i < 20; i++) {
-            factory.newHazelcastInstance();
+        for (int i = 0; i < 5; i++) {
+            factory.newHazelcastInstance(config);
         }
 
 
