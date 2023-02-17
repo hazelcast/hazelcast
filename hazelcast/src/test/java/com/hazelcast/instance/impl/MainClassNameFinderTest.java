@@ -25,15 +25,15 @@ import java.nio.file.Paths;
 
 import static org.junit.Assert.fail;
 
-public class MainClassFinderTest {
+public class MainClassNameFinderTest {
 
     @Test
     public void testFindMainClassInManifest() throws Exception {
         String jarPath = getPathOfJar("simplejob-1.0.0.jar");
 
-        MainClassFinder mainClassFinder = new MainClassFinder();
-        mainClassFinder.findMainClass(null, jarPath, true);
-        String mainClassName = mainClassFinder.getMainClassName();
+        MainClassNameFinder mainClassNameFinder = new MainClassNameFinder();
+        mainClassNameFinder.findMainClass(null, jarPath, true);
+        String mainClassName = mainClassNameFinder.getMainClassName();
         Assertions.assertThat(mainClassName)
                 .isEqualTo("org.example.Main");
     }
@@ -42,13 +42,13 @@ public class MainClassFinderTest {
     public void testNoMainClassInManifest() throws Exception {
         String jarPath = getPathOfJar("nomanifestsimplejob-1.0.0.jar");
 
-        MainClassFinder mainClassFinder = new MainClassFinder();
-        mainClassFinder.findMainClass(null, jarPath, false);
-        String mainClassName = mainClassFinder.getMainClassName();
+        MainClassNameFinder mainClassNameFinder = new MainClassNameFinder();
+        mainClassNameFinder.findMainClass(null, jarPath, false);
+        String mainClassName = mainClassNameFinder.getMainClassName();
         Assertions.assertThat(mainClassName)
                 .isNull();
 
-        String errorMessage = mainClassFinder.getErrorMessage();
+        String errorMessage = mainClassNameFinder.getErrorMessage();
         Assertions.assertThat(errorMessage)
                 .containsIgnoringCase("No Main-Class found in the manifest of ");
     }

@@ -100,8 +100,6 @@ import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.hazelcast.spi.properties.ClusterProperty.LOGGING_TYPE;
-import static java.lang.reflect.Modifier.isPublic;
-import static java.lang.reflect.Modifier.isStatic;
 
 /**
  * This class shouldn't be directly used, instead see {@link Hazelcast#bootstrappedInstance()}
@@ -132,39 +130,35 @@ public final class HazelcastBootstrap {
         supplier = null;
     }
 
-    public static void executeJar(@Nonnull Supplier<HazelcastInstance> supplierOfInstance,
-                                  @Nonnull String jarPath,
-                                  @Nullable String snapshotName,
-                                  @Nullable String jobName,
-                                  @Nullable String mainClassName,
-                                  @Nonnull List<String> args,
-                                  boolean calledByMember
+    public static synchronized void executeJar(@Nonnull Supplier<HazelcastInstance> supplierOfInstance,
+                                               @Nonnull String jarPath,
+                                               @Nullable String snapshotName,
+                                               @Nullable String jobName,
+                                               @Nullable String mainClassName,
+                                               @Nonnull List<String> args,
+                                               boolean calledByMember
     ) throws Exception {
 
-        // Reset singleton in synchronized block
-        synchronized (HazelcastBootstrap.class) {
-            if (supplier == null) {
-                supplier = new ConcurrentMemoizingSupplier<>(() ->
-                        new BootstrappedInstanceProxy(supplierOfInstance.get(), jarPath, snapshotName, jobName));
-            }
-            if (calledByMember) {
-                resetJetParameters(jarPath, snapshotName, jobName);
-            }
+        // Method is synchronized, so it is safe to do null check
+        if (supplier == null) {
+            supplier = new ConcurrentMemoizingSupplier<>(() ->
+                    new BootstrappedInstanceProxy(supplierOfInstance.get(), jarPath, snapshotName, jobName));
         }
 
+        resetJetParametersIfNecessary(jarPath, snapshotName, jobName, calledByMember);
+
         try {
-            mainClassName = getMainClassNameFromJar(mainClassName, jarPath, calledByMember);
+            mainClassName = findMainClassNameForJar(mainClassName, jarPath, calledByMember);
 
             URL jarUrl = new File(jarPath).toURI().toURL();
             try (URLClassLoader classLoader = URLClassLoader.newInstance(
                     new URL[]{jarUrl},
                     HazelcastBootstrap.class.getClassLoader())) {
 
-                Class<?> clazz = loadMainClassFromJar(classLoader, mainClassName);
+                Method main = findMainMethodForJar(classLoader, mainClassName, calledByMember);
 
-                Method main = getMainMethod(clazz, calledByMember);
                 String[] jobArgs = args.toArray(new String[0]);
-                // upcast args to Object, so it's passed as a single array-typed argument
+                // upcast args to Object so it's passed as a single array-typed argument
                 main.invoke(null, (Object) jobArgs);
             }
 
@@ -174,7 +168,7 @@ public final class HazelcastBootstrap {
             }
 
         } finally {
-            // HazelcastInstance should be closed only if it is called by the client side
+            // HazelcastInstance should be closed only if called by the client side
             if (!calledByMember) {
                 HazelcastInstance remembered = HazelcastBootstrap.supplier.remembered();
                 if (remembered != null) {
@@ -190,51 +184,43 @@ public final class HazelcastBootstrap {
         }
     }
 
-    static String getMainClassNameFromJar(String mainClass, String jarPath, boolean calledByMember)
+    static String findMainClassNameForJar(String mainClass, String jarPath, boolean calledByMember)
             throws IOException {
-        MainClassFinder mainClassFinder = new MainClassFinder();
-        mainClassFinder.findMainClass(mainClass, jarPath, calledByMember);
+        MainClassNameFinder mainClassNameFinder = new MainClassNameFinder();
+        mainClassNameFinder.findMainClass(mainClass, jarPath, calledByMember);
 
         // Check if there is an error
-        String errorMessage = mainClassFinder.getErrorMessage();
+        String errorMessage = mainClassNameFinder.getErrorMessage();
         if (!StringUtil.isNullOrEmpty(errorMessage)) {
+            // Client side immediately exits, server side throws JetException
             error(errorMessage, calledByMember);
         }
+        return mainClassNameFinder.getMainClassName();
+    }
 
-        // Check if mainClassName found
-        String mainClassName = mainClassFinder.getMainClassName();
-        if (StringUtil.isNullOrEmpty(mainClassName)) {
+    static Method findMainMethodForJar(ClassLoader classLoader, String mainClassName, boolean calledByMember) {
+        MainMethodFinder mainMethodFinder = new MainMethodFinder();
+        mainMethodFinder.findMainMethod(classLoader, mainClassName);
+
+        // Check if there is an error
+        String errorMessage = mainMethodFinder.getErrorMessage();
+        if (!StringUtil.isNullOrEmpty(errorMessage)) {
+            // Client side immediately exits, server side throws JetException
             error(errorMessage, calledByMember);
         }
-        return mainClassName;
+        return mainMethodFinder.getMainMethod();
     }
 
-    // Returns true if the main method is both public and static
-    static boolean isPublicAndStatic(Method mainMethod) {
-        int modifiers = mainMethod.getModifiers();
-        return isPublic(modifiers) && isStatic(modifiers);
-    }
-
-    static Method getMainMethod(Class<?> clazz, boolean calledByMember) throws NoSuchMethodException {
-        // If main method does not exist, throws NoSuchMethodException
-        Method main = clazz.getDeclaredMethod("main", String[].class);
-
-        if (!isPublicAndStatic(main)) {
-            String message = "Class " + clazz.getName()
-                             + " has a main(String[] args) method which is not public static";
-             error(message, calledByMember);
+    private static void resetJetParametersIfNecessary(String jar, String snapshotName, String jobName, boolean calledByMember) {
+        if (calledByMember) {
+            // BootstrappedInstanceProxy is a singleton that owns a HazelcastInstance and BootstrappedJetProxy
+            // Change cached jarName,snapshotName,jobName properties of the singleton on the member
+            BootstrappedInstanceProxy bootstrappedInstanceProxy = supplier.get();
+            BootstrappedJetProxy bootstrappedJetProxy = bootstrappedInstanceProxy.getJet();
+            bootstrappedJetProxy.setJarName(jar);
+            bootstrappedJetProxy.setSnapshotName(snapshotName);
+            bootstrappedJetProxy.setJobName(jobName);
         }
-        return main;
-    }
-
-    private static void resetJetParameters(String jar, String snapshotName, String jobName) {
-        // BootstrappedInstanceProxy is a singleton that owns a HazelcastInstance and BootstrappedJetProxy
-        // Change cached jarName,snapshotName,jobName properties of the singleton on the member
-        BootstrappedInstanceProxy bootstrappedInstanceProxy = supplier.get();
-        BootstrappedJetProxy bootstrappedJetProxy = bootstrappedInstanceProxy.getJet();
-        bootstrappedJetProxy.setJarName(jar);
-        bootstrappedJetProxy.setSnapshotName(snapshotName);
-        bootstrappedJetProxy.setJobName(jobName);
     }
 
 
@@ -286,15 +272,6 @@ public final class HazelcastBootstrap {
                 System.out.format("%,d jobs are still starting...%n", remainingCount);
             }
             previousCount = remainingCount;
-        }
-    }
-
-    private static Class<?> loadMainClassFromJar(ClassLoader classLoader, String mainClass) throws ClassNotFoundException {
-        try {
-            return classLoader.loadClass(mainClass);
-        } catch (ClassNotFoundException e) {
-            System.err.println("Cannot find or load main class: " + mainClass);
-            throw e;
         }
     }
 

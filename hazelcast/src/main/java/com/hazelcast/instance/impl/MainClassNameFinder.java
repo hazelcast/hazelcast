@@ -26,11 +26,12 @@ import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
-class MainClassFinder {
+class MainClassNameFinder {
 
-    private static final ILogger LOGGER = Logger.getLogger(MainClassFinder.class);
+    private static final ILogger LOGGER = Logger.getLogger(MainClassNameFinder.class);
 
     boolean calledByMember;
+
     private String errorMessage;
 
     private String mainClassName;
@@ -43,8 +44,8 @@ class MainClassFinder {
         return mainClassName;
     }
 
-    // Find the mainClass to be used to execute the jar
-    void findMainClass(String mainClass, String jarPath, boolean calledByMember)
+    // Find the mainClassName from the jar
+    public void findMainClass(String mainClassName, String jarPath, boolean calledByMember)
             throws IOException {
 
         this.calledByMember = calledByMember;
@@ -52,11 +53,11 @@ class MainClassFinder {
         try (JarFile jarFile = new JarFile(jarPath)) {
             checkHazelcastCodebasePresence(jarFile);
 
-            // Assume that mainClass is provided
-            this.mainClassName = mainClass;
+            // Assume that mainClassName is provided
+            this.mainClassName = mainClassName;
 
             // If the given parameter is null, try to read mainClassName from the jar manifest
-            if (StringUtil.isNullOrEmpty(mainClassName)) {
+            if (StringUtil.isNullOrEmpty(this.mainClassName)) {
 
                 Manifest manifest = jarFile.getManifest();
                 if (manifest == null) {
