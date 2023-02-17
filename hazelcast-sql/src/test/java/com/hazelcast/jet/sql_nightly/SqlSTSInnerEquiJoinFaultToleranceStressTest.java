@@ -27,12 +27,10 @@ import com.hazelcast.jet.sql.impl.connector.kafka.KafkaSqlConnector;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
-import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -148,8 +146,6 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
         sqlService.execute("CREATE VIEW s2 AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + sourceTopicName + " , DESCRIPTOR(__key), 5))");
 
-        fetchingQuery = setupFetchingQuery();
-
         Thread.sleep(15_000L); // time to feed Kafka
     }
 
@@ -163,40 +159,29 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
         try {
             kafkaFeedThread.join();
             jobRestarter.join();
-        } catch (AssertionError e) {
-            Assert.fail(e.getMessage());
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
     protected void processAndCheckResults(JobRestarter jobRestarter) {
-        Thread thread = new Thread(() -> {
-            SqlStatement statement = new SqlStatement(fetchingQuery);
-
-            try (SqlResult result = sqlService.execute(statement)) {
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
-        });
-        thread.start();
+        sqlService.execute(setupFetchingQuery());
 
         String mainCheckQuery = "SELECT * FROM " + sinkTopic;
         try (SqlResult result = sqlService.execute(mainCheckQuery)) {
             for (SqlRow sqlRow : result) {
                 String s = sqlRow.getObject(1);
-                resultSet.compute(s, (str, i) -> i == null ? 0 : i + 1);
+                resultSet.merge(s, 1, Integer::sum);
                 if (resultSet.size() >= expectedEventsCount) {
                     break;
                 }
             }
         }
 
-        try {
-            thread.join();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+        if (ex != null) {
+            throw new RuntimeException(ex);
         }
+
 
         assertThat(resultSet.size()).isGreaterThanOrEqualTo(expectedEventsCount);
         jobRestarter.finish();
@@ -254,7 +239,11 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
                     return;
                 }
                 AbstractJobProxy job = (AbstractJobProxy) jetService.getJob(JOB_NAME);
-                waitForNextSnapshot(jetBackend.getJobRepository(), job.getId(), SNAPSHOT_TIMEOUT_SECONDS, false);
+                try {
+                    waitForNextSnapshot(jetBackend.getJobRepository(), job.getId(), SNAPSHOT_TIMEOUT_SECONDS, false);
+                } catch (Exception e) {
+                    ex = e;
+                }
                 job.restart(restartGraceful);
             }
         }
