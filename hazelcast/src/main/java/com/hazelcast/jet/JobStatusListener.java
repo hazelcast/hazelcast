@@ -16,10 +16,35 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
+
 import java.util.UUID;
 
 /**
- * Invoked upon job status change.
+ * Invoked upon job status change. <ol>
+ * <li> This listener observes that the status is transitioned to {@link
+ *      JobStatus#SUSPENDED SUSPENDED}/{@link JobStatus#FAILED FAILED} upon job
+ *      {@linkplain Job#suspend suspension}/{@linkplain Job#cancel termination},
+ *      {@link JobStatus#NOT_RUNNING NOT_RUNNING} upon job {@linkplain
+ *      Job#resume resume}/{@linkplain Job#restart restart}, and {@link
+ *      JobStatus#SUSPENDED_EXPORTING_SNAPSHOT SUSPENDED_EXPORTING_SNAPSHOT}
+ *      upon {@linkplain Job#exportSnapshot exporting snapshot}, all of which
+ *      are reported as user-initiated. Other transitions, such as from {@link
+ *      JobStatus#NOT_RUNNING NOT_RUNNING} to {@link JobStatus#STARTING
+ *      STARTING} or from {@link JobStatus#STARTING STARTING} to {@link
+ *      JobStatus#RUNNING RUNNING}, are not reported as user-initiated.
+ * <li> This listener is not notified for {@link JobStatus#COMPLETING
+ *      COMPLETING} status and observes that the status is transitioned from
+ *      {@link JobStatus#RUNNING RUNNING} to {@link JobStatus#FAILED FAILED}
+ *      upon job {@linkplain Job#cancel termination}.
+ * <li> This listener is automatically deregistered after a {@linkplain
+ *      JobStatus#isTerminal terminal event}.
+ * <li> Events are transmitted asynchronously by default, which may result in
+ *      out-of-order events, or the deregistration of this listener before a
+ *      terminal event is received. To disable asynchronous transmission, system
+ *      property {@value EventServiceImpl#EVENT_SYNC_FREQUENCY_PROP} should be
+ *      set to 1. </ol>
  *
  * @see Job#addStatusListener(JobStatusListener)
  * @see Job#removeStatusListener(UUID)
@@ -27,7 +52,29 @@ import java.util.UUID;
  */
 public interface JobStatusListener {
     /**
-     * Invoked upon job status change.
+     * Invoked upon job status change. <ol>
+     * <li> This listener observes that the status is transitioned to {@link
+     *      JobStatus#SUSPENDED SUSPENDED}/{@link JobStatus#FAILED FAILED} upon job
+     *      {@linkplain Job#suspend suspension}/{@linkplain Job#cancel termination},
+     *      {@link JobStatus#NOT_RUNNING NOT_RUNNING} upon job {@linkplain
+     *      Job#resume resume}/{@linkplain Job#restart restart}, and {@link
+     *      JobStatus#SUSPENDED_EXPORTING_SNAPSHOT SUSPENDED_EXPORTING_SNAPSHOT}
+     *      upon {@linkplain Job#exportSnapshot exporting snapshot}, all of which
+     *      are reported as user-initiated. Other transitions, such as from {@link
+     *      JobStatus#NOT_RUNNING NOT_RUNNING} to {@link JobStatus#STARTING
+     *      STARTING} or from {@link JobStatus#STARTING STARTING} to {@link
+     *      JobStatus#RUNNING RUNNING}, are not reported as user-initiated.
+     * <li> This listener is not notified for {@link JobStatus#COMPLETING
+     *      COMPLETING} status and observes that the status is transitioned from
+     *      {@link JobStatus#RUNNING RUNNING} to {@link JobStatus#FAILED FAILED}
+     *      upon job {@linkplain Job#cancel termination}.
+     * <li> This listener is automatically deregistered after a {@linkplain
+     *      JobStatus#isTerminal terminal event}.
+     * <li> Events are transmitted asynchronously by default, which may result in
+     *      out-of-order events, or the deregistration of this listener before a
+     *      terminal event is received. To disable asynchronous transmission, system
+     *      property {@value EventServiceImpl#EVENT_SYNC_FREQUENCY_PROP} should be
+     *      set to 1. </ol>
      *
      * @param event Holds information about the previous and new job statuses,
      *        reason for the status change, and whether it is user-initiated.
