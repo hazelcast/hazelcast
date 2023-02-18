@@ -68,6 +68,7 @@ public abstract class ReactorBuilder {
     int batchSize;
     int clockRefreshPeriod;
     TpcEngine engine;
+     Supplier<Thread> threadSupplier;
 
     protected ReactorBuilder(ReactorType type) {
         this.type = checkNotNull(type);
@@ -108,6 +109,10 @@ public abstract class ReactorBuilder {
      */
     public void setClockRefreshPeriod(int clockRefreshPeriod) {
         this.clockRefreshPeriod = checkNotNegative(clockRefreshPeriod, "clockRefreshPeriod");
+    }
+
+    public void setThreadSupplier(Supplier<Thread> threadSupplier){
+        this.threadSupplier = threadSupplier;
     }
 
     /**

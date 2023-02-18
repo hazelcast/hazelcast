@@ -85,7 +85,14 @@ public abstract class Reactor implements Executor {
         this.spin = builder.spin;
         this.engine = builder.engine;
         CompletableFuture<Eventloop> eventloopFuture = new CompletableFuture<>();
-        this.eventloopThread = builder.threadFactory.newThread(new EventloopTask(eventloopFuture, builder));
+        if (builder.threadSupplier != null) {
+            this.eventloopThread = builder.threadSupplier.get();
+            CrappyThread crappyThread = (CrappyThread) this.eventloopThread;
+            crappyThread.setEventloopTask(new StartEventloopTask(eventloopFuture, builder));
+        } else {
+            this.eventloopThread = builder.threadFactory.newThread(new StartEventloopTask(eventloopFuture, builder));
+        }
+
         if (builder.threadNameSupplier != null) {
             eventloopThread.setName(builder.threadNameSupplier.get());
         }
@@ -93,6 +100,7 @@ public abstract class Reactor implements Executor {
 
         // The eventloopThread is started so eventloop gets created on the eventloop thread.
         eventloopThread.start();
+
         // wait for the eventloop to be created.
         eventloop = eventloopFuture.join();
         // There is a happens-before edge between writing to the eventloopFuture and
@@ -333,11 +341,11 @@ public abstract class Reactor implements Executor {
      * 2) Create the eventloop
      * 3) Run the eventloop
      */
-    private final class EventloopTask implements Runnable {
+    private final class StartEventloopTask implements Runnable {
         private final CompletableFuture<Eventloop> future;
         private final ReactorBuilder builder;
 
-        private EventloopTask(CompletableFuture<Eventloop> future, ReactorBuilder builder) {
+        private StartEventloopTask(CompletableFuture<Eventloop> future, ReactorBuilder builder) {
             this.future = future;
             this.builder = builder;
         }

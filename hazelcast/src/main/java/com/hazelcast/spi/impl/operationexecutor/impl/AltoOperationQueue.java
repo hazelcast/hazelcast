@@ -26,16 +26,13 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class AltoOperationQueue implements OperationQueue {
 
-    private final Reactor reactor;
+    // Is there not a data-race on this field? Because the 'nodeengine' thread sets this field while
+    // the reactor is going to use it.
+    private  Reactor reactor;
     private final Queue<Object> normalQueue;
     private final Queue<Object> priorityQueue;
 
-    public AltoOperationQueue(Reactor reactor) {
-        this(reactor, new LinkedBlockingQueue<>(), new ConcurrentLinkedQueue<>());
-    }
-
-    public AltoOperationQueue(Reactor reactor, Queue<Object> normalQueue, Queue<Object> priorityQueue) {
-        this.reactor = reactor;
+    public AltoOperationQueue(Queue<Object> normalQueue, Queue<Object> priorityQueue) {
         this.normalQueue = checkNotNull(normalQueue, "normalQueue");
         this.priorityQueue = checkNotNull(priorityQueue, "priorityQueue");
     }
@@ -85,5 +82,9 @@ public class AltoOperationQueue implements OperationQueue {
     @Override
     public boolean isEmpty() {
         return normalQueue.isEmpty() && priorityQueue.isEmpty();
+    }
+
+    public void setReactor(Reactor reactor) {
+        this.reactor = reactor;
     }
 }

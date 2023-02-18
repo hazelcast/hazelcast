@@ -18,11 +18,11 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.internal.bootstrap.TpcServerBootstrap;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.tpc.Reactor;
 import com.hazelcast.internal.tpc.TpcEngine;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
@@ -112,7 +112,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     private final Address thisAddress;
     private final OperationRunner adHocOperationRunner;
     private final int priorityThreadCount;
-    private final TpcEngine tpcEngine;
+    private final TpcServerBootstrap tpcServerBootstrap;
 
     public OperationExecutorImpl(HazelcastProperties properties,
                                  LoggingService loggerService,
@@ -121,22 +121,26 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
                                  NodeExtension nodeExtension,
                                  String hzName,
                                  ClassLoader configClassLoader,
-                                 TpcEngine tpcEngine) {
-        this.tpcEngine = tpcEngine;
+                                 TpcServerBootstrap tpcServerBootstrap) {
+        this.tpcServerBootstrap = tpcServerBootstrap;
         this.thisAddress = thisAddress;
         this.logger = loggerService.getLogger(OperationExecutorImpl.class);
 
         this.adHocOperationRunner = runnerFactory.createAdHocRunner();
 
         this.partitionOperationRunners = initPartitionOperationRunners(properties, runnerFactory);
-        if (tpcEngine == null) {
+        if (!tpcServerBootstrap.isEnabled()) {
             this.partitionThreads = initClassicPartitionThreads(properties, hzName, nodeExtension, configClassLoader);
         } else {
-            this.partitionThreads = initAltoPartitionThreads(tpcEngine, hzName, nodeExtension, configClassLoader);
+            this.partitionThreads = initAltoPartitionThreads(this.tpcServerBootstrap, hzName, nodeExtension, configClassLoader);
         }
         this.priorityThreadCount = properties.getInteger(PRIORITY_GENERIC_OPERATION_THREAD_COUNT);
         this.genericOperationRunners = initGenericOperationRunners(properties, runnerFactory);
         this.genericThreads = initGenericThreads(hzName, nodeExtension, configClassLoader);
+    }
+
+    public PartitionOperationThread[] getPartitionThreads() {
+        return partitionThreads;
     }
 
     private OperationRunner[] initPartitionOperationRunners(HazelcastProperties properties,
@@ -193,28 +197,23 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         return threads;
     }
 
-    private PartitionOperationThread[] initAltoPartitionThreads(TpcEngine tpcEngine,
+    private PartitionOperationThread[] initAltoPartitionThreads(TpcServerBootstrap tpcServerBootstrap,
                                                                 String hzName,
                                                                 NodeExtension nodeExtension,
                                                                 ClassLoader configClassLoader) {
-        int threadCount = tpcEngine.reactorCount();
+        int threadCount = tpcServerBootstrap.eventloopCount();
 
         PartitionOperationThread[] threads = new PartitionOperationThread[threadCount];
         for (int threadId = 0; threadId < threads.length; threadId++) {
-            Reactor reactor = tpcEngine.reactor(threadId);
-            AltoPartitionOperationThread partitionThread = (AltoPartitionOperationThread) reactor.eventloopThread();
+            String threadName = createThreadPoolName(hzName, "partition-operation") + threadId;
+            MPSCQueue<Object> normalQueue = new MPSCQueue<>(null);
 
-            partitionThread.setName(createThreadPoolName(hzName, "partition-operation") + threadId);
+            AltoOperationQueue operationQueue = new AltoOperationQueue(normalQueue, new ConcurrentLinkedQueue<>());
 
             // the AltoOperationQueue is unbound just like HZ classic. Since we do not have any back pressure mechanism between
             // members, there is no proper way to prevent overload. So we keep the same bad bad behavior for now.
-            partitionThread.queue = new AltoOperationQueue(reactor, new MPSCQueue<>(null), new ConcurrentLinkedQueue<>());
-            partitionThread.threadId = threadId;
-            partitionThread.logger = logger;
-            partitionThread.nodeExtension = nodeExtension;
-            partitionThread.partitionOperationRunners = partitionOperationRunners;
-            partitionThread.setContextClassLoader(configClassLoader);
-            partitionThread.setThreadAffinity(threadAffinity);
+            PartitionOperationThread partitionThread = new AltoPartitionOperationThread(threadName, threadId,
+                    operationQueue, logger, nodeExtension, partitionOperationRunners, configClassLoader);
             threads[threadId] = partitionThread;
         }
 
@@ -563,7 +562,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         }
 
         // When tpc is enabled, the partitionThread are manged bu the tpcEngine.
-        if (tpcEngine == null) {
+        if (!tpcServerBootstrap.isEnabled()) {
             startAll(partitionThreads);
         }
         startAll(genericThreads);
@@ -578,11 +577,11 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     @Override
     public void shutdown() {
         // when tpc is enabled, the partitionThread are manged bu the tpcEngine.
-        if (tpcEngine == null) {
+        if (!tpcServerBootstrap.isEnabled()) {
             shutdownAll(partitionThreads);
         }
         shutdownAll(genericThreads);
-        if (tpcEngine == null) {
+        if (!tpcServerBootstrap.isEnabled()) {
             awaitTermination(partitionThreads);
         }
         awaitTermination(genericThreads);

@@ -30,6 +30,7 @@ import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
@@ -58,14 +59,11 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 @ExcludedMetricTargets(MANAGEMENT_CENTER)
 public abstract class OperationThread extends HazelcastManagedThread implements StaticMetricsProvider {
 
-    int threadId;
-    OperationQueue queue;
+    final int threadId;
+    final OperationQueue queue;
     // This field wil only be accessed by the thread itself when doing 'self'
     // calls. So no need for any form of synchronization.
     OperationRunner currentRunner;
-    NodeExtension nodeExtension;
-    ILogger logger;
-    volatile boolean shutdown;
 
     // All these counters are updated by this OperationThread (so a single writer)
     // and are read by the MetricsRegistry.
@@ -84,7 +82,10 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
     @Probe(name = OPERATION_METRIC_THREAD_COMPLETED_OPERATION_BATCH_COUNT)
     private final SwCounter completedOperationBatchCount = newSwCounter();
 
-    private boolean priority;
+    private final boolean priority;
+    private final NodeExtension nodeExtension;
+    private final ILogger logger;
+    private volatile boolean shutdown;
 
     public OperationThread(String name,
                            int threadId,
@@ -100,9 +101,6 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
         this.logger = logger;
         this.nodeExtension = nodeExtension;
         this.priority = priority;
-    }
-
-    public OperationThread() {
     }
 
     public int getThreadId() {
@@ -124,7 +122,7 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
         }
     }
 
-    protected void loop() {
+    protected void loop() throws Exception {
         while (!shutdown) {
             Object task;
             try {

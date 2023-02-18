@@ -35,8 +35,10 @@ import com.hazelcast.internal.tpc.TpcEngine;
 import com.hazelcast.internal.tpc.nio.NioReactorBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationexecutor.impl.AltoOperationQueue;
 import com.hazelcast.spi.impl.operationexecutor.impl.AltoOperationScheduler;
 import com.hazelcast.spi.impl.operationexecutor.impl.AltoPartitionOperationThread;
+import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.io.UncheckedIOException;
@@ -72,7 +74,7 @@ public class TpcServerBootstrap {
     private final InternalSerializationService ss;
     private final ILogger logger;
     private final Address thisAddress;
-    private final TpcEngine tpcEngine;
+    private  TpcEngine tpcEngine;
     private final boolean tcpNoDelay = true;
     private final boolean enabled;
     private final Map<Reactor, Supplier<? extends ReadHandler>> readHandlerSuppliers = new HashMap<>();
@@ -87,7 +89,6 @@ public class TpcServerBootstrap {
         this.config = nodeEngine.getConfig();
         this.enabled = loadAltoEnabled();
         this.thisAddress = nodeEngine.getThisAddress();
-        this.tpcEngine = newTpcEngine();
     }
 
     private boolean loadAltoEnabled() {
@@ -121,12 +122,23 @@ public class TpcServerBootstrap {
 
         Configuration configuration = new Configuration();
         NioReactorBuilder reactorBuilder = new NioReactorBuilder();
-        reactorBuilder.setThreadFactory(AltoPartitionOperationThread::new);
+        reactorBuilder.setThreadSupplier(new Supplier<Thread>() {
+            int index=0;
+            @Override
+            public Thread get() {
+                OperationExecutorImpl operationExecutor = (OperationExecutorImpl)  nodeEngine.getOperationService().getOperationExecutor();
+                return operationExecutor.getPartitionThreads()[index++];
+            }
+        });
         reactorBuilder.setSchedulerSupplier(() -> new AltoOperationScheduler(1));
 
         configuration.setReactorBuilder(reactorBuilder);
         configuration.setReactorCount(loadEventloopCount());
         return new TpcEngine(configuration);
+    }
+
+    public int eventloopCount(){
+        return loadEventloopCount();
     }
 
     private int loadEventloopCount() {
@@ -143,6 +155,19 @@ public class TpcServerBootstrap {
     public void start() {
         if (!enabled) {
             return;
+        }
+        this.tpcEngine = newTpcEngine();
+
+        // The AltoPartitionOperationThread are created with the right AltoOperationQueue, but
+        // the reactor isn't set yet.
+        // The tpcEngine (and hence reactor.start) will create the appropriate happens-before
+        // edge between the main thread and the reactor thread. So it is guaranteed to see
+        // the reactor.
+        OperationExecutorImpl operationExecutor = (OperationExecutorImpl)  nodeEngine.getOperationService().getOperationExecutor();
+        for(int k=0;k<operationExecutor.getPartitionThreadCount();k++){
+            Reactor reactor = tpcEngine.reactor(k);
+            AltoPartitionOperationThread partitionThread = (AltoPartitionOperationThread) operationExecutor.getPartitionThreads()[k];
+            partitionThread.getQueue().setReactor(reactor);
         }
 
         logger.info("Starting TpcServerBootstrap");
