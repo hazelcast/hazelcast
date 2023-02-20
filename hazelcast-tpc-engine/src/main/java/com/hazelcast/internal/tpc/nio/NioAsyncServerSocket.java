@@ -59,27 +59,9 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             this.options = builder.options;
             this.eventloopThread = reactor.eventloopThread();
             this.serverSocketChannel = builder.serverSocketChannel;
-            this.key = register();
+            this.key = serverSocketChannel.register(reactor.selector, 0, new Handler());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        }
-    }
-
-    private SelectionKey register() throws IOException {
-        if (Thread.currentThread() == eventloopThread) {
-            return serverSocketChannel.register(reactor.selector, 0, new Handler());
-        } else {
-            CompletableFuture<SelectionKey> future = new CompletableFuture<>();
-            reactor.execute(() -> {
-                try {
-                    future.complete(serverSocketChannel.register(reactor.selector, 0, new Handler()));
-                } catch (Throwable t) {
-                    future.completeExceptionally(t);
-                    throw sneakyThrow(t);
-                }
-            });
-
-            return future.join();
         }
     }
 
