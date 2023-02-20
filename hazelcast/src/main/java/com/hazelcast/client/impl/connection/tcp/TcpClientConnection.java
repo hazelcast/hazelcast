@@ -49,7 +49,6 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_ME
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_CONNECTION_EVENT_HANDLER_COUNT;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.StringUtil.timeToStringFriendly;
 
 /**
@@ -201,7 +200,7 @@ public class TcpClientConnection implements ClientConnection {
         try {
             innerClose();
         } catch (Exception e) {
-            logger.warning("Exception while closing connection" + e.getMessage());
+            logger.warning("Exception while closing connection " + e.getMessage());
         }
 
         connectionManager.onConnectionClose(this);
@@ -236,7 +235,11 @@ public class TcpClientConnection implements ClientConnection {
     protected void innerClose() throws IOException {
         if (altoChannels != null) {
             for (Channel altoChannel : altoChannels) {
-                closeResource(altoChannel);
+                try {
+                    altoChannel.close();
+                } catch (IOException e) {
+                    logger.warning("Exception while closing Alto channel " + e.getMessage());
+                }
             }
         }
 

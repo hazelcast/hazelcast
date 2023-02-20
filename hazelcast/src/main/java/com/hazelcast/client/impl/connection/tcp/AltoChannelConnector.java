@@ -24,6 +24,7 @@ import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -33,7 +34,6 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESS
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.BOOLEAN_SIZE_IN_BYTES;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeUUID;
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
 
 /**
  * Establishes channels to the Alto ports of a connection in a
@@ -174,7 +174,7 @@ public final class AltoChannelConnector {
 
     private void onFailure(Channel channel) {
         synchronized (altoChannels) {
-            closeResource(channel);
+            closeChannel(channel);
             if (failed) {
                 return;
             }
@@ -188,9 +188,21 @@ public final class AltoChannelConnector {
         return failed || !connection.isAlive();
     }
 
+    private void closeChannel(Channel channel) {
+        if (channel == null) {
+            return;
+        }
+
+        try {
+            channel.close();
+        } catch (IOException e) {
+            logger.warning("Exception while closing Alto channel " + e.getMessage());
+        }
+    }
+
     private void closeAllChannels() {
         for (Channel channel : altoChannels) {
-            closeResource(channel);
+            closeChannel(channel);
         }
     }
 
