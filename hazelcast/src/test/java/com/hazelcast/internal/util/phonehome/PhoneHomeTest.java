@@ -613,7 +613,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testViridianPhoneHomes() {
+    public void testViridianPhoneHomeNullByDefault() {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
         assertEquals(null, parameters.get(PhoneHomeMetrics.VIRIDIAN.getRequestParameterName()));
