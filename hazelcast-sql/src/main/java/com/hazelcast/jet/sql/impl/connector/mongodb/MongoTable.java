@@ -106,6 +106,19 @@ class MongoTable extends JetTable {
                           .collect(toList());
     }
 
+    /**
+     * Returns an array of data types with order the same as the order of fields in the projection.
+     */
+    @Nonnull
+    QueryDataType[] resolveColumnTypes(@Nonnull List<String> requestedProjection) {
+        QueryDataType[] types = new QueryDataType[requestedProjection.size()];
+        int i = 0;
+        for (String column : requestedProjection) {
+            types[i++] = getField(column).getType();
+        }
+        return types;
+    }
+
     @Override
     public String toString() {
         return "MongoTable{" +

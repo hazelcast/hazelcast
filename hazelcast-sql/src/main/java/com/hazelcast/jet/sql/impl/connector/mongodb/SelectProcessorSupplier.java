@@ -23,6 +23,7 @@ import com.hazelcast.jet.mongodb.impl.ReadMongoP;
 import com.hazelcast.jet.mongodb.impl.ReadMongoParams;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import org.bson.Document;
@@ -32,6 +33,7 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -57,6 +59,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
     private final List<String> projection;
     private final Long startAt;
     private transient ExpressionEvalContext evalContext;
+    private final QueryDataType[] types;
 
     SelectProcessorSupplier(MongoTable table, String predicate, List<String> projection, Long startAt, boolean stream,
                             FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
@@ -68,8 +71,11 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         this.startAt = startAt;
         this.stream = stream;
         this.eventTimePolicyProvider = eventTimePolicyProvider;
+
         checkArgument(projection != null && !projection.isEmpty(), "projection cannot be empty");
+        this.types = table.resolveColumnTypes(projection);
     }
+
 
     SelectProcessorSupplier(MongoTable table, String predicate, List<String> projection, Long startAt,
                             FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
@@ -128,9 +134,9 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
     private JetSqlRow convertDocToRow(Document doc) {
         Object[] row = new Object[doc.size()];
 
-        int i = 0;
-        for (Object value : doc.values()) {
-            row[i++] = value;
+        for (Map.Entry<String, Object> value : doc.entrySet()) {
+            int index = indexInProjection(value.getKey());
+            row[index] = types[index].convert(value.getValue());
         }
 
         return new JetSqlRow(evalContext.getSerializationService(), row);
@@ -146,7 +152,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
             if (index == -1) {
                 continue;
             }
-            row[index] = entry.getValue();
+            row[index] = types[index].convert(entry.getValue());
         }
         addIfInProjection(changeStreamDocument.getOperationType().getValue(), "operationType", row);
         addIfInProjection(changeStreamDocument.getResumeToken().toString(), "resumeToken", row);
