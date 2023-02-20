@@ -16,25 +16,16 @@
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.util.EmptyStatement;
-import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.logging.LogListener;
-import com.hazelcast.sql.SqlResult;
-import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
-import org.testcontainers.containers.MongoDBContainer;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -47,24 +38,8 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class MongoStreamSqlConnectorTest extends SqlTestSupport {
-    private static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "6.0.3");
-
-    @ClassRule
-    public static final MongoDBContainer mongoContainer
-            = new MongoDBContainer("mongo:" + TEST_MONGO_VERSION);
-
-    private static SqlService sqlService;
-
-    @Rule
-    public final TestName testName = new TestName();
+public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
     private final Random random = new Random();
-
-    @BeforeClass
-    public static void beforeClass() {
-        initialize(1, null);
-        sqlService = instance().getSql();
-    }
 
     @Test
     public void readsFromMongo_withId_twoSteps() {
@@ -152,13 +127,6 @@ public class MongoStreamSqlConnectorTest extends SqlTestSupport {
             Thread.sleep(random.nextInt(howMuch));
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-
-    protected void execute(String sql, Object... arguments) {
-        try (SqlResult ignored = sqlService.execute(sql, arguments)) {
-            EmptyStatement.ignore(null);
         }
     }
 

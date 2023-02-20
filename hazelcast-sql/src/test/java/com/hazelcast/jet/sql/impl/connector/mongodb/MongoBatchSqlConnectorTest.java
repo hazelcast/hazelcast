@@ -17,28 +17,17 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.EmptyStatement;
-import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.logging.LogListener;
 import com.hazelcast.sql.SqlResult;
-import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.MongoBulkWriteException;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import org.bson.Document;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
-import org.testcontainers.containers.MongoDBContainer;
 
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -52,33 +41,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class MongoBatchSqlConnectorTest extends SqlTestSupport {
-    private static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "6.0.3");
-
-    @ClassRule
-    public static final MongoDBContainer mongoContainer
-            = new MongoDBContainer("mongo:" + TEST_MONGO_VERSION);
-    private static final String DATABASE_NAME = "sqlConnectorTest";
-
-    private static SqlService sqlService;
-    private static MongoClient mongoClient;
-    private static MongoDatabase database;
-
-    @Rule
-    public final TestName testName = new TestName();
-
-    @BeforeClass
-    public static void beforeClass() {
-        initialize(1, null);
-        sqlService = instance().getSql();
-        mongoClient = MongoClients.create(mongoContainer.getConnectionString());
-        database = mongoClient.getDatabase(DATABASE_NAME);
-    }
-
-    @AfterClass
-    public static void close() {
-        mongoClient.close();
-    }
+public class MongoBatchSqlConnectorTest extends MongoSqlTest {
 
     @Test
     public void readsFromMongo_withId_twoSteps() {
@@ -130,7 +93,7 @@ public class MongoBatchSqlConnectorTest extends SqlTestSupport {
                 + "TYPE MongoDB "
                 + "OPTIONS ("
                 + "    'connectionString' = '" + connectionString + "', "
-                + "    'database' = '" + DATABASE_NAME + "', "
+                + "    'database' = '" +  databaseName + "', "
                 + "    'collection' = '" + collectionName + "' "
                 + ")");
 
@@ -193,13 +156,13 @@ public class MongoBatchSqlConnectorTest extends SqlTestSupport {
                 + "TYPE MongoDB "
                 + "OPTIONS ("
                 + "    'connectionString' = '" + connectionString + "', "
-                + "    'database' = '" + DATABASE_NAME + "'"
+                + "    'database' = '" +  databaseName + "'"
                 + ")");
         execute("CREATE MAPPING peopleProfession external name \"peopleProfession\" (personId INT, profession VARCHAR) "
                 + "TYPE MongoDB "
                 + "OPTIONS ("
                 + "    'connectionString' = '" + connectionString + "', "
-                + "    'database' = '" + DATABASE_NAME + "'"
+                + "    'database' = '" + databaseName + "'"
                 + ")");
 
         assertRowsAnyOrder("select pn.personId, pn.name, pr.profession " +
@@ -369,13 +332,9 @@ public class MongoBatchSqlConnectorTest extends SqlTestSupport {
                 + "TYPE MongoDB "
                 + "OPTIONS ("
                 + "    'connectionString' = '" + mongoContainer.getConnectionString() + "', "
-                + "    'database' = '" + DATABASE_NAME + "', "
+                + "    'database' = '" +  databaseName + "', "
                 + "    'collection' = '" + methodName() + "' "
                 + ")");
-    }
-
-    private String methodName() {
-        return testName.getMethodName();
     }
 
 }
