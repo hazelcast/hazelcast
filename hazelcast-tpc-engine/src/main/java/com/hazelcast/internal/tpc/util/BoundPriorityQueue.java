@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.tpc.util;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
+
 import java.util.PriorityQueue;
 
 /**
@@ -25,6 +27,7 @@ import java.util.PriorityQueue;
  *
  * @param <E> the type of elements in this BoundPriorityQueue.
  */
+@SerializableByConvention
 public class BoundPriorityQueue<E> extends PriorityQueue<E> {
 
     private final int capacity;
