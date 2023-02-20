@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveAllCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
@@ -65,7 +66,7 @@ public class MapRemoveAllMessageTask extends AbstractMapAllPartitionsMessageTask
             } else {
                 handleProcessingFailure(throwable);
             }
-        }, internalAsyncExecutor);
+        }, ConcurrencyUtil.getDefaultAsyncExecutor());
     }
 
     @Override

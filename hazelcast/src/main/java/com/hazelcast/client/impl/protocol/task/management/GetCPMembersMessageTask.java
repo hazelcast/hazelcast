@@ -36,6 +36,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+
 public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<Void, List<SimpleEntry<UUID, UUID>>> {
 
     private static final Permission REQUIRED_PERMISSION = new ManagementPermission("cp.getCPMembers");
@@ -58,7 +60,7 @@ public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<Void, List
                         result.add(new SimpleEntry<>(cpMember.getUuid(), apUuid));
                     }
                     return result;
-                }, internalAsyncExecutor);
+                }, CALLER_RUNS);
     }
 
     @Override
