@@ -23,6 +23,7 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.internal.util.StateMachine;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
@@ -268,7 +269,8 @@ public class MapKeyLoader {
                 return false;
             });
 
-            execService.asCompletableFuture(sent).whenCompleteAsync(keyLoadFinished, internalAsyncExecutor);
+            execService.asCompletableFuture(sent).whenCompleteAsync(keyLoadFinished,
+                    ConcurrencyUtil.getDefaultAsyncExecutor());
         }
 
         return keyLoadFinished;
@@ -292,7 +294,7 @@ public class MapKeyLoader {
                 opService.<Boolean>invokeOnPartition(SERVICE_NAME, op, mapNamePartition)
                         // required since loading may be triggered after migration
                         // and in this case the callback is the only way to get to know if the key load finished or not.
-                        .whenCompleteAsync(loadingFinishedCallback(), internalAsyncExecutor);
+                        .whenCompleteAsync(loadingFinishedCallback(), ConcurrencyUtil.getDefaultAsyncExecutor());
             });
         }
         return keyLoadFinished;

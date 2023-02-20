@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
@@ -27,7 +28,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
@@ -201,7 +201,7 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
             getOperationService().executeOnPartitions(
                     new QueryTaskFactory(query, queryRunner, future), localPartitions);
             future.whenCompleteAsync(new ExecutionCallbackImpl(queryRunner, query),
-                    nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR));
+                    ConcurrencyUtil.getDefaultAsyncExecutor());
         }
     }
 
