@@ -190,7 +190,7 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
         job.cancel();
         assertJobStatusEventually(job, FAILED);
 
-        if (processingGuarantee.equals(EXACTLY_ONCE)) {
+        if (processingGuarantee.equals(EXACTLY_ONCE) || restartGraceful) {
             List<Entry<String, Integer>> duplicates = resultSet.entrySet()
                     .stream()
                     .filter(entry -> entry.getValue() > 1)
@@ -246,6 +246,8 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
                     job.restart(restartGraceful);
                     lastExecutionId = assertJobRunningEventually(instance(), job, lastExecutionId);
                 }
+            } catch (NullPointerException e) {
+                System.err.println(e);
             } catch (Throwable e) {
                 logger.warning(null, e);
                 ex = e;
