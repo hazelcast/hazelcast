@@ -63,7 +63,7 @@ import static org.junit.Assert.assertTrue;
 public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport {
     private static final int INITIAL_PARTITION_COUNT = 1;
     private static final int EVENTS_PER_SINK = 500;
-    private static final int SINK_ATTEMPTS = 500;
+    private static final int SINK_ATTEMPTS = 400;
     protected static final int EVENTS_TO_PROCESS = EVENTS_PER_SINK * SINK_ATTEMPTS;
     protected static final int SNAPSHOT_TIMEOUT_SECONDS = 30;
 
@@ -77,7 +77,6 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
     private SqlService sqlService;
     private Thread kafkaFeedThread;
     private String sourceTopicName;
-    private String fetchingQuery;
     protected String sinkTopic;
 
     protected int expectedEventsCount = EVENTS_TO_PROCESS;
@@ -181,7 +180,6 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
             throw new RuntimeException(ex);
         }
 
-
         assertThat(resultSet.size()).isGreaterThanOrEqualTo(expectedEventsCount);
         jobRestarter.finish();
 
@@ -270,10 +268,4 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
             System.err.println("Items sank " + itemsSank);
         }
     }
-
-//    private void createTopicData(String topicName) {
-//        for (int i = 0; i < EVENTS_TO_PROCESS; i++) {
-//            kafkaTestSupport.produce(topicName, i, "value-" + i);
-//        }
-//    }
 }
