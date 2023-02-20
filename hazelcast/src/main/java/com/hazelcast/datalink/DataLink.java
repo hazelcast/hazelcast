@@ -22,18 +22,10 @@ import com.hazelcast.spi.annotation.Beta;
 /**
  * Creates data link. Configuration is provided by {@link #init(DataLinkConfig)}.
  *
- * @param <DL> type of the data link
  * @since 5.2
  */
 @Beta
-public interface DataLinkFactory<DL> extends AutoCloseable {
-
-    /**
-     * Returns configured data link. Depending on configuration and implementation it can create new data link
-     * or reuse existing one. The implementation <i>must</i> be thread-safe, since this method may be called
-     * by multiple threads concurrently.
-     */
-    DL getDataLink();
+public interface DataLink extends AutoCloseable {
 
     /**
      * Initialize factory with the config

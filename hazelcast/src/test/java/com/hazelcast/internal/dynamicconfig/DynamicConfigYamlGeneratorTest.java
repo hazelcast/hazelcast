@@ -525,7 +525,7 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
         properties.put("jdbcUrl", "jdbc:h2:mem:" + DynamicConfigYamlGeneratorTest.class.getSimpleName());
         DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName("test-data-link")
-                .setClassName("com.hazelcast.datalink.JdbcDataLinkFactory")
+                .setClassName("com.hazelcast.datalink.JdbcDataLink")
                 .setProperties(properties);
 
         expectedConfig.addDataLinkConfig(dataLinkConfig);

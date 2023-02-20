@@ -149,7 +149,7 @@ User will be able to configure map store:
 Config config = new Config();
 config.addDataLinkConfig(
         new DataLinkConfig("mongodb-ref")
-            .setClassName(MongoDbDataLinkFactory.class.getName())
+            .setClassName(MongoDbDataLink.class.getName())
             .setProperty("url", dbConnectionUrl)
   );
 
@@ -268,7 +268,7 @@ The implementation will be split into 4 parts:
     * Support for hot updates is not planned. All nodes should have the same version of processors.
     
   - What are the possible interactions with other features or sub-systems inside Hazelcast? How does the behavior of other code change implicitly as a result of the changes outlined in the design document?
-    * This feature will use GenericMapStore and Data Link Factories, as mentioned in the examples above.
+    * This feature will use GenericMapStore and Data Links, as mentioned in the examples above.
     
   - What are the edge cases? What are example uses or inputs that we think are uncommon but are still possible and thus need to be handled? How are these edge cases handled?
     * User may have documents of very different schemas in one collection. In such cases the connector should not fail - for inserts

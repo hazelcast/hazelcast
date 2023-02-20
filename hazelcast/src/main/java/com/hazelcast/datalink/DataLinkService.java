@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.spi.annotation.Beta;
 
 /**
- * Service for accessing data link factories
+ * Service for accessing data links
  *
  * @since 5.2
  */
@@ -31,7 +31,7 @@ public interface DataLinkService extends AutoCloseable {
     /**
      * Tests data link configuration.
      *
-     * @param config name of the data link factory
+     * @param config name of the data link
      * @return {@code true} if test was successful
      * @throws Exception if the test operation fails
      * @since 5.3
@@ -39,14 +39,14 @@ public interface DataLinkService extends AutoCloseable {
     boolean testConnection(DataLinkConfig config) throws Exception;
 
     /**
-     * Returns data link factory with given name.
+     * Returns data link with given name.
      *
-     * @param name name of the data link factory
-     * @param <DL> type of the data link
+     * @param name name of the data link
+     * @param <T> type of the data link
      * @return instance of the factory
      * @throws HazelcastException if the factory with given name is not found or misconfigured*
      */
-    <DL> DataLinkFactory<DL> getDataLinkFactory(String name);
+    <T extends DataLink> T getDataLink(String name);
 
     @Override
     void close();

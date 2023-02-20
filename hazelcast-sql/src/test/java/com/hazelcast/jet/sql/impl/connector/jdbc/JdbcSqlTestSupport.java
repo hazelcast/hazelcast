@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataLinkConfig;
-import com.hazelcast.datalink.JdbcDataLinkFactory;
+import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
@@ -63,7 +63,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         properties.setProperty("jdbcUrl", dbConnectionUrl);
         config.addDataLinkConfig(
                 new DataLinkConfig(TEST_DATABASE_REF)
-                        .setClassName(JdbcDataLinkFactory.class.getName())
+                        .setClassName(JdbcDataLink.class.getName())
                         .setProperties(properties)
         );
         initialize(2, config);

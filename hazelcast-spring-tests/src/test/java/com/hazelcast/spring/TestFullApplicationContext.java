@@ -1641,7 +1641,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         DataLinkConfig dataLinkConfig = config.getDataLinkConfig("my-data-link");
         assertNotNull(dataLinkConfig);
         assertEquals("my-data-link", dataLinkConfig.getName());
-        assertEquals("com.hazelcast.datalink.JdbcDataLinkFactory", dataLinkConfig.getClassName());
+        assertEquals("com.hazelcast.datalink.JdbcDataLink", dataLinkConfig.getClassName());
         assertFalse(dataLinkConfig.isShared());
         assertEquals("jdbc:mysql://dummy:3306", dataLinkConfig.getProperty("jdbcUrl"));
     }

@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.datalink.DataLinkFactory;
+import com.hazelcast.datalink.DataLink;
 import com.hazelcast.datalink.DataLinkService;
 import com.hazelcast.datalink.impl.CloseableDataSource;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
@@ -45,10 +45,10 @@ abstract class AbstractJdbcSqlConnectorProcessorSupplier implements ProcessorSup
         DataLinkService dataLinkService = ((HazelcastInstanceImpl) context.hazelcastInstance())
                 .node.getNodeEngine().getDataLinkService();
 
-        DataLinkFactory<DataSource> factory = dataLinkService
-                .getDataLinkFactory(dataLinkRef);
+        DataLink dataLink = dataLinkService
+                .getDataLink(dataLinkRef);
 
-        dataSource = factory.getDataLink();
+        dataSource = dataLink.getDataLink();
     }
 
     @Override

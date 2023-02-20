@@ -1120,7 +1120,7 @@
             </hz:auditlog>
             <hz:integrity-checker enabled="false"/>
             <hz:data-link name="${datalink.name}">
-                <hz:class-name>com.hazelcast.datalink.JdbcDataLinkFactory</hz:class-name>
+                <hz:class-name>com.hazelcast.datalink.JdbcDataLink</hz:class-name>
                 <hz:properties>
                     <hz:property name="jdbcUrl">${datalink.url}</hz:property>
                 </hz:properties>

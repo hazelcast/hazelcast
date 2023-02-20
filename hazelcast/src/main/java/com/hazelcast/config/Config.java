@@ -3140,7 +3140,7 @@ public class Config {
      *      properties.put("password", password);
      *      DataLinkConfig dataLinkConfig = new DataLinkConfig()
      *              .setName("my-jdbc-data-link")
-     *              .setClassName(JdbcDataLinkFactory.class.getName())
+     *              .setClassName(JdbcDataLink.class.getName())
      *              .setProperties(properties);
      *      config.addDataLinkConfig(dataLinkConfig);
      * }</pre>

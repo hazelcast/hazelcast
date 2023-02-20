@@ -20,8 +20,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.DataLinkFactory;
-import com.hazelcast.datalink.JdbcDataLinkFactory;
+import com.hazelcast.datalink.DataLink;
+import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
@@ -71,11 +71,11 @@ import static java.util.stream.Stream.of;
  * <p>
  * Usage:
  * <p>
- * First define data link, e.g. for JDBC use {@link JdbcDataLinkFactory}:
+ * First define data link, e.g. for JDBC use {@link JdbcDataLink}:
  * <pre>{@code Config config = new Config();
  * config.addDataLinkConfig(
  *   new DataLinkConfig("mysql-ref")
- *     .setClassName(JdbcDataLinkFactory.class.getName())
+ *     .setClassName(JdbcDataLink.class.getName())
  *     .setProperty("jdbcUrl", dbConnectionUrl)
  * );}</pre>
  * <p>
@@ -209,14 +209,14 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         if (properties.mappingType != null) {
             return properties.mappingType;
         } else {
-            DataLinkFactory<?> factory = nodeEngine()
+            DataLink dataLink = nodeEngine()
                     .getDataLinkService()
-                    .getDataLinkFactory(properties.dataLinkRef);
+                    .getDataLink(properties.dataLinkRef);
 
-            if (factory instanceof JdbcDataLinkFactory) {
+            if (dataLink instanceof JdbcDataLink) {
                 return "JDBC";
             } else {
-                throw new HazelcastException("Unknown DataLinkFactory class " + factory.getClass()
+                throw new HazelcastException("Unknown DataLink class " + dataLink.getClass()
                         + ". Set the mapping type using '" + MAPPING_TYPE_PROPERTY + "' property");
             }
         }

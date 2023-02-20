@@ -132,7 +132,7 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
                 .writeTo(assertAnyOrder(tableContents));
 
         assertThatThrownBy(() -> instance().getJet().newJob(p).join())
-                .hasMessageContaining("Data link factory 'non-existing-data-link' not found");
+                .hasMessageContaining("Data link 'non-existing-data-link' not found");
     }
 
     @Test
@@ -150,7 +150,7 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
                 .writeTo(assertAnyOrder(tableContents));
 
         assertThatThrownBy(() -> instance().getJet().newJob(p).join())
-                .hasMessageContaining("Data link factory '" + DUMMY_DATA_LINK + "' must be an instance of JdbcDataLinkFactory");
+                .hasMessageContaining("Data link '" + DUMMY_DATA_LINK + "' must be an instance of JdbcDataLink");
     }
 
     @Test

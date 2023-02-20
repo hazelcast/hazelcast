@@ -17,7 +17,8 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datalink.DataLinkFactory;
+import com.hazelcast.datalink.DataLink;
+import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.datalink.impl.CloseableDataSource;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
@@ -196,10 +197,10 @@ public class JdbcSqlConnector implements SqlConnector {
     }
 
     private static DataSource createDataLink(NodeEngine nodeEngine, String dataLinkRef) {
-        final DataLinkFactory<DataSource> dataLinkFactory = nodeEngine
+        final JdbcDataLink dataLink = nodeEngine
                 .getDataLinkService()
-                .getDataLinkFactory(dataLinkRef);
-        return dataLinkFactory.getDataLink();
+                .getDataLink(dataLinkRef);
+        return dataLink.getDataLink();
     }
 
     private void validateType(MappingField field, DbField dbField) {

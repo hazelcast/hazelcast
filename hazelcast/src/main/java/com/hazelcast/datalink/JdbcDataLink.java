@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @since 5.2
  */
 @Beta
-public class JdbcDataLinkFactory implements DataLinkFactory<DataSource> {
+public class JdbcDataLink implements DataLink {
 
     private static final int JDBC_TEST_CONNECTION_TIMEOUT_SECONDS = 5;
     private static final AtomicInteger DATA_SOURCE_COUNTER = new AtomicInteger();
@@ -57,7 +57,6 @@ public class JdbcDataLinkFactory implements DataLinkFactory<DataSource> {
         }
     }
 
-    @Override
     public DataSource getDataLink() {
         return config.isShared() ? sharedCloseableDataSource : CloseableDataSource.closing(doCreateDataSource());
     }

@@ -6220,7 +6220,7 @@
             <xs:element name="class-name" type="xs:string">
                 <xs:annotation>
                     <xs:documentation>
-                        The name of the class implementing DataLinkFactory.
+                        The name of the class implementing DataLink.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

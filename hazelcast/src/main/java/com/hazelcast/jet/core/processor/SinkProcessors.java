@@ -18,8 +18,8 @@ package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datalink.DataLinkFactory;
-import com.hazelcast.datalink.JdbcDataLinkFactory;
+import com.hazelcast.datalink.DataLink;
+import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BinaryOperatorEx;
@@ -425,17 +425,17 @@ public final class SinkProcessors {
     }
 
     private static FunctionEx<ProcessorMetaSupplier.Context, DataSource> dataSourceSupplier(String dataLinkName) {
-        return context -> getDataLinkFactory(context, dataLinkName).getDataLink();
+        return context -> getDataLink(context, dataLinkName).getDataLink();
     }
 
-    private static JdbcDataLinkFactory getDataLinkFactory(ProcessorMetaSupplier.Context context, String name) {
+    private static JdbcDataLink getDataLink(ProcessorMetaSupplier.Context context, String name) {
         NodeEngineImpl nodeEngine = Util.getNodeEngine(context.hazelcastInstance());
-        DataLinkFactory<?> dataLinkFactory = nodeEngine.getDataLinkService().getDataLinkFactory(name);
-        if (!(dataLinkFactory instanceof JdbcDataLinkFactory)) {
-            String className = JdbcDataLinkFactory.class.getName();
-            throw new HazelcastException("Data link factory '" + name + "' must be an instance of " + className);
+        DataLink dataLink = nodeEngine.getDataLinkService().getDataLink(name);
+        if (!(dataLink instanceof JdbcDataLink)) {
+            String className = JdbcDataLink.class.getName();
+            throw new HazelcastException("Data link '" + name + "' must be an instance of " + className);
         }
-        return (JdbcDataLinkFactory) dataLinkFactory;
+        return (JdbcDataLink) dataLink;
     }
 
     /**

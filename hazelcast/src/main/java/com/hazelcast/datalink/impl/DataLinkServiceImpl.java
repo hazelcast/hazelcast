@@ -18,7 +18,7 @@ package com.hazelcast.datalink.impl;
 
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datalink.DataLinkFactory;
+import com.hazelcast.datalink.DataLink;
 import com.hazelcast.datalink.DataLinkService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 public class DataLinkServiceImpl implements DataLinkService {
-    private final Map<String, DataLinkFactory<?>> dataLinkFactories = new ConcurrentHashMap<>();
+    private final Map<String, DataLink> dataLinks = new ConcurrentHashMap<>();
     private final ClassLoader classLoader;
     private final Node node;
     private final ILogger logger;
@@ -40,21 +40,21 @@ public class DataLinkServiceImpl implements DataLinkService {
         this.node = node;
         this.logger = node.getLogger(DataLinkServiceImpl.class);
         for (Map.Entry<String, DataLinkConfig> entry : node.getConfig().getDataLinkConfigs().entrySet()) {
-            dataLinkFactories.put(entry.getKey(), createFactory(entry.getValue()));
+            dataLinks.put(entry.getKey(), createDataLink(entry.getValue()));
         }
     }
 
-    private <DS> DataLinkFactory<DS> createFactory(DataLinkConfig config) {
-        logger.finest("Creating '" + config.getName() + "' data link factory");
+    private <T extends DataLink> T createDataLink(DataLinkConfig config) {
+        logger.finest("Creating '" + config.getName() + "' data link");
         String className = config.getClassName();
         try {
-            DataLinkFactory<DS> dataLinkFactory = ClassLoaderUtil.newInstance(classLoader, className);
-            dataLinkFactory.init(config);
-            return dataLinkFactory;
+            T dataLink = ClassLoaderUtil.newInstance(classLoader, className);
+            dataLink.init(config);
+            return dataLink;
         } catch (ClassCastException e) {
             throw new HazelcastException("Data link '" + config.getName() + "' misconfigured: "
                     + "'" + className + "' must implement '"
-                    + DataLinkFactory.class.getName() + "'", e);
+                    + DataLink.class.getName() + "'", e);
 
         } catch (ClassNotFoundException e) {
             throw new HazelcastException("Data link '" + config.getName() + "' misconfigured: "
@@ -66,30 +66,30 @@ public class DataLinkServiceImpl implements DataLinkService {
 
     @Override
     public boolean testConnection(DataLinkConfig config) throws Exception {
-        try (DataLinkFactory<Object> factory = createFactory(config)) {
-            return factory.testConnection();
+        try (DataLink dataLink = createDataLink(config)) {
+            return dataLink.testConnection();
         }
     }
 
     @Override
-    public <DS> DataLinkFactory<DS> getDataLinkFactory(String name) {
+    public <T extends DataLink> T getDataLink(String name) {
         DataLinkConfig dataLinkConfig = node.getConfig().getDataLinkConfigs().get(name);
         if (dataLinkConfig == null) {
-            throw new HazelcastException("Data link factory '" + name + "' not found");
+            throw new HazelcastException("Data link '" + name + "' not found");
         }
-        return (DataLinkFactory<DS>) dataLinkFactories
-                .computeIfAbsent(name, n -> createFactory(dataLinkConfig));
+        return (T) dataLinks
+                .computeIfAbsent(name, n -> createDataLink(dataLinkConfig));
     }
 
     @Override
     public void close() {
-        for (Map.Entry<String, DataLinkFactory<?>> entry : dataLinkFactories.entrySet()) {
+        for (Map.Entry<String, DataLink> entry : dataLinks.entrySet()) {
             try {
-                logger.finest("Closing '" + entry.getKey() + "' data link factory");
-                DataLinkFactory<?> dataLinkFactory = entry.getValue();
-                dataLinkFactory.close();
+                logger.finest("Closing '" + entry.getKey() + "' data link");
+                DataLink dataLink = entry.getValue();
+                dataLink.close();
             } catch (Exception e) {
-                logger.warning("Closing '" + entry.getKey() + "' data link factory failed", e);
+                logger.warning("Closing '" + entry.getKey() + "' data link failed", e);
             }
         }
     }
