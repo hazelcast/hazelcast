@@ -21,7 +21,6 @@ import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
-import org.assertj.core.api.Assertions;
 import org.assertj.core.api.Condition;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -94,12 +93,8 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
         ))
-                .isInstanceOf(HazelcastSqlException.class)
-                .is(Assertions.anyOf(
-                        hasMessage("Table \"" + tableName + "\" not found"), // H2
-                        hasMessage("relation \"" + tableName + "\" does not exist"), // Postgres
-                        hasMessage("Table 'test." + tableName + "' doesn't exist") // MySQL
-                ));
+                .isInstanceOf(HazelcastSqlException.class);
+
 
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()

@@ -16,31 +16,60 @@
 
 package com.hazelcast.jet.mongodb;
 
+import com.hazelcast.function.SupplierEx;
+import com.hazelcast.jet.mongodb.MongoDBSourceBuilder.Batch;
+import com.hazelcast.jet.mongodb.MongoDBSourceBuilder.Stream;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.StreamSource;
-import com.mongodb.client.ChangeStreamIterable;
+import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
-import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
+import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
-
-import static com.hazelcast.function.FunctionEx.identity;
 
 /**
  * Contains factory methods for MongoDB sources.
  * <p>
  * See {@link MongoDBSourceBuilder} for creating custom MongoDB sources.
+ *
+ * @since 5.3
  */
 public final class MongoDBSources {
 
     private MongoDBSources() {
+    }
+
+    /**
+     * Creates as builder for new batch mongo source. Equivalent to calling {@link MongoDBSourceBuilder#batch}.
+     * <p>
+     * Example usage:
+     * <pre>{@code
+     * BatchSource<Document> batchSource =
+     *         MongoDBSources.batch("batch-source", () -> MongoClients.create("mongodb://127.0.0.1:27017"))
+     *                 .into("myDatabase", "myCollection")
+     *                 .filter(new Document("age", new Document("$gt", 10)),
+     *                 .projection(new Document("age", 1))
+     *         );
+     * Pipeline p = Pipeline.create();
+     * BatchStage<Document> srcStage = p.readFrom(batchSource);
+     * }</pre>
+     *
+     * @since 5.3
+     * @param name descriptive name for the source (diagnostic purposes) client.
+     * @param clientSupplier a function that creates MongoDB client.
+     * @return Batch Mongo source builder
+     */
+    @Beta
+    @Nonnull
+    public static MongoDBSourceBuilder.Batch<Document> batch(
+            @Nonnull String name,
+            @Nonnull SupplierEx<? extends MongoClient> clientSupplier) {
+        return MongoDBSourceBuilder.batch(name, clientSupplier);
     }
 
     /**
@@ -68,6 +97,8 @@ public final class MongoDBSources {
      * BatchStage<Document> srcStage = p.readFrom(batchSource);
      * }</pre>
      *
+     * @since 5.3
+     *
      * @param name             a descriptive name for the source (diagnostic purposes)
      * @param connectionString a connection string URI to MongoDB for example:
      *                         {@code mongodb://127.0.0.1:27017}
@@ -76,23 +107,56 @@ public final class MongoDBSources {
      * @param filter           filter object as a {@link Document}
      * @param projection       projection object as a {@link Document}
      */
+    @Beta
     @Nonnull
     public static BatchSource<Document> batch(
             @Nonnull String name,
             @Nonnull String connectionString,
             @Nonnull String database,
             @Nonnull String collection,
-            @Nullable Document filter,
-            @Nullable Document projection
+            @Nullable Bson filter,
+            @Nullable Bson projection
     ) {
-        return MongoDBSourceBuilder
+        Batch<Document> builder = MongoDBSourceBuilder
                 .batch(name, () -> MongoClients.create(connectionString))
-                .databaseFn(client -> client.getDatabase(database))
-                .collectionFn(db -> db.getCollection(collection))
-                .destroyFn(MongoClient::close)
-                .searchFn(col -> col.find().filter(filter).projection(projection))
-                .mapFn(identity())
-                .build();
+                .database(database)
+                .collection(collection);
+        if (projection != null) {
+            builder.project(projection);
+        }
+        if (filter != null) {
+            builder.filter(filter);
+        }
+        return builder.build();
+    }
+
+    /**
+     * Creates as builder for new stream mongo source. Equivalent to calling {@link MongoDBSourceBuilder#stream}.
+     *
+     * Example usage:
+     * <pre>{@code
+     * StreamSource<Document> streamSource =
+     *         MongoDBSources.stream("batch-source", () -> MongoClients.create("mongodb://127.0.0.1:27017"))
+     *                 .into("myDatabase", "myCollection")
+     *                 .filter(new Document("fullDocument.age", new Document("$gt", 10)),
+     *                 .projection(new Document("fullDocument.age", 1))
+     *         );
+     * Pipeline p = Pipeline.create();
+     * StreamStage<Document> srcStage = p.readFrom(streamSource);
+     * }</pre>
+     *
+     * @since 5.3
+     *
+     * @param name descriptive name for the source (diagnostic purposes) client.
+     * @param clientSupplier a function that creates MongoDB client.
+     * @return Stream Mongo source builder
+     */
+    @Beta
+    @Nonnull
+    public static MongoDBSourceBuilder.Stream<Document> stream(
+            @Nonnull String name,
+            @Nonnull SupplierEx<? extends MongoClient> clientSupplier) {
+        return MongoDBSourceBuilder.stream(name, clientSupplier);
     }
 
     /**
@@ -129,6 +193,8 @@ public final class MongoDBSources {
      * StreamSourceStage<? extends Document> srcStage = p.readFrom(streamSource);
      * }</pre>
      *
+     * @since 5.3
+     *
      * @param name             a descriptive name for the source (diagnostic purposes)
      * @param connectionString a connection string URI to MongoDB for example:
      *                         {@code mongodb://127.0.0.1:27017}
@@ -137,6 +203,7 @@ public final class MongoDBSources {
      * @param filter           filter object as a {@link Document}
      * @param projection       projection object as a {@link Document}
      */
+    @Beta
     @Nonnull
     public static StreamSource<? extends Document> stream(
             @Nonnull String name,
@@ -146,30 +213,18 @@ public final class MongoDBSources {
             @Nullable Document filter,
             @Nullable Document projection
     ) {
-        return MongoDBSourceBuilder
+        Stream<Document> builder = MongoDBSourceBuilder
                 .stream(name, () -> MongoClients.create(connectionString))
-                .databaseFn(client -> client.getDatabase(database))
-                .collectionFn(db -> db.getCollection(collection))
-                .destroyFn(MongoClient::close)
-                .searchFn(
-                        col -> {
-                            List<Bson> aggregates = new ArrayList<>();
-                            if (filter != null) {
-                                aggregates.add(Aggregates.match(filter));
-                            }
-                            if (projection != null) {
-                                aggregates.add(Aggregates.project(projection));
-                            }
-                            ChangeStreamIterable<? extends Document> watch;
-                            if (aggregates.isEmpty()) {
-                                watch = col.watch();
-                            } else {
-                                watch = col.watch(aggregates);
-                            }
-                            return watch;
-                        }
-                )
-                .mapFn(ChangeStreamDocument::getFullDocument)
-                .build();
+                .database(database)
+                .collection(collection)
+                .mapFn(ChangeStreamDocument::getFullDocument);
+        if (projection != null) {
+            builder.project(projection);
+        }
+        if (filter != null) {
+            builder.filter(filter);
+        }
+        builder.startAtOperationTime(new BsonTimestamp(System.currentTimeMillis()));
+        return builder.build();
     }
 }

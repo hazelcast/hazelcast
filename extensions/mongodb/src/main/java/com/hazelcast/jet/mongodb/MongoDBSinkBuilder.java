@@ -19,100 +19,174 @@ package com.hazelcast.jet.mongodb;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.mongodb.impl.WriteMongoP;
+import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.SinkBuilder;
+import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.retry.RetryStrategies;
+import com.hazelcast.jet.retry.RetryStrategy;
+import com.hazelcast.spi.annotation.Beta;
+import com.mongodb.TransactionOptions;
 import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.InsertManyOptions;
+import com.mongodb.client.model.ReplaceOptions;
+import org.bson.BsonDocument;
+import org.bson.Document;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.List;
 
-import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.jet.retry.IntervalFunction.exponentialBackoffWithCap;
+import static com.mongodb.ReadPreference.primaryPreferred;
+import static com.mongodb.WriteConcern.MAJORITY;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
- * See {@link MongoDBSinks#builder(String, SupplierEx)}
+ * See {@link MongoDBSinks#builder}
+ *
+ * @since 5.3
  *
  * @param <T> type of the items the sink will accept
  */
+@Beta
+@SuppressWarnings("UnusedReturnValue")
 public final class MongoDBSinkBuilder<T> {
 
+    @SuppressWarnings("checkstyle:MagicNumber")
+    private static final TransactionOptions DEFAULT_TRANSACTION_OPTION = TransactionOptions
+            .builder()
+            .writeConcern(MAJORITY)
+            .maxCommitTime(10L, MINUTES)
+            .readPreference(primaryPreferred())
+            .build();
+
+    @SuppressWarnings("checkstyle:MagicNumber")
+    private static final RetryStrategy DEFAULT_COMMIT_RETRY_STRATEGY = RetryStrategies
+            .custom()
+            .intervalFunction(exponentialBackoffWithCap(100, 2.0, 3000))
+            .maxAttempts(20)
+            .build();
+
     private final String name;
-    private final SupplierEx<MongoClient> connectionSupplier;
+    private final WriteMongoParams<T> params = new WriteMongoParams<>();
 
-    private FunctionEx<MongoClient, MongoDatabase> databaseFn;
-    private FunctionEx<MongoDatabase, MongoCollection<T>> collectionFn;
-    private ConsumerEx<MongoClient> destroyFn = ConsumerEx.noop();
-
-    private boolean ordered = true;
-    private boolean bypassValidation;
     private int preferredLocalParallelism = 2;
 
     /**
-     * See {@link MongoDBSinks#builder(String, SupplierEx)}
+     * See {@link MongoDBSinks#builder}
      */
     MongoDBSinkBuilder(
             @Nonnull String name,
-            @Nonnull SupplierEx<MongoClient> connectionSupplier
+            @Nonnull Class<T> documentClass,
+            @Nonnull SupplierEx<MongoClient> clientSupplier
     ) {
-        checkSerializable(connectionSupplier, "connectionSupplier");
-        this.name = name;
-        this.connectionSupplier = connectionSupplier;
+        this.name = checkNotNull(name, "sink name cannot be null");
+        params.setClientSupplier(checkNonNullAndSerializable(clientSupplier, "clientSupplier"));
+        params.setDocumentType(checkNotNull(documentClass, "document class cannot be null"));
+
+        if (Document.class.isAssignableFrom(documentClass)) {
+            identifyDocumentBy("_id", doc -> ((Document) doc).get("_id"));
+        }
+        if (BsonDocument.class.isAssignableFrom(documentClass)) {
+            identifyDocumentBy("_id", doc -> ((BsonDocument) doc).get("_id"));
+        }
+
+        transactionOptions(() -> DEFAULT_TRANSACTION_OPTION);
+        commitRetryStrategy(DEFAULT_COMMIT_RETRY_STRATEGY);
     }
 
     /**
-     * @param databaseFn creates/obtains a database using the given client.
+     * @param selectDatabaseNameFn selects database name for each item individually
+     * @param selectCollectionNameFn selects collection name for each item individually
      */
-    public MongoDBSinkBuilder<T> databaseFn(@Nonnull FunctionEx<MongoClient, MongoDatabase> databaseFn) {
-        checkSerializable(databaseFn, "databaseFn");
-        this.databaseFn = databaseFn;
+    @Nonnull
+    public MongoDBSinkBuilder<T> into(
+            @Nonnull FunctionEx<T, String> selectDatabaseNameFn,
+            @Nonnull FunctionEx<T, String> selectCollectionNameFn
+    ) {
+        params.setDatabaseNameSelectFn(selectDatabaseNameFn);
+        params.setCollectionNameSelectFn(selectCollectionNameFn);
         return this;
     }
 
     /**
-     * @param collectionFn creates/obtains a collection in the given database.
+     * @param databaseName database name to which objects will be inserted/updated.
+     * @param collectionName collection name to which objects will be inserted/updated.
      */
-    public MongoDBSinkBuilder<T> collectionFn(@Nonnull FunctionEx<MongoDatabase, MongoCollection<T>> collectionFn) {
-        checkSerializable(collectionFn, "collectionFn");
-        this.collectionFn = collectionFn;
-        return this;
-    }
-
-    /**
-     * @param destroyFn destroys the client.
-     */
-    public MongoDBSinkBuilder<T> destroyFn(@Nonnull ConsumerEx<MongoClient> destroyFn) {
-        checkSerializable(destroyFn, "destroyFn");
-        this.destroyFn = destroyFn;
-        return this;
-    }
-
-    /**
-     * @param ordered sets {@link InsertManyOptions#ordered(boolean)}.
-     */
-    public MongoDBSinkBuilder<T> ordered(boolean ordered) {
-        this.ordered = ordered;
-        return this;
-    }
-
-    /**
-     * @param bypassValidation sets {@link
-     *                         InsertManyOptions#bypassDocumentValidation(Boolean)}.
-     */
-    public MongoDBSinkBuilder<T> bypassValidation(boolean bypassValidation) {
-        this.bypassValidation = bypassValidation;
+    @Nonnull
+    public MongoDBSinkBuilder<T> into(@Nonnull String databaseName, @Nonnull String collectionName) {
+        params.setDatabaseName(databaseName);
+        params.setCollectionName(collectionName);
         return this;
     }
 
     /**
      * See {@link SinkBuilder#preferredLocalParallelism(int)}.
      */
+    @Nonnull
     public MongoDBSinkBuilder<T> preferredLocalParallelism(int preferredLocalParallelism) {
         this.preferredLocalParallelism = Vertex.checkLocalParallelism(preferredLocalParallelism);
+        return this;
+    }
+
+    /**
+     * Provides an option to adjust options used in replace action.
+     * By default {@linkplain ReplaceOptions#upsert(boolean) upsert} is only enabled.
+     */
+    @Nonnull
+    public MongoDBSinkBuilder<T> withCustomReplaceOptions(@Nonnull ConsumerEx<ReplaceOptions> adjustConsumer) {
+        params.setReplaceOptionAdjuster(checkNonNullAndSerializable(adjustConsumer, "adjustConsumer"));
+        return this;
+    }
+
+    /**
+     * Sets the filter that decides which document in the collection is equal to processed document.
+     * @param fieldName field name in the collection, that will be used for comparison
+     * @param documentIdentityFn function that extracts ID from given item; will be compared against {@code fieldName}
+     */
+    @Nonnull
+    public MongoDBSinkBuilder<T> identifyDocumentBy(
+            @Nonnull String fieldName,
+            @Nonnull FunctionEx<T, Object> documentIdentityFn) {
+        checkNotNull(fieldName, "fieldName cannot be null");
+        checkSerializable(documentIdentityFn, "documentIdentityFn");
+        params.setDocumentIdentityFieldName(fieldName);
+        params.setDocumentIdentityFn(documentIdentityFn);
+        return this;
+    }
+
+    /**
+     * Sets the retry strategy in case of commit failure.
+     * <p>
+     * MongoDB by default retries simple operations, but commits must be retried manually.
+     * <p>
+     * This option is taken into consideration only if
+     * {@linkplain com.hazelcast.jet.config.ProcessingGuarantee#EXACTLY_ONCE} is used.
+     * <p>
+     * Default value is {@linkplain #DEFAULT_COMMIT_RETRY_STRATEGY}.
+     */
+    @Nonnull
+    public MongoDBSinkBuilder<T> commitRetryStrategy(@Nonnull RetryStrategy commitRetryStrategy) {
+        params.setCommitRetryStrategy(commitRetryStrategy);
+        return this;
+    }
+
+
+    /**
+     * Sets options which will be used by MongoDB transaction mechanism.
+     * <p>
+     * This option is taken into consideration only if
+     * {@linkplain com.hazelcast.jet.config.ProcessingGuarantee#EXACTLY_ONCE} is used.
+     * <p>
+     * Default value is {@linkplain #DEFAULT_TRANSACTION_OPTION}.
+     */
+    @Nonnull
+    public MongoDBSinkBuilder<T> transactionOptions(@Nonnull SupplierEx<TransactionOptions> transactionOptionsSup) {
+        params.setTransactionOptions(transactionOptionsSup);
         return this;
     }
 
@@ -120,72 +194,13 @@ public final class MongoDBSinkBuilder<T> {
      * Creates and returns the MongoDB {@link Sink} with the components you
      * supplied to this builder.
      */
-    public Sink<T> build() {
-        checkNotNull(connectionSupplier, "connectionSupplier must be set");
-        checkNotNull(databaseFn, "databaseFn must be set");
-        checkNotNull(collectionFn, "collectionFn must be set");
+    @Nonnull
+        public Sink<T> build() {
+        params.checkValid();
+        final WriteMongoParams<T> localParams = this.params;
 
-        SupplierEx<MongoClient> localConnectionSupplier = connectionSupplier;
-        FunctionEx<MongoClient, MongoDatabase> localDatabaseFn = databaseFn;
-        FunctionEx<MongoDatabase, MongoCollection<T>> localCollectionFn = collectionFn;
-        ConsumerEx<MongoClient> localDestroyFn = destroyFn;
-
-        boolean localOrdered = ordered;
-        boolean localBypassValidation = bypassValidation;
-
-        return SinkBuilder
-                .sinkBuilder(name, ctx -> {
-                    MongoClient client = localConnectionSupplier.get();
-                    MongoCollection<T> collection = localCollectionFn.apply(localDatabaseFn.apply(client));
-                    return new MongoSinkContext<>(client, collection, localDestroyFn, localOrdered, localBypassValidation);
-                })
-                .<T>receiveFn(MongoSinkContext::addDocument)
-                .flushFn(MongoSinkContext::flush)
-                .destroyFn(MongoSinkContext::close)
-                .preferredLocalParallelism(preferredLocalParallelism)
-                .build();
-
+        return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism,
+                () -> new WriteMongoP<>(localParams)));
     }
-
-    private static class MongoSinkContext<T> {
-
-        final MongoClient client;
-        final MongoCollection<T> collection;
-        final ConsumerEx<MongoClient> destroyFn;
-        final InsertManyOptions insertManyOptions;
-
-        final List<T> documents;
-
-        MongoSinkContext(
-                MongoClient client,
-                MongoCollection<T> collection,
-                ConsumerEx<MongoClient> destroyFn,
-                boolean ordered,
-                boolean bypassValidation
-        ) {
-            this.client = client;
-            this.collection = collection;
-            this.destroyFn = destroyFn;
-            this.insertManyOptions = new InsertManyOptions()
-                    .ordered(ordered)
-                    .bypassDocumentValidation(bypassValidation);
-
-            documents = new ArrayList<>();
-        }
-
-        void addDocument(T document) {
-            documents.add(document);
-        }
-
-        void flush() {
-            collection.insertMany(documents, insertManyOptions);
-            documents.clear();
-        }
-
-        void close() {
-            destroyFn.accept(client);
-        }
-    }
-
 
 }

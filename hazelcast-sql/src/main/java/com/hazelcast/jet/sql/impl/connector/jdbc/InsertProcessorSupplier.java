@@ -30,8 +30,6 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.security.Permission;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.SQLNonTransientException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -70,7 +68,7 @@ public class InsertProcessorSupplier
                             ps.setObject(j + 1, row.get(j));
                         }
                     },
-                    this::isNonTransientException,
+                    SQLExceptionUtils::isNonTransientException,
                     false,
                     batchLimit
             );
@@ -80,44 +78,7 @@ public class InsertProcessorSupplier
     }
 
     @SuppressWarnings("BooleanExpressionComplexity")
-    private boolean isNonTransientException(SQLException e) {
-        SQLException next = e.getNextException();
-        return e instanceof SQLNonTransientException
-                || e.getCause() instanceof SQLNonTransientException
-                || !isTransientCode(e.getSQLState())
-                || (next != null && e != next && isNonTransientException(next));
-    }
 
-    private boolean isTransientCode(String code) {
-        // Full list of error codes at:
-        // https://www.postgresql.org/docs/current/errcodes-appendix.html
-        switch (code) {
-            // Sorted alphabetically
-            case "08000":
-            case "08001":
-            case "08003":
-            case "08004":
-            case "08006":
-            case "08007":
-            case "40001":
-            case "40P01":
-            case "53000":
-            case "53100":
-            case "53200":
-            case "53300":
-            case "53400":
-            case "55000":
-            case "55006":
-            case "55P03":
-            case "57P03":
-            case "58000":
-            case "58030":
-                return true;
-
-            default:
-                return false;
-        }
-    }
 
     @Nullable
     @Override

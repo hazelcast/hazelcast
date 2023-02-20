@@ -43,7 +43,8 @@ import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlService;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
+import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -58,7 +59,6 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
 import static com.hazelcast.sql.SqlRowMetadata.COLUMN_NOT_FOUND;
-import static java.util.Collections.unmodifiableList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Stream.of;
@@ -89,6 +89,9 @@ import static java.util.stream.Stream.of;
  * <p>
  * The GenericMapStore creates a SQL mapping with name "__map-store." + mapName.
  * This mapping is removed when the map is destroyed.
+ * <p>
+ * Note : When GenericMapStore uses GenericRecord as value, even if the GenericRecord contains the primary key as a field,
+ * the primary key is still received from @{link {@link com.hazelcast.map.IMap} method call
  *
  * @param <K>
  */
@@ -113,10 +116,6 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
     static final String TYPE_NAME_PROPERTY = "type-name";
 
     static final String MAPPING_NAME_COLUMN = "name";
-
-    static final String H2_PK_VIOLATION = "Unique index or primary key violation";
-    static final String PG_PK_VIOLATION = "ERROR: duplicate key value violates unique constraint";
-    static final String MYSQL_PK_VIOLATION = "Duplicate entry";
 
     private ILogger logger;
 
@@ -155,9 +154,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
                 .getExecutor(ExecutionService.MAP_STORE_OFFLOADABLE_EXECUTOR);
 
         // Init can run on partition thread, creating a mapping uses other maps, so it needs to run elsewhere
-        asyncExecutor.submit(() -> {
-            createMappingForMapStore(mapName);
-        });
+        asyncExecutor.submit(() -> createMappingForMapStore(mapName));
     }
 
     private void verifyMapStoreOffload(HazelcastInstance instance, String mapName) {
@@ -234,7 +231,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
         return Stream.concat(of(properties.idColumn), properties.columns.stream())
                      .distinct() // avoid duplicate id column if present in columns property
-                     .map((columnName) -> validateColumn(rowMetadata.findColumn(columnName), columnName))
+                     .map(columnName -> validateColumn(rowMetadata.findColumn(columnName), columnName))
                      .map(rowMetadata::getColumn)
                      .map(columnMetadata1 -> columnMetadata1.getName() + " " + columnMetadata1.getType())
                      .collect(Collectors.joining(", "));
@@ -253,16 +250,15 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
     private SqlRowMetadata loadMetadataFromMapping(String mapping) {
         try (SqlResult result = sql.execute("SELECT * FROM \"" + mapping + "\" LIMIT 0")) {
-            SqlRowMetadata rowMetadata = result.getRowMetadata();
-            return rowMetadata;
+            return result.getRowMetadata();
         }
     }
 
     private void readExistingMapping() {
         logger.fine("Reading existing mapping for map" + mapName);
         try (SqlResult mappings = sql.execute("SHOW MAPPINGS")) {
-            for (SqlRow mapping : mappings) {
-                String name = mapping.getObject(MAPPING_NAME_COLUMN);
+            for (SqlRow sqlRow : mappings) {
+                String name = sqlRow.getObject(MAPPING_NAME_COLUMN);
                 if (name.equals(this.mapping)) {
                     SqlRowMetadata rowMetadata = loadMetadataFromMapping(name);
                     validateColumns(rowMetadata);
@@ -279,7 +275,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
     private void validateColumns(SqlRowMetadata rowMetadata) {
         Stream.concat(of(properties.idColumn), properties.columns.stream())
               .distinct() // avoid duplicate id column if present in columns property
-              .forEach((columnName) -> validateColumn(rowMetadata.findColumn(columnName), columnName));
+              .forEach(columnName -> validateColumn(rowMetadata.findColumn(columnName), columnName));
     }
 
     private int validateColumn(int column, String columnName) {
@@ -314,7 +310,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
                 if (it.hasNext()) {
                     throw new IllegalStateException("multiple matching rows for a key " + key);
                 }
-                return convertRowToGenericRecord(key, row);
+                return convertRowToGenericRecord(row);
             } else {
                 return null;
             }
@@ -322,7 +318,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
     }
 
     @Nonnull
-    private GenericRecord convertRowToGenericRecord(K key, SqlRow row) {
+    private GenericRecord convertRowToGenericRecord(SqlRow row) {
         GenericRecordBuilder builder = GenericRecordBuilder.compact(properties.compactTypeName);
 
         SqlRowMetadata metadata = row.getMetadata();
@@ -404,7 +400,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
             while (it.hasNext()) {
                 SqlRow row = it.next();
                 K id = row.getObject(properties.idColumn);
-                GenericRecord record = convertRowToGenericRecord(id, row);
+                GenericRecord record = convertRowToGenericRecord(row);
                 result.put(id, record);
             }
             return result;
@@ -430,79 +426,20 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
     public void store(K key, GenericRecord record) {
         awaitSuccessfulInit();
 
-        int idPos = -1;
-        Object[] params = new Object[columnMetadataList.size()];
-        for (int i = 0; i < columnMetadataList.size(); i++) {
-            SqlColumnMetadata columnMetadata = columnMetadataList.get(i);
-            if (columnMetadata.getName().equals(properties.idColumn)) {
-                idPos = i;
-            }
-            switch (columnMetadata.getType()) {
-                case VARCHAR:
-                    params[i] = record.getString(columnMetadata.getName());
-                    break;
+        JDBCParameters jdbcParameters = GenericRecordUtils.toJDBCParameters(key, record, columnMetadataList,
+                properties.idColumn);
 
-                case BOOLEAN:
-                    params[i] = record.getBoolean(columnMetadata.getName());
-                    break;
 
-                case TINYINT:
-                    params[i] = record.getInt8(columnMetadata.getName());
-                    break;
-
-                case SMALLINT:
-                    params[i] = record.getInt16(columnMetadata.getName());
-                    break;
-
-                case INTEGER:
-                    params[i] = record.getInt32(columnMetadata.getName());
-                    break;
-
-                case BIGINT:
-                    params[i] = record.getInt64(columnMetadata.getName());
-                    break;
-
-                case REAL:
-                    params[i] = record.getFloat32(columnMetadata.getName());
-                    break;
-
-                case DOUBLE:
-                    params[i] = record.getFloat64(columnMetadata.getName());
-                    break;
-
-                case DATE:
-                    params[i] = record.getDate(columnMetadata.getName());
-                    break;
-
-                case TIME:
-                    params[i] = record.getTime(columnMetadata.getName());
-                    break;
-
-                case TIMESTAMP:
-                    params[i] = record.getTimestamp(columnMetadata.getName());
-                    break;
-
-                case TIMESTAMP_WITH_TIME_ZONE:
-                    params[i] = record.getTimestampWithTimezone(columnMetadata.getName());
-                    break;
-
-                case DECIMAL:
-                    params[i] = record.getDecimal(columnMetadata.getName());
-                    break;
-
-                default:
-                    throw new HazelcastException("Column type " + columnMetadata.getType() + " not supported");
-            }
-        }
-        try (SqlResult ignored = sql.execute(queries.storeInsert(), params)) {
+        try (SqlResult ignored = sql.execute(queries.storeSink(), jdbcParameters.getParams())) {
         } catch (Exception e) {
-            if (e.getMessage() != null && (e.getMessage().contains(H2_PK_VIOLATION) ||
-                    e.getMessage().contains(PG_PK_VIOLATION) ||
-                    e.getMessage().contains(MYSQL_PK_VIOLATION))) {
-                Object tmp = params[idPos];
-                params[idPos] = params[params.length - 1];
-                params[params.length - 1] = tmp;
-                sql.execute(queries.storeUpdate(), params).close();
+
+            if (isIntegrityConstraintViolation(e)) {
+
+                // Try to update the row
+                jdbcParameters.shiftParametersForUpdate();
+
+                String updateSQL = queries.storeUpdate();
+                sql.execute(updateSQL, jdbcParameters.getParams()).close();
             } else {
                 throw e;
             }
@@ -562,6 +499,35 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         }
     }
 
+    static SQLException findSQLException(Throwable throwable) {
+        Throwable rootCause = throwable;
+        while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
+            rootCause = rootCause.getCause();
+            if (rootCause instanceof SQLException) {
+                return (SQLException) rootCause;
+            }
+        }
+        return null;
+    }
+
+    // SQLException returns SQL state in five-digit number.
+    // These five-digit numbers tell about the status of the SQL statements.
+    // The SQLSTATE values consists of two fields.
+    // The class, which is the first two characters of the string, and
+    // the subclass, which is the terminating three characters of the string.
+    // See https://en.wikipedia.org/wiki/SQLSTATE for cate
+    static boolean isIntegrityConstraintViolation(Exception exception) {
+        boolean result = false;
+        SQLException sqlException = findSQLException(exception);
+        if (sqlException != null) {
+            String sqlState = sqlException.getSQLState();
+            if (sqlState != null) {
+                result = sqlState.startsWith("23");
+            }
+        }
+        return result;
+    }
+
     @VisibleForTesting
     boolean initHasFinished() {
         return initFinished.getCount() == 0;
@@ -585,9 +551,8 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
             String columnsProperty = properties.getProperty(COLUMNS_PROPERTY);
             if (columnsProperty != null) {
-                List<String> columns = new ArrayList<>();
-                Collections.addAll(columns, columnsProperty.split(","));
-                this.columns = unmodifiableList(columns);
+                List<String> columnsList = Arrays.asList(columnsProperty.split(","));
+                this.columns = Collections.unmodifiableList(columnsList);
             } else {
                 columns = Collections.emptyList();
             }
