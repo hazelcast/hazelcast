@@ -102,8 +102,9 @@ public abstract class ReactorBuilder {
     /**
      * Sets the clock refresh period.
      *
-     * @param clockRefreshPeriod the period to refresh the time. A clockRefreshPeriod of 0 means that always the newest
-     *                           time is obtained. There will be more overhead, but you get better granularity.
+     * @param clockRefreshPeriod the period to refresh the time. A clockRefreshPeriod of 0 means
+     *                           that always the newest time is obtained. There will be more overhead,
+     *                           but you get better granularity.
      * @throws IllegalArgumentException when clockRefreshPeriod smaller than 0.
      */
     public void setClockRefreshPeriod(int clockRefreshPeriod) {
@@ -114,7 +115,7 @@ public abstract class ReactorBuilder {
      * Sets the ThreadFactory used to create the Thread that runs the {@link Reactor}.
      *
      * @param threadFactory the ThreadFactory
-     * @throws NullPointerException if threadFactory is null.
+     * @throws NullPointerException if threadFactory is set to null.
      */
     public void setThreadFactory(ThreadFactory threadFactory) {
         this.threadFactory = checkNotNull(threadFactory, "threadFactory");

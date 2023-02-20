@@ -26,6 +26,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.datalink.DataLinkService;
 import com.hazelcast.datalink.impl.DataLinkServiceImpl;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.bootstrap.TpcServerBootstrap;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
@@ -68,7 +69,6 @@ import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
-import com.hazelcast.internal.bootstrap.TpcServerBootstrap;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.impl.servicemanager.impl.ServiceManagerImpl;
@@ -582,6 +582,9 @@ public class NodeEngineImpl implements NodeEngine {
         if (executionService != null) {
             executionService.shutdown();
         }
+        if (tpcServerBootstrap != null) {
+            tpcServerBootstrap.shutdown();
+        }
         if (metricsRegistry != null) {
             metricsRegistry.shutdown();
         }
@@ -591,9 +594,7 @@ public class NodeEngineImpl implements NodeEngine {
         if (dataLinkService != null) {
             dataLinkService.close();
         }
-        if (tpcServerBootstrap != null) {
-            tpcServerBootstrap.shutdown();
-        }
+
     }
 
     @Override
