@@ -293,7 +293,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
         asyncExecutor.submit(() -> {
             awaitInitFinished();
-            if (instance.node.isRunning()) {
+            if (instance.isRunning()) {
                 dropMapping(mapping);
             }
         });
