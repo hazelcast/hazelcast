@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartClusterDataRecoveryPolicy;
 import com.hazelcast.config.HotRestartConfig;
@@ -189,7 +189,7 @@ import static com.hazelcast.internal.config.ConfigSections.CRDT_REPLICATION;
 import static com.hazelcast.internal.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.DYNAMIC_CONFIGURATION;
 import static com.hazelcast.internal.config.ConfigSections.EXECUTOR_SERVICE;
-import static com.hazelcast.internal.config.ConfigSections.EXTERNAL_DATA_STORE;
+import static com.hazelcast.internal.config.ConfigSections.DATA_LINK;
 import static com.hazelcast.internal.config.ConfigSections.FLAKE_ID_GENERATOR;
 import static com.hazelcast.internal.config.ConfigSections.HOT_RESTART_PERSISTENCE;
 import static com.hazelcast.internal.config.ConfigSections.IMPORT;
@@ -383,8 +383,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleDynamicConfiguration(node);
         } else if (matches(INTEGRITY_CHECKER.getName(), nodeName)) {
             handleIntegrityChecker(node);
-        } else if (matches(EXTERNAL_DATA_STORE.getName(), nodeName)) {
-            handleExternalDataStores(node);
+        } else if (matches(DATA_LINK.getName(), nodeName)) {
+            handleDataLinks(node);
         } else if (matches(ALTO.getName(), nodeName)) {
             handleAlto(node);
         } else {
@@ -3469,22 +3469,22 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    protected void handleExternalDataStores(Node node) {
+    protected void handleDataLinks(Node node) {
         String name = getAttribute(node, "name");
-        ExternalDataStoreConfig externalDataStoreConfig = ConfigUtils.getByNameOrNew(config.getExternalDataStoreConfigs(),
-                name, ExternalDataStoreConfig.class);
-        handleExternalDataStore(node, externalDataStoreConfig);
+        DataLinkConfig dataLinkConfig = ConfigUtils.getByNameOrNew(config.getDataLinkConfigs(),
+                name, DataLinkConfig.class);
+        handleDataLink(node, dataLinkConfig);
     }
 
-    protected void handleExternalDataStore(Node node, ExternalDataStoreConfig externalDataStoreConfig) {
+    protected void handleDataLink(Node node, DataLinkConfig dataLinkConfig) {
         for (Node child : childElements(node)) {
             String childName = cleanNodeName(child);
             if (matches("class-name", childName)) {
-                externalDataStoreConfig.setClassName(getTextContent(child));
+                dataLinkConfig.setClassName(getTextContent(child));
             } else if (matches("properties", childName)) {
-                fillProperties(child, externalDataStoreConfig.getProperties());
+                fillProperties(child, dataLinkConfig.getProperties());
             } else if (matches("shared", childName)) {
-                externalDataStoreConfig.setShared(getBooleanValue(getTextContent(child)));
+                dataLinkConfig.setShared(getBooleanValue(getTextContent(child)));
             }
         }
     }

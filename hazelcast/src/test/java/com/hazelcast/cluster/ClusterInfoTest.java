@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@ public class ClusterInfoTest extends HazelcastTestSupport {
         UUID node1ClusterId = clusterService.getClusterId();
 
         assertTrue(clusterUpTime > 0);
-        assertNotEquals(node1ClusterStartTime, Long.MIN_VALUE);
+        assertNotEquals(Long.MIN_VALUE, node1ClusterStartTime);
         assertEquals(node1ClusterStartTime, node2.getClusterService().getClusterClock().getClusterStartTime());
         assertEquals(node1ClusterStartTime, node3.getClusterService().getClusterClock().getClusterStartTime());
 
@@ -119,7 +119,7 @@ public class ClusterInfoTest extends HazelcastTestSupport {
         Node node4 = getNode(h4);
 
         //All nodes should have the same cluster start time
-        assertNotEquals(node1ClusterStartTime, Long.MIN_VALUE);
+        assertNotEquals(Long.MIN_VALUE, node1ClusterStartTime);
         assertEquals(node1ClusterStartTime, node2.getClusterService().getClusterClock().getClusterStartTime());
         assertEquals(node1ClusterStartTime, node3.getClusterService().getClusterClock().getClusterStartTime());
         assertEquals(node1ClusterStartTime, node4.getClusterService().getClusterClock().getClusterStartTime());

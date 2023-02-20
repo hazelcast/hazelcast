@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,11 +40,12 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -95,7 +96,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
     public void whenValidSelectionKey_thenHandlerCalled() {
         startThread();
 
-        SelectionKey selectionKey = mock(SelectionKey.class);
+        SelectionKey selectionKey = spy(SelectionKey.class);
         selectionKey.attach(handler);
         when(selectionKey.isValid()).thenReturn(true);
 
@@ -106,7 +107,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
             public void run() throws Exception {
                 verify(handler).process();
             }
-        });
+        }, 10);
         assertEquals(1, thread.getEventCount());
         assertStillRunning();
     }
@@ -115,7 +116,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
     public void whenInvalidSelectionKey_thenHandlerOnFailureCalledWithCancelledKeyException() {
         startThread();
 
-        SelectionKey selectionKey = mock(SelectionKey.class);
+        SelectionKey selectionKey = spy(SelectionKey.class);
         selectionKey.attach(handler);
         when(selectionKey.isValid()).thenReturn(false);
         selector.scheduleSelectAction(selectionKey);
@@ -133,7 +134,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
     public void whenHandlerThrowException_thenHandlerOnFailureCalledWithThatException() throws Exception {
         startThread();
 
-        SelectionKey selectionKey = mock(SelectionKey.class);
+        SelectionKey selectionKey = spy(SelectionKey.class);
         selectionKey.attach(handler);
         when(selectionKey.isValid()).thenReturn(true);
         doThrow(new ExpectedRuntimeException()).when(handler).process();
@@ -184,7 +185,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
         // we verify that the thread is still running by scheduling a selection-key event and checking if the
         // handler is being called.
         final NioPipeline handler = mock(NioPipeline.class);
-        SelectionKey selectionKey = mock(SelectionKey.class);
+        SelectionKey selectionKey = spy(SelectionKey.class);
         selectionKey.attach(handler);
         when(selectionKey.isValid()).thenReturn(true);
 

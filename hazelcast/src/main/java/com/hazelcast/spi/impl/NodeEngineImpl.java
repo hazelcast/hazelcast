@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datastore.ExternalDataStoreService;
-import com.hazelcast.datastore.impl.ExternalDataStoreServiceImpl;
+import com.hazelcast.datalink.DataLinkService;
+import com.hazelcast.datalink.impl.DataLinkServiceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.bootstrap.TpcServerBootstrap;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -133,7 +133,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
     private final ConcurrencyDetection concurrencyDetection;
     private final TenantControlServiceImpl tenantControlService;
-    private final ExternalDataStoreService externalDataStoreService;
+    private final DataLinkService dataLinkService;
     private final TpcServerBootstrap tpcServerBootstrap;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
@@ -162,7 +162,7 @@ public class NodeEngineImpl implements NodeEngine {
             this.transactionManagerService = new TransactionManagerServiceImpl(this);
             this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
             this.sqlService = new SqlServiceImpl(this);
-            this.externalDataStoreService = new ExternalDataStoreServiceImpl(node, configClassLoader);
+            this.dataLinkService = new DataLinkServiceImpl(node, configClassLoader);
             this.packetDispatcher = new PacketDispatcher(
                     logger,
                     operationService.getOperationExecutor(),
@@ -383,8 +383,8 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public ExternalDataStoreService getExternalDataStoreService() {
-        return externalDataStoreService;
+    public DataLinkService getDataLinkService() {
+        return dataLinkService;
     }
 
     @Override
@@ -591,8 +591,8 @@ public class NodeEngineImpl implements NodeEngine {
         if (diagnostics != null) {
             diagnostics.shutdown();
         }
-        if (externalDataStoreService != null) {
-            externalDataStoreService.close();
+        if (dataLinkService != null) {
+            dataLinkService.close();
         }
 
     }

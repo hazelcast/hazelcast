@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("f72f9519f4421f68df71aac788a94253")
+@Generated("5d1f6692ee4ec792fbecfe868ff53498")
 public final class JobAndSqlSummaryCodec {
     private static final int LIGHT_JOB_FIELD_OFFSET = 0;
     private static final int JOB_ID_FIELD_OFFSET = LIGHT_JOB_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -32,7 +32,8 @@ public final class JobAndSqlSummaryCodec {
     private static final int STATUS_FIELD_OFFSET = EXECUTION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int SUBMISSION_TIME_FIELD_OFFSET = STATUS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int COMPLETION_TIME_FIELD_OFFSET = SUBMISSION_TIME_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int INITIAL_FRAME_SIZE = COMPLETION_TIME_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int USER_CANCELLED_FIELD_OFFSET = COMPLETION_TIME_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = USER_CANCELLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private JobAndSqlSummaryCodec() {
     }
@@ -47,11 +48,13 @@ public final class JobAndSqlSummaryCodec {
         encodeInt(initialFrame.content, STATUS_FIELD_OFFSET, jobAndSqlSummary.getStatus());
         encodeLong(initialFrame.content, SUBMISSION_TIME_FIELD_OFFSET, jobAndSqlSummary.getSubmissionTime());
         encodeLong(initialFrame.content, COMPLETION_TIME_FIELD_OFFSET, jobAndSqlSummary.getCompletionTime());
+        encodeBoolean(initialFrame.content, USER_CANCELLED_FIELD_OFFSET, jobAndSqlSummary.isUserCancelled());
         clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, jobAndSqlSummary.getNameOrId());
         CodecUtil.encodeNullable(clientMessage, jobAndSqlSummary.getFailureText(), StringCodec::encode);
         CodecUtil.encodeNullable(clientMessage, jobAndSqlSummary.getSqlSummary(), SqlSummaryCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, jobAndSqlSummary.getSuspensionCause(), StringCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
     }
@@ -67,13 +70,25 @@ public final class JobAndSqlSummaryCodec {
         int status = decodeInt(initialFrame.content, STATUS_FIELD_OFFSET);
         long submissionTime = decodeLong(initialFrame.content, SUBMISSION_TIME_FIELD_OFFSET);
         long completionTime = decodeLong(initialFrame.content, COMPLETION_TIME_FIELD_OFFSET);
+        boolean isUserCancelledExists = false;
+        boolean userCancelled = false;
+        if (initialFrame.content.length >= USER_CANCELLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES) {
+            userCancelled = decodeBoolean(initialFrame.content, USER_CANCELLED_FIELD_OFFSET);
+            isUserCancelledExists = true;
+        }
 
         java.lang.String nameOrId = StringCodec.decode(iterator);
         java.lang.String failureText = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         com.hazelcast.jet.impl.SqlSummary sqlSummary = CodecUtil.decodeNullable(iterator, SqlSummaryCodec::decode);
+        boolean isSuspensionCauseExists = false;
+        java.lang.String suspensionCause = null;
+        if (!iterator.peekNext().isEndFrame()) {
+            suspensionCause = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+            isSuspensionCauseExists = true;
+        }
 
         fastForwardToEndFrame(iterator);
 
-        return CustomTypeFactory.createJobAndSqlSummary(lightJob, jobId, executionId, nameOrId, status, submissionTime, completionTime, failureText, sqlSummary);
+        return CustomTypeFactory.createJobAndSqlSummary(lightJob, jobId, executionId, nameOrId, status, submissionTime, completionTime, failureText, sqlSummary, isSuspensionCauseExists, suspensionCause, isUserCancelledExists, userCancelled);
     }
 }

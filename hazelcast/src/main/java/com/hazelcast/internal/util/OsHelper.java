@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,6 @@
  */
 
 package com.hazelcast.internal.util;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 
 /**
  * Helper methods related to operating system on which the code is actually running.
@@ -59,31 +54,6 @@ public final class OsHelper {
      */
     public static boolean isMac() {
         return (OS.contains("mac") || OS.contains("darwin"));
-    }
-
-    /**
-     * Returns {@code true} if the system is a Mac OS with Arm CPU, e.g. M1.
-     *
-     * @return {@code true} if the system is a Mac OS with Arm CPU, e.g. M1.
-     */
-    public static boolean isArmMac() {
-        if (!isMac()) {
-            return false;
-        }
-        try {
-            Process process = new ProcessBuilder("sysctl", "-n", "hw.optional.arm64")
-                    .redirectErrorStream(true)
-                    .start();
-            process.waitFor();
-            try (InputStream is = process.getInputStream()) {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-                String line = reader.readLine();
-                return line.equals("1");
-            }
-        } catch (IOException | InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return false;
-        }
     }
 
     /**

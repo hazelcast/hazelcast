@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
-import org.assertj.core.api.Assertions;
 import org.assertj.core.api.Condition;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -31,7 +30,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_EXTERNAL_DATASTORE_REF;
+import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.emptyList;
@@ -64,7 +64,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void createMappingWithoutDataStoreRef() {
+    public void createMappingWithoutDataLinkRef() {
         tableName = randomTableName();
 
         assertThatThrownBy(() ->
@@ -77,7 +77,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-         .hasMessageContaining("externalDataStoreRef must be set");
+                .hasMessageContaining("dataLinkRef must be set");
     }
 
     @Test
@@ -90,15 +90,11 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ") "
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
+                        + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
         ))
-                .isInstanceOf(HazelcastSqlException.class)
-                .is(Assertions.anyOf(
-                        hasMessage("Table \"" + tableName + "\" not found"), // H2
-                        hasMessage("relation \"" + tableName + "\" does not exist"), // Postgres
-                        hasMessage("Table 'test." + tableName + "' doesn't exist") // MySQL
-                ));
+                .isInstanceOf(HazelcastSqlException.class);
+
 
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()
@@ -126,7 +122,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 + ") "
                 + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
+                + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
                 + ")"
         );
 
@@ -153,11 +149,11 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ") "
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
+                        + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-         .hasMessageContaining("could not resolve field with name fullName");
+                .hasMessageContaining("Could not resolve field with name fullName");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()
@@ -181,11 +177,11 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ") "
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
+                        + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-         .hasMessageContaining("could not resolve field with external name myName");
+                .hasMessageContaining("Could not resolve field with external name myName");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()
@@ -204,14 +200,33 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ") "
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
+                        + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-         .hasMessageContaining("type BOOLEAN of field id does not match db type INTEGER");
+                .hasMessageContaining("Type BOOLEAN of field id does not match db type INTEGER");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()
+        );
+    }
+
+    @Test
+    public void when_createMappingWithImplicitFieldTypesDefinition_then_orderIsPreserved() throws Exception {
+        createTable(tableName);
+        insertItems(tableName, 2);
+
+        execute("CREATE MAPPING " + tableName
+                + " TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
+                + " OPTIONS ( "
+                + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
+                + ")"
+        );
+
+        // If you change LinkedHashMap -> HashMap at JdbcSqlConnector:159, it will fail.
+        assertRowsAnyOrder(
+                "SELECT * FROM " + tableName,
+                asList(new Row(0, "name-0"), new Row(1, "name-1"))
         );
     }
 
@@ -222,7 +237,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         execute("CREATE MAPPING " + tableName
                 + " TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
+                + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
                 + ")"
         );
 

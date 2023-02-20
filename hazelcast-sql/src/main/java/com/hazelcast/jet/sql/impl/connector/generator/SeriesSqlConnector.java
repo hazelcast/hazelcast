@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.connector.generator;
 
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
@@ -33,6 +32,7 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -91,19 +91,18 @@ class SeriesSqlConnector implements SqlConnector {
     @Nonnull
     @Override
     public Vertex fullScanReader(
-            @Nonnull DAG dag,
-            @Nonnull Table table0,
-            @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projections,
+            @Nonnull DagBuildContext context,
+            @Nullable RexNode predicate,
+            @Nonnull List<RexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
             throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
         }
 
-        SeriesTable table = (SeriesTable) table0;
-        BatchSource<JetSqlRow> source = table.items(predicate, projections);
+        SeriesTable table = (SeriesTable) context.getTable();
+        BatchSource<JetSqlRow> source = table.items(context.convertFilter(predicate), context.convertProjection(projection));
         ProcessorMetaSupplier pms = ((BatchSourceTransform<JetSqlRow>) source).metaSupplier;
-        return dag.newUniqueVertex(table.toString(), pms);
+        return context.getDag().newUniqueVertex(table.toString(), pms);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -198,7 +198,7 @@ public class ConfigXmlGenerator {
         factoryWithPropertiesXmlGenerator(gen, "auditlog", config.getAuditlogConfig());
         userCodeDeploymentConfig(gen, config);
         integrityCheckerXmlGenerator(gen, config);
-        externalDataStoreConfiguration(gen, config);
+        dataLinkConfiguration(gen, config);
         altoConfiguration(gen, config);
 
         xml.append("</hazelcast>");
@@ -1213,16 +1213,16 @@ public class ConfigXmlGenerator {
         );
     }
 
-    private static void externalDataStoreConfiguration(final XmlGenerator gen, final Config config) {
-        for (ExternalDataStoreConfig externalDataStoreConfig : config.getExternalDataStoreConfigs().values()) {
+    private static void dataLinkConfiguration(final XmlGenerator gen, final Config config) {
+        for (DataLinkConfig dataLinkConfig : config.getDataLinkConfigs().values()) {
             gen.open(
-                            "external-data-store",
+                            "data-link",
                             "name",
-                            externalDataStoreConfig.getName()
+                            dataLinkConfig.getName()
                     )
-                    .node("class-name", externalDataStoreConfig.getClassName())
-                    .node("shared", externalDataStoreConfig.isShared())
-                    .appendProperties(externalDataStoreConfig.getProperties())
+                    .node("class-name", dataLinkConfig.getClassName())
+                    .node("shared", dataLinkConfig.isShared())
+                    .appendProperties(dataLinkConfig.getProperties())
                     .close();
         }
     }

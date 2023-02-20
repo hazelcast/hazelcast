@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -145,7 +145,7 @@ public interface CacheConfiguration<K, V>
      * Management may be enabled or disabled at runtime via
      * {@link javax.cache.CacheManager#enableManagement(String, boolean)}.
      *
-     * @param enabled {@code true} to enable statistics, {@code false} to disable
+     * @param enabled {@code true} to enable management, {@code false} to disable
      * @return the {@link com.hazelcast.config.CacheConfiguration} to permit fluent-style method calls
      */
     CacheConfiguration<K, V> setManagementEnabled(boolean enabled);

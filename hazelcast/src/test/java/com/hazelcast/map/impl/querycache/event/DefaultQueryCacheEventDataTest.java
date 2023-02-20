@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -195,8 +195,8 @@ public class DefaultQueryCacheEventDataTest {
         assertEquals(queryCacheEventData, queryCacheEventData);
         assertEquals(queryCacheEventData, queryCacheEventDataSameAttributes);
 
-        assertNotEquals(queryCacheEventData, null);
-        assertNotEquals(queryCacheEventData, new Object());
+        assertNotEquals(null, queryCacheEventData);
+        assertNotEquals(new Object(), queryCacheEventData);
 
         assertNotEquals(queryCacheEventData, queryCacheEventDataOtherSequence);
         assertNotEquals(queryCacheEventData, queryCacheEventDataOtherEventType);

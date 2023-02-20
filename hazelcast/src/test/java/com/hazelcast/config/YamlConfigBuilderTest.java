@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -4539,35 +4539,35 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    public void testExternalDataStoreConfigs() {
+    public void testDataLinkConfigs() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  external-data-store:\n"
+                + "  data-link:\n"
                 + "    mysql-database:\n"
-                + "      class-name: com.hazelcast.datastore.JdbcDataStore\n"
+                + "      class-name: com.hazelcast.datalink.JdbcDataLink\n"
                 + "      properties:\n"
                 + "        jdbcUrl: jdbc:mysql://dummy:3306\n"
                 + "        some.property: dummy-value\n"
                 + "      shared: true\n"
                 + "    other-database:\n"
-                + "      class-name: com.hazelcast.datastore.OtherDataStore\n";
+                + "      class-name: com.hazelcast.datalink.OtherDataLink\n";
 
         Config config = new InMemoryYamlConfig(yaml);
 
-        Map<String, ExternalDataStoreConfig> externalDataStoreConfigs = config.getExternalDataStoreConfigs();
+        Map<String, DataLinkConfig> dataLinkConfigs = config.getDataLinkConfigs();
 
-        assertThat(externalDataStoreConfigs).hasSize(2);
-        assertThat(externalDataStoreConfigs).containsKey("mysql-database");
-        ExternalDataStoreConfig mysqlDataStoreConfig = externalDataStoreConfigs.get("mysql-database");
-        assertThat(mysqlDataStoreConfig.getClassName()).isEqualTo("com.hazelcast.datastore.JdbcDataStore");
-        assertThat(mysqlDataStoreConfig.getName()).isEqualTo("mysql-database");
-        assertThat(mysqlDataStoreConfig.isShared()).isTrue();
-        assertThat(mysqlDataStoreConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
-        assertThat(mysqlDataStoreConfig.getProperty("some.property")).isEqualTo("dummy-value");
+        assertThat(dataLinkConfigs).hasSize(2);
+        assertThat(dataLinkConfigs).containsKey("mysql-database");
+        DataLinkConfig mysqlDataLinkConfig = dataLinkConfigs.get("mysql-database");
+        assertThat(mysqlDataLinkConfig.getClassName()).isEqualTo("com.hazelcast.datalink.JdbcDataLink");
+        assertThat(mysqlDataLinkConfig.getName()).isEqualTo("mysql-database");
+        assertThat(mysqlDataLinkConfig.isShared()).isTrue();
+        assertThat(mysqlDataLinkConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
+        assertThat(mysqlDataLinkConfig.getProperty("some.property")).isEqualTo("dummy-value");
 
-        assertThat(externalDataStoreConfigs).containsKey("other-database");
-        ExternalDataStoreConfig otherDataStoreConfig = externalDataStoreConfigs.get("other-database");
-        assertThat(otherDataStoreConfig.getClassName()).isEqualTo("com.hazelcast.datastore.OtherDataStore");
+        assertThat(dataLinkConfigs).containsKey("other-database");
+        DataLinkConfig otherDataLinkConfig = dataLinkConfigs.get("other-database");
+        assertThat(otherDataLinkConfig.getClassName()).isEqualTo("com.hazelcast.datalink.OtherDataLink");
     }
 
     @Override

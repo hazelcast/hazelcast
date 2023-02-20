@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_EXECUTOR;
@@ -78,6 +79,7 @@ public class RaftInvocationManager {
     private final int invocationMaxRetryCount;
     private final long invocationRetryPauseMillis;
     private final boolean cpSubsystemEnabled;
+    private final Executor internalAsyncExecutor;
 
     RaftInvocationManager(NodeEngine nodeEngine, RaftService raftService) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
@@ -89,6 +91,7 @@ public class RaftInvocationManager {
         this.invocationRetryPauseMillis = nodeEngine.getProperties().getMillis(ClusterProperty.INVOCATION_RETRY_PAUSE);
         this.operationCallTimeout = nodeEngine.getProperties().getMillis(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS);
         this.cpSubsystemEnabled = raftService.isCpSubsystemEnabled();
+        this.internalAsyncExecutor = nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
     void reset() {
@@ -137,7 +140,7 @@ public class RaftInvocationManager {
             List<RaftEndpoint> groupEndpoints = generateRandomGroupMembers(cpMembers, groupSize);
             invokeCreateRaftGroup(groupName, groupSize, groupIndex, groupEndpoints, resultFuture);
             return null;
-        }).exceptionally(t -> {
+        }, internalAsyncExecutor).exceptionally(t -> {
             resultFuture.completeExceptionally(t);
             return null;
         });
@@ -163,7 +166,11 @@ public class RaftInvocationManager {
                         .collect(Collectors.toList());
     }
 
-    private void invokeCreateRaftGroup(String groupName, int groupSize, long groupIndex, List<RaftEndpoint> members,
+    /**
+     * This method needs to be public to allow to create CP groups in
+     * integration tests deterministically
+     */
+    public void invokeCreateRaftGroup(String groupName, int groupSize, long groupIndex, List<RaftEndpoint> members,
                                        InternalCompletableFuture<RaftGroupId> resultFuture) {
         InternalCompletableFuture<CPGroupSummary> f =
                 invoke(raftService.getMetadataGroupId(), new CreateRaftGroupOp(groupName, members, groupIndex));
@@ -181,7 +188,7 @@ public class RaftInvocationManager {
                 }
                 resultFuture.completeExceptionally(t);
             }
-        });
+        }, internalAsyncExecutor);
     }
 
     void triggerRaftNodeCreation(CPGroupSummary group) {

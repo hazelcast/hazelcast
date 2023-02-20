@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
-import com.hazelcast.map.MapEvent;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.test.Accessors;
@@ -30,13 +27,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -110,116 +103,11 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         assertThat(storage.removeView("non-existing")).isNull();
     }
 
-    @Test
-    public void when_clusterVersionIs5dot2_then_onlyNewCatalogIsUsed() {
-        String name = randomName();
-        storage.put(name, mapping(name, "type"));
-
-        assertEquals(1, storage.newStorage().size());
-        assertEquals(0, storage.oldStorage().size());
-    }
-
-    @Test
-    public void when_clusterVersionIs5dot2_then_oldCatalogIsMigratedOnFirstReadBeforeInitialization() {
-        String name = randomName();
-        storage.oldStorage().put(name, mapping(name, "type"));
-
-        assertEquals(1, storage.allObjects().size());
-        assertEquals(1, storage.newStorage().size());
-        assertEquals(0, storage.oldStorage().size());
-    }
-
-    @Test
-    public void when_clusterVersionIs5dot2_then_oldCatalogIsNotMigratedOnFirstReadAfterInitialization() {
-        storage.initializeWithListener(new TablesStorage.EntryListenerAdapter() {
-            @Override
-            public void entryUpdated(EntryEvent<String, Object> event) {
-            }
-
-            @Override
-            public void entryRemoved(EntryEvent<String, Object> event) {
-            }
-        });
-        String name = randomName();
-        storage.oldStorage().put(name, mapping(name, "type"));
-
-        assertEquals(0, storage.allObjects().size());
-        assertEquals(1, storage.oldStorage().size());
-    }
-
-    @Test
-    public void when_clusterVersionIs5dot2_then_listenerIsAppliedOnNewCatalogOnly() throws InterruptedException {
-        AtomicInteger clearCounter = new AtomicInteger();
-        storage.initializeWithListener(getCountingOnClearEntryListener(clearCounter));
-
-        String name = randomName();
-        storage.newStorage().put(name, mapping(name, "type"));
-        storage.oldStorage().put(name, mapping(name, "type"));
-        storage.oldStorage().clear();
-        storage.newStorage().clear();
-
-        assertTrueEventually(() -> {
-            assertEquals(1, clearCounter.get());
-        });
-        MILLISECONDS.sleep(100);
-        assertEquals(1, clearCounter.get());
-    }
-
     private static Mapping mapping(String name, String type) {
         return new Mapping(name, name, type, emptyList(), emptyMap());
     }
 
     private static View view(String name, String query) {
         return new View(name, query, emptyList(), emptyList());
-    }
-
-    private EntryListener<String, Object> getCountingOnClearEntryListener(AtomicInteger clearCounter) {
-        return new EntryListener<String, Object>() {
-            @Override
-            public void mapCleared(MapEvent event) {
-                clearCounter.incrementAndGet();
-            }
-
-            @Override
-            public void entryAdded(EntryEvent<String, Object> event) { }
-
-            @Override
-            public void entryEvicted(EntryEvent<String, Object> event) { }
-
-            @Override
-            public void entryExpired(EntryEvent<String, Object> event) { }
-
-            @Override
-            public void entryRemoved(EntryEvent<String, Object> event) { }
-
-            @Override
-            public void entryUpdated(EntryEvent<String, Object> event) { }
-
-            @Override
-            public void mapEvicted(MapEvent event) { }
-        };
-    }
-
-    private static class EmptyEntryListener implements EntryListener<String, Object> {
-        @Override
-        public void entryAdded(EntryEvent<String, Object> event) { }
-
-        @Override
-        public void entryRemoved(EntryEvent<String, Object> event) { }
-
-        @Override
-        public void entryUpdated(EntryEvent<String, Object> event) { }
-
-        @Override
-        public void entryEvicted(EntryEvent<String, Object> event) { }
-
-        @Override
-        public void mapEvicted(MapEvent event) { }
-
-        @Override
-        public void mapCleared(MapEvent event) { }
-
-        @Override
-        public void entryExpired(EntryEvent<String, Object> event) { }
     }
 }

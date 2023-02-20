@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,26 @@
 
 package com.hazelcast.cluster;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.JavaSerializationFilterConfig;
+import com.hazelcast.config.JoinConfig;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.serialization.impl.SerializationConstants;
+import com.hazelcast.internal.util.OsHelper;
+import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.OverridePropertyRule;
+import com.hazelcast.test.annotation.QuickTest;
+import example.serialization.TestDeserialized;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -29,28 +44,14 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
-import com.hazelcast.spi.properties.ClusterProperty;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import com.hazelcast.config.Config;
-import com.hazelcast.config.JavaSerializationFilterConfig;
-import com.hazelcast.config.JoinConfig;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.internal.serialization.impl.SerializationConstants;
-import com.hazelcast.internal.util.OsHelper;
-import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.OverridePropertyRule;
-import com.hazelcast.test.annotation.QuickTest;
-
-import example.serialization.TestDeserialized;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests if deserialization blacklisting works for MulticastService.
@@ -88,9 +89,10 @@ public class MulticastDeserializationTest {
     @Test
     public void test() throws Exception {
         Config config = createConfig(true);
-        Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        boolean useBigEndian = getNode(instance).getSerializationService().getByteOrder().equals(ByteOrder.BIG_ENDIAN);
 
-        sendJoinDatagram(new TestDeserialized());
+        sendJoinDatagram(new TestDeserialized(), useBigEndian);
         Thread.sleep(500L);
         assertFalse("Untrusted deserialization is possible", TestDeserialized.isDeserialized);
     }
@@ -98,9 +100,10 @@ public class MulticastDeserializationTest {
     @Test
     public void testWithoutFilter() throws Exception {
         Config config = createConfig(false);
-        Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        boolean useBigEndian = getNode(instance).getSerializationService().getByteOrder().equals(ByteOrder.BIG_ENDIAN);
 
-        sendJoinDatagram(new TestDeserialized());
+        sendJoinDatagram(new TestDeserialized(), useBigEndian);
         assertTrueEventually(() -> assertTrue("Object was not deserialized", TestDeserialized.isDeserialized));
     }
 
@@ -126,7 +129,7 @@ public class MulticastDeserializationTest {
         return config;
     }
 
-    private void sendJoinDatagram(Object object) throws IOException {
+    private void sendJoinDatagram(Object object, boolean useBigEndian) throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(bos);
         try {
@@ -147,6 +150,7 @@ public class MulticastDeserializationTest {
             int msgSize = data.length;
 
             ByteBuffer bbuf = ByteBuffer.allocate(1 + 4 + msgSize);
+            bbuf.order(useBigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
             bbuf.put(Packet.VERSION);
             bbuf.putInt(SerializationConstants.JAVA_DEFAULT_TYPE_SERIALIZABLE);
             bbuf.put(data);

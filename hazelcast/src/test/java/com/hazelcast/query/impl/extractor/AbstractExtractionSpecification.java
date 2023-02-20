@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ public class AbstractExtractionSpecification extends HazelcastTestSupport {
             AbstractPredicate ap = (AbstractPredicate) predicate;
             Query query = new Query();
             query.expression = parametrize(PredicateTestUtils.getAttributeName(ap), mv);
-            PredicateTestUtils.setAttributeName((AbstractPredicate) predicate, query.expression);
+            PredicateTestUtils.setAttributeName(predicate, query.expression);
             query.predicate = ap;
             return query;
         }
@@ -134,7 +134,7 @@ public class AbstractExtractionSpecification extends HazelcastTestSupport {
      */
     protected static Collection<Object[]> axes(List<InMemoryFormat> formats, List<Index> indexes,
                                                List<Multivalue> multivalues) {
-        List<Object[]> combinations = new ArrayList<Object[]>();
+        List<Object[]> combinations = new ArrayList<>();
         for (InMemoryFormat inMemoryFormat : formats) {
             for (Index index : indexes) {
                 for (Multivalue multivalue : multivalues) {

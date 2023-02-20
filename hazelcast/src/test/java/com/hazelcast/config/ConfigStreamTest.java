@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -91,7 +91,7 @@ public class ConfigStreamTest {
 
         byte[] actualBytes = new byte[expectedRead.getBytes().length];
         configStream.read(actualBytes);
-        verifyZeroInteractions(mockIs);
+        verifyNoInteractions(mockIs);
         assertArrayEquals(expectedRead.getBytes(), actualBytes);
     }
 
@@ -122,7 +122,7 @@ public class ConfigStreamTest {
 
         byte[] actualBytes = new byte[expectedRead.getBytes().length];
         configStream.read(actualBytes);
-        verifyZeroInteractions(mockIs);
+        verifyNoInteractions(mockIs);
         assertArrayEquals(expectedRead.getBytes(), actualBytes);
     }
 

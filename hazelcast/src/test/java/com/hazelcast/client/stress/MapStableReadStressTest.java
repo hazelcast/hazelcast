@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,8 +115,9 @@ public class MapStableReadStressTest extends StressTestSupport {
         @Override
         public void doRun() throws Exception {
             while (!isStopped()) {
-                int key = random.nextInt(MAP_SIZE);
-                int value = map.get(key);
+                // do not want to get NPE when map does not contain key
+                Integer key = random.nextInt(MAP_SIZE);
+                Integer value = map.get(key);
                 assertEquals("The value for the key was not consistent", key, value);
             }
         }

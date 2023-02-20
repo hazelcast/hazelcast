@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -230,6 +230,18 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
     }
 
     /**
+     * Like {@link #metWithPreconditions} but without timeout checks.
+     * <p>
+     * Includes checks related to node and cluster health
+     * before execution of an operation.
+     */
+    public void ensureNodeAndClusterHealth(Operation op) {
+        checkNodeState(op);
+        ensureNoPartitionProblems(op);
+        ensureNoSplitBrain(op);
+    }
+
+    /**
      * Runs the provided operation.
      *
      * @param op         the operation to execute
@@ -354,7 +366,7 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
         splitBrainProtectionService.ensureNoSplitBrain(op);
     }
 
-    private boolean timeout(Operation op) {
+    public boolean timeout(Operation op) {
         if (!operationService.isCallTimedOut(op)) {
             return false;
         }
@@ -412,7 +424,7 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
         return (op instanceof ReadonlyOperation && staleReadOnMigrationEnabled) || isMigrationOperation(op);
     }
 
-    private void handleOperationError(Operation operation, Throwable e) {
+    public void handleOperationError(Operation operation, Throwable e) {
         if (e instanceof OutOfMemoryError) {
             OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
         }

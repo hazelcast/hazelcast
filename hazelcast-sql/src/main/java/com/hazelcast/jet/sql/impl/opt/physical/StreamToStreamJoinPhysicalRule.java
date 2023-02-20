@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,9 +89,18 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         RelNode left = RelRule.convert(join.getLeft(), join.getLeft().getTraitSet().replace(PHYSICAL));
         RelNode right = RelRule.convert(join.getRight(), join.getRight().getTraitSet().replace(PHYSICAL));
 
-        WatermarkedFields wmFields = watermarkedFields(join,
-                metadataQuery(left).extractWatermarkedFields(left),
-                metadataQuery(right).extractWatermarkedFields(right));
+        WatermarkedFields leftFields = metadataQuery(left).extractWatermarkedFields(left);
+        WatermarkedFields rightFields = metadataQuery(right).extractWatermarkedFields(right);
+
+        if (leftFields == null || rightFields == null) {
+            // If we pass initial isUnbounded checks for left & right input with rule config,
+            // it means, we cannot execute such a query, we must abort it.
+            String message = "For stream-to-stream join, both joined sides must have an order imposed";
+            call.transformTo(fail(join, message));
+            return;
+        }
+
+        WatermarkedFields wmFields = watermarkedFields(join, leftFields, rightFields);
 
         // a postponeTimeMap just like the one described in the TDD, but we don't use WM keys, but field indexes here
         Map<Integer, Map<Integer, Long>> postponeTimeMap = new HashMap<>();

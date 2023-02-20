@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
+import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.RestartableException;
@@ -62,7 +63,8 @@ public final class ExceptionUtil {
             tuple3(JET_EXCEPTIONS_RANGE_START + 2, JobNotFoundException.class, JobNotFoundException::new),
             tuple3(JET_EXCEPTIONS_RANGE_START + 3, JobAlreadyExistsException.class, JobAlreadyExistsException::new),
             tuple3(JET_EXCEPTIONS_RANGE_START + 4, AssertionCompletedException.class, AssertionCompletedException::new),
-            tuple3(JET_EXCEPTIONS_RANGE_START + 5, JetDisabledException.class, JetDisabledException::new)
+            tuple3(JET_EXCEPTIONS_RANGE_START + 5, JetDisabledException.class, JetDisabledException::new),
+            tuple3(JET_EXCEPTIONS_RANGE_START + 6, CancellationByUserException.class, CancellationByUserException::new)
         );
 
     private ExceptionUtil() { }
@@ -235,6 +237,13 @@ public final class ExceptionUtil {
         Throwable peeledFailure = peel(t);
         return peeledFailure instanceof JobTerminateRequestedException
                 || peeledFailure instanceof ResultLimitReachedException
-                || peeledFailure instanceof TerminatedWithSnapshotException;
+                || peeledFailure instanceof TerminatedWithSnapshotException
+                || checkCause(peeledFailure);
+    }
+
+    private static boolean checkCause(Throwable peeledFailure) {
+        return peeledFailure.getCause() != null
+                && peeledFailure != peeledFailure.getCause()
+                && isTechnicalCancellationException(peeledFailure.getCause());
     }
 }

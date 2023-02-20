@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -68,5 +69,6 @@ public class JobTimeoutClusterTest extends JetTestSupport {
         final Job restartedJob = newMaster.getJet().getJob(jobId);
         assertNotNull(restartedJob);
         assertJobStatusEventually(restartedJob, JobStatus.FAILED);
+        assertFalse(restartedJob.isUserCancelled());
     }
 }

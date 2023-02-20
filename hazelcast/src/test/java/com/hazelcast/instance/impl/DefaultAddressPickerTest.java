@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -305,8 +305,8 @@ public class DefaultAddressPickerTest {
         assertEquals(interfaceDefinition, interfaceDefinition);
         assertEquals(interfaceDefinition, interfaceDefinitionSameAttributes);
 
-        assertNotEquals(interfaceDefinition, null);
-        assertNotEquals(interfaceDefinition, new Object());
+        assertNotEquals(null, interfaceDefinition);
+        assertNotEquals(new Object(), interfaceDefinition);
 
         assertNotEquals(interfaceDefinition, interfaceDefinitionOtherHost);
         assertNotEquals(interfaceDefinition, interfaceDefinitionOtherAddress);
@@ -322,8 +322,8 @@ public class DefaultAddressPickerTest {
         assertEquals(addressDefinition, addressDefinition);
         assertEquals(addressDefinition, addressDefinitionSameAttributes);
 
-        assertNotEquals(addressDefinition, null);
-        assertNotEquals(addressDefinition, new Object());
+        assertNotEquals(null, addressDefinition);
+        assertNotEquals(new Object(), addressDefinition);
 
         assertNotEquals(addressDefinition, addressDefinitionOtherHost);
         assertNotEquals(addressDefinition, addressDefinitionOtherPort);

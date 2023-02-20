@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -555,8 +555,8 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml, "env", "local");
-        assertEquals(config.getProperty("local-with-suffix"), "local-with-suffix");
-        assertEquals(config.getProperty("with-prefix-local"), "with-prefix-local");
+        assertEquals("local-with-suffix", config.getProperty("local-with-suffix"));
+        assertEquals("with-prefix-local", config.getProperty("with-prefix-local"));
     }
 
     @Override
@@ -575,8 +575,8 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + "    <import resource=\"file:///" + "${file}" + "\"/>\n"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml, "file", pathToFile);
-        assertEquals(config.getProperty("prop1"), "value1");
-        assertEquals(config.getProperty("prop2"), "value2");
+        assertEquals("value1", config.getProperty("prop1"));
+        assertEquals("value2", config.getProperty("prop2"));
     }
 
     @Override

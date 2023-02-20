@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ExternalDataStoreConfig;
-import com.hazelcast.datastore.JdbcDataStoreFactory;
+import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.datalink.JdbcDataLinkFactory;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
@@ -36,7 +36,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_EXTERNAL_DATASTORE_REF;
+import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -61,9 +61,9 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         dbConnectionUrl = databaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
         Properties properties = new Properties();
         properties.setProperty("jdbcUrl", dbConnectionUrl);
-        config.addExternalDataStoreConfig(
-                new ExternalDataStoreConfig(TEST_DATABASE_REF)
-                        .setClassName(JdbcDataStoreFactory.class.getName())
+        config.addDataLinkConfig(
+                new DataLinkConfig(TEST_DATABASE_REF)
+                        .setClassName(JdbcDataLinkFactory.class.getName())
                         .setProperties(properties)
         );
         initialize(2, config);
@@ -142,7 +142,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
                         + ") "
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
+                        + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
         );
     }
@@ -157,7 +157,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
                         + ") "
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
+                        + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
         );
     }

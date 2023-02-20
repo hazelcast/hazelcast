@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -1124,13 +1124,13 @@
                 </hz:properties>
             </hz:auditlog>
             <hz:integrity-checker enabled="false"/>
-            <hz:external-data-store name="${external.datastore.name}">
-                <hz:class-name>com.hazelcast.datastore.JdbcDataStoreFactory</hz:class-name>
+            <hz:data-link name="${datalink.name}">
+                <hz:class-name>com.hazelcast.datalink.JdbcDataLinkFactory</hz:class-name>
                 <hz:properties>
-                    <hz:property name="jdbcUrl">${external.datastore.url}</hz:property>
+                    <hz:property name="jdbcUrl">${datalink.url}</hz:property>
                 </hz:properties>
                 <hz:shared>false</hz:shared>
-            </hz:external-data-store>
+            </hz:data-link>
             <hz:alto enabled="true">
                 <hz:eventloop-count>12</hz:eventloop-count>
             </hz:alto>

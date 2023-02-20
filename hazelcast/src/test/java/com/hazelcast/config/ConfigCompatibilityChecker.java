@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,8 +141,8 @@ public class ConfigCompatibilityChecker {
                 new InstanceTrackingConfigChecker());
         checkCompatibleConfigs("native memory", c1.getNativeMemoryConfig(), c2.getNativeMemoryConfig(),
                 new NativeMemoryConfigChecker());
-        checkCompatibleConfigs("external data store", c1, c2, c1.getExternalDataStoreConfigs(), c2.getExternalDataStoreConfigs(),
-                new ExternalDataStoreConfigChecker());
+        checkCompatibleConfigs("data link", c1, c2, c1.getDataLinkConfigs(), c2.getDataLinkConfigs(),
+                new DataLinkConfigChecker());
         checkCompatibleConfigs("alto", c1, c2, singletonMap("", c1.getAltoConfig()),
                 singletonMap("", c2.getAltoConfig()), new AltoConfigChecker());
 
@@ -692,9 +692,9 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    private static class ExternalDataStoreConfigChecker extends ConfigChecker<ExternalDataStoreConfig> {
+    private static class DataLinkConfigChecker extends ConfigChecker<DataLinkConfig> {
         @Override
-        boolean check(ExternalDataStoreConfig c1, ExternalDataStoreConfig c2) {
+        boolean check(DataLinkConfig c1, DataLinkConfig c2) {
             if (c1 == c2) {
                 return true;
             }
@@ -708,8 +708,8 @@ public class ConfigCompatibilityChecker {
         }
 
         @Override
-        ExternalDataStoreConfig getDefault(Config c) {
-            return c.getExternalDataStoreConfig("default");
+        DataLinkConfig getDefault(Config c) {
+            return c.getDataLinkConfig("default");
         }
     }
 
