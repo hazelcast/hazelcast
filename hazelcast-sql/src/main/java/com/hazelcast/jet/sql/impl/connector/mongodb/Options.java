@@ -20,7 +20,6 @@ final class Options {
     static final String DATA_LINK_REF_OPTION = "dataLinkRef";
     static final String CONNECTION_STRING_OPTION = "connectionString";
     static final String DATABASE_NAME_OPTION = "database";
-    static final String COLLECTION_NAME_OPTION = "collection";
     static final String START_AT_OPTION = "startAt";
 
     private Options() {

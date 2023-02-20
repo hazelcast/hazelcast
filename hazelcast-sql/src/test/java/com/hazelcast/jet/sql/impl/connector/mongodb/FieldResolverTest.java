@@ -83,8 +83,7 @@ public class FieldResolverTest {
             Map<String, String> readOpts = new HashMap<>();
             readOpts.put("connectionString", mongoContainer.getConnectionString());
             readOpts.put("database", databaseName);
-            readOpts.put("collection", collectionName);
-            Map<String, DocumentField> fields = resolver.readFields(readOpts, false);
+            Map<String, DocumentField> fields = resolver.readFields(collectionName, readOpts, false);
             assertThat(fields).containsOnlyKeys("firstName", "lastName", "birthYear");
             assertThat(fields.get("lastName").columnType).isEqualTo(BsonType.STRING);
             assertThat(fields.get("birthYear").columnType).isEqualTo(BsonType.INT32);
@@ -108,8 +107,7 @@ public class FieldResolverTest {
             Map<String, String> readOpts = new HashMap<>();
             readOpts.put("connectionString", mongoContainer.getConnectionString());
             readOpts.put("database", databaseName);
-            readOpts.put("collection", collectionName);
-            Map<String, DocumentField> fields = resolver.readFields(readOpts, false);
+            Map<String, DocumentField> fields = resolver.readFields(collectionName, readOpts, false);
             assertThat(fields).containsOnlyKeys("_id", "firstName", "lastName", "birthYear");
             assertThat(fields.get("lastName").columnType).isEqualTo(BsonType.STRING);
             assertThat(fields.get("birthYear").columnType).isEqualTo(BsonType.INT32);
@@ -133,8 +131,7 @@ public class FieldResolverTest {
             Map<String, String> readOpts = new HashMap<>();
             readOpts.put("connectionString", mongoContainer.getConnectionString());
             readOpts.put("database", databaseName);
-            readOpts.put("collection", collectionName);
-            List<MappingField> fields = resolver.resolveFields(readOpts, Collections.emptyList(), false);
+            List<MappingField> fields = resolver.resolveFields(collectionName, readOpts, Collections.emptyList(), false);
             assertThat(fields).contains(
                     fieldWithSameExternal("_id", VARCHAR).setPrimaryKey(true),
                     fieldWithSameExternal("firstName", VARCHAR),
@@ -161,8 +158,7 @@ public class FieldResolverTest {
             Map<String, String> readOpts = new HashMap<>();
             readOpts.put("connectionString", mongoContainer.getConnectionString());
             readOpts.put("database", databaseName);
-            readOpts.put("collection", collectionName);
-            List<MappingField> fields = resolver.resolveFields(readOpts, Collections.emptyList(), true);
+            List<MappingField> fields = resolver.resolveFields(collectionName, readOpts, Collections.emptyList(), true);
             assertThat(fields).contains(
                     fieldWithSameExternal("resumeToken", VARCHAR),
                     fieldWithSameExternal("operationType", VARCHAR),
@@ -195,8 +191,7 @@ public class FieldResolverTest {
             Map<String, String> readOpts = new HashMap<>();
             readOpts.put("connectionString", mongoContainer.getConnectionString());
             readOpts.put("database", databaseName);
-            readOpts.put("collection", collectionName);
-            List<MappingField> fields = resolver.resolveFields(readOpts, Arrays.asList(
+            List<MappingField> fields = resolver.resolveFields(collectionName, readOpts, Arrays.asList(
                     new MappingField("id", VARCHAR).setExternalName("_id"),
                     new MappingField("birthYear", QueryDataType.BIGINT)
             ), false);
@@ -224,9 +219,8 @@ public class FieldResolverTest {
             Map<String, String> readOpts = new HashMap<>();
             readOpts.put("connectionString", mongoContainer.getConnectionString());
             readOpts.put("database", databaseName);
-            readOpts.put("collection", collectionName);
             try {
-                resolver.resolveFields(readOpts, Collections.singletonList(
+                resolver.resolveFields(collectionName, readOpts, Collections.singletonList(
                         new MappingField("id", QueryDataType.MAP).setExternalName("_id")
                 ), false);
             } catch (IllegalStateException e) {

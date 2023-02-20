@@ -34,7 +34,6 @@ import java.util.Map.Entry;
 
 import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.resolveTypeByName;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.resolveTypeFromJava;
-import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.COLLECTION_NAME_OPTION;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.CONNECTION_STRING_OPTION;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.DATABASE_NAME_OPTION;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.DATA_LINK_REF_OPTION;
@@ -47,19 +46,20 @@ class FieldResolver {
     /**
      * Resolves fields based on the options passed to the connector and schema provided by user (if any).
      *
-     * @param options options provided for the connector
-     * @param userFields user-provided field list
+     * @param externalName external name of the mapping, namely collection name
+     * @param options      options provided for the connector
+     * @param userFields   user-provided field list
      * @return resolved fields - all fields from collection or user provided fields with resolved types
-     *
      * @throws IllegalArgumentException if given column type won't be resolved or field from user mapping won't exist
      *                                  in the collection
      */
     List<MappingField> resolveFields(
+            @Nonnull String externalName,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
             boolean stream
     ) {
-        Map<String, DocumentField> dbFields = readFields(options, stream);
+        Map<String, DocumentField> dbFields = readFields(externalName, options, stream);
 
         List<MappingField> resolvedFields = new ArrayList<>();
         if (userFields.isEmpty()) {
@@ -123,12 +123,11 @@ class FieldResolver {
         }
     }
 
-    Map<String, DocumentField> readFields(Map<String, String> options, boolean stream) {
+    Map<String, DocumentField> readFields(String collectionName, Map<String, String> options, boolean stream) {
         Map<String, DocumentField> fields = new HashMap<>();
         try (MongoClient client = connect(options)) {
             String databaseName = requireNonNull(options.get(DATABASE_NAME_OPTION),
                     DATABASE_NAME_OPTION + " option must be provided");
-            String collectionName = options.get(COLLECTION_NAME_OPTION);
 
             MongoDatabase database = client.getDatabase(databaseName);
             List<Document> collections = database.listCollections()

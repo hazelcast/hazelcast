@@ -71,7 +71,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             @Nonnull List<MappingField> userFields,
             @Nonnull String externalName
     ) {
-        return fieldResolver.resolveFields(options, userFields, isStream());
+        return fieldResolver.resolveFields(externalName, options, userFields, isStream());
     }
 
     @Nonnull

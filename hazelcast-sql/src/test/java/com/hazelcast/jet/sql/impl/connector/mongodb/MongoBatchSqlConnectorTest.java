@@ -46,6 +46,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -174,6 +175,41 @@ public class MongoBatchSqlConnectorTest extends SqlTestSupport {
                 asList(
                         new Row("Luke", "Skywalker", true),
                         new Row("Anakin", "Skywalker", true)
+                )
+        );
+    }
+
+    @Test
+    public void readsWithJoins() {
+        final String connectionString = mongoContainer.getConnectionString();
+
+        MongoCollection<Document> peopleName = database.getCollection("peopleName");
+        peopleName.insertOne(new Document("personId", 1).append("name", "Luke Skywalker"));
+        peopleName.insertOne(new Document("personId", 2).append("name", "Han Solo"));
+
+        MongoCollection<Document> peopleProfession = database.getCollection("peopleProfession");
+        peopleProfession.insertOne(new Document("personId", 1).append("profession", "Jedi"));
+        peopleProfession.insertOne(new Document("personId", 2).append("profession", "Smuggler"));
+
+        execute("CREATE MAPPING peopleName external name \"peopleName\" (personId INT, name VARCHAR) "
+                + "TYPE MongoDB "
+                + "OPTIONS ("
+                + "    'connectionString' = '" + connectionString + "', "
+                + "    'database' = '" + DATABASE_NAME + "'"
+                + ")");
+        execute("CREATE MAPPING peopleProfession external name \"peopleProfession\" (personId INT, profession VARCHAR) "
+                + "TYPE MongoDB "
+                + "OPTIONS ("
+                + "    'connectionString' = '" + connectionString + "', "
+                + "    'database' = '" + DATABASE_NAME + "'"
+                + ")");
+
+        assertRowsAnyOrder("select pn.personId, pn.name, pr.profession " +
+                        "from peopleName pn join peopleProfession pr on pn.personId = pr.personId",
+                emptyList(),
+                asList(
+                        new Row(1, "Luke Skywalker", "Jedi"),
+                        new Row(2, "Han Solo", "Smuggler")
                 )
         );
     }
