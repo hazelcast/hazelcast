@@ -30,7 +30,6 @@ import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;

@@ -19,8 +19,6 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 import com.hazelcast.internal.tpc.Reactor;
 
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -28,7 +26,7 @@ public class AltoOperationQueue implements OperationQueue {
 
     // Is there not a data-race on this field? Because the 'nodeengine' thread sets this field while
     // the reactor is going to use it.
-    private  Reactor reactor;
+    private Reactor reactor;
     private final Queue<Object> normalQueue;
     private final Queue<Object> priorityQueue;
 

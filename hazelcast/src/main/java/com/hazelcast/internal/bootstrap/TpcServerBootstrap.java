@@ -123,7 +123,7 @@ public class TpcServerBootstrap {
         Configuration configuration = new Configuration();
         NioReactorBuilder reactorBuilder = new NioReactorBuilder();
         reactorBuilder.setThreadFactory(new ThreadFactory() {
-            int index = 0;
+            int index;
 
             @Override
             public Thread newThread(Runnable eventloopRunnable) {

@@ -23,7 +23,6 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.tpc.TpcEngine;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
@@ -210,8 +209,9 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
 
             AltoOperationQueue operationQueue = new AltoOperationQueue(normalQueue, new ConcurrentLinkedQueue<>());
 
-            // the AltoOperationQueue is unbound just like HZ classic. Since we do not have any back pressure mechanism between
-            // members, there is no proper way to prevent overload. So we keep the same bad bad behavior for now.
+            // the AltoOperationQueue is unbound just like HZ classic. Since we do not have any
+            // back pressure mechanism between members, there is no proper way to prevent overload.
+            // So we keep the same bad bad behavior for now.
             PartitionOperationThread partitionThread = new AltoPartitionOperationThread(threadName, threadId,
                     operationQueue, logger, nodeExtension, partitionOperationRunners, configClassLoader);
             threads[threadId] = partitionThread;
