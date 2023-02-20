@@ -21,11 +21,18 @@ import com.hazelcast.jet.mongodb.WriteMode;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.mongodb.client.MongoClients;
+import org.bson.BsonDateTime;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
 import javax.annotation.Nonnull;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Collection;
 
 import static com.hazelcast.jet.mongodb.MongoDBSinkBuilder.DEFAULT_COMMIT_RETRY_STRATEGY;
@@ -43,12 +50,14 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
     private final String collectionName;
     private final String[] paths;
     private final WriteMode writeMode;
+    private final QueryDataType[] types;
 
     InsertProcessorSupplier(MongoTable table, WriteMode writeMode) {
         this.connectionString = table.connectionString;
         this.databaseName = table.databaseName;
         this.collectionName = table.collectionName;
         this.paths = table.paths();
+        this.types = table.types();
         this.writeMode = writeMode;
     }
 
@@ -86,8 +95,18 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
             String fieldName = paths[i];
             Object value = values[i];
             if (fieldName.equals("_id") && value instanceof String) {
-                // the only field that needs explicit coercion
                 value = new ObjectId((String) value);
+            } else if (value instanceof LocalDateTime) {
+                Timestamp jdbcTimestamp = Timestamp.valueOf((LocalDateTime) value);
+                value = new BsonDateTime(jdbcTimestamp.getTime());
+            } else if (value instanceof OffsetDateTime) {
+                OffsetDateTime v = (OffsetDateTime) value;
+                ZonedDateTime atUtc = v.atZoneSameInstant(ZoneId.of("UTC"));
+                Timestamp jdbcTimestamp = Timestamp.valueOf(atUtc.toLocalDateTime());
+                value = new BsonDateTime(jdbcTimestamp.getTime());
+            } else {
+                // todo other coercions?
+                value = types[i].convert(value);
             }
             doc = doc.append(fieldName, value);
         }

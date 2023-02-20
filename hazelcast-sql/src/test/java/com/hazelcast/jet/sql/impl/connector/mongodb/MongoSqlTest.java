@@ -35,7 +35,7 @@ import org.testcontainers.containers.MongoDBContainer;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class MongoSqlTest extends SqlTestSupport {
+public abstract class MongoSqlTest extends SqlTestSupport {
     private static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "6.0.3");
 
     @ClassRule
@@ -70,6 +70,11 @@ public class MongoSqlTest extends SqlTestSupport {
         try (SqlResult ignored = sqlService.execute(sql, arguments)) {
             EmptyStatement.ignore(null);
         }
+    }
+
+    protected static String options() {
+        return String.format("OPTIONS ( 'database' = '%s', 'connectionString' = '%s') ", databaseName,
+                mongoContainer.getConnectionString());
     }
 
     protected String methodName() {

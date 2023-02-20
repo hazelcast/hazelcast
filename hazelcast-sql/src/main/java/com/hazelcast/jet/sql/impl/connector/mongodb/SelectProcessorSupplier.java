@@ -136,10 +136,15 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
 
         for (Map.Entry<String, Object> value : doc.entrySet()) {
             int index = indexInProjection(value.getKey());
-            row[index] = types[index].convert(value.getValue());
+            row[index] = convert(value.getValue(), index);
         }
 
         return new JetSqlRow(evalContext.getSerializationService(), row);
+    }
+
+    private Object convert(Object value, int index) {
+        value = BsonTypes.unwrap(value);
+        return types[index].convert(value);
     }
 
     private JetSqlRow convertStreamDocToRow(ChangeStreamDocument<Document> changeStreamDocument) {
@@ -152,7 +157,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
             if (index == -1) {
                 continue;
             }
-            row[index] = types[index].convert(entry.getValue());
+            row[index] = convert(entry.getValue(), index);
         }
         addIfInProjection(changeStreamDocument.getOperationType().getValue(), "operationType", row);
         addIfInProjection(changeStreamDocument.getResumeToken().toString(), "resumeToken", row);

@@ -70,6 +70,13 @@ class MongoTable extends JetTable {
         }
         throw new IllegalArgumentException("field " + name + " does not exist");
     }
+    public MongoTableField getFieldByExternalName(String name) {
+        return getFields().stream()
+                          .map(f -> (MongoTableField) f)
+                          .filter(f -> f.getExternalName().equals(name))
+                          .findFirst()
+                          .orElseThrow(() -> new IllegalArgumentException("field " + name + " does not exist"));
+    }
 
     String[] paths() {
         return getFields().stream()
@@ -114,7 +121,7 @@ class MongoTable extends JetTable {
         QueryDataType[] types = new QueryDataType[requestedProjection.size()];
         int i = 0;
         for (String column : requestedProjection) {
-            types[i++] = getField(column).getType();
+            types[i++] = getFieldByExternalName(column).getType();
         }
         return types;
     }

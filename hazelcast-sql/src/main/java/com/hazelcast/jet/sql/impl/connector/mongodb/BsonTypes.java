@@ -15,17 +15,21 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import org.bson.BsonBoolean;
 import org.bson.BsonDateTime;
 import org.bson.BsonDecimal128;
 import org.bson.BsonDouble;
 import org.bson.BsonInt32;
 import org.bson.BsonInt64;
+import org.bson.BsonString;
 import org.bson.BsonTimestamp;
 import org.bson.BsonType;
+import org.bson.types.Decimal128;
 import org.bson.types.ObjectId;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
@@ -103,5 +107,37 @@ final class BsonTypes {
         result.put(ObjectId.class, BsonType.OBJECT_ID);
 
         return result;
+    }
+
+    @SuppressWarnings("checkstyle:ReturnCount")
+    static Object unwrap(Object value) {
+        if (value instanceof BsonDateTime) {
+            BsonDateTime v = (BsonDateTime) value;
+            return LocalDateTime.from(new Date(v.getValue()).toInstant());
+        }
+        if (value instanceof BsonString) {
+            return value.toString();
+        }
+        if (value instanceof BsonDecimal128) {
+            BsonDecimal128 v = (BsonDecimal128) value;
+            return new BigDecimal(v.toString());
+        }
+        if (value instanceof Decimal128) {
+            Decimal128 v = (Decimal128) value;
+            return new BigDecimal(v.toString());
+        }
+        if (value instanceof BsonDouble) {
+            return ((BsonDouble) value).getValue();
+        }
+        if (value instanceof BsonInt32) {
+            return ((BsonInt32) value).getValue();
+        }
+        if (value instanceof BsonInt64) {
+            return ((BsonInt64) value).getValue();
+        }
+        if (value instanceof BsonBoolean) {
+            return ((BsonBoolean) value).getValue();
+        }
+        return value;
     }
 }
