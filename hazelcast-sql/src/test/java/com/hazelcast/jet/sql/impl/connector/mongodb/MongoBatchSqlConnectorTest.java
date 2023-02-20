@@ -36,6 +36,7 @@ import java.util.logging.Level;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
@@ -201,6 +202,26 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         assertEquals("Han", item.getString("firstName"));
         assertEquals("Solo", item.getString("lastName"));
         assertEquals(false, item.getBoolean("jedi"));
+    }
+
+    @Test
+    public void insertsIntoMongo_multiple() {
+        MongoCollection<Document> collection = database.getCollection(methodName());
+        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
+
+        createMapping(true);
+
+        collection.deleteMany(Filters.empty());
+
+        execute("insert into " + methodName() + "(firstName, lastName) " +
+                "select 'Person ' || v, cast(v as varchar) " +
+                "from table(generate_series(0,2))");
+
+        ArrayList<Document> list = collection.find()
+                                             .into(new ArrayList<>());
+        assertThat(list)
+                .extracting(d -> d.getString("firstName"))
+                .containsExactlyInAnyOrder("Person 0", "Person 1", "Person 2");
     }
 
     @Test

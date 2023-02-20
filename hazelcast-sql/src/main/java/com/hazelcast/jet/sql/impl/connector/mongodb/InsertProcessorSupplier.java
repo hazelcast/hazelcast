@@ -94,8 +94,13 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
         for (int i = 0; i < row.getFieldCount(); i++) {
             String fieldName = paths[i];
             Object value = values[i];
-            if (fieldName.equals("_id") && value instanceof String) {
-                value = new ObjectId((String) value);
+
+            if (fieldName.equals("_id")) {
+                if (value instanceof String) {
+                    value = new ObjectId((String) value);
+                } else if (value == null) {
+                    continue;
+                }
             } else if (value instanceof LocalDateTime) {
                 Timestamp jdbcTimestamp = Timestamp.valueOf((LocalDateTime) value);
                 value = new BsonDateTime(jdbcTimestamp.getTime());
