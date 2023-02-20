@@ -21,19 +21,20 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
 /**
- * Wraps Calcite's RexNodes, so that connector can be created outside hazelcast-sql module without problems with
- * shaded Calcite dependency.
- *
- * During shading process the {@link RexNode} is shaded into {@code com.hazelcast.shaded.org.apache.calcite.rex.RexNode},
- * however if you work on some {@link SqlConnector} inside core Hazelcast repository, then IDE will still see only
- * class as it is in Maven's jar.
+ * Wraps Calcite's {@link RexNode} so that connector can be created outside hazelcast-sql module without problems with
+ * relocated Calcite dependency.
  * <p>
- * Wrapping {@link RexNode}s avoids problems in compilation both in IDE and Maven, as this class is not shaded
- * and in the runtime it will just return shaded class.
- * <strong>If you want to use this class in module outside hazelcast-sql, you must apply maven-shade-plugin with
+ * During shading process the {@link RexNode} is relocated to {@code com.hazelcast.shaded.*},
+ * however if you work on an {@link SqlConnector} inside core Hazelcast repository, then IDE will still see only
+ * the class it the original package.
+ * <p>
+ * Wrapping {@link RexNode}s avoids problems in compilation both in IDE and Maven, as this class is not relocated
+ * and at runtime it will just return the relocated class.
+ * <strong>If you want to use this class in a module outside hazelcast-sql, you must apply maven-shade-plugin with
  * configuration that shades calcite-core, otherwise you will end up in runtime errors.</strong>
  *
  * <p>
@@ -91,22 +92,25 @@ import static java.util.stream.Collectors.toList;
 public final class HazelcastRexNode {
     private final RexNode node;
 
-    private HazelcastRexNode(RexNode node) {
-        this.node = node;
+    private HazelcastRexNode(@Nonnull RexNode node) {
+        this.node = requireNonNull(node);
     }
 
     /**
      * Returns underlying Calcite {@linkplain RexNode}.
      */
-    @Nullable
+    @Nonnull
     public <T> T unwrap(Class<T> clazz) {
         return clazz.cast(node);
     }
 
     /**
-     * Creates a new wrapper around given node.
+     * Creates a new wrapper around the given `node`.
      */
-    public static @Nonnull HazelcastRexNode wrap(RexNode node) {
+    public static @Nullable HazelcastRexNode wrap(@Nullable RexNode node) {
+        if (node == null) {
+            return null;
+        }
         return new HazelcastRexNode(node);
     }
 
@@ -115,8 +119,7 @@ public final class HazelcastRexNode {
      */
     public static @Nonnull List<HazelcastRexNode> wrap(@Nonnull List<RexNode> nodes) {
         return nodes.stream()
-                .map(HazelcastRexNode::new)
+                .map(HazelcastRexNode::wrap)
                 .collect(toList());
     }
-
 }

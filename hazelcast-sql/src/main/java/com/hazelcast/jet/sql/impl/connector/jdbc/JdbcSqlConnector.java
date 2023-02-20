@@ -23,6 +23,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.logging.ILogger;
@@ -285,7 +286,7 @@ public class JdbcSqlConnector implements SqlConnector {
         }
         JdbcTable table = (JdbcTable) context.getTable();
 
-        List<RexNode> projections = projection.stream().map(n -> n.unwrap(RexNode.class)).collect(toList());
+        List<RexNode> projections = Util.toList(projection, n -> n.unwrap(RexNode.class));
         RexNode filter = predicate == null ? null : predicate.unwrap(RexNode.class);
         SelectQueryBuilder builder = new SelectQueryBuilder(context.getTable(), filter, projections);
         return context.getDag().newUniqueVertex(
@@ -336,7 +337,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 .map(f -> table.getField(f).externalName())
                 .collect(toList());
 
-        List<RexNode> projections = expressions.stream().map(n -> n.unwrap(RexNode.class)).collect(toList());
+        List<RexNode> projections = Util.toList(expressions, n -> n.unwrap(RexNode.class));
         UpdateQueryBuilder builder = new UpdateQueryBuilder(table, pkFields, fieldNames, projections);
 
         return context.getDag().newUniqueVertex(

@@ -32,8 +32,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 
-import static java.util.stream.Collectors.toList;
-
 public class DagBuildContextImpl implements DagBuildContext {
     private final DAG dag;
     private final QueryParameterMetadata parameterMetadata;
@@ -75,19 +73,14 @@ public class DagBuildContextImpl implements DagBuildContext {
         if (node == null) {
             return null;
         }
-        RexNode unwrap = node.unwrap(RexNode.class);
-        if (unwrap == null) {
-            return null;
-        }
-        return (Expression<Boolean>) unwrap.accept(createVisitor());
+        return (Expression<Boolean>) node.unwrap(RexNode.class).accept(createVisitor());
     }
 
     @Nonnull
     @Override
     public List<Expression<?>> convertProjection(@Nonnull List<HazelcastRexNode> nodes) {
         RexVisitor<Expression<?>> visitor = createVisitor();
-        List<RexNode> rexNodes = nodes.stream().map(n -> n.unwrap(RexNode.class)).collect(toList());
-        return Util.toList(rexNodes, node -> node.accept(visitor));
+        return Util.toList(nodes, node -> node.unwrap(RexNode.class).accept(visitor));
     }
 
     @Nonnull
