@@ -64,6 +64,10 @@ class CloudInfoCollector implements MetricsCollector {
         dockerFilePath = dockerFilepath;
     }
 
+    String getCloudEnvironment() {
+        return System.getenv("HZ_CLOUD_ENVIRONMENT");
+    }
+
     @Override
     public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
         if (environmentInfo != null) {
@@ -92,7 +96,7 @@ class CloudInfoCollector implements MetricsCollector {
             info.put(PhoneHomeMetrics.DOCKER, "N");
         }
 
-        String cloudEnv = System.getenv("HZ_CLOUD_ENVIRONMENT");
+        String cloudEnv = getCloudEnvironment();
         if (cloudEnv != null) {
             info.put(PhoneHomeMetrics.VIRIDIAN, cloudEnv);
         }
