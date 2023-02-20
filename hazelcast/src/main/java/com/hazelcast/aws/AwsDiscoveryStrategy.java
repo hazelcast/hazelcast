@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
+import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import com.hazelcast.spi.exception.NoCredentialsException;
 import com.hazelcast.spi.exception.RestClientException;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
@@ -78,11 +79,15 @@ public class AwsDiscoveryStrategy
     private boolean isEmptyAddressListAlreadyLogged;
 
     AwsDiscoveryStrategy(Map<String, Comparable> properties) {
+        this(null, properties);
+    }
+
+    AwsDiscoveryStrategy(DiscoveryNode discoveryNode, Map<String, Comparable> properties) {
         super(LOGGER, properties);
-
-        AwsConfig awsConfig = createAwsConfig();
+        AwsConfig awsConfig = createAwsConfig()
+                .setDiscoveryMode(discoveryNode == null ? DiscoveryMode.Client : DiscoveryMode.Member)
+                .build();
         LOGGER.info("Using AWS discovery plugin with configuration: " + awsConfig);
-
         this.awsClient = AwsClientConfigurator.createAwsClient(awsConfig);
         this.portRange = awsConfig.getHzPort();
     }
@@ -93,27 +98,26 @@ public class AwsDiscoveryStrategy
     AwsDiscoveryStrategy(Map<String, Comparable> properties, AwsClient client) {
         super(LOGGER, properties);
         this.awsClient = client;
-        this.portRange = createAwsConfig().getHzPort();
+        this.portRange = new PortRange(getPortRange());
     }
 
-    private AwsConfig createAwsConfig() {
+    private AwsConfig.Builder createAwsConfig() {
         try {
             return AwsConfig.builder()
-                .setAccessKey(getOrNull(ACCESS_KEY)).setSecretKey(getOrNull(SECRET_KEY))
-                .setRegion(getOrDefault(REGION.getDefinition(), null))
-                .setIamRole(getOrNull(IAM_ROLE))
-                .setHostHeader(getOrNull(HOST_HEADER.getDefinition()))
-                .setSecurityGroupName(getOrNull(SECURITY_GROUP_NAME)).setTagKey(getOrNull(TAG_KEY))
-                .setTagValue(getOrNull(TAG_VALUE))
-                .setConnectionTimeoutSeconds(getOrDefault(CONNECTION_TIMEOUT_SECONDS.getDefinition(),
-                    DEFAULT_CONNECTION_TIMEOUT_SECONDS))
-                .setConnectionRetries(getOrDefault(CONNECTION_RETRIES.getDefinition(), DEFAULT_CONNECTION_RETRIES))
-                .setReadTimeoutSeconds(getOrDefault(READ_TIMEOUT_SECONDS.getDefinition(), DEFAULT_READ_TIMEOUT_SECONDS))
-                .setHzPort(new PortRange(getPortRange()))
-                .setCluster(getOrNull(CLUSTER))
-                .setFamily(getOrNull(FAMILY))
-                .setServiceName(getOrNull(SERVICE_NAME))
-                .build();
+                    .setAccessKey(getOrNull(ACCESS_KEY)).setSecretKey(getOrNull(SECRET_KEY))
+                    .setRegion(getOrDefault(REGION.getDefinition(), null))
+                    .setIamRole(getOrNull(IAM_ROLE))
+                    .setHostHeader(getOrNull(HOST_HEADER.getDefinition()))
+                    .setSecurityGroupName(getOrNull(SECURITY_GROUP_NAME)).setTagKey(getOrNull(TAG_KEY))
+                    .setTagValue(getOrNull(TAG_VALUE))
+                    .setConnectionTimeoutSeconds(getOrDefault(CONNECTION_TIMEOUT_SECONDS.getDefinition(),
+                            DEFAULT_CONNECTION_TIMEOUT_SECONDS))
+                    .setConnectionRetries(getOrDefault(CONNECTION_RETRIES.getDefinition(), DEFAULT_CONNECTION_RETRIES))
+                    .setReadTimeoutSeconds(getOrDefault(READ_TIMEOUT_SECONDS.getDefinition(), DEFAULT_READ_TIMEOUT_SECONDS))
+                    .setHzPort(new PortRange(getPortRange()))
+                    .setCluster(getOrNull(CLUSTER))
+                    .setFamily(getOrNull(FAMILY))
+                    .setServiceName(getOrNull(SERVICE_NAME));
         } catch (IllegalArgumentException e) {
             throw new InvalidConfigurationException("AWS configuration is not valid", e);
         }
@@ -157,9 +161,9 @@ public class AwsDiscoveryStrategy
      * two resources in different zones but in the same placement group will be assumed as
      * a single group.
      *
+     * @return Placement group name if exists, empty otherwise.
      * @see AwsClient#getPlacementGroup()
      * @see AwsClient#getPlacementPartitionNumber()
-     * @return  Placement group name if exists, empty otherwise.
      */
     private Optional<String> getPlacementGroup() {
         Optional<String> placementGroup = awsClient.getPlacementGroup();

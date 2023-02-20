@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ public final class Conventions {
         }
 
         @Override
-        public boolean useAbstractConvertersForConversion(RelTraitSet fromTraits, RelTraitSet toTraits) {
-            return !fromTraits.satisfies(toTraits);
+        public boolean useAbstractConvertersForConversion(RelTraitSet fromTraits, RelTraitSet required) {
+            return !fromTraits.satisfies(required);
         }
     };
 

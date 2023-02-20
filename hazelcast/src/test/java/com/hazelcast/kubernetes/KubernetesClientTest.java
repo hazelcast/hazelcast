@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.kubernetes;
 
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.hazelcast.instance.impl.ClusterTopologyIntentTracker;
 import com.hazelcast.kubernetes.KubernetesClient.Endpoint;
 import com.hazelcast.kubernetes.KubernetesConfig.ExposeExternallyMode;
 import com.hazelcast.spi.exception.RestClientException;
@@ -1501,7 +1502,8 @@ public class KubernetesClientTest {
 
     private KubernetesClient newKubernetesClient(KubernetesTokenProvider tokenProvider) {
         String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
-        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, tokenProvider, CA_CERTIFICATE, RETRIES, ExposeExternallyMode.AUTO, true, null, null);
+        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, tokenProvider, CA_CERTIFICATE, RETRIES,
+                ExposeExternallyMode.AUTO, true, null, null, (ClusterTopologyIntentTracker) null);
     }
 
     private KubernetesClient newKubernetesClient(boolean useNodeNameAsExternalAddress) {

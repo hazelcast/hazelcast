@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the current value.
  */
-@Generated("7cce2209f748d6705c966b6690967bb7")
+@Generated("7a9402b3d42fc4e5cc087338919528d6")
 public final class AtomicLongGetCodec {
     //hex: 0x090500
     public static final int REQUEST_MESSAGE_TYPE = 591104;

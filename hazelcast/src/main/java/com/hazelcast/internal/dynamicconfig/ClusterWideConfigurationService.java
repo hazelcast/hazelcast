@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
@@ -53,7 +53,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.version.Version;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -81,7 +80,7 @@ import static java.util.Collections.singleton;
 
 @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class ClusterWideConfigurationService implements
-        PreJoinAwareService,
+        PreJoinAwareService<DynamicConfigPreJoinOperation>,
         CoreService,
         ClusterVersionListener,
         ManagedService,
@@ -118,7 +117,7 @@ public class ClusterWideConfigurationService implements
     private final ConcurrentMap<String, ReliableTopicConfig> reliableTopicConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, CacheSimpleConfig> cacheSimpleConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, ExternalDataStoreConfig> externalDataStoreConfigs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, DataLinkConfig> dataLinkConfigs = new ConcurrentHashMap<>();
 
     private final ConfigPatternMatcher configPatternMatcher;
 
@@ -140,7 +139,7 @@ public class ClusterWideConfigurationService implements
             cacheSimpleConfigs,
             flakeIdGeneratorConfigs,
             pnCounterConfigs,
-            externalDataStoreConfigs,
+            dataLinkConfigs,
     };
 
     private volatile Version version;
@@ -160,7 +159,7 @@ public class ClusterWideConfigurationService implements
     }
 
     @Override
-    public Operation getPreJoinOperation() {
+    public DynamicConfigPreJoinOperation getPreJoinOperation() {
         IdentifiedDataSerializable[] allConfigurations = collectAllDynamicConfigs();
         if (noConfigurationExist(allConfigurations)) {
             // there is no dynamic configuration -> no need to send an empty operation
@@ -329,9 +328,9 @@ public class ClusterWideConfigurationService implements
         } else if (newConfig instanceof PNCounterConfig) {
             PNCounterConfig config = (PNCounterConfig) newConfig;
             currentConfig = pnCounterConfigs.putIfAbsent(config.getName(), config);
-        } else if (newConfig instanceof ExternalDataStoreConfig) {
-            ExternalDataStoreConfig config = (ExternalDataStoreConfig) newConfig;
-            currentConfig = externalDataStoreConfigs.putIfAbsent(config.getName(), config);
+        } else if (newConfig instanceof DataLinkConfig) {
+            DataLinkConfig config = (DataLinkConfig) newConfig;
+            currentConfig = dataLinkConfigs.putIfAbsent(config.getName(), config);
         } else {
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
         }
@@ -534,13 +533,13 @@ public class ClusterWideConfigurationService implements
     }
 
     @Override
-    public ExternalDataStoreConfig findExternalDataStoreConfig(String baseName) {
-        return lookupByPattern(configPatternMatcher, externalDataStoreConfigs, baseName);
+    public DataLinkConfig findDataLinkConfig(String baseName) {
+        return lookupByPattern(configPatternMatcher, dataLinkConfigs, baseName);
     }
 
     @Override
-    public Map<String, ExternalDataStoreConfig> getExternalDataStoreConfigs() {
-        return externalDataStoreConfigs;
+    public Map<String, DataLinkConfig> getDataLinkConfigs() {
+        return dataLinkConfigs;
     }
 
     @Override
@@ -611,7 +610,7 @@ public class ClusterWideConfigurationService implements
         configToVersion.put(FlakeIdGeneratorConfig.class, V4_0);
         configToVersion.put(PNCounterConfig.class, V4_0);
         configToVersion.put(MerkleTreeConfig.class, V4_0);
-        configToVersion.put(ExternalDataStoreConfig.class, V5_2);
+        configToVersion.put(DataLinkConfig.class, V5_2);
 
         return Collections.unmodifiableMap(configToVersion);
     }

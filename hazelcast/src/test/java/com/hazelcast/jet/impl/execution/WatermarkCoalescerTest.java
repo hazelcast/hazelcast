@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -186,6 +186,7 @@ public class WatermarkCoalescerTest {
     public void when_allDone_then_noMaxValueEmitted() {
         assertEquals(Long.MIN_VALUE, wc.queueDone(0));
         assertEquals(Long.MIN_VALUE, wc.queueDone(1));
+        assertFalse(wc.idleMessagePending());
     }
 
     @Test

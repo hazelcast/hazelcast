@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
-public enum ClearOpSteps implements Step<State> {
+public enum ClearOpSteps implements IMapOpStep {
 
     CLEAR_MEMORY() {
         @Override
@@ -69,7 +69,7 @@ public enum ClearOpSteps implements Step<State> {
 
     CLEAR_MAP_STORE() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isStoreStep() {
             return true;
         }
 
@@ -78,6 +78,7 @@ public enum ClearOpSteps implements Step<State> {
             DefaultRecordStore recordStore = ((DefaultRecordStore) state.getRecordStore());
             Collection<Data> keys = state.getKeys();
             recordStore.getMapDataStore().removeAll(keys);
+            recordStore.getMapDataStore().reset();
         }
 
         @Override

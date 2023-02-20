@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -31,7 +32,7 @@ import java.util.Set;
 /**
  * Propagates {@link PermissionConfig} changes to members.
  */
-public class UpdatePermissionConfigOperation extends AbstractManagementOperation {
+public class UpdatePermissionConfigOperation extends AbstractManagementOperation implements AllowedDuringPassiveState {
 
     private Set<PermissionConfig> permissionConfigs;
 

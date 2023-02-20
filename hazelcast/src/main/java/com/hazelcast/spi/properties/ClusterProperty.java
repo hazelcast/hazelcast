@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.properties;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
@@ -1790,6 +1791,29 @@ public final class ClusterProperty {
     @Beta
     public static final HazelcastProperty SQL_CUSTOM_TYPES_ENABLED = new HazelcastProperty(
             "hazelcast.sql.experimental.custom.types.enabled", false);
+
+    /**
+     * When {@code true}, enables monitoring of the runtime environment to detect the intent of shutdown
+     * and automate cluster state management decisions.
+     * Supported when persistence is enabled and Hazelcast is executed in a Kubernetes
+     * <a href="https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/">StatefulSet</a>.
+     * <p/>
+     * The default value is {@code true}.
+     *
+     * @since 5.2
+     */
+    public static final HazelcastProperty PERSISTENCE_AUTO_CLUSTER_STATE = new HazelcastProperty(
+            "hazelcast.persistence.auto.cluster.state", true);
+
+    /**
+     * Select which cluster state to use when dealing with missing members in a managed runtime environment.
+     * Used when {@link #PERSISTENCE_AUTO_CLUSTER_STATE} and persistence are both enabled.
+     * Valid values are {@code FROZEN} or {@code NO_MIGRATION}.
+     *
+     * @since 5.2
+     */
+    public static final HazelcastProperty PERSISTENCE_AUTO_CLUSTER_STATE_STRATEGY = new HazelcastProperty(
+            "hazelcast.persistence.auto.cluster.state.strategy", ClusterState.NO_MIGRATION);
 
     private ClusterProperty() {
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.client.config.ClientSqlResubmissionMode;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.sql.SqlTestSupport;
 
 import java.io.Serializable;
@@ -26,8 +27,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 public abstract class SqlResubmissionTestSupport extends SqlTestSupport {
-    protected static final int SLOW_ACCESS_TIME_MILLIS = 500;
-    protected static final String SLOW_MAP_NAME = randomName();
+    protected static final String FAILING_MAP_NAME = randomName();
     protected static final int COMMON_MAP_SIZE = 10_000;
     protected static final String COMMON_MAP_NAME = randomName();
 
@@ -59,15 +59,11 @@ public abstract class SqlResubmissionTestSupport extends SqlTestSupport {
         createMapping(instance, name, Integer.class, tClass);
     }
 
-    public static class SlowFieldAccessObject implements Serializable {
+    public static class FailingDuringFieldAccessObject implements Serializable {
         private int field = 0;
 
         public int getField() {
-            try {
-                Thread.sleep(SLOW_ACCESS_TIME_MILLIS);
-            } catch (InterruptedException e) {
-            }
-            return field;
+            throw new TopologyChangedException();
         }
 
         public void setField(int field) {

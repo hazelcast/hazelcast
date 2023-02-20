@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,8 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     private static HazelcastInstance client;
 
     protected static void initialize(int memberCount, @Nullable Config config) {
+        assertNoRunningInstances();
+
         assert factory == null : "already initialized";
         factory = new TestHazelcastFactory();
         instances = new HazelcastInstance[memberCount];
@@ -83,13 +85,13 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         client = factory.newHazelcastClient(clientConfig);
     }
 
-    protected void assertNoJobsLeftEventually(HazelcastInstance instance) {
+    protected void assertNoLightJobsLeftEventually(HazelcastInstance instance) {
         assertTrueEventually(() -> {
             List<Job> runningJobs = instance.getJet().getJobs().stream()
-                                            .filter(j -> !j.getFuture().isDone() && !j.getStatus().isTerminal())
-                                            .collect(toList());
+                    .filter(Job::isLightJob)
+                    .collect(toList());
             int size = runningJobs.size();
-            assertEquals("at this point no running jobs were expected, but got: " + runningJobs, 0, size);
+            assertEquals("at this point no running light jobs were expected, but got: " + runningJobs, 0, size);
         });
     }
 
@@ -117,7 +119,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         // If the client was created and used any proxy to a distributed object, we need to destroy that object through
         // client, so the proxy in client's internals was destroyed as well. Without going through client, if we use
         // the same distributed object in more than one test, we are not going to invoke InitializeDistributedObjectOperation
-        // one second and following tests.
+        // in all of them (just in the first one).
         Collection<DistributedObject> objects = client != null ? client.getDistributedObjects()
                 : instances()[0].getDistributedObjects();
         SUPPORT_LOGGER.info("Destroying " + objects.size()
@@ -129,6 +131,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         }
         for (HazelcastInstance instance : instances) {
             assertTrueEventually(() -> {
+                // Let's wait for all unprocessed operations (like destroying distributed object) to complete
                 assertEquals(0, getNodeEngineImpl(instance).getEventService().getEventQueueSize());
             });
         }

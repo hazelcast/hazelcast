@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,41 +37,69 @@ public class ArrayOfFixedSizeFieldsDTOSerializerWritingNullable implements Compa
 
     @Override
     public void write(@Nonnull CompactWriter out, @Nonnull ArrayOfFixedSizeFieldsDTO object) {
-        Byte[] bb = new Byte[object.b.length];
-        for (int k = 0; k < object.b.length; k++) {
-            bb[k] = object.b[k];
+        if (object.b == null) {
+            out.writeArrayOfNullableInt8("b", null);
+        } else {
+            Byte[] bb = new Byte[object.b.length];
+            for (int k = 0; k < object.b.length; k++) {
+                bb[k] = object.b[k];
+            }
+            out.writeArrayOfNullableInt8("b", bb);
         }
-        Boolean[] bools = new Boolean[object.bool.length];
-        for (int k = 0; k < object.bool.length; k++) {
-            bools[k] = object.bool[k];
+        if (object.bool == null) {
+            out.writeArrayOfNullableBoolean("bool", null);
+        } else {
+            Boolean[] bools = new Boolean[object.bool.length];
+            for (int k = 0; k < object.bool.length; k++) {
+                bools[k] = object.bool[k];
+            }
+            out.writeArrayOfNullableBoolean("bool", bools);
         }
-        Short[] ss = new Short[object.s.length];
-        for (int k = 0; k < object.s.length; k++) {
-            ss[k] = object.s[k];
+        if (object.s == null) {
+            out.writeArrayOfNullableInt16("s", null);
+        } else {
+            Short[] ss = new Short[object.s.length];
+            for (int k = 0; k < object.s.length; k++) {
+                ss[k] = object.s[k];
+            }
+            out.writeArrayOfNullableInt16("s", ss);
         }
-        Integer[] ii = new Integer[object.i.length];
-        for (int k = 0; k < object.i.length; k++) {
-            ii[k] = object.i[k];
+        if (object.i == null) {
+            out.writeArrayOfNullableInt32("i", null);
+        } else {
+            Integer[] ii = new Integer[object.i.length];
+            for (int k = 0; k < object.i.length; k++) {
+                ii[k] = object.i[k];
+            }
+            out.writeArrayOfNullableInt32("i", ii);
         }
-        Long[] ll = new Long[object.l.length];
-        for (int k = 0; k < object.l.length; k++) {
-            ll[k] = object.l[k];
+        if (object.l == null) {
+            out.writeArrayOfNullableInt64("l", null);
+        } else {
+            Long[] ll = new Long[object.l.length];
+            for (int k = 0; k < object.l.length; k++) {
+                ll[k] = object.l[k];
+            }
+            out.writeArrayOfNullableInt64("l", ll);
         }
-        Float[] ff = new Float[object.f.length];
-        for (int k = 0; k < object.f.length; k++) {
-            ff[k] = object.f[k];
+        if (object.f == null) {
+            out.writeArrayOfNullableFloat32("f", null);
+        } else {
+            Float[] ff = new Float[object.f.length];
+            for (int k = 0; k < object.f.length; k++) {
+                ff[k] = object.f[k];
+            }
+            out.writeArrayOfNullableFloat32("f", ff);
         }
-        Double[] dd = new Double[object.d.length];
-        for (int k = 0; k < object.d.length; k++) {
-            dd[k] = object.d[k];
+        if (object.d == null) {
+            out.writeArrayOfNullableFloat64("d", null);
+        } else {
+            Double[] dd = new Double[object.d.length];
+            for (int k = 0; k < object.d.length; k++) {
+                dd[k] = object.d[k];
+            }
+            out.writeArrayOfNullableFloat64("d", dd);
         }
-        out.writeArrayOfNullableInt8("b", bb);
-        out.writeArrayOfNullableBoolean("bool", bools);
-        out.writeArrayOfNullableInt16("s", ss);
-        out.writeArrayOfNullableInt32("i", ii);
-        out.writeArrayOfNullableInt64("l", ll);
-        out.writeArrayOfNullableFloat32("f", ff);
-        out.writeArrayOfNullableFloat64("d", dd);
     }
 
     @Nonnull

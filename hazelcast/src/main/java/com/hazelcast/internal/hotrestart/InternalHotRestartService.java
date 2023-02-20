@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package com.hazelcast.internal.hotrestart;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.HotRestartPersistenceConfig;
+import com.hazelcast.instance.impl.ClusterTopologyIntent;
 import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.cluster.Address;
@@ -47,6 +49,23 @@ public interface InternalHotRestartService {
      * Returns whether hot-restart is enabled or not.
      */
     boolean isEnabled();
+
+    /**
+     * If recovery is in progress and no other deferred cluster state was already set
+     * (with a previous call to {@code trySetDeferredClusterState}),
+     * stores the given {@code newClusterState} and applies it after recovery is complete,
+     * returning {@code true}. Otherwise does nothing and returns {@code false}.
+     *
+     * @param newClusterState
+     * @return {@code true} if recovery is in progress, indicating that the new cluster
+     * state will be applied once recovery is complete, otherwise {@code false}.
+     */
+    boolean trySetDeferredClusterState(ClusterState newClusterState);
+
+    /**
+     * @return {@code true} when recovery process is completed and all members reached final state, otherwise {@code false}.
+     */
+    boolean isStartCompleted();
 
     /**
      * Forces node to start by skipping hot-restart completely and removing all hot-restart data
@@ -141,4 +160,23 @@ public interface InternalHotRestartService {
      * @param postJoinOp
      */
     void deferPostJoinOps(OnJoinOp postJoinOp);
+
+    /**
+     * @return {@code true} if cluster metadata were found on disk
+     *         so recovery will proceed from disk, otherwise {@code false}.
+     */
+    boolean isClusterMetadataFoundOnDisk();
+
+    /**
+     * Invoked each time an enabled {@link com.hazelcast.instance.impl.ClusterTopologyIntentTracker}
+     * detects a change of cluster topology in the runtime environment. Only used when running in a
+     * managed context (Kubernetes).
+     */
+    void onClusterTopologyIntentChange();
+
+    /**
+     * Conveys information about the detected cluster topology intent on master member.
+     * @param clusterTopologyIntent the cluster topology intent, as detected by master member.
+     */
+    void setClusterTopologyIntentOnMaster(ClusterTopologyIntent clusterTopologyIntent);
 }

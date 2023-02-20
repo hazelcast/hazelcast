@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -150,8 +150,8 @@ public class BatchEventDataTest extends HazelcastTestSupport {
         assertEquals(batchEventData, batchEventData);
         assertEquals(batchEventData, batchEventDataSameAttribute);
 
-        assertNotEquals(batchEventData, null);
-        assertNotEquals(batchEventData, new Object());
+        assertNotEquals(null, batchEventData);
+        assertNotEquals(new Object(), batchEventData);
 
         assertEquals(batchEventData, batchEventDataOtherSource);
         assertEquals(batchEventData, batchEventDataOtherPartitionId);

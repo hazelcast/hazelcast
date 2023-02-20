@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,6 +111,52 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
             SUPPORT_LOGGER.info("Removing " + planCache.size() + " cached plans in SqlTestSupport.@After");
             planCache.clear();
         }
+    }
+
+    public static void setupCompactTypesForNestedQuery(HazelcastInstance instance) {
+        instance.getSql().execute("CREATE TYPE Office ("
+                + "id BIGINT, "
+                + "name VARCHAR "
+                + ") OPTIONS ('format'='compact', 'compactTypeName'='OfficeCompactType')");
+
+        instance.getSql().execute("CREATE TYPE Organization ("
+                + "id BIGINT, "
+                + "name VARCHAR, "
+                + "office Office"
+                + ") OPTIONS ('format'='compact', 'compactTypeName'='OrganizationCompactType')");
+
+        instance.getSql().execute(
+                "CREATE MAPPING test ("
+                        + "__key BIGINT,"
+                        + "id BIGINT, "
+                        + "name VARCHAR, "
+                        + "organization Organization"
+                        + ")"
+                        + "TYPE IMap "
+                        + "OPTIONS ("
+                        + "'keyFormat'='bigint',"
+                        + "'valueFormat'='compact',"
+                        + "'valueCompactTypeName'='UserCompactType'"
+                        + ")");
+    }
+
+    public static void setupPortableTypesForNestedQuery(HazelcastInstance instance) {
+        instance.getSql().execute("CREATE TYPE Office OPTIONS "
+                + "('format'='portable', 'portableFactoryId'='1', 'portableClassId'='3', 'portableClassVersion'='0')");
+        instance.getSql().execute("CREATE TYPE Organization OPTIONS "
+                + "('format'='portable', 'portableFactoryId'='1', 'portableClassId'='2', 'portableClassVersion'='0')");
+
+        instance.getSql().execute("CREATE MAPPING test ("
+                + "__key BIGINT, "
+                + "id BIGINT, "
+                + "name VARCHAR, "
+                + "organization Organization "
+                + ") TYPE IMap "
+                + "OPTIONS ("
+                + "'keyFormat'='bigint', "
+                + "'valueFormat'='portable', "
+                + "'valuePortableFactoryId'='1', "
+                + "'valuePortableClassId'='1')");
     }
 
     /**
@@ -282,6 +328,25 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      */
     public static void assertRowsAnyOrder(HazelcastInstance instance, String sql, Collection<Row> expectedRows) {
         assertRowsAnyOrder(instance, sql, emptyList(), expectedRows);
+    }
+
+    /**
+     * Execute a query and wait until it completes. Assert that the returned
+     * rows does not contain the expected rows, in any order.
+     *
+     * @param instance     Hazelcast Instance to be used
+     * @param sql          The query
+     * @param expectedRows Expected rows
+     */
+    public static void assertDoesNotContainRow(HazelcastInstance instance, String sql, Collection<Row> expectedRows) {
+        SqlStatement statement = new SqlStatement(sql);
+
+        SqlService sqlService = instance.getSql();
+        List<Row> actualRows = new ArrayList<>();
+        try (SqlResult result = sqlService.execute(statement)) {
+            result.iterator().forEachRemaining(row -> actualRows.add(new Row(row)));
+        }
+        assertThat(actualRows).doesNotContainAnyElementsOf(expectedRows);
     }
 
     /**
@@ -583,7 +648,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         return Accessors.getNodeEngineImpl(instance);
     }
 
-    public List<Row> rows(final int rowLength, final Object... values) {
+    public static List<Row> rows(final int rowLength, final Object... values) {
         if ((values.length % rowLength) != 0) {
             throw new HazelcastException("Number of row value args is not divisible by row length");
         }

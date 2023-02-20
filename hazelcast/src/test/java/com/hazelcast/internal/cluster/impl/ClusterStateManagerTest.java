@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.hotrestart.NoopInternalHotRestartService;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.LockGuard;
@@ -82,6 +83,7 @@ public class ClusterStateManagerTest {
         when(nodeExtension.isStartCompleted()).thenReturn(true);
         when(nodeExtension.getAuditlogService()).thenReturn(NoOpAuditlogService.INSTANCE);
         when(nodeExtension.isNodeVersionCompatibleWith(ArgumentMatchers.any(Version.class))).thenReturn(true);
+        when(nodeExtension.getInternalHotRestartService()).thenReturn(new NoopInternalHotRestartService());
 
         when(node.getPartitionService()).thenReturn(partitionService);
         when(node.getClusterService()).thenReturn(clusterService);

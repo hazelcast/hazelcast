@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.inject;
 
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.util.JavaVersion;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
@@ -30,6 +31,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
+import static com.hazelcast.internal.util.JavaVersion.JAVA_19;
 import static java.time.ZoneOffset.UTC;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -73,29 +75,51 @@ public class HazelcastJsonUpsertTargetTest {
         timestampInjector.set(LocalDateTime.of(2020, 9, 9, 12, 23, 34, 100_000_000));
         timestampTzInjector.set(OffsetDateTime.of(2020, 9, 9, 12, 23, 34, 200_000_000, UTC));
         Object hazelcastJson = target.conclude();
-
-        assertThat(hazelcastJson).isEqualTo(new HazelcastJsonValue("{"
-                + "\"null\":null"
-                + ",\"object\":{}"
-                + ",\"string\":\"string\""
-                + ",\"boolean\":true"
-                + ",\"byte\":127"
-                + ",\"short\":32767"
-                + ",\"int\":2147483647"
-                + ",\"long\":9223372036854775807"
-                + ",\"float\":1.23456794E9"
-                + ",\"double\":1.234512345678901E14"
-                + ",\"decimal\":\"9223372036854775.123\""
-                + ",\"time\":\"12:23:34\""
-                + ",\"date\":\"2020-09-09\""
-                + ",\"timestamp\":\"2020-09-09T12:23:34.100\""
-                + ",\"timestampTz\":\"2020-09-09T12:23:34.200Z\""
-                + "}"
-        ));
+        String expectedJson;
+        if (JavaVersion.isAtLeast(JAVA_19)) {
+            // old, old, old JDK bug fixed now https://bugs.openjdk.org/browse/JDK-4511638
+            expectedJson = "{"
+                    + "\"null\":null"
+                    + ",\"object\":{}"
+                    + ",\"string\":\"string\""
+                    + ",\"boolean\":true"
+                    + ",\"byte\":127"
+                    + ",\"short\":32767"
+                    + ",\"int\":2147483647"
+                    + ",\"long\":9223372036854775807"
+                    + ",\"float\":1.234568E9"
+                    + ",\"double\":1.234512345678901E14"
+                    + ",\"decimal\":\"9223372036854775.123\""
+                    + ",\"time\":\"12:23:34\""
+                    + ",\"date\":\"2020-09-09\""
+                    + ",\"timestamp\":\"2020-09-09T12:23:34.100\""
+                    + ",\"timestampTz\":\"2020-09-09T12:23:34.200Z\""
+                    + "}";
+        } else {
+            expectedJson = "{"
+                    + "\"null\":null"
+                    + ",\"object\":{}"
+                    + ",\"string\":\"string\""
+                    + ",\"boolean\":true"
+                    + ",\"byte\":127"
+                    + ",\"short\":32767"
+                    + ",\"int\":2147483647"
+                    + ",\"long\":9223372036854775807"
+                    + ",\"float\":1.23456794E9"
+                    + ",\"double\":1.234512345678901E14"
+                    + ",\"decimal\":\"9223372036854775.123\""
+                    + ",\"time\":\"12:23:34\""
+                    + ",\"date\":\"2020-09-09\""
+                    + ",\"timestamp\":\"2020-09-09T12:23:34.100\""
+                    + ",\"timestampTz\":\"2020-09-09T12:23:34.200Z\""
+                    + "}";
+        }
+        assertThat(hazelcastJson).isEqualTo(new HazelcastJsonValue(expectedJson));
     }
 
     @SuppressWarnings("unused")
     private Object[] values() {
+        String expectedFloat = JavaVersion.isAtLeast(JAVA_19) ? "1.234568E9" : "1.23456794E9";
         return new Object[]{
                 new Object[]{null, "null"},
                 new Object[]{new JsonObject(), "{}"},
@@ -105,7 +129,7 @@ public class HazelcastJsonUpsertTargetTest {
                 new Object[]{(short) 32767, "32767"},
                 new Object[]{2147483647, "2147483647"},
                 new Object[]{9223372036854775807L, "9223372036854775807"},
-                new Object[]{1234567890.1F, "1.23456794E9"},
+                new Object[]{1234567890.1F, expectedFloat},
                 new Object[]{123451234567890.1D, "1.234512345678901E14"},
                 new Object[]{new BigDecimal("9223372036854775.123"), "\"9223372036854775.123\""},
                 new Object[]{LocalTime.of(12, 23, 34), "\"12:23:34\""},

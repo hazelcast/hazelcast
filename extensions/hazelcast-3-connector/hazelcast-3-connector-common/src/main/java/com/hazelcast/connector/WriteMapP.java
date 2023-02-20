@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,7 +111,6 @@ final class WriteMapP<T, K, V> implements Processor {
         return toValueFn.apply(item);
     }
 
-
     @Override
     public boolean tryProcess() {
         checkFailure();
@@ -141,6 +140,11 @@ final class WriteMapP<T, K, V> implements Processor {
     @Override
     public boolean complete() {
         return ensureAllSuccessfullyWritten();
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
     }
 
     private void checkFailure() {

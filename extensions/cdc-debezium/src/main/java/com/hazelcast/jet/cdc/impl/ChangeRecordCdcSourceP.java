@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,21 +62,35 @@ public class ChangeRecordCdcSourceP extends CdcSourceP<ChangeRecord> {
         long sequenceValue = sequenceExtractor.sequence(record.sourceOffset());
         String keyJson = Values.convertToString(record.keySchema(), record.key());
         Struct value = (Struct) record.value();
+        Schema valueSchema = record.valueSchema();
         Struct source = (Struct) value.get("source");
 
-        Operation operation = Operation.get(value.getString("op"));
-        Schema valueSchema = record.valueSchema();
+        Operation operation = value.schema().field("op") != null
+                ?   Operation.get(value.getString("op"))
+                : Operation.UNSPECIFIED;
 
-        Object before = value.get("before");
-        Object after = value.get("after");
-        Supplier<String> oldValueJson = before == null
-                ? null
-                : () -> Values.convertToString(valueSchema.field("before").schema(), before);
-        Supplier<String> newValueJson = after == null
-                ? null
-                : () -> Values.convertToString(valueSchema.field("after").schema(), after);
+        long timestamp;
+        Supplier<String> oldValueJson;
+        Supplier<String> newValueJson;
+        if (operation == Operation.UNSPECIFIED) {
+            timestamp = ((Struct) value.get("source")).getInt64("ts_ms");
+            oldValueJson = () -> Values.convertToString(valueSchema, value);
+            newValueJson = () -> Values.convertToString(valueSchema, value);
+        } else {
+            Object before = valueSchema.field("before") != null ? value.get("before") : null;
+            Object after = valueSchema.field("after") != null ? value.get("after") : null;
+
+            timestamp = value.getInt64("ts_ms");
+            oldValueJson = before == null
+                    ? null
+                    : () -> Values.convertToString(valueSchema.field("before").schema(), before);
+            newValueJson = after == null
+                    ? null
+                    : () -> Values.convertToString(valueSchema.field("after").schema(), after);
+        }
+
         return new ChangeRecordImpl(
-                value.getInt64("ts_ms"),
+                timestamp,
                 sequenceSource,
                 sequenceValue,
                 operation,

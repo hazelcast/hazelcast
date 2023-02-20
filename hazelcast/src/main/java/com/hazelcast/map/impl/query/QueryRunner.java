@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,26 +122,26 @@ public class QueryRunner {
      */
     public Result runIndexOrPartitionScanQueryOnOwnedPartitions(Query query, boolean doPartitionScan) {
         int migrationStamp = getMigrationStamp();
-        PartitionIdSet initialPartitions = mapServiceContext.getOrInitCachedMemberPartitions();
+        PartitionIdSet ownedPartitions = mapServiceContext.getCachedOwnedPartitions();
         PartitionIdSet actualPartitions = query.getPartitionIdSet() != null
-                ? initialPartitions.intersectCopy(query.getPartitionIdSet())
-                : initialPartitions;
+                ? ownedPartitions.intersectCopy(query.getPartitionIdSet())
+                : ownedPartitions;
 
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
 
         // to optimize the query we need to get any index instance
         Indexes indexes = mapContainer.getIndexes();
         if (indexes == null) {
-            indexes = mapContainer.getIndexes(initialPartitions.iterator().next());
+            indexes = mapContainer.getIndexes(ownedPartitions.iterator().next());
         }
         // first we optimize the query
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), indexes);
 
         // then we try to run using an index, but if that doesn't work, we'll try a full table scan
         Iterable<QueryableEntry> entries = runUsingGlobalIndexSafely(predicate, mapContainer,
-                migrationStamp, initialPartitions.size());
+                migrationStamp, ownedPartitions.size());
 
-        if (entries != null && !initialPartitions.equals(actualPartitions)) {
+        if (entries != null && !ownedPartitions.equals(actualPartitions)) {
             assert indexes.isGlobal();
             // if the query runs on a subset of partitions, filter the results from a global index
             entries = IterableUtil.filter(entries,
@@ -188,28 +188,28 @@ public class QueryRunner {
      */
     public Result runIndexQueryOnOwnedPartitions(Query query) {
         int migrationStamp = getMigrationStamp();
-        PartitionIdSet initialPartitions = mapServiceContext.getOrInitCachedMemberPartitions();
+        PartitionIdSet ownedPartitions = mapServiceContext.getCachedOwnedPartitions();
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
 
         // to optimize the query we need to get any index instance
         Indexes indexes = mapContainer.getIndexes();
         if (indexes == null) {
-            indexes = mapContainer.getIndexes(initialPartitions.iterator().next());
+            indexes = mapContainer.getIndexes(ownedPartitions.iterator().next());
         }
         // first we optimize the query
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), indexes);
 
         // then we try to run using an index
         Iterable<QueryableEntry> entries = runUsingGlobalIndexSafely(predicate, mapContainer,
-                migrationStamp, initialPartitions.size());
+                migrationStamp, ownedPartitions.size());
 
         Result result;
         if (entries == null) {
             // failed with index query because of ongoing migrations
-            result = populateEmptyResult(query, initialPartitions);
+            result = populateEmptyResult(query, ownedPartitions);
         } else {
             // success
-            result = populateNonEmptyResult(query, entries, initialPartitions);
+            result = populateNonEmptyResult(query, entries, ownedPartitions);
         }
 
         return result;

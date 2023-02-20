@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.query.PagingPredicate;
@@ -91,6 +92,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -137,7 +139,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     protected Config getConfig() {
-        Config cfg = smallInstanceConfig();
+        Config cfg = smallInstanceConfigWithoutJetAndMetrics();
         cfg.getMapConfig("default")
                 .setStatisticsEnabled(statisticsEnabled)
                 .setPerEntryStatsEnabled(perEntryStatsEnabled);
@@ -248,11 +250,11 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Test
     public void testMapPutIfAbsent() {
         IMap<String, String> map = getInstance().getMap("testMapPutIfAbsent");
-        assertEquals(map.putIfAbsent("key1", "value1"), null);
-        assertEquals(map.putIfAbsent("key2", "value2"), null);
-        assertEquals(map.putIfAbsent("key1", "valueX"), "value1");
-        assertEquals(map.get("key1"), "value1");
-        assertEquals(map.size(), 2);
+        assertEquals(null, map.putIfAbsent("key1", "value1"));
+        assertEquals(null, map.putIfAbsent("key2", "value2"));
+        assertEquals("value1", map.putIfAbsent("key1", "valueX"));
+        assertEquals("value1", map.get("key1"));
+        assertEquals(2, map.size());
     }
 
     @Test
@@ -414,12 +416,12 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key1", "value1");
         map.put("key2", "value2");
         map.put("key3", "value3");
-        assertEquals(map.remove("key1"), "value1");
-        assertEquals(map.size(), 2);
-        assertEquals(map.remove("key1"), null);
-        assertEquals(map.size(), 2);
-        assertEquals(map.remove("key3"), "value3");
-        assertEquals(map.size(), 1);
+        assertEquals("value1", map.remove("key1"));
+        assertEquals(2, map.size());
+        assertEquals(null, map.remove("key1"));
+        assertEquals(2, map.size());
+        assertEquals("value3", map.remove("key3"));
+        assertEquals(1, map.size());
     }
 
     @Test
@@ -429,11 +431,11 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key2", "value2");
         map.put("key3", "value3");
         map.delete("key1");
-        assertEquals(map.size(), 2);
+        assertEquals(2, map.size());
         map.delete("key1");
-        assertEquals(map.size(), 2);
+        assertEquals(2, map.size());
         map.delete("key3");
-        assertEquals(map.size(), 1);
+        assertEquals(1, map.size());
     }
 
     @Test
@@ -443,10 +445,10 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key2", "value2");
         map.put("key3", "value3");
         map.clear();
-        assertEquals(map.size(), 0);
-        assertEquals(map.get("key1"), null);
-        assertEquals(map.get("key2"), null);
-        assertEquals(map.get("key3"), null);
+        assertEquals(0, map.size());
+        assertEquals(null, map.get("key1"));
+        assertEquals(null, map.get("key2"));
+        assertEquals(null, map.get("key3"));
     }
 
     @Test
@@ -455,7 +457,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         HazelcastInstance hz = getInstance();
         IMap<String, String> map = hz.getMap(mapName);
         map.clear();
-        assertEquals(map.size(), 0);
+        assertEquals(0, map.size());
 
         // TODO: This test is going to be enabled as soon as the size has been fixed (since it also triggers unwanted RecordStore
         // creation). We need to make sure there are no unwanted RecordStores (consumes memory) being created because of the
@@ -472,12 +474,12 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key1", "value1");
         map.put("key2", "value2");
         map.put("key3", "value3");
-        assertEquals(map.remove("key1"), "value1");
-        assertEquals(map.size(), 2);
-        assertEquals(map.remove("key1"), null);
-        assertEquals(map.size(), 2);
-        assertEquals(map.remove("key3"), "value3");
-        assertEquals(map.size(), 1);
+        assertEquals("value1", map.remove("key1"));
+        assertEquals(2, map.size());
+        assertEquals(null, map.remove("key1"));
+        assertEquals(2, map.size());
+        assertEquals("value3", map.remove("key3"));
+        assertEquals(1, map.size());
     }
 
     @Test
@@ -535,27 +537,27 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key2", "value2");
         map.put("key3", "value3");
         assertFalse(map.remove("key1", "nan"));
-        assertEquals(map.size(), 3);
+        assertEquals(3, map.size());
         assertTrue(map.remove("key1", "value1"));
-        assertEquals(map.size(), 2);
+        assertEquals(2, map.size());
         assertTrue(map.remove("key2", "value2"));
         assertTrue(map.remove("key3", "value3"));
-        assertEquals(map.size(), 0);
+        assertEquals(0, map.size());
     }
 
     @Test
     public void testMapSet() {
         IMap<String, String> map = getInstance().getMap("testMapSet");
         map.put("key1", "value1");
-        assertEquals(map.get("key1"), "value1");
-        assertEquals(map.size(), 1);
+        assertEquals("value1", map.get("key1"));
+        assertEquals(1, map.size());
         map.set("key1", "valueX", 0, TimeUnit.MILLISECONDS);
-        assertEquals(map.size(), 1);
-        assertEquals(map.get("key1"), "valueX");
+        assertEquals(1, map.size());
+        assertEquals("valueX", map.get("key1"));
         map.set("key2", "value2", 0, TimeUnit.MILLISECONDS);
-        assertEquals(map.size(), 2);
-        assertEquals(map.get("key1"), "valueX");
-        assertEquals(map.get("key2"), "value2");
+        assertEquals(2, map.size());
+        assertEquals("valueX", map.get("key1"));
+        assertEquals("value2", map.get("key2"));
     }
 
     @Test
@@ -564,12 +566,12 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key1", "value1");
         map.put("key2", "value2");
         map.put("key3", "value3");
-        assertEquals(map.containsKey("key1"), true);
-        assertEquals(map.containsKey("key5"), false);
+        assertEquals(true, map.containsKey("key1"));
+        assertEquals(false, map.containsKey("key5"));
         map.remove("key1");
-        assertEquals(map.containsKey("key1"), false);
-        assertEquals(map.containsKey("key2"), true);
-        assertEquals(map.containsKey("key5"), false);
+        assertEquals(false, map.containsKey("key1"));
+        assertEquals(true, map.containsKey("key2"));
+        assertEquals(false, map.containsKey("key5"));
     }
 
     @Test
@@ -599,12 +601,12 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Test
     public void testMapSize() {
         IMap<Integer, Integer> map = getInstance().getMap("testMapSize");
-        assertEquals(map.size(), 0);
+        assertEquals(0, map.size());
         map.put(1, 1);
-        assertEquals(map.size(), 1);
+        assertEquals(1, map.size());
         map.put(2, 2);
         map.put(3, 3);
-        assertEquals(map.size(), 3);
+        assertEquals(3, map.size());
     }
 
     @Test
@@ -624,12 +626,12 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put(1, 1);
         assertFalse(map.replace(1, 2, 3));
         assertTrue(map.replace(1, 1, 2));
-        assertEquals(map.get(1).intValue(), 2);
+        assertEquals(2, map.get(1).intValue());
         map.put(2, 2);
         assertTrue(map.replace(2, 2, 3));
-        assertEquals(map.get(2).intValue(), 3);
+        assertEquals(3, map.get(2).intValue());
         assertTrue(map.replace(2, 3, 4));
-        assertEquals(map.get(2).intValue(), 4);
+        assertEquals(4, map.get(2).intValue());
     }
 
     @Test
@@ -876,6 +878,56 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testEntryViewLastUpdateTimeSet_whenEntryIsExpirable() {
+        // statisticsEnabled shouldn't change anything, no need to test same scenario twice
+        assumeThat(statisticsEnabled, is(false));
+
+        HazelcastInstance instance = getInstance();
+        IMap<Integer, Integer> map = instance.getMap("testEntryViewLastUpdateTimeSet_whenEntryIsExpirable");
+
+        map.put(1, 1, 10_000, MILLISECONDS);
+        EntryView<Integer, Integer> entryView1 = map.getEntryView(1);
+
+        assertNotEquals(Record.UNSET, entryView1.getLastUpdateTime());
+    }
+
+    @Test
+    public void testEntryViewLastUpdateTimeSet_whenEntryIsNotExpirable_butPerEntryStatsEnabled() {
+        // statisticsEnabled shouldn't change anything, no need to test same scenario twice
+        assumeThat(statisticsEnabled, is(false));
+
+        // test condition
+        assumeThat(perEntryStatsEnabled, is(true));
+
+        HazelcastInstance instance = getInstance();
+        IMap<Integer, Integer> map = instance.getMap(
+                "testEntryViewLastUpdateTimeSet_whenEntryIsNotExpirable_butPerEntryStatsEnabled");
+
+        map.put(1, 1, 0, MILLISECONDS);
+        EntryView<Integer, Integer> entryView1 = map.getEntryView(1);
+
+        assertNotEquals(Record.UNSET, entryView1.getLastUpdateTime());
+    }
+
+    @Test
+    public void testEntryViewLastUpdateTimeIsNotSet_whenEntryIsNotExpirable_andPerEntryStatsDisabled() {
+        // statisticsEnabled shouldn't change anything, no need to test same scenario twice
+        assumeThat(statisticsEnabled, is(false));
+
+        // test condition
+        assumeThat(perEntryStatsEnabled, is(false));
+
+        HazelcastInstance instance = getInstance();
+        IMap<Integer, Integer> map = instance.getMap(
+                "testEntryViewLastUpdateTimeIsNotSet_whenEntryIsNotExpirable_andPerEntryStatsDisabled");
+
+        map.put(1, 1, 0, MILLISECONDS);
+        EntryView<Integer, Integer> entryView1 = map.getEntryView(1);
+
+        assertEquals(Record.UNSET, entryView1.getLastUpdateTime());
+    }
+
+    @Test
     public void testTryPut_whenKeyNotLocked() {
         IMap<Object, Object> map = getInstance().getMap(randomMapName());
         String key = "key";
@@ -1021,9 +1073,9 @@ public class BasicMapTest extends HazelcastTestSupport {
         set.add(1);
         set.add(3);
         Map m2 = map.getAll(set);
-        assertEquals(m2.size(), 2);
-        assertEquals(m2.get(1), 1);
-        assertEquals(m2.get(3), 3);
+        assertEquals(2, m2.size());
+        assertEquals(1, m2.get(1));
+        assertEquals(3, m2.get(3));
     }
 
     @Test
@@ -1094,7 +1146,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         }
         CompletableFuture<Void> future = map.putAllAsync(mm).toCompletableFuture();
         assertTrueEventually(() -> assertTrue(future.isDone()));
-        assertEquals(map.size(), size);
+        assertEquals(size, map.size());
         for (int i = 0; i < size; i++) {
             assertEquals(i, map.get(i).intValue());
         }
@@ -1206,13 +1258,13 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals(addedKey[0], "key");
-                assertEquals(addedValue[0], "value");
-                assertEquals(updatedKey[0], "key");
-                assertEquals(oldValue[0], "value");
-                assertEquals(newValue[0], "value2");
-                assertEquals(removedKey[0], "key");
-                assertEquals(removedValue[0], "value2");
+                assertEquals("key", addedKey[0]);
+                assertEquals("value", addedValue[0]);
+                assertEquals("key", updatedKey[0]);
+                assertEquals("value", oldValue[0]);
+                assertEquals("value2", newValue[0]);
+                assertEquals("key", removedKey[0]);
+                assertEquals("value2", removedValue[0]);
             }
         });
     }
@@ -1358,13 +1410,13 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.remove("keyz");
 
         assertTrueEventually(() -> {
-            assertEquals(addedKey[0], "key");
-            assertEquals(addedValue[0], "value");
-            assertEquals(updatedKey[0], "key");
-            assertEquals(oldValue[0], "value");
-            assertEquals(newValue[0], "value2");
-            assertEquals(removedKey[0], "key");
-            assertEquals(removedValue[0], "value2");
+            assertEquals("key", addedKey[0]);
+            assertEquals("value", addedValue[0]);
+            assertEquals("key", updatedKey[0]);
+            assertEquals("value", oldValue[0]);
+            assertEquals("value2", newValue[0]);
+            assertEquals("key", removedKey[0]);
+            assertEquals("value2", removedValue[0]);
         });
     }
 
@@ -1419,13 +1471,13 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.remove("key");
 
         assertTrueEventually(() -> {
-            assertEquals(addedKey[0], "key");
-            assertEquals(addedValue[0], null);
-            assertEquals(updatedKey[0], "key");
-            assertEquals(oldValue[0], null);
-            assertEquals(newValue[0], null);
-            assertEquals(removedKey[0], "key");
-            assertEquals(removedValue[0], null);
+            assertEquals("key", addedKey[0]);
+            assertEquals(null, addedValue[0]);
+            assertEquals("key", updatedKey[0]);
+            assertEquals(null, oldValue[0]);
+            assertEquals(null, newValue[0]);
+            assertEquals("key", removedKey[0]);
+            assertEquals(null, removedValue[0]);
         });
     }
 
@@ -1513,7 +1565,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put(1, 1);
         SampleEntryProcessor<Integer> entryProcessor = new SampleEntryProcessor<>();
         map.executeOnKey(1, entryProcessor);
-        assertEquals(map.get(1), (Object) 2);
+        assertEquals((Object) 2, map.get(1));
     }
 
     @Test
@@ -2050,8 +2102,8 @@ public class BasicMapTest extends HazelcastTestSupport {
         testMap.put("k1", 1);
         testMap.put("k2", 2);
         testMap.replaceAll((k, v) -> v * 10);
-        assertEquals((int) testMap.get("k1"), 10);
-        assertEquals((int) testMap.get("k2"), 20);
+        assertEquals(10, (int) testMap.get("k1"));
+        assertEquals(20, (int) testMap.get("k2"));
     }
 
     @Test
@@ -2060,8 +2112,8 @@ public class BasicMapTest extends HazelcastTestSupport {
         testMap.put("k1", "v1");
         testMap.put("k2", "v2");
         testMap.replaceAll(new StaticSerializableBiFunction("v_new"));
-        assertEquals(testMap.get("k1"), "v_new");
-        assertEquals(testMap.get("k2"), "v_new");
+        assertEquals("v_new", testMap.get("k1"));
+        assertEquals("v_new", testMap.get("k2"));
     }
 
 }

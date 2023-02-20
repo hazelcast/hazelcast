@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,33 +32,68 @@ public class ArrayOfFixedSizeFieldsDTOSerializerReadingNullable implements Compa
         Long[] l = reader.readArrayOfNullableInt64("l");
         Float[] f = reader.readArrayOfNullableFloat32("f");
         Double[] d = reader.readArrayOfNullableFloat64("d");
-        byte[] pBytes = new byte[b.length];
-        for (int k = 0; k < b.length; k++) {
-            pBytes[k] = b[k];
+        byte[] pBytes;
+        if (b == null) {
+            pBytes = null;
+        } else {
+            pBytes = new byte[b.length];
+            for (int k = 0; k < b.length; k++) {
+                pBytes[k] = b[k];
+            }
         }
-        boolean[] pBools = new boolean[bool.length];
-        for (int k = 0; k < bool.length; k++) {
-            pBools[k] = bool[k];
+        boolean[] pBools;
+        if (bool == null) {
+            pBools = null;
+        } else {
+            pBools = new boolean[bool.length];
+            for (int k = 0; k < bool.length; k++) {
+                pBools[k] = bool[k];
+            }
         }
-        short[] pShorts = new short[s.length];
-        for (int k = 0; k < s.length; k++) {
-            pShorts[k] = s[k];
+        short[] pShorts;
+        if (s == null) {
+            pShorts = null;
+        } else {
+            pShorts = new short[s.length];
+            for (int k = 0; k < s.length; k++) {
+                pShorts[k] = s[k];
+            }
         }
-        int[] pInts = new int[i.length];
-        for (int k = 0; k < i.length; k++) {
-            pInts[k] = i[k];
+        int[] pInts;
+        if (i == null) {
+            pInts = null;
+        } else {
+            pInts = new int[i.length];
+            for (int k = 0; k < i.length; k++) {
+                pInts[k] = i[k];
+            }
         }
-        long[] pLongs = new long[l.length];
-        for (int k = 0; k < l.length; k++) {
-            pLongs[k] = l[k];
+        long[] pLongs;
+        if (l == null) {
+            pLongs = null;
+        } else {
+            pLongs = new long[l.length];
+            for (int k = 0; k < l.length; k++) {
+                pLongs[k] = l[k];
+            }
         }
-        float[] pFloats = new float[f.length];
-        for (int k = 0; k < f.length; k++) {
-            pFloats[k] = f[k];
+        float[] pFloats;
+        if (f == null) {
+            pFloats = null;
+        } else {
+            pFloats = new float[f.length];
+            for (int k = 0; k < f.length; k++) {
+                pFloats[k] = f[k];
+            }
         }
-        double[] pDoubles = new double[d.length];
-        for (int k = 0; k < d.length; k++) {
-            pDoubles[k] = d[k];
+        double[] pDoubles;
+        if (d == null) {
+            pDoubles = null;
+        } else {
+            pDoubles = new double[d.length];
+            for (int k = 0; k < d.length; k++) {
+                pDoubles[k] = d[k];
+            }
         }
         return new ArrayOfFixedSizeFieldsDTO(pBytes, pBools, pShorts, pInts, pLongs, pFloats, pDoubles);
     }

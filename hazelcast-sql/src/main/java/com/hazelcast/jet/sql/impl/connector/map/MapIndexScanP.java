@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -383,7 +383,7 @@ final class MapIndexScanP extends AbstractProcessor {
                     entry.getKeyIfPresent(), entry.getKeyDataIfPresent(),
                     entry.getValueIfPresent(), entry.getValueDataIfPresent()
             );
-            return ExpressionUtil.evaluate(metadata.getRemainingFilter(), metadata.getProjection(), row, evalContext);
+            return ExpressionUtil.projection(metadata.getRemainingFilter(), metadata.getProjection(), row, evalContext);
         }
 
         private void remove() {

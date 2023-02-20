@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,5 +87,18 @@ public class KeyedWatermarkCoalescerTest extends JetTestSupport {
         kwc.observeWm(0, wm(42));
         assertEquals(emptyList(), kwc.observeWm(0, IDLE_MESSAGE));
         assertEquals(asList(wm(42), IDLE_MESSAGE), kwc.observeWm(1, IDLE_MESSAGE));
+    }
+
+    @Test
+    public void test_oneQueueDoneOtherIdle_then_allIdle() {
+        assertEquals(emptyList(), kwc.queueDone(0));
+        assertEquals(singletonList(IDLE_MESSAGE), kwc.observeWm(1, IDLE_MESSAGE));
+    }
+
+    @Test
+    public void test_q1IdleThenActiveThenQ2Idle_then_notAllIdle() {
+        assertEquals(emptyList(), kwc.observeWm(0, IDLE_MESSAGE));
+        kwc.observeEvent(0);
+        assertEquals(emptyList(), kwc.observeWm(1, IDLE_MESSAGE));
     }
 }
