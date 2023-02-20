@@ -21,7 +21,7 @@ import java.lang.reflect.Method;
 import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
 
-public class MainMethodFinder {
+class MainMethodFinder {
 
     private String errorMessage;
 
@@ -51,7 +51,6 @@ public class MainMethodFinder {
 
     void getMainMethodOfClass(Class<?> clazz) {
         try {
-            // If main method does not exist, throws NoSuchMethodException
             mainMethod = clazz.getDeclaredMethod("main", String[].class);
 
             if (!isPublicAndStatic()) {
