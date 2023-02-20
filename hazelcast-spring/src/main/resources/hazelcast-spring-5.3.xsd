@@ -1698,7 +1698,7 @@
                     <xs:element name="instance-tracking" type="instance-tracking" minOccurs="0"/>
                     <xs:element name="native-memory" type="native-memory" minOccurs="0"/>
                     <xs:element name="sql" type="clientSql" minOccurs="0"/>
-                    <xs:element name="alto" type="alto" minOccurs="0"/>
+                    <xs:element name="alto" type="alto-client" minOccurs="0"/>
                 </xs:choice>
             </xs:extension>
         </xs:complexContent>
@@ -6201,7 +6201,7 @@
         <xs:attribute name="factory-class-name" type="xs:string"/>
     </xs:complexType>
 
-    <xs:complexType name="alto">
+    <xs:complexType name="alto-client">
         <xs:annotation>
             <xs:documentation>
                 Configures the client for Alto, which is the next generation Hazelcast that
