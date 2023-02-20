@@ -116,10 +116,6 @@ public class TpcServerBootstrap {
     }
 
     private TpcEngine newTpcEngine() {
-        if (!enabled) {
-            return null;
-        }
-
         Configuration configuration = new Configuration();
         NioReactorBuilder reactorBuilder = new NioReactorBuilder();
         reactorBuilder.setThreadFactory(new ThreadFactory() {
