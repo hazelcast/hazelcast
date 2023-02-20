@@ -474,7 +474,12 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
     }
 
     private void dropMapping(String mappingName) {
-        sql.execute("DROP MAPPING IF EXISTS \"" + mappingName + "\"").close();
+        logger.info("Dropping mapping " + mappingName);
+        try {
+            sql.execute("DROP MAPPING IF EXISTS \"" + mappingName + "\"").close();
+        } catch (Exception e) {
+            logger.warning("Failed to drop mapping " + mappingName, e);
+        }
     }
 
     /**

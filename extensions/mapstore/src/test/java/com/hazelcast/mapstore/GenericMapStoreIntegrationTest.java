@@ -31,6 +31,7 @@ import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.test.ExceptionRecorder;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import org.example.Person;
@@ -43,6 +44,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 
 import static com.hazelcast.mapstore.GenericMapStore.DATA_LINK_REF_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.TYPE_NAME_PROPERTY;
@@ -337,6 +339,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         HazelcastInstance hz3 = factory().newHazelcastInstance(memberConfig);
         assertClusterSizeEventually(3, hz3);
 
+        ExceptionRecorder recorder = new ExceptionRecorder(hz3, Level.WARNING);
         // fill the map with some values so each member gets some items
         for (int i = 1; i < 1000; i++) {
             map.put(i, new Person(i, "name-" + i));
@@ -352,5 +355,9 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         Person p = map.get(1000);
         assertThat(p.getId()).isEqualTo(1000);
         assertThat(p.getName()).isEqualTo("name-1000");
+
+        for (Throwable throwable : recorder.exceptionsLogged()) {
+            assertThat(throwable).hasMessageNotContaining("is not active!");
+        }
     }
 }
