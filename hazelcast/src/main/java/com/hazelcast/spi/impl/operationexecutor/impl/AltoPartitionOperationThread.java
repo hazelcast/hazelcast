@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 
 
 import com.hazelcast.instance.impl.NodeExtension;
-import com.hazelcast.internal.tpc.CrappyThread;
+import com.hazelcast.internal.tpc.SuppliedThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 
@@ -34,7 +34,7 @@ import java.util.concurrent.CompletableFuture;
  * the thread blocks on the OperationQueue with a take. With the alto version, it will only poll
  * and block on the Reactor (which in Nio blocks on the selector.select).
  */
-public class AltoPartitionOperationThread extends PartitionOperationThread implements CrappyThread {
+public class AltoPartitionOperationThread extends PartitionOperationThread implements SuppliedThread {
 
     private final CompletableFuture<Runnable> eventloopFuture = new CompletableFuture<>();
 

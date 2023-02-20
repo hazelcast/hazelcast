@@ -87,7 +87,7 @@ public abstract class Reactor implements Executor {
         CompletableFuture<Eventloop> eventloopFuture = new CompletableFuture<>();
         if (builder.threadSupplier != null) {
             this.eventloopThread = builder.threadSupplier.get();
-            CrappyThread crappyThread = (CrappyThread) this.eventloopThread;
+            SuppliedThread crappyThread = (SuppliedThread) this.eventloopThread;
             crappyThread.setEventloopTask(new StartEventloopTask(eventloopFuture, builder));
         } else {
             this.eventloopThread = builder.threadFactory.newThread(new StartEventloopTask(eventloopFuture, builder));
