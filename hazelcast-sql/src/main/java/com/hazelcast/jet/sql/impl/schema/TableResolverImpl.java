@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,15 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingColumnsTable;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingsTable;
 import com.hazelcast.jet.sql.impl.connector.infoschema.TablesTable;
+import com.hazelcast.jet.sql.impl.connector.infoschema.UDTAttributesTable;
+import com.hazelcast.jet.sql.impl.connector.infoschema.UserDefinedTypesTable;
 import com.hazelcast.jet.sql.impl.connector.infoschema.ViewsTable;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -31,6 +35,7 @@ import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
+import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 
 import javax.annotation.Nonnull;
@@ -40,7 +45,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static java.util.Arrays.asList;
@@ -59,10 +63,27 @@ public class TableResolverImpl implements TableResolver {
             asList(CATALOG, SCHEMA_NAME_PUBLIC)
     );
 
+    private static final List<TriFunction<List<Mapping>, List<View>, List<Type>, Table>> ADDITIONAL_TABLE_PRODUCERS = asList(
+            (m, v, t) -> new TablesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m, v),
+            (m, v, t) -> new MappingsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m),
+            (m, v, t) -> new MappingColumnsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m, v),
+            (m, v, t) -> new ViewsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, v),
+            (m, v, t) -> new UserDefinedTypesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, t),
+            (m, v, t) -> new UDTAttributesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, t)
+    );
+
     private final NodeEngine nodeEngine;
     private final TablesStorage tableStorage;
     private final SqlConnectorCache connectorCache;
     private final List<TableListener> listeners;
+
+    // These fields should normally be volatile because we're accessing them from multiple threads. But we
+    // don't care if some thread doesn't see a newer value written by another thread. Each thread will write
+    // the same value (we assume that the number of mappings and views doesn't change much), so we
+    // shave a tiny bit of performance from not synchronizing :)
+    private int lastViewsSize;
+    private int lastMappingsSize;
+    private int lastTypesSize;
 
     public TableResolverImpl(
             NodeEngine nodeEngine,
@@ -77,19 +98,23 @@ public class TableResolverImpl implements TableResolver {
         // because listeners are invoked asynchronously from the calling thread,
         // local changes are handled in createMapping() & removeMapping(), thus
         // we skip events originating from local member to avoid double processing
-        this.tableStorage.registerListener(new TablesStorage.EntryListenerAdapter() {
-            @Override
-            public void entryUpdated(EntryEvent<String, Object> event) {
-                if (!event.getMember().localMember()) {
-                    listeners.forEach(TableListener::onTableChanged);
-                }
-            }
+        nodeEngine.getHazelcastInstance().getLifecycleService().addLifecycleListener(event -> {
+            if (event.getState() == LifecycleEvent.LifecycleState.STARTED) {
+                this.tableStorage.initializeWithListener(new TablesStorage.EntryListenerAdapter() {
+                    @Override
+                    public void entryUpdated(EntryEvent<String, Object> event) {
+                        if (!event.getMember().localMember()) {
+                            listeners.forEach(TableListener::onTableChanged);
+                        }
+                    }
 
-            @Override
-            public void entryRemoved(EntryEvent<String, Object> event) {
-                if (!event.getMember().localMember()) {
-                    listeners.forEach(TableListener::onTableChanged);
-                }
+                    @Override
+                    public void entryRemoved(EntryEvent<String, Object> event) {
+                        if (!event.getMember().localMember()) {
+                            listeners.forEach(TableListener::onTableChanged);
+                        }
+                    }
+                });
             }
         });
     }
@@ -115,7 +140,12 @@ public class TableResolverImpl implements TableResolver {
         Map<String, String> options = mapping.options();
 
         SqlConnector connector = connectorCache.forType(type);
-        List<MappingField> resolvedFields = connector.resolveAndValidateFields(nodeEngine, options, mapping.fields());
+        List<MappingField> resolvedFields = connector.resolveAndValidateFields(
+                nodeEngine,
+                options,
+                mapping.fields(),
+                mapping.externalName()
+        );
         return new Mapping(
                 mapping.name(),
                 mapping.externalName(),
@@ -151,10 +181,6 @@ public class TableResolverImpl implements TableResolver {
         }
     }
 
-    public View getView(String name) {
-        return tableStorage.getView(name);
-    }
-
     public void removeView(String name, boolean ifExists) {
         if (tableStorage.removeView(name) == null && !ifExists) {
             throw QueryException.error("View does not exist: " + name);
@@ -164,6 +190,34 @@ public class TableResolverImpl implements TableResolver {
     @Nonnull
     public Collection<String> getViewNames() {
         return tableStorage.viewNames();
+    }
+
+    // endregion
+
+    // region type
+
+    public Collection<String> getTypeNames() {
+        return tableStorage.typeNames();
+    }
+
+    public Collection<Type> getTypes() {
+        return tableStorage.getAllTypes();
+    }
+
+    public void createType(Type type, boolean replace, boolean ifNotExists) {
+        if (ifNotExists) {
+            tableStorage.putIfAbsent(type.getName(), type);
+        } else if (replace) {
+            tableStorage.put(type.getName(), type);
+        } else if (!tableStorage.putIfAbsent(type.getName(), type)) {
+            throw QueryException.error("Type already exists: " + type.getName());
+        }
+    }
+
+    public void removeType(String name, boolean ifExists) {
+        if (tableStorage.removeType(name) == null && !ifExists) {
+            throw QueryException.error("Type does not exist: " + name);
+        }
     }
 
     // endregion
@@ -178,29 +232,38 @@ public class TableResolverImpl implements TableResolver {
     @Override
     public List<Table> getTables() {
         Collection<Object> objects = tableStorage.allObjects();
-        List<Table> tables = new ArrayList<>(objects.size() + 3);
+        List<Table> tables = new ArrayList<>(objects.size() + ADDITIONAL_TABLE_PRODUCERS.size());
+
+        int lastMappingsSize = this.lastMappingsSize;
+        int lastViewsSize = this.lastViewsSize;
+        int lastTypesSize = this.lastTypesSize;
+
+        // Trying to avoid list growing.
+        List<Mapping> mappings = lastMappingsSize == 0 ? new ArrayList<>() : new ArrayList<>(lastMappingsSize);
+        List<View> views = lastViewsSize == 0 ? new ArrayList<>() : new ArrayList<>(lastViewsSize);
+        List<Type> types = lastTypesSize == 0 ? new ArrayList<>() : new ArrayList<>(lastTypesSize);
+
         for (Object o : objects) {
             if (o instanceof Mapping) {
                 tables.add(toTable((Mapping) o));
+                mappings.add((Mapping) o);
             } else if (o instanceof View) {
                 tables.add(toTable((View) o));
+                views.add((View) o);
+            } else if (o instanceof Type) {
+                types.add((Type) o);
             } else {
                 throw new RuntimeException("Unexpected: " + o);
             }
         }
 
-        Collection<Mapping> mappings = objects.stream()
-                .filter(o -> o instanceof Mapping)
-                .map(m -> (Mapping) m)
-                .collect(Collectors.toList());
-        Collection<View> views = objects.stream()
-                .filter(o -> o instanceof View)
-                .map(v -> (View) v)
-                .collect(Collectors.toList());
-        tables.add(new TablesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings, views));
-        tables.add(new MappingsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings));
-        tables.add(new MappingColumnsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings, views));
-        tables.add(new ViewsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, views));
+        ADDITIONAL_TABLE_PRODUCERS.forEach(
+                producer -> tables.add(producer.apply(mappings, views, types)));
+
+        this.lastViewsSize = views.size();
+        this.lastMappingsSize = mappings.size();
+        this.lastTypesSize = types.size();
+
         return tables;
     }
 

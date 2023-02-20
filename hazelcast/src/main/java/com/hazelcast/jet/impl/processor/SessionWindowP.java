@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
+import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -68,8 +69,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
- * Session window processor. See {@link
- *      com.hazelcast.jet.core.processor.Processors#aggregateToSessionWindowP
+ * Session window processor. See {@link Processors#aggregateToSessionWindowP
  * Processors.aggregateToSessionWindowP()} for documentation.
  *
  * @param <K> type of the extracted grouping key
@@ -98,6 +98,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     @Nonnull
     private final FlatMapper<Watermark, Object> closedWindowFlatmapper;
     private ProcessingGuarantee processingGuarantee;
+    private final byte windowWatermarkKey;
 
     @Probe(name = "lateEventsDropped")
     private final Counter lateEventsDropped = SwCounter.newSwCounter();
@@ -128,7 +129,8 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
             @Nonnull List<? extends ToLongFunction<?>> timestampFns,
             @Nonnull List<? extends Function<?, ? extends K>> keyFns,
             @Nonnull AggregateOperation<A, ? extends R> aggrOp,
-            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
+            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn,
+            byte windowWatermarkKey
     ) {
         checkTrue(keyFns.size() == aggrOp.arity(), keyFns.size() + " key functions " +
                 "provided for " + aggrOp.arity() + "-arity aggregate operation");
@@ -140,6 +142,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
         this.mapToOutputFn = mapToOutputFn;
         this.sessionTimeout = sessionTimeout;
         this.closedWindowFlatmapper = flatMapper(this::traverseClosedWindows);
+        this.windowWatermarkKey = windowWatermarkKey;
     }
 
     @Override
@@ -171,7 +174,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         final long timestamp = timestampFns.get(ordinal).applyAsLong(item);
         if (timestamp < currentWatermark) {
-            logLateEvent(getLogger(), currentWatermark, item);
+            logLateEvent(getLogger(), (byte) 0, currentWatermark, item);
             lateEventsDropped.inc();
             return true;
         }
@@ -184,6 +187,10 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark wm) {
+        // drop all watermarks except for the one we use for timestamps
+        if (wm.key() != windowWatermarkKey) {
+            return true;
+        }
         currentWatermark = wm.timestamp();
         assert totalWindows.get() == deadlineToKeys.values().stream().mapToInt(Set::size).sum()
                 : "unexpected totalWindows. Expected=" + deadlineToKeys.values().stream().mapToInt(Set::size).sum()
@@ -282,6 +289,11 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
         currentWatermark = minRestoredCurrentWatermark;
         totalKeys.set(keyToWindows.size());
         logFine(getLogger(), "Restored currentWatermark from snapshot to: %s", currentWatermark);
+        return true;
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
         return true;
     }
 

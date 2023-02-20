@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,13 @@ import java.util.Objects;
  * @param <T> Return type.
  */
 public final class ConstantExpression<T> implements Expression<T>, IdentifiedDataSerializable {
+
+    @SuppressWarnings("unchecked")
+    public static final ConstantExpression<Boolean> TRUE = (ConstantExpression<Boolean>) create(true, QueryDataType.BOOLEAN);
+    @SuppressWarnings("unchecked")
+    public static final ConstantExpression<Boolean> FALSE = (ConstantExpression<Boolean>) create(false, QueryDataType.BOOLEAN);
+    @SuppressWarnings("unchecked")
+    public static final ConstantExpression<Boolean> NULL = (ConstantExpression<Boolean>) create(null, QueryDataType.BOOLEAN);
 
     private QueryDataType type;
     private T value;

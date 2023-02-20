@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,17 @@ package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.expression.AbstractSarg;
 import com.hazelcast.sql.impl.expression.BiExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.Searchable;
+import com.hazelcast.sql.impl.expression.SargExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
- * Implements evaluation of SQL SEARCH predicate.
+ * Implements evaluation of SQL SEARCH predicate. The right argument is always a
+ * {@link SargExpression}.
  */
 public final class SearchPredicate extends BiExpression<Boolean> implements IdentifiedDataSerializable {
 
@@ -49,16 +51,14 @@ public final class SearchPredicate extends BiExpression<Boolean> implements Iden
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.EXPRESSION_SEARCH;
+        return SqlDataSerializerHook.SEARCH_PREDICATE;
     }
 
     @Override
     @SuppressWarnings({"rawtypes", "unchecked"})
     public Boolean eval(Row row, ExpressionEvalContext context) {
         Object left = operand1.eval(row, context);
-        if (left == null) {
-            return null;
-        }
+        // if left operand is null, we still proceed with the right operand, because it can contain a match to a NULL
 
         Object right = operand2.eval(row, context);
         if (right == null) {
@@ -66,9 +66,9 @@ public final class SearchPredicate extends BiExpression<Boolean> implements Iden
         }
 
         Comparable<?> needle = (Comparable<?>) left;
-        Searchable searchable = (Searchable<?>) right;
+        AbstractSarg sarg = (AbstractSarg<?>) right;
 
-        return searchable.contains(needle);
+        return sarg.contains(needle);
     }
 
     @Override

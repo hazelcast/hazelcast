@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.serialization.impl.compact.extractor;
 
-import com.hazelcast.config.CompactSerializationConfig;
-import com.hazelcast.config.Config;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -94,10 +92,6 @@ public class ExtractionInArraySpecTest extends AbstractExtractionTest {
 
     public ExtractionInArraySpecTest(Index index) {
         super(index);
-    }
-
-    public void doWithConfig(Config config) {
-        config.getSerializationConfig().setCompactSerializationConfig(new CompactSerializationConfig().setEnabled(true));
     }
 
     @Test(expected = IllegalArgumentException.class)

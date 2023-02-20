@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,43 +28,50 @@ public enum JobStatus {
      * state when its execution was interrupted (e.g., due to a cluster member
      * failing), before it is started again.
      */
-    NOT_RUNNING,
+    NOT_RUNNING(0),
 
     /**
      * The job is in the initialization phase on a new coordinator.
      */
-    STARTING,
+    STARTING(1),
 
     /**
      * The job is currently running.
      */
-    RUNNING,
+    RUNNING(2),
 
     /**
      * The job is suspended and it can be manually resumed.
      */
-    SUSPENDED,
+    SUSPENDED(3),
 
     /**
      * The job is suspended and is exporting the snapshot. It cannot be resumed
      * until the export is finished and status is {@link #SUSPENDED} again.
      */
-    SUSPENDED_EXPORTING_SNAPSHOT,
+    SUSPENDED_EXPORTING_SNAPSHOT(4),
 
     /**
      * The job is currently being completed.
      */
-    COMPLETING,
+    COMPLETING(5),
 
     /**
      * The job has failed with an exception.
      */
-    FAILED,
+    FAILED(6),
 
     /**
      * The job has completed successfully.
      */
-    COMPLETED;
+    COMPLETED(7);
+
+    private static final JobStatus[] VALUES = values();
+    private final int id;
+
+    JobStatus(int id) {
+        this.id = id;
+    }
 
     /**
      * Returns {@code true} if this state is terminal - a job in this state
@@ -73,5 +80,13 @@ public enum JobStatus {
      */
     public boolean isTerminal() {
         return this == COMPLETED || this == FAILED;
+    }
+
+    public static JobStatus getById(int id) {
+        return VALUES[id];
+    }
+
+    public int getId() {
+        return id;
     }
 }

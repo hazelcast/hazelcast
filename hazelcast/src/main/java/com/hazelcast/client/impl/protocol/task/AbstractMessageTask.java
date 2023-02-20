@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,17 +76,17 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         this.clientMessage = clientMessage;
         this.logger = node.getLogger(getClass());
         this.node = node;
-        this.nodeEngine = node.nodeEngine;
+        this.nodeEngine = node.getNodeEngine();
         this.serializationService = node.getSerializationService();
         this.connection = (ServerConnection) connection;
-        this.clientEngine = node.clientEngine;
+        this.clientEngine = node.getClientEngine();
         this.endpointManager = clientEngine.getEndpointManager();
         this.endpoint = initEndpoint();
     }
 
     @SuppressWarnings("unchecked")
     public <S> S getService(String serviceName) {
-        return (S) node.nodeEngine.getService(serviceName);
+        return (S) node.getNodeEngine().getService(serviceName);
     }
 
     private ClientEndpoint initEndpoint() {
@@ -168,15 +168,21 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
     private void handleAuthenticationFailure() {
         Exception exception;
+        String closeReason;
         if (nodeEngine.isRunning()) {
             String message = "Client " + endpoint + " must authenticate before any operation.";
+            String secureMessage = "Client " + endpoint.toSecureString() + " must authenticate before any operation.";
+
             logger.severe(message);
-            exception = new RetryableHazelcastException(new AuthenticationException(message));
+
+            closeReason = message;
+            exception = new RetryableHazelcastException(new AuthenticationException(secureMessage));
         } else {
             exception = new HazelcastInstanceNotActiveException();
+            closeReason = exception.getMessage();
         }
         sendClientMessage(exception);
-        connection.close("Authentication failed. " + exception.getMessage(), null);
+        connection.close("Authentication failed. " + closeReason, null);
     }
 
     private void logProcessingFailure(Throwable throwable) {

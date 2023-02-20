@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.connector.map.UpdatingEntryProcessor;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
@@ -38,11 +37,8 @@ import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlKind;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.IntStream;
 
 import static com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER;
-import static java.util.stream.Collectors.toMap;
 
 public class UpdateByKeyMapPhysicalRel extends AbstractRelNode implements PhysicalRel {
 
@@ -84,10 +80,7 @@ public class UpdateByKeyMapPhysicalRel extends AbstractRelNode implements Physic
 
     public UpdatingEntryProcessor.Supplier updaterSupplier(QueryParameterMetadata parameterMetadata) {
         List<Expression<?>> projects = project(OptUtils.schema(table), sourceExpressions, parameterMetadata);
-        Map<String, Expression<?>> updates = IntStream.range(0, projects.size())
-                .boxed()
-                .collect(toMap(updatedColumns::get, projects::get));
-        return UpdatingEntryProcessor.supplier(table(), updates);
+        return UpdatingEntryProcessor.supplier(table(), updatedColumns, projects);
     }
 
     private PartitionedMapTable table() {
@@ -100,7 +93,7 @@ public class UpdateByKeyMapPhysicalRel extends AbstractRelNode implements Physic
     }
 
     @Override
-    public Vertex accept(CreateDagVisitor visitor) {
+    public <V> V accept(CreateDagVisitor<V> visitor) {
         throw new UnsupportedOperationException();
     }
 

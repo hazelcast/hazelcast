@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -26,6 +29,8 @@ import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
+import com.zaxxer.hikari.HikariDataSource;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -41,6 +46,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientException;
 import java.sql.Statement;
@@ -52,22 +58,33 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.impl.connector.DataLinkTestUtil.configureDummyDataLink;
+import static com.hazelcast.jet.impl.connector.DataLinkTestUtil.configureJdbcDataLink;
+import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 @Category({SlowTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public class WriteJdbcPTest extends SimpleTestInClusterSupport {
 
+    private static final String JDBC_DATA_LINK = "jdbc-data-link";
+    private static final String DUMMY_DATA_LINK = "dummy-data-link";
+
     @ClassRule
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes", "resource"})
     public static PostgreSQLContainer container = new PostgreSQLContainer<>("postgres:12.1")
-            .withCommand("postgres -c max_prepared_transactions=10");
+            .withCommand("postgres -c max_prepared_transactions=10 -c max_connections=500");
 
     private static final int PERSON_COUNT = 10;
 
-    private static AtomicInteger tableCounter = new AtomicInteger();
+    private static final AtomicInteger TABLE_COUNTER = new AtomicInteger();
+    private static HikariDataSource hikariDataSource;
     private String tableName;
 
     @BeforeClass
@@ -77,16 +94,60 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void setupClass() {
-        initialize(2, null);
+        Config config = smallInstanceConfig();
+        configureJdbcDataLink(JDBC_DATA_LINK, container.getJdbcUrl(), container.getUsername(), container.getPassword(), config);
+        configureDummyDataLink(DUMMY_DATA_LINK, config);
+        initialize(2, config);
     }
 
     @Before
     public void setup() throws SQLException {
-        tableName = "T" + tableCounter.incrementAndGet();
+        tableName = "T" + TABLE_COUNTER.incrementAndGet();
         logger.info("Will use table: " + tableName);
+        /* language=SQL */
+        executeSql("CREATE TABLE " + tableName + "(id int, name varchar(255))");
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (hikariDataSource != null) {
+            hikariDataSource.close();
+        }
+
+        listRemainingConnections();
+    }
+
+    private static void executeSql(String sql) throws SQLException {
         try (Connection connection = ((DataSource) createDataSource(false)).getConnection()) {
-            connection.createStatement()
-                      .execute("CREATE TABLE " + tableName + "(id int, name varchar(255))");
+            connection.createStatement().execute(sql);
+        }
+    }
+    private void listRemainingConnections() throws SQLException {
+        try (
+                Connection connection = ((DataSource) createDataSource(false)).getConnection();
+                ResultSet resultSet = connection.createStatement().executeQuery(
+                        "SELECT * FROM pg_stat_activity WHERE datname = current_database() and pid <> pg_backend_pid()")
+        ) {
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            List<String> rows = new ArrayList<>();
+            StringBuilder row = new StringBuilder();
+            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                row.append(metaData.getColumnName(i)).append("\t|");
+            }
+            rows.add(row.toString());
+
+            while (resultSet.next()) {
+                row = new StringBuilder();
+                for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                    row.append(resultSet.getObject(i) + "\t|\t");
+                }
+                rows.add(row.toString());
+
+            }
+
+            if (!rows.isEmpty()) {
+                logger.warning("Remaining connections: \n" + String.join("\n", rows));
+            }
         }
     }
 
@@ -94,33 +155,78 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     public void test() throws SQLException {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
-         .map(item -> entry(item, item.toString()))
-         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
-                 () -> createDataSource(false),
-                 (stmt, item) -> {
-                     stmt.setInt(1, item.getKey());
-                     stmt.setString(2, item.getValue());
-                 }
-         ));
+                .map(item -> entry(item, item.toString()))
+                .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+                        () -> createDataSource(false),
+                        (stmt, item) -> {
+                            stmt.setInt(1, item.getKey());
+                            stmt.setString(2, item.getValue());
+                        }
+                ));
 
         instance().getJet().newJob(p).join();
         assertEquals(PERSON_COUNT, rowCount());
     }
 
     @Test
-    public void testReconnect() throws SQLException {
+    public void test_supplied_closeable_datasource_is_NOT_closed() throws SQLException {
+        Pipeline p = Pipeline.create();
+
+        p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
+                .map(item -> entry(item, item.toString()))
+                .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+                        WriteJdbcPTest::createHikariDataSource,
+                        (stmt, item) -> {
+                            stmt.setInt(1, item.getKey());
+                            stmt.setString(2, item.getValue());
+                        }
+                ));
+        instance().getJet().newJob(p).join();
+        assertEquals(PERSON_COUNT, rowCount());
+        assertFalse(hikariDataSource.isClosed());
+    }
+
+    private static DataSource createHikariDataSource() {
+        hikariDataSource = new HikariDataSource();
+        assertThat(hikariDataSource).isInstanceOf(AutoCloseable.class);
+
+        hikariDataSource.setJdbcUrl(container.getJdbcUrl());
+        hikariDataSource.setUsername(container.getUsername());
+        hikariDataSource.setPassword(container.getPassword());
+        return hikariDataSource;
+    }
+
+    @Test
+    public void test_data_link_config() throws SQLException {
+        assertEquals(0, rowCount());
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
-         .map(item -> entry(item, item.toString()))
-         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
-                 failTwiceDataSourceSupplier(), failOnceBindFn()
-         ));
+                .map(item -> entry(item, item.toString()))
+                .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+                        dataLinkRef(JDBC_DATA_LINK),
+                        (stmt, item) -> {
+                            stmt.setInt(1, item.getKey());
+                            stmt.setString(2, item.getValue());
+                        }
+                ));
 
         instance().getJet().newJob(p).join();
         assertEquals(PERSON_COUNT, rowCount());
     }
 
-    @Test(expected = CompletionException.class)
+    public void testReconnect() throws SQLException {
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
+                .map(item -> entry(item, item.toString()))
+                .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+                        failTwiceDataSourceSupplier(), failOnceBindFn()
+                ));
+
+        instance().getJet().newJob(p).join();
+        assertEquals(PERSON_COUNT, rowCount());
+    }
+
+    @Test(expected = CompletionException.class, timeout = 5_000)
     public void testFailJob_withNonTransientException() {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
@@ -129,6 +235,136 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
                  () -> createDataSource(false),
                  (stmt, item) -> {
                      throw new SQLNonTransientException();
+                 }
+         ));
+
+        instance().getJet().newJob(p).join();
+    }
+
+    @Test(expected = CompletionException.class, timeout = 5_000)
+    public void testFailJob_withNonTransientExceptionCause() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
+         .map(item -> entry(item, item.toString()))
+         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+                 () -> createDataSource(false),
+                 (stmt, item) -> {
+                     throw new SQLException(new SQLNonTransientException());
+                 }
+         ));
+
+        instance().getJet().newJob(p).join();
+    }
+
+    @Test(expected = CompletionException.class, timeout = 5_000)
+    public void testFailJob_withNonTransientExceptionNext() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
+         .map(item -> entry(item, item.toString()))
+         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+                 () -> createDataSource(false),
+                 (stmt, item) -> {
+                     SQLException ex = new SQLException();
+                     ex.setNextException(new SQLNonTransientException());
+                     throw ex;
+                 }
+         ));
+
+        instance().getJet().newJob(p).join();
+    }
+
+    @Test(expected = CompletionException.class, timeout = 5_000)
+    public void testFailJob_withNonTransientExceptionNextChain() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
+         .map(item -> entry(item, item.toString()))
+         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+                 () -> createDataSource(false),
+                 (stmt, item) -> {
+                     SQLException ex = new SQLException();
+                     SQLException next = new SQLException();
+                     ex.setNextException(next);
+                     next.setNextException(new SQLNonTransientException());
+                     throw ex;
+                 }
+         ));
+
+        instance().getJet().newJob(p).join();
+    }
+
+    @Test
+    public void testFailJob_withNonTransientExceptionNextChainCycle() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
+         .map(item -> entry(item, item.toString()))
+         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+                 () -> createDataSource(false),
+                 (stmt, item) -> {
+                     SQLException ex = new SQLException();
+                     SQLException next = new SQLException();
+                     ex.setNextException(next);
+                     next.setNextException(next); // Cycle for the last exception
+                     throw ex;
+                 }
+         ));
+
+        Job job = instance().getJet().newJob(p);
+        assertJobStatusEventually(job, JobStatus.RUNNING, 5);
+    }
+
+    @Test(expected = CompletionException.class, timeout = 5_000)
+    public void testFailJob_whenGetConnection_withNonTransientException() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
+         .map(item -> entry(item, item.toString()))
+         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+                 () -> {
+                     DataSource spyDataSource = (DataSource) spy(createDataSource(false));
+                     when(spyDataSource.getConnection()).thenThrow(new SQLNonTransientException());
+                     return spyDataSource;
+                 },
+                 (stmt, item) -> {
+                     // execution doesn't get here
+                 }
+         ));
+
+        instance().getJet().newJob(p).join();
+    }
+
+    @Test(expected = CompletionException.class, timeout = 5_000)
+    public void testFailJob_whenGetConnection_withNonTransientExceptionCause() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
+         .map(item -> entry(item, item.toString()))
+         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+                 () -> {
+                     DataSource spyDataSource = (DataSource) spy(createDataSource(false));
+                     when(spyDataSource.getConnection()).thenThrow(new SQLException(new SQLNonTransientException()));
+                     return spyDataSource;
+                 },
+                 (stmt, item) -> {
+                     // execution doesn't get here
+                 }
+         ));
+
+        instance().getJet().newJob(p).join();
+    }
+
+    @Test(expected = CompletionException.class, timeout = 5_000)
+    public void testFailJob_whenGetConnection_withNonTransientExceptionNext() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
+         .map(item -> entry(item, item.toString()))
+         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+                 () -> {
+                     DataSource spyDataSource = (DataSource) spy(createDataSource(false));
+                     SQLException ex = new SQLException();
+                     ex.setNextException(new SQLNonTransientException());
+                     when(spyDataSource.getConnection()).thenThrow(ex);
+                     return spyDataSource;
+                 },
+                 (stmt, item) -> {
+                     // execution doesn't get here
                  }
          ));
 

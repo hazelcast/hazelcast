@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,8 @@ public class ClientClusterViewListenerService implements ConnectionListener {
         connectionManager.addConnectionListener(this);
     }
 
-    private final class ClusterViewListenerHandler extends ClientAddClusterViewListenerCodec.AbstractEventHandler
+    // public for tests
+    public final class ClusterViewListenerHandler extends ClientAddClusterViewListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
         private final ClientConnection connection;

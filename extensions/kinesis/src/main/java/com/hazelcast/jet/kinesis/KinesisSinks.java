@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.jet.kinesis;
 
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
 import com.hazelcast.jet.kinesis.impl.AwsConfig;
@@ -29,6 +30,7 @@ import com.hazelcast.jet.retry.RetryStrategy;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 
 import static com.hazelcast.jet.impl.pipeline.SinkImpl.Type.DISTRIBUTED_PARTITIONED;
 
@@ -286,6 +288,18 @@ public final class KinesisSinks {
         @Nonnull
         public Builder<T> withRetryStrategy(@Nonnull RetryStrategy retryStrategy) {
             this.retryStrategy = retryStrategy;
+            return this;
+        }
+
+        /**
+         * Specifies an executor service supplier that will be used by the {@link AwsConfig}
+         * to construct an AWS async client.
+         *
+         * @since 5.2
+         */
+        @Nonnull
+        public Builder<T> withExecutorServiceSupplier(@Nonnull SupplierEx<ExecutorService> executorSupplier) {
+            awsConfig.withExecutorServiceSupplier(executorSupplier);
             return this;
         }
 

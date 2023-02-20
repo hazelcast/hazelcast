@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,16 @@ public class MetaSupplierFromProcessorSupplier implements ProcessorMetaSupplier,
     @Override
     public void init(@Nonnull Context context) throws Exception {
         PermissionsUtil.checkPermission(processorSupplier, context);
+    }
+
+    @Override
+    public boolean initIsCooperative() {
+        return true;
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
     }
 
     @Override

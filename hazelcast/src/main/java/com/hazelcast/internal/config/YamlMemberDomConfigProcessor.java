@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,14 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.CompactSerializationConfig;
+import com.hazelcast.config.CompactSerializationConfigAccessor;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.LocalDeviceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.IndexConfig;
@@ -38,6 +39,7 @@ import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.LocalDeviceConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MemberGroupConfig;
@@ -312,6 +314,16 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             LocalDeviceConfig localDeviceConfig =
                     (LocalDeviceConfig) ConfigUtils.getByNameOrNew(config.getDeviceConfigs(), name, LocalDeviceConfig.class);
             handleLocalDeviceNode(deviceNode, localDeviceConfig);
+        }
+    }
+
+    @Override
+    protected void handleDataLinks(Node parentNode) {
+        for (Node deviceNode : childElements(parentNode)) {
+            String name = deviceNode.getNodeName();
+            DataLinkConfig dataLinkConfig = ConfigUtils.
+                    getByNameOrNew(config.getDataLinkConfigs(), name, DataLinkConfig.class);
+            handleDataLink(deviceNode, dataLinkConfig);
         }
     }
 
@@ -647,22 +659,27 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         CompactSerializationConfig compactSerializationConfig = serializationConfig.getCompactSerializationConfig();
         for (Node child : childElements(node)) {
             String name = cleanNodeName(child);
-            if (matches("enabled", name)) {
-                boolean enabled = getBooleanValue(getTextContent(child));
-                compactSerializationConfig.setEnabled(enabled);
-            } else if (matches("registered-classes", name)) {
+            if (matches("serializers", name)) {
+                fillCompactSerializers(child, compactSerializationConfig);
+            } else if (matches("classes", name)) {
                 fillCompactSerializableClasses(child, compactSerializationConfig);
             }
         }
     }
 
     @Override
+    protected void fillCompactSerializers(Node node, CompactSerializationConfig compactSerializationConfig) {
+        for (Node child : childElements(node)) {
+            String serializerClassName = getAttribute(child, "serializer");
+            CompactSerializationConfigAccessor.registerSerializer(compactSerializationConfig, serializerClassName);
+        }
+    }
+
+    @Override
     protected void fillCompactSerializableClasses(Node node, CompactSerializationConfig compactSerializationConfig) {
         for (Node child : childElements(node)) {
-            String className = getAttribute(child, "class");
-            String typeName = getAttribute(child, "type-name");
-            String serializerClassName = getAttribute(child, "serializer");
-            registerCompactSerializableClass(compactSerializationConfig, className, typeName, serializerClassName);
+            String compactSerializableClassName = getAttribute(child, "class");
+            CompactSerializationConfigAccessor.registerClass(compactSerializationConfig, compactSerializableClassName);
         }
     }
 

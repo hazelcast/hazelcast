@@ -1,5 +1,5 @@
 <#--
-// Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+// Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -55,6 +55,75 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
             ifNotExists,
             startPos.plus(getPos())
         );
+    }
+}
+
+SqlCreate SqlCreateType(Span span, boolean replace) :
+{
+    SqlParserPos startPos = span.pos();
+    SqlIdentifier name;
+    SqlNodeList columns = SqlNodeList.EMPTY;
+    SqlNodeList sqlOptions = SqlNodeList.EMPTY;
+    boolean ifNotExists = false;
+}
+{
+    <TYPE>
+    [
+        <IF> <NOT> <EXISTS> { ifNotExists = true; }
+    ]
+    name = SimpleIdentifier()
+    columns = TypeColumns()
+    <OPTIONS>
+    sqlOptions = SqlOptions()
+    {
+        return new SqlCreateType(
+            name,
+            columns,
+            sqlOptions,
+            replace,
+            ifNotExists,
+            startPos.plus(getPos())
+        );
+    }
+}
+
+SqlNodeList TypeColumns():
+{
+    SqlParserPos pos = getPos();
+    SqlTypeColumn column;
+    List<SqlNode> columns = new ArrayList<SqlNode>();
+}
+{
+    [
+        <LPAREN> {  pos = getPos(); }
+        column = TypeColumn()
+        {
+            columns.add(column);
+        }
+        (
+            <COMMA> column = TypeColumn()
+            {
+                columns.add(column);
+            }
+        )*
+        <RPAREN>
+    ]
+    {
+        return new SqlNodeList(columns, pos.plus(getPos()));
+    }
+}
+
+SqlTypeColumn TypeColumn():
+{
+    Span span;
+    SqlIdentifier name;
+    SqlDataType type;
+}
+{
+    name = SimpleIdentifier() { span = span(); }
+    type = SqlDataType()
+    {
+        return new SqlTypeColumn(name, type, span.end(this));
     }
 }
 
@@ -203,15 +272,31 @@ QueryDataType DateTimeTypes() :
 QueryDataType ObjectTypes() :
 {
     QueryDataType type;
+    SqlIdentifier typeId;
 }
 {
     (
+        LOOKAHEAD(2)
         <OBJECT> { type = QueryDataType.OBJECT; }
     |
+        LOOKAHEAD(2)
         <JSON> { type = QueryDataType.JSON; }
+    |
+        type = CustomObjectType()
     )
     {
         return type;
+    }
+}
+
+QueryDataType CustomObjectType() :
+{
+    SqlIdentifier typeName;
+}
+{
+    typeName = SimpleIdentifier()
+    {
+        return new QueryDataType(typeName.getSimple());
     }
 }
 
@@ -233,6 +318,27 @@ SqlDrop SqlDropMapping(Span span, boolean replace) :
     name = CompoundIdentifier()
     {
         return new SqlDropMapping(name, ifExists, pos.plus(getPos()));
+    }
+}
+
+/**
+ * Parses DROP TYPE statement.
+ */
+SqlDrop SqlDropType(Span span, boolean replace) :
+{
+    SqlParserPos pos = span.pos();
+
+    SqlIdentifier name;
+    boolean ifExists = false;
+}
+{
+    <TYPE>
+    [
+        <IF> <EXISTS> { ifExists = true; }
+    ]
+    name = SimpleIdentifier()
+    {
+        return new SqlDropType(name, ifExists, pos.plus(getPos()));
     }
 }
 
@@ -314,7 +420,7 @@ SqlNodeList IndexAttributes():
 /**
  * Parses DROP INDEX statement.
  */
-SqlDrop SqlDropIndex(Span span, boolean required) :
+SqlDrop SqlDropIndex(Span span, boolean replace) :
 {
     SqlParserPos pos = span.pos();
 
@@ -585,6 +691,8 @@ SqlShowStatement SqlShowStatement() :
         <VIEWS> { target = ShowStatementTarget.VIEWS; }
     |
         <JOBS> { target = ShowStatementTarget.JOBS; }
+    |
+        <TYPES> { target = ShowStatementTarget.TYPES; }
     )
     {
         return new SqlShowStatement(getPos(), target);

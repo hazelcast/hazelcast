@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,16 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
-import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.WatermarkPolicy;
+import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
+import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
+import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.jet.sql.impl.opt.FullScan;
-import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -35,6 +38,7 @@ import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.metadata.RelMdUtil;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
@@ -45,43 +49,43 @@ import java.util.List;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.jet.sql.impl.opt.cost.CostUtils.TABLE_SCAN_CPU_MULTIPLIER;
 
-public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
+public class FullScanPhysicalRel extends FullScan implements HazelcastPhysicalScan {
+
+    /**
+     * See {@link CalciteSqlOptimizer#postOptimizationRewrites(PhysicalRel)}.
+     */
+    private final int discriminator;
 
     FullScanPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
-            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
-            int watermarkedColumnIndex
-
+            @Nullable Expression<?> lagExpression,
+            int watermarkedColumnIndex,
+            int discriminator
     ) {
-        super(cluster, traitSet, table, eventTimePolicyProvider, watermarkedColumnIndex);
+        super(cluster, traitSet, table, lagExpression, watermarkedColumnIndex);
+        this.discriminator = discriminator;
     }
 
-    public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
-        PlanNodeSchema schema = OptUtils.schema(getTable());
-
-        RexNode filter = getTable().unwrap(HazelcastTable.class).getFilter();
-
-        return filter(schema, filter, parameterMetadata);
+    @Override
+    public RexNode filter() {
+        return getTable().unwrap(HazelcastTable.class).getFilter();
     }
 
-    public List<Expression<?>> projection(QueryParameterMetadata parameterMetadata) {
-        PlanNodeSchema schema = OptUtils.schema(getTable());
-
-        HazelcastTable table = getTable().unwrap(HazelcastTable.class);
-
-        return project(schema, table.getProjects(), parameterMetadata);
+    @Override
+    public List<RexNode> projection() {
+        return getTable().unwrap(HazelcastTable.class).getProjects();
     }
 
     @Override
     public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
-        List<QueryDataType> fieldTypes = toList(projection(parameterMetadata), Expression::getType);
+        List<QueryDataType> fieldTypes = toList(projection(), rexNode -> HazelcastTypeUtils.toHazelcastType(rexNode.getType()));
         return new PlanNodeSchema(fieldTypes);
     }
 
     @Override
-    public Vertex accept(CreateDagVisitor visitor) {
+    public <V> V accept(CreateDagVisitor<V> visitor) {
         return visitor.onFullScan(this);
     }
 
@@ -132,8 +136,46 @@ public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
     }
 
     @Override
+    public RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw)
+                .item("discriminator", discriminator);
+    }
+
+    @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new FullScanPhysicalRel(getCluster(), traitSet, getTable(), eventTimePolicyProvider(),
-                watermarkedColumnIndex());
+        return new FullScanPhysicalRel(getCluster(), traitSet, getTable(), lagExpression(),
+                watermarkedColumnIndex(), discriminator());
+    }
+
+    public RelNode copy(RelTraitSet traitSet, int discriminator) {
+        return new FullScanPhysicalRel(getCluster(), traitSet, getTable(), lagExpression(),
+                watermarkedColumnIndex(), discriminator);
+    }
+
+    public int discriminator() {
+        return discriminator;
+    }
+
+    public List<RexNode> getProjects() {
+        HazelcastTable table = getTable().unwrap(HazelcastTable.class);
+        return table.getProjects();
+    }
+
+    public BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider(
+            int wmColumnIndex, @Nullable Expression<?> lagExpression, long throttlingFrameSize) {
+        if (lagExpression == null) {
+            return null;
+        }
+        return (context, watermarkKey) -> {
+            long lagMs = WindowUtils.extractMillis(lagExpression, context);
+            return EventTimePolicy.eventTimePolicy(
+                    row -> WindowUtils.extractMillis(row.get(wmColumnIndex)),
+                    (row, timestamp) -> row,
+                    WatermarkPolicy.limitingLag(lagMs),
+                    throttlingFrameSize,
+                    0,
+                    EventTimePolicy.DEFAULT_IDLE_TIMEOUT,
+                    watermarkKey);
+        };
     }
 }

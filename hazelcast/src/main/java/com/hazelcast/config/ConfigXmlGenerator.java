@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,10 +31,10 @@ import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.config.ConfigXmlGeneratorHelper;
 import com.hazelcast.internal.config.PersistenceAndHotRestartPersistenceMerger;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.MapUtil;
-import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
@@ -42,7 +42,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.memory.Capacity;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
 
@@ -197,6 +196,7 @@ public class ConfigXmlGenerator {
         factoryWithPropertiesXmlGenerator(gen, "auditlog", config.getAuditlogConfig());
         userCodeDeploymentConfig(gen, config);
         integrityCheckerXmlGenerator(gen, config);
+        dataLinkConfiguration(gen, config);
 
         xml.append("</hazelcast>");
 
@@ -522,30 +522,9 @@ public class ConfigXmlGenerator {
             gen.close();
         }
 
-        compactSerializationXmlGenerator(gen, c);
+        ConfigXmlGeneratorHelper.compactSerialization(gen, c.getCompactSerializationConfig());
 
-        gen.close();
-    }
-
-    private static void compactSerializationXmlGenerator(XmlGenerator gen, SerializationConfig serializationConfig) {
-        CompactSerializationConfig compactSerializationConfig = serializationConfig.getCompactSerializationConfig();
-        if (!compactSerializationConfig.isEnabled()) {
-            return;
-        }
-
-        gen.open("compact-serialization", "enabled", compactSerializationConfig.isEnabled());
-
-        Map<String, TriTuple<Class, String, CompactSerializer>> registries
-                = CompactSerializationConfigAccessor.getRegistrations(compactSerializationConfig);
-        Map<String, TriTuple<String, String, String>> namedRegistries
-                = CompactSerializationConfigAccessor.getNamedRegistrations(compactSerializationConfig);
-        if (!MapUtil.isNullOrEmpty(registries) || !MapUtil.isNullOrEmpty(namedRegistries)) {
-            gen.open("registered-classes");
-            appendRegisteredClasses(gen, registries);
-            appendNamedRegisteredClasses(gen, namedRegistries);
-            gen.close();
-        }
-
+        // close serialization
         gen.close();
     }
 
@@ -601,7 +580,7 @@ public class ConfigXmlGenerator {
         gen.open("join");
         autoDetectionConfigXmlGenerator(gen, join);
         multicastConfigXmlGenerator(gen, join);
-        tcpConfigXmlGenerator(gen, join);
+        tcpIpConfigXmlGenerator(gen, join);
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(join));
         discoveryStrategyConfigXmlGenerator(gen, join.getDiscoveryConfig());
         gen.close();
@@ -629,7 +608,7 @@ public class ConfigXmlGenerator {
         gen.open("join");
         autoDetectionConfigXmlGenerator(gen, join);
         multicastConfigXmlGenerator(gen, join);
-        tcpConfigXmlGenerator(gen, join);
+        tcpIpConfigXmlGenerator(gen, join);
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(join));
         discoveryStrategyConfigXmlGenerator(gen, join.getDiscoveryConfig());
         gen.close();
@@ -695,7 +674,7 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private String endpointConfigElementName(EndpointConfig endpointConfig) {
+    public static String endpointConfigElementName(EndpointConfig endpointConfig) {
         if (endpointConfig instanceof ServerSocketEndpointConfig) {
             switch (endpointConfig.getProtocolType()) {
                 case REST:
@@ -759,16 +738,19 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private static void tcpConfigXmlGenerator(XmlGenerator gen, JoinConfig join) {
-        TcpIpConfig c = join.getTcpIpConfig();
-        gen.open("tcp-ip", "enabled", c.isEnabled(), "connection-timeout-seconds", c.getConnectionTimeoutSeconds())
-                .open("member-list");
-        for (String m : c.getMembers()) {
+    public static void tcpIpConfigXmlGenerator(XmlGenerator gen, JoinConfig join) {
+        TcpIpConfig tcpIpConfig = join.getTcpIpConfig();
+        gen.open("tcp-ip", "enabled", tcpIpConfig.isEnabled(),
+                "connection-timeout-seconds", tcpIpConfig.getConnectionTimeoutSeconds());
+        gen.open("member-list");
+        for (String m : tcpIpConfig.getMembers()) {
             gen.node("member", m);
         }
-        gen.close()
-                .node("required-member", c.getRequiredMember())
-                .close();
+        // </member-list>
+        gen.close();
+        gen.node("required-member", tcpIpConfig.getRequiredMember());
+        // </tcp-ip>
+        gen.close();
     }
 
     private static void interfacesConfigXmlGenerator(XmlGenerator gen, InterfacesConfig interfaces) {
@@ -993,7 +975,8 @@ public class ConfigXmlGenerator {
                 .node("fail-on-indeterminate-operation-state", cpSubsystemConfig.isFailOnIndeterminateOperationState())
                 .node("persistence-enabled", cpSubsystemConfig.isPersistenceEnabled())
                 .node("base-dir", cpSubsystemConfig.getBaseDir().getAbsolutePath())
-                .node("data-load-timeout-seconds", cpSubsystemConfig.getDataLoadTimeoutSeconds());
+                .node("data-load-timeout-seconds", cpSubsystemConfig.getDataLoadTimeoutSeconds())
+                .node("cp-member-priority", cpSubsystemConfig.getCPMemberPriority());
 
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
         gen.open("raft-algorithm")
@@ -1127,9 +1110,9 @@ public class ConfigXmlGenerator {
         gen.open("native-memory",
                 "enabled", nativeMemoryConfig.isEnabled(),
                 "allocator-type", nativeMemoryConfig.getAllocatorType())
-                .node("size", null,
-                        "unit", nativeMemoryConfig.getSize().getUnit(),
-                        "value", nativeMemoryConfig.getSize().getValue())
+                .node("capacity", null,
+                        "unit", nativeMemoryConfig.getCapacity().getUnit(),
+                        "value", nativeMemoryConfig.getCapacity().getValue())
                 .node("min-block-size", nativeMemoryConfig.getMinBlockSize())
                 .node("page-size", nativeMemoryConfig.getPageSize())
                 .node("metadata-space-percentage", nativeMemoryConfig.getMetadataSpacePercentage());
@@ -1207,43 +1190,6 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private static void appendRegisteredClasses(XmlGenerator gen,
-                                                Map<String, TriTuple<Class, String, CompactSerializer>> registries) {
-        if (registries.isEmpty()) {
-            return;
-        }
-
-        for (TriTuple<Class, String, CompactSerializer> registration : registries.values()) {
-            Class registeredClass = registration.element1;
-            String typeName = registration.element2;
-            CompactSerializer serializer = registration.element3;
-            if (serializer != null) {
-                String serializerClassName = serializer.getClass().getName();
-                gen.node("class", registeredClass.getName(), "type-name", typeName, "serializer", serializerClassName);
-            } else {
-                gen.node("class", registeredClass.getName());
-            }
-        }
-    }
-
-    private static void appendNamedRegisteredClasses(XmlGenerator gen,
-                                                     Map<String, TriTuple<String, String, String>> namedRegistries) {
-        if (namedRegistries.isEmpty()) {
-            return;
-        }
-
-        for (TriTuple<String, String, String> registration : namedRegistries.values()) {
-            String registeredClassName = registration.element1;
-            String typeName = registration.element2;
-            String serializerClassName = registration.element3;
-            if (serializerClassName != null) {
-                gen.node("class", registeredClassName, "type-name", typeName, "serializer", serializerClassName);
-            } else {
-                gen.node("class", registeredClassName);
-            }
-        }
-    }
-
     private static void integrityCheckerXmlGenerator(final XmlGenerator gen, final Config config) {
         gen.node(
                 "integrity-checker",
@@ -1251,6 +1197,20 @@ public class ConfigXmlGenerator {
                 "enabled",
                 config.getIntegrityCheckerConfig().isEnabled()
         );
+    }
+
+    private static void dataLinkConfiguration(final XmlGenerator gen, final Config config) {
+        for (DataLinkConfig dataLinkConfig : config.getDataLinkConfigs().values()) {
+            gen.open(
+                            "data-link",
+                            "name",
+                            dataLinkConfig.getName()
+                    )
+                    .node("class-name", dataLinkConfig.getClassName())
+                    .node("shared", dataLinkConfig.isShared())
+                    .appendProperties(dataLinkConfig.getProperties())
+                    .close();
+        }
     }
 
     /**
@@ -1398,6 +1358,12 @@ public class ConfigXmlGenerator {
             for (int i = 0; i < length; i++) {
                 char ch = s.charAt(i);
                 switch (ch) {
+                    case '\n':
+                        appendTo.append("&#10;");
+                        break;
+                    case '\r':
+                        appendTo.append("&#13;");
+                        break;
                     case '"':
                         appendTo.append("&quot;");
                         break;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,15 +25,19 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.util.FilteringClassLoader;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
+import com.hazelcast.nio.serialization.FieldKind;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import example.serialization.MainDTO;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -42,25 +46,25 @@ import java.util.List;
 
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createCompactGenericRecord;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createMainDTO;
-import static com.hazelcast.nio.serialization.GenericRecordBuilder.compact;
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createSerializationService;
+import static com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder.compact;
+import static com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder.portable;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class GenericRecordTest {
 
-    SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void testGenericRecordToStringValidJson() throws IOException {
-        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.setEnabled(true);
-        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
-                .build();
+        SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
+        InternalSerializationService serializationService = (InternalSerializationService)
+                createSerializationService(schemaService);
 
         MainDTO expectedDTO = createMainDTO();
         expectedDTO.nullableBool = null;
@@ -99,11 +103,11 @@ public class GenericRecordTest {
     public void testCloneDeserializedGenericRecord() {
         GenericRecordBuilder builder = compact("fooBarTypeName");
         builder.setInt32("foo", 1);
-        assertTrue(trySetAndGetMessage("foo", 5, builder).startsWith("Field can only be written once"));
+        assertSetterThrows(builder, "foo", 5, "Field can only be written once");
         builder.setInt64("bar", 1231L);
         DeserializedGenericRecord genericRecord = (DeserializedGenericRecord) builder.build();
 
-        verifyCloneWithBuilder(genericRecord);
+        verifyNewBuilderWithClone(genericRecord);
     }
 
     @Test
@@ -112,7 +116,7 @@ public class GenericRecordTest {
 
         GenericRecordBuilder builder = compact("fooBarTypeName");
         builder.setInt32("foo", 1);
-        assertTrue(trySetAndGetMessage("foo", 5, builder).startsWith("Field can only be written once"));
+        assertSetterThrows(builder, "foo", 5, "Field can only be written once");
         builder.setInt64("bar", 1231L);
         GenericRecord expectedGenericRecord = builder.build();
 
@@ -120,29 +124,20 @@ public class GenericRecordTest {
         CompactInternalGenericRecord genericRecord = (CompactInternalGenericRecord)
                 serializationService.readAsInternalGenericRecord(data);
 
-        verifyCloneWithBuilder(genericRecord);
+        verifyNewBuilderWithClone(genericRecord);
     }
 
-    private void verifyCloneWithBuilder(GenericRecord genericRecord) {
-        GenericRecordBuilder cloneBuilder = genericRecord.cloneWithBuilder();
+    private void verifyNewBuilderWithClone(GenericRecord genericRecord) {
+        GenericRecordBuilder cloneBuilder = genericRecord.newBuilderWithClone();
         cloneBuilder.setInt32("foo", 2);
-        assertTrue(trySetAndGetMessage("foo", 5, cloneBuilder).startsWith("Field can only be written once"));
 
-        assertTrue(trySetAndGetMessage("notExisting", 3, cloneBuilder).startsWith("Invalid field name"));
+        assertSetterThrows(cloneBuilder, "foo", 5, "Field can only be written once");
+        assertSetterThrows(cloneBuilder, "notExisting", 3, "Invalid field name");
 
         GenericRecord clone = cloneBuilder.build();
 
         assertEquals(2, clone.getInt32("foo"));
         assertEquals(1231L, clone.getInt64("bar"));
-    }
-
-    private SerializationService createSerializationService() {
-        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.setEnabled(true);
-        return new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
-                .build();
     }
 
     @Test
@@ -151,7 +146,7 @@ public class GenericRecordTest {
 
         GenericRecordBuilder builder = compact("fooBarTypeName");
         builder.setInt32("foo", 1);
-        assertTrue(trySetAndGetMessage("foo", 5, builder).startsWith("Field can only be written once"));
+        assertSetterThrows(builder, "foo", 5, "Field can only be written once");
         builder.setInt64("bar", 1231L);
         GenericRecord expectedGenericRecord = builder.build();
 
@@ -166,10 +161,13 @@ public class GenericRecordTest {
     private void verifyNewBuilder(GenericRecord genericRecord) {
         GenericRecordBuilder recordBuilder = genericRecord.newBuilder();
         recordBuilder.setInt32("foo", 2);
-        assertTrue(trySetAndGetMessage("foo", 5, recordBuilder).startsWith("Field can only be written once"));
 
-        assertTrue(trySetAndGetMessage("notExisting", 3, recordBuilder).startsWith("Invalid field name"));
-        assertTrue(tryBuildAndGetMessage(recordBuilder).startsWith("Found an unset field"));
+        assertSetterThrows(recordBuilder, "foo", 5, "Field can only be written once");
+        assertSetterThrows(recordBuilder, "notExisting", 3, "Invalid field name");
+
+        assertThatThrownBy(recordBuilder::build)
+                .isInstanceOf(HazelcastSerializationException.class)
+                .hasMessageStartingWith("Found an unset field");
 
         recordBuilder.setInt64("bar", 100);
         GenericRecord newRecord = recordBuilder.build();
@@ -182,70 +180,207 @@ public class GenericRecordTest {
     public void testBuildFromDeserializedGenericRecord() {
         GenericRecordBuilder builder = compact("fooBarTypeName");
         builder.setInt32("foo", 1);
-        assertTrue(trySetAndGetMessage("foo", 5, builder).startsWith("Field can only be written once"));
+        assertSetterThrows(builder, "foo", 5, "Field can only be written once");
         builder.setInt64("bar", 1231L);
-        GenericRecord genericRecord = builder.build();
+        DeserializedGenericRecord genericRecord = (DeserializedGenericRecord) builder.build();
 
         verifyNewBuilder(genericRecord);
     }
 
     @Test
     public void testReadWriteChar() {
-        assertThrows(UnsupportedOperationException.class, () -> {
-            compact("writeChar").setChar("c", 'a');
-        });
+        assertThatThrownBy(() -> compact("writeChar").setChar("c", 'a'))
+                .isInstanceOf(UnsupportedOperationException.class);
 
-        assertThrows(UnsupportedOperationException.class, () -> {
+        assertThatThrownBy(() -> {
             GenericRecord record = compact("readChar").build();
             record.getChar("c");
-        });
+        }).isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
     public void testReadWriteCharArray() {
-        assertThrows(UnsupportedOperationException.class, () -> {
-            compact("writeCharArray").setArrayOfChar("ca", new char[]{'c'});
-        });
+        assertThatThrownBy(() -> compact("writeCharArray").setArrayOfChar("ca", new char[]{'c'}))
+                .isInstanceOf(UnsupportedOperationException.class);
 
-        assertThrows(UnsupportedOperationException.class, () -> {
+        assertThatThrownBy(() -> {
             GenericRecord record = compact("readCharArray").build();
             record.getArrayOfChar("ca");
-        });
+        }).isInstanceOf(UnsupportedOperationException.class);
     }
-
-    private String trySetAndGetMessage(String fieldName, int value, GenericRecordBuilder cloneBuilder) {
-        try {
-            cloneBuilder.setInt32(fieldName, value);
-        } catch (HazelcastSerializationException e) {
-            return e.getMessage();
-        }
-        return null;
-    }
-
-    private String tryBuildAndGetMessage(GenericRecordBuilder builder) {
-        try {
-            builder.build();
-        } catch (HazelcastSerializationException e) {
-            return e.getMessage();
-        }
-        return null;
-    }
-
 
     @Test
-    public void testGetFieldKindThrowsExceptionWhenFieldDoesNotExist() throws IOException {
-        GenericRecord record = compact("test").build();
-        assertThrows(IllegalArgumentException.class, () -> {
-            record.getFieldKind("doesNotExist");
-        });
+    public void testGetFieldKind() throws IOException {
+        GenericRecord record = compact("test")
+                .setString("s", "s")
+                .build();
 
+        assertEquals(FieldKind.STRING, record.getFieldKind("s"));
+        assertEquals(FieldKind.NOT_AVAILABLE, record.getFieldKind("ss"));
+
+        SerializationService service = createSerializationService();
+        Data data = service.toData(record);
+        InternalGenericRecord internalGenericRecord
+                = ((InternalSerializationService) service).readAsInternalGenericRecord(data);
+
+        assertEquals(FieldKind.STRING, internalGenericRecord.getFieldKind("s"));
+        assertEquals(FieldKind.NOT_AVAILABLE, internalGenericRecord.getFieldKind("ss"));
+    }
+
+    private void assertSetterThrows(GenericRecordBuilder builder, String fieldName, int value, String errorMessage) {
+        assertThatThrownBy(() -> builder.setInt32(fieldName, value))
+                .isInstanceOf(HazelcastSerializationException.class)
+                .hasMessageStartingWith(errorMessage);
+    }
+
+    @Test
+    public void testGetFieldThrowsExceptionWhenFieldDoesNotExist() throws IOException {
+        GenericRecord record = compact("test").build();
+        assertThatThrownBy(() -> {
+            record.getInt32("doesNotExist");
+        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Invalid field name");
 
         InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
         Data data = serializationService.toData(record);
 
         InternalGenericRecord internalGenericRecord = serializationService.readAsInternalGenericRecord(data);
-        assertThrows(IllegalArgumentException.class, () -> {
-            internalGenericRecord.getFieldKind("doesNotExist");
-        });
+
+        assertThatThrownBy(() -> {
+            internalGenericRecord.getInt32("doesNotExist");
+        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Invalid field name");
+    }
+
+    @Test
+    public void testGetFieldThrowsExceptionWhenFieldTypeDoesNotMatch() throws IOException {
+        GenericRecord record = compact("test").setInt32("foo", 123).build();
+        assertThatThrownBy(() -> {
+            record.getInt64("foo");
+        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Invalid field kind");
+
+        InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
+        Data data = serializationService.toData(record);
+
+        InternalGenericRecord internalGenericRecord = serializationService.readAsInternalGenericRecord(data);
+
+        assertThatThrownBy(() -> {
+            internalGenericRecord.getInt64("foo");
+        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Invalid field kind");
+    }
+
+    @Test
+    public void testSetGenericRecordDoesNotThrowWithSameTypeOfGenericRecord() {
+        GenericRecord fieldCompactRecord = compact("asd2").build();
+        // Regular builder
+        GenericRecordBuilder compactBuilder = compact("asd1");
+        compactBuilder.setGenericRecord("f", fieldCompactRecord);
+        GenericRecord record = compactBuilder.build();
+        // Cloner
+        GenericRecordBuilder cloner = record.newBuilderWithClone();
+        cloner.setGenericRecord("f", fieldCompactRecord).build();
+        // Schema bound builder
+        SchemaWriter schemaWriter = new SchemaWriter("asd1");
+        schemaWriter.addField(new FieldDescriptor("f", FieldKind.COMPACT));
+        Schema schema = schemaWriter.build();
+        GenericRecordBuilder builder = new DeserializedSchemaBoundGenericRecordBuilder(schema);
+        builder.setGenericRecord("f", fieldCompactRecord);
+        builder.build();
+    }
+
+    @Test
+    public void testSetGenericRecordThrowsWithDifferentTypeOfGenericRecord() {
+        thrown.expect(HazelcastSerializationException.class);
+        thrown.expectMessage("You can only use Compact GenericRecords in a Compact");
+
+        GenericRecordBuilder compactBuilder = compact("asd1");
+        compactBuilder.setGenericRecord("f", portable(new ClassDefinitionBuilder(1, 1).build()).build());
+    }
+
+    @Test
+    public void testSetGenericRecordThrowsWithDifferentTypeOfGenericRecord_cloner() {
+        thrown.expect(HazelcastSerializationException.class);
+        thrown.expectMessage("You can only use Compact GenericRecords in a Compact");
+
+        GenericRecordBuilder compactBuilder = compact("asd1");
+        compactBuilder.setGenericRecord("f", null);
+        GenericRecord record = compactBuilder.build();
+
+        GenericRecordBuilder cloner = record.newBuilderWithClone();
+        GenericRecord portableRecord = portable(new ClassDefinitionBuilder(1, 1).build()).build();
+        cloner.setGenericRecord("f", portableRecord);
+    }
+
+    @Test
+    public void testSetGenericRecordThrowsWithDifferentTypeOfGenericRecord_schemaBound() {
+        thrown.expect(HazelcastSerializationException.class);
+        thrown.expectMessage("You can only use Compact GenericRecords in a Compact");
+
+        SchemaWriter schemaWriter = new SchemaWriter("asd1");
+        schemaWriter.addField(new FieldDescriptor("f", FieldKind.COMPACT));
+        Schema schema = schemaWriter.build();
+        GenericRecordBuilder builder = new DeserializedSchemaBoundGenericRecordBuilder(schema);
+        GenericRecord portableRecord = portable(new ClassDefinitionBuilder(1, 1).build()).build();
+        builder.setGenericRecord("f", portableRecord);
+    }
+
+    @Test
+    public void testSetArrayOfGenericRecordDoesNotThrowWithSameTypeOfGenericRecord() {
+        // Regular builder
+        GenericRecordBuilder compactBuilder = compact("asd1");
+        GenericRecord aCompact = compact("asd2").build();
+        GenericRecord aCompact2 = compact("asd3").build();
+        compactBuilder.setArrayOfGenericRecord("f", new GenericRecord[]{aCompact, aCompact2});
+        GenericRecord record = compactBuilder.build();
+        // Cloner
+        GenericRecordBuilder cloner = record.newBuilderWithClone();
+        cloner.setArrayOfGenericRecord("f", new GenericRecord[]{aCompact, aCompact2});
+        cloner.build();
+        // Schema bound builder
+        SchemaWriter schemaWriter = new SchemaWriter("asd1");
+        schemaWriter.addField(new FieldDescriptor("f", FieldKind.ARRAY_OF_COMPACT));
+        Schema schema = schemaWriter.build();
+        GenericRecordBuilder builder = new DeserializedSchemaBoundGenericRecordBuilder(schema);
+        builder.setArrayOfGenericRecord("f", new GenericRecord[]{aCompact, aCompact2});
+        builder.build();
+    }
+
+    @Test
+    public void testSetArrayOfGenericRecordThrowsWithDifferentTypeOfGenericRecord() {
+        thrown.expect(HazelcastSerializationException.class);
+        thrown.expectMessage("You can only use Compact GenericRecords in a Compact");
+
+        GenericRecordBuilder compactBuilder = compact("asd1");
+        GenericRecord aPortable = portable(new ClassDefinitionBuilder(1, 1).build()).build();
+        GenericRecord aCompact = compact("asd2").build();
+        compactBuilder.setArrayOfGenericRecord("f", new GenericRecord[]{aPortable, aCompact});
+    }
+
+    @Test
+    public void testSetArrayOfGenericRecordThrowsWithDifferentTypeOfGenericRecord_cloner() {
+        thrown.expect(HazelcastSerializationException.class);
+        thrown.expectMessage("You can only use Compact GenericRecords in a Compact");
+
+        GenericRecordBuilder compactBuilder = compact("asd1");
+        compactBuilder.setArrayOfGenericRecord("f", null);
+        GenericRecord record = compactBuilder.build();
+
+        GenericRecordBuilder cloner = record.newBuilderWithClone();
+        GenericRecord aPortable = portable(new ClassDefinitionBuilder(1, 1).build()).build();
+        GenericRecord aCompact = compact("asd2").build();
+        cloner.setArrayOfGenericRecord("f", new GenericRecord[]{aPortable, aCompact});
+    }
+
+    @Test
+    public void testSetArrayOfGenericRecordThrowsWithDifferentTypeOfGenericRecord_schemaBound() {
+        thrown.expect(HazelcastSerializationException.class);
+        thrown.expectMessage("You can only use Compact GenericRecords in a Compact");
+
+        GenericRecord aPortable = portable(new ClassDefinitionBuilder(1, 1).build()).build();
+        GenericRecord aCompact = compact("asd2").build();
+
+        SchemaWriter schemaWriter = new SchemaWriter("asd1");
+        schemaWriter.addField(new FieldDescriptor("f", FieldKind.ARRAY_OF_COMPACT));
+        Schema schema = schemaWriter.build();
+        GenericRecordBuilder builder = new DeserializedSchemaBoundGenericRecordBuilder(schema);
+        builder.setArrayOfGenericRecord("f", new GenericRecord[]{aPortable, aCompact});
     }
 }

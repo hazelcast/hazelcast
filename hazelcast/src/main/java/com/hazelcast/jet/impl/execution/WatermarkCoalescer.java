@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,23 +26,28 @@ import java.util.Arrays;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 
 /**
- * Implements {@link Watermark} coalescing. Tracks WMs on input queues and
- * decides when to forward the WM. The watermark should be forwarded when
- * it has been received from all input streams (ignoring idle streams).
- *
+ * Implements {@link Watermark} coalescing for a single watermark key. For
+ * handling WMs with multiple keys, see {@link KeyedWatermarkCoalescer}.
+ * <p>
+ * The class tracks WMs on input queues and decides when to forward the WM. The
+ * watermark should be forwarded when it has been received from all input
+ * streams (ignoring idle streams).
+ * <p>
  * The class also handles idle messages from inputs (coming in the form of a
- * watermark equal to {@link #IDLE_MESSAGE}). When such a message is received,
- * that input is switched to <em>idle</em> and excluded from coalescing. Any
- * event or watermark from such input will turn the input back to
- * <em>active</em> state.
+ * watermark with value equal to {@link #IDLE_MESSAGE_TIME}). When such a
+ * message is received, that input is switched to <em>idle</em> and excluded
+ * from coalescing. Any event or watermark from such input will turn the input
+ * back to <em>active</em> state.
  */
 public abstract class WatermarkCoalescer {
 
-    public static final Watermark IDLE_MESSAGE = new Watermark(Long.MAX_VALUE);
+    public static final long IDLE_MESSAGE_TIME = Long.MAX_VALUE;
+    public static final Watermark IDLE_MESSAGE = new Watermark(IDLE_MESSAGE_TIME, (byte) 0);
 
     static final long NO_NEW_WM = Long.MIN_VALUE;
 
-    private WatermarkCoalescer() { }
+    private WatermarkCoalescer() {
+    }
 
     /**
      * Called when the queue with the given index is exhausted.
@@ -66,19 +71,16 @@ public abstract class WatermarkCoalescer {
      * @param queueIndex index of the queue on which the WM was received.
      * @param wmValue    the watermark value, it can be {@link #IDLE_MESSAGE}
      * @return the watermark value to emit or {@link #NO_NEW_WM} if no
-     *      watermark should be forwarded. It can return {@link #IDLE_MESSAGE}
+     * watermark should be forwarded. It can not return {@link #IDLE_MESSAGE}
      */
     public abstract long observeWm(int queueIndex, long wmValue);
 
     /**
-     * Checks if there is a watermark to emit now based on the passage of
-     * system time or if all input queues are idle and we should forward the
-     * idle marker.
-     *
-     * @return the watermark value to emit, {@link #IDLE_MESSAGE} or
-     *      {@link #NO_NEW_WM} if no watermark should be forwarded
+     * Return {@code true}, if an idle message should be forwarded. The status
+     * is reset after this method is called. It can return {@code true} at most
+     * once after a {@link #queueDone(int)} call, never after any other method.
      */
-    public abstract long checkWmHistory();
+    public abstract boolean idleMessagePending();
 
     /**
      * Returns the last emitted watermark.
@@ -128,8 +130,8 @@ public abstract class WatermarkCoalescer {
         }
 
         @Override
-        public long checkWmHistory() {
-            return NO_NEW_WM;
+        public boolean idleMessagePending() {
+            return false;
         }
 
         @Override
@@ -150,6 +152,7 @@ public abstract class WatermarkCoalescer {
     private static final class SingleInputImpl extends WatermarkCoalescer {
 
         private final Counter queueWm = SwCounter.newSwCounter(Long.MIN_VALUE);
+        private boolean idleMessagePending;
 
         @Override
         public long queueDone(int queueIndex) {
@@ -169,15 +172,22 @@ public abstract class WatermarkCoalescer {
                 throw new JetException("Watermarks not monotonically increasing on queue: " +
                         "last one=" + queueWm + ", new one=" + wmValue);
             }
-            if (wmValue != IDLE_MESSAGE.timestamp()) {
+            if (wmValue == IDLE_MESSAGE_TIME) {
+                idleMessagePending = true;
+                return NO_NEW_WM;
+            } else {
                 queueWm.set(wmValue);
+                return wmValue;
             }
-            return wmValue;
         }
 
         @Override
-        public long checkWmHistory() {
-            return NO_NEW_WM;
+        public boolean idleMessagePending() {
+            try {
+                return idleMessagePending;
+            } finally {
+                idleMessagePending = false;
+            }
         }
 
         @Override
@@ -231,7 +241,7 @@ public abstract class WatermarkCoalescer {
                         "last one=" + queueWms[queueIndex] + ", new one=" + wmValue);
             }
 
-            if (wmValue == IDLE_MESSAGE.timestamp()) {
+            if (wmValue == IDLE_MESSAGE_TIME) {
                 isIdle[queueIndex] = true;
             } else {
                 isIdle[queueIndex] = false;
@@ -273,15 +283,14 @@ public abstract class WatermarkCoalescer {
                 //      Then message from Q1 is received. Without this condition WM would stay at wm(1). With it,
                 //      wm(2) is forwarded.
                 allInputsAreIdle = true;
+                idleMessagePending = notDoneInputCount != 0;
                 final long topObservedWmLocal = topObservedWm.get();
                 if (topObservedWmLocal > lastEmittedWm.get()) {
-                    idleMessagePending = notDoneInputCount != 0;
                     lastEmittedWm.set(topObservedWmLocal);
                     return topObservedWmLocal;
                 }
-                return notDoneInputCount != 0
-                        ? IDLE_MESSAGE.timestamp()
-                        : NO_NEW_WM;
+
+                return NO_NEW_WM;
             }
 
             // if the new lowest observed wm is larger than already emitted, emit it
@@ -294,12 +303,12 @@ public abstract class WatermarkCoalescer {
         }
 
         @Override
-        public long checkWmHistory() {
-            if (idleMessagePending) {
+        public boolean idleMessagePending() {
+            try {
+                return idleMessagePending;
+            } finally {
                 idleMessagePending = false;
-                return IDLE_MESSAGE.timestamp();
             }
-            return NO_NEW_WM;
         }
 
         @Override

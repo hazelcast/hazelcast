@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.cdc.impl;
 
+import com.hazelcast.jet.cdc.Operation;
+import com.hazelcast.jet.cdc.RecordPart;
 import com.hazelcast.jet.impl.serialization.SerializerHookConstants;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -29,10 +31,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Hazelcast serializer hooks for data objects involved in processing
  * change data capture streams.
  */
+@SuppressWarnings("NullableProblems")
 public class CdcSerializerHooks {
 
     public static final class ChangeRecordImplHook implements SerializerHook<ChangeRecordImpl> {
@@ -52,19 +57,36 @@ public class CdcSerializerHooks {
 
                 @Override
                 public void write(ObjectDataOutput out, ChangeRecordImpl record) throws IOException {
+                    out.writeLong(record.timestamp());
                     out.writeLong(record.sequenceSource());
                     out.writeLong(record.sequenceValue());
+                    out.writeString(record.operation().code());
                     out.writeUTF(record.getKeyJson());
-                    out.writeUTF(record.getValueJson());
+                    RecordPart oldValue = record.oldValue();
+                    out.writeUTF(oldValue == null ? null : oldValue.toJson());
+                    RecordPart newValue = record.newValue();
+                    out.writeUTF(newValue == null ? null : newValue.toJson());
+                    out.writeString(record.table());
+                    out.writeString(record.schema());
+                    out.writeString(record.database());
                 }
 
                 @Override
                 public ChangeRecordImpl read(ObjectDataInput in) throws IOException {
+                    long timestamp = in.readLong();
                     long sequenceSource = in.readLong();
                     long sequenceValue = in.readLong();
-                    String keyJson = in.readUTF();
-                    String valueJson = in.readUTF();
-                    return new ChangeRecordImpl(sequenceSource, sequenceValue, keyJson, valueJson);
+                    Operation operation = Operation.get(in.readString());
+                    String keyJson = requireNonNull(in.readString(), "keyJson cannot be null");
+                    String oldValueJson = in.readString();
+                    String newValueJson = in.readString();
+                    String table = in.readString();
+                    String schema = in.readString();
+                    String database = in.readString();
+                    return new ChangeRecordImpl(
+                            timestamp, sequenceSource, sequenceValue,
+                            operation, keyJson, oldValueJson, newValueJson,
+                            table, schema, database);
                 }
             };
         }
@@ -91,12 +113,12 @@ public class CdcSerializerHooks {
 
                 @Override
                 public void write(ObjectDataOutput out, RecordPartImpl part) throws IOException {
-                    out.writeUTF(part.toJson());
+                    out.writeString(part.toJson());
                 }
 
                 @Override
                 public RecordPartImpl read(ObjectDataInput in) throws IOException {
-                    String json = in.readUTF();
+                    String json = requireNonNull(in.readString(), "RecordPart.json must not be null");
                     return new RecordPartImpl(json);
                 }
             };

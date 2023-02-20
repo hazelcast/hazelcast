@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,10 @@ public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
         }
 
         if (!masterCheck()) {
+            getLogger().info("A split-brain merge validation request was received, but the current member is not a master. "
+                    + "The master address will be sent to the request source (" + getConnection().getRemoteAddress()
+                    + ")");
+            node.getClusterService().getClusterJoinManager().answerWhoisMasterQuestion(request, getConnection());
             return;
         }
 

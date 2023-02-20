@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package com.hazelcast.internal.serialization.impl.portable;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import javax.annotation.Nonnull;
@@ -171,6 +171,7 @@ public class PortableGenericRecordBuilder implements GenericRecordBuilder {
     @Nonnull
     @Override
     public GenericRecordBuilder setGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord value) {
+        checkPortableGenericRecord(value);
         return set(fieldName, value, FieldType.PORTABLE);
     }
 
@@ -207,7 +208,19 @@ public class PortableGenericRecordBuilder implements GenericRecordBuilder {
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
+        if (value != null) {
+            for (GenericRecord genericRecord : value) {
+                checkPortableGenericRecord(genericRecord);
+            }
+        }
         return set(fieldName, value, FieldType.PORTABLE_ARRAY);
+    }
+
+    private static void checkPortableGenericRecord(GenericRecord genericRecord) {
+        if (genericRecord != null && !(genericRecord instanceof PortableGenericRecord)) {
+            throw new HazelcastSerializationException("You can only use Portable GenericRecords in a Portable"
+                    + " GenericRecordBuilder");
+        }
     }
 
     @Nonnull
@@ -343,7 +356,7 @@ public class PortableGenericRecordBuilder implements GenericRecordBuilder {
             if (!isClone) {
                 throw new HazelcastSerializationException("It is illegal to the overwrite the field");
             } else {
-                throw new HazelcastSerializationException("Field can only overwritten once with `cloneWithBuilder`");
+                throw new HazelcastSerializationException("Field can only overwritten once with `newBuilderWithClone`");
             }
         }
         objects[index] = value;

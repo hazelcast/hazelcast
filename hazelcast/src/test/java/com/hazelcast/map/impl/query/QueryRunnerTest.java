@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
 
         assertEquals(1, result.getRows().size());
         assertEquals(map.get(key), toObject(result.getRows().iterator().next().getValue()));
-        assertArrayEquals(result.getPartitionIds().toArray(), mapService.getMapServiceContext().getOrInitCachedMemberPartitions().toArray());
+        assertArrayEquals(result.getPartitionIds().toArray(), mapService.getMapServiceContext().getCachedOwnedPartitions().toArray());
     }
 
     @Test

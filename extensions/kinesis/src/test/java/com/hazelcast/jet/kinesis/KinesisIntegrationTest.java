@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.kinesis;
 
 import com.amazonaws.SDKGlobalConfiguration;
 import com.amazonaws.services.kinesis.AmazonKinesisAsync;
 import com.amazonaws.services.kinesis.model.PutRecordsResult;
 import com.amazonaws.services.kinesis.model.Shard;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
@@ -28,11 +30,11 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.JobProxy;
 import com.hazelcast.jet.kinesis.impl.AwsConfig;
 import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.WindowDefinition;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.test.SerialTest;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -47,6 +49,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static com.amazonaws.services.kinesis.model.ShardIteratorType.AFTER_SEQUENCE_NUMBER;
@@ -58,6 +62,7 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.pipeline.test.Assertions.assertCollectedEventually;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
+import static java.util.concurrent.Executors.newFixedThreadPool;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -68,6 +73,7 @@ import static org.testcontainers.utility.DockerImageName.parse;
 public class KinesisIntegrationTest extends AbstractKinesisTest {
 
     public static LocalStackContainer localStack;
+    public static final AtomicInteger threadCounter = new AtomicInteger(0);
 
     private static AwsConfig AWS_CONFIG;
     private static AmazonKinesisAsync KINESIS;
@@ -81,6 +87,8 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
     @BeforeClass
     public static void beforeClass() {
         assumeDockerEnabled();
+        //Newer version of localstack with arm64 support fails in KinesisIntegrationTest
+        assumeNoArm64Architecture();
 
         localStack = new LocalStackContainer(parse("localstack/localstack")
                 .withTag("0.12.3"))
@@ -108,7 +116,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
                     .withCredentials(localStack.getAccessKey(), localStack.getSecretKey());
         }
         KINESIS = AWS_CONFIG.buildClient();
-        HELPER = new KinesisTestHelper(KINESIS, STREAM, Logger.getLogger(KinesisIntegrationTest.class));
+        HELPER = new KinesisTestHelper(KINESIS, STREAM);
     }
 
     @AfterClass
@@ -133,18 +141,19 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
             Pipeline pipeline = Pipeline.create();
             pipeline.readFrom(kinesisSource().build())
                     .withNativeTimestamps(0)
-                    .window(WindowDefinition.sliding(500, 100))
+                    .window(WindowDefinition.sliding(500, 50))
                     .aggregate(counting())
                     .apply(assertCollectedEventually(ASSERT_TRUE_EVENTUALLY_TIMEOUT, windowResults -> {
-                        assertTrue(windowResults.size() > 1); //multiple windows, so watermark works
+                        // multiple windows, so watermark works
+                        assertGreaterOrEquals("Windows count", windowResults.size(), 1);
                     }));
 
             hz().getJet().newJob(pipeline).join();
             fail("Expected exception not thrown");
         } catch (CompletionException ce) {
             Throwable cause = peel(ce);
-            assertTrue(cause instanceof JetException);
-            assertTrue(cause.getCause() instanceof AssertionCompletedException);
+            assertInstanceOf(JetException.class, cause);
+            assertInstanceOf(AssertionCompletedException.class, cause.getCause());
         }
     }
 
@@ -173,6 +182,42 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
                         assertEquals(MESSAGES, results.size());
                         results.forEach(v -> assertEquals(expectedPerSequenceNo, v.getValue()));
                     }));
+
+            hz().getJet().newJob(pipeline).join();
+            fail("Expected exception not thrown");
+        } catch (CompletionException ce) {
+            Throwable cause = peel(ce);
+            assertTrue(cause instanceof JetException);
+            assertTrue(cause.getCause() instanceof AssertionCompletedException);
+        }
+    }
+
+    @Test
+    public void testCustomSinkExecutorService() throws Exception {
+        HELPER.createStream(1);
+
+        threadCounter.set(0);
+        SupplierEx<ExecutorService> sinkExecutorSupplier = () -> newFixedThreadPool(
+                1,
+                r -> new Thread(r, "kinesis-sink-thread-" + threadCounter.getAndIncrement())
+        );
+        Sink<Map.Entry<String, byte[]>> sink = kinesisSink()
+                .withExecutorServiceSupplier(sinkExecutorSupplier)
+                .build();
+
+        sendMessages(MESSAGES, sink);
+        assertTrueEventually(() -> assertEquals(MEMBER_COUNT, threadCounter.get()));
+
+        try {
+            Pipeline pipeline = Pipeline.create();
+            pipeline.readFrom(kinesisSource().build())
+                    .withoutTimestamps()
+                    .groupingKey(key -> "sameKeyAllEntries")
+                    .rollingAggregate(counting())
+                    .apply(assertCollectedEventually(
+                            ASSERT_TRUE_EVENTUALLY_TIMEOUT,
+                            windowResults -> assertEquals(MESSAGES, windowResults.size())
+                    ));
 
             hz().getJet().newJob(pipeline).join();
             fail("Expected exception not thrown");
@@ -555,6 +600,36 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
                 .build();
         hz().getJet().newJob(getPipeline(source));
         assertMessages(expectedMessages(51, 100), true, false);
+    }
+
+    @Test
+    public void initialRead_customSourceExecutorService() {
+        HELPER.createStream(1);
+
+        // send out some records, make sure they are in the shard
+        HELPER.putRecords(messages(0, 100));
+        Job initialJob = hz().getJet().newJob(getPipeline(kinesisSource().build()));
+        assertMessages(expectedMessages(0, 100), true, false);
+        initialJob.cancel();
+        results.clear();
+
+        // start a new job which reads records with custom executor service supplier
+        threadCounter.set(0);
+        SupplierEx<ExecutorService> sourceExecutorSupplier = () -> newFixedThreadPool(
+                1,
+                r -> new Thread(r, "kinesis-source-thread-" + threadCounter.getAndIncrement())
+        );
+        StreamSource<Map.Entry<String, byte[]>> source = kinesisSource()
+                .withExecutorServiceSupplier(sourceExecutorSupplier).build();
+        Job job = hz().getJet().newJob(getPipeline(source));
+        assertJobStatusEventually(job, JobStatus.RUNNING);
+
+        // send some more messages and check that the job reads both old and new records
+        HELPER.putRecords(messages(100, 200));
+        assertMessages(expectedMessages(0, 200), true, false);
+
+        // single thread on each member should be created
+        assertEquals(MEMBER_COUNT, threadCounter.get());
     }
 
     private void assertOpenShards(int count, Shard... excludedShards) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartClusterDataRecoveryPolicy;
 import com.hazelcast.config.HotRestartConfig;
@@ -182,15 +183,16 @@ import static com.hazelcast.internal.config.ConfigSections.CARDINALITY_ESTIMATOR
 import static com.hazelcast.internal.config.ConfigSections.CLUSTER_NAME;
 import static com.hazelcast.internal.config.ConfigSections.CP_SUBSYSTEM;
 import static com.hazelcast.internal.config.ConfigSections.CRDT_REPLICATION;
-import static com.hazelcast.internal.config.ConfigSections.INTEGRITY_CHECKER;
 import static com.hazelcast.internal.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.DYNAMIC_CONFIGURATION;
 import static com.hazelcast.internal.config.ConfigSections.EXECUTOR_SERVICE;
+import static com.hazelcast.internal.config.ConfigSections.DATA_LINK;
 import static com.hazelcast.internal.config.ConfigSections.FLAKE_ID_GENERATOR;
 import static com.hazelcast.internal.config.ConfigSections.HOT_RESTART_PERSISTENCE;
 import static com.hazelcast.internal.config.ConfigSections.IMPORT;
 import static com.hazelcast.internal.config.ConfigSections.INSTANCE_NAME;
 import static com.hazelcast.internal.config.ConfigSections.INSTANCE_TRACKING;
+import static com.hazelcast.internal.config.ConfigSections.INTEGRITY_CHECKER;
 import static com.hazelcast.internal.config.ConfigSections.JET;
 import static com.hazelcast.internal.config.ConfigSections.LICENSE_KEY;
 import static com.hazelcast.internal.config.ConfigSections.LIST;
@@ -378,6 +380,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleDynamicConfiguration(node);
         } else if (matches(INTEGRITY_CHECKER.getName(), nodeName)) {
             handleIntegrityChecker(node);
+        } else if (matches(DATA_LINK.getName(), nodeName)) {
+            handleDataLinks(node);
         } else {
             return true;
         }
@@ -524,7 +528,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if (matches("base-dir", name)) {
                 localDeviceConfig.setBaseDir(new File(getTextContent(n)).getAbsoluteFile());
             } else if (matches("capacity", name)) {
-                localDeviceConfig.setCapacity(createMemorySize(n));
+                localDeviceConfig.setCapacity(createCapacity(n));
             } else if (matches(blockSizeName, name)) {
                 localDeviceConfig.setBlockSize(getIntegerValue(blockSizeName, getTextContent(n)));
             } else if (matches(readIOThreadCountName, name)) {
@@ -562,7 +566,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             String name = cleanNodeName(n);
 
             if (matches("capacity", name)) {
-                return memoryTierConfig.setCapacity(createMemorySize(n));
+                return memoryTierConfig.setCapacity(createCapacity(n));
             }
         }
         return memoryTierConfig;
@@ -2435,6 +2439,13 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 } else {
                     mapStoreConfig.setWriteCoalescing(getBooleanValue(writeCoalescing));
                 }
+            } else if (matches("offload", nodeName)) {
+                String offload = getTextContent(n);
+                if (isNullOrEmpty(offload)) {
+                    mapStoreConfig.setOffload(MapStoreConfig.DEFAULT_OFFLOAD);
+                } else {
+                    mapStoreConfig.setOffload(getBooleanValue(offload));
+                }
             } else if (matches("properties", nodeName)) {
                 fillProperties(n, mapStoreConfig.getProperties());
             }
@@ -2983,6 +2994,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                     cpSubsystemConfig.setBaseDir(new File(getTextContent(child)).getAbsoluteFile());
                 } else if (matches("data-load-timeout-seconds", nodeName)) {
                     cpSubsystemConfig.setDataLoadTimeoutSeconds(Integer.parseInt(getTextContent(child)));
+                } else if (matches("cp-member-priority", nodeName)) {
+                    cpSubsystemConfig.setCPMemberPriority(Integer.parseInt(getTextContent(child)));
                 }
             }
         }
@@ -3417,6 +3430,27 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
         config.getIntegrityCheckerConfig().setEnabled(enabled);
     }
+
+    protected void handleDataLinks(Node node) {
+        String name = getAttribute(node, "name");
+        DataLinkConfig dataLinkConfig = ConfigUtils.getByNameOrNew(config.getDataLinkConfigs(),
+                name, DataLinkConfig.class);
+        handleDataLink(node, dataLinkConfig);
+    }
+
+    protected void handleDataLink(Node node, DataLinkConfig dataLinkConfig) {
+        for (Node child : childElements(node)) {
+            String childName = cleanNodeName(child);
+            if (matches("class-name", childName)) {
+                dataLinkConfig.setClassName(getTextContent(child));
+            } else if (matches("properties", childName)) {
+                fillProperties(child, dataLinkConfig.getProperties());
+            } else if (matches("shared", childName)) {
+                dataLinkConfig.setShared(getBooleanValue(getTextContent(child)));
+            }
+        }
+    }
+
 
     protected void fillClusterLoginConfig(AbstractClusterLoginConfig<?> config, Node node) {
         for (Node child : childElements(node)) {

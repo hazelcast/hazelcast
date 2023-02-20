@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -218,7 +218,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             LocalRecordStoreStats stats = statsEntry.getValue();
 
             RecordStore recordStore = operation.getRecordStore(mapName);
-            recordStore.setStats(stats);
+            recordStore.setLocalRecordStoreStats(stats);
 
         }
     }
@@ -333,7 +333,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             RecordStore<Record> recordStore = entry.getValue();
             out.writeString(mapName);
             writeRecordStore(mapName, recordStore, out);
-            recordStore.getStats().writeData(out);
+            recordStore.getLocalRecordStoreStats().writeData(out);
         }
 
         out.writeInt(loaded.size());

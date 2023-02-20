@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@ import static com.hazelcast.jet.impl.util.ProgressState.DONE;
 import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -89,34 +88,12 @@ public class OutboxImplTest {
     }
 
     @Test
-    public void when_queueFullAndOfferReturnedFalse_then_subsequentCallFails() {
-        // See https://github.com/hazelcast/hazelcast-jet/issues/622
-        outbox = new OutboxImpl(new OutboundCollector[] {e -> DONE, e -> NO_PROGRESS},
-                true, new ProgressTracker(), mockSerializationService(), 128, new AtomicLongArray(3));
-
-        // we succeed offering to one queue, but not to the other, thus false
-        assertFalse(outbox.offer(4));
-
-        // Then
-        exception.expectMessage("offer() called again");
-        outbox.offer(4);
-    }
-
-    @Test
     public void when_batchSizeReachedAndOfferReturnedFalse_then_subsequentCallFails() {
         // See https://github.com/hazelcast/hazelcast-jet/issues/622
         assertTrue(outbox.offer(1));
         assertTrue(outbox.offer(2));
         assertTrue(outbox.offer(3));
         assertFalse(outbox.offer(4));
-
-        // Then
-        try {
-            outbox.offer(4);
-            fail("expected exception not thrown");
-        } catch (AssertionError e) {
-            assertTrue(e.getMessage().contains("offer() called again"));
-        }
 
         // let's reset the outbox, we should be able to offer now
         outbox.reset();

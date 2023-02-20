@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,12 +61,12 @@ public class TestEntryStore<K, V> implements EntryStore<K, V> {
 
     @Override
     public Map<K, MetadataAwareValue<V>> loadAll(Collection<K> keys) {
-        loadAllCallCount.incrementAndGet();
-        loadedEntryCount.addAndGet(keys.size());
         Map<K, MetadataAwareValue<V>> map = new HashMap<>(keys.size());
-        for (K key: keys) {
-            Record record = records.get(key);
-            map.put(key, new MetadataAwareValue<>(record.value, record.expirationTime));
+        for (K key : keys) {
+            MetadataAwareValue<V> metadataAwareValue = load(key);
+            if (metadataAwareValue != null) {
+                map.put(key, metadataAwareValue);
+            }
         }
         return map;
     }
@@ -92,7 +92,7 @@ public class TestEntryStore<K, V> implements EntryStore<K, V> {
 
     @Override
     public void storeAll(Map<K, MetadataAwareValue<V>> map) {
-        for (Map.Entry<K, MetadataAwareValue<V>> mapEntry: map.entrySet()) {
+        for (Map.Entry<K, MetadataAwareValue<V>> mapEntry : map.entrySet()) {
             K key = mapEntry.getKey();
             MetadataAwareValue<V> entry = mapEntry.getValue();
             V internalValue = entry.getValue();
@@ -115,7 +115,7 @@ public class TestEntryStore<K, V> implements EntryStore<K, V> {
 
     @Override
     public void deleteAll(Collection<K> keys) {
-        for (K key: keys) {
+        for (K key : keys) {
             records.remove(key);
         }
     }

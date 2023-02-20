@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,9 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.operation.steps.GetOpSteps;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
+import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
@@ -37,17 +40,38 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
     }
 
     @Override
+    protected void innerBeforeRun() throws Exception {
+        super.innerBeforeRun();
+        recordStore.checkIfLoaded();
+    }
+
+    @Override
     protected void runInternal() {
         Object currentValue = recordStore.get(dataKey, false, getCallerAddress());
+        result = extractResult(currentValue);
+    }
+
+    public Data extractResult(Object currentValue) {
         if (noCopyReadAllowed(currentValue)) {
             // in case of a 'remote' call (e.g a client call) we prevent making
             // an on-heap copy of the off-heap data
-            result = (Data) currentValue;
+            return (Data) currentValue;
         } else {
             // in case of a local call, we do make a copy, so we can safely share
             // it with e.g. near cache invalidation
-            result = mapService.getMapServiceContext().toData(currentValue);
+            return mapService.getMapServiceContext().toData(currentValue);
         }
+    }
+
+    @Override
+    public Step getStartingStep() {
+        return GetOpSteps.READ;
+    }
+
+    @Override
+    public void applyState(State state) {
+        super.applyState(state);
+        result = extractResult(state.getOldValue());
     }
 
     private boolean noCopyReadAllowed(Object currentValue) {
@@ -57,7 +81,7 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
     }
 
     @Override
-    protected void afterRunInternal() {
+    public void afterRunInternal() {
         mapServiceContext.interceptAfterGet(mapContainer.getInterceptorRegistry(), result);
         super.afterRunInternal();
     }

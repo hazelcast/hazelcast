@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,13 +112,20 @@ public abstract class BaseElasticTest {
     }
 
     /**
-     * RestHighLevelClient supplier, it is used to
-     * - create a client before each test for use by all methods from this class interacting with elastic
-     * - may be used as as a parameter of {@link ElasticSourceBuilder#clientFn(SupplierEx)}
+     * RestHighLevelClient supplier, it is used to create a client before each
+     * test for use by all methods from this class interacting with elastic
      */
     protected SupplierEx<RestClientBuilder> elasticClientSupplier() {
         return ElasticSupport.elasticClientSupplier();
-    };
+    }
+
+    /**
+     * RestHighLevelClient supplier, it is used to used as a parameter of
+     * {@link ElasticSourceBuilder#clientFn(SupplierEx)}
+     */
+    protected SupplierEx<RestClientBuilder> elasticPipelineClientSupplier() {
+        return ElasticSupport.elasticClientSupplier();
+    }
 
     protected abstract HazelcastInstance createHazelcastInstance();
 

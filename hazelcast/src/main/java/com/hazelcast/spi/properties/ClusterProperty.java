@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.properties;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
@@ -39,9 +40,12 @@ import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.predicates.QueryOptimizerFactory;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Function;
@@ -51,9 +55,6 @@ import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 
 /**
  * Defines the name and default value for Hazelcast properties.
@@ -371,6 +372,17 @@ public final class ClusterProperty {
      */
     public static final HazelcastProperty TCP_JOIN_PORT_TRY_COUNT
             = new HazelcastProperty("hazelcast.tcp.join.port.try.count", 3);
+
+    /**
+     * Specifies how long the address of a member that has previously joined the
+     * cluster will be retained/remembered in the TcpIpJoiner after it leaves the
+     * cluster. The remembered member addresses is used to discover other cluster
+     * by split-brain handler.
+     */
+    public static final HazelcastProperty TCP_PREVIOUSLY_JOINED_MEMBER_ADDRESS_RETENTION_DURATION
+            = new HazelcastProperty("hazelcast.tcp.join.previously.joined.member.address.retention.seconds",
+            14400, SECONDS);
+
 
     /**
      * Allows explicitly control if the {@link java.net.MulticastSocket#setInterface(java.net.InetAddress)} method is called in
@@ -822,8 +834,7 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.mc.executor.thread.count", 2);
 
     /**
-     * Enables collecting debug metrics. Debug metrics are sent to the
-     * diagnostics only.
+     * Enables collecting debug metrics.
      */
     public static final HazelcastProperty METRICS_DEBUG
             = new HazelcastProperty("hazelcast.metrics.debug.enabled");
@@ -1769,6 +1780,40 @@ public final class ClusterProperty {
      */
     public static final HazelcastProperty SECURITY_RECOMMENDATIONS = new HazelcastProperty(
             "hazelcast.security.recommendations");
+
+    /**
+     * Enable experimental support for accessing nested fields by using custom
+     * types in SQL. The feature is unstable in 5.2, this property will be
+     * removed once the feature is stable.
+     *
+     * @since 5.2
+     */
+    @Beta
+    public static final HazelcastProperty SQL_CUSTOM_TYPES_ENABLED = new HazelcastProperty(
+            "hazelcast.sql.experimental.custom.types.enabled", false);
+
+    /**
+     * When {@code true}, enables monitoring of the runtime environment to detect the intent of shutdown
+     * and automate cluster state management decisions.
+     * Supported when persistence is enabled and Hazelcast is executed in a Kubernetes
+     * <a href="https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/">StatefulSet</a>.
+     * <p/>
+     * The default value is {@code true}.
+     *
+     * @since 5.2
+     */
+    public static final HazelcastProperty PERSISTENCE_AUTO_CLUSTER_STATE = new HazelcastProperty(
+            "hazelcast.persistence.auto.cluster.state", true);
+
+    /**
+     * Select which cluster state to use when dealing with missing members in a managed runtime environment.
+     * Used when {@link #PERSISTENCE_AUTO_CLUSTER_STATE} and persistence are both enabled.
+     * Valid values are {@code FROZEN} or {@code NO_MIGRATION}.
+     *
+     * @since 5.2
+     */
+    public static final HazelcastProperty PERSISTENCE_AUTO_CLUSTER_STATE_STRATEGY = new HazelcastProperty(
+            "hazelcast.persistence.auto.cluster.state.strategy", ClusterState.NO_MIGRATION);
 
     private ClusterProperty() {
     }

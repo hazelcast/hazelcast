@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -110,6 +110,6 @@ public class TestHazelcastFactoryTest extends HazelcastTestSupport {
                     clientInstanceImpl != registeredClient);
         }
 
-        assertFalse(HazelcastClientUtil.hasRegisteredClientWithName(instanceName));
+        assertNull(HazelcastClient.getHazelcastClientByName(instanceName));
     }
 }

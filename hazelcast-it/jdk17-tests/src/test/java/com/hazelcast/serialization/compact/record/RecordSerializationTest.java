@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,37 @@
 
 package com.hazelcast.serialization.compact.record;
 
-import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.compact.CompactReader;
+import com.hazelcast.nio.serialization.compact.CompactSerializer;
+import com.hazelcast.nio.serialization.compact.CompactWriter;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import jdk.net.UnixDomainPrincipal;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.LinkedList;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -47,11 +57,9 @@ public class RecordSerializationTest extends HazelcastTestSupport {
 
     @Before
     public void createSerializationService() {
-        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.setEnabled(true);
         service = new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .setConfig(new SerializationConfig())
                 .build();
     }
 
@@ -179,46 +187,109 @@ public class RecordSerializationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void shouldThrowWhileSerializingRecordWithCharField() {
-        CharRecord charRecord = new CharRecord('x');
-        assertThatThrownBy(() -> service.toData(charRecord))
-                .hasRootCauseInstanceOf(HazelcastSerializationException.class)
-                .hasStackTraceContaining("does not support fields of type 'char'");
+    public void testSerializingRecordReflectively_whenTheRecordClassIsNotSupported() {
+        // UnixDomainPrincipal is a record that does not implement the Serializable
+        // interface from the jdk.net package, which is not allowed to be serialized
+        // by zero-config serializer.
+        assertThatThrownBy(() -> {
+            service.toData(new UnixDomainPrincipal(() -> null, () -> null));
+        }).isInstanceOf(HazelcastSerializationException.class)
+                .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
+                .hasStackTraceContaining("If you want to serialize this class");
     }
 
     @Test
-    public void shouldThrowWhileSerializingRecordWithCharacterField() {
-        CharacterRecord characterRecord = new CharacterRecord('x');
-        assertThatThrownBy(() -> service.toData(characterRecord))
-                .hasRootCauseInstanceOf(HazelcastSerializationException.class)
-                .hasStackTraceContaining("does not support fields of type 'Character'");
+    public void testSerializingRecordReflectively_withUnsupportedFieldType() {
+        assertThatThrownBy(() -> {
+            service.toData(new RecordWithUnsupportedField(new LinkedList<>()));
+        }).isInstanceOf(HazelcastSerializationException.class)
+                .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
+                .hasStackTraceContaining("which uses this class in its fields");
     }
 
     @Test
-    public void shouldThrowWhileSerializingRecordWithCharArrayField() {
-        CharArrayRecord charArrayRecord = new CharArrayRecord(new char[]{'x'});
-        assertThatThrownBy(() -> service.toData(charArrayRecord))
-                .hasRootCauseInstanceOf(HazelcastSerializationException.class)
-                .hasStackTraceContaining("does not support fields of type 'char[]'");
+    public void testSerializingRecordReflectively_withUnsupportedArrayItemType() {
+        assertThatThrownBy(() -> {
+            service.toData(new RecordWithUnsupportedArrayField(new LinkedList[0]));
+        }).isInstanceOf(HazelcastSerializationException.class)
+                .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
+                .hasStackTraceContaining("which uses this class in its fields");
     }
 
     @Test
-    public void shouldThrowWhileSerializingRecordWithCharacterArrayField() {
-        CharacterArrayRecord characterArrayRecord = new CharacterArrayRecord(new Character[]{'x'});
-        assertThatThrownBy(() -> service.toData(characterArrayRecord))
-                .hasRootCauseInstanceOf(HazelcastSerializationException.class)
-                .hasStackTraceContaining("does not support fields of type 'Character[]'");
+    public void testSerializingRecordReflectively_withUnsupportedFieldType_whenThereIsExplicitSerializerForTheType() {
+        SerializationService serializationService = CompactTestUtil.createSerializationService(InstantSerializer::new);
+        RecordWithInstant object = new RecordWithInstant(Instant.ofEpochSecond(123, 456));
+        Data data = serializationService.toData(object);
+        RecordWithInstant deserialized = serializationService.toObject(data);
+        assertEquals(object, deserialized);
     }
 
-    record CharRecord(char field) {
+    @Test
+    public void testSerializingRecordReflectively_withUnsupportedArrayItemType_whenThereIsExplicitSerializerForComponentType() {
+        SerializationService serializationService = CompactTestUtil.createSerializationService(InstantSerializer::new);
+        RecordWithArrayOfInstant object = new RecordWithArrayOfInstant(new Instant[]{
+                Instant.ofEpochSecond(123, 456), Instant.ofEpochSecond(789123, 2112356)
+        });
+        Data data = serializationService.toData(object);
+        RecordWithArrayOfInstant deserialized = serializationService.toObject(data);
+        assertEquals(object, deserialized);
     }
 
-    record CharacterRecord(Character field) {
+
+    private record RecordWithUnsupportedField(LinkedList<String> list) {
     }
 
-    record CharArrayRecord(char[] field) {
+    private record RecordWithUnsupportedArrayField(LinkedList<String>[] lists) {
     }
 
-    record CharacterArrayRecord(Character[] field) {
+    private record RecordWithInstant(Instant instant) {
+    }
+
+    private record RecordWithArrayOfInstant(Instant[] lists) {
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            RecordWithArrayOfInstant that = (RecordWithArrayOfInstant) o;
+            return Arrays.equals(lists, that.lists);
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(lists);
+        }
+    }
+
+    private static class InstantSerializer implements CompactSerializer<Instant> {
+        @Nonnull
+        @Override
+        public Instant read(@Nonnull CompactReader reader) {
+            long epoch = reader.readInt64("epoch");
+            int nano = reader.readInt32("nano");
+            return Instant.ofEpochSecond(epoch, nano);
+        }
+
+        @Override
+        public void write(@Nonnull CompactWriter writer, @Nonnull Instant object) {
+            writer.writeInt64("epoch", object.getEpochSecond());
+            writer.writeInt32("nano", object.getNano());
+        }
+
+        @Nonnull
+        @Override
+        public String getTypeName() {
+            return "instant";
+        }
+
+        @Nonnull
+        @Override
+        public Class<Instant> getCompactClass() {
+            return Instant.class;
+        }
     }
 }

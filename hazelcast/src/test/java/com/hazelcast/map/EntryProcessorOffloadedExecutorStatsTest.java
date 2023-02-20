@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,20 +44,18 @@ public class EntryProcessorOffloadedExecutorStatsTest extends HazelcastTestSuppo
         // run task
         String mapName = "map";
         Config config = smallInstanceConfig();
-        config.getMapConfig(mapName)
-                .setStatisticsEnabled(true);
+        config.getMapConfig(mapName).setStatisticsEnabled(true);
 
         HazelcastInstance instance = createHazelcastInstance(config);
+
         IMap<Object, Object> map = instance.getMap(mapName);
         map.executeOnKey(1, new OneSecondSleepingEntryProcessor());
 
         // collect metrics
-        Map<String, List<Long>> metrics
-                = collectMetrics(MAP_PREFIX_ENTRY_PROCESSOR_OFFLOADABLE_EXECUTOR, instance);
+        Map<String, List<Long>> metrics = collectMetrics(MAP_PREFIX_ENTRY_PROCESSOR_OFFLOADABLE_EXECUTOR, instance);
 
         // check results
-        assertMetricsCollected(metrics, 1000, 0,
-                1, 1, 0, 1, 0);
+        assertMetricsCollected(metrics, 1000, 0, 1, 1, 0, 1, 0);
     }
 
     @Test
@@ -65,16 +63,14 @@ public class EntryProcessorOffloadedExecutorStatsTest extends HazelcastTestSuppo
         // run task
         String mapName = "map";
         Config config = smallInstanceConfig();
-        config.getMapConfig(mapName)
-                .setStatisticsEnabled(false);
+        config.getMapConfig(mapName).setStatisticsEnabled(false);
 
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<Object, Object> map = instance.getMap(mapName);
         map.executeOnKey(1, new OneSecondSleepingEntryProcessor());
 
         // collect metrics
-        Map<String, List<Long>> metrics
-                = collectMetrics(MAP_PREFIX_ENTRY_PROCESSOR_OFFLOADABLE_EXECUTOR, instance);
+        Map<String, List<Long>> metrics = collectMetrics(MAP_PREFIX_ENTRY_PROCESSOR_OFFLOADABLE_EXECUTOR, instance);
 
         // check results
         assertTrue("No metrics collection expected but " + metrics, metrics.isEmpty());
@@ -89,7 +85,7 @@ public class EntryProcessorOffloadedExecutorStatsTest extends HazelcastTestSuppo
 
         @Override
         public Object process(Map.Entry entry) {
-            sleepSeconds(1);
+            sleepAtLeastSeconds(1);
             return null;
         }
     }

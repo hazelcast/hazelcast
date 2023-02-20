@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,15 +37,15 @@ public class HeapMemoryManager implements MemoryManager {
 
     private final Accessor mem = new Accessor();
 
-    private final Long2LongHashMap allocatedAddrs = new Long2LongHashMap(1024, 0.7, -1);
+    final Long2LongHashMap allocatedAddrs = new Long2LongHashMap(1024, 0.7, -1);
 
-    private byte[] storage;
+    byte[] storage;
 
-    private int heapTop = HEAP_BOTTOM;
+    long heapTop = HEAP_BOTTOM;
 
-    private int lastAllocatedAddress;
+    long lastAllocatedAddress;
 
-    private int usedMemory;
+    long usedMemory;
 
     public HeapMemoryManager(int size) {
         this.storage = new byte[size];

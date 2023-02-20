@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,80 +16,72 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
-import com.hazelcast.cluster.Address;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapEvent;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.replicatedmap.ReplicatedMap;
-import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.operation.GetOperation;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
+import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
 
 public class TablesStorage {
-
-    private static final int MAX_CHECK_ATTEMPTS = 5;
-    private static final long SLEEP_MILLIS = 100;
-
-    private static final String CATALOG_MAP_NAME = "__sql.catalog";
-
     private final NodeEngine nodeEngine;
-    private final ILogger logger;
 
     public TablesStorage(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.logger = nodeEngine.getLogger(getClass());
     }
 
     void put(String name, Mapping mapping) {
         storage().put(name, mapping);
-        awaitMappingOnAllMembers(name, mapping);
     }
 
     void put(String name, View view) {
         storage().put(name, view);
-        awaitMappingOnAllMembers(name, view);
+    }
+
+    void put(String name, Type type) {
+        storage().put(name, type);
     }
 
     boolean putIfAbsent(String name, Mapping mapping) {
-        Object previous = storage().putIfAbsent(name, mapping);
-        awaitMappingOnAllMembers(name, mapping);
-        return previous == null;
+        return storage().putIfAbsent(name, mapping) == null;
     }
 
     boolean putIfAbsent(String name, View view) {
-        Object previous = storage().putIfAbsent(name, view);
-        awaitMappingOnAllMembers(name, view);
-        return previous == null;
+        return storage().putIfAbsent(name, view) == null;
+    }
+
+    boolean putIfAbsent(String name, Type type) {
+        return storage().putIfAbsent(name, type) == null;
     }
 
     Mapping removeMapping(String name) {
         return (Mapping) storage().remove(name);
     }
 
-    View getView(String name) {
+    public Collection<Type> getAllTypes() {
+        return storage().values().stream()
+                .filter(o -> o instanceof Type)
+                .map(o -> (Type) o)
+                .collect(Collectors.toList());
+    }
+
+    public Type getType(final String name) {
         Object obj = storage().get(name);
-        if (obj instanceof View) {
-            return (View) obj;
+        if (obj instanceof Type) {
+            return (Type) obj;
         }
         return null;
+    }
+
+    public Type removeType(String name) {
+        return (Type) storage().remove(name);
     }
 
     View removeView(String name) {
@@ -116,63 +108,22 @@ public class TablesStorage {
                 .collect(Collectors.toList());
     }
 
-    void registerListener(EntryListener<String, Object> listener) {
-        // do not try to implicitly create ReplicatedMap
-        // TODO: perform this check in a single place i.e. SqlService ?
+    Collection<String> typeNames() {
+        return storage().values()
+                .stream()
+                .filter(t -> t instanceof Type)
+                .map(t -> ((Type) t).getName())
+                .collect(Collectors.toList());
+    }
+
+    void initializeWithListener(EntryListener<String, Object> listener) {
         if (!nodeEngine.getLocalMember().isLiteMember()) {
-            storage().addEntryListener(listener);
+            storage().addEntryListener(listener, false);
         }
     }
 
-    private ReplicatedMap<String, Object> storage() {
-        return nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
-    }
-
-    private Collection<Address> getMemberAddresses() {
-        return nodeEngine.getClusterService().getMembers(MemberSelectors.DATA_MEMBER_SELECTOR).stream()
-                .filter(member -> !member.localMember() && !member.isLiteMember())
-                .map(Member::getAddress)
-                .collect(toSet());
-    }
-
-    /**
-     * Temporary measure to ensure schema is propagated to all the members.
-     */
-    @SuppressWarnings("BusyWait")
-    private void awaitMappingOnAllMembers(String name, IdentifiedDataSerializable metadata) {
-        Data keyData = nodeEngine.getSerializationService().toData(name);
-        int keyPartitionId = nodeEngine.getPartitionService().getPartitionId(keyData);
-        OperationService operationService = nodeEngine.getOperationService();
-
-        Collection<Address> memberAddresses = getMemberAddresses();
-        for (int i = 0; i < MAX_CHECK_ATTEMPTS && !memberAddresses.isEmpty(); i++) {
-            List<CompletableFuture<Address>> futures = memberAddresses.stream()
-                    .map(memberAddress -> {
-                        Operation operation = new GetOperation(CATALOG_MAP_NAME, keyData)
-                                .setPartitionId(keyPartitionId)
-                                .setValidateTarget(false);
-                        return operationService
-                                .createInvocationBuilder(ReplicatedMapService.SERVICE_NAME, operation, memberAddress)
-                                .setTryCount(1)
-                                .invoke()
-                                .toCompletableFuture()
-                                .thenApply(result -> Objects.equals(metadata, result) ? memberAddress : null);
-                    }).collect(toList());
-            for (CompletableFuture<Address> future : futures) {
-                try {
-                    memberAddresses.remove(future.join());
-                } catch (Exception e) {
-                    logger.warning("Error occurred while trying to fetch mapping: " + e.getMessage(), e);
-                }
-            }
-            if (!memberAddresses.isEmpty()) {
-                try {
-                    Thread.sleep(SLEEP_MILLIS);
-                } catch (InterruptedException e) {
-                    break;
-                }
-            }
-        }
+    IMap<String, Object> storage() {
+        return nodeEngine.getHazelcastInstance().getMap(SQL_CATALOG_MAP_NAME);
     }
 
     abstract static class EntryListenerAdapter implements EntryListener<String, Object> {

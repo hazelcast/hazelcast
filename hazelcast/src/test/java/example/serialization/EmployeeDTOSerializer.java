@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,13 +25,25 @@ import javax.annotation.Nonnull;
 public class EmployeeDTOSerializer implements CompactSerializer<EmployeeDTO> {
     @Nonnull
     @Override
-    public EmployeeDTO read(@Nonnull CompactReader in) {
-        return new EmployeeDTO(in.readInt32("age"), in.readInt64("id"));
+    public EmployeeDTO read(@Nonnull CompactReader reader) {
+        return new EmployeeDTO(reader.readInt32("age"), reader.readInt64("id"));
     }
 
     @Override
-    public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) {
-        out.writeInt32("age", object.getAge());
-        out.writeInt64("id", object.getId());
+    public void write(@Nonnull CompactWriter writer, @Nonnull EmployeeDTO object) {
+        writer.writeInt32("age", object.getAge());
+        writer.writeInt64("id", object.getId());
+    }
+
+    @Nonnull
+    @Override
+    public String getTypeName() {
+        return "employee";
+    }
+
+    @Nonnull
+    @Override
+    public Class<EmployeeDTO> getCompactClass() {
+        return EmployeeDTO.class;
     }
 }

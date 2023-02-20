@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.MapStore;
@@ -187,8 +188,8 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
             }
         }
 
-        assertEquals(success, maxCapacity);
-        assertEquals(map.size(), maxCapacity);
+        assertEquals(maxCapacity, success);
+        assertEquals(maxCapacity, map.size());
     }
 
     @Test
@@ -278,6 +279,39 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         expectedException.expectMessage(startsWith("Neither key nor value can be loaded as null"));
         // load entries.
         map.getAll(new HashSet<>(asList("key1", "key2", "key3")));
+    }
+
+    @Test
+    public void test_executeOnEntries_with_read_only_entry_processor() {
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setImplementation(new SimpleMapStore());
+
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setName(MAP_NAME);
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+
+        Config config = getConfig();
+        config.addMapConfig(mapConfig);
+
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+
+        IMap map = client.getMap(MAP_NAME);
+        map.loadAll(true);
+
+        int mapSize = map.size();
+
+        Map responses = map.executeOnEntries(new CountItemsEP());
+
+        assertEquals(mapSize, responses.size());
+    }
+
+    public static class CountItemsEP implements EntryProcessor {
+
+        @Override
+        public Object process(Map.Entry entry) {
+            return 1;
+        }
     }
 
     static class SimpleMapStore implements MapStore<String, String>, MapLoader<String, String> {
@@ -405,7 +439,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         String mapNameWithStoreAndSize = "MapStoreMaxSize*";
 
         String xml = "<hazelcast xsi:schemaLocation=\"http://www.hazelcast.com/schema/config\n"
-                + "                             http://www.hazelcast.com/schema/config/hazelcast-config-3.11.xsd\"\n"
+                + "                             http://www.hazelcast.com/schema/config/hazelcast-config-5.3.xsd\"\n"
                 + "                             xmlns=\"http://www.hazelcast.com/schema/config\"\n"
                 + "                             xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
                 + "\n"

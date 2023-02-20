@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -191,21 +191,23 @@ public class Lock extends BlockingResource<LockInvocationKey> implements Identif
     private Collection<LockInvocationKey> setNewLockOwner() {
         Collection<LockInvocationKey> newOwnerWaitKeys;
         Iterator<WaitKeyContainer<LockInvocationKey>> iter = waitKeyContainersIterator();
-        if (iter.hasNext()) {
-            WaitKeyContainer<LockInvocationKey> container = iter.next();
-            LockInvocationKey newOwner = container.key();
-            newOwnerWaitKeys = container.keyAndRetries();
+        synchronized (waitKeys) {
+            if (iter.hasNext()) {
+                WaitKeyContainer<LockInvocationKey> container = iter.next();
+                LockInvocationKey newOwner = container.key();
+                newOwnerWaitKeys = container.keyAndRetries();
 
-            iter.remove();
-            owner = newOwner;
-            lockCount = 1;
-            ownerInvocationRefUids.put(BiTuple.of(owner.endpoint(), owner.invocationUid()), lockOwnershipState());
-        } else {
-            owner = null;
-            newOwnerWaitKeys = Collections.emptyList();
+                iter.remove();
+                owner = newOwner;
+                lockCount = 1;
+                ownerInvocationRefUids.put(BiTuple.of(owner.endpoint(), owner.invocationUid()), lockOwnershipState());
+            } else {
+                owner = null;
+                newOwnerWaitKeys = Collections.emptyList();
+            }
+
+            return newOwnerWaitKeys;
         }
-
-        return newOwnerWaitKeys;
     }
 
     LockOwnershipState lockOwnershipState() {
@@ -252,7 +254,8 @@ public class Lock extends BlockingResource<LockInvocationKey> implements Identif
      */
     @Override
     protected Collection<Long> getActivelyAttachedSessions() {
-        return owner != null ? Collections.singleton(owner.sessionId()) : Collections.emptyList();
+        LockInvocationKey ownerCopy = owner;
+        return ownerCopy != null ? Collections.singleton(ownerCopy.sessionId()) : Collections.emptyList();
     }
 
     @Override

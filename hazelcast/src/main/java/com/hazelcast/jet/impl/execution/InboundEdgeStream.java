@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.execution;
 import com.hazelcast.jet.impl.util.ProgressState;
 
 import javax.annotation.Nonnull;
-import java.util.function.Predicate;
+import java.util.function.Consumer;
 
 /**
  * The inbound side of a data stream corresponding to a single DAG edge identified by its ordinal. In the
@@ -39,10 +39,12 @@ public interface InboundEdgeStream {
     int priority();
 
     /**
-     * Passes the items from the queues to the predicate while it returns {@code true}.
+     * Passes the items from the queues to the consumer. Ensures that there
+     * never is a combination of special and non-special items added. A special
+     * item is an instance of {@link SpecialBroadcastItem}.
      */
     @Nonnull
-    ProgressState drainTo(@Nonnull Predicate<Object> dest);
+    ProgressState drainTo(@Nonnull Consumer<Object> dest);
 
     /**
      * Returns true after all the input queues are done.
@@ -58,14 +60,4 @@ public interface InboundEdgeStream {
      * Returns the total number of items in input queues.
      */
     int sizes();
-
-    /**
-     * Returns the top WM observed on any of the input queues.
-     */
-    long topObservedWm();
-
-    /**
-     * Returns the last coalesced WM that was forwarded from the edge.
-     */
-    long coalescedWm();
 }

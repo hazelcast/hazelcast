@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,12 +44,14 @@ public class LateItemsDropP extends AbstractProcessor {
     @Probe(name = "lateEventsDropped")
     private final Counter lateEventsDropped = SwCounter.newSwCounter();
 
+    private final byte watermarkKey;
     private final Expression<?> timestampExpression;
 
     private ExpressionEvalContext evalContext;
     private long currentWm = Long.MIN_VALUE;
 
-    public LateItemsDropP(Expression<?> timestampExpression) {
+    public LateItemsDropP(byte watermarkKey, Expression<?> timestampExpression) {
+        this.watermarkKey = watermarkKey;
         this.timestampExpression = timestampExpression;
     }
 
@@ -64,7 +66,7 @@ public class LateItemsDropP extends AbstractProcessor {
         Row row = ((JetSqlRow) item).getRow();
         long timestamp = WindowUtils.extractMillis(timestampExpression.eval(row, evalContext));
         if (timestamp < currentWm) {
-            logLateEvent(getLogger(), currentWm, item);
+            logLateEvent(getLogger(), (byte) 0, currentWm, item);
             lateEventsDropped.inc();
             return true;
         } else {
@@ -74,7 +76,15 @@ public class LateItemsDropP extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
-        currentWm = watermark.timestamp();
+        // ignore unknown watermarks
+        if (watermark.key() == watermarkKey) {
+            currentWm = watermark.timestamp();
+        }
         return super.tryProcessWatermark(watermark);
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
     }
 }

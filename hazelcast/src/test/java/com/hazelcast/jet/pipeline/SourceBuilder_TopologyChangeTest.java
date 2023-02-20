@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -47,10 +46,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(QuickTest.class)
+@SuppressWarnings("NewClassNamingConvention")
 public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
 
-    private static volatile boolean stateRestored;
+    private static volatile boolean stateRestored = false;
 
     @Test
     public void test_restartJob_nodeShutDown() {
@@ -84,14 +84,14 @@ public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
                     }
                 })
                 .createSnapshotFn(src -> {
-                    System.out.println("Will save " + src.current + " to snapshot");
+                        System.out.println("Will save " + src.current + " to snapshot");
                     return src;
                 })
                 .restoreSnapshotFn((src, states) -> {
-                    stateRestored = true;
                     assert states.size() == 1;
                     src.restore(states.get(0));
                     System.out.println("Restored " + src.current + " from snapshot");
+                    stateRestored = true;
                 })
                 .build();
 
@@ -112,14 +112,19 @@ public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
                 .writeTo(Sinks.list(result));
 
         Job job = hz.getJet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(500));
+        assertJobVisible(hz, job, "test job");
         assertTrueEventually(() -> assertFalse("result list is still empty", result.isEmpty()));
         assertJobStatusEventually(job, JobStatus.RUNNING);
         JobRepository jr = new JobRepository(hz);
         waitForFirstSnapshot(jr, job.getId(), 10, false);
 
         assertFalse(stateRestored);
+        int membersBefore = hz.getCluster().getMembers().size();
         changeTopologyFn.accept(possibleSecondNode);
-        assertTrueEventually(() -> assertTrue("restoreSnapshotFn was not called", stateRestored));
+        assertTrueEventually("cluster size should have changed",
+                () -> assertTrue(hz.getCluster().getMembers().size() != membersBefore));
+        assertTrueEventually(() -> assertTrue("restoreSnapshotFn was not called",
+                stateRestored));
 
         // wait until more results are added
         int oldSize = result.size();

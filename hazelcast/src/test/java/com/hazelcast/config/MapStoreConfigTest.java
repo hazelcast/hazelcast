@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.config.MapStoreConfigReadOnly;
+import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -290,5 +291,26 @@ public class MapStoreConfigTest extends HazelcastTestSupport {
                         new MapStoreConfigReadOnly(cfgNotEnabled),
                         new MapStoreConfigReadOnly(cfgNonNullClassName))
                 .verify();
+    }
+
+    @Test
+    public void test_copy_constructor() {
+        MapStoreConfig original = new MapStoreConfig();
+        original.setOffload(false)
+                .setEnabled(true)
+                .setClassName("clazzName")
+                .setFactoryClassName("factoryClazzName")
+                .setInitialLoadMode(EAGER)
+                .setImplementation(new MapStoreAdapter<>())
+                .setFactoryImplementation(new MapStoreAdapter<>())
+                .setProperties(new Properties())
+                .setWriteBatchSize(11)
+                .setWriteCoalescing(false)
+                .setWriteDelaySeconds(3);
+
+        MapStoreConfig copy = new MapStoreConfig(original);
+
+        assertEquals(original.hashCode(), copy.hashCode());
+        assertTrue(original.equals(copy));
     }
 }

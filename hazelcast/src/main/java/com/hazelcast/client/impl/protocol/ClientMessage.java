@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -135,6 +135,7 @@ public final class ClientMessage implements OutboundFrame {
     private transient boolean isRetryable;
     private transient String operationName;
     private transient Connection connection;
+    private transient boolean containsSerializedDataInRequest;
 
     private ClientMessage() {
 
@@ -282,6 +283,14 @@ public final class ClientMessage implements OutboundFrame {
         startFrame = startFrame.next;
     }
 
+    public boolean isContainsSerializedDataInRequest() {
+        return containsSerializedDataInRequest;
+    }
+
+    public void setContainsSerializedDataInRequest(boolean containsSerializedDataInRequest) {
+        this.containsSerializedDataInRequest = containsSerializedDataInRequest;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("ClientMessage{");
@@ -323,7 +332,6 @@ public final class ClientMessage implements OutboundFrame {
      * @return the copy message
      */
     public ClientMessage copyWithNewCorrelationId(long correlationId) {
-
         Frame initialFrameCopy = startFrame.deepCopy();
         ClientMessage newMessage = new ClientMessage(initialFrameCopy, endFrame);
 
@@ -331,6 +339,28 @@ public final class ClientMessage implements OutboundFrame {
 
         newMessage.isRetryable = isRetryable;
         newMessage.operationName = operationName;
+        newMessage.containsSerializedDataInRequest = containsSerializedDataInRequest;
+
+        return newMessage;
+    }
+
+    /**
+     * Only deep copies the initial frame to not duplicate the rest of the
+     * message to get rid of unnecessary allocations for the retry of the same
+     * client message.
+     * <p>
+     * It is expected that the correlation id for the returned message is set
+     * later.
+     *
+     * @return the copied message
+     */
+    public ClientMessage copyMessageWithSharedNonInitialFrames() {
+        Frame initialFrameCopy = startFrame.deepCopy();
+        ClientMessage newMessage = new ClientMessage(initialFrameCopy, endFrame);
+
+        newMessage.isRetryable = isRetryable;
+        newMessage.operationName = operationName;
+        newMessage.containsSerializedDataInRequest = containsSerializedDataInRequest;
 
         return newMessage;
     }
@@ -352,6 +382,9 @@ public final class ClientMessage implements OutboundFrame {
         if (isRetryable != message.isRetryable) {
             return false;
         }
+        if (containsSerializedDataInRequest != message.containsSerializedDataInRequest) {
+            return false;
+        }
         if (!Objects.equals(operationName, message.operationName)) {
             return false;
         }
@@ -362,6 +395,7 @@ public final class ClientMessage implements OutboundFrame {
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (isRetryable ? 1 : 0);
+        result = 31 * result + (containsSerializedDataInRequest ? 1 : 0);
         result = 31 * result + (operationName != null ? operationName.hashCode() : 0);
         result = 31 * result + (connection != null ? connection.hashCode() : 0);
         return result;

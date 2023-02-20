@@ -134,7 +134,7 @@ Here is the proposed solution for the new graceful shutdown process:
 -   Migration system has the following modifications to handle the
     shutdown requests:
 
-    -   `RepartitioningTask` removes shutdown-requested nodes from the
+    -   `RedoPartitioningTask` removes shutdown-requested nodes from the
         member groups that is provided to the repartitioning algorithm
         and a new partition table is produced with the given limited
         member groups. Then, migration decision algorithm schedules a
@@ -143,7 +143,7 @@ Here is the proposed solution for the new graceful shutdown process:
         property: shutdown-requested nodes can be only source of these
         migrations. So once all of these migrations are completed,
         partition table will not contain any node that requested to shut
-        down. To verify this, RepartitioningTask schedules a new task,
+        down. To verify this, RedoPartitioningTask schedules a new task,
         `ProcessShutdownRequestsTask`,  at the end of the queue after
         the migrations.
 

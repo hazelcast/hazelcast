@@ -19,7 +19,7 @@ to a large cluster of cloud instances.
 
 A cluster of Hazelcast nodes share both the data storage and computational load
 which can dynamically scale up and down. When you add new nodes to the cluster,
-the data is automatically rebalanced across the cluster and currently running
+the data is automatically rebalanced across the cluster, and currently running
 computational tasks (known as jobs) snapshot their state and scale with
 processing guarantees.
 
@@ -71,7 +71,7 @@ Hazelcast provides distributed in-memory data structures which are partitioned,
 replicated and queryable. One of the main use cases for Hazelcast is for storing
 a _working set_ of data for fast querying and access. 
 
-The main data structure underlying Hazelcast, called `IMap` is a key-value store
+The main data structure underlying Hazelcast, called `IMap`, is a key-value store
 which has a rich set of features, including:
 
 * Integration with [data
@@ -305,7 +305,7 @@ marked as good first issue for some guidance.
 
 ### Building From Source
 
-Building Hazelcast requires minimum JDK 1.8. Pull the latest source from the
+Building Hazelcast requires at minimum JDK 1.8. Pull the latest source from the
 repository and use Maven install (or package) to build:
 
 ```bash
@@ -351,10 +351,22 @@ see used in the comments on your PR:
   module
 * `run-cdc-postgres-tests` - run all tests in the
   `extensions/cdc-postgres` module
+* `run-mongodb-tests` - run all tests in the `extensions/mongodb` module
 * `run-s3-tests` - run all tests in the `extensions/s3` module
+* *`run-nightly-tests` - run nightly (slow) tests. WARNING: Use with care as this is a resource consuming task.*
+* `run-sql-only` - run default tests in `hazelcast-sql`, `hazelcast-distribution`, and `extensions/mapstore` modules
+* `run-sonar` - run SonarCloud analysis
+* `run-arm64` - run the tests on arm64 machine
 
-Where not indicated, the builds run on a Linux machine with Oracle JDK
-8.
+Where not indicated, the builds run on a Linux machine with Oracle JDK 8.
+
+### Creating PRs for Hazelcast SQL
+
+When creating a PR with changes located in the `hazelcast-sql` module and nowhere else,
+you can label your PR with `SQL-only`. This will change the standard PR builder to one that
+will only run tests related to SQL (see `run-sql-only` above), which will significantly shorten
+the build time vs. the default PR builder. **NOTE**: this job will fail if you've made changes
+anywhere other than `hazelcast-sql`.
 
 ## License
 
@@ -378,6 +390,6 @@ We owe (the good parts of) our CLI tool's user experience to
 
 ## Copyright
 
-Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
 
 Visit [www.hazelcast.com](http://www.hazelcast.com/) for more info.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import com.hazelcast.internal.nearcache.impl.record.NearCacheObjectRecord;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.nearcache.NearCacheStats;
@@ -377,7 +378,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
                 public void run() {
                     long invalidationCount = context.stats.getInvalidations();
                     assertTrue(format("Expected between %d and %d Near Cache invalidations, but found %d (%s)",
-                            minInvalidations, maxInvalidations, invalidationCount, context.stats),
+                                    minInvalidations, maxInvalidations, invalidationCount, context.stats),
                             minInvalidations <= invalidationCount && invalidationCount <= maxInvalidations);
                 }
             });
@@ -432,7 +433,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     public static void assertNearCacheEvictions(NearCacheTestContext<?, ?, ?, ?> context, int evictionCount) {
         long evictions = context.stats.getEvictions();
         assertTrue(format("Near Cache eviction count didn't reach the desired value (%d vs. %d) (%s)",
-                evictions, evictionCount, context.stats),
+                        evictions, evictionCount, context.stats),
                 evictions >= evictionCount);
     }
 
@@ -552,8 +553,9 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
 
         boolean hasLocalMapStats = isMethodAvailable(context.nearCacheAdapter, DataStructureMethods.GET_LOCAL_MAP_STATS);
         if (hasLocalMapStats) {
-            long heapCost = context.nearCacheAdapter.getLocalMapStats().getHeapCost();
-            assertEquals(format("Expected no heap costs in the LocalMapStats, but found %d", heapCost), 0, heapCost);
+            LocalMapStats localMapStats = context.nearCacheAdapter.getLocalMapStats();
+            long heapCost = localMapStats.getHeapCost();
+            assertEquals(format("Expected no heap costs in the LocalMapStats, but found %d %s", heapCost, localMapStats), 0, heapCost);
         }
     }
 

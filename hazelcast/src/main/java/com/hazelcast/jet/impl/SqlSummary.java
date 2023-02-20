@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,19 +15,11 @@
  */
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import java.util.Objects;
 
-import java.io.IOException;
-
-public class SqlSummary implements IdentifiedDataSerializable {
-    private String query;
-    private boolean unbounded;
-
-    public SqlSummary() {
-    }
+public class SqlSummary {
+    private final String query;
+    private final boolean unbounded;
 
     public SqlSummary(String query, boolean unbounded) {
         this.query = query;
@@ -43,32 +35,27 @@ public class SqlSummary implements IdentifiedDataSerializable {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeString(query);
-        out.writeBoolean(unbounded);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        query = in.readString();
-        unbounded = in.readBoolean();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return JetInitDataSerializerHook.FACTORY_ID;
-    }
-
-    @Override
-    public int getClassId() {
-        return JetInitDataSerializerHook.SQL_SUMMARY;
-    }
-
-    @Override
     public String toString() {
         return "SqlSummary{" +
                 "query='" + query + '\'' +
                 ", unbounded=" + unbounded +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        SqlSummary that = (SqlSummary) o;
+        return unbounded == that.unbounded && Objects.equals(query, that.query);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(query, unbounded);
     }
 }

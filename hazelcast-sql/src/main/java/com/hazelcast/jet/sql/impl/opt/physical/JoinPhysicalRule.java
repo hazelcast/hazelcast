@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.JoinLogicalRel;
@@ -63,7 +64,7 @@ public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
         JoinLogicalRel logicalJoin = call.rel(0);
 
         JoinRelType joinType = logicalJoin.getJoinType();
-        if (joinType != JoinRelType.INNER && joinType != JoinRelType.LEFT) {
+        if (OptUtils.isBounded(logicalJoin) && (joinType != JoinRelType.INNER && joinType != JoinRelType.LEFT)) {
             throw new RuntimeException("Unexpected joinType: " + joinType);
         }
 
@@ -71,8 +72,8 @@ public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
         RelNode rightInput = call.rel(2);
 
         if (OptUtils.isUnbounded(rightInput)) {
-            // This rule doesn't support joining of streaming data on the right side. Stream
-            // can be on the left side.
+            // This rule doesn't support joining of streaming data on the right side.
+            // Stream can be on the left side.
             return;
         }
 
@@ -93,7 +94,8 @@ public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
 
         if (rightInput instanceof TableScan) {
             HazelcastTable rightHzTable = rightInput.getTable().unwrap(HazelcastTable.class);
-            if (SqlConnectorUtil.getJetSqlConnector(rightHzTable.getTarget()).isNestedLoopReaderSupported()) {
+            SqlConnector connector = SqlConnectorUtil.getJetSqlConnector(rightHzTable.getTarget());
+            if (connector.isNestedLoopReaderSupported()) {
                 RelNode rel2 = new JoinNestedLoopPhysicalRel(
                         logicalJoin.getCluster(),
                         OptUtils.toPhysicalConvention(logicalJoin.getTraitSet()),
@@ -103,7 +105,20 @@ public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
                         logicalJoin.getJoinType()
                 );
                 call.transformTo(rel2);
+            } else {
+                call.transformTo(
+                        fail(logicalJoin, connector.typeName() + " connector doesn't support stream-to-batch JOIN")
+                );
             }
         }
+    }
+
+    private ShouldNotExecuteRel fail(RelNode node, String message) {
+        return new ShouldNotExecuteRel(
+                node.getCluster(),
+                node.getTraitSet().replace(PHYSICAL),
+                node.getRowType(),
+                message
+        );
     }
 }

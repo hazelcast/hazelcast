@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.security.impl.function.SecuredFunctions;
+import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import javax.jms.ConnectionFactory;
@@ -1047,7 +1048,6 @@ public final class Sources {
                 .build(SecuredFunctions.jsonReadFileFn(directory));
     }
 
-
     /**
      * A source to stream lines added to files in a directory. This is a
      * streaming source, it will watch directory and emit lines as they are
@@ -1326,6 +1326,59 @@ public final class Sources {
     ) {
         return batchFromProcessor("jdbcSource",
                 SourceProcessors.readJdbcP(newConnectionFn, resultSetFn, createOutputFn));
+    }
+
+    /**
+     * Returns a source which connects to the specified database using the given
+     * {@code dataLinkRef}, queries the database and creates a result set
+     * using the given {@code resultSetFn}. It creates output objects from the
+     * {@link ResultSet} using given {@code mapOutputFn} and emits them to
+     * downstream.
+     * <p>
+     * Example:
+     * <p>
+     * (Prerequisite) Data link configuration:
+     * <pre>{@code
+     *      Config config = smallInstanceConfig();
+     *      Properties properties = new Properties();
+     *      properties.put("jdbcUrl", jdbcUrl);
+     *      properties.put("username", username);
+     *      properties.put("password", password);
+     *      DataLinkConfig dataLinkConfig = new DataLinkConfig()
+     *              .setName("my-jdbc-data-link")
+     *              .setClassName(JdbcDataLinkFactory.class.getName())
+     *              .setProperties(properties);
+     *      config.getDataLinkConfigs().put(name, dataLinkConfig);
+     * }</pre>
+     * </p>
+     * <p>Pipeline configuration
+     * <pre>{@code
+     *     p.readFrom(Sources.jdbc(
+     *         DataLinkRef.dataLinkRef("my-jdbc-data-link"),
+     *         (con, parallelism, index) -> {
+     *              PreparedStatement stmt = con.prepareStatement("SELECT * FROM TABLE WHERE MOD(id, ?) = ?)");
+     *              stmt.setInt(1, parallelism);
+     *              stmt.setInt(2, index);
+     *              return stmt.executeQuery();
+     *         },
+     *         resultSet -> new Person(resultSet.getInt(1), resultSet.getString(2))))
+     * }</pre>
+     * </p>
+     * <p>
+     * <p>
+     * See also {@link Sources#jdbc(SupplierEx, ToResultSetFunction, FunctionEx)}.
+     *</p>
+     *
+     * @since 5.2
+     */
+    @Beta
+    public static <T> BatchSource<T> jdbc(
+            @Nonnull DataLinkRef dataLinkRef,
+            @Nonnull ToResultSetFunction resultSetFn,
+            @Nonnull FunctionEx<? super ResultSet, ? extends T> createOutputFn
+    ) {
+        return batchFromProcessor("jdbcSource",
+                SourceProcessors.readJdbcP(dataLinkRef, resultSetFn, createOutputFn));
     }
 
     /**

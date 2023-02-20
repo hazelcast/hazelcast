@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -524,10 +524,9 @@ hazelcast:
   # Specifies which network interfaces Hazelcast should use. You need to set its "enabled" attribute
   # to true to be able to use your defined interfaces. You can define multiple interfaces. By default, it is disabled.
   # * "ssl":
-  # Lets you configure SSL using the SSL context factory. This feature is available only in Hazelcast
-  # Enterprise. To be able to use it, encryption should NOT be enabled and you should first implement
-  # your SSLContextFactory class. Its configuration contains the factory class and SSL properties.
-  # By default, it is disabled. The following is an example:
+  # Allows configuring TLS/SSL communication encryption. This feature is available only in Hazelcast
+  # Enterprise.
+  # The default configuration uses JSSE engine available in Java.
   # ssl:
   #   enabled: true
   #   factory-class-name: com.hazelcast.nio.ssl.BasicSSLContextFactory
@@ -551,10 +550,7 @@ hazelcast:
   #     property1: value1
   #     property2: value2
   # * "symmetric-encryption":
-  # Lets you encrypt the entire socket level communication among all Hazelcast members.
-  # This feature is available only in Hazelcast Enterprise.  Its configuration contains the encryption
-  # properties and the same configuration must be placed to all members. By default, it is disabled.
-  # The following is an example:
+  # The symmetric-encryption is deprecated since Hazelcast 4.2. Consider using TLS instead.
   # symmetric-encryption:
   #   enabled: true
   #   algorithm: PBEWithMD5AndDES
@@ -703,25 +699,18 @@ hazelcast:
         - 10.10.1.*
     ssl:
       enabled: false
-      factory-class-name: com.hazelcast.nio.ssl.BasicSSLContextFactory
       properties:
-        protocol: TLS
-
+        protocol: TLSv1.3
         mutualAuthentication: REQUIRED
         keyStore: /opt/hazelcast.keystore
         keyStorePassword: secret.97531
-        keyStoreType: JKS
+        keyStoreType: PKCS12
         trustStore: /opt/hazelcast.truststore
         trustStorePassword: changeit
-        trustStoreType: JKS
+        trustStoreType: PKCS12
+        keyMaterialDuration: PT10M
     socket-interceptor:
       enabled: false
-    symmetric-encryption:
-      enabled: false
-      algorithm: PBEWithMD5AndDES
-      password: ...
-      salt: ...
-      iteration-count: 7
     member-address-provider:
       enabled: false
       class-name: com.hazelcast.MemberAddressProviderImpl
@@ -1189,6 +1178,15 @@ hazelcast:
   # It has the following sub-elements:
   # - "class-name":
   #     The name of your class implementing MapLoader and/or MapStore interface.
+  # - "<offload>":
+  #     Default value is true.
+  #     MapStore or MapLoader implementations are executed by
+  #     partition threads, by setting offload to true, Hazelcast
+  #     makes these threads available for other cluster operations
+  #     and offloads MapStore or MapLoader interacting parts of
+  #     executions to a different thread pool, upon interaction finish,
+  #     operations continue to work in the partition thread from
+  #     the point they are offloaded.
   # - "write-delay-seconds":
   #     Number of seconds to delay the storing of entries. If the value is 0, then it is write-through.
   #     Otherwise, it is write-behind so updates will be stored after this period. Its default value is 0.
@@ -1350,6 +1348,7 @@ hazelcast:
         enabled: true
         initial-mode: LAZY
         class-name: com.hazelcast.examples.DummyStore
+        offload: true
         write-delay-seconds: 60
         write-batch-size: 1000
         write-coalescing: true
@@ -1400,6 +1399,17 @@ hazelcast:
           bitmap-index-options:
             unique-key: id
             unique-key-transformation: RAW
+        - type: SORTED
+          attributes:
+            - "age"
+          btree-index:
+            page-size:
+              value: 1024
+              unit: BYTES
+            memory-tier:
+              capacity:
+                value: 128
+                unit: BYTES
 
       attributes:
         currency:
@@ -2114,6 +2124,19 @@ hazelcast:
   #     and throw a Serialization Exception with the error definition.
   # * "java-serialization-filter":
   #     Allows to configure blacklisting and whitelisting for deserialized classes when Java serialization is used.
+  # * "compact-serialization":
+  #     Contains configuration attributes for the compact serialization.
+  #
+  #     It has the following sub-attributes:
+  #     * "enabled":
+  #       Enables/disables the Compact serialization.
+  #     * "serializers":
+  #       List of fully qualified class names of the Compact serializers.
+  #     * "classes:
+  #       List of fully qualified names of the classes to be serialized
+  #       with the reflective Compact serializer. It is meant to be used
+  #       to serialize classes that are serializable with other mechanisms
+  #       like Java serialization with Compact serialization.
   #
   serialization:
     portable-version: 0
@@ -2147,12 +2170,10 @@ hazelcast:
           - com.hazelcast.
           - java
     compact-serialization:
-      enabled: true
-      registered-classes:
+      serializers:
+        - serializer: com.hazelcast.examples.DummyTypeSerializer
+      classes:
         - class: com.hazelcast.examples.DummyType
-        - class: com.hazelcast.examples.DummyTypeWithSerializer
-          type-name: dummy
-          serializer: com.hazelcast.examples.DummyTypeSerializer
   #
   # ===== HAZELCAST HIGH-DENSITY MEMORY STORE CONFIGURATION =====
   #
@@ -3402,6 +3423,9 @@ hazelcast:
   #   Timeout duration for CP members to restore their data from disk.
   #   A CP member fails its startup if it cannot complete its CP data restore
   #   process in the configured duration.
+  #  * <cp-member-priority>:
+  #    The CP member priority. The CP groups' leadership will be eventually
+  #    transferred to members with higher priorities within the CP group.
   #
   # * "raft-algorithm":
   #     These parameters tune specific parameters of Hazelcast’s Raft consensus
@@ -3476,6 +3500,7 @@ hazelcast:
     persistence-enabled: true
     base-dir: custom-cp-dir
     data-load-timeout-seconds: 30
+    cp-member-priority: 1
     raft-algorithm:
       leader-election-timeout-in-millis: 2000
       leader-heartbeat-period-in-millis: 5000
@@ -3778,3 +3803,15 @@ hazelcast:
   # Integrity Checker is disabled by default.
   integrity-checker:
     enabled: false
+  #      ===== HAZELCAST DATA LINK CONFIGURATION =====
+  #
+  #      Configuration element's name is <data-link>. Contains configuration of data links
+  #      used by map stores and jdbc sinks and sources.
+  data-link:
+    mysql-database:
+      class-name: com.hazelcast.datalink.JdbcDataLinkFactory
+      properties:
+        jdbcUrl: jdbc:mysql://dummy:3306
+      shared: false
+    other-database:
+      class-name: com.hazelcast.datalink.OtherDataLink

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -390,7 +390,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
         } catch (ExecutionException ee) {
             //job completed exceptionally, as expected, we check the details of it
             assertThat(ee)
-                    .hasRootCauseInstanceOf(JetException.class)
+                    .hasCauseInstanceOf(JetException.class)
                     .hasStackTraceContaining("Failed to connect to database");
         }
     }

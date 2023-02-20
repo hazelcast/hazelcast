@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,14 @@ package com.hazelcast.spi.impl.merge;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 
+import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
@@ -53,6 +55,7 @@ public abstract class AbstractContainerMerger<C, V, T extends MergingValue<V>> i
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
 
     private int operationCount;
+    private final Executor internalAsyncExecutor;
 
     protected AbstractContainerMerger(AbstractContainerCollector<C> collector, NodeEngine nodeEngine) {
         this.collector = collector;
@@ -67,11 +70,12 @@ public abstract class AbstractContainerMerger<C, V, T extends MergingValue<V>> i
         };
         this.operationService = nodeEngine.getOperationService();
         this.splitBrainMergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
+        this.internalAsyncExecutor = nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
     @Override
     public final void run() {
-        int valueCount = collector.getMergingValueCount();
+        long valueCount = collector.getMergingValueCount();
         if (valueCount == 0) {
             return;
         }
@@ -126,7 +130,7 @@ public abstract class AbstractContainerMerger<C, V, T extends MergingValue<V>> i
             operationCount++;
             operationService
                     .invokeOnPartition(serviceName, operation, partitionId)
-                    .whenCompleteAsync(mergeCallback);
+                    .whenCompleteAsync(mergeCallback, internalAsyncExecutor);
         } catch (Throwable t) {
             throw rethrow(t);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
@@ -36,6 +37,7 @@ import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -67,6 +69,12 @@ public interface ConfigurationService {
      * @param licenseKey new license key to set
      */
     void updateLicense(String licenseKey);
+
+    /**
+     * Update the member list of TCP-IP join config
+     * @param memberList a new member list to set
+     */
+    void updateTcpIpConfigMemberList(List<String> memberList);
 
     /**
      * Persists any dynamically changeable sub configuration to this member's
@@ -350,4 +358,19 @@ public interface ConfigurationService {
      * @return registered FlakeIdGenerator configurations
      */
     Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs();
+
+    /**
+     * Finds existing data link config.
+     *
+     * @param name name of the config
+     * @return Data link config or {@code null} when requested configuration does not exist
+     */
+    DataLinkConfig findDataLinkConfig(String name);
+
+    /**
+     * Returns all registered data link configurations keyed by store's name.
+     *
+     * @return registered data link configurations keyed by store's name
+     */
+    Map<String, DataLinkConfig> getDataLinkConfigs();
 }

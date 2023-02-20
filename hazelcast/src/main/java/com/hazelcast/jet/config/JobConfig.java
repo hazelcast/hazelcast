@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Contains the configuration specific to one Hazelcast Jet job.
+ * <p>
+ * Serialized form of this class should not be changed due to backward
+ * compatibility for {@link com.hazelcast.jet.impl.JobResult}.
  *
  * @since Jet 3.0
  */
@@ -636,7 +639,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * <pre>{@code
      * BatchSource<String> source = ...
      * JobConfig config = new JobConfig();
-     * config.addCustomClasspath(source.name(), "hazelcast-client-3.12.12.jar");
+     * config.addCustomClasspath(source.name(), "hazelcast-client-3.12.13.jar");
      * }</pre>
      *
      * @param name name of the stage, must be unique for the whole pipeline
@@ -1295,10 +1298,11 @@ public class JobConfig implements IdentifiedDataSerializable {
 
     /**
      * Returns whether metrics should be stored in the cluster after the job
-     * completes. Needs both {@link MetricsConfig#isEnabled()} and
+     * completes successfully. Needs both {@link MetricsConfig#isEnabled()} and
      * {@link #isMetricsEnabled()} to be on in order to function.
      * <p>
-     * If enabled, metrics can be retrieved by calling {@link Job#getMetrics()}.
+     * If enabled, metrics can be retrieved by calling {@link
+     * Job#getMetrics()}.
      * <p>
      * It's disabled by default.
      *
@@ -1309,15 +1313,16 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Sets whether metrics should be stored in the cluster after the job completes.
-     * If enabled, metrics can be retrieved for the configured job even if it's no
-     * longer running (has completed successfully, has failed, has been cancelled or
-     * suspended) by calling {@link Job#getMetrics()}.
+     * Sets whether metrics should be stored in the cluster after the job
+     * completes. If enabled, metrics can be retrieved for the configured job
+     * after it has completed successfully and it is no longer running by
+     * calling {@link Job#getMetrics()}.
      * <p>
-     * If disabled, once the configured job stops running {@link Job#getMetrics()}
-     * will always return empty metrics for it, regardless of the settings for
-     * {@link MetricsConfig#setEnabled global metrics collection} or
-     * {@link JobConfig#isMetricsEnabled() per job metrics collection}.
+     * If disabled, once the configured job stops running {@link
+     * Job#getMetrics()} will always return empty metrics for it, regardless of
+     * the settings for {@link MetricsConfig#setEnabled global metrics
+     * collection} or {@link JobConfig#isMetricsEnabled() per job metrics
+     * collection}.
      * <p>
      * It's disabled by default. Ignored for {@linkplain
      * JetService#newLightJob(Pipeline) light jobs}.

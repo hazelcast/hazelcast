@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -200,7 +200,9 @@ final class MapIndexScanP extends AbstractProcessor {
     }
 
     private boolean runHashIndex() {
-        for (; ; ) {
+        boolean allIdle;
+        do {
+            allIdle = true;
             for (int i = 0; i < splits.size(); ++i) {
                 Split split = splits.get(i);
                 try {
@@ -219,6 +221,7 @@ final class MapIndexScanP extends AbstractProcessor {
                         }
                     }
                 } else {
+                    allIdle = false;
                     if (tryEmit(split.currentRow)) {
                         split.remove();
                     } else {
@@ -226,7 +229,9 @@ final class MapIndexScanP extends AbstractProcessor {
                     }
                 }
             }
-        }
+        } while (!allIdle);
+
+        return false;
     }
 
     /**
@@ -378,7 +383,7 @@ final class MapIndexScanP extends AbstractProcessor {
                     entry.getKeyIfPresent(), entry.getKeyDataIfPresent(),
                     entry.getValueIfPresent(), entry.getValueDataIfPresent()
             );
-            return ExpressionUtil.evaluate(metadata.getRemainingFilter(), metadata.getProjection(), row, evalContext);
+            return ExpressionUtil.projection(metadata.getRemainingFilter(), metadata.getProjection(), row, evalContext);
         }
 
         private void remove() {

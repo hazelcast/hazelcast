@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -337,8 +337,9 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
     }
 
     protected final void assertValid() {
-        assert baseAddress - HEADER_SIZE != NULL_ADDRESS
-                : "This instance doesn't point to a valid hashtable. Base address = " + baseAddress;
+        assert NULL_ADDRESS != (baseAddress - HEADER_SIZE)
+                : String.format("This instance doesn't point to a valid hashtable "
+                + "[baseAddress: %d, headerSize: %d]", baseAddress, HEADER_SIZE);
     }
 
     protected final MemoryAllocator malloc() {

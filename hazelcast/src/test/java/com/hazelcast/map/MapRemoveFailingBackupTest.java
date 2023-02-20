@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,9 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.map.impl.operation.BaseRemoveOperation;
 import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
+import com.hazelcast.map.impl.operation.steps.RemoveOpSteps;
+import com.hazelcast.map.impl.operation.steps.engine.State;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -45,7 +48,7 @@ import org.mockito.stubbing.Answer;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertNull;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -121,15 +124,28 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
 
         @Override
         protected void runInternal() {
-            dataOldValue = mapService.getMapServiceContext().toData(recordStore.remove(dataKey, getCallerProvenance()));
+            dataOldValue = mapService.getMapServiceContext()
+                    .toData(recordStore.remove(dataKey, getCallerProvenance()));
             successful = dataOldValue != null;
         }
 
         @Override
-        protected void afterRunInternal() {
+        public void afterRunInternal() {
             if (successful) {
                 super.afterRunInternal();
             }
+        }
+
+        @Override
+        public void applyState(State state) {
+            super.applyState(state);
+
+            successful = dataOldValue != null;
+        }
+
+        @Override
+        public Step getStartingStep() {
+            return RemoveOpSteps.READ;
         }
 
         @Override

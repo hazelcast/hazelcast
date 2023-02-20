@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,13 +25,14 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.map.IMap;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
+
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -43,7 +44,11 @@ import java.util.Random;
 import java.util.UUID;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.spi.properties.ClusterProperty.CHANNEL_COUNT;
 import static com.hazelcast.test.Accessors.getNode;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -51,6 +56,8 @@ import static org.junit.Assert.assertNull;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
 public class LocalAddressRegistryIntegrationTest extends HazelcastTestSupport {
+
+    private static final int CHANNELS_PER_CONNECTION = 3;
 
     // MEMBER & WAN & CLIENT addresses of the connection initiator
     private static final Address INITIATOR_MEMBER_ADDRESS;
@@ -84,8 +91,6 @@ public class LocalAddressRegistryIntegrationTest extends HazelcastTestSupport {
     @Test
     public void whenSomeConnectionClosedBetweenMembers_registeredAddresses_should_not_be_cleaned_up() {
         int timeoutSecs = 10;
-        int tcpChannelsPerConnection = 3;
-        System.setProperty("tcp.channels.per.connection", String.valueOf(tcpChannelsPerConnection));
 
         // create members
         HazelcastInstance serverMember = Hazelcast.newHazelcastInstance(createConfigForServer());
@@ -101,7 +106,7 @@ public class LocalAddressRegistryIntegrationTest extends HazelcastTestSupport {
                 assertGreaterOrEquals(
                         "The number of connections must be greater than the number of channels.",
                         connectionManager.getConnections().size(),
-                        tcpChannelsPerConnection
+                        CHANNELS_PER_CONNECTION
                 ), timeoutSecs);
 
         LinkedAddresses registeredAddressesOfInitiatorMember = serverNode
@@ -109,13 +114,9 @@ public class LocalAddressRegistryIntegrationTest extends HazelcastTestSupport {
                 .linkedAddressesOf(initiatorMemberUuid);
         assertNotNull(registeredAddressesOfInitiatorMember);
         assertContains(registeredAddressesOfInitiatorMember.getAllAddresses(), INITIATOR_MEMBER_ADDRESS);
-        int previousNoConnections = connectionManager.getConnections().size();
-        closeRandomConnection(new ArrayList<>(connectionManager.getConnections()));
-        assertTrueEventually(() ->
-                assertEquals(
-                        previousNoConnections - 1,
-                        connectionManager.getConnections().size()
-                ), timeoutSecs);
+        ServerConnection removedConnection = closeRandomConnection(new ArrayList<>(connectionManager.getConnections()));
+        assertTrueEventually(() -> assertThat(connectionManager.getConnections(), not(hasItem(removedConnection))),
+                timeoutSecs);
 
         LinkedAddresses registeredAddressesAfterConnectionClose = serverNode
                 .getLocalAddressRegistry()
@@ -129,8 +130,6 @@ public class LocalAddressRegistryIntegrationTest extends HazelcastTestSupport {
     @Test
     public void whenAllConnectionClosedBetweenMembers_registeredAddresses_should_be_cleaned_up() {
         int timeoutSecs = 10;
-        int tcpChannelsPerConnection = 3;
-        System.setProperty("tcp.channels.per.connection", String.valueOf(tcpChannelsPerConnection));
 
         // create members
         HazelcastInstance serverMember = Hazelcast.newHazelcastInstance(createConfigForServer());
@@ -146,7 +145,7 @@ public class LocalAddressRegistryIntegrationTest extends HazelcastTestSupport {
                 assertGreaterOrEquals(
                         "The number of connections must be greater than the number of channels.",
                         connectionManager.getConnections().size(),
-                        tcpChannelsPerConnection
+                        CHANNELS_PER_CONNECTION
                 ), timeoutSecs);
 
         LinkedAddresses registeredAddressesOfInitiatorMember = serverNode
@@ -170,7 +169,7 @@ public class LocalAddressRegistryIntegrationTest extends HazelcastTestSupport {
 
 
     private Config createConfigForServer() {
-        Config config = smallInstanceConfig();
+        Config config = smallInstanceConfig().setProperty(CHANNEL_COUNT.getName(), String.valueOf(CHANNELS_PER_CONNECTION));
         AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
         JoinConfig advancedJoinConfig = advancedNetworkConfig.getJoin();
         advancedJoinConfig.getTcpIpConfig().setEnabled(true);
@@ -194,7 +193,7 @@ public class LocalAddressRegistryIntegrationTest extends HazelcastTestSupport {
     }
 
     private Config createConfigForInitiator() {
-        Config config = smallInstanceConfig();
+        Config config = smallInstanceConfig().setProperty(CHANNEL_COUNT.getName(), String.valueOf(CHANNELS_PER_CONNECTION));
         AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
         JoinConfig advancedJoinConfig = advancedNetworkConfig.getJoin();
         advancedJoinConfig.getTcpIpConfig().setEnabled(true).addMember(
@@ -231,10 +230,12 @@ public class LocalAddressRegistryIntegrationTest extends HazelcastTestSupport {
         dummy.destroy();
     }
 
-    private void closeRandomConnection(List<Connection> connections) {
+    private ServerConnection closeRandomConnection(List<ServerConnection> connections) {
         Random random = new Random();
         int randomIdx = random.nextInt(connections.size());
-        connections.get(randomIdx).close("Failure is injected", null);
+        ServerConnection connection = connections.get(randomIdx);
+        connection.close("Failure is injected", null);
+        return connection;
     }
 
     private String randomKeyNameOwnedByPartition(HazelcastInstance hz, int partitionId) {

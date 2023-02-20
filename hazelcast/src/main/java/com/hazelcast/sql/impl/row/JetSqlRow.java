@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,6 +81,7 @@ public class JetSqlRow implements IdentifiedDataSerializable {
         return ss;
     }
 
+    @Nonnull
     public Row getRow() {
         return new Row() {
 
@@ -128,7 +129,8 @@ public class JetSqlRow implements IdentifiedDataSerializable {
     @Override
     public int hashCode() {
         // This is a dummy value that will not break the contract, but the object is not supposed
-        // to be used as a hash map key.
+        // to be used as a hash map key. Ideally we would throw an UOE here, but we use the instances
+        // as a map key in tests
         return 0;
     }
 

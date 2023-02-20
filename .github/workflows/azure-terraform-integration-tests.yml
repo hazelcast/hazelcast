@@ -6,12 +6,11 @@ on:
       - master
     paths:
       - 'hazelcast/src/main/java/com/hazelcast/azure/**'
-      - 'hazelcast/pom.xml'
       - '.github/terraform/azure/**'
-
 
 jobs:
   build:
+    name: Azure Tests
     defaults:
       run:
         shell: bash
@@ -20,91 +19,63 @@ jobs:
       ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-      SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
-      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
     runs-on: ubuntu-latest
     if: github.repository_owner == 'hazelcast'
-    strategy:
-      matrix:
-        java: [ '8' ]
-        architecture: [ 'x64' ]
-        distribution: [ 'adopt' ]
     steps:
-      # SET UP JDK
       - name: Setup JDK
         uses: actions/setup-java@v2.1.0
         with:
-          java-version: ${{ matrix.java }}
-          architecture: ${{ matrix.architecture }}
-          distribution: ${{ matrix.distribution }}
+          java-version: 11
+          architecture: x64
+          distribution: adopt
 
-      - run: java -version
+      - uses: actions/checkout@v3.3.0
 
-      - run: mvn --version
-
-      - run : mkdir ~/lib
-
-      # BUILD HAZELCAST AZURE SNAPSHOT
-      - uses: actions/checkout@v2.4.0
+      - name: Setup Local Maven Cache
+        uses: actions/cache@v3
         with:
-          path: hazelcast
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
 
       - name: Build hazelcast jar
         run: |
-          cd hazelcast
-          mvn clean install -DskipTests -Dcheckstyle.skip
+          ./mvnw -T 4 -B -V -e clean package \
+          -Dfindbugs.skip \
+          -Dcheckstyle.skip \
+          -Dpmd.skip=true \
+          -Dspotbugs.skip \
+          -Denforcer.skip \
+          -Dmaven.javadoc.skip \
+          -DskipTests \
+          -Dlicense.skip=true \
+          -Drat.skip=true \
+          -Dspotless.check.skip=true \
+          -Dattribution.skip \
+          -Danimal.sniffer.skip=true \
+          -Dmaven.source.skip=true
           echo "Hazelcast jar is: " hazelcast/target/hazelcast-*-SNAPSHOT.jar
-          cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ~/lib/hazelcast.jar
+          cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ~/hazelcast.jar
 
-      #BUILD TERRAFORM
       - name : Set-up Terraform
-        uses: hashicorp/setup-terraform@v1.3.2
+        uses: hashicorp/setup-terraform@v2.0.0
         with:
-          terraform_version: 0.13.0
-
-      - name: Create unique prefix for resources
-        run: |
-          sed -i -e "s/SET_PREFIX/\"${GITHUB_WORKFLOW}-${GITHUB_RUN_ID}\"/g" hazelcast/.github/terraform/azure/terraform.tfvars
+          terraform_version: 1.1.8
 
       - name: Terraform Init
-        run: cd hazelcast/.github/terraform/azure && terraform init
-
-      - name: Terraform Format
-        run: cd hazelcast/.github/terraform/azure  && terraform fmt
-
-      - name: Generate SSH keys
-        id: ssh
-        run: |
-          ssh-keygen -t rsa -b 4096 -C "devOpsHazelcast@hazelcast.com" -f id_rsa -P "" 1>/dev/null
-          ssh_key=$(cat id_rsa)
-          echo 'SSH_KEY<<EOF' >> $GITHUB_ENV
-          echo "$ssh_key" >> $GITHUB_ENV
-          echo 'EOF' >> $GITHUB_ENV
-
-          ssh_key_public=$(cat id_rsa.pub)
-          echo 'SSH_KEY_PUBLIC<<EOF' >> $GITHUB_ENV
-          echo "$ssh_key_public" >> $GITHUB_ENV
-          echo 'EOF' >> $GITHUB_ENV
-
-      - name: Install private key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ env.SSH_KEY }}
-          name: id_rsa
-          known_hosts: " "
-
-      - name: Install public key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ env.SSH_KEY_PUBLIC }}
-          name: id_rsa.pub
-          known_hosts: " "
+        working-directory: .github/terraform/azure
+        run: terraform init
 
       - name: Terraform Apply
+        working-directory: .github/terraform/azure
         run: |
-          cd hazelcast/.github/terraform/azure && terraform apply -auto-approve
+          terraform apply \
+            -var="hazelcast_mancenter_version=latest-snapshot" \
+            -var="hazelcast_path=~/hazelcast.jar" \
+            -auto-approve
 
       - name: Terraform Destroy
         if: ${{ always() }}
-        run: |
-          cd hazelcast/.github/terraform/azure && terraform destroy -auto-approve
+        working-directory: .github/terraform/azure
+        run: terraform destroy -auto-approve

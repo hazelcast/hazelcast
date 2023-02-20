@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,9 @@ final class RegionValidator {
     }
 
     static void validateRegion(String region) {
+        if (region == null) {
+            throw new InvalidConfigurationException("The provided region is null.");
+        }
         if (!AWS_REGION_PATTERN.matcher(region).matches()) {
             String message = String.format("The provided region %s is not a valid AWS region.", region);
             throw new InvalidConfigurationException(message);

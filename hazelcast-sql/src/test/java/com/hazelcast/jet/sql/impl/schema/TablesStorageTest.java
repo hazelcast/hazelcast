@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,10 @@ import org.junit.experimental.categories.Category;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class TablesStorageTest extends SimpleTestInClusterSupport {
-
     private TablesStorage storage;
 
     @BeforeClass
@@ -64,8 +64,8 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         storage.put(name, originalMapping);
         storage.put(name, updatedMapping);
 
-        assertThat(storage.allObjects().stream().noneMatch(m -> m.equals(originalMapping)));
-        assertThat(storage.allObjects().stream().anyMatch(m -> m.equals(updatedMapping)));
+        assertTrue(storage.allObjects().stream().noneMatch(m -> m.equals(originalMapping)));
+        assertTrue(storage.allObjects().stream().anyMatch(m -> m.equals(updatedMapping)));
     }
 
     @Test
@@ -74,8 +74,8 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
 
         assertThat(storage.putIfAbsent(name, mapping(name, "type-1"))).isTrue();
         assertThat(storage.putIfAbsent(name, mapping(name, "type-2"))).isFalse();
-        assertThat(storage.allObjects().stream().anyMatch(m -> m instanceof Mapping && ((Mapping) m).type().equals("type-1")));
-        assertThat(storage.allObjects().stream().noneMatch(m -> m instanceof Mapping && ((Mapping) m).type().equals("type-2")));
+        assertTrue(storage.allObjects().stream().anyMatch(m -> m instanceof Mapping && ((Mapping) m).type().equals("type-1")));
+        assertTrue(storage.allObjects().stream().noneMatch(m -> m instanceof Mapping && ((Mapping) m).type().equals("type-2")));
     }
 
     @Test
@@ -85,7 +85,7 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         storage.put(name, mapping(name, "type"));
 
         assertThat(storage.removeMapping(name)).isNotNull();
-        assertThat(storage.mappingNames().stream().noneMatch(m -> m.equals(name)));
+        assertTrue(storage.mappingNames().stream().noneMatch(m -> m.equals(name)));
     }
 
     @Test
@@ -95,7 +95,7 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         storage.put(name, view(name, "type"));
 
         assertThat(storage.removeView(name)).isNotNull();
-        assertThat(storage.allObjects().stream().noneMatch(o -> o instanceof View && ((View) o).name().equals(name)));
+        assertTrue(storage.allObjects().stream().noneMatch(o -> o instanceof View && ((View) o).name().equals(name)));
     }
 
     @Test

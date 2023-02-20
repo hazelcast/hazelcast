@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -80,13 +79,15 @@ public class DelegatingScheduledFutureStripperTest {
 
     @Test
     public void getDelay() {
-        ScheduledFuture<Integer> future = new DelegatingScheduledFutureStripper<Integer>(
+        ScheduledFuture<Integer> future = new DelegatingScheduledFutureStripper<>(
                 scheduler.schedule(new SimpleCallableTestTask(), 0, TimeUnit.SECONDS));
-        assertEquals(0, future.getDelay(TimeUnit.SECONDS));
+        //getDelay returns the remaining delay; zero or negative values indicate that the delay has already elapsed
+        //If JVM pauses for GC we may get a negative value
+        assertTrue(future.getDelay(TimeUnit.SECONDS) <= 0);
 
-        future = new DelegatingScheduledFutureStripper<Integer>(
+        future = new DelegatingScheduledFutureStripper<>(
                 scheduler.schedule(new SimpleCallableTestTask(), 10, TimeUnit.SECONDS));
-        assertEquals(10, future.getDelay(TimeUnit.SECONDS), 1);
+        assertTrue(future.getDelay(TimeUnit.SECONDS) <= 10);
     }
 
     @Test
@@ -97,7 +98,7 @@ public class DelegatingScheduledFutureStripperTest {
 
         new DelegatingScheduledFutureStripper<Object>(outer).cancel(true);
 
-        verify(inner).cancel(eq(true));
+        verify(inner).cancel(true);
     }
 
     @Test
@@ -205,9 +206,4 @@ public class DelegatingScheduledFutureStripperTest {
         }
     }
 
-    private static class SimpleRunnableTestTask implements Runnable {
-        @Override
-        public void run() {
-        }
-    }
 }

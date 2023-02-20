@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -140,6 +140,8 @@ public class ConfigCompatibilityChecker {
                 new InstanceTrackingConfigChecker());
         checkCompatibleConfigs("native memory", c1.getNativeMemoryConfig(), c2.getNativeMemoryConfig(),
                 new NativeMemoryConfigChecker());
+        checkCompatibleConfigs("data link", c1, c2, c1.getDataLinkConfigs(), c2.getDataLinkConfigs(),
+                new DataLinkConfigChecker());
 
         return true;
     }
@@ -687,6 +689,28 @@ public class ConfigCompatibilityChecker {
         }
     }
 
+    private static class DataLinkConfigChecker extends ConfigChecker<DataLinkConfig> {
+        @Override
+        boolean check(DataLinkConfig c1, DataLinkConfig c2) {
+            if (c1 == c2) {
+                return true;
+            }
+            if (c1 == null || c2 == null) {
+                return false;
+            }
+            return nullSafeEqual(c1.getName(), c2.getName())
+                    && nullSafeEqual(c1.getClassName(), c2.getClassName())
+                    && c1.isShared() == c2.isShared()
+                    && nullSafeEqual(c1.getProperties(), c2.getProperties());
+        }
+
+        @Override
+        DataLinkConfig getDefault(Config c) {
+            return c.getDataLinkConfig("default");
+        }
+    }
+
+
     public static class CPSubsystemConfigChecker extends ConfigChecker<CPSubsystemConfig> {
 
         @Override
@@ -706,7 +730,8 @@ public class ConfigCompatibilityChecker {
                             && c1.isFailOnIndeterminateOperationState() == c2.isFailOnIndeterminateOperationState())
                             && c1.isPersistenceEnabled() == c2.isPersistenceEnabled()
                             && c1.getBaseDir().getAbsoluteFile().equals(c2.getBaseDir().getAbsoluteFile())
-                            && c1.getDataLoadTimeoutSeconds() == c2.getDataLoadTimeoutSeconds();
+                            && c1.getDataLoadTimeoutSeconds() == c2.getDataLoadTimeoutSeconds()
+                            && c1.getCPMemberPriority() == c2.getCPMemberPriority();
 
             if (!cpSubsystemConfigValuesEqual) {
                 return false;
@@ -1017,6 +1042,7 @@ public class ConfigCompatibilityChecker {
                     classNameOrImpl(c1.getFactoryClassName(), c1.getFactoryImplementation()),
                     classNameOrImpl(c2.getFactoryClassName(), c2.getFactoryImplementation()))
                 && nullSafeEqual(c1.getProperties(), c2.getProperties()))
+                && nullSafeEqual(c1.isOffload(), c2.isOffload())
                 && nullSafeEqual(c1.isWriteCoalescing(), c2.isWriteCoalescing())
                 && nullSafeEqual(c1.getWriteBatchSize(), c2.getWriteBatchSize())
                 && nullSafeEqual(c1.getWriteDelaySeconds(), c2.getWriteDelaySeconds())
@@ -1902,9 +1928,9 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    static class RestApiConfigChecker extends ConfigChecker<RestApiConfig> {
+    public static class RestApiConfigChecker extends ConfigChecker<RestApiConfig> {
         @Override
-        boolean check(RestApiConfig c1, RestApiConfig c2) {
+        public boolean check(RestApiConfig c1, RestApiConfig c2) {
             if (c1 == c2) {
                 return true;
             }
@@ -1916,9 +1942,9 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    static class MemcacheProtocolConfigChecker extends ConfigChecker<MemcacheProtocolConfig> {
+    public static class MemcacheProtocolConfigChecker extends ConfigChecker<MemcacheProtocolConfig> {
         @Override
-        boolean check(MemcacheProtocolConfig c1, MemcacheProtocolConfig c2) {
+        public boolean check(MemcacheProtocolConfig c1, MemcacheProtocolConfig c2) {
             if (c1 == c2) {
                 return true;
             }

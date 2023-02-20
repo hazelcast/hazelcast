@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,7 +83,11 @@ public class SqlAvroTest extends SqlTestSupport {
 
         Properties properties = new Properties();
         properties.put("listeners", "http://0.0.0.0:0");
-        properties.put("kafkastore.bootstrap.servers", kafkaTestSupport.getBrokerConnectionString());
+        properties.put(SchemaRegistryConfig.KAFKASTORE_BOOTSTRAP_SERVERS_CONFIG, kafkaTestSupport.getBrokerConnectionString());
+        //When Kafka is under load the schema registry may give
+        //io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException: Register operation timed out; error code: 50002
+        //Because the default timeout is 500 ms. Use a bigger timeout value to avoid it
+        properties.put(SchemaRegistryConfig.KAFKASTORE_TIMEOUT_CONFIG, "5000");
         SchemaRegistryConfig config = new SchemaRegistryConfig(properties);
         SchemaRegistryRestApplication schemaRegistryApplication = new SchemaRegistryRestApplication(config);
         schemaRegistry = schemaRegistryApplication.createServer();

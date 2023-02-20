@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -136,6 +136,7 @@ public class StoreSnapshotTaskletTest extends JetTestSupport {
         ssContext.startNewSnapshotPhase1(2, "map", 0);
         assertEquals(2, sst.pendingSnapshotId);
         assertEquals(MADE_PROGRESS, sst.call());
+        assertEquals(MADE_PROGRESS, sst.call());
         mockSsWriter.hasPendingFlushes = false;
         assertEquals(MADE_PROGRESS, sst.call());
 
@@ -168,6 +169,7 @@ public class StoreSnapshotTaskletTest extends JetTestSupport {
         Entry<String, String> entry = entry("k", "v");
         init(asList(entry, new SnapshotBarrier(2, false)));
         ssContext.startNewSnapshotPhase1(2, "map", 0);
+        assertEquals(MADE_PROGRESS, sst.call());
         assertEquals(MADE_PROGRESS, sst.call());
         assertEquals(NO_PROGRESS, sst.call());
         assertTrue(mockSsWriter.hasPendingFlushes);

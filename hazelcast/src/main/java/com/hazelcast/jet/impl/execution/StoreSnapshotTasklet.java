@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import com.hazelcast.logging.ILogger;
 import javax.annotation.Nonnull;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
+import java.util.function.Consumer;
 
 import static com.hazelcast.jet.core.metrics.MetricNames.SNAPSHOT_BYTES;
 import static com.hazelcast.jet.core.metrics.MetricNames.SNAPSHOT_KEYS;
@@ -57,7 +57,7 @@ public class StoreSnapshotTasklet implements Tasklet {
     private State state = DRAIN;
     private boolean hasReachedBarrier;
     private Entry<Data, Data> pendingEntry;
-    private Predicate<Object> addToInboxFunction;
+    private Consumer<Object> addToInboxFunction;
 
     public StoreSnapshotTasklet(
             SnapshotContext snapshotContext,

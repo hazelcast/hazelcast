@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ACCEPTOR_IDLE_TIME_MILLIS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ACCEPTOR_SELECTOR_RECREATE_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX_ACCEPTOR;
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_WITH_FIX;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
@@ -73,12 +74,12 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
     private final TcpServer server;
     private final ILogger logger;
     private final ServerContext serverContext;
-    @Probe(name = TCP_METRIC_ACCEPTOR_EVENT_COUNT)
+    @Probe(name = TCP_METRIC_ACCEPTOR_EVENT_COUNT, level = DEBUG)
     private final SwCounter eventCount = newSwCounter();
-    @Probe(name = TCP_METRIC_ACCEPTOR_EXCEPTION_COUNT)
+    @Probe(name = TCP_METRIC_ACCEPTOR_EXCEPTION_COUNT, level = DEBUG)
     private final SwCounter exceptionCount = newSwCounter();
     // count number of times the selector was recreated (if selectWorkaround is enabled)
-    @Probe(name = TCP_METRIC_ACCEPTOR_SELECTOR_RECREATE_COUNT)
+    @Probe(name = TCP_METRIC_ACCEPTOR_SELECTOR_RECREATE_COUNT, level = DEBUG)
     private final SwCounter selectorRecreateCount = newSwCounter();
     private final AcceptorIOThread acceptorThread;
     // last time select returned
@@ -107,7 +108,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
      *
      * @return the idle time in ms.
      */
-    @Probe(name = TCP_METRIC_ACCEPTOR_IDLE_TIME_MILLIS, unit = MS)
+    @Probe(name = TCP_METRIC_ACCEPTOR_IDLE_TIME_MILLIS, unit = MS, level = DEBUG)
     private long idleTimeMillis() {
         return max(currentTimeMillis() - lastSelectTimeMs, 0);
     }

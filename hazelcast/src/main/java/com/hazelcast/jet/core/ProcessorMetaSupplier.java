@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,6 +122,17 @@ public interface ProcessorMetaSupplier extends Serializable {
     }
 
     /**
+     * Returns {@code true} if the {@link #init(Context)} method of this
+     * instance is cooperative. If it's not, the call to the {@code init()}
+     * method is off-loaded to another thread.
+     *
+     * @since 5.2
+     */
+    default boolean initIsCooperative() {
+        return false;
+    }
+
+    /**
      * Called to create a mapping from member {@link Address} to the
      * {@link ProcessorSupplier} that will be sent to that member. Jet calls
      * this method with a list of all cluster members' addresses and the
@@ -134,6 +145,17 @@ public interface ProcessorMetaSupplier extends Serializable {
      */
     @Nonnull
     Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses);
+
+    /**
+     * Returns {@code true} if the {@link #close(Throwable)} method of this
+     * instance is cooperative. If it's not, the call to the {@code close()}
+     * method is off-loaded to another thread.
+     *
+     * @since 5.2
+     */
+    default boolean closeIsCooperative() {
+        return false;
+    }
 
     /**
      * Called on coordinator member after execution has finished on all

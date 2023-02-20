@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,18 @@
 package com.hazelcast.jet.python;
 
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.annotation.EvolvingApi;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.GeneralStage;
 import com.hazelcast.jet.pipeline.StreamStage;
 
 import javax.annotation.Nonnull;
 
-
 /**
  * Transforms which allow the user to call Python user-defined functions
  * from inside a Jet pipeline.
- * <p>
- * Support for Python is currently in the beta phase. The API might change
- * in future versions.
  *
  * @since Jet 4.0
  */
-@EvolvingApi
 public final class PythonTransforms {
 
     private PythonTransforms() {

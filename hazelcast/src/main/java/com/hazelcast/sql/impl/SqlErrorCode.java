@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package com.hazelcast.sql.impl;
+
+import com.hazelcast.jet.RestartableException;
 
 /**
  * Error codes used in Hazelcast SQL.
@@ -46,6 +48,12 @@ public final class SqlErrorCode {
 
     /** Object (mapping/table) not found. */
     public static final int OBJECT_NOT_FOUND = 1010;
+
+    /** Topology of a cluster has changed during query execution. */
+    public static final int TOPOLOGY_CHANGE = 1011;
+
+    /** An instance of {@link RestartableException} was thrown. */
+    public static final int RESTARTABLE_ERROR = 1012;
 
     /** An error with data conversion or transformation. */
     public static final int DATA_EXCEPTION = 2000;

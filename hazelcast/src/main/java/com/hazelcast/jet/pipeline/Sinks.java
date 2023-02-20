@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ReliableTopicPermission;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
@@ -1271,6 +1272,34 @@ public final class Sinks {
     /**
      * A shortcut for:
      * <pre>{@code
+     *     Sinks.<T>jdbcBuilder()
+     *             .updateQuery(updateQuery)
+     *             .dataLinkRef(dataLinkRef)
+     *             .bindFn(bindFn)
+     *             .build();
+     * }</pre>
+     * <p>
+     * See {@link #jdbcBuilder()} for more information.
+     *
+     * @since 5.2
+     */
+    @Nonnull
+    @Beta
+    public static <T> Sink<T> jdbc(
+            @Nonnull String updateQuery,
+            @Nonnull DataLinkRef dataLinkRef,
+            @Nonnull BiConsumerEx<PreparedStatement, T> bindFn
+    ) {
+        return Sinks.<T>jdbcBuilder()
+                .updateQuery(updateQuery)
+                .dataLinkRef(dataLinkRef)
+                .bindFn(bindFn)
+                .build();
+    }
+
+    /**
+     * A shortcut for:
+     * <pre>{@code
      *     jdbcBuilder(updateQuery, bindFn)
      *              .jdbcUrl(jdbcUrl)
      *              .build()
@@ -1296,7 +1325,8 @@ public final class Sinks {
      * prepares an SQL statement and executes it for each item. On the returned
      * builder you must specify a connection (either using a {@linkplain
      * JdbcSinkBuilder#jdbcUrl(String) JDBC URL} or using a {@linkplain
-     * JdbcSinkBuilder#dataSourceSupplier(SupplierEx) datasource}), the
+     * JdbcSinkBuilder#dataSourceSupplier(SupplierEx) datasource} or using a {@linkplain
+     * JdbcSinkBuilder#dataLinkRef(DataLinkRef) dataLink}), the
      * {@linkplain JdbcSinkBuilder#updateQuery(String) SQL statement} and a
      * {@linkplain JdbcSinkBuilder#bindFn(BiConsumerEx) bind function}.
      * <p>

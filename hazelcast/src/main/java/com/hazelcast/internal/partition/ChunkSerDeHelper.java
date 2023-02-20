@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.internal.partition;
 
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -128,8 +128,8 @@ public final class ChunkSerDeHelper {
 
         logger.finest(format("Chunk is full [partitionId:%d, maxChunkSize:%s, actualChunkSize:%s]",
                 partitionId,
-                MemorySize.toPrettyString(maxTotalChunkedDataInBytes),
-                MemorySize.toPrettyString(isEndOfChunk.bytesWrittenSoFar())));
+                Capacity.toPrettyString(maxTotalChunkedDataInBytes),
+                Capacity.toPrettyString(isEndOfChunk.bytesWrittenSoFar())));
     }
 
     private void logEndOfAllChunks(IsEndOfChunk isEndOfChunk) {
@@ -148,8 +148,8 @@ public final class ChunkSerDeHelper {
         if (allDone) {
             logger.finest(format("Last chunk was sent [partitionId:%d, maxChunkSize:%s, actualChunkSize:%s]",
                     partitionId,
-                    MemorySize.toPrettyString(maxTotalChunkedDataInBytes),
-                    MemorySize.toPrettyString(isEndOfChunk.bytesWrittenSoFar())));
+                    Capacity.toPrettyString(maxTotalChunkedDataInBytes),
+                    Capacity.toPrettyString(isEndOfChunk.bytesWrittenSoFar())));
         }
     }
 

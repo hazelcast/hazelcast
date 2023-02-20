@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,12 +52,14 @@ public class IndexImplTest {
         IndexConfig config = IndexUtils.createTestIndexConfig(IndexType.HASH, ATTRIBUTE_NAME);
 
         index = new IndexImpl(
+            null,
             config,
             mockSerializationService,
             mockExtractors,
             IndexCopyBehavior.COPY_ON_READ,
             PerIndexStats.EMPTY,
-            MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT
+            MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT,
+            "test"
         );
     }
 

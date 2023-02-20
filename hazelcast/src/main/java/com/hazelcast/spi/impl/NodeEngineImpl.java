@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.datalink.DataLinkService;
+import com.hazelcast.datalink.impl.DataLinkServiceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.diagnostics.Diagnostics;
@@ -130,6 +132,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
     private final ConcurrencyDetection concurrencyDetection;
     private final TenantControlServiceImpl tenantControlService;
+    private final DataLinkService dataLinkService;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     public NodeEngineImpl(Node node) {
@@ -156,6 +159,7 @@ public class NodeEngineImpl implements NodeEngine {
             this.transactionManagerService = new TransactionManagerServiceImpl(this);
             this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
             this.sqlService = new SqlServiceImpl(this);
+            this.dataLinkService = new DataLinkServiceImpl(node, configClassLoader);
             this.packetDispatcher = new PacketDispatcher(
                     logger,
                     operationService.getOperationExecutor(),
@@ -171,10 +175,11 @@ public class NodeEngineImpl implements NodeEngine {
             checkMapMergePolicies(node);
 
             this.tenantControlService = new TenantControlServiceImpl(this);
+
             serviceManager.registerService(OperationServiceImpl.SERVICE_NAME, operationService);
             serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
             serviceManager.registerService(UserCodeDeploymentService.SERVICE_NAME, userCodeDeploymentService);
-            serviceManager.registerService(MemberSchemaService.SERVICE_NAME, node.memberSchemaService);
+            serviceManager.registerService(MemberSchemaService.SERVICE_NAME, node.getSchemaService());
             serviceManager.registerService(ConfigurationService.SERVICE_NAME, configurationService);
             serviceManager.registerService(TenantControlServiceImpl.SERVICE_NAME, tenantControlService);
         } catch (Throwable e) {
@@ -371,6 +376,11 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
+    public DataLinkService getDataLinkService() {
+        return dataLinkService;
+    }
+
+    @Override
     public TransactionManagerService getTransactionManagerService() {
         return transactionManagerService;
     }
@@ -393,6 +403,11 @@ public class NodeEngineImpl implements NodeEngine {
     @Override
     public boolean isRunning() {
         return node.isRunning();
+    }
+
+    @Override
+    public boolean isStartCompleted() {
+        return node.getNodeExtension().isStartCompleted();
     }
 
     @Override
@@ -529,7 +544,7 @@ public class NodeEngineImpl implements NodeEngine {
         operationService.reset();
     }
 
-    @SuppressWarnings("checkstyle:npathcomplexity")
+    @SuppressWarnings({"checkstyle:npathcomplexity", "cyclomaticcomplexity"})
     public void shutdown(boolean terminate) {
         logger.finest("Shutting down services...");
         if (sqlService != null) {
@@ -566,6 +581,14 @@ public class NodeEngineImpl implements NodeEngine {
         if (diagnostics != null) {
             diagnostics.shutdown();
         }
+        if (dataLinkService != null) {
+            dataLinkService.close();
+        }
+    }
+
+    @Override
+    public MemberSchemaService getSchemaService() {
+        return node.getSchemaService();
     }
 
     @Nonnull

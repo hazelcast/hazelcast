@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,10 +66,14 @@ public class AuthenticationCustomCredentialsMessageTask
 
     @Override
     protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, byte version,
-                                       int partitionCount, UUID clusterId, boolean clientFailoverSupported) {
-        return ClientAuthenticationCustomCodec
-                .encodeResponse(status, thisAddress, uuid, version,
-                        getMemberBuildInfo().getVersion(), partitionCount, clusterId, clientFailoverSupported);
+                                       int partitionCount, UUID clusterId, boolean clientFailoverSupported,
+                                       boolean isAuthenticated) {
+        String serverHazelcastVersion = "";
+        if (isAuthenticated) {
+            serverHazelcastVersion = getMemberBuildInfo().getVersion();
+        }
+        return ClientAuthenticationCustomCodec.encodeResponse(status, thisAddress, uuid, version,
+                        serverHazelcastVersion, partitionCount, clusterId, clientFailoverSupported);
     }
 
     @Override

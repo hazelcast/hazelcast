@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Spliterator;
 import java.util.UUID;
 
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
@@ -291,6 +292,11 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
         ClientMessage response = invokeOnPartition(request);
         List<Data> resultCollection = ListListIteratorCodec.decodeResponse(response);
         return (ListIterator<E>) new UnmodifiableLazyList(resultCollection, getSerializationService()).listIterator();
+    }
+
+    @Override
+    public Spliterator<E> spliterator() {
+        return getAll().spliterator();
     }
 
     @Override

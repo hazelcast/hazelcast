@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("236de3bb92bd650a7905dab47a7c4392")
+@Generated("44d247063a9c4b901d47142c3b80c312")
 public final class IndexConfigCodec {
     private static final int TYPE_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -42,6 +42,7 @@ public final class IndexConfigCodec {
         CodecUtil.encodeNullable(clientMessage, indexConfig.getName(), StringCodec::encode);
         ListMultiFrameCodec.encode(clientMessage, indexConfig.getAttributes(), StringCodec::encode);
         CodecUtil.encodeNullable(clientMessage, indexConfig.getBitmapIndexOptions(), BitmapIndexOptionsCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, indexConfig.getBTreeIndexConfig(), BTreeIndexConfigCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
     }
@@ -56,9 +57,15 @@ public final class IndexConfigCodec {
         java.lang.String name = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         java.util.List<java.lang.String> attributes = ListMultiFrameCodec.decode(iterator, StringCodec::decode);
         com.hazelcast.config.BitmapIndexOptions bitmapIndexOptions = CodecUtil.decodeNullable(iterator, BitmapIndexOptionsCodec::decode);
+        boolean isBTreeIndexConfigExists = false;
+        com.hazelcast.config.BTreeIndexConfig bTreeIndexConfig = null;
+        if (!iterator.peekNext().isEndFrame()) {
+            bTreeIndexConfig = CodecUtil.decodeNullable(iterator, BTreeIndexConfigCodec::decode);
+            isBTreeIndexConfigExists = true;
+        }
 
         fastForwardToEndFrame(iterator);
 
-        return CustomTypeFactory.createIndexConfig(name, type, attributes, bitmapIndexOptions);
+        return CustomTypeFactory.createIndexConfig(name, type, attributes, bitmapIndexOptions, isBTreeIndexConfigExists, bTreeIndexConfig);
     }
 }

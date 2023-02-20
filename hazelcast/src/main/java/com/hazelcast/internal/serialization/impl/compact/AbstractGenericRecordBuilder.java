@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.nio.serialization.FieldKind;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import javax.annotation.Nonnull;
@@ -93,6 +93,7 @@ abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
     @Nonnull
     @Override
     public GenericRecordBuilder setGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord value) {
+        checkCompactGenericRecord(value);
         return write(fieldName, value, FieldKind.COMPACT);
     }
 
@@ -129,6 +130,11 @@ abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
+        if (value != null) {
+            for (GenericRecord genericRecord : value) {
+                checkCompactGenericRecord(genericRecord);
+            }
+        }
         return write(fieldName, value, FieldKind.ARRAY_OF_COMPACT);
     }
 
@@ -310,6 +316,13 @@ abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
         if (fd.getKind() != fieldKind) {
             throw new HazelcastSerializationException("Invalid field kind: '" + fieldName
                     + "' for " + schema + ", expected : " + fd.getKind() + ", given : " + fieldKind);
+        }
+    }
+
+    private static void checkCompactGenericRecord(GenericRecord value) {
+        if (value != null && !(value instanceof CompactGenericRecord)) {
+            throw new HazelcastSerializationException("You can only use Compact GenericRecords in a Compact"
+                    + " GenericRecordBuilder");
         }
     }
 }

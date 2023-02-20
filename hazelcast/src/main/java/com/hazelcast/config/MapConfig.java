@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,9 +57,14 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
     public static final int MAX_BACKUP_COUNT = IPartition.MAX_BACKUP_COUNT;
 
     /**
+     * The number of Time to Live that represents disabling TTL.
+     */
+    public static final int DISABLED_TTL_SECONDS = 0;
+
+    /**
      * The number of default Time to Live in seconds.
      */
-    public static final int DEFAULT_TTL_SECONDS = 0;
+    public static final int DEFAULT_TTL_SECONDS = DISABLED_TTL_SECONDS;
 
     /**
      * The number of default time to wait eviction in seconds.
@@ -260,6 +265,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
      * 0 means no sync backup.
      *
      * @param backupCount the number of synchronous backups to set for this {@link IMap}
+     * @return the updated MapConfig
      * @see #setAsyncBackupCount(int)
      */
     public MapConfig setBackupCount(final int backupCount) {
@@ -281,7 +287,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
      * Sets the number of asynchronous backups. 0 means no backups.
      *
      * @param asyncBackupCount the number of asynchronous synchronous backups to set
-     * @return the updated CacheConfig
+     * @return the updated MapConfig
      * @throws IllegalArgumentException if asyncBackupCount smaller than
      *                                  0, or larger than the maximum number of backup or the sum of the
      *                                  backups and async backups is larger than the maximum number of backups

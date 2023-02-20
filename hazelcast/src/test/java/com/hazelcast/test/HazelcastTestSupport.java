@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,15 @@
 package com.hazelcast.test;
 
 import classloading.ThreadLocalLeakTestUtils;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -57,6 +60,7 @@ import junit.framework.AssertionFailedError;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.AssumptionViolatedException;
+import org.junit.ClassRule;
 import org.junit.ComparisonFailure;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
@@ -96,6 +100,7 @@ import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -120,6 +125,8 @@ public abstract class HazelcastTestSupport {
     public static final String JVM_NAME = System.getProperty("java.vm.name");
     public static final String JAVA_VENDOR = System.getProperty("java.vendor");
 
+    public static final String OS_ARCHITECTURE = System.getProperty("os.arch");
+
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
     public static final int ASSERT_COMPLETES_STALL_TOLERANCE;
     public static final String PERSISTENT_MEMORY_DIRECTORIES;
@@ -127,6 +134,9 @@ public abstract class HazelcastTestSupport {
     private static final String COMPAT_HZ_INSTANCE_FACTORY = "com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory";
     private static final boolean EXPECT_DIFFERENT_HASHCODES = (new Object().hashCode() != new Object().hashCode());
     private static final ILogger LOGGER = Logger.getLogger(HazelcastTestSupport.class);
+
+    @ClassRule
+    public static MobyNamingRule mobyNamingRule = new MobyNamingRule();
 
     @Rule
     public JitterRule jitterRule = new JitterRule();
@@ -192,14 +202,25 @@ public abstract class HazelcastTestSupport {
         return shrinkInstanceConfig(new Config());
     }
 
-    public static Config shrinkInstanceConfig(Config config) {
+    public static Config smallInstanceConfigWithoutJetAndMetrics() {
+        return smallInstanceConfigWithoutJetAndMetrics(new Config());
+    }
+
+    private static Config smallInstanceConfigWithoutJetAndMetrics(Config config) {
         // make the test instances consume less resources per default
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "11")
                 .setProperty(ClusterProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "2")
                 .setProperty(ClusterProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "2")
                 .setProperty(ClusterProperty.EVENT_THREAD_COUNT.getName(), "1");
-        config.getJetConfig().setEnabled(true).setCooperativeThreadCount(2);
+        config.getMetricsConfig().setEnabled(false);
+        config.getJetConfig().setEnabled(false);
+        return config;
+    }
 
+    public static Config shrinkInstanceConfig(Config config) {
+        smallInstanceConfigWithoutJetAndMetrics(config);
+        config.getMetricsConfig().setEnabled(true);
+        config.getJetConfig().setEnabled(true).setCooperativeThreadCount(2);
         return config;
     }
 
@@ -293,6 +314,16 @@ public abstract class HazelcastTestSupport {
         } else {
             return nodeCount == null ? new TestHazelcastInstanceFactory() : new TestHazelcastInstanceFactory(nodeCount);
         }
+    }
+
+    protected void assertNoRunningInstancesEventually(String methodName, TestHazelcastFactory hazelcastFactory) {
+        // check for running Hazelcast instances
+        assertTrueEventually(() -> {
+            Collection<HazelcastInstance> instances = hazelcastFactory.getAllHazelcastInstances();
+            if (!instances.isEmpty()) {
+                fail("After " + methodName + " following instances haven't been shut down: " + instances);
+            }
+        });
     }
 
     // ###########################################
@@ -783,6 +814,14 @@ public abstract class HazelcastTestSupport {
         assertTrue("Instances not in safe state! " + nonSafeStates, nonSafeStates.isEmpty());
     }
 
+    public static void assertNoRunningInstances() {
+        assertThat(Hazelcast.getAllHazelcastInstances()).as("There should be no running instances").isEmpty();
+    }
+
+    public static void assertNoRunningClientInstances() {
+        assertThat(HazelcastClient.getAllHazelcastClients()).as("There should be no running client instances").isEmpty();
+    }
+
     public static void assertNodeStarted(HazelcastInstance instance) {
         NodeExtension nodeExtension = Accessors.getNode(instance).getNodeExtension();
         assertTrue(nodeExtension.isStartCompleted());
@@ -1035,6 +1074,16 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+    public static void assertClusterSizeEventually(
+            int expectedSize,
+            Collection<HazelcastInstance> instances,
+            long timeout
+    ) {
+        for (HazelcastInstance instance : instances) {
+            assertClusterSizeEventually(expectedSize, instance, timeout);
+        }
+    }
+
     public static void assertClusterSizeEventually(int expectedSize, Collection<HazelcastInstance> instances) {
         for (HazelcastInstance instance : instances) {
             assertClusterSizeEventually(expectedSize, instance, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
@@ -1220,7 +1269,9 @@ public abstract class HazelcastTestSupport {
         int sleepMillis = 200;
         long iterations = timeoutSeconds * 5;
         long deadline = System.currentTimeMillis() + SECONDS.toMillis(timeoutSeconds);
-        for (int i = 0; i < iterations && System.currentTimeMillis() < deadline; i++) {
+        boolean passedTheDeadline = false;
+        for (int i = 0; i < iterations && !passedTheDeadline; i++) {
+            passedTheDeadline = System.currentTimeMillis() > deadline;
             try {
                 try {
                     task.run();
@@ -1231,7 +1282,9 @@ public abstract class HazelcastTestSupport {
             } catch (AssertionError e) {
                 error = e;
             }
-            sleepMillis(sleepMillis);
+            if (!passedTheDeadline) {
+                sleepMillis(sleepMillis);
+            }
         }
         if (error != null) {
             throw error;
@@ -1308,9 +1361,9 @@ public abstract class HazelcastTestSupport {
                         long elapsedMillis = historicProgress.timestamp() - taskStartTimestamp;
                         String elapsedMillisPadded = String.format("%1$5s", elapsedMillis);
                         sb.append("\t")
-                          .append(elapsedMillisPadded).append("ms: ")
-                          .append(historicProgress.getProgressString())
-                          .append("\n");
+                                .append(elapsedMillisPadded).append("ms: ")
+                                .append(historicProgress.getProgressString())
+                                .append("\n");
                     }
                     LOGGER.severe(sb.toString());
                     fail("Stall tolerance " + stallToleranceSeconds
@@ -1609,8 +1662,15 @@ public abstract class HazelcastTestSupport {
         assumeFalse("Zing JDK6 used", JAVA_VERSION.startsWith("1.6.") && JVM_NAME.startsWith("Zing"));
     }
 
-    public static void assumeThatNotIBMJDK17() {
-        assumeFalse("Skipping on IBM JDK 17", JAVA_VERSION.startsWith("17.") && JAVA_VENDOR.contains("IBM"));
+    public static void assumeHadoopSupportsIbmPlatform() {
+        boolean missingIbmLoginModule = true;
+        try {
+            Class.forName("com.ibm.security.auth.module.JAASLoginModule");
+            missingIbmLoginModule = false;
+        } catch (ClassNotFoundException ignored) {
+        }
+        assumeFalse("Skipping due Hadoop authentication issues. See https://github.com/apache/hadoop/pull/4537",
+                JAVA_VENDOR.contains("IBM") && missingIbmLoginModule);
     }
 
     public static void assumeThatNoWindowsOS() {
@@ -1619,6 +1679,10 @@ public abstract class HazelcastTestSupport {
 
     public static void assumeThatLinuxOS() {
         Assume.assumeTrue("Only Linux platform supported", isLinux());
+    }
+
+    public static void assumeNoArm64Architecture() {
+        Assume.assumeFalse("Not supported on arm64 (aarch64) architecture", "aarch64".equals(OS_ARCHITECTURE));
     }
 
     /**

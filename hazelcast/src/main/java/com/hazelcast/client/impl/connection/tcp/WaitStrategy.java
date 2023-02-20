@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,6 @@ public class WaitStrategy {
         attempt++;
         long currentTimeMillis = Clock.currentTimeMillis();
         long timePassed = currentTimeMillis - clusterConnectAttemptBegin;
-
         if (timePassed > clusterConnectTimeoutMillis) {
             logger.warning(String.format("Unable to get live cluster connection, cluster connect timeout (%s) is "
                     + "reached. Attempt %d.", clusterConnectTimeoutText, attempt));

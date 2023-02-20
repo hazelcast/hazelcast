@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.test.starter;
 
-import com.google.common.io.Files;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -37,16 +36,17 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyObjectForStarter;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 import static com.hazelcast.test.starter.ReflectionUtils.setFieldValueReflectively;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static java.lang.Thread.currentThread;
 import static java.lang.reflect.Proxy.isProxyClass;
 import static org.mockito.Mockito.mock;
@@ -58,8 +58,6 @@ public class HazelcastStarter {
      */
     private static final ConcurrentMap<String, HazelcastVersionClassloaderFuture> LOADED_VERSIONS =
             new ConcurrentHashMap<String, HazelcastVersionClassloaderFuture>();
-
-    private static final File WORKING_DIRECTORY = Files.createTempDir();
 
     /**
      * Starts a new open source {@link HazelcastInstance} of the given version.
@@ -113,7 +111,7 @@ public class HazelcastStarter {
      * @param configTemplate configuration object to clone on the target HazelcastInstance. If {@code null}, default
      *                       configuration is assumed
      * @param enterprise     when {@code true}, start Hazelcast enterprise edition, otherwise open source
-     * @param additionalJars
+     * @param additionalJars additional jars to be loaded for this instance
      * @return a {@link HazelcastInstance} proxying the started Hazelcast instance.
      */
     public static HazelcastInstance newHazelcastInstance(String version, Config configTemplate, boolean enterprise,
@@ -231,7 +229,7 @@ public class HazelcastStarter {
      *
      * @param version           the target Hazelcast version e.g. "3.8.1", must be a published release version
      * @param configClassLoader class loader given via config
-     * @param additionalJars
+     * @param additionalJars additional jars to be loaded for this instance
      * @return a classloader with given version's artifacts in its classpath
      */
     public static HazelcastAPIDelegatingClassloader getTargetVersionClassloader(String version, boolean enterprise,
@@ -281,7 +279,6 @@ public class HazelcastStarter {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private static Object createInstanceViaInstanceFactory(HazelcastAPIDelegatingClassloader classloader, Config configTemplate) {
         try {
             Class<?> configClass = classloader.loadClass("com.hazelcast.config.Config");
@@ -298,15 +295,8 @@ public class HazelcastStarter {
             Method newHazelcastInstanceMethod = hazelcastInstanceFactoryClass.getMethod("newHazelcastInstance", configClass,
                     String.class, nodeContextClass);
             return newHazelcastInstanceMethod.invoke(null, config, instanceName, nodeContext);
-        } catch (ClassNotFoundException e) {
-            debug("Could not create HazelcastInstance via HazelcastInstanceFactory: " + e.getMessage());
-        } catch (IllegalAccessException e) {
-            debug("Could not create HazelcastInstance via HazelcastInstanceFactory: " + e.getMessage());
-        } catch (NoSuchMethodException e) {
-            debug("Could not create HazelcastInstance via HazelcastInstanceFactory: " + e.getMessage());
-        } catch (InvocationTargetException e) {
-            debug("Could not create HazelcastInstance via HazelcastInstanceFactory: " + e.getMessage());
-        } catch (InstantiationException e) {
+        } catch (ClassNotFoundException | IllegalAccessException | NoSuchMethodException | InvocationTargetException
+                 | InstantiationException e) {
             debug("Could not create HazelcastInstance via HazelcastInstanceFactory: " + e.getMessage());
         }
         return null;
@@ -323,15 +313,8 @@ public class HazelcastStarter {
 
             Method newHazelcastInstanceMethod = hazelcastClass.getMethod("newHazelcastInstance", configClass);
             return newHazelcastInstanceMethod.invoke(null, config);
-        } catch (ClassNotFoundException e) {
-            throw rethrowGuardianException(e);
-        } catch (NoSuchMethodException e) {
-            throw rethrowGuardianException(e);
-        } catch (IllegalAccessException e) {
-            throw rethrowGuardianException(e);
-        } catch (InvocationTargetException e) {
-            throw rethrowGuardianException(e);
-        } catch (InstantiationException e) {
+        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException
+                 | InstantiationException e) {
             throw rethrowGuardianException(e);
         }
     }
@@ -348,26 +331,6 @@ public class HazelcastStarter {
             config = proxyObjectForStarter(classloader, configTemplate);
         }
         return config;
-    }
-
-    /**
-     * Creates a temporary directory for downloaded artifacts.
-     *
-     * @param versionSpec the version specification, which should include both version and enterprise edition indication,
-     *                    e.g. "3.8-EE", "3.8.1"
-     */
-    public static File getOrCreateVersionDirectory(String versionSpec) {
-        File workingDir = WORKING_DIRECTORY;
-        if (!workingDir.isDirectory() || !workingDir.exists()) {
-            throw new GuardianException("Working directory " + workingDir.getAbsolutePath() + " does not exist.");
-        }
-
-        File versionDir = new File(WORKING_DIRECTORY, versionSpec);
-        // the versionDir may already exist when the same Hazelcast version artifacts were previously downloaded
-        if (!versionDir.exists() && !versionDir.mkdir()) {
-            throw new GuardianException("Version directory " + versionDir.getAbsolutePath() + " could not be created.");
-        }
-        return versionDir;
     }
 
     private static String versionSpec(String version, boolean enterprise) {
@@ -396,8 +359,8 @@ public class HazelcastStarter {
                 return classLoader;
             }
             synchronized (this) {
-                File versionDir = getOrCreateVersionDirectory(versionSpec(version, enterprise));
-                File[] files = HazelcastVersionLocator.locateVersion(version, versionDir, enterprise);
+                Map<HazelcastVersionLocator.Artifact, File> files =
+                        HazelcastVersionLocator.locateVersion(version, enterprise);
                 List<URL> urls = fileIntoUrls(files);
                 urls.addAll(additionalJars);
                 ClassLoader parentClassloader = HazelcastStarter.class.getClassLoader();
@@ -409,9 +372,9 @@ public class HazelcastStarter {
             }
         }
 
-        private static List<URL> fileIntoUrls(File[] files) {
-            List<URL> urls = new ArrayList<>(files.length);
-            for (File file : files) {
+        private static List<URL> fileIntoUrls(Map<HazelcastVersionLocator.Artifact, File> files) {
+            List<URL> urls = new ArrayList<>(files.size());
+            for (File file : files.values()) {
                 try {
                     urls.add(file.toURI().toURL());
                 } catch (MalformedURLException e) {

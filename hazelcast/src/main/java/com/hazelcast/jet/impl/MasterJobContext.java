@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.metrics.JobMetrics;
@@ -32,13 +33,15 @@ import com.hazelcast.jet.core.metrics.Measurement;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate;
-import com.hazelcast.jet.impl.deployment.JetDelegatingClassLoader;
+import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.impl.exception.ExecutionNotFoundException;
 import com.hazelcast.jet.impl.exception.JetDisabledException;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
+import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.operation.GetLocalJobMetricsOperation;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
@@ -65,10 +68,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -77,6 +83,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.function.Functions.entryKey;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
@@ -99,7 +106,6 @@ import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_GRACEFUL;
 import static com.hazelcast.jet.impl.TerminationMode.RESTART_GRACEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
-import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createExecutionPlans;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
@@ -109,8 +115,10 @@ import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.formatJobDuration;
 import static com.hazelcast.jet.impl.util.Util.toList;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.Collections.emptyList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.concurrent.CompletableFuture.runAsync;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toMap;
@@ -124,6 +132,7 @@ public class MasterJobContext {
     public static final int SNAPSHOT_RESTORE_EDGE_PRIORITY = Integer.MIN_VALUE;
     public static final String SNAPSHOT_VERTEX_PREFIX = "__snapshot_";
 
+
     private static final int COLLECT_METRICS_RETRY_DELAY_MILLIS = 100;
     private static final Runnable NO_OP = () -> { };
 
@@ -131,7 +140,6 @@ public class MasterJobContext {
     private final ILogger logger;
     private final int defaultParallelism;
     private final int defaultQueueSize;
-
     private volatile long executionStartTime = System.currentTimeMillis();
     private volatile ExecutionFailureCallback executionFailureCallback;
     private volatile Set<Vertex> vertices;
@@ -157,11 +165,17 @@ public class MasterJobContext {
     private final NonCompletableFuture jobCompletionFuture = new NonCompletableFuture();
 
     /**
-     * Null initially. When a job termination is requested, it is assigned a
-     * termination mode. It's reset back to null when execute operations
-     * complete.
+     * Current execution termination request in progress, if any. There can be at
+     * most one active request at any given time. Cleared when execution is
+     * terminated.
+     * <p>
+     * Members of {@link TerminationRequest} can be accessed directly through
+     * this field only when guarded by {@link MasterContext#lock()}, otherwise
+     * inconsistent values are possible in subsequent reads. Standard access
+     * pattern should involve invocation of {@link #getTerminationRequest()}
+     * once and using returned value.
      */
-    private volatile TerminationMode requestedTerminationMode;
+    private volatile TerminationRequest terminationRequest;
 
     MasterJobContext(MasterContext masterContext, ILogger logger) {
         this.mc = masterContext;
@@ -175,12 +189,35 @@ public class MasterJobContext {
         return jobCompletionFuture;
     }
 
-    TerminationMode requestedTerminationMode() {
-        return requestedTerminationMode;
+    Optional<TerminationRequest> getTerminationRequest() {
+        return Optional.ofNullable(terminationRequest);
+    }
+
+    Optional<TerminationMode> requestedTerminationMode() {
+        return getTerminationRequest().map(TerminationRequest::getMode);
+    }
+
+    boolean isUserInitiatedTermination() {
+        return getTerminationRequest().map(TerminationRequest::isUserInitiated).orElse(false);
+    }
+
+    /**
+     * Creates exception with appropriate type for job cancellation.
+     */
+    private Throwable createCancellationException() {
+        return isUserInitiatedTermination() ? new CancellationByUserException() : new CancellationException();
     }
 
     private boolean isCancelled() {
-        return requestedTerminationMode == CANCEL_FORCEFUL;
+        return requestedTerminationMode()
+                .map(mode -> mode == CANCEL_FORCEFUL)
+                .orElse(false);
+    }
+
+    private boolean isCancelledGracefully() {
+        return requestedTerminationMode()
+                .map(mode -> mode == CANCEL_GRACEFUL)
+                .orElse(false);
     }
 
     /**
@@ -194,57 +231,75 @@ public class MasterJobContext {
      * If there was a membership change and the partition table is not completely
      * fixed yet, reschedules the job restart.
      */
-    void tryStartJob(Supplier<Long> executionIdSupplier) {
-        mc.coordinationService().submitToCoordinatorThread(() -> {
-            executionStartTime = System.currentTimeMillis();
-            try {
-                JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
-                jobExecRec.markExecuted();
-                Tuple2<DAG, ClassLoader> dagAndClassloader = resolveDagAndCL(executionIdSupplier);
-                if (dagAndClassloader == null) {
-                    return;
-                }
-                DAG dag = dagAndClassloader.f0();
-                assert dag != null;
-                ClassLoader classLoader = dagAndClassloader.f1();
-                // must call this before rewriteDagWithSnapshotRestore()
-                String dotRepresentation = dag.toDotString(defaultParallelism, defaultQueueSize);
-                long snapshotId = jobExecRec.snapshotId();
-                String snapshotName = mc.jobConfig().getInitialSnapshotName();
-                String mapName =
-                        snapshotId >= 0 ? jobExecRec.successfulSnapshotDataMapName(mc.jobId())
-                                : snapshotName != null ? EXPORTED_SNAPSHOTS_PREFIX + snapshotName
-                                : null;
-                if (mapName != null) {
-                    rewriteDagWithSnapshotRestore(dag, snapshotId, mapName, snapshotName);
-                } else {
-                    logger.info("Didn't find any snapshot to restore for " + mc.jobIdString());
-                }
-                MembersView membersView = Util.getMembersView(mc.nodeEngine());
-                logger.info("Start executing " + mc.jobIdString()
-                        + ", execution graph in DOT format:\n" + dotRepresentation
-                        + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
-                logger.fine("Building execution plan for " + mc.jobIdString());
-                Util.doWithClassLoader(classLoader, () ->
-                        mc.setExecutionPlanMap(createExecutionPlans(mc.nodeEngine(), membersView.getMembers(),
-                                dag, mc.jobId(), mc.executionId(), mc.jobConfig(), jobExecRec.ongoingSnapshotId(),
-                                false, mc.jobRecord().getSubject())));
 
-                logger.fine("Built execution plans for " + mc.jobIdString());
-                Set<MemberInfo> participants = mc.executionPlanMap().keySet();
-                Version coordinatorVersion = mc.nodeEngine().getLocalMember().getVersion().asVersion();
-                Function<ExecutionPlan, Operation> operationCtor = plan ->
-                        new InitExecutionOperation(mc.jobId(), mc.executionId(), membersView.getVersion(), coordinatorVersion,
-                                participants, mc.nodeEngine().getSerializationService().toData(plan), false);
-                mc.invokeOnParticipants(operationCtor, this::onInitStepCompleted, null, false);
-            } catch (Throwable e) {
-                finalizeJob(e);
-            }
-        });
+    void tryStartJob(Supplier<Long> executionIdSupplier) {
+        JobCoordinationService coordinator = mc.coordinationService();
+        MembersView membersView = Util.getMembersView(mc.nodeEngine());
+
+        mc.coordinationService()
+          .submitToCoordinatorThread(() -> {
+              try {
+                  executionStartTime = System.currentTimeMillis();
+                  JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
+                  jobExecRec.markExecuted();
+                  DAG dag = resolveDag(executionIdSupplier);
+                  if (dag == null) {
+                      return;
+                  }
+                  // must call this before rewriteDagWithSnapshotRestore()
+                  String dotRepresentation = dag.toDotString(defaultParallelism, defaultQueueSize);
+                  long snapshotId = jobExecRec.snapshotId();
+                  String snapshotName = mc.jobConfig().getInitialSnapshotName();
+                  String mapName =
+                          snapshotId >= 0 ? jobExecRec.successfulSnapshotDataMapName(mc.jobId())
+                                  : snapshotName != null ? EXPORTED_SNAPSHOTS_PREFIX + snapshotName
+                                  : null;
+                  if (mapName != null) {
+                      rewriteDagWithSnapshotRestore(dag, snapshotId, mapName, snapshotName);
+                  } else {
+                      logger.info("Didn't find any snapshot to restore for " + mc.jobIdString());
+                  }
+                  logger.info("Start executing " + mc.jobIdString()
+                          + ", execution graph in DOT format:\n" + dotRepresentation
+                          + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
+                  logger.fine("Building execution plan for " + mc.jobIdString());
+
+                  createExecutionPlans(dag, membersView)
+                          .thenCompose(plans -> coordinator.submitToCoordinatorThread(
+                                  () -> initExecution(membersView, plans)
+                          ))
+                          .whenComplete((r, e) -> {
+                              if (e != null) {
+                                  finalizeExecution(peel(e));
+                              }
+                          });
+              } catch (Throwable e) {
+                  finalizeExecution(e);
+              }
+          });
+    }
+
+    private CompletableFuture<Map<MemberInfo, ExecutionPlan>> createExecutionPlans(
+            DAG dag,
+            MembersView membersView) {
+        return ExecutionPlanBuilder.createExecutionPlans(mc.nodeEngine(), membersView.getMembers(),
+                dag, mc.jobId(), mc.executionId(), mc.jobConfig(), mc.jobExecutionRecord().ongoingSnapshotId(),
+                false, mc.jobRecord().getSubject());
+    }
+
+    private void initExecution(MembersView membersView, Map<MemberInfo, ExecutionPlan> executionPlanMap) {
+        mc.setExecutionPlanMap(executionPlanMap);
+        logger.fine("Built execution plans for " + mc.jobIdString());
+        Set<MemberInfo> participants = mc.executionPlanMap().keySet();
+        Version coordinatorVersion = mc.nodeEngine().getLocalMember().getVersion().asVersion();
+        Function<ExecutionPlan, Operation> operationCtor = plan ->
+                new InitExecutionOperation(mc.jobId(), mc.executionId(), membersView.getVersion(), coordinatorVersion,
+                        participants, mc.nodeEngine().getSerializationService().toData(plan), false);
+        mc.invokeOnParticipants(operationCtor, this::onInitStepCompleted, null, false);
     }
 
     @Nullable
-    private Tuple2<DAG, ClassLoader> resolveDagAndCL(Supplier<Long> executionIdSupplier) {
+    private DAG resolveDag(Supplier<Long> executionIdSupplier) {
         mc.lock();
         try {
             if (isCancelled()) {
@@ -275,12 +330,12 @@ public class MasterJobContext {
             // ensure JobExecutionRecord exists
             mc.writeJobExecutionRecord(true);
 
-            if (requestedTerminationMode != null) {
-                if (requestedTerminationMode.actionAfterTerminate() != RESTART) {
-                    throw new JobTerminateRequestedException(requestedTerminationMode);
+            if (terminationRequest != null) {
+                if (terminationRequest.mode.actionAfterTerminate() != RESTART) {
+                    throw new JobTerminateRequestedException(terminationRequest.mode);
                 }
                 // requested termination mode is RESTART, ignore it because we are just starting
-                requestedTerminationMode = null;
+                terminationRequest = null;
             }
             ClassLoader classLoader = mc.getJetServiceBackend().getJobClassLoaderService()
                                         .getOrCreateClassLoader(mc.jobConfig(), mc.jobId(), COORDINATOR);
@@ -304,7 +359,7 @@ public class MasterJobContext {
             mc.setExecutionId(executionIdSupplier.get());
             mc.snapshotContext().onExecutionStarted();
             executionCompletionFuture = new CompletableFuture<>();
-            return tuple2(dag, classLoader);
+            return dag;
         } finally {
             mc.unlock();
         }
@@ -313,18 +368,20 @@ public class MasterJobContext {
     /**
      * Returns a tuple of:<ol>
      *     <li>a future that will be completed when the execution completes (or
-     *          a completed future, if execution is not RUNNING or STARTING)
+     *         a completed future, if execution is not RUNNING or STARTING)
      *     <li>a string with a message why this call did nothing or null, if
-     *          this call actually initiated the termination
+     *         this call actually initiated the termination
      * </ol>
      *
      * @param allowWhileExportingSnapshot if false and jobStatus is
-     *      SUSPENDED_EXPORTING_SNAPSHOT, termination will be rejected
+     *                                    SUSPENDED_EXPORTING_SNAPSHOT, termination will be rejected
+     * @param userInitiated if the termination was requested by the user
      */
     @Nonnull
     Tuple2<CompletableFuture<Void>, String> requestTermination(
             TerminationMode mode,
-            @SuppressWarnings("SameParameterValue") boolean allowWhileExportingSnapshot
+            @SuppressWarnings("SameParameterValue") boolean allowWhileExportingSnapshot,
+            boolean userInitiated
     ) {
         mc.coordinationService().assertOnCoordinatorThread();
         // Switch graceful method to forceful if we don't do snapshots, except for graceful
@@ -346,17 +403,17 @@ public class MasterJobContext {
                 // if suspended, we can only cancel the job. Other terminations have no effect.
                 return tuple2(executionCompletionFuture, "Job is " + SUSPENDED);
             }
-            if (requestedTerminationMode != null) {
+            if (terminationRequest != null) {
                 // don't report the cancellation of a cancelled job as an error
-                String message = requestedTerminationMode == CANCEL_FORCEFUL && mode == CANCEL_FORCEFUL ? null
-                        : "Job is already terminating in mode: " + requestedTerminationMode.name();
+                String message = terminationRequest.mode == CANCEL_FORCEFUL && mode == CANCEL_FORCEFUL ? null
+                        : "Job is already terminating in mode: " + terminationRequest.mode.name();
                 return tuple2(executionCompletionFuture, message);
             }
-            requestedTerminationMode = mode;
+            terminationRequest = new TerminationRequest(mode, userInitiated);
             // handle cancellation of a suspended job
             if (localStatus == SUSPENDED || localStatus == SUSPENDED_EXPORTING_SNAPSHOT) {
                 mc.setJobStatus(FAILED);
-                setFinalResult(new CancellationException());
+                setFinalResult(createCancellationException());
             }
             if (mode.isWithTerminalSnapshot()) {
                 mc.snapshotContext().enqueueSnapshot(null, true, null);
@@ -369,7 +426,11 @@ public class MasterJobContext {
 
         if (localStatus == SUSPENDED || localStatus == SUSPENDED_EXPORTING_SNAPSHOT) {
             try {
-                mc.coordinationService().completeJob(mc, new CancellationException(), System.currentTimeMillis()).get();
+                mc.coordinationService()
+                        .completeJob(mc,
+                                createCancellationException(),
+                                System.currentTimeMillis(), userInitiated)
+                        .get();
             } catch (Exception e) {
                 throw rethrow(e);
             }
@@ -464,9 +525,9 @@ public class MasterJobContext {
         long executionId = mc.executionId();
         mc.resetStartOperationResponses();
         executionFailureCallback = new ExecutionFailureCallback(executionId, mc.startOperationResponses());
-        if (requestedTerminationMode != null) {
-            handleTermination(requestedTerminationMode);
-        }
+
+        getTerminationRequest().ifPresent(request ->
+            handleTermination(request.getMode()));
 
         boolean savingMetricsEnabled = mc.jobConfig().isStoreMetricsAfterJobCompletion();
         Function<ExecutionPlan, Operation> operationCtor =
@@ -476,6 +537,8 @@ public class MasterJobContext {
                         responses);
 
         mc.setJobStatus(RUNNING);
+        // There can be a snapshot enqueued while the job is starting, start it now if that's the case
+        mc.snapshotContext().tryBeginSnapshot();
         mc.invokeOnParticipants(operationCtor, completionCallback, executionFailureCallback, false);
 
         if (mc.jobConfig().getProcessingGuarantee() != NONE) {
@@ -505,10 +568,11 @@ public class MasterJobContext {
      * <ul>
      * <li>Returns {@code null} if there is no failure
      * <li>Returns a {@link CancellationException} if the job is cancelled
-     *     forcefully.
      * <li>Returns a {@link JobTerminateRequestedException} if the current
      *     execution is stopped due to a requested termination, except for
-     *     CANCEL_GRACEFUL, in which case CancellationException is returned.
+     *     {@link TerminationMode#CANCEL_GRACEFUL} and
+     *     {@link TerminationMode#CANCEL_FORCEFUL}, in which case
+     *     {@link CancellationException} is returned.
      * <li>If there is at least one user failure, such as an exception in user
      *     code (restartable or not), then returns that failure.
      * <li>Otherwise, the failure is because a job participant has left the
@@ -519,7 +583,7 @@ public class MasterJobContext {
     private Throwable getErrorFromResponses(String opName, Collection<Map.Entry<MemberInfo, Object>> responses) {
         if (isCancelled()) {
             logger.fine(mc.jobIdString() + " to be cancelled after " + opName);
-            return new CancellationException();
+            return createCancellationException();
         }
 
         Map<Boolean, List<Entry<Address, Object>>> grouped = responses.stream()
@@ -544,8 +608,8 @@ public class MasterJobContext {
         if (failures.stream().allMatch(entry -> entry.getValue() instanceof TerminatedWithSnapshotException)) {
             assert opName.equals("Execution") : "opName is '" + opName + "', expected 'Execution'";
             logger.fine(opName + " of " + mc.jobIdString() + " terminated after a terminal snapshot");
-            TerminationMode mode = requestedTerminationMode;
-            assert mode != null && mode.isWithTerminalSnapshot() : "mode=" + mode;
+            TerminationMode mode = requestedTerminationMode().orElseThrow(() -> new AssertionError("mode is null"));
+            assert mode.isWithTerminalSnapshot() : "mode=" + mode;
             return mode == CANCEL_GRACEFUL ? new CancellationException() : new JobTerminateRequestedException(mode);
         }
 
@@ -595,21 +659,24 @@ public class MasterJobContext {
             // StartExecutionOp, so wait for that too.
             mc.snapshotContext().terminalSnapshotFuture()
                     // have to use Async version, the future is completed inside a synchronized block
-                    .whenCompleteAsync(withTryCatch(logger, (r, e) -> finalizeJob(finalError)));
+                    .whenCompleteAsync(withTryCatch(logger, (r, e) -> finalizeExecution(finalError)));
         } else {
             if (error instanceof ExecutionNotFoundException) {
                 // If the StartExecutionOperation didn't find the execution, it means that it was cancelled.
-                if (requestedTerminationMode != null) {
-                    // This cancellation can be because the master cancelled it. If that's the case, convert the exception
-                    // to JobTerminateRequestedException.
-                    error = new JobTerminateRequestedException(requestedTerminationMode).initCause(error);
-                }
-                // The cancellation can also happen if some participant left and
-                // the target cancelled the execution locally in JobExecutionService.onMemberRemoved().
-                // We keep this (and possibly other) exceptions as they are
-                // and let the execution complete with failure.
+                final Throwable notFoundException = error;
+                error = getTerminationRequest()
+                        // This cancellation can be because the master cancelled it. If that's the case, convert the exception
+                        // to JobTerminateRequestedException.
+                        .map(request -> new JobTerminateRequestedException(request.getMode())
+                                .initCause(notFoundException))
+                        // The cancellation can also happen if some participant left and
+                        // the target cancelled the execution locally in JobExecutionService.onMemberRemoved().
+                        // We keep this (and possibly other) exceptions as they are
+                        // and let the execution complete with failure.
+                        .orElse(notFoundException);
+
             }
-            finalizeJob(error);
+            finalizeExecution(error);
         }
     }
 
@@ -631,17 +698,20 @@ public class MasterJobContext {
                         }, null, true));
     }
 
-    void finalizeJob(@Nullable Throwable failure) {
+    void finalizeExecution(@Nullable Throwable failure) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
-            final Runnable nonSynchronizedAction;
             mc.lock();
+            JobStatus status = mc.jobStatus();
+            if (status == COMPLETED || status == FAILED) {
+                logIgnoredCompletion(failure, status);
+            }
+            mc.unlock();
+          })
+          .thenComposeAsync(r -> completeVertices(failure))
+          .thenCompose(ignored -> mc.coordinationService().submitToCoordinatorThread(() -> {
+            final Runnable nonSynchronizedAction;
             try {
-                JobStatus status = mc.jobStatus();
-                if (status == COMPLETED || status == FAILED) {
-                    logIgnoredCompletion(failure, status);
-                    return;
-                }
-                completeVertices(failure);
+                mc.lock();
                 mc.getJetServiceBackend().getJobClassLoaderService().tryRemoveClassloadersForJob(mc.jobId(), COORDINATOR);
 
                 ActionAfterTerminate terminationModeAction = failure instanceof JobTerminateRequestedException
@@ -665,7 +735,11 @@ public class MasterJobContext {
                     mc.setJobStatus(SUSPENDED);
                     mc.jobExecutionRecord().setSuspended(null);
                     nonSynchronizedAction = () -> mc.writeJobExecutionRecord(false);
-                } else if (failure != null && !isCancelled() && mc.jobConfig().isSuspendOnFailure()) {
+                } else if (failure != null
+                        && !isCancelled()
+                        && !isCancelledGracefully()
+                        && mc.jobConfig().isSuspendOnFailure()
+                ) {
                     mc.setJobStatus(SUSPENDED);
                     mc.jobExecutionRecord().setSuspended("Execution failure:\n" +
                             ExceptionUtil.stackTraceToString(failure));
@@ -680,7 +754,7 @@ public class MasterJobContext {
                         setFinalResult(new CancellationException());
                     } else {
                         mc.coordinationService()
-                          .completeJob(mc, failure, completionTime)
+                          .completeJob(mc, failure, completionTime, isUserInitiatedTermination())
                           .whenComplete(withTryCatch(logger, (r, f) -> {
                               if (f != null) {
                                   logger.warning("Completion of " + mc.jobIdString() + " failed", f);
@@ -692,14 +766,14 @@ public class MasterJobContext {
                     nonSynchronizedAction = NO_OP;
                 }
                 // reset the state for the next execution
-                requestedTerminationMode = null;
+                terminationRequest = null;
                 executionFailureCallback = null;
             } finally {
                 mc.unlock();
             }
             executionCompletionFuture.complete(null);
             nonSynchronizedAction.run();
-        });
+        }));
     }
 
     /**
@@ -773,25 +847,32 @@ public class MasterJobContext {
         }
     }
 
-    private void completeVertices(@Nullable Throwable failure) {
+    private CompletableFuture<Void> completeVertices(@Nullable Throwable failure) {
         if (vertices != null) {
+            ExecutorService offloadExecutor =
+                    mc.nodeEngine().getExecutionService().getExecutor(JOB_OFFLOADABLE_EXECUTOR);
+            List<CompletableFuture<Void>> futures = new ArrayList<>(vertices.size());
             JobClassLoaderService classLoaderService = mc.getJetServiceBackend().getJobClassLoaderService();
-            JetDelegatingClassLoader jobCl = classLoaderService.getClassLoader(mc.jobId());
-            doWithClassLoader(jobCl, () -> {
-                for (Vertex v : vertices) {
+            for (Vertex v : vertices) {
+                ProcessorMetaSupplier processorMetaSupplier = v.getMetaSupplier();
+                RunnableEx closeAction = () -> {
                     try {
                         ClassLoader processorCl = classLoaderService.getProcessorClassLoader(mc.jobId(), v.getName());
                         doWithClassLoader(
                                 processorCl,
-                                () -> v.getMetaSupplier().close(failure)
+                                () -> processorMetaSupplier.close(failure)
                         );
                     } catch (Throwable e) {
                         logger.severe(mc.jobIdString()
-                                      + " encountered an exception in ProcessorMetaSupplier.close(), ignoring it", e);
+                                + " encountered an exception in ProcessorMetaSupplier.close(), ignoring it", e);
                     }
-                }
-            });
+                };
+                Executor executor = processorMetaSupplier.closeIsCooperative() ? CALLER_RUNS : offloadExecutor;
+                futures.add(runAsync(closeAction, executor));
+            }
+            return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
         }
+        return completedFuture(null);
     }
 
     void resumeJob(Supplier<Long> executionIdSupplier) {
@@ -831,7 +912,7 @@ public class MasterJobContext {
     @Nonnull
     CompletableFuture<Void> gracefullyTerminate() {
         CompletableFuture<CompletableFuture<Void>> future = mc.coordinationService().submitToCoordinatorThread(
-                () -> requestTermination(RESTART_GRACEFUL, false).f0());
+                () -> requestTermination(RESTART_GRACEFUL, false, false).f0());
         return future.thenCompose(Function.identity());
     }
 
@@ -862,7 +943,7 @@ public class MasterJobContext {
         }
 
         JobStatus localStatus = mc.jobStatus();
-        if (localStatus == RUNNING && requestTermination(TerminationMode.RESTART_GRACEFUL, false).f1() == null) {
+        if (localStatus == RUNNING && requestTermination(TerminationMode.RESTART_GRACEFUL, false, false).f1() == null) {
             logger.info("Requested restart of " + mc.jobIdString() + " to make use of added member(s). "
                     + "Job was running on " + mc.executionPlanMap().size() + " members, cluster now has "
                     + dataMembersWithPartitionsCount + " data members with assigned partitions");
@@ -935,6 +1016,35 @@ public class MasterJobContext {
         @Override
         public int getPriority() {
             return SNAPSHOT_RESTORE_EDGE_PRIORITY;
+        }
+    }
+
+    public static class TerminationRequest {
+        /**
+         * Requested termination mode
+         */
+        private final TerminationMode mode;
+        /**
+         * If the termination was initiated by the user.
+         * <p>
+         * Note that at present this information is trustworthy only for
+         * cancellations. For other modes of termination we may not have enough
+         * information about what initiated it. In dubious cases we default to false
+         * i.e. not user-initiated action.
+         */
+        private final boolean userInitiated;
+
+        public TerminationRequest(@Nonnull TerminationMode mode, boolean userInitiated) {
+            this.mode = mode;
+            this.userInitiated = userInitiated;
+        }
+
+        TerminationMode getMode() {
+            return mode;
+        }
+
+        boolean isUserInitiated() {
+            return userInitiated;
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSummaryListCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.impl.JetServiceBackend;
@@ -27,6 +28,7 @@ import com.hazelcast.jet.impl.JobSummary;
 import com.hazelcast.jet.impl.operation.GetJobSummaryListOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.JobPermission;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
@@ -37,10 +39,12 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrowFromCollection;
 import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
 import static com.hazelcast.jet.impl.util.Util.distinctBy;
 
 public class JetGetJobSummaryListMessageTask extends AbstractMultiTargetMessageTask<Void> {
+    private static final Class[] IGNORED_EXCEPTIONS = {TargetNotMemberException.class, MemberLeftException.class};
 
     JetGetJobSummaryListMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -60,7 +64,9 @@ public class JetGetJobSummaryListMessageTask extends AbstractMultiTargetMessageT
     @SuppressWarnings("unchecked")
     @Override
     protected Object reduce(Map<Member, Object> map) throws Throwable {
+        rethrowFromCollection(map.values(), IGNORED_EXCEPTIONS);
         return map.values().stream()
+                .filter(item -> !(item instanceof Throwable))
                 .flatMap(item -> ((List<JobSummary>) item).stream())
                 // In edge cases there can be duplicates. E.g. the GetIdsOp is broadcast to all members.  member1
                 // is master and responds and dies. It's removed from cluster, member2 becomes master and

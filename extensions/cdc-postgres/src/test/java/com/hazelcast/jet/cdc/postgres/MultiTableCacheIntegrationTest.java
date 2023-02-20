@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,9 @@
 package com.hazelcast.jet.cdc.postgres;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.Job;
 import com.hazelcast.jet.cdc.ChangeRecord;
-import com.hazelcast.jet.cdc.Operation;
 import com.hazelcast.jet.cdc.ParsingException;
-import com.hazelcast.jet.cdc.RecordPart;
-import com.hazelcast.jet.function.TriFunction;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
@@ -42,18 +39,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.jet.cdc.Operation.DELETE;
+import static com.hazelcast.jet.cdc.Operation.INSERT;
+import static com.hazelcast.jet.cdc.Operation.SYNC;
+import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 
 @Category(NightlyTest.class)
 public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrationTest {
 
-    private static final int MAX_CONCURRENT_OPERATIONS = 1;
     private static final String CACHE = "cache";
-    private static final int REPEATS = 1000;
+    private static final int REPEATS = 1001;
 
     @Test
     public void ordersOfCustomers() throws Exception {
@@ -62,26 +63,27 @@ public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrati
                 .build();
 
         Pipeline pipeline = Pipeline.create();
+        pipeline.setPreserveOrder(true);
         StreamStage<ChangeRecord> allRecords = pipeline.readFrom(source)
-                .withNativeTimestamps(0);
+                                                       .withoutTimestamps()
+                                                       .setLocalParallelism(1);
 
         allRecords.filter(r -> r.table().equals("customers"))
-                .apply(this::fixOrdering)
-                .writeTo(Sinks.mapWithEntryProcessor(MAX_CONCURRENT_OPERATIONS, CACHE,
+                .writeTo(Sinks.mapWithEntryProcessor(CACHE,
                         record -> (Integer) record.key().toMap().get("id"),
                         CustomerEntryProcessor::new
                 ));
 
         allRecords.filter(r -> r.table().equals("orders"))
-                .apply(this::fixOrdering)
-                .writeTo(Sinks.mapWithEntryProcessor(MAX_CONCURRENT_OPERATIONS, CACHE,
+                .writeTo(Sinks.mapWithEntryProcessor(CACHE,
                         record -> (Integer) record.value().toMap().get("purchaser"),
                         OrderEntryProcessor::new
                 ));
 
         // when
-        HazelcastInstance hz = createHazelcastInstances(1)[0];
-        Job job = hz.getJet().newJob(pipeline);
+        HazelcastInstance hz = createHazelcastInstance();
+        hz.getJet().newJob(pipeline, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE));
+
         //then
         Map<Integer, OrdersOfCustomer> expected = toMap(
         new OrdersOfCustomer(
@@ -96,22 +98,20 @@ public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrati
                 new Order(10004, new Date(1456012800000L), 1003, 1, 107)),
         new OrdersOfCustomer(
                 new Customer(1004, "Anne", "Kretchmar", "annek@noanswer.org")));
-        assertEqualsEventually(() -> getIMapContent(hz, CACHE), expected);
+        assertEqualsEventually(() -> getIMapContent(hz), expected);
 
         //when
+        executeBatch("INSERT INTO customers VALUES (1005, 'Jason', 'Bourne', 'jason@bourne.org')");
         List<String> batch = new ArrayList<>();
         for (int i = 1; i <= REPEATS; i++) {
-            batch.add("UPDATE customers SET first_name='Anne" + i + "' WHERE id=1004");
-
-            batch.add("INSERT INTO customers VALUES (1005, 'Jason', 'Bourne', 'jason@bourne.org')");
-            batch.add("DELETE FROM customers WHERE id=1005");
-
-            batch.add("UPDATE orders SET quantity='" + i + "' WHERE id=10004");
-
-            batch.add("DELETE FROM orders WHERE id=10003");
-            batch.add("INSERT INTO orders VALUES (10003, '2016-02-19', 1002, 2, 106)");
+            batch.addAll(createTestSqlQueries(i));
+            if (batch.size() >= 50 || i == REPEATS) {
+                executeBatch(batch.toArray(new String[0]));
+                batch.clear();
+            }
         }
-        executeBatch(batch.toArray(new String[0]));
+        executeBatch("DELETE FROM customers WHERE id=1005");
+        executeBatch("INSERT INTO orders VALUES (10007, '2016-02-19', 1002, 2, 106)");
 
         //then
         expected = toMap(
@@ -121,73 +121,34 @@ public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrati
                 new OrdersOfCustomer(
                         new Customer(1002, "George", "Bailey", "gbailey@foobar.com"),
                         new Order(10002, new Date(1452988800000L) , 1002, 2, 105),
-                        new Order(10003, new Date(1455840000000L), 1002, 2, 106)),
+                        new Order(10007, new Date(1455840000000L), 1002, 2, 106)),
                 new OrdersOfCustomer(
                         new Customer(1003, "Edward", "Walker", "ed@walker.com"),
                         new Order(10004, new Date(1456012800000L), 1003, REPEATS, 107)),
                 new OrdersOfCustomer(
                         new Customer(1004, "Anne" + REPEATS, "Kretchmar", "annek@noanswer.org")));
         expected.put(1005, new OrdersOfCustomer());
-        assertEqualsEventually(() -> getIMapContent(hz, CACHE), expected);
+        assertEqualsEventually(() -> getIMapContent(hz), expected);
     }
 
-    private StreamStage<ChangeRecord> fixOrdering(StreamStage<ChangeRecord> input) {
-        return input
-                .groupingKey(ChangeRecord::key)
-                .mapStateful(
-                        TimeUnit.SECONDS.toMillis(10),
-                        () -> new Sequence(0, 0),
-                        (lastSequence, key, record) -> {
-                            long source = record.sequenceSource();
-                            long sequence = record.sequenceValue();
-                            if (lastSequence.update(source, sequence)) {
-                                return record;
-                            }
-                            return null;
-                        },
-                        (TriFunction<Sequence, RecordPart, Long, ChangeRecord>) (sequence, recordPart, aLong) -> null);
+    private static List<String> createTestSqlQueries(int index) {
+        List<String> batch = new ArrayList<>();
+        batch.add("UPDATE customers SET first_name='Anne" + index + "' WHERE id=1004");
+        batch.add("UPDATE orders SET quantity='" + index + "' WHERE id=10004");
+
+        batch.add("DELETE FROM orders WHERE id=10003");
+        return batch;
     }
 
     @Nonnull
-    private static Map<Integer, OrdersOfCustomer> getIMapContent(HazelcastInstance hz, String name) {
-        return new HashMap<>(hz.getMap(name));
+    private static Map<Integer, OrdersOfCustomer> getIMapContent(HazelcastInstance hz) {
+        return new HashMap<>(hz.getMap(MultiTableCacheIntegrationTest.CACHE));
     }
 
     @Nonnull
     private static Map<Integer, OrdersOfCustomer> toMap(OrdersOfCustomer... ordersOfCustomers) {
         return Arrays.stream(ordersOfCustomers).collect(Collectors.toMap(
                 orders -> orders.getCustomer().getId(), Function.identity()));
-    }
-
-    private static class Sequence {
-
-        private long source;
-        private long sequence;
-
-        Sequence(long source, long sequence) {
-            this.source = source;
-            this.sequence = sequence;
-        }
-
-        boolean update(long source, long sequence) {
-            if (this.source != source) { //sequence source changed for key
-                this.source = source;
-                this.sequence = sequence;
-                return true;
-            }
-
-            if (this.sequence < sequence) { //sequence is newer than previous for key
-                this.sequence = sequence;
-                return true;
-            }
-
-            return false;
-        }
-
-        @Override
-        public String toString() {
-            return "source=" + source + ", sequence=" + sequence;
-        }
     }
 
     private static class OrdersOfCustomer implements Serializable {
@@ -241,7 +202,7 @@ public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrati
 
         @Override
         public String toString() {
-            return String.format("Customer: %s, Orders: %s", customer, orders);
+            return format("%s, Orders: %s", customer, orders);
         }
     }
 
@@ -256,16 +217,14 @@ public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrati
         @Override
         public Object process(Entry<Integer, OrdersOfCustomer> entry) {
             try {
-                boolean deletion = Operation.DELETE.equals(record.operation());
                 OrdersOfCustomer value = entry.getValue();
-                if (deletion) {
-                    if (value != null) {
-                        value.setCustomer(null);
-                    }
+                if (value == null && (record.operation() == SYNC || record.operation() == INSERT)) {
+                    value = new OrdersOfCustomer();
+                }
+                requireNonNull(value, "value is null");
+                if (DELETE == record.operation()) {
+                    value.setCustomer(null);
                 } else {
-                    if (value == null) {
-                        value = new OrdersOfCustomer();
-                    }
                     value.setCustomer(record.value().toObject(Customer.class));
                 }
                 entry.setValue(value);
@@ -287,7 +246,7 @@ public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrati
         @Override
         public Object process(Entry<Integer, OrdersOfCustomer> entry) {
             try {
-                boolean deletion = Operation.DELETE.equals(record.operation());
+                boolean deletion = DELETE == record.operation();
                 OrdersOfCustomer value = entry.getValue();
                 if (deletion) {
                     if (value != null) {

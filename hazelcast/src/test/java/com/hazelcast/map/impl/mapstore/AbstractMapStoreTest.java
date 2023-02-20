@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ public abstract class AbstractMapStoreTest extends HazelcastTestSupport {
 
     public Config newConfig(String mapName, Object storeImpl, int writeDelaySeconds, MapStoreConfig.InitialLoadMode loadMode) {
         Config config = getConfig();
-
+        config.getMetricsConfig().setEnabled(false);
         MapConfig mapConfig = config.getMapConfig(mapName);
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig();

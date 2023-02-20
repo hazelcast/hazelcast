@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,5 +77,34 @@ public final class PredicateUtils {
 
         Predicate unwrappedPredicate = ((PartitionPredicate) predicate).getTarget();
         return (PagingPredicateImpl) unwrappedPredicate;
+    }
+
+    /**
+     * This method is used for checking a predicate that it is not/does not contain a {@link com.hazelcast.query.PagingPredicate}
+     *
+     * @throws IllegalArgumentException if the predicate is a {@link com.hazelcast.query.PagingPredicate} or is a
+     *                                  {@link com.hazelcast.query.PartitionPredicate} that includes a
+     *                                  {@link com.hazelcast.query.PagingPredicate}
+     */
+    public static void checkDoesNotContainPagingPredicate(Predicate predicate, String methodName)
+            throws IllegalArgumentException {
+        if (PredicateUtils.containsPagingPredicate(predicate)) {
+            throw new IllegalArgumentException("Paging predicate is not supported in " + methodName + " method");
+        }
+    }
+
+    /**
+     * Returns true if the predicate passed is a {@link com.hazelcast.query.PagingPredicate}
+     * or is a {@link com.hazelcast.query.PartitionPredicate} that includes a {@link com.hazelcast.query.PagingPredicate}
+     */
+    public static boolean containsPagingPredicate(Predicate predicate) {
+        if (predicate instanceof PagingPredicateImpl) {
+            return true;
+        }
+        if (!(predicate instanceof PartitionPredicate)) {
+            return false;
+        }
+        PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
+        return partitionPredicate.getTarget() instanceof PagingPredicateImpl;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.MapConfig;
@@ -35,6 +36,7 @@ import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -207,6 +209,16 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
+    public DataLinkConfig findDataLinkConfig(String baseName) {
+        return null;
+    }
+
+    @Override
+    public Map<String, DataLinkConfig> getDataLinkConfigs() {
+        return emptyMap();
+    }
+
+    @Override
     public void broadcastConfig(IdentifiedDataSerializable config) {
         throw new IllegalStateException("Cannot add a new config while Hazelcast is starting.");
     }
@@ -231,5 +243,10 @@ class EmptyConfigurationService implements ConfigurationService {
     @Override
     public void updateLicense(String licenseKey) {
         throw new IllegalStateException("Cannot update license while Hazelcast is starting.");
+    }
+
+    @Override
+    public void updateTcpIpConfigMemberList(List<String> memberList) {
+        throw new IllegalStateException("Cannot update the member list of TCP-IP join config while Hazelcast is starting.");
     }
 }

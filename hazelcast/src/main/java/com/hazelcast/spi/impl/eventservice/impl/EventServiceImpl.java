@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
@@ -676,17 +675,19 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
     }
 
     @Override
-    public Operation getPreJoinOperation() {
-        // pre-join operations are only sent by master member
+    public OnJoinRegistrationOperation getPreJoinOperation() {
+        // EventService's pre-join operations are only sent by master member
+        // also EventService's pre-join op is sent from joining member to master in JoinRequest
         return getOnJoinRegistrationOperation();
     }
 
     @Override
     public Operation getPostJoinOperation() {
-        ClusterService clusterService = nodeEngine.getClusterService();
-        // Send post join registration operation only if this is the newly joining member.
-        // Master will send registrations with pre-join operation.
-        return clusterService.isMaster() ? null : getOnJoinRegistrationOperation();
+        // The post join operation can reach another member with some delay.
+        // This could lead to an issue (for example, the proxy creation on a secondary member) if it was used for the
+        // event registration (see https://github.com/hazelcast/hazelcast/issues/18381#issuecomment-952843577)
+
+        return null;
     }
 
     /**

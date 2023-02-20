@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
@@ -53,12 +53,12 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
         super(cluster, traitSet, left, right, condition, joinType);
     }
 
-    public Expression<Boolean> rightFilter(QueryParameterMetadata parameterMetadata) {
-        return ((FullScanPhysicalRel) getRight()).filter(parameterMetadata);
+    public RexNode rightFilter() {
+        return ((HazelcastPhysicalScan) getRight()).filter();
     }
 
-    public List<Expression<?>> rightProjection(QueryParameterMetadata parameterMetadata) {
-        return ((FullScanPhysicalRel) getRight()).projection(parameterMetadata);
+    public List<RexNode> rightProjection() {
+        return ((HazelcastPhysicalScan) getRight()).projection();
     }
 
     public JetJoinInfo joinInfo(QueryParameterMetadata parameterMetadata) {
@@ -106,7 +106,7 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
     }
 
     @Override
-    public Vertex accept(CreateDagVisitor visitor) {
+    public <V> V accept(CreateDagVisitor<V> visitor) {
         return visitor.onNestedLoopJoin(this);
     }
 

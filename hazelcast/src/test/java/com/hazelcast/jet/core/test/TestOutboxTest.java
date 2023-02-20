@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,18 +73,6 @@ public class TestOutboxTest {
         // When
         outbox.reset();
         // Then - this would fail if reset() was required
-        assertFalse(outbox.offer(2));
-    }
-
-    @Test
-    public void when_resetNotCalled_then_offerFails() {
-        TestOutbox outbox = new TestOutbox(1);
-        // When
-        assertTrue(outbox.offer(1));
-        assertFalse(outbox.offer(2));
-
-        // Then
-        exception.expectMessage("offer() called again");
         assertFalse(outbox.offer(2));
     }
 

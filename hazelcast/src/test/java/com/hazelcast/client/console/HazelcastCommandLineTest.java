@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.BuildInfo;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
@@ -58,8 +60,10 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.client.console.HazelcastCommandLine.runCommandLine;
+import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -94,7 +98,8 @@ public class HazelcastCommandLineTest extends JetTestSupport {
     public static void beforeClass() throws IOException {
         createJarFile();
         xmlConfiguration = new File(HazelcastCommandLineTest.class.getResource("hazelcast-client-test.xml").getPath());
-        yamlConfiguration = new File(HazelcastCommandLineTest.class.getResource("hazelcast-client-test.yaml").getPath());
+        yamlConfiguration =
+                new File(HazelcastCommandLineTest.class.getResource("hazelcast-client-test.yaml").getPath());
     }
 
     public static void createJarFile() throws IOException {
@@ -106,6 +111,7 @@ public class HazelcastCommandLineTest extends JetTestSupport {
     @AfterClass
     public static void afterClass() {
         IOUtil.deleteQuietly(testJobJarFile.toFile());
+        System.clearProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);
     }
 
     @Before
@@ -523,6 +529,110 @@ public class HazelcastCommandLineTest extends JetTestSupport {
     }
 
     @Test
+    public void test_submit_server_cli_version_minor_mismatch() {
+        String serverVersion = "5.0.0";
+        System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, serverVersion);
+
+        Config cfg = smallInstanceConfig();
+        cfg.getJetConfig().setResourceUploadEnabled(true);
+        String clusterName = randomName();
+        cfg.setClusterName(clusterName);
+        hz = createHazelcastInstance(cfg);
+
+        System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, "5.1.0");
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setClusterName(clusterName);
+        client = createHazelcastClient(clientConfig);
+
+        BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
+        String clientVersion = buildInfo.getVersion();
+
+        assertThatThrownBy(() -> run("submit", testJobJarFile.toString()))
+                .hasStackTraceContaining("Server and client must have matching minor version. Server version "
+                        + serverVersion + ", hz-cli version " + clientVersion);
+
+        assertTrueEventually(() -> assertThat(hz.getJet().getJobs()).isEmpty());
+
+        assertTrueEventually(() -> assertContains(captureErr(),
+                "ERROR: Server and client must have matching minor version. Server version "
+                        + serverVersion + ", hz-cli version " + clientVersion)
+        );
+    }
+
+    @Test
+    public void test_submit_server_cli_version_minor_mismatch_ignore() {
+        String serverVersion = "5.0.0";
+        System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, serverVersion);
+
+        Config cfg = smallInstanceConfig();
+        cfg.getJetConfig().setResourceUploadEnabled(true);
+        String clusterName = randomName();
+        cfg.setClusterName(clusterName);
+        hz = createHazelcastInstance(cfg);
+
+        System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, "5.1.0");
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setClusterName(clusterName);
+        client = createHazelcastClient(clientConfig);
+
+        run("submit", "--ignore-version-mismatch", testJobJarFile.toString());
+        Job job = hz.getJet().getJobs().get(0);
+        assertJobStatusEventually(job, JobStatus.RUNNING);
+    }
+
+    @Test
+    public void test_submit_server_cli_version_major_mismatch() {
+        String serverVersion = "6.0.0";
+        System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, serverVersion);
+
+        Config cfg = smallInstanceConfig();
+        cfg.getJetConfig().setResourceUploadEnabled(true);
+        String clusterName = randomName();
+        cfg.setClusterName(clusterName);
+        hz = createHazelcastInstance(cfg);
+
+        System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, "5.1.0");
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setClusterName(clusterName);
+        client = createHazelcastClient(clientConfig);
+
+        BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
+        String clientVersion = buildInfo.getVersion();
+
+        assertThatThrownBy(() -> run("submit", testJobJarFile.toString()))
+                .hasStackTraceContaining("Server and client must have matching minor version. Server version "
+                        + serverVersion + ", hz-cli version " + clientVersion);
+
+        assertTrueEventually(() -> assertThat(hz.getJet().getJobs()).isEmpty());
+
+        assertTrueEventually(() -> assertContains(captureErr(),
+                "ERROR: Server and client must have matching minor version. Server version "
+                        + serverVersion + ", hz-cli version " + clientVersion)
+        );
+    }
+
+    @Test
+    public void test_submit_server_cli_version_same_minor_patch_mismatch() {
+        String serverVersion = "5.0.0";
+        System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, serverVersion);
+
+        Config cfg = smallInstanceConfig();
+        cfg.getJetConfig().setResourceUploadEnabled(true);
+        String clusterName = randomName();
+        cfg.setClusterName(clusterName);
+        hz = createHazelcastInstance(cfg);
+
+        System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, "5.0.1");
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setClusterName(clusterName);
+        client = createHazelcastClient(clientConfig);
+
+        run("submit", testJobJarFile.toString());
+        Job job = hz.getJet().getJobs().get(0);
+        assertJobStatusEventually(job, JobStatus.RUNNING);
+    }
+
+    @Test
     public void testTargetsMixin() {
         String target = "foobar@127.0.0.1:5701,127.0.0.1:5702";
 
@@ -690,8 +800,8 @@ public class HazelcastCommandLineTest extends JetTestSupport {
     private Job newJob(String jobName) {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.mapJournal(SOURCE_NAME, START_FROM_OLDEST))
-                .withoutTimestamps()
-                .writeTo(Sinks.list(SINK_NAME));
+         .withoutTimestamps()
+         .writeTo(Sinks.list(SINK_NAME));
         Job job = hz.getJet().newJob(p, new JobConfig().setName(jobName));
         assertJobStatusEventually(job, JobStatus.RUNNING);
         return job;

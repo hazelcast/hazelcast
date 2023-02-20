@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,8 +55,9 @@ public class PredicateDataSerializerHook implements DataSerializerHook {
     public static final int COMPOSITE_VALUE = 18;
     public static final int NEGATIVE_INFINITY = 19;
     public static final int POSITIVE_INFINITY = 20;
+    public static final int MULTI_PARTITION_PREDICATE = 21;
 
-    public static final int LEN = POSITIVE_INFINITY + 1;
+    public static final int LEN = MULTI_PARTITION_PREDICATE + 1;
 
     @Override
     public int getFactoryId() {
@@ -173,6 +174,12 @@ public class PredicateDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return CompositeValue.POSITIVE_INFINITY;
+            }
+        };
+        constructors[MULTI_PARTITION_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MultiPartitionPredicateImpl();
             }
         };
 

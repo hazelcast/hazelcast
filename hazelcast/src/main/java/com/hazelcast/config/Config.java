@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import com.hazelcast.internal.config.ConfigUtils;
 import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.config.DurableExecutorConfigReadOnly;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
+import com.hazelcast.internal.config.DataLinkConfigReadOnly;
 import com.hazelcast.internal.config.ListConfigReadOnly;
 import com.hazelcast.internal.config.MapConfigReadOnly;
 import com.hazelcast.internal.config.MemberXmlConfigRootTagRecognizer;
@@ -56,6 +57,7 @@ import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.security.jsm.HazelcastRuntimePermission;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.ITopic;
 
@@ -216,6 +218,9 @@ public class Config {
 
     // @since 5.1
     private IntegrityCheckerConfig integrityCheckerConfig = new IntegrityCheckerConfig();
+
+    // @since 5.2
+    private final Map<String, DataLinkConfig> dataLinkConfigs = new ConcurrentHashMap<>();
 
     public Config() {
     }
@@ -773,7 +778,9 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public MapConfig getMapConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, mapConfigs, name, MapConfig.class);
+        MapConfig config = ConfigUtils.getConfig(configPatternMatcher, mapConfigs, name, MapConfig.class);
+        DataPersistenceAndHotRestartMerger.merge(config.getHotRestartConfig(), config.getDataPersistenceConfig());
+        return config;
     }
 
     /**
@@ -3093,6 +3100,125 @@ public class Config {
     }
 
     /**
+     * Returns the map of data link configurations, mapped by config name.
+     *
+     * @since 5.2
+     */
+    @Beta
+    public Map<String, DataLinkConfig> getDataLinkConfigs() {
+        return dataLinkConfigs;
+    }
+
+    /**
+     * Sets the map of data link configurations, mapped by config name.
+     * <p>
+     * <p>
+     * Example configuration: see {@link #addDataLinkConfig(DataLinkConfig)}
+     *
+     * @since 5.2
+     */
+    @Beta
+    public Config setDataLinkConfigs(Map<String, DataLinkConfig> dataLinkConfigs) {
+        this.dataLinkConfigs.clear();
+        this.dataLinkConfigs.putAll(dataLinkConfigs);
+        for (Entry<String, DataLinkConfig> entry : dataLinkConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+    /**
+     * Adds an data link configuration.
+     * <p>
+     * <p>
+     * Example:
+     * <pre>{@code
+     *      Config config = new Config();
+     *      Properties properties = new Properties();
+     *      properties.put("jdbcUrl", jdbcUrl);
+     *      properties.put("username", username);
+     *      properties.put("password", password);
+     *      DataLinkConfig dataLinkConfig = new DataLinkConfig()
+     *              .setName("my-jdbc-data-link")
+     *              .setClassName(JdbcDataLinkFactory.class.getName())
+     *              .setProperties(properties);
+     *      config.addDataLinkConfig(dataLinkConfig);
+     * }</pre>
+     *
+     * @since 5.2
+     */
+    @Beta
+    public Config addDataLinkConfig(DataLinkConfig dataLinkConfig) {
+        dataLinkConfigs.put(dataLinkConfig.getName(), dataLinkConfig);
+        return this;
+    }
+
+
+    /**
+     * Returns the data link configuration for the given name, creating one
+     * if necessary and adding it to the collection of known configurations.
+     * <p>
+     * The configuration is found by matching the configuration name
+     * pattern to the provided {@code name} without the partition qualifier
+     * (the part of the name after {@code '@'}).
+     * If no configuration matches, it will create one by cloning the
+     * {@code "default"} configuration and add it to the configuration
+     * collection.
+     * <p>
+     * This method is intended to easily and fluently create and add
+     * configurations more specific than the default configuration without
+     * explicitly adding it by invoking
+     * {@link #addDataLinkConfig(DataLinkConfig)}.
+     * <p>
+     * Because it adds new configurations if they are not already present,
+     * this method is intended to be used before this config is used to
+     * create a hazelcast instance. Afterwards, newly added configurations
+     * may be ignored.
+     *
+     * @param name data link name
+     * @return data link configuration
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
+     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
+     * @see #getConfigPatternMatcher()
+     * @since 5.2
+     */
+    @Beta
+    public DataLinkConfig getDataLinkConfig(String name) {
+        return ConfigUtils.getConfig(configPatternMatcher, dataLinkConfigs, name, DataLinkConfig.class);
+    }
+
+    /**
+     * Returns a read-only {@link DataLinkConfig}
+     * configuration for the given name.
+     * <p>
+     * The name is matched by pattern to the configuration and by stripping the
+     * partition ID qualifier from the given {@code name}.
+     * If there is no config found by the name, it will return the configuration
+     * with the name {@code default}.
+     *
+     * @param name name of the data link
+     * @return the data link configuration
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
+     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
+     * @see #getConfigPatternMatcher()
+     * @see EvictionConfig#setSize(int)
+     * @since 5.2
+     */
+    @Beta
+    public DataLinkConfig findDataLinkConfig(String name) {
+        name = getBaseName(name);
+        DataLinkConfig config = lookupByPattern(configPatternMatcher, dataLinkConfigs, name);
+        if (config != null) {
+            return new DataLinkConfigReadOnly(config);
+        }
+        return new DataLinkConfigReadOnly(getDataLinkConfig("default"));
+    }
+
+    /**
      * Returns the configuration for the user services managed by this
      * hazelcast instance.
      *
@@ -3155,6 +3281,7 @@ public class Config {
                 + ", jetConfig=" + jetConfig
                 + ", deviceConfigs=" + deviceConfigs
                 + ", integrityCheckerConfig=" + integrityCheckerConfig
+                + ", dataLinkConfigs=" + dataLinkConfigs
                 + '}';
     }
 }

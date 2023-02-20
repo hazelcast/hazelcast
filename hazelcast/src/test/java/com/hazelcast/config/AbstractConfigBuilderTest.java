@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -176,6 +176,15 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public abstract void testMapStoreDisabled();
+
+    @Test
+    public abstract void testMapStoreConfig_offload_whenDefault();
+
+    @Test
+    public abstract void testMapStoreConfig_offload_whenSetFalse();
+
+    @Test
+    public abstract void testMapStoreConfig_offload_whenSetTrue();
 
     @Test
     public abstract void testMapStoreWriteBatchSize();
@@ -379,19 +388,31 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testJavaSerializationFilter();
 
     @Test
-    public abstract void testCompactSerialization();
+    public abstract void testCompactSerialization_serializerRegistration();
 
     @Test
-    public abstract void testCompactSerialization_explicitSerializationRegistration();
+    public abstract void testCompactSerialization_classRegistration();
 
     @Test
-    public abstract void testCompactSerialization_reflectiveSerializerRegistration();
+    public abstract void testCompactSerialization_serializerAndClassRegistration();
 
-    @Test(expected = InvalidConfigurationException.class)
-    public abstract void testCompactSerialization_registrationWithJustTypeName();
+    @Test
+    public abstract void testCompactSerialization_duplicateSerializerRegistration();
 
-    @Test(expected = InvalidConfigurationException.class)
-    public abstract void testCompactSerialization_registrationWithJustSerializer();
+    @Test
+    public abstract void testCompactSerialization_duplicateClassRegistration();
+
+    @Test
+    public abstract void testCompactSerialization_registrationsWithDuplicateClasses();
+
+    @Test
+    public abstract void testCompactSerialization_registrationsWithDuplicateTypeNames();
+
+    @Test
+    public abstract void testCompactSerialization_withInvalidSerializer();
+
+    @Test
+    public abstract void testCompactSerialization_withInvalidCompactSerializableClass();
 
     @Test
     public abstract void testAllowOverrideDefaultSerializers();
@@ -559,9 +580,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
         // WAN server socket configs
         EndpointConfig wanServerSockerEndpointConfig1 = advancedNetworkConfig.getEndpointConfigs()
-                                                                             .get(EndpointQualifier.resolve(WAN, "WAN_SERVER1"));
+                .get(EndpointQualifier.resolve(WAN, "WAN_SERVER1"));
         EndpointConfig wanServerSockerEndpointConfig2 = advancedNetworkConfig.getEndpointConfigs()
-                                                                             .get(EndpointQualifier.resolve(WAN, "WAN_SERVER2"));
+                .get(EndpointQualifier.resolve(WAN, "WAN_SERVER2"));
         assertEquals(WAN, wanServerSockerEndpointConfig1.getProtocolType());
         assertEquals("52000-52100", wanServerSockerEndpointConfig1.getOutboundPortDefinitions().iterator().next());
         assertEquals(WAN, wanServerSockerEndpointConfig2.getProtocolType());
@@ -569,9 +590,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
         // WAN endpoint config
         EndpointConfig wanEndpointConfig1 = advancedNetworkConfig.getEndpointConfigs()
-                                                                 .get(EndpointQualifier.resolve(WAN, "WAN_ENDPOINT1"));
+                .get(EndpointQualifier.resolve(WAN, "WAN_ENDPOINT1"));
         EndpointConfig wanEndpointConfig2 = advancedNetworkConfig.getEndpointConfigs()
-                                                                 .get(EndpointQualifier.resolve(WAN, "WAN_ENDPOINT2"));
+                .get(EndpointQualifier.resolve(WAN, "WAN_ENDPOINT2"));
         assertEquals(WAN, wanEndpointConfig1.getProtocolType());
         assertEquals("62000-62100", wanEndpointConfig1.getOutboundPortDefinitions().iterator().next());
         assertEquals(WAN, wanEndpointConfig2.getProtocolType());
@@ -675,11 +696,19 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public abstract void testMapExpiryConfig();
+
+    @Test
     public abstract void testIntegrityCheckerConfig();
+
+    @Test
+    public abstract void testDataLinkConfigs();
 
     protected abstract Config buildAuditlogConfig();
 
-    /** Build a config with overlapping wildcard configs map* & mapBackup2* */
+    /**
+     * Build a config with overlapping wildcard configs map* & mapBackup2*
+     */
     protected abstract Config buildMapWildcardConfig();
 
 }

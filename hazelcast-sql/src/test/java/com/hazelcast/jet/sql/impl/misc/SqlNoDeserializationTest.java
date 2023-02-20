@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,7 +104,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
             if (classId == PORTABLE_KEY_ID) {
                 return new PersonKey();
             } else {
-                assertEquals(classId, PORTABLE_VALUE_ID);
+                assertEquals(PORTABLE_VALUE_ID, classId);
 
                 return new Person();
             }

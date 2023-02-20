@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,9 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.StaticParams;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
-
-import static com.hazelcast.map.impl.record.Record.UNSET;
 
 public class PutTransientOperation extends BasePutOperation implements MutatingOperation {
 
@@ -45,12 +44,9 @@ public class PutTransientOperation extends BasePutOperation implements MutatingO
         return new PutTransientBackupOperation(name, dataKey, record, dataValue, expiryMetadata);
     }
 
-    protected long getTtl() {
-        return UNSET;
-    }
-
-    protected long getMaxIdle() {
-        return UNSET;
+    @Override
+    protected StaticParams getStaticParams() {
+        return StaticParams.PUT_TRANSIENT_PARAMS;
     }
 
     @Override

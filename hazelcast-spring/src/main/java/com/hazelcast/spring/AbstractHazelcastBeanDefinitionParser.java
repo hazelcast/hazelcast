@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.spring;
 import com.hazelcast.config.AbstractXmlConfigHelper;
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AutoDetectionConfig;
+import com.hazelcast.config.BTreeIndexConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.DiscoveryConfig;
@@ -37,8 +38,8 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.internal.config.DomConfigHelper;
-import com.hazelcast.internal.util.TriTuple;
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.spring.config.ConfigFactory;
 import com.hazelcast.spring.context.SpringManagedContext;
@@ -201,17 +202,24 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             }
         }
 
-        protected void fillAttributesForAliasedDiscoveryStrategy(AliasedDiscoveryConfig config, Node node,
-                                                                 BeanDefinitionBuilder builder, String name) {
+        protected void handleAliasedDiscoveryStrategy(Node node, BeanDefinitionBuilder builder, String name) {
             NamedNodeMap attributes = node.getAttributes();
+            Map<String, String> properties = new ManagedMap<>();
             if (attributes != null) {
                 for (int i = 0; i < attributes.getLength(); i++) {
                     Node attribute = attributes.item(i);
-                    config.setProperty(attribute.getNodeName(), attribute.getNodeValue());
+                    properties.put(attribute.getNodeName(), attribute.getNodeValue());
                 }
             }
+            BeanDefinitionBuilder discoveryConfigBuilder = createBeanBuilder(AliasedDiscoveryConfig.class);
+            discoveryConfigBuilder.getBeanDefinition().setBeanClass(ConfigFactory.class);
+            discoveryConfigBuilder.setFactoryMethod("newAliasedDiscoveryConfig");
+
+            discoveryConfigBuilder.addConstructorArgValue(name);
+            discoveryConfigBuilder.addConstructorArgValue(properties);
+
             String propertyName = String.format("%sConfig", name);
-            builder.addPropertyValue(propertyName, config);
+            builder.addPropertyValue(propertyName, discoveryConfigBuilder.getBeanDefinition());
         }
 
         protected ManagedList parseListeners(Node node, Class listenerConfigClass) {
@@ -350,51 +358,41 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             compactSerializationConfigBuilder.getBeanDefinition().setBeanClass(ConfigFactory.class);
             compactSerializationConfigBuilder.setFactoryMethod("newCompactSerializationConfig");
 
-            NamedNodeMap attributes = compactNode.getAttributes();
-            Node enabledNode = attributes.getNamedItem("enabled");
-            if (enabledNode != null) {
-                String value = getTextContent(enabledNode);
-                compactSerializationConfigBuilder.addConstructorArgValue(value);
-            }
-
-            ManagedMap<String, TriTuple<String, String, String>> registrations = new ManagedMap<>();
+            ManagedList<String> serializerClassNames = new ManagedList<>();
+            ManagedList<String> compactSerializableClassNames = new ManagedList<>();
             for (Node child : childElements(compactNode)) {
                 String name = cleanNodeName(child);
-                if ("registered-classes".equals(name)) {
-                    handleRegisteredClasses(child, registrations);
+                if ("serializers".equals(name)) {
+                    handleCompactSerializers(child, serializerClassNames);
+                } else if ("classes".equals(name)) {
+                    handleCompactSerializableClasses(child, compactSerializableClassNames);
                 }
             }
-            compactSerializationConfigBuilder.addConstructorArgValue(registrations);
+            compactSerializationConfigBuilder.addConstructorArgValue(serializerClassNames);
+            compactSerializationConfigBuilder.addConstructorArgValue(compactSerializableClassNames);
 
             BeanDefinition compactBeanDefinition = compactSerializationConfigBuilder.getBeanDefinition();
             serializationConfigBuilder.addPropertyValue("compactSerializationConfig", compactBeanDefinition);
         }
 
-        private void handleRegisteredClasses(Node registeredClasses,
-                                             Map<String, TriTuple<String, String, String>> registrations) {
-            for (Node node : childElements(registeredClasses)) {
+        private void handleCompactSerializers(Node compactSerializers, List<String> serializerClassNames) {
+            for (Node node : childElements(compactSerializers)) {
                 String nodeName = cleanNodeName(node);
-                if (!"class".equals(nodeName)) {
-                    continue;
+                if ("serializer".equals(nodeName)) {
+                    String serializerClassName = getTextContent(node);
+                    serializerClassNames.add(serializerClassName);
                 }
+            }
+        }
 
-                String className = getTextContent(node);
-                NamedNodeMap classAttributes = node.getAttributes();
-                Node typeNameNode = classAttributes.getNamedItem("type-name");
-                Node serializerNode = classAttributes.getNamedItem("serializer");
-                if (typeNameNode != null ^ serializerNode != null) {
-                    throw new InvalidConfigurationException("Either both 'type-name' and 'serializer' attributes "
-                            + "must be defined to register a class with an explicit serializer, "
-                            + "or no attributes should be defined to register a class to be used with "
-                            + "reflective compact serializer.");
-                }
-
-                String typeName = typeNameNode != null ? getTextContent(typeNameNode) : className;
-                String serializerName = serializerNode != null ? getTextContent(serializerNode) : null;
-
-                TriTuple<String, String, String> registration = TriTuple.of(className, typeName, serializerName);
-                if (registrations.put(typeName, registration) != null) {
-                    throw new InvalidConfigurationException("Found a duplicate type name registration for " + typeName);
+        private void handleCompactSerializableClasses(
+                Node compactSerializableClasses,
+                List<String> compactSerializableClassNames) {
+            for (Node node : childElements(compactSerializableClasses)) {
+                String nodeName = cleanNodeName(node);
+                if ("class".equals(nodeName)) {
+                    String compactSerializableClassName = getTextContent(node);
+                    compactSerializableClassNames.add(compactSerializableClassName);
                 }
             }
         }
@@ -550,7 +548,9 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
                 if ("size".equals(nodeName)) {
-                    handleMemorySizeConfig(child, nativeMemoryConfigBuilder);
+                    handleCapacityConfig(child, nativeMemoryConfigBuilder);
+                } else if ("capacity".equals(nodeName)) {
+                    handleCapacityConfig(child, nativeMemoryConfigBuilder);
                 } else if ("persistent-memory".equals(nodeName)) {
                     handlePersistentMemoryConfig(child, pmemConfigBuilder, directories);
                 }
@@ -598,14 +598,14 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             }
         }
 
-        private void handleMemorySizeConfig(Node node, BeanDefinitionBuilder nativeMemoryConfigBuilder) {
-            BeanDefinitionBuilder memorySizeConfigBuilder = createBeanBuilder(MemorySize.class);
+        private void handleCapacityConfig(Node node, BeanDefinitionBuilder nativeMemoryConfigBuilder) {
+            BeanDefinitionBuilder capacityConfigBuilder = createBeanBuilder(Capacity.class);
             NamedNodeMap attributes = node.getAttributes();
             Node value = attributes.getNamedItem("value");
             Node unit = attributes.getNamedItem("unit");
-            memorySizeConfigBuilder.addConstructorArgValue(getTextContent(value));
-            memorySizeConfigBuilder.addConstructorArgValue(getTextContent(unit));
-            nativeMemoryConfigBuilder.addPropertyValue("size", memorySizeConfigBuilder.getBeanDefinition());
+            capacityConfigBuilder.addConstructorArgValue(getTextContent(value));
+            capacityConfigBuilder.addConstructorArgValue(getTextContent(unit));
+            nativeMemoryConfigBuilder.addPropertyValue("capacity", capacityConfigBuilder.getBeanDefinition());
         }
 
         protected void handleDiscoveryStrategies(Node node, BeanDefinitionBuilder joinConfigBuilder) {
@@ -655,12 +655,40 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                             columns.add(getTextContent(columnNode));
                         }
                     }
+                } else if ("btree-index".equals(cleanNodeName(columnsNode))) {
+                    BTreeIndexConfig treeIndexConfig = new BTreeIndexConfig();
+                    for (Node columnNode : childElements(columnsNode)) {
+                        if ("page-size".equals(cleanNodeName(columnNode))) {
+                            treeIndexConfig.setPageSize(parseCapacity(columnNode));
+                        }
+                        if ("memory-tier".equals(cleanNodeName(columnNode))) {
+                            Node capacityNode = searchForNode(columnNode, "capacity");
+                            treeIndexConfig.getMemoryTierConfig().setCapacity(parseCapacity(capacityNode));
+                        }
+                    }
+                    indexConfBuilder.addPropertyValue("bTreeIndexConfig", treeIndexConfig);
                 }
             }
+
 
             indexConfBuilder.addPropertyValue("attributes", columns);
 
             indexes.add(indexConfBuilder.getBeanDefinition());
+        }
+
+        private Node searchForNode(Node parentNode, String nodeCleanName) {
+            for (Node node : childElements(parentNode)) {
+                if (cleanNodeName(node).equals(nodeCleanName)) {
+                    return node;
+                }
+            }
+            throw new IllegalStateException("no node with name " + nodeCleanName + " found");
+        }
+
+        private Capacity parseCapacity(Node columnNode) {
+            String value = getAttribute(columnNode, "value");
+            String unit = getAttribute(columnNode, "unit");
+            return Capacity.of(Long.parseLong(value), MemoryUnit.valueOf(unit));
         }
 
         private void handleDiscoveryServiceProvider(Node node, BeanDefinitionBuilder discoveryConfigBuilder) {

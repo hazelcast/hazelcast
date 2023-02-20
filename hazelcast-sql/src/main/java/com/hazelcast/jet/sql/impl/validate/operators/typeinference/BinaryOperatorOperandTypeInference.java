@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.createType;
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isNullOrUnknown;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
 
 public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeInference {
@@ -61,7 +62,7 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
                     operandTypes[i] = newOperandType;
                 }
 
-                if (knownType == null || knownType.getSqlTypeName() == SqlTypeName.NULL) {
+                if (knownType == null || isNullOrUnknown(knownType.getSqlTypeName())) {
                     knownType = operandTypes[i];
                     knownTypeOperandIndex = i;
                 }
@@ -70,12 +71,12 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
 
         // If we have [UNKNOWN, UNKNOWN] or [NULL, UNKNOWN] operands, throw a signature error,
         // since we cannot deduce the return type
-        if (knownType == null || knownType.getSqlTypeName() == SqlTypeName.NULL && hasParameters) {
+        if (knownType == null || isNullOrUnknown(knownType.getSqlTypeName()) && hasParameters) {
             throw new HazelcastCallBinding(binding).newValidationSignatureError();
         }
 
         if (SqlTypeName.INTERVAL_TYPES.contains(knownType.getSqlTypeName())
-                && operandTypes[1 - knownTypeOperandIndex].getSqlTypeName() == SqlTypeName.NULL) {
+                && isNullOrUnknown(operandTypes[1 - knownTypeOperandIndex].getSqlTypeName())) {
             // If there is an interval on the one side and NULL on the other, assume that the other side is a TIMESTAMP,
             // because this is the only viable overload.
             operandTypes[1 - knownTypeOperandIndex] = createType(binding.getTypeFactory(), SqlTypeName.TIMESTAMP, true);

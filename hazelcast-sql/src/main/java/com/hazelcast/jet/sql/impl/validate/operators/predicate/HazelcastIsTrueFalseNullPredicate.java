@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-import static org.apache.calcite.sql.type.SqlTypeName.NULL;
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isNullOrUnknown;
 
 public final class HazelcastIsTrueFalseNullPredicate extends HazelcastPostfixOperator {
 
@@ -110,7 +110,7 @@ public final class HazelcastIsTrueFalseNullPredicate extends HazelcastPostfixOpe
             for (int i = 0; i < operandTypes.length; i++) {
                 RelDataType type = binding.getOperandType(i);
 
-                if (type.getSqlTypeName() == NULL) {
+                if (isNullOrUnknown(type.getSqlTypeName())) {
                     if (objectOperand) {
                         type = HazelcastTypeUtils.createType(binding.getTypeFactory(), SqlTypeName.ANY, type.isNullable());
                     } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TreeMap;
 
 import static com.hazelcast.internal.serialization.impl.FieldKindBasedOperations.VARIABLE_SIZE;
 import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOperations;
@@ -41,7 +42,8 @@ import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOpe
 public class Schema implements IdentifiedDataSerializable {
 
     private String typeName;
-    private TreeMap<String, FieldDescriptor> fieldDefinitionMap;
+    private Map<String, FieldDescriptor> fieldsMap;
+    private List<FieldDescriptor> fields;
     private int numberVarSizeFields;
     private int fixedSizeFieldsLength;
     private transient long schemaId;
@@ -49,18 +51,29 @@ public class Schema implements IdentifiedDataSerializable {
     public Schema() {
     }
 
-    public Schema(String typeName, TreeMap<String, FieldDescriptor> fieldDefinitionMap) {
+    public Schema(String typeName, List<FieldDescriptor> fields) {
         this.typeName = typeName;
-        this.fieldDefinitionMap = fieldDefinitionMap;
+        this.fields = fields;
         init();
     }
 
     private void init() {
+        // Construct the fields map for field lookups
+        Map<String, FieldDescriptor> fieldsMap = new HashMap<>(fields.size());
+        for (FieldDescriptor field : fields) {
+            fieldsMap.put(field.getFieldName(), field);
+        }
+        this.fieldsMap = fieldsMap;
+
+        // Sort the fields by the field name so that the field offsets/indexes
+        // can be set correctly.
+        fields.sort(Comparator.comparing(FieldDescriptor::getFieldName));
+
         List<FieldDescriptor> fixedSizeFields = new ArrayList<>();
         List<FieldDescriptor> booleanFields = new ArrayList<>();
         List<FieldDescriptor> variableSizeFields = new ArrayList<>();
 
-        for (FieldDescriptor descriptor : fieldDefinitionMap.values()) {
+        for (FieldDescriptor descriptor : fields) {
             FieldKind fieldKind = descriptor.getKind();
             if (fieldOperations(fieldKind).kindSizeInBytes() == VARIABLE_SIZE) {
                 variableSizeFields.add(descriptor);
@@ -73,8 +86,15 @@ public class Schema implements IdentifiedDataSerializable {
             }
         }
 
-        fixedSizeFields.sort(Comparator.comparingInt(
-                d -> fieldOperations(((FieldDescriptor) d).getKind()).kindSizeInBytes()).reversed()
+        // Fixed size fields should be in descending order of size in bytes.
+        // For ties, the alphabetical order(ascending) of the field name will
+        // be used. Since, `fields` is sorted at this point, and the `sort`
+        // method is stable, only sorting by the size in bytes is enough for
+        // this invariant to hold.
+        fixedSizeFields.sort(
+                Comparator.comparingInt(
+                        d -> fieldOperations(((FieldDescriptor) d).getKind()).kindSizeInBytes()
+                ).reversed()
         );
 
         int offset = 0;
@@ -98,6 +118,8 @@ public class Schema implements IdentifiedDataSerializable {
 
         fixedSizeFieldsLength = offset;
 
+        // Variable size fields should be in ascending alphabetical ordering
+        // of the field names
         int index = 0;
         for (FieldDescriptor descriptor : variableSizeFields) {
             descriptor.setIndex(index++);
@@ -119,11 +141,11 @@ public class Schema implements IdentifiedDataSerializable {
     }
 
     public Collection<FieldDescriptor> getFields() {
-        return fieldDefinitionMap.values();
+        return fields;
     }
 
     public Set<String> getFieldNames() {
-        return fieldDefinitionMap.keySet();
+        return fieldsMap.keySet();
     }
 
     public int getNumberOfVariableSizeFields() {
@@ -135,15 +157,15 @@ public class Schema implements IdentifiedDataSerializable {
     }
 
     public int getFieldCount() {
-        return fieldDefinitionMap.size();
+        return fieldsMap.size();
     }
 
     public FieldDescriptor getField(String fieldName) {
-        return fieldDefinitionMap.get(fieldName);
+        return fieldsMap.get(fieldName);
     }
 
     public boolean hasField(String fieldName) {
-        return fieldDefinitionMap.containsKey(fieldName);
+        return fieldsMap.containsKey(fieldName);
     }
 
     public long getSchemaId() {
@@ -154,17 +176,16 @@ public class Schema implements IdentifiedDataSerializable {
     public String toString() {
         return "Schema {"
                 + " className = " + typeName
-                + " numberOfComplexFields = " + numberVarSizeFields
-                + " primitivesLength = " + fixedSizeFieldsLength
-                + ", map = " + fieldDefinitionMap
+                + ", numberOfComplexFields = " + numberVarSizeFields
+                + ", primitivesLength = " + fixedSizeFieldsLength
+                + ", map = " + fieldsMap
                 + '}';
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(typeName);
-        out.writeInt(fieldDefinitionMap.size());
-        Collection<FieldDescriptor> fields = fieldDefinitionMap.values();
+        out.writeInt(fields.size());
         for (FieldDescriptor descriptor : fields) {
             out.writeString(descriptor.getFieldName());
             out.writeInt(descriptor.getKind().getId());
@@ -174,13 +195,13 @@ public class Schema implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         typeName = in.readString();
-        int fieldDefinitionsSize = in.readInt();
-        fieldDefinitionMap = new TreeMap<>(Comparator.naturalOrder());
-        for (int i = 0; i < fieldDefinitionsSize; i++) {
+        int fieldCount = in.readInt();
+        fields = new ArrayList<>(fieldCount);
+        for (int i = 0; i < fieldCount; i++) {
             String name = in.readString();
             FieldKind kind = FieldKind.get(in.readInt());
             FieldDescriptor descriptor = new FieldDescriptor(name, kind);
-            fieldDefinitionMap.put(name, descriptor);
+            fields.add(descriptor);
         }
         init();
     }
@@ -208,7 +229,8 @@ public class Schema implements IdentifiedDataSerializable {
                 && fixedSizeFieldsLength == schema.fixedSizeFieldsLength
                 && schemaId == schema.schemaId
                 && Objects.equals(typeName, schema.typeName)
-                && Objects.equals(fieldDefinitionMap, schema.fieldDefinitionMap);
+                && Objects.equals(fields, schema.fields)
+                && Objects.equals(fieldsMap, schema.fieldsMap);
     }
 
     @Override

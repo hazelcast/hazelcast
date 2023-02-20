@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,10 @@ public class SqlPermission extends InstancePermission {
     private static final int CREATE_INDEX = DROP_MAPPING << 1;
     private static final int CREATE_VIEW = CREATE_INDEX << 1;
     private static final int DROP_VIEW = CREATE_VIEW << 1;
-    private static final int ALL = CREATE_MAPPING | DROP_MAPPING | CREATE_INDEX | CREATE_VIEW | DROP_VIEW;
+    private static final int CREATE_TYPE = DROP_VIEW << 1;
+    private static final int DROP_TYPE = CREATE_TYPE << 1;
+    private static final int ALL = CREATE_MAPPING | DROP_MAPPING | CREATE_INDEX | CREATE_VIEW | DROP_VIEW
+            | CREATE_TYPE | DROP_TYPE;
 
     public SqlPermission(String name, String... actions) {
         super(name, actions);
@@ -46,6 +49,10 @@ public class SqlPermission extends InstancePermission {
                     mask |= CREATE_VIEW;
                 } else if (ActionConstants.ACTION_DROP_VIEW.equals(action)) {
                     mask |= DROP_VIEW;
+                } else if (ActionConstants.ACTION_CREATE_TYPE.equals(action)) {
+                    mask |= CREATE_TYPE;
+                } else if (ActionConstants.ACTION_DROP_TYPE.equals(action)) {
+                    mask |= DROP_TYPE;
                 }
                 // Note: DROP INDEX is not implemented yet, no need to have separate permission.
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,19 @@ package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.CompactSerializationConfigAccessor;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.serialization.impl.AbstractSerializationService;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.record.JavaRecordSerializer;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.FieldKind;
-import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
@@ -36,6 +38,7 @@ import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -56,23 +59,24 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     private final Map<Class, CompactSerializableRegistration> classToRegistrationMap = new ConcurrentHashMap<>();
     private final Map<String, CompactSerializableRegistration> typeNameToRegistrationMap = new ConcurrentHashMap<>();
     private final Map<Class, Schema> classToSchemaMap = new ConcurrentHashMap<>();
-    private final ReflectiveCompactSerializer reflectiveSerializer = new ReflectiveCompactSerializer();
-    private final JavaRecordSerializer javaRecordSerializer = new JavaRecordSerializer();
+    private final ReflectiveCompactSerializer reflectiveSerializer = new ReflectiveCompactSerializer(this);
+    private final JavaRecordSerializer javaRecordSerializer = new JavaRecordSerializer(this);
     private final SchemaService schemaService;
     private final ManagedContext managedContext;
     private final ClassLoader classLoader;
-    //Should be deleted with removing Beta tags
-    private final boolean isEnabled;
+    private final AbstractSerializationService serializationService;
 
-    public CompactStreamSerializer(CompactSerializationConfig compactSerializationConfig,
+    public CompactStreamSerializer(AbstractSerializationService serializationService,
+                                   CompactSerializationConfig compactSerializationConfig,
                                    ManagedContext managedContext, SchemaService schemaService,
                                    ClassLoader classLoader) {
+        this.serializationService = serializationService;
         this.managedContext = managedContext;
         this.schemaService = schemaService;
         this.classLoader = classLoader;
-        this.isEnabled = compactSerializationConfig.isEnabled();
-        registerConfiguredSerializers(compactSerializationConfig);
-        registerConfiguredNamedSerializers(compactSerializationConfig);
+        registerSerializers(compactSerializationConfig);
+        registerDeclarativeConfigSerializers(compactSerializationConfig);
+        registerDeclarativeConfigClasses(compactSerializationConfig);
     }
 
     /**
@@ -81,6 +85,14 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
      */
     public boolean isRegisteredAsCompact(Class clazz) {
         return classToRegistrationMap.containsKey(clazz);
+    }
+
+    public Collection<Class> getCompactSerializableClasses() {
+        return classToRegistrationMap.keySet();
+    }
+
+    public boolean canBeSerializedAsCompact(Class<?> clazz) {
+        return serializationService.serializerForClass(clazz, false) instanceof CompactStreamSerializerAdapter;
     }
 
     @Override
@@ -121,11 +133,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     }
 
     private void putToSchemaService(boolean includeSchemaOnBinary, Schema schema) {
-        if (includeSchemaOnBinary) {
-            //if we will include the schema on binary, the schema will be delivered anyway.
-            //No need to put it to cluster. Putting it local only in order not to ask from remote on read.
-            schemaService.putLocal(schema);
-        } else {
+        if (!includeSchemaOnBinary) {
             schemaService.put(schema);
         }
     }
@@ -201,7 +209,6 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
                 throw new HazelcastSerializationException("Invalid schema id found. Expected " + schemaId
                         + ", actual " + incomingSchemaId + " for schema " + schema);
             }
-            schemaService.putLocal(schema);
             return schema;
         }
         throw new HazelcastSerializationException("The schema can not be found with id " + schemaId);
@@ -257,12 +264,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         return new CompactInternalGenericRecord(this, input, schema, null, false);
     }
 
-    //Should be deleted with removing Beta tags
-    public boolean isEnabled() {
-        return isEnabled;
-    }
-
-    private void registerConfiguredSerializers(CompactSerializationConfig compactSerializationConfig) {
+    private void registerSerializers(CompactSerializationConfig compactSerializationConfig) {
         Map<String, TriTuple<Class, String, CompactSerializer>> registrations
                 = CompactSerializationConfigAccessor.getRegistrations(compactSerializationConfig);
         for (TriTuple<Class, String, CompactSerializer> registration : registrations.values()) {
@@ -278,44 +280,79 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             }
             CompactSerializableRegistration serializableRegistration
                     = new CompactSerializableRegistration(clazz, typeName, serializer);
-            classToRegistrationMap.put(clazz, serializableRegistration);
-            typeNameToRegistrationMap.put(typeName, serializableRegistration);
+            saveRegistration(serializableRegistration);
         }
     }
 
-    private void registerConfiguredNamedSerializers(CompactSerializationConfig compactSerializationConfig) {
-        Map<String, TriTuple<String, String, String>> namedRegistries
-                = CompactSerializationConfigAccessor.getNamedRegistrations(compactSerializationConfig);
-        for (TriTuple<String, String, String> registry : namedRegistries.values()) {
-            String className = registry.element1;
-            String typeName = registry.element2;
-            String serializerClassName = registry.element3;
+    private void saveRegistration(CompactSerializableRegistration registration) {
+        Class clazz = registration.getClazz();
+        CompactSerializableRegistration existing = classToRegistrationMap.putIfAbsent(clazz, registration);
+        if (existing != null) {
+            throw new InvalidConfigurationException("Duplicate serializer registrations "
+                    + "are found for the class '" + clazz + "'. Make sure only one "
+                    + "Compact serializer is registered for the same class. "
+                    + "Existing serializer: " + existing.getSerializer() + ", "
+                    + "new serializer: " + registration.getSerializer());
+        }
 
+        String typeName = registration.getTypeName();
+        existing = typeNameToRegistrationMap.putIfAbsent(typeName, registration);
+        if (existing != null) {
+            throw new InvalidConfigurationException("Duplicate serializer registrations "
+                    + "are found for the type name '" + typeName + "'. Make sure only one "
+                    + "Compact serializer is registered for the same type name. "
+                    + "Existing serializer: " + existing.getSerializer() + ", "
+                    + "new serializer: " + registration.getSerializer());
+        }
+    }
+
+    private void registerDeclarativeConfigSerializers(CompactSerializationConfig config) {
+        List<String> serializerClassNames = CompactSerializationConfigAccessor.getSerializerClassNames(config);
+        for (String className : serializerClassNames) {
+            CompactSerializer serializer;
+            try {
+                serializer = ClassLoaderUtil.newInstance(classLoader, className);
+            } catch (Exception e) {
+                throw new InvalidConfigurationException("Cannot create an instance "
+                        + "of the Compact serializer '" + className + "'.");
+            }
+
+            CompactSerializableRegistration registration = new CompactSerializableRegistration(
+                    serializer.getCompactClass(),
+                    serializer.getTypeName(),
+                    serializer
+            );
+
+            saveRegistration(registration);
+        }
+    }
+
+    private void registerDeclarativeConfigClasses(CompactSerializationConfig config) {
+        List<String> compactSerializableClassNames
+                = CompactSerializationConfigAccessor.getCompactSerializableClassNames(config);
+        for (String className : compactSerializableClassNames) {
             Class clazz;
             try {
                 clazz = ClassLoaderUtil.loadClass(classLoader, className);
             } catch (ClassNotFoundException e) {
-                throw new IllegalArgumentException("Cannot load the class " + className);
+                throw new InvalidConfigurationException("Cannot load the Compact "
+                        + "serializable class '" + className + "'.");
             }
 
             CompactSerializer serializer;
-            if (serializerClassName != null) {
-                try {
-                    serializer = ClassLoaderUtil.newInstance(classLoader, serializerClassName);
-                } catch (Exception e) {
-                    throw new IllegalArgumentException("Cannot create an instance of " + serializerClassName);
-                }
+            if (javaRecordSerializer.isRecord(clazz)) {
+                serializer = javaRecordSerializer;
             } else {
-                if (javaRecordSerializer.isRecord(clazz)) {
-                    serializer = javaRecordSerializer;
-                } else {
-                    serializer = reflectiveSerializer;
-                }
+                serializer = reflectiveSerializer;
             }
 
-            CompactSerializableRegistration registration = new CompactSerializableRegistration(clazz, typeName, serializer);
-            classToRegistrationMap.put(clazz, registration);
-            typeNameToRegistrationMap.put(typeName, registration);
+            CompactSerializableRegistration registration = new CompactSerializableRegistration(
+                    clazz,
+                    className,
+                    serializer
+            );
+
+            saveRegistration(registration);
         }
     }
 

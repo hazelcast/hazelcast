@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.config.SchemaViolationConfigurationException;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
@@ -63,12 +63,12 @@ import java.util.Set;
 
 import static com.hazelcast.config.DynamicConfigurationConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.DynamicConfigurationConfig.DEFAULT_BACKUP_DIR;
+import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_BLOCK_SIZE_IN_BYTES;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_BASE_DIR;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_NAME;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_READ_IO_THREAD_COUNT;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_WRITE_IO_THREAD_COUNT;
-import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.MemoryTierConfig.DEFAULT_CAPACITY;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
@@ -81,6 +81,8 @@ import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static java.io.File.createTempFile;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -106,8 +108,7 @@ import static org.junit.Assert.fail;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class YamlConfigBuilderTest
-        extends AbstractConfigBuilderTest {
+public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
@@ -1170,6 +1171,30 @@ public class YamlConfigBuilderTest
 
     @Override
     @Test
+    public void testMapStoreConfig_offload_whenDefault() {
+        MapStoreConfig mapStoreConfig = getOffloadMapStoreConfig(MapStoreConfig.DEFAULT_OFFLOAD, true);
+
+        assertTrue(mapStoreConfig.isOffload());
+    }
+
+    @Override
+    @Test
+    public void testMapStoreConfig_offload_whenSetFalse() {
+        MapStoreConfig mapStoreConfig = getOffloadMapStoreConfig(false, false);
+
+        assertFalse(mapStoreConfig.isOffload());
+    }
+
+    @Override
+    @Test
+    public void testMapStoreConfig_offload_whenSetTrue() {
+        MapStoreConfig mapStoreConfig = getOffloadMapStoreConfig(true, false);
+
+        assertTrue(mapStoreConfig.isOffload());
+    }
+
+    @Override
+    @Test
     public void testMapStoreWriteBatchSize() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1220,7 +1245,22 @@ public class YamlConfigBuilderTest
                 + "  map:\n"
                 + "    mymap:\n"
                 + "      map-store:"
-                + (useDefault ? " {}" : "\n        write-coalescing: " + String.valueOf(value) + "\n");
+                + (useDefault ? " {}" : "\n        write-coalescing: " + value + "\n");
+    }
+
+    private MapStoreConfig getOffloadMapStoreConfig(boolean offload, boolean useDefault) {
+        String xml = getOffloadConfigYaml(offload, useDefault);
+        Config config = buildConfig(xml);
+        return config.getMapConfig("mymap").getMapStoreConfig();
+    }
+
+    private String getOffloadConfigYaml(boolean value, boolean useDefault) {
+        return ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    mymap:\n"
+                + "      map-store:"
+                + (useDefault ? " {}" : "\n        offload: " + String.valueOf(value) + "\n");
     }
 
     @Override
@@ -2598,14 +2638,31 @@ public class YamlConfigBuilderTest
                 + "          attributes:\n"
                 + "            - \"name\"\n"
                 + "        - attributes:\n"
-                + "          - \"age\"\n";
+                + "          - \"age\"\n"
+                + "        - type: SORTED\n"
+                + "          attributes:\n"
+                + "            - \"age\"\n"
+                + "          btree-index:\n"
+                + "            page-size:\n"
+                + "              value: 1337\n"
+                + "              unit: BYTES\n"
+                + "            memory-tier: \n"
+                + "              capacity: \n"
+                + "                value: 1138\n"
+                + "                unit: BYTES\n"
+                ;
 
         Config config = buildConfig(yaml);
         MapConfig mapConfig = config.getMapConfig("people");
 
-        assertFalse(mapConfig.getIndexConfigs().isEmpty());
-        assertIndexEqual("name", false, mapConfig.getIndexConfigs().get(0));
-        assertIndexEqual("age", true, mapConfig.getIndexConfigs().get(1));
+        List<IndexConfig> indexConfigs = mapConfig.getIndexConfigs();
+        assertFalse(indexConfigs.isEmpty());
+        assertIndexEqual("name", false, indexConfigs.get(0));
+        assertIndexEqual("age", true, indexConfigs.get(1));
+        assertIndexEqual("age", true, indexConfigs.get(2));
+        BTreeIndexConfig bTreeIndexConfig = indexConfigs.get(2).getBTreeIndexConfig();
+        assertEquals(Capacity.of(1337, MemoryUnit.BYTES), bTreeIndexConfig.getPageSize());
+        assertEquals(Capacity.of(1138, MemoryUnit.BYTES), bTreeIndexConfig.getMemoryTierConfig().getCapacity());
     }
 
     @Override
@@ -2992,41 +3049,25 @@ public class YamlConfigBuilderTest
     }
 
     @Override
-    public void testCompactSerialization() {
+    public void testCompactSerialization_serializerRegistration() {
         String yaml = ""
                 + "hazelcast:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
-                + "            enabled: true\n";
-
-        Config config = buildConfig(yaml);
-        assertTrue(config.getSerializationConfig().getCompactSerializationConfig().isEnabled());
-    }
-
-    @Override
-    public void testCompactSerialization_explicitSerializationRegistration() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "    serialization:\n"
-                + "        compact-serialization:\n"
-                + "            enabled: true\n"
-                + "            registered-classes:\n"
-                + "                - class: example.serialization.EmployeeDTO\n"
-                + "                  type-name: obj\n"
-                + "                  serializer: example.serialization.EmployeeDTOSerializer\n";
+                + "            serializers:\n"
+                + "                - serializer: example.serialization.SerializableEmployeeDTOSerializer\n";
 
         Config config = buildConfig(yaml);
         CompactTestUtil.verifyExplicitSerializerIsUsed(config.getSerializationConfig());
     }
 
     @Override
-    public void testCompactSerialization_reflectiveSerializerRegistration() {
+    public void testCompactSerialization_classRegistration() {
         String yaml = ""
                 + "hazelcast:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
-                + "            enabled: true\n"
-                + "            registered-classes:\n"
+                + "            classes:\n"
                 + "                - class: example.serialization.ExternalizableEmployeeDTO\n";
 
         Config config = buildConfig(yaml);
@@ -3034,31 +3075,115 @@ public class YamlConfigBuilderTest
     }
 
     @Override
-    public void testCompactSerialization_registrationWithJustTypeName() {
+    public void testCompactSerialization_serializerAndClassRegistration() {
         String yaml = ""
                 + "hazelcast:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
-                + "            enabled: true\n"
-                + "            registered-classes:\n"
-                + "                - class: example.serialization.EmployeeDTO\n"
-                + "                  type-name: employee\n";
+                + "            serializers:\n"
+                + "                - serializer: example.serialization.SerializableEmployeeDTOSerializer\n"
+                + "            classes:\n"
+                + "                - class: example.serialization.ExternalizableEmployeeDTO\n";
 
-        buildConfig(yaml);
+        SerializationConfig config = buildConfig(yaml).getSerializationConfig();
+        CompactTestUtil.verifyExplicitSerializerIsUsed(config);
+        CompactTestUtil.verifyReflectiveSerializerIsUsed(config);
     }
 
     @Override
-    public void testCompactSerialization_registrationWithJustSerializer() {
+    public void testCompactSerialization_duplicateSerializerRegistration() {
         String yaml = ""
                 + "hazelcast:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
-                + "            enabled: true\n"
-                + "            registered-classes:\n"
-                + "                - class: example.serialization.EmployeeDTO\n"
-                + "                  serializer: example.serialization.EmployeeDTOSerializer\n";
+                + "            serializers:\n"
+                + "                - serializer: example.serialization.EmployeeDTOSerializer\n"
+                + "                - serializer: example.serialization.EmployeeDTOSerializer\n";
 
-        buildConfig(yaml);
+        SerializationConfig config = buildConfig(yaml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Duplicate");
+    }
+
+    @Override
+    public void testCompactSerialization_duplicateClassRegistration() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "    serialization:\n"
+                + "        compact-serialization:\n"
+                + "            classes:\n"
+                + "                - class: example.serialization.ExternalizableEmployeeDTO\n"
+                + "                - class: example.serialization.ExternalizableEmployeeDTO\n";
+
+        SerializationConfig config = buildConfig(yaml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Duplicate");
+    }
+
+    @Override
+    public void testCompactSerialization_registrationsWithDuplicateClasses() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "    serialization:\n"
+                + "        compact-serialization:\n"
+                + "            serializers:\n"
+                + "                - serializer: example.serialization.EmployeeDTOSerializer\n"
+                + "                - serializer: example.serialization.SameClassEmployeeDTOSerializer\n";
+
+        SerializationConfig config = buildConfig(yaml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Duplicate")
+                .hasMessageContaining("class");
+    }
+
+    @Override
+    public void testCompactSerialization_registrationsWithDuplicateTypeNames() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "    serialization:\n"
+                + "        compact-serialization:\n"
+                + "            serializers:\n"
+                + "                - serializer: example.serialization.EmployeeDTOSerializer\n"
+                + "                - serializer: example.serialization.SameTypeNameEmployeeDTOSerializer\n";
+
+        SerializationConfig config = buildConfig(yaml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Duplicate")
+                .hasMessageContaining("type name");
+    }
+
+    @Override
+    public void testCompactSerialization_withInvalidSerializer() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "    serialization:\n"
+                + "        compact-serialization:\n"
+                + "            serializers:\n"
+                + "                - serializer: does.not.exist.FooSerializer\n";
+
+        SerializationConfig config = buildConfig(yaml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Cannot create an instance");
+    }
+
+    @Override
+    public void testCompactSerialization_withInvalidCompactSerializableClass() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "    serialization:\n"
+                + "        compact-serialization:\n"
+                + "            classes:\n"
+                + "                - class: does.not.exist.Foo\n";
+
+        SerializationConfig config = buildConfig(yaml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Cannot load");
     }
 
     @Override
@@ -3156,7 +3281,7 @@ public class YamlConfigBuilderTest
         String yaml = ""
                 + "hazelcast:\n"
                 + "  dynamic-configuration:\n"
-                + "    persistence-enabled: " +  persistenceEnabled + "\n"
+                + "    persistence-enabled: " + persistenceEnabled + "\n"
                 + "    backup-dir: " + backupDir + "\n"
                 + "    backup-count: " + backupCount + "\n";
 
@@ -3170,7 +3295,7 @@ public class YamlConfigBuilderTest
         yaml = ""
                 + "hazelcast:\n"
                 + "  dynamic-configuration:\n"
-                + "    persistence-enabled: " +  persistenceEnabled + "\n";
+                + "    persistence-enabled: " + persistenceEnabled + "\n";
 
         config = new InMemoryYamlConfig(yaml);
         dynamicConfigurationConfig = config.getDynamicConfigurationConfig();
@@ -3206,7 +3331,7 @@ public class YamlConfigBuilderTest
         assertEquals("my-device", localDeviceConfig.getName());
         assertEquals(new File(baseDir).getAbsolutePath(), localDeviceConfig.getBaseDir().getAbsolutePath());
         assertEquals(blockSize, localDeviceConfig.getBlockSize());
-        assertEquals(new MemorySize(100, MemoryUnit.GIGABYTES), localDeviceConfig.getCapacity());
+        assertEquals(new Capacity(100, MemoryUnit.GIGABYTES), localDeviceConfig.getCapacity());
         assertEquals(readIOThreadCount, localDeviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount, localDeviceConfig.getWriteIOThreadCount());
 
@@ -3234,7 +3359,7 @@ public class YamlConfigBuilderTest
         assertEquals(blockSize * device0Multiplier, localDeviceConfig.getBlockSize());
         assertEquals(readIOThreadCount * device0Multiplier, localDeviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount * device0Multiplier, localDeviceConfig.getWriteIOThreadCount());
-        assertEquals(new MemorySize(1234567890, MemoryUnit.MEGABYTES), localDeviceConfig.getCapacity());
+        assertEquals(new Capacity(1234567890, MemoryUnit.MEGABYTES), localDeviceConfig.getCapacity());
 
         localDeviceConfig = config.getDeviceConfig("device1");
         assertEquals(blockSize * device1Multiplier, localDeviceConfig.getBlockSize());
@@ -4008,6 +4133,7 @@ public class YamlConfigBuilderTest
                 + "    persistence-enabled: true\n"
                 + "    base-dir: /mnt/cp-data\n"
                 + "    data-load-timeout-seconds: 30\n"
+                + "    cp-member-priority: -1\n"
                 + "    raft-algorithm:\n"
                 + "      leader-election-timeout-in-millis: 500\n"
                 + "      leader-heartbeat-period-in-millis: 100\n"
@@ -4039,6 +4165,7 @@ public class YamlConfigBuilderTest
         assertTrue(cpSubsystemConfig.isPersistenceEnabled());
         assertEquals(new File("/mnt/cp-data").getAbsoluteFile(), cpSubsystemConfig.getBaseDir().getAbsoluteFile());
         assertEquals(30, cpSubsystemConfig.getDataLoadTimeoutSeconds());
+        assertEquals(-1, cpSubsystemConfig.getCPMemberPriority());
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
         assertEquals(500, raftAlgorithmConfig.getLeaderElectionTimeoutInMillis());
         assertEquals(100, raftAlgorithmConfig.getLeaderHeartbeatPeriodInMillis());
@@ -4407,5 +4534,53 @@ public class YamlConfigBuilderTest
         Config config = buildConfig(yaml);
 
         assertFalse(config.getIntegrityCheckerConfig().isEnabled());
+    }
+
+    @Override
+    public void testDataLinkConfigs() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  data-link:\n"
+                + "    mysql-database:\n"
+                + "      class-name: com.hazelcast.datalink.JdbcDataLink\n"
+                + "      properties:\n"
+                + "        jdbcUrl: jdbc:mysql://dummy:3306\n"
+                + "        some.property: dummy-value\n"
+                + "      shared: true\n"
+                + "    other-database:\n"
+                + "      class-name: com.hazelcast.datalink.OtherDataLink\n";
+
+        Config config = new InMemoryYamlConfig(yaml);
+
+        Map<String, DataLinkConfig> dataLinkConfigs = config.getDataLinkConfigs();
+
+        assertThat(dataLinkConfigs).hasSize(2);
+        assertThat(dataLinkConfigs).containsKey("mysql-database");
+        DataLinkConfig mysqlDataLinkConfig = dataLinkConfigs.get("mysql-database");
+        assertThat(mysqlDataLinkConfig.getClassName()).isEqualTo("com.hazelcast.datalink.JdbcDataLink");
+        assertThat(mysqlDataLinkConfig.getName()).isEqualTo("mysql-database");
+        assertThat(mysqlDataLinkConfig.isShared()).isTrue();
+        assertThat(mysqlDataLinkConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
+        assertThat(mysqlDataLinkConfig.getProperty("some.property")).isEqualTo("dummy-value");
+
+        assertThat(dataLinkConfigs).containsKey("other-database");
+        DataLinkConfig otherDataLinkConfig = dataLinkConfigs.get("other-database");
+        assertThat(otherDataLinkConfig.getClassName()).isEqualTo("com.hazelcast.datalink.OtherDataLink");
+    }
+
+    @Override
+    public void testMapExpiryConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    expiry:\n"
+                + "      time-to-live-seconds: 2147483647\n"
+                + "      max-idle-seconds: 2147483647\n";
+
+        Config config = buildConfig(yaml);
+        MapConfig mapConfig = config.getMapConfig("expiry");
+
+        assertEquals(Integer.MAX_VALUE, mapConfig.getTimeToLiveSeconds());
+        assertEquals(Integer.MAX_VALUE, mapConfig.getMaxIdleSeconds());
     }
 }

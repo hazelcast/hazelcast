@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,14 @@
 package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.datalink.DataLinkFactory;
+import com.hazelcast.datalink.JdbcDataLinkFactory;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BinaryOperatorEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
@@ -32,9 +34,14 @@ import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
 import com.hazelcast.jet.impl.connector.WriteJdbcP;
 import com.hazelcast.jet.impl.connector.WriteJmsP;
+import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
+import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -42,6 +49,7 @@ import javax.jms.Connection;
 import javax.jms.Message;
 import javax.jms.Session;
 import javax.sql.CommonDataSource;
+import javax.sql.DataSource;
 import java.io.BufferedWriter;
 import java.nio.charset.Charset;
 import java.sql.PreparedStatement;
@@ -93,7 +101,7 @@ public final class SinkProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier writeRemoteMapP(
-        @Nonnull String mapName, @Nonnull ClientConfig clientConfig
+            @Nonnull String mapName, @Nonnull ClientConfig clientConfig
     ) {
         return writeRemoteMapP(mapName, clientConfig, identity(), identity());
     }
@@ -159,7 +167,7 @@ public final class SinkProcessors {
     /**
      * Returns a supplier of processors for
      * {@link Sinks#remoteMapWithUpdating(String, ClientConfig, FunctionEx
-     * , BiFunctionEx)}.
+     *, BiFunctionEx)}.
      */
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier updateRemoteMapP(
@@ -324,8 +332,8 @@ public final class SinkProcessors {
      * The returned processor will have preferred local parallelism of 1. It
      * will not participate in state saving for fault tolerance.
      *
-     * @param createFn     supplies the writer. The argument to this function
-     *                     is the context for the given processor.
+     * @param createFn    supplies the writer. The argument to this function
+     *                    is the context for the given processor.
      * @param onReceiveFn function that Jet calls upon receiving each item for the sink
      * @param flushFn     function that flushes the writer
      * @param destroyFn   function that destroys the writer
@@ -390,7 +398,44 @@ public final class SinkProcessors {
         checkNotNull(dataSourceSupplier, "dataSourceSupplier");
         checkNotNull(bindFn, "bindFn");
         checkPositive(batchLimit, "batchLimit");
-        return WriteJdbcP.metaSupplier(jdbcUrl, updateQuery, dataSourceSupplier, bindFn, exactlyOnce, batchLimit);
+        return WriteJdbcP.metaSupplier(jdbcUrl, updateQuery, ctx -> dataSourceSupplier.get(),
+                bindFn, exactlyOnce, batchLimit);
+    }
+
+    /**
+     * Returns a supplier of processors for {@link Sinks#jdbcBuilder()}.
+     *
+     * @since 5.2
+     */
+    @Nonnull
+    @Beta
+    public static <T> ProcessorMetaSupplier writeJdbcP(
+            @Nonnull String updateQuery,
+            @Nonnull DataLinkRef dataLinkRef,
+            @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
+            boolean exactlyOnce,
+            int batchLimit
+    ) {
+        checkNotNull(updateQuery, "updateQuery");
+        checkNotNull(dataLinkRef, "dataLinkRef");
+        checkNotNull(bindFn, "bindFn");
+        checkPositive(batchLimit, "batchLimit");
+        return WriteJdbcP.metaSupplier(null, updateQuery, dataSourceSupplier(dataLinkRef.getName()),
+                bindFn, exactlyOnce, batchLimit);
+    }
+
+    private static FunctionEx<ProcessorMetaSupplier.Context, DataSource> dataSourceSupplier(String dataLinkName) {
+        return context -> getDataLinkFactory(context, dataLinkName).getDataLink();
+    }
+
+    private static JdbcDataLinkFactory getDataLinkFactory(ProcessorMetaSupplier.Context context, String name) {
+        NodeEngineImpl nodeEngine = Util.getNodeEngine(context.hazelcastInstance());
+        DataLinkFactory<?> dataLinkFactory = nodeEngine.getDataLinkService().getDataLinkFactory(name);
+        if (!(dataLinkFactory instanceof JdbcDataLinkFactory)) {
+            String className = JdbcDataLinkFactory.class.getName();
+            throw new HazelcastException("Data link factory '" + name + "' must be an instance of " + className);
+        }
+        return (JdbcDataLinkFactory) dataLinkFactory;
     }
 
     /**

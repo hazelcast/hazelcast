@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import com.hazelcast.client.impl.connection.tcp.ClientICMPManager;
 import com.hazelcast.client.impl.connection.tcp.HeartbeatManager;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
@@ -378,6 +379,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             clusterService.start(configuredListeners);
             clientClusterViewListenerService.start();
 
+            // Add connection process listeners before starting the connection
+            // manager, so that they are invoked for all connection attempts
+            addConnectionProcessListeners(configuredListeners);
             connectionManager.start();
             startHeartbeat();
             startIcmpPing();
@@ -864,13 +868,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return clientExtension.getJet();
     }
 
-    public void onClusterChange() {
+    public void onTryToConnectNextCluster() {
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
         logger.info("Resetting local state of the client, because of a cluster change.");
 
         dispose(onClusterChangeDisposables);
         //reset the member list version
-        clusterService.onClusterChange();
+        clusterService.onTryToConnectNextCluster();
         //clear partition service
         partitionService.reset();
         //close all the connections, consequently waiting invocations get TargetDisconnectedException
@@ -879,12 +883,24 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         connectionManager.reset();
     }
 
-    public void onClusterConnect() {
+    public void onConnectionToNewCluster() {
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
         logger.info("Clearing local state of the client, because of a cluster restart.");
 
         dispose(onClusterChangeDisposables);
         clusterService.onClusterConnect();
+    }
+
+    public void collectAndSendStatsNow() {
+        clientStatisticsService.collectAndSendStatsNow();
+    }
+
+    /**
+     * Returns {@code true} if we need to check the urgent invocations, by
+     * examining the local registry of the schema service.
+     */
+    public boolean shouldCheckUrgentInvocations() {
+        return schemaService.hasAnySchemas();
     }
 
     public void waitForInitialMembershipEvents() {
@@ -932,6 +948,14 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
         configuredListeners.stream().filter(listener -> listener instanceof CPGroupAvailabilityListener)
                 .forEach(listener -> getCPSubsystem().addGroupAvailabilityListener((CPGroupAvailabilityListener) listener));
+    }
+
+    private void addConnectionProcessListeners(Collection<EventListener> configuredListeners) {
+        configuredListeners.stream()
+                .filter(ClientConnectionProcessListener.class::isInstance)
+                // private API for Management Center (cluster connection diagnostics)
+                .map(ClientConnectionProcessListener.class::cast)
+                .forEach(connectionManager::addClientConnectionProcessListener);
     }
 
     public SchemaService getSchemaService() {

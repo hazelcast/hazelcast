@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,14 +30,15 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import java.io.File;
+import java.util.Map;
 
 import static com.google.common.io.Files.toByteArray;
-import static com.hazelcast.test.starter.HazelcastVersionLocator.HAZELCAST_EE_JAR_INDEX;
-import static com.hazelcast.test.starter.HazelcastVersionLocator.HAZELCAST_EE_TESTS_JAR_INDEX;
-import static com.hazelcast.test.starter.HazelcastVersionLocator.HAZELCAST_JAR_INDEX;
-import static com.hazelcast.test.starter.HazelcastVersionLocator.HAZELCAST_TESTS_JAR_INDEX;
+import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.EE_JAR;
+import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.OS_JAR;
+import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.OS_TEST_JAR;
 import static org.junit.Assert.assertEquals;
 
+@SuppressWarnings("UnstableApiUsage")
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class HazelcastVersionLocatorTest {
@@ -45,19 +46,18 @@ public class HazelcastVersionLocatorTest {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
 
-    private HashFunction md5Hash = Hashing.md5();
+    @SuppressWarnings("deprecation")
+    private final HashFunction md5Hash = Hashing.md5();
 
     @Test
     public void testDownloadVersion() throws Exception {
-        File[] files = HazelcastVersionLocator.locateVersion("4.0", folder.getRoot(), true);
+        Map<HazelcastVersionLocator.Artifact, File> files = HazelcastVersionLocator.locateVersion("4.0", true);
 
-        assertHash(files[HAZELCAST_JAR_INDEX], "bc409b12b96ece6d05c3bd1e99b202bb", "OS");
+        assertHash(files.get(OS_JAR), "bc409b12b96ece6d05c3bd1e99b202bb", "OS");
 
-        assertHash(files[HAZELCAST_TESTS_JAR_INDEX], "220509ece9fc152525c91ba7c75ce600", "OS tests");
+        assertHash(files.get(OS_TEST_JAR), "220509ece9fc152525c91ba7c75ce600", "OS tests");
 
-        assertHash(files[HAZELCAST_EE_JAR_INDEX], "765816e628ca4ca57d5bd7387e761eaa", "EE");
-
-        assertHash(files[HAZELCAST_EE_TESTS_JAR_INDEX], "162bcb2412570845e6fd91ee61b54f94", "EE tests");
+        assertHash(files.get(EE_JAR), "765816e628ca4ca57d5bd7387e761eaa", "EE");
     }
 
     private void assertHash(File file, String expectedHash, String label) throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,13 +25,13 @@ import com.hazelcast.client.config.ClientMetricsConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientReliableTopicConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
+import com.hazelcast.client.config.ClientSqlConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
-import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.InMemoryFormat;
@@ -90,6 +90,7 @@ import static org.springframework.util.Assert.isTrue;
  *   </hz:client>
  * }</pre>
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
     @Override
@@ -196,6 +197,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleInstanceTracking(node);
                 } else if ("native-memory".equals(nodeName)) {
                     handleNativeMemory(node);
+                } else if ("sql".equals(nodeName)) {
+                    handleSql(node);
                 }
             }
             return configBuilder.getBeanDefinition();
@@ -331,11 +334,6 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             clientNetworkConfig.addPropertyValue("addresses", members);
 
             configBuilder.addPropertyValue("networkConfig", clientNetworkConfig.getBeanDefinition());
-        }
-
-        private void handleAliasedDiscoveryStrategy(Node node, BeanDefinitionBuilder builder, String name) {
-            AliasedDiscoveryConfig config = AliasedDiscoveryConfigUtils.newConfigFor(name);
-            fillAttributesForAliasedDiscoveryStrategy(config, node, builder, name);
         }
 
         private void handleSSLConfig(Node node, BeanDefinitionBuilder networkConfigBuilder) {
@@ -648,6 +646,11 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
             list.add(beanDefinition);
         }
-    }
 
+        private void handleSql(Node node) {
+            BeanDefinitionBuilder sqlConfigBuilder = createBeanBuilder(ClientSqlConfig.class);
+            fillValues(node, sqlConfigBuilder);
+            this.configBuilder.addPropertyValue("sqlConfig", sqlConfigBuilder.getBeanDefinition());
+        }
+    }
 }

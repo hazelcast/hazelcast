@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ class JetToPythonServer {
                     }
                 } catch (SocketTimeoutException e) {
                     if (!pythonProcess.isAlive()) {
-                        throw new IOException("Python process died before completing initialization");
+                        throw new IOException("Python process died before completing initialization", e);
                     }
                 }
             }

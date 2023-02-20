@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
-import org.apache.calcite.rex.RexNode;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.List;
@@ -35,19 +34,19 @@ import java.util.List;
  * the last watermark.
  */
 public class DropLateItemsLogicalRel extends SingleRel implements LogicalRel {
-    private final RexNode wmField;
+    private final int wmField;
 
-    protected DropLateItemsLogicalRel(
+    public DropLateItemsLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelNode input,
-            RexNode wmField
+            int wmField
     ) {
         super(cluster, traitSet, input);
         this.wmField = wmField;
     }
 
-    public RexNode wmField() {
+    public int wmField() {
         return wmField;
     }
 
@@ -59,6 +58,10 @@ public class DropLateItemsLogicalRel extends SingleRel implements LogicalRel {
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
         return new DropLateItemsLogicalRel(getCluster(), traitSet, sole(inputs), wmField);
+    }
+
+    public DropLateItemsLogicalRel copy(RelTraitSet traitSet, RelNode input, int wmField) {
+        return new DropLateItemsLogicalRel(getCluster(), traitSet, input, wmField);
     }
 
     @Override

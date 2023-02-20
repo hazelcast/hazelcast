@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,8 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.processor.SinkProcessors;
-import com.hazelcast.jet.impl.connector.DataSourceFromConnectionSupplier;
+import com.hazelcast.jet.impl.connector.DataSourceFromJdbcUrl;
+import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import javax.sql.CommonDataSource;
@@ -51,6 +52,7 @@ public class JdbcSinkBuilder<T> {
     private SupplierEx<? extends CommonDataSource> dataSourceSupplier;
     private boolean exactlyOnce = DEFAULT_EXACTLY_ONCE;
     private int batchLimit = DEFAULT_BATCH_LIMIT;
+    private DataLinkRef dataLinkRef;
 
     JdbcSinkBuilder() {
     }
@@ -118,6 +120,8 @@ public class JdbcSinkBuilder<T> {
     @Nonnull
     public JdbcSinkBuilder<T> jdbcUrl(String connectionUrl) {
         this.jdbcUrl = connectionUrl;
+        this.dataSourceSupplier = null;
+        this.dataLinkRef = null;
         return this;
     }
 
@@ -133,12 +137,14 @@ public class JdbcSinkBuilder<T> {
      * the entire job execution.
      *
      * @param dataSourceSupplier the supplier of data source. The function must
-     *     be stateless.
+     *                           be stateless.
      * @return this instance for fluent API
      */
     @Nonnull
     public JdbcSinkBuilder<T> dataSourceSupplier(SupplierEx<? extends CommonDataSource> dataSourceSupplier) {
         this.dataSourceSupplier = dataSourceSupplier;
+        this.jdbcUrl = null;
+        this.dataLinkRef = null;
         return this;
     }
 
@@ -179,19 +185,75 @@ public class JdbcSinkBuilder<T> {
     }
 
     /**
+     * Sets the reference to the configured data link of {@link DataLinkRef} from which
+     * the instance of the {@link javax.sql.DataSource} will be retrieved.
+     * <p>
+     * Example:
+     * <p>
+     * (Prerequisite) Data link configuration:
+     * <pre>{@code
+     *      Config config = smallInstanceConfig();
+     *      Properties properties = new Properties();
+     *      properties.put("jdbcUrl", jdbcUrl);
+     *      properties.put("username", username);
+     *      properties.put("password", password);
+     *      DataLinkConfig dataLinkConfig = new DataLinkConfig()
+     *              .setName("my-jdbc-data-link")
+     *              .setClassName(JdbcDataLinkFactory.class.getName())
+     *              .setProperties(properties);
+     *      config.getDataLinkConfigs().put(name, dataLinkConfig);
+     * }</pre>
+     * </p>
+     * <p>Pipeline configuration
+     * <pre>{@code
+     *
+     *         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
+     *                 .map(item -> entry(item, item.toString()))
+     *                 .writeTo(Sinks.<Entry<Integer, String>>jdbcBuilder()
+     *                         .updateQuery("INSERT INTO " + tableName + " VALUES(?, ?)")
+     *                         .dataLinkRef(dataLinkRef("my-jdbc-data-link"))
+     *                         .bindFn((stmt, item1) -> {
+     *                             stmt.setInt(1, item1.getKey());
+     *                             stmt.setString(2, item1.getValue());
+     *                         })
+     *                         .build());
+     * }</pre>
+     * </p>
+     *
+     * @param dataLinkRef the reference to the configured data link
+     * @return this instance for fluent API
+     * @since 5.2
+     */
+    @Nonnull
+    @Beta
+    public JdbcSinkBuilder<T> dataLinkRef(DataLinkRef dataLinkRef) {
+        this.dataSourceSupplier = null;
+        this.jdbcUrl = null;
+        this.dataLinkRef = dataLinkRef;
+        return this;
+    }
+
+    /**
      * Creates and returns the JDBC {@link Sink} with the supplied components.
      */
     @Nonnull
     public Sink<T> build() {
-        if (dataSourceSupplier == null && jdbcUrl == null) {
-            throw new IllegalStateException("Neither jdbcUrl() nor dataSourceSupplier() set");
+        if (dataSourceSupplier == null && jdbcUrl == null && dataLinkRef == null) {
+            throw new IllegalStateException("Neither jdbcUrl() nor dataSourceSupplier() nor dataLinkRef() set");
         }
-        if (dataSourceSupplier == null) {
+        if (jdbcUrl != null) {
             String connectionUrl = jdbcUrl;
-            dataSourceSupplier = () -> new DataSourceFromConnectionSupplier(connectionUrl);
+            dataSourceSupplier = () -> new DataSourceFromJdbcUrl(connectionUrl);
         }
+        if (dataSourceSupplier != null) {
+            return Sinks.fromProcessor("jdbcSink",
+                    SinkProcessors.writeJdbcP(jdbcUrl, updateQuery, dataSourceSupplier, bindFn,
+                            exactlyOnce, batchLimit));
+        }
+
         return Sinks.fromProcessor("jdbcSink",
-                SinkProcessors.writeJdbcP(jdbcUrl, updateQuery, dataSourceSupplier, bindFn,
+                SinkProcessors.writeJdbcP(updateQuery, dataLinkRef, bindFn,
                         exactlyOnce, batchLimit));
+
     }
 }

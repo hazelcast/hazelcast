@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -347,13 +347,13 @@ public class MySqlCdcWhiteBlackListIntegrationTest extends AbstractMySqlCdcInteg
         int id3 = 1000 * dbSuffix + 3;
         int id4 = 1000 * dbSuffix + 4;
         return Arrays.asList(
-                id1 + "/0:INSERT:TableRow {id=" + id1 + ", value1=" + db + "_table0_val1_0, "
+                id1 + "/0:SYNC:TableRow {id=" + id1 + ", value1=" + db + "_table0_val1_0, "
                         + "value2=" + db + "_table0_val2_0, value3=" + db + "_table0_val3_0}",
                 id1 + "/1:UPDATE:TableRow {id=" + id1 + ", value1=new_" + db + "_table0_val1_0, "
                         + "value2=" + db + "_table0_val2_0, value3=" + db + "_table0_val3_0}",
-                id2 + "/0:INSERT:TableRow {id=" + id2 + ", value1=" + db + "_table0_val1_1, "
+                id2 + "/0:SYNC:TableRow {id=" + id2 + ", value1=" + db + "_table0_val1_1, "
                         + "value2=" + db + "_table0_val2_1, value3=" + db + "_table0_val3_1}",
-                id3 + "/0:INSERT:TableRow {id=" + id3 + ", value1=" + db + "_table0_val1_2, "
+                id3 + "/0:SYNC:TableRow {id=" + id3 + ", value1=" + db + "_table0_val1_2, "
                         + "value2=" + db + "_table0_val2_2, value3=" + db + "_table0_val3_2}",
                 id4 + "/0:INSERT:TableRow {id=" + id4 + ", value1=" + db + "_table0_val1_3, "
                         + "value2=" + db + "_table0_val2_3, value3=" + db + "_table0_val3_3}",
@@ -369,13 +369,13 @@ public class MySqlCdcWhiteBlackListIntegrationTest extends AbstractMySqlCdcInteg
         int id3 = 1000 * dbSuffix + 103;
         int id4 = 1000 * dbSuffix + 104;
         return Arrays.asList(
-                id1 + "/0:INSERT:TableRow {id=" + id1 + ", value1=" + db + "_table1_val1_0, "
+                id1 + "/0:SYNC:TableRow {id=" + id1 + ", value1=" + db + "_table1_val1_0, "
                         + "value2=" + db + "_table1_val2_0, value3=" + db + "_table1_val3_0}",
-                id2 + "/0:INSERT:TableRow {id=" + id2 + ", value1=" + db + "_table1_val1_1, "
+                id2 + "/0:SYNC:TableRow {id=" + id2 + ", value1=" + db + "_table1_val1_1, "
                         + "value2=" + db + "_table1_val2_1, value3=" + db + "_table1_val3_1}",
                 id2 + "/1:UPDATE:TableRow {id=" + id2 + ", value1=" + db + "_table1_val1_1, "
                         + "value2=new_" + db + "_table1_val2_1, value3=" + db + "_table1_val3_1}",
-                id3 + "/0:INSERT:TableRow {id=" + id3 + ", value1=" + db + "_table1_val1_2, "
+                id3 + "/0:SYNC:TableRow {id=" + id3 + ", value1=" + db + "_table1_val1_2, "
                         + "value2=" + db + "_table1_val2_2, value3=" + db + "_table1_val3_2}",
                 id4 + "/0:INSERT:TableRow {id=" + id4 + ", value1=" + db + "_table1_val1_3, "
                         + "value2=" + db + "_table1_val2_3, value3=" + db + "_table1_val3_3}",
@@ -391,11 +391,11 @@ public class MySqlCdcWhiteBlackListIntegrationTest extends AbstractMySqlCdcInteg
         int id3 = 1000 * dbSuffix + 203;
         int id4 = 1000 * dbSuffix + 204;
         return Arrays.asList(
-                id1 + "/0:INSERT:TableRow {id=" + id1 + ", value1=" + db + "_table2_val1_0, "
+                id1 + "/0:SYNC:TableRow {id=" + id1 + ", value1=" + db + "_table2_val1_0, "
                         + "value2=" + db + "_table2_val2_0, value3=" + db + "_table2_val3_0}",
-                id2 + "/0:INSERT:TableRow {id=" + id2 + ", value1=" + db + "_table2_val1_1, "
+                id2 + "/0:SYNC:TableRow {id=" + id2 + ", value1=" + db + "_table2_val1_1, "
                         + "value2=" + db + "_table2_val2_1, value3=" + db + "_table2_val3_1}",
-                id3 + "/0:INSERT:TableRow {id=" + id3 + ", value1=" + db + "_table2_val1_2, "
+                id3 + "/0:SYNC:TableRow {id=" + id3 + ", value1=" + db + "_table2_val1_2, "
                         + "value2=" + db + "_table2_val2_2, value3=" + db + "_table2_val3_2}",
                 id3 + "/1:UPDATE:TableRow {id=" + id3 + ", value1=" + db + "_table2_val1_2, "
                         + "value2=" + db + "_table2_val2_2, value3=new_" + db + "_table2_val3_2}",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,8 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.json.JsonEscape;
 import com.hazelcast.internal.serialization.impl.compact.DefaultCompactWriter;
-import com.hazelcast.nio.serialization.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.FieldKind;
-import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -1159,7 +1158,7 @@ public final class FieldOperations {
     }
 
     public static boolean isArrayKind(FieldKind fieldKind) {
-        return fieldKind.getId() % 2 != 0;
+        return fieldKind.getId() % 2 != 1;
     }
 
     public static FieldKind getSingleKind(FieldKind fieldKind) {

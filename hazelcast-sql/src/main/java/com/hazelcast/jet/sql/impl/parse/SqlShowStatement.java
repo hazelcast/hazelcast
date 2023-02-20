@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ public class SqlShowStatement extends SqlCall {
     public static final SqlSpecialOperator SHOW_MAPPINGS = new SqlSpecialOperator("SHOW EXTERNAL MAPPINGS", SqlKind.OTHER);
     public static final SqlSpecialOperator SHOW_VIEWS = new SqlSpecialOperator("SHOW VIEWS", SqlKind.OTHER);
     public static final SqlSpecialOperator SHOW_JOBS = new SqlSpecialOperator("SHOW JOBS", SqlKind.OTHER);
+    public static final SqlSpecialOperator SHOW_TYPES = new SqlSpecialOperator("SHOW TYPES", SqlKind.OTHER);
 
     private final ShowStatementTarget target;
 
@@ -68,7 +69,8 @@ public class SqlShowStatement extends SqlCall {
     public enum ShowStatementTarget {
         MAPPINGS(SHOW_MAPPINGS),
         VIEWS(SHOW_VIEWS),
-        JOBS(SHOW_JOBS);
+        JOBS(SHOW_JOBS),
+        TYPES(SHOW_TYPES);
 
         private final SqlSpecialOperator operator;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,14 +98,14 @@ public class VertexDef implements IdentifiedDataSerializable {
      * otherwise.
      * Fixes https://github.com/hazelcast/hazelcast-jet/pull/1101
      */
-    static Set<Integer> getHigherPriorityVertices(List<VertexDef> vertices) {
+    static Set<Integer> getHigherPriorityVertices(VertexDef[] vertices) {
         // We assume the vertices are in topological order. We iterate in the reverse order, this way
         // when we observe a parent, all children should have been observed.
         // That order is asserted in `seenVertices`
         Set<Integer> res = new HashSet<>();
         Set<Integer> seenVertices = new HashSet<>();
-        for (int i = vertices.size(); i-- > 0; ) {
-            VertexDef v = vertices.get(i);
+        for (int i = vertices.length; i-- > 0; ) {
+            VertexDef v = vertices[i];
             assert seenVertices.add(v.vertexId()) : "duplicate vertex id";
             for (EdgeDef outboundEdge : v.outboundEdges) {
                 VertexDef downstream = outboundEdge.destVertex();

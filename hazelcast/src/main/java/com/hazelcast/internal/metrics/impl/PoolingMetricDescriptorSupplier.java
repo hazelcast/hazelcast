@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ class PoolingMetricDescriptorSupplier implements Supplier<MetricDescriptorImpl> 
         allCreated = new ArrayList<>(reusableData.getAllCreatedLastSize() + LAST_SIZE_INCREMENT);
         pool = reusableData.getPool();
         poolPtr = reusableData.getPoolPtr();
-        for (int i = 0; i < poolPtr; i++) {
+        for (int i = 0; i <= poolPtr; i++) {
             pool[i].setSupplier(this);
             allCreated.add(pool[i]);
         }

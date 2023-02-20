@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,10 @@ import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.version.MemberVersion;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,10 +39,13 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.readMa
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeMap;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
-public class MemberInfo implements IdentifiedDataSerializable {
+// RU_COMPAT 5.2 No need to implement Versioned after 5.3 release
+public class MemberInfo implements IdentifiedDataSerializable, Versioned {
 
     private Address address;
     private UUID uuid;
+    @Nullable
+    private UUID cpMemberUUID;
     private boolean liteMember;
     private MemberVersion version;
     private Map<String, String> attributes;
@@ -60,20 +65,31 @@ public class MemberInfo implements IdentifiedDataSerializable {
         this(address, uuid, attributes, liteMember, version, NA_MEMBER_LIST_JOIN_VERSION, addressMap);
     }
 
+    public MemberInfo(Address address, UUID uuid, UUID cpMemberUUID, Map<String, String> attributes, boolean liteMember,
+                      MemberVersion version, Map<EndpointQualifier, Address> addressMap) {
+        this(address, uuid, cpMemberUUID, attributes, liteMember, version, NA_MEMBER_LIST_JOIN_VERSION, addressMap);
+    }
+
     public MemberInfo(Address address, UUID uuid, Map<String, String> attributes, boolean liteMember, MemberVersion version,
                       boolean isAddressMapExists, Map<EndpointQualifier, Address> addressMap) {
         this(address, uuid, attributes, liteMember, version, NA_MEMBER_LIST_JOIN_VERSION, addressMap);
     }
 
-    public MemberInfo(Address address, UUID uuid, Map<String, String> attributes, boolean liteMember, MemberVersion version,
-                      int memberListJoinVersion, Map<EndpointQualifier, Address> addressMap) {
+    public MemberInfo(Address address, UUID uuid, UUID cpMemberUUID, Map<String, String> attributes, boolean liteMember,
+                      MemberVersion version, int memberListJoinVersion, Map<EndpointQualifier, Address> addressMap) {
         this.address = address;
         this.uuid = uuid;
+        this.cpMemberUUID = cpMemberUUID;
         this.attributes = attributes == null || attributes.isEmpty() ? Collections.emptyMap() : new HashMap<>(attributes);
         this.liteMember = liteMember;
         this.version = version;
         this.memberListJoinVersion = memberListJoinVersion;
         this.addressMap = addressMap;
+    }
+
+    public MemberInfo(Address address, UUID uuid, Map<String, String> attributes, boolean liteMember, MemberVersion version,
+                      int memberListJoinVersion, Map<EndpointQualifier, Address> addressMap) {
+        this(address, uuid, null, attributes, liteMember, version, memberListJoinVersion, addressMap);
     }
 
     public MemberInfo(MemberImpl member) {
@@ -91,6 +107,11 @@ public class MemberInfo implements IdentifiedDataSerializable {
 
     public UUID getUuid() {
         return uuid;
+    }
+
+    @Nullable
+    public UUID getCPMemberUUID() {
+        return cpMemberUUID;
     }
 
     public Map<String, String> getAttributes() {
@@ -136,6 +157,7 @@ public class MemberInfo implements IdentifiedDataSerializable {
         version = in.readObject();
         memberListJoinVersion = in.readInt();
         addressMap = readMap(in);
+        cpMemberUUID = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override
@@ -153,6 +175,7 @@ public class MemberInfo implements IdentifiedDataSerializable {
         out.writeObject(version);
         out.writeInt(memberListJoinVersion);
         writeMap(addressMap, out);
+        UUIDSerializationUtil.writeUUID(out, cpMemberUUID);
     }
 
     @Override
@@ -184,6 +207,7 @@ public class MemberInfo implements IdentifiedDataSerializable {
         return "MemberInfo{"
                 + "address=" + address
                 + ", uuid=" + uuid
+                + ", cpMemberUUID=" + cpMemberUUID
                 + ", liteMember=" + liteMember
                 + ", memberListJoinVersion=" + memberListJoinVersion
                 + '}';

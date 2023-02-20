@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.execution;
 
-import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.impl.util.ProgressState;
 
 import javax.annotation.Nonnull;
@@ -24,7 +23,7 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
-import java.util.function.Predicate;
+import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.ProgressState.DONE;
@@ -34,9 +33,10 @@ import static com.hazelcast.jet.impl.util.ProgressState.WAS_ALREADY_DONE;
 
 public class MockInboundStream implements InboundEdgeStream {
     private int ordinal;
-    private int priority;
+    private final int priority;
     private final Deque<Object> mockData;
     private final int chunkSize;
+    private SpecialBroadcastItem pendingItem = null;
 
     private boolean done;
 
@@ -55,10 +55,17 @@ public class MockInboundStream implements InboundEdgeStream {
     }
 
     @Nonnull @Override
-    public ProgressState drainTo(@Nonnull Predicate<Object> dest) {
+    public ProgressState drainTo(@Nonnull Consumer<Object> dest) {
         if (done) {
             return WAS_ALREADY_DONE;
         }
+
+        if (pendingItem != null) {
+            dest.accept(pendingItem);
+            pendingItem = null;
+            return MADE_PROGRESS;
+        }
+
         if (mockData.isEmpty()) {
             return NO_PROGRESS;
         }
@@ -67,8 +74,18 @@ public class MockInboundStream implements InboundEdgeStream {
             if (item == DONE_ITEM) {
                 done = true;
                 break;
-            } else if (!dest.test(item) || item instanceof SnapshotBarrier || item instanceof Watermark) {
+            }
+            if (item instanceof SpecialBroadcastItem) {
+                if (i == 0) {
+                    // if we meet special item first, just forward it and stop draining iteration.
+                    dest.accept(item);
+                } else {
+                    // here, if we meet special item after normal items, stop draining iteration without skipping.
+                    pendingItem = (SpecialBroadcastItem) item;
+                }
                 break;
+            } else {
+                dest.accept(item);
             }
         }
         return done ? DONE : MADE_PROGRESS;
@@ -101,15 +118,5 @@ public class MockInboundStream implements InboundEdgeStream {
     @Override
     public int capacities() {
         return Integer.MAX_VALUE;
-    }
-
-    @Override
-    public long topObservedWm() {
-        return 0;
-    }
-
-    @Override
-    public long coalescedWm() {
-        return 0;
     }
 }

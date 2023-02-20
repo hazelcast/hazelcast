@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import com.hazelcast.client.config.ClientMetricsConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientReliableTopicConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
+import com.hazelcast.client.config.ClientSqlConfig;
+import com.hazelcast.client.config.ClientSqlResubmissionMode;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
@@ -81,6 +83,7 @@ import static com.hazelcast.client.config.impl.ClientConfigSections.QUERY_CACHES
 import static com.hazelcast.client.config.impl.ClientConfigSections.RELIABLE_TOPIC;
 import static com.hazelcast.client.config.impl.ClientConfigSections.SECURITY;
 import static com.hazelcast.client.config.impl.ClientConfigSections.SERIALIZATION;
+import static com.hazelcast.client.config.impl.ClientConfigSections.SQL;
 import static com.hazelcast.client.config.impl.ClientConfigSections.USER_CODE_DEPLOYMENT;
 import static com.hazelcast.client.config.impl.ClientConfigSections.canOccurMultipleTimes;
 import static com.hazelcast.config.security.TokenEncoding.getTokenEncoding;
@@ -184,6 +187,8 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             handleMetrics(node);
         } else if (matches(INSTANCE_TRACKING.getName(), nodeName)) {
             handleInstanceTracking(node, clientConfig.getInstanceTrackingConfig());
+        } else if (matches(SQL.getName(), nodeName)) {
+            handleSql(node, clientConfig.getSqlConfig());
         }
     }
 
@@ -781,4 +786,12 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
+    private void handleSql(Node node, ClientSqlConfig sqlConfig) {
+        for (Node n : childElements(node)) {
+            final String name = cleanNodeName(n);
+            if (matches("resubmission-mode", name)) {
+                sqlConfig.setResubmissionMode(ClientSqlResubmissionMode.valueOf(getTextContent(n)));
+            }
+        }
+    }
 }

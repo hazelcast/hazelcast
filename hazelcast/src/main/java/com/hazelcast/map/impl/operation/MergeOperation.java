@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,17 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.operation.steps.MergeOpSteps;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
+import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
@@ -83,21 +88,41 @@ public class MergeOperation extends MapOperation
     }
 
     @Override
+    protected void innerBeforeRun() throws Exception {
+        super.innerBeforeRun();
+        if (recordStore != null) {
+            recordStore.checkIfLoaded();
+        }
+    }
+
+    @Override
     protected boolean disableWanReplicationEvent() {
         return disableWanReplicationEvent;
     }
 
     @Override
+    public State createState() {
+        return super.createState()
+                .setMergingEntries(mergingEntries)
+                .setMergePolicy(mergePolicy);
+    }
+
+    @Override
+    public Step getStartingStep() {
+        return MergeOpSteps.READ;
+    }
+
+    @Override
+    public void applyState(State state) {
+        hasMergedValues = (boolean) state.getResult();
+        backupPairs = state.getBackupPairs();
+        hasBackups = mapContainer.getTotalBackupCount() > 0;
+    }
+
+    @Override
     protected void runInternal() {
         // Check once in a minute as earliest to avoid log bursts.
-        if (shouldCheckNow(mapContainer.getLastInvalidMergePolicyCheckTime())) {
-            try {
-                checkMapMergePolicy(mapContainer.getMapConfig(), mergePolicy.getClass().getName(),
-                        getNodeEngine().getSplitBrainMergePolicyProvider());
-            } catch (InvalidConfigurationException e) {
-                logger().log(Level.WARNING, e.getMessage(), e);
-            }
-        }
+        checkMergePolicy(mapContainer, mergePolicy);
 
         hasMapListener = mapEventPublisher.hasEventListener(name);
         hasWanReplication = mapContainer.isWanReplicationEnabled()
@@ -137,14 +162,26 @@ public class MergeOperation extends MapOperation
         finishIndexMarking(notMarkedIndexes);
     }
 
-    private void finishIndexMarking(Queue<InternalIndex> notIndexedPartitions) {
+    public static void checkMergePolicy(MapContainer mapContainer, SplitBrainMergePolicy mergePolicy) {
+        NodeEngine nodeEngine = mapContainer.getMapServiceContext().getNodeEngine();
+        if (shouldCheckNow(mapContainer.getLastInvalidMergePolicyCheckTime())) {
+            try {
+                checkMapMergePolicy(mapContainer.getMapConfig(), mergePolicy.getClass().getName(),
+                        nodeEngine.getSplitBrainMergePolicyProvider());
+            } catch (InvalidConfigurationException e) {
+                nodeEngine.getLogger(MergeOperation.class).log(Level.WARNING, e.getMessage(), e);
+            }
+        }
+    }
+
+    public void finishIndexMarking(Queue<InternalIndex> notIndexedPartitions) {
         InternalIndex indexToMark;
         while ((indexToMark = notIndexedPartitions.poll()) != null) {
             indexToMark.markPartitionAsIndexed(getPartitionId());
         }
     }
 
-    private Queue<InternalIndex> beginIndexMarking() {
+    public Queue<InternalIndex> beginIndexMarking() {
         int partitionId = getPartitionId();
         Indexes indexes = mapContainer.getIndexes(partitionId);
         InternalIndex[] indexesSnapshot = indexes.getIndexes();
@@ -201,15 +238,15 @@ public class MergeOperation extends MapOperation
         }
     }
 
-    private Data getValueOrPostProcessedValue(Data dataKey, Data dataValue) {
-        if (!isPostProcessing(recordStore)) {
+    public Data getValueOrPostProcessedValue(Data dataKey, Data dataValue) {
+        if (!isPostProcessingOrHasInterceptor(recordStore)) {
             return dataValue;
         }
         Record record = recordStore.getRecord(dataKey);
         return mapServiceContext.toData(record.getValue());
     }
 
-    private Data getValue(Data dataKey) {
+    public Data getValue(Data dataKey) {
         Record record = recordStore.getRecord(dataKey);
         if (record != null) {
             return mapServiceContext.toData(record.getValue());
@@ -238,7 +275,7 @@ public class MergeOperation extends MapOperation
     }
 
     @Override
-    protected void afterRunInternal() {
+    public void afterRunInternal() {
         invalidateNearCache(invalidationKeys);
 
         super.afterRunInternal();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -188,9 +188,10 @@ public final class FieldsUtil {
         return fields;
     }
 
+    // TODO: maybe move to more generic utilities class?
     @SuppressWarnings({"checkstyle:ReturnCount", "checkstyle:cyclomaticcomplexity"})
     @Nonnull
-    private static QueryDataType resolveType(@Nonnull FieldKind kind) {
+    public static QueryDataType resolveType(@Nonnull FieldKind kind) {
         switch (kind) {
             case BOOLEAN:
                 return QueryDataType.BOOLEAN;

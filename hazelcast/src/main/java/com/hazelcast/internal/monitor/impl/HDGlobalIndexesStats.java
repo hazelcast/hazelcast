@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
  * The main trait of the implementation is the concurrency support, which is
  * required for global indexes because they are shared among partitions.
  */
-public final class HDGlobalIndexesStats implements IndexesStats {
+public class HDGlobalIndexesStats implements IndexesStats {
 
     private static final AtomicLongFieldUpdater<HDGlobalIndexesStats> QUERY_COUNT = newUpdater(HDGlobalIndexesStats.class,
             "queryCount");
