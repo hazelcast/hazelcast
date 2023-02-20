@@ -35,7 +35,6 @@ import com.hazelcast.internal.tpc.TpcEngine;
 import com.hazelcast.internal.tpc.nio.NioReactorBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationexecutor.impl.AltoOperationQueue;
 import com.hazelcast.spi.impl.operationexecutor.impl.AltoOperationScheduler;
 import com.hazelcast.spi.impl.operationexecutor.impl.AltoPartitionOperationThread;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
@@ -75,7 +74,7 @@ public class TpcServerBootstrap {
     private final InternalSerializationService ss;
     private final ILogger logger;
     private final Address thisAddress;
-    private  TpcEngine tpcEngine;
+    private TpcEngine tpcEngine;
     private final boolean tcpNoDelay = true;
     private final boolean enabled;
     private final Map<Reactor, Supplier<? extends ReadHandler>> readHandlerSuppliers = new HashMap<>();
@@ -124,11 +123,11 @@ public class TpcServerBootstrap {
         Configuration configuration = new Configuration();
         NioReactorBuilder reactorBuilder = new NioReactorBuilder();
         reactorBuilder.setThreadFactory(new ThreadFactory() {
-            int index=0;
+            int index = 0;
 
             @Override
             public Thread newThread(Runnable eventloopRunnable) {
-                OperationExecutorImpl operationExecutor = (OperationExecutorImpl)  nodeEngine
+                OperationExecutorImpl operationExecutor = (OperationExecutorImpl) nodeEngine
                         .getOperationService()
                         .getOperationExecutor();
                 AltoPartitionOperationThread operationThread = (AltoPartitionOperationThread) operationExecutor
@@ -144,7 +143,7 @@ public class TpcServerBootstrap {
         return new TpcEngine(configuration);
     }
 
-    public int eventloopCount(){
+    public int eventloopCount() {
         return loadEventloopCount();
     }
 
@@ -170,10 +169,13 @@ public class TpcServerBootstrap {
         // The tpcEngine (and hence reactor.start) will create the appropriate happens-before
         // edge between the main thread and the reactor thread. So it is guaranteed to see
         // the reactor.
-        OperationExecutorImpl operationExecutor = (OperationExecutorImpl)  nodeEngine.getOperationService().getOperationExecutor();
-        for(int k=0;k<operationExecutor.getPartitionThreadCount();k++){
+        OperationExecutorImpl operationExecutor = (OperationExecutorImpl) nodeEngine
+                .getOperationService()
+                .getOperationExecutor();
+        for (int k = 0; k < operationExecutor.getPartitionThreadCount(); k++) {
             Reactor reactor = tpcEngine.reactor(k);
-            AltoPartitionOperationThread partitionThread = (AltoPartitionOperationThread) operationExecutor.getPartitionThreads()[k];
+            AltoPartitionOperationThread partitionThread = (AltoPartitionOperationThread) operationExecutor
+                    .getPartitionThreads()[k];
             partitionThread.getQueue().setReactor(reactor);
         }
 
