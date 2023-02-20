@@ -23,18 +23,12 @@ import com.hazelcast.logging.Logger;
 import org.apache.kafka.connect.connector.ConnectorContext;
 import org.apache.kafka.connect.source.SourceConnector;
 import org.apache.kafka.connect.source.SourceRecord;
-import org.apache.kafka.connect.source.SourceTask;
-import org.apache.kafka.connect.source.SourceTaskContext;
-import org.apache.kafka.connect.storage.OffsetStorageReader;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.client.impl.protocol.util.PropertiesUtil.toMap;
 import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
@@ -42,14 +36,10 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 public class KafkaConnectSource {
     private static final ILogger LOGGER = Logger.getLogger(KafkaConnectSource.class);
-    private static final int AWAIT_STOP_TIMEOUT = 1_000;
 
     private final SourceConnector connector;
 
-    private CountDownLatch taskStoppedLatch = new CountDownLatch(1);
-
-    private SourceTask task;
-
+    private final TaskRunner taskRunner;
 
     /**
      * Key represents the partition which the record originated from. Value
@@ -59,10 +49,6 @@ public class KafkaConnectSource {
      * See {@link SourceRecord} for more information regarding the format.
      */
     private Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new ConcurrentHashMap<>();
-    private final AtomicBoolean taskRunning = new AtomicBoolean();
-
-    private volatile boolean taskReconfigurationRequested;
-
 
     public KafkaConnectSource(Properties properties) {
         String connectorClazz = checkRequiredProperty(properties, "connector.class");
@@ -70,6 +56,7 @@ public class KafkaConnectSource {
         this.connector = (SourceConnector) newInstance(connectorClass);
         this.connector.initialize(new JetConnectorContext());
         this.connector.start(toMap(properties));
+        this.taskRunner = new TaskRunner(connector, partitionsToOffset);
     }
 
     @Nonnull
@@ -91,71 +78,19 @@ public class KafkaConnectSource {
     }
 
     public void fillBuffer(SourceBuilder.TimestampedSourceBuffer<SourceRecord> buf) {
-        restartTaskIfNeeded();
-        try {
-            List<SourceRecord> records = task.poll();
-            if (records == null) {
-                return;
-            }
-            if (LOGGER.isFineEnabled()) {
-                LOGGER.fine("Get " + records.size() + " records from task poll");
-            }
-            for (SourceRecord record : records) {
-                addToBuffer(record, buf);
-                partitionsToOffset.put(record.sourcePartition(), record.sourceOffset());
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw rethrow(e);
-        }
-    }
-
-    private void restartTaskIfNeeded() {
-        if (taskReconfigurationRequested) {
-            taskReconfigurationRequested = false;
-            stopTaskAndAwait();
-        }
-        if (taskRunning.get()) {
-            LOGGER.info("Not starting task, already running");
+        List<SourceRecord> records = taskRunner.poll();
+        if (records == null) {
             return;
         }
-        startTaskIfNotRunning();
-    }
-
-    private void startTaskIfNotRunning() {
-        LOGGER.info("Starting tasks if the previous not running");
-        if (taskRunning.compareAndSet(false, true)) {
-            LOGGER.info("Starting tasks");
-
-            List<Map<String, String>> taskConfigs = connector.taskConfigs(1);
-            if (!taskConfigs.isEmpty()) {
-                Map<String, String> taskConfig = taskConfigs.get(0);
-                this.task = newInstance(connector.taskClass().asSubclass(SourceTask.class));
-                LOGGER.info("Initializing task: " + task);
-                task.initialize(new JetSourceTaskContext(taskConfig));
-                LOGGER.info("Starting task: " + task + " with task config: " + taskConfig);
-                task.start(taskConfig);
-            } else {
-                LOGGER.info("No task configs!");
-            }
+        if (LOGGER.isFineEnabled()) {
+            LOGGER.fine("Get " + records.size() + " records from task poll");
+        }
+        for (SourceRecord record : records) {
+            addToBuffer(record, buf);
+            partitionsToOffset.put(record.sourcePartition(), record.sourceOffset());
         }
     }
 
-    private void stopTaskAndAwait() {
-        stopTaskIfRunning();
-        if (!awaitStop()) {
-            LOGGER.info("Waiting for stopping task timed-out");
-        }
-    }
-
-    private boolean awaitStop() {
-        try {
-            LOGGER.info("Waiting for stopping the previous task");
-            return taskStoppedLatch.await(AWAIT_STOP_TIMEOUT, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            return false;
-        }
-    }
 
     private void addToBuffer(SourceRecord record, SourceBuilder.TimestampedSourceBuffer<SourceRecord> buf) {
         long ts = record.timestamp() == null ? 0 : record.timestamp();
@@ -164,7 +99,7 @@ public class KafkaConnectSource {
 
     public void destroy() {
         try {
-            stopTaskIfRunning();
+            taskRunner.stop();
         } finally {
             connector.stop();
         }
@@ -175,55 +110,20 @@ public class KafkaConnectSource {
     }
 
     public void restoreSnapshot(List<Map<Map<String, ?>, Map<String, ?>>> snapshots) {
-        this.partitionsToOffset = snapshots.get(0);
+        this.partitionsToOffset.clear();
+        this.partitionsToOffset.putAll(snapshots.get(0));
     }
 
     private class JetConnectorContext implements ConnectorContext {
 
         @Override
         public void requestTaskReconfiguration() {
-            LOGGER.info("Task reconfiguration requested");
-            taskReconfigurationRequested = true;
+            taskRunner.requestReconfiguration();
         }
 
         @Override
         public void raiseError(Exception e) {
             throw rethrow(e);
-        }
-    }
-
-    private void stopTaskIfRunning() {
-        LOGGER.info("Stopping task if running");
-        if (taskRunning.compareAndSet(true, false)) {
-            try {
-                if (task != null) {
-                    LOGGER.fine("Stopping task");
-                    task.stop();
-                    LOGGER.fine("Task stopped");
-                }
-            } finally {
-                taskStoppedLatch.countDown();
-                taskStoppedLatch = new CountDownLatch(1);
-                task = null;
-            }
-        }
-    }
-
-    private final class JetSourceTaskContext implements SourceTaskContext {
-        private final Map<String, String> taskConfig;
-
-        private JetSourceTaskContext(Map<String, String> taskConfig) {
-            this.taskConfig = taskConfig;
-        }
-
-        @Override
-        public Map<String, String> configs() {
-            return taskConfig;
-        }
-
-        @Override
-        public OffsetStorageReader offsetStorageReader() {
-            return new SourceOffsetStorageReader(partitionsToOffset);
         }
     }
 }
