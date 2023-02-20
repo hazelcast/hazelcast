@@ -49,10 +49,10 @@ public class TerminateJobOperation extends AsyncJobOperation {
     @Override
     public CompletableFuture<Void> doRun() {
         if (isLightJob) {
-            getJobCoordinationService().terminateLightJob(jobId());
+            getJobCoordinationService().terminateLightJob(jobId(), true);
             return completedFuture(null);
         } else {
-            return getJobCoordinationService().terminateJob(jobId(), terminationMode);
+            return getJobCoordinationService().terminateJob(jobId(), terminationMode, true);
         }
     }
 

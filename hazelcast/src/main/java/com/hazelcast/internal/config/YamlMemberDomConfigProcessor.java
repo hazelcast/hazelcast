@@ -29,7 +29,7 @@ import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.IndexConfig;
@@ -318,12 +318,12 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected void handleExternalDataStores(Node parentNode) {
+    protected void handleDataLinks(Node parentNode) {
         for (Node deviceNode : childElements(parentNode)) {
             String name = deviceNode.getNodeName();
-            ExternalDataStoreConfig externalDataStoreConfig = ConfigUtils.
-                    getByNameOrNew(config.getExternalDataStoreConfigs(), name, ExternalDataStoreConfig.class);
-            handleExternalDataStore(deviceNode, externalDataStoreConfig);
+            DataLinkConfig dataLinkConfig = ConfigUtils.
+                    getByNameOrNew(config.getDataLinkConfigs(), name, DataLinkConfig.class);
+            handleDataLink(deviceNode, dataLinkConfig);
         }
     }
 

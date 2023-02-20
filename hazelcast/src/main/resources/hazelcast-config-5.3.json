@@ -148,8 +148,8 @@
         "integrity-checker": {
           "$ref": "#/definitions/IntegrityChecker"
         },
-        "external-data-store": {
-          "$ref": "#/definitions/ExternalDataStoreConfig"
+        "data-link": {
+          "$ref": "#/definitions/DataLinkConfig"
         }
       }
     },
@@ -4965,7 +4965,7 @@
       ],
       "description": "Enables/disables Integrity Checker. Integrity Checker can be disabled to improve startup time."
     },
-    "ExternalDataStoreConfig": {
+    "DataLinkConfig": {
       "type": "object",
       "additionalProperties": {
         "type": "object",
@@ -4973,18 +4973,18 @@
         "properties": {
           "name": {
             "type": "string",
-            "description": "Name of the external data store configuration."
+            "description": "Name of the data link configuration."
           },
           "class-name": {
             "type": "string",
-            "description": "The name of the class implementing ExternalDataStoreFactory."
+            "description": "The name of the class implementing DataLinkFactory."
           },
           "shared": {
             "type": "boolean",
             "description": "If true reuse an instance of JDBC pool or any other storage driver (e.g. kafka client) between jobs or instances of MapStore."
           },
           "properties": {
-            "description": "The \"properties\" used for configuring external data store",
+            "description": "The \"properties\" used for configuring data link",
             "type": "object"
           }
         }

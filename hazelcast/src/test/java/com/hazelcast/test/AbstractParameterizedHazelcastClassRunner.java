@@ -54,18 +54,9 @@ public abstract class AbstractParameterizedHazelcastClassRunner extends BlockJUn
     }
 
     @Override
-    protected String getName() {
-        if (isParameterized) {
-            return fName;
-        } else {
-            return super.getName();
-        }
-    }
-
-    @Override
     protected String testName(FrameworkMethod method) {
         if (isParameterized) {
-            return method.getName() + getName();
+            return method.getName() + fName;
         } else {
             return method.getName();
         }

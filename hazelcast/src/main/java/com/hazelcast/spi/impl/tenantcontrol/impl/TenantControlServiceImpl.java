@@ -35,6 +35,7 @@ import javax.annotation.Nullable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.spi.tenantcontrol.TenantControlFactory.NOOP_TENANT_CONTROL_FACTORY;
 
@@ -155,7 +156,7 @@ public class TenantControlServiceImpl
                 if (t != null) {
                     logger.warning("Failed to propagate tenant control", t);
                 }
-            });
+            }, CALLER_RUNS);
         }
     }
 
