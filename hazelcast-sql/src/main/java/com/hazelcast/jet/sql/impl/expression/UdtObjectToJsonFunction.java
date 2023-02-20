@@ -20,7 +20,9 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.expression.json.JsonCreationUtil;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.getters.EvictableGetterCache;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.query.impl.getters.GetterCache;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -37,6 +39,17 @@ import java.util.Set;
 import static java.util.Collections.newSetFromMap;
 
 public class UdtObjectToJsonFunction extends UniExpressionWithType<HazelcastJsonValue> implements IdentifiedDataSerializable {
+    // Unlike FieldAccessExpression UdtToJson function typically works with many classes and all of their fields
+    private static final int MAX_CLASS_COUNT = 10;
+    private static final int MAX_GETTER_PER_CLASS_COUNT = 100;
+
+    // single instance for all calls to eval, used only during execution on particular node
+    private final GetterCache getterCache = new EvictableGetterCache(
+            MAX_CLASS_COUNT,
+            MAX_GETTER_PER_CLASS_COUNT,
+            GetterCache.EVICTABLE_CACHE_EVICTION_PERCENTAGE,
+            false
+    );
 
     public UdtObjectToJsonFunction() { }
 
@@ -57,7 +70,11 @@ public class UdtObjectToJsonFunction extends UniExpressionWithType<HazelcastJson
             return null;
         }
 
-        final Extractors extractors = Extractors.newBuilder(context.getSerializationService()).build();
+        // It's not possible to correctly wire InternalSerializationService into expressions themselves,
+        // but it's possible to at least reuse same getter cache in every subsequent call.
+        final Extractors extractors = Extractors.newBuilder(context.getSerializationService())
+                .setGetterCacheSupplier(() -> getterCache)
+                .build();
         final Map<String, Object> value = new HashMap<>();
 
         convert(obj, value, queryDataType, newSetFromMap(new IdentityHashMap<>()), extractors);

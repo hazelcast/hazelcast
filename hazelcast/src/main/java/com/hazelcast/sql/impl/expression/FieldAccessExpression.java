@@ -19,13 +19,16 @@ package com.hazelcast.sql.impl.expression;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.getters.EvictableGetterCache;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.query.impl.getters.GetterCache;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * An expression backing the DOT operator for extracting field from a struct type.
@@ -33,6 +36,14 @@ import java.io.IOException;
  * {@code ref.field} - extracts `field` from `ref`.
  */
 public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSerializable {
+    // FAE can be potentially used for many sub-classes of the base class, but it will always use same getter
+    private static final int MAX_CLASS_COUNT = 10;
+    private static final int MAX_GETTER_PER_CLASS_COUNT = 1;
+
+    // single instance for all calls to eval, used only during execution on particular node
+    // atomic reference due to serialization constraints
+    private final AtomicReference<GetterCache> getterCache = new AtomicReference<>();
+
     private QueryDataType type;
     private String name;
     private Expression<?> ref;
@@ -75,7 +86,22 @@ public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSe
             throw QueryException.error("Field Access expression can not be applied to primitive types");
         }
 
-        final Extractors extractors = Extractors.newBuilder(context.getSerializationService()).build();
+        if (getterCache.get() == null) {
+            getterCache.compareAndSet(null, new EvictableGetterCache(
+                    MAX_CLASS_COUNT,
+                    MAX_GETTER_PER_CLASS_COUNT,
+                    GetterCache.EVICTABLE_CACHE_EVICTION_PERCENTAGE,
+                    false
+            ));
+        }
+
+        // defensive check, should never happen
+        final GetterCache cache = getterCache.get();
+        assert cache != null : "GetterCache should never be null";
+
+        final Extractors extractors = Extractors.newBuilder(context.getSerializationService())
+                .setGetterCacheSupplier(() -> cache)
+                .build();
         try {
             return (T) type.convert(extractors.extract(res, name, useLazyDeserialization));
         } catch (Exception e) {
