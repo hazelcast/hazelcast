@@ -30,6 +30,7 @@ import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -45,6 +46,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.core.JobStatus.FAILED;
@@ -55,29 +57,28 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(NightlyTest.class)
 public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport {
-    private static final int INITIAL_PARTITION_COUNT = 1;
     private static final int EVENTS_PER_SINK = 500;
-    private static final int SINK_ATTEMPTS = 400;
-    protected static final int EVENTS_TO_PROCESS = EVENTS_PER_SINK * SINK_ATTEMPTS;
+    private static final int SINK_COUNT = 400;
+    protected static final int EVENTS_TO_PROCESS = EVENTS_PER_SINK * SINK_COUNT;
     protected static final int SNAPSHOT_TIMEOUT_SECONDS = 30;
 
     protected static final String JOB_NAME = "s2s_join";
     protected static final String EXACTLY_ONCE = "exactlyOnce";
     protected static final String AT_LEAST_ONCE = "atLeastOnce";
     private static KafkaTestSupport kafkaTestSupport;
-    private Throwable ex;
+    private volatile Throwable ex;
 
     private final Map<String, Integer> resultSet = new HashMap<>();
     private SqlService sqlService;
     private Thread kafkaFeedThread;
-    private String sourceTopicName;
+    private String sourceTopic;
     protected String sinkTopic;
+    private JobRestarter jobRestarter;
 
     protected int expectedEventsCount = EVENTS_TO_PROCESS;
     protected int firstItemId = 1;
@@ -116,8 +117,9 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
         sqlService = instance().getSql();
 
         // Kafka source definition
-        sourceTopicName = createRandomTopic();
-        sqlService.execute("CREATE MAPPING " + sourceTopicName + ' '
+        sourceTopic = "source_topic_" + randomName();
+        kafkaTestSupport.createTopic(sourceTopic, 5);
+        sqlService.execute("CREATE MAPPING " + sourceTopic + ' '
                 + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
                 + '\'' + OPTION_KEY_FORMAT + "'='int'"
@@ -126,11 +128,12 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
                 + ", 'auto.offset.reset'='earliest'"
                 + ")");
 
-        kafkaFeedThread = new Thread(() -> createTopicData(sqlService, sourceTopicName));
+        kafkaFeedThread = new Thread(() -> createTopicData(sqlService, sourceTopic));
         kafkaFeedThread.start();
 
         // Kafka sink topic definition
-        sinkTopic = randomName();
+        sinkTopic = "sink_topic_" + randomName();
+        kafkaTestSupport.createTopic(sinkTopic, 5);
         sqlService.execute("CREATE MAPPING " + sinkTopic
                 + " TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
                 + " OPTIONS ( "
@@ -142,60 +145,72 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
 
         // Left & right sides of the JOIN
         sqlService.execute("CREATE VIEW s1 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + sourceTopicName + " , DESCRIPTOR(__key), 3))");
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + sourceTopic + " , DESCRIPTOR(__key), 3))");
         sqlService.execute("CREATE VIEW s2 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + sourceTopicName + " , DESCRIPTOR(__key), 4))");
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + sourceTopic + " , DESCRIPTOR(__key), 4))");
+
+        jobRestarter = new JobRestarter(instance());
+        jobRestarter.start();
     }
 
-    @Test
-    public void stressTest() {
-        JobRestarter jobRestarter = new JobRestarter(instance());
-        jobRestarter.start();
+    @After
+    public void after() throws InterruptedException {
+        kafkaFeedThread.join();
+        kafkaFeedThread = null;
 
-        processAndCheckResults(jobRestarter);
+        // finish again to make sure the thread terminates in every case
+        jobRestarter.finish();
+        jobRestarter.join();
+        jobRestarter = null;
 
-        try {
-            kafkaFeedThread.join();
-            jobRestarter.join();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+        if (ex != null) {
+            throw new RuntimeException(ex);
         }
     }
 
-    protected void processAndCheckResults(JobRestarter jobRestarter) {
+    @Test
+    public void stressTest() throws Exception {
         sqlService.execute(setupFetchingQuery());
 
-        String mainCheckQuery = "SELECT * FROM " + sinkTopic;
-        try (SqlResult result = sqlService.execute(mainCheckQuery)) {
+        try (SqlResult result = sqlService.execute("SELECT * FROM " + sinkTopic)) {
             for (SqlRow sqlRow : result) {
                 String s = sqlRow.getObject(1);
                 resultSet.merge(s, 1, Integer::sum);
-                if (resultSet.size() >= expectedEventsCount) {
+                if (resultSet.size() == expectedEventsCount) {
                     break;
                 }
             }
         }
 
-        if (ex != null) {
-            throw new RuntimeException(ex);
-        }
-
-        assertThat(resultSet.size()).isGreaterThanOrEqualTo(expectedEventsCount);
+        Job job = instance().getJet().getJob(JOB_NAME);
         jobRestarter.finish();
+        jobRestarter.join();
+        assertNotNull(job);
+        assertJobStatusEventually(job, RUNNING);
+        job.cancel();
+        assertJobStatusEventually(job, FAILED);
 
         if (processingGuarantee.equals(EXACTLY_ONCE)) {
-            List<String> dups = resultSet.entrySet()
+            List<Entry<String, Integer>> duplicates = resultSet.entrySet()
                     .stream()
                     .filter(entry -> entry.getValue() > 1)
-                    .map(Map.Entry::getKey)
                     .collect(Collectors.toList());
-            assertThat(dups.size()).isZero();
+
+            assertThat(duplicates)
+                    .as("Non-unique result count: " + duplicates.size())
+                    .isEmpty();
         }
 
         for (int i = firstItemId; i <= lastItemId; ++i) {
-            assertThat(resultSet.remove("value-" + i)).isNotNull();
+            String key = "value-" + i;
+            assertThat(resultSet.remove(key))
+                    .as("Missing element: " + key)
+                    .isNotNull();
         }
-        assertTrue("Result set is not empty : " + resultSet.size(), resultSet.isEmpty());
+
+        assertThat(resultSet)
+                .as("Unexpected items in the result: " + resultSet)
+                .isEmpty();
     }
 
     protected String setupFetchingQuery() {
@@ -205,16 +220,10 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
                 " SELECT s1.__key, s2.this FROM s1 JOIN s2 ON s1.__key = s2.__key";
     }
 
-    private static String createRandomTopic() {
-        String topicName = randomName();
-        kafkaTestSupport.createTopic(topicName, INITIAL_PARTITION_COUNT);
-        return topicName;
-    }
-
     class JobRestarter extends Thread {
         private final JetService jetService;
         private final JetServiceBackend jetBackend;
-        private volatile boolean finish;
+        private volatile boolean finished;
 
         JobRestarter(HazelcastInstance hazelcastInstance) {
             this.jetService = hazelcastInstance.getJet();
@@ -223,49 +232,49 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
 
         @Override
         public void run() {
-            while (jetService.getJob(JOB_NAME) == null) {
-                try {
-                    Thread.sleep(100L); // wait for query start
-                } catch (InterruptedException e) {
-                    ex = e;
-                }
-            }
+            try {
+                // wait for job start
+                assertTrueEventually(() -> assertNotNull(jetService.getJob(JOB_NAME)));
 
-            for (; ; ) {
-                if (finish) {
-                    return;
-                }
+                @SuppressWarnings("rawtypes")
                 AbstractJobProxy job = (AbstractJobProxy) jetService.getJob(JOB_NAME);
+                assertNotNull(job);
 
-                waitForNextSnapshot(jetBackend.getJobRepository(), job.getId(), SNAPSHOT_TIMEOUT_SECONDS, true);
-                job.restart(restartGraceful);
+                Long lastExecutionId = null;
+                while (!finished) {
+                    waitForNextSnapshot(jetBackend.getJobRepository(), job.getId(), SNAPSHOT_TIMEOUT_SECONDS, true);
+                    job.restart(restartGraceful);
+                    lastExecutionId = assertJobRunningEventually(instance(), job, lastExecutionId);
+                }
+            } catch (Throwable e) {
+                logger.warning(null, e);
+                ex = e;
             }
         }
 
         public void finish() {
-            Job job = jetService.getJob(JOB_NAME);
-            assertNotNull(job);
-            assertJobStatusEventually(job, RUNNING);
-            job.cancel();
-            assertJobStatusEventually(job, FAILED);
-            this.finish = true;
+            this.finished = true;
         }
     }
 
     private void createTopicData(SqlService sqlService, String topicName) {
-        int itemsSank = 0;
-        for (int sink = 1; sink <= SINK_ATTEMPTS; sink++) {
-            StringBuilder queryBuilder = new StringBuilder("INSERT INTO " + topicName + " VALUES ");
-            for (int i = 1; i < EVENTS_PER_SINK; ++i) {
-                ++itemsSank;
-                queryBuilder.append("(").append(itemsSank).append(", 'value-").append(itemsSank).append("'), ");
-            }
-            ++itemsSank;
-            queryBuilder.append("(").append(itemsSank).append(", 'value-").append(itemsSank).append("')");
+        try {
+            int itemsSank = 0;
+            for (int sink = 1; sink <= SINK_COUNT; sink++) {
+                StringBuilder queryBuilder = new StringBuilder("INSERT INTO " + topicName + " VALUES ");
+                for (int i = 0; i < EVENTS_PER_SINK; ++i) {
+                    ++itemsSank;
+                    queryBuilder.append("(").append(itemsSank).append(", 'value-").append(itemsSank).append("'),");
+                }
+                queryBuilder.setLength(queryBuilder.length() - 1);
 
-            assertEquals(itemsSank, EVENTS_PER_SINK * sink);
-            sqlService.execute(queryBuilder.toString());
-            System.err.println("Items sank " + itemsSank);
+                assertEquals(itemsSank, EVENTS_PER_SINK * sink);
+                sqlService.execute(queryBuilder.toString());
+                logger.info("Items sank " + itemsSank);
+            }
+        } catch (Throwable e) {
+            logger.warning(null, e);
+            ex = e;
         }
     }
 }

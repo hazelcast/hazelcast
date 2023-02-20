@@ -164,6 +164,7 @@ public final class WriteKafkaP<T, K, V> implements Processor {
 
     @Override
     public boolean snapshotCommitFinish(boolean commitTransactions) {
+        context.logger().info("aaa kafka commit");
         return snapshotUtility.snapshotCommitFinish(commitTransactions);
     }
 
