@@ -24,7 +24,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.hazelcast.function.ConsumerEx.noop;
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_EXTERNAL_DATASTORE_REF;
+import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
 
@@ -52,13 +52,13 @@ public class JdbcSqlConnectorStabilityTest extends JdbcSqlTestSupport {
                         + ") "
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
+                        + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
         );
     }
 
     @Test
-    public void dataStoreDownShouldTimeout() {
+    public void dataLinkDownShouldTimeout() {
 
         assertRowsAnyOrder(
                 "SELECT * FROM " + tableName,
@@ -83,7 +83,7 @@ public class JdbcSqlConnectorStabilityTest extends JdbcSqlTestSupport {
 
     @Test
     @Ignore("https://github.com/hazelcast/hazelcast/issues/22651")
-    public void dataStoreDownShouldNotAffectUnrelatedQueries() {
+    public void dataLinkDownShouldNotAffectUnrelatedQueries() {
 
         assertRowsAnyOrder(
                 "SELECT * FROM " + tableName,

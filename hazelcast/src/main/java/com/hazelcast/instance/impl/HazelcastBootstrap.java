@@ -39,6 +39,7 @@ import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.JetCacheManager;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Observable;
@@ -73,6 +74,8 @@ import com.hazelcast.transaction.TransactionalTask;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -88,7 +91,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
-import java.util.jar.JarFile;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -133,7 +135,7 @@ public final class HazelcastBootstrap {
     }
 
     public static synchronized void executeJar(@Nonnull Supplier<HazelcastInstance> supplierOfInstance,
-                                               @Nonnull String jar, @Nullable String snapshotName,
+                                               @Nonnull String jarPath, @Nullable String snapshotName,
                                                @Nullable String jobName, @Nullable String mainClass, @Nonnull List<String> args,
                                                boolean calledByMember
     ) throws Exception {
@@ -141,38 +143,29 @@ public final class HazelcastBootstrap {
         // Method is synchronized, so it is safe to do null check
         if (supplier == null) {
             supplier = new ConcurrentMemoizingSupplier<>(() ->
-                    new BootstrappedInstanceProxy(supplierOfInstance.get(), jar, snapshotName, jobName));
+                    new BootstrappedInstanceProxy(supplierOfInstance.get(), jarPath, snapshotName, jobName));
         }
 
-        resetJetParametersIfNecessary(jar, snapshotName, jobName, calledByMember);
+        resetJetParametersIfNecessary(jarPath, snapshotName, jobName, calledByMember);
 
+        try {
+            mainClass = getMainClass(mainClass, jarPath, calledByMember);
 
-        try (JarFile jarFile = new JarFile(jar)) {
-            checkHazelcastCodebasePresence(jarFile);
-            if (StringUtil.isNullOrEmpty(mainClass)) {
-                if (jarFile.getManifest() == null) {
-                    String message = "No manifest file in " + jar + ". You can use the -c option to provide the main class.";
-                    error(message, calledByMember);
-                }
-                mainClass = jarFile.getManifest().getMainAttributes().getValue("Main-Class");
-                if (mainClass == null) {
-                    String message = "No Main-Class found in manifest. You can use the -c option to provide the main class.";
-                    error(message, calledByMember);
-                }
-            }
-
-            URL jarUrl = new URL("file:///" + jar);
-            URLClassLoader classLoader = AccessController.doPrivileged(
+            URL jarUrl = new File(jarPath).toURI().toURL();
+            // Close the URLClassLoader when finished
+            try (URLClassLoader classLoader = AccessController.doPrivileged(
                     (PrivilegedAction<URLClassLoader>) () ->
                             new URLClassLoader(new URL[]{jarUrl}, HazelcastBootstrap.class.getClassLoader())
-            );
+            )) {
 
-            Class<?> clazz = loadMainClass(classLoader, mainClass);
+                Class<?> clazz = loadMainClass(classLoader, mainClass);
 
-            Method main = getMainMethod(clazz, calledByMember);
-            String[] jobArgs = args.toArray(new String[0]);
-            // upcast args to Object so it's passed as a single array-typed argument
-            main.invoke(null, (Object) jobArgs);
+                Method main = getMainMethod(clazz, calledByMember);
+                String[] jobArgs = args.toArray(new String[0]);
+                // upcast args to Object so it's passed as a single array-typed argument
+                main.invoke(null, (Object) jobArgs);
+
+            }
 
             // Wait for the job to start only if called by the client side
             if (!calledByMember) {
@@ -197,6 +190,25 @@ public final class HazelcastBootstrap {
         }
     }
 
+    static String getMainClass(String mainClass, String jarPath, boolean calledByMember)
+            throws IOException {
+        MainClassFinder mainClassFinder = new MainClassFinder();
+        mainClassFinder.findMainClass(mainClass, jarPath, calledByMember);
+
+        // Check if there is an error
+        String errorMessage = mainClassFinder.getErrorMessage();
+        if (!StringUtil.isNullOrEmpty(errorMessage)) {
+            error(errorMessage, calledByMember);
+        }
+
+        // Check if mainClassName found
+        String mainClassName = mainClassFinder.getMainClassName();
+        if (StringUtil.isNullOrEmpty(mainClassName)) {
+            error(errorMessage, calledByMember);
+        }
+        return mainClassName;
+    }
+
     // Returns true if the main method is both public and static
     static boolean isPublicAndStatic(Method mainMethod) {
         int modifiers = mainMethod.getModifiers();
@@ -210,7 +222,7 @@ public final class HazelcastBootstrap {
         if (!isPublicAndStatic(main)) {
             String message = "Class " + clazz.getName()
                              + " has a main(String[] args) method which is not public static";
-            error(message, calledByMember);
+             error(message, calledByMember);
         }
         return main;
     }
@@ -228,14 +240,6 @@ public final class HazelcastBootstrap {
         }
     }
 
-    private static void checkHazelcastCodebasePresence(JarFile jarFile) {
-        List<String> classFiles = JarScanner.findClassFiles(jarFile, HazelcastBootstrap.class.getSimpleName());
-        if (!classFiles.isEmpty()) {
-            System.err.format("WARNING: Hazelcast code detected in the jar: %s. "
-                              + "Hazelcast dependency should be set with the 'provided' scope or equivalent.%n",
-                    String.join(", ", classFiles));
-        }
-    }
 
     // Method is call by synchronized executeJar() so, it is safe to access submittedJobs array in BootstrappedJetProxy
     private static void awaitJobsStarted() {
@@ -298,9 +302,11 @@ public final class HazelcastBootstrap {
     }
 
     private static void error(String msg, boolean calledByMember) {
-        System.err.println(msg);
         if (!calledByMember) {
+            System.err.println(msg);
             System.exit(1);
+        } else {
+            throw new JetException(msg);
         }
     }
 
