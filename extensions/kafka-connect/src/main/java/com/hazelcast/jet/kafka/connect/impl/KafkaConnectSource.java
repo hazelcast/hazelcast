@@ -61,7 +61,7 @@ public class KafkaConnectSource {
     private Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new ConcurrentHashMap<>();
     private final AtomicBoolean taskRunning = new AtomicBoolean();
 
-    private volatile boolean taskReconfigurationRequested = false;
+    private volatile boolean taskReconfigurationRequested;
 
 
     public KafkaConnectSource(Properties properties) {
@@ -209,7 +209,7 @@ public class KafkaConnectSource {
         }
     }
 
-    private class JetSourceTaskContext implements SourceTaskContext {
+    private final class JetSourceTaskContext implements SourceTaskContext {
         private final Map<String, String> taskConfig;
 
         private JetSourceTaskContext(Map<String, String> taskConfig) {
