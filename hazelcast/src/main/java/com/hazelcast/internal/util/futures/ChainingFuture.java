@@ -57,7 +57,7 @@ public class ChainingFuture<T> extends InternalCompletableFuture<T> {
                     completeExceptionally(t);
                 }
             }
-        });
+        }, defaultExecutor());
     }
 
     private void advanceOrComplete(T response, Iterator<InternalCompletableFuture<T>> invocationIterator) {
