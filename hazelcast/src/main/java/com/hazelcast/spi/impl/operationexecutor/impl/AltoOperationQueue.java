@@ -24,8 +24,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class AltoOperationQueue implements OperationQueue {
 
-    // Is there not a data-race on this field? Because the 'nodeengine' thread sets this field while
-    // the reactor is going to use it.
+    // There is no data-race on this queue because the field is set before the thread is started.
     private Reactor reactor;
     private final Queue<Object> normalQueue;
     private final Queue<Object> priorityQueue;
