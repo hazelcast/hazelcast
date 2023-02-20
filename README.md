@@ -356,6 +356,7 @@ see used in the comments on your PR:
 * *`run-nightly-tests` - run nightly (slow) tests. WARNING: Use with care as this is a resource consuming task.*
 * `run-sql-only` - run default tests in `hazelcast-sql`, `hazelcast-distribution`, and `extensions/mapstore` modules
 * `run-sonar` - run SonarCloud analysis
+* `run-arm64` - run the tests on arm64 machine
 
 Where not indicated, the builds run on a Linux machine with Oracle JDK 8.
 
