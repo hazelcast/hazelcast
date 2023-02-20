@@ -49,6 +49,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadFactory;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -122,16 +123,22 @@ public class TpcServerBootstrap {
 
         Configuration configuration = new Configuration();
         NioReactorBuilder reactorBuilder = new NioReactorBuilder();
-        reactorBuilder.setThreadSupplier(new Supplier<Thread>() {
+        reactorBuilder.setThreadFactory(new ThreadFactory() {
             int index=0;
+
             @Override
-            public Thread get() {
-                OperationExecutorImpl operationExecutor = (OperationExecutorImpl)  nodeEngine.getOperationService().getOperationExecutor();
-                return operationExecutor.getPartitionThreads()[index++];
+            public Thread newThread(Runnable eventloopRunnable) {
+                OperationExecutorImpl operationExecutor = (OperationExecutorImpl)  nodeEngine
+                        .getOperationService()
+                        .getOperationExecutor();
+                AltoPartitionOperationThread operationThread = (AltoPartitionOperationThread) operationExecutor
+                        .getPartitionThreads()[index++];
+                operationThread.setEventloopTask(eventloopRunnable);
+                return operationThread;
             }
         });
-        reactorBuilder.setSchedulerSupplier(() -> new AltoOperationScheduler(1));
 
+        reactorBuilder.setSchedulerSupplier(() -> new AltoOperationScheduler(1));
         configuration.setReactorBuilder(reactorBuilder);
         configuration.setReactorCount(loadEventloopCount());
         return new TpcEngine(configuration);

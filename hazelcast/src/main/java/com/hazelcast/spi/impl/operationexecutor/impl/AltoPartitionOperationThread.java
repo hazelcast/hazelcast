@@ -18,25 +18,22 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 
 
 import com.hazelcast.instance.impl.NodeExtension;
-import com.hazelcast.internal.tpc.SuppliedThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
-
-import java.util.concurrent.CompletableFuture;
 
 
 /**
  * The {@link AltoPartitionOperationThread} subclasses the {@link PartitionOperationThread} and
  * overrides the loop method. In the original PartitionOperationThread, there is a loop that
  * takes items from the operation queue and process them. With the AltoPartitionOperationThread
- * the loop method forwards to the loopTask. The loopTasks loops over even sources (like
+ * the loop method forwards to the eventloopTask. The eventloopTask loops over even sources (like
  * Nio Selectors) and other queues including the OperationQueue. With the AltoPartitionOperationThread
  * the thread blocks on the OperationQueue with a take. With the alto version, it will only poll
  * and block on the Reactor (which in Nio blocks on the selector.select).
  */
-public class AltoPartitionOperationThread extends PartitionOperationThread implements SuppliedThread {
+public class AltoPartitionOperationThread extends PartitionOperationThread {
 
-    private final CompletableFuture<Runnable> eventloopFuture = new CompletableFuture<>();
+    private Runnable eventloopTask;
 
     public AltoPartitionOperationThread(String name,
                                         int threadId,
@@ -48,18 +45,16 @@ public class AltoPartitionOperationThread extends PartitionOperationThread imple
         super(name, threadId, queue, logger, nodeExtension, partitionOperationRunners, configClassLoader);
     }
 
-    public AltoOperationQueue getQueue(){
+    public AltoOperationQueue getQueue() {
         return (AltoOperationQueue) queue;
     }
 
-    @Override
     public void setEventloopTask(Runnable eventloopTask) {
-        eventloopFuture.complete(eventloopTask);
+        this.eventloopTask = eventloopTask;
     }
 
     @Override
     protected void loop() throws Exception {
-        Runnable eventloopTask = eventloopFuture.get();
         eventloopTask.run();
     }
 }

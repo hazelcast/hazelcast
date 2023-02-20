@@ -68,7 +68,6 @@ public abstract class ReactorBuilder {
     int batchSize;
     int clockRefreshPeriod;
     TpcEngine engine;
-    Supplier<Thread> threadSupplier;
 
     protected ReactorBuilder(ReactorType type) {
         this.type = checkNotNull(type);
@@ -113,31 +112,13 @@ public abstract class ReactorBuilder {
     }
 
     /**
-     * Sets the thread supplier. A thread supplier is more flexible compared to a threadFactory
-     * because it is easier to have the dependencies of the thread properly configured
-     * The threads returned by the threadSupplier do need to implement the {@link SuppliedThread}
-     * interface.
-     * <p/>
-     * When set, the threadFactory is set to null.
-     *
-     * @param threadSupplier
-     */
-    public void setThreadSupplier(Supplier<Thread> threadSupplier){
-        this.threadSupplier = checkNotNull(threadSupplier, "threadSupplier");
-        this.threadFactory = null;
-    }
-
-    /**
      * Sets the ThreadFactory used to create the Thread that runs the {@link Reactor}.
-     * <p/>
-     * When set, the thread supplier is set to null.
      *
      * @param threadFactory the ThreadFactory
      * @throws NullPointerException if threadFactory is set to null.
      */
     public void setThreadFactory(ThreadFactory threadFactory) {
         this.threadFactory = checkNotNull(threadFactory, "threadFactory");
-        this.threadSupplier = null;
     }
 
     /**
