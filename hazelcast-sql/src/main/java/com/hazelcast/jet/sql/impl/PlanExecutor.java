@@ -468,7 +468,7 @@ public class PlanExecutor {
                 Util.getNodeEngine(hazelcastInstance));
         Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
         CompletableFuture<Long> future = hazelcastInstance.getMap(plan.mapName())
-                .submitToKey(key, plan.updaterSupplier().get(arguments, hazelcastInstance))
+                .submitToKey(key, plan.updaterSupplier().get(arguments))
                 .toCompletableFuture();
         await(future, timeout);
         return UpdateSqlResultImpl.createUpdateCountResult(0);

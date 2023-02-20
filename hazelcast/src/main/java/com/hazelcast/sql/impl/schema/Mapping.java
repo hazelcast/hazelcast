@@ -35,7 +35,7 @@ import java.util.Objects;
  * represent a mapping.
  */
 @SuppressWarnings("JavadocReference")
-public class Mapping implements IdentifiedDataSerializable, DdlUnparseable {
+public class Mapping implements IdentifiedDataSerializable, SqlCatalogObject {
 
     private String name;
     private String externalName;
@@ -134,8 +134,8 @@ public class Mapping implements IdentifiedDataSerializable, DdlUnparseable {
     public String unparse() {
         StringBuffer buffer = new StringBuffer();
 
-        buffer.append("CREATE MAPPING");
-        buffer.append(" \"").append(name()).append("\" ");
+        buffer.append("CREATE OR REPLACE MAPPING");
+        buffer.append("\"hazelcast\".\"public\".").append(" \"").append(name()).append("\" ");
 
         // external name defaults to mapping name - omit it if it's equal
         if (externalName() != null && !externalName().equals(name())) {

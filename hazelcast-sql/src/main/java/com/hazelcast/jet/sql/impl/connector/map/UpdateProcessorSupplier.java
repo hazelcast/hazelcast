@@ -96,9 +96,7 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
             assert row.getFieldCount() == 1;
             keys.add(row.get(0));
         }
-        return map.submitToKeys(keys, updaterSupplier.get(
-                        evalContext.getArguments(),
-                        evalContext.getNodeEngine().getHazelcastInstance()))
+        return map.submitToKeys(keys, updaterSupplier.get(evalContext.getArguments()))
                 .toCompletableFuture()
                 .thenApply(m -> Traversers.empty());
     }

@@ -40,7 +40,7 @@ public final class HazelcastGetDdlFunction extends HazelcastFunction {
         super(
                 "GET_DDL",
                 SqlKind.OTHER_FUNCTION,
-                ReturnTypes.ARG0_NULLABLE_VARYING,
+                ReturnTypes.explicit(VARCHAR),
                 new ReplaceUnknownOperandTypeInference(VARCHAR),
                 SqlFunctionCategory.SYSTEM
         );

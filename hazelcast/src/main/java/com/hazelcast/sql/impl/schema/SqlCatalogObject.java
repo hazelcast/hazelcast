@@ -21,7 +21,7 @@ import javax.annotation.Nonnull;
 /**
  * Interface for relation object which supports unparsing DDL query for itself.
  */
-public interface DdlUnparseable {
+public interface SqlCatalogObject {
 
     /**
      * @return DDL query for current relation object.

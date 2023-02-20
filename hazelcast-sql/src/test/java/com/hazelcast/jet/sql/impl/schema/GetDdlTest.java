@@ -61,7 +61,7 @@ public class GetDdlTest extends SqlTestSupport {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM a");
 
         assertRowsAnyOrder("SELECT GET_DDL('relation', 'v')", ImmutableList.of(
-                new Row("CREATE VIEW \"v\" AS\n" +
+                new Row("CREATE OR REPLACE VIEW \"hazelcast\".\"public\".\"v\" AS\n" +
                         "SELECT \"a\".\"__key\", \"a\".\"this\"\n" +
                         "FROM \"hazelcast\".\"public\".\"a\" AS \"a\""))
         );
@@ -78,12 +78,28 @@ public class GetDdlTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_queryNullNamespace_then_throws() {
+        SqlResult sqlRows = instance().getSql().execute("SELECT GET_DDL(null, 'b')");
+
+        assertThatThrownBy(() -> sqlRows.iterator().next())
+                .hasCauseInstanceOf(QueryException.class)
+                .hasMessageContaining("Can't fetch DDL query for null namespace");
+    }
+    @Test
     public void when_queryNotSupportedNamespace_then_throws() {
         SqlResult sqlRows = instance().getSql().execute("SELECT GET_DDL('a', 'b')");
 
         assertThatThrownBy(() -> sqlRows.iterator().next())
                 .hasCauseInstanceOf(QueryException.class)
                 .hasMessageContaining("Namespace 'a' is not supported.");
+    }
+
+    @Test
+    public void when_queryNullObject_then_throws() {
+        SqlResult sqlRows = instance().getSql().execute("SELECT GET_DDL('relation', NULL)");
+        assertThatThrownBy(() -> sqlRows.iterator().next())
+                .hasCauseInstanceOf(QueryException.class)
+                .hasMessageContaining("Can't fetch DDL query for null object_name");
     }
 
     @Test

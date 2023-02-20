@@ -25,6 +25,7 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nonnull;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,13 +37,13 @@ import static java.util.Objects.requireNonNull;
  *
  * @see Expression#eval
  */
-public class ExpressionEvalContext {
+public class ExpressionEvalContext implements Serializable {
 
     public static final String SQL_ARGUMENTS_KEY_NAME = "__sql.arguments";
 
     private final List<Object> arguments;
-    private final InternalSerializationService serializationService;
-    private final NodeEngine nodeEngine;
+    private final transient InternalSerializationService serializationService;
+    private final transient NodeEngine nodeEngine;
 
     public ExpressionEvalContext(
             @Nonnull List<Object> arguments,

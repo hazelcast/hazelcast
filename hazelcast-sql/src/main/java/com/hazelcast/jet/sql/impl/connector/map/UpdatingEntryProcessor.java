@@ -68,13 +68,10 @@ public final class UpdatingEntryProcessor
     private UpdatingEntryProcessor(
             KvRowProjector.Supplier rowProjectorSupplier,
             Projector.Supplier valueProjectorSupplier,
-            List<Object> arguments,
-            HazelcastInstance hzInstance
-    ) {
+            List<Object> arguments) {
         this.rowProjectorSupplier = rowProjectorSupplier;
         this.valueProjectorSupplier = valueProjectorSupplier;
         this.arguments = arguments;
-        this.hzInstance = hzInstance;
     }
 
     @Override
@@ -188,8 +185,8 @@ public final class UpdatingEntryProcessor
             this.valueProjectorSupplier = valueProjectorSupplier;
         }
 
-        public EntryProcessor<Object, Object, Long> get(List<Object> arguments, HazelcastInstance hzInstance) {
-            return new UpdatingEntryProcessor(rowProjectorSupplier, valueProjectorSupplier, arguments, hzInstance);
+        public EntryProcessor<Object, Object, Long> get(List<Object> arguments) {
+            return new UpdatingEntryProcessor(rowProjectorSupplier, valueProjectorSupplier, arguments);
         }
 
         @Override

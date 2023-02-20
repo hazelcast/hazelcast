@@ -24,7 +24,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.TriExpression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.schema.DdlUnparseable;
+import com.hazelcast.sql.impl.schema.SqlCatalogObject;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
@@ -45,12 +45,12 @@ public class GetDdlFunction extends TriExpression<String> implements IdentifiedD
     public String eval(Row row, ExpressionEvalContext context) {
         String namespace = asVarchar(operand1, row, context);
         if (namespace == null) {
-            return null;
+            throw QueryException.error("Can't fetch DDL query for null namespace");
         }
 
         String objectName = asVarchar(operand2, row, context);
         if (objectName == null) {
-            return null;
+            throw QueryException.error("Can't fetch DDL query for null object_name");
         }
 
         // Ignore schema for now, the only supported schema at the moment is 'hazelcast.public'.
@@ -66,8 +66,8 @@ public class GetDdlFunction extends TriExpression<String> implements IdentifiedD
         final Object obj = sqlCatalog.get(objectName);
         if (obj == null) {
             throw QueryException.error("Object '" + objectName + "' does not exist in namespace '" + namespace + "'");
-        } else if (obj instanceof DdlUnparseable) {
-            ddl = ((DdlUnparseable) obj).unparse();
+        } else if (obj instanceof SqlCatalogObject) {
+            ddl = ((SqlCatalogObject) obj).unparse();
         } else {
             throw new AssertionError("Object must not be present in information_schema");
         }
