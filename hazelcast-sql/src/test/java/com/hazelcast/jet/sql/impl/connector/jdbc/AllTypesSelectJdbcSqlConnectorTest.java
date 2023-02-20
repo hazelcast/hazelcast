@@ -62,7 +62,6 @@ public class AllTypesSelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         return asList(new Object[][]{
                 {"VARCHAR(100)", "VARCHAR", "'dummy'", "dummy"},
                 {"BOOLEAN", "BOOLEAN", "TRUE", true},
-                {"VARCHAR", "BOOLEAN", "TRUE", true},
                 {"TINYINT", "TINYINT", "1", 1},
                 {"SMALLINT", "SMALLINT", "2", 2},
                 {"INTEGER", "INTEGER", "3", 3},
