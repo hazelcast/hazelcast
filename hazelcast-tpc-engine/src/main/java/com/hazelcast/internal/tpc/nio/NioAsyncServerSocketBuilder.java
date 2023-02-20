@@ -24,8 +24,10 @@ import com.hazelcast.internal.tpc.Option;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.channels.ServerSocketChannel;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
+import static com.hazelcast.internal.tpc.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 
 /**
@@ -75,7 +77,23 @@ public class NioAsyncServerSocketBuilder implements AsyncServerSocketBuilder {
         }
 
         build = true;
-        return new NioAsyncServerSocket(this);
+
+        if (Thread.currentThread() == reactor.eventloopThread()) {
+            return new NioAsyncServerSocket(this);
+        } else {
+            CompletableFuture<NioAsyncServerSocket> future = new CompletableFuture<>();
+            reactor.execute(() -> {
+                try {
+                    NioAsyncServerSocket asyncServerSocket = new NioAsyncServerSocket(this);
+                    future.complete(asyncServerSocket);
+                } catch (Throwable e) {
+                    future.completeExceptionally(e);
+                    throw sneakyThrow(e);
+                }
+            });
+
+            return future.join();
+        }
     }
 
     private void verifyNotBuild() {
