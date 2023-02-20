@@ -42,7 +42,9 @@ import static com.hazelcast.internal.tpc.Reactor.State.TERMINATED;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
 /**
- * A Reactor is a loop that processes events.
+ * A Reactor is an implementation of the reactor design pattern. So it listen to some
+ * event sources and then dispatches the events to the appropriate handler. This is coordinated
+ * from the eventloop that is inside each reactor.
  * <p/>
  * There are various forms of events:
  * <ol>
@@ -85,14 +87,17 @@ public abstract class Reactor implements Executor {
         this.spin = builder.spin;
         this.engine = builder.engine;
         CompletableFuture<Eventloop> eventloopFuture = new CompletableFuture<>();
-        this.eventloopThread = builder.threadFactory.newThread(new EventloopTask(eventloopFuture, builder));
+        this.eventloopThread = builder.threadFactory.newThread(new StartEventloopTask(eventloopFuture, builder));
+
         if (builder.threadNameSupplier != null) {
             eventloopThread.setName(builder.threadNameSupplier.get());
         }
         this.name = builder.reactorNameSupplier.get();
 
         // The eventloopThread is started so eventloop gets created on the eventloop thread.
+        // but the actual processing of the eventloop is only done after start() is called.
         eventloopThread.start();
+
         // wait for the eventloop to be created.
         eventloop = eventloopFuture.join();
         // There is a happens-before edge between writing to the eventloopFuture and
@@ -187,6 +192,7 @@ public abstract class Reactor implements Executor {
      * Creates a new {@link AsyncServerSocketBuilder}.
      *
      * @return the created AsyncSocketBuilder.
+     * @throws IllegalStateException if the reactor isn't running.
      */
     public abstract AsyncSocketBuilder newAsyncSocketBuilder();
 
@@ -197,9 +203,16 @@ public abstract class Reactor implements Executor {
      *                      to be accepted.
      * @return the created AsyncSocketBuilder.
      * @throws NullPointerException if acceptRequest is null.
+     * @throws IllegalStateException if the reactor isn't running.
      */
     public abstract AsyncSocketBuilder newAsyncSocketBuilder(AcceptRequest acceptRequest);
 
+    /**
+     * Creates a new AsyncServerSocketBuilder.
+     *
+     * @return the created AsyncServerSocketBuilder.
+     * @throws IllegalStateException if the reactor isn't running.
+     */
     public abstract AsyncServerSocketBuilder newAsyncServerSocketBuilder();
 
     protected void verifyRunning() {
@@ -328,16 +341,19 @@ public abstract class Reactor implements Executor {
     }
 
     /**
-     * The EventloopTask does 3 important things:
-     * 1) configure the thread affinity.
-     * 2) Create the eventloop
-     * 3) Run the eventloop
+     * The EventloopTask does a few important things:
+     * <ol>
+     *     <li>Configure the thread affinity</li>
+     *     <li>Create the eventloop</li>
+     *     <li>Run the eventloop</li>
+     *     <li>Manage the lifecycle of the reactor when it terminates.</li>
+     * </ol>
      */
-    private final class EventloopTask implements Runnable {
+    private final class StartEventloopTask implements Runnable {
         private final CompletableFuture<Eventloop> future;
         private final ReactorBuilder builder;
 
-        private EventloopTask(CompletableFuture<Eventloop> future, ReactorBuilder builder) {
+        private StartEventloopTask(CompletableFuture<Eventloop> future, ReactorBuilder builder) {
             this.future = future;
             this.builder = builder;
         }

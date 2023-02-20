@@ -16,25 +16,45 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
+
+import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
+
+
 /**
  * The {@link AltoPartitionOperationThread} subclasses the {@link PartitionOperationThread} and
  * overrides the loop method. In the original PartitionOperationThread, there is a loop that
  * takes items from the operation queue and process them. With the AltoPartitionOperationThread
- * the loop method forwards to the loopTask. The loopTasks loops over even sources (like
+ * the loop method forwards to the eventloopTask. The eventloopTask loops over even sources (like
  * Nio Selectors) and other queues including the OperationQueue. With the AltoPartitionOperationThread
  * the thread blocks on the OperationQueue with a take. With the alto version, it will only poll
  * and block on the Reactor (which in Nio blocks on the selector.select).
  */
 public class AltoPartitionOperationThread extends PartitionOperationThread {
 
-    private final Runnable loopTask;
+    private Runnable eventloopTask;
 
-    public AltoPartitionOperationThread(Runnable loopTask) {
-        this.loopTask = loopTask;
+    public AltoPartitionOperationThread(String name,
+                                        int threadId,
+                                        AltoOperationQueue queue,
+                                        ILogger logger,
+                                        NodeExtension nodeExtension,
+                                        OperationRunner[] partitionOperationRunners,
+                                        ClassLoader configClassLoader) {
+        super(name, threadId, queue, logger, nodeExtension, partitionOperationRunners, configClassLoader);
+    }
+
+    public AltoOperationQueue getQueue() {
+        return (AltoOperationQueue) queue;
+    }
+
+    public void setEventloopTask(Runnable eventloopTask) {
+        this.eventloopTask = eventloopTask;
     }
 
     @Override
-    protected void loop() {
-        loopTask.run();
+    protected void loop() throws Exception {
+        eventloopTask.run();
     }
 }

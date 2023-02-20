@@ -45,9 +45,6 @@ public class PartitionOperationThread extends OperationThread {
         this.partitionOperationRunners = partitionOperationRunners;
     }
 
-    public PartitionOperationThread() {
-    }
-
     /**
      * For each partition there is a {@link OperationRunner} instance. So we need
      * to find the right one based on the partition ID.
