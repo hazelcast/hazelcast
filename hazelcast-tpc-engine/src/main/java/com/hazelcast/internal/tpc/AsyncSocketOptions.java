@@ -60,19 +60,19 @@ public interface AsyncSocketOptions {
     Option<Boolean> TCP_NODELAY = new Option<>("TCP_NODELAY", Boolean.class);
 
     /**
-     * See {@link jdk.net.ExtendedSocketOptions#TCP_KEEPIDLE}
+     * See {@code jdk.net.ExtendedSocketOptions#TCP_KEEPIDLE}
      */
     Option<Integer> TCP_KEEPIDLE
             = new Option<>("TCP_KEEPIDLE", Integer.class);
 
     /**
-     * See {@link jdk.net.ExtendedSocketOptions#TCP_KEEPINTERVAL}
+     * See {@code jdk.net.ExtendedSocketOptions#TCP_KEEPINTERVAL}
      */
     Option<Integer> TCP_KEEPINTERVAL
             = new Option<>("TCP_KEEPINTERVAL", Integer.class);
 
     /**
-     * See {@link jdk.net.ExtendedSocketOptions#TCP_KEEPCOUNT}
+     * See {@code jdk.net.ExtendedSocketOptions#TCP_KEEPCOUNT}
      */
     Option<Integer> TCP_KEEPCOUNT
             = new Option<>("TCP_KEEPCOUNT", Integer.class);

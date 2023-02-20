@@ -40,4 +40,21 @@ public final class ReflectionUtil {
         }
     }
 
+    /**
+     * Finds the value for a static field. If the field doesn't exist, null is returned.
+     *
+     * @param className name of the class.
+     * @param fieldName the name of the static field.
+     * @param <E>
+     * @return the value of the static field. If the field doesn't exist, null is returned.
+     */
+    public static <E> E findStaticFieldValue(String className, String fieldName) {
+        try {
+            Class<?> clazz = Class.forName("jdk.net.ExtendedSocketOptions");
+            Field field = clazz.getField(fieldName);
+            return (E) field.get(null);
+        } catch (Exception ignore) {
+            return null;
+        }
+    }
 }
