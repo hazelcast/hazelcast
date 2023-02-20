@@ -30,6 +30,7 @@ import static com.hazelcast.internal.tpc.TpcTestSupport.assertTrueEventually;
 import static com.hazelcast.internal.tpc.TpcTestSupport.assertTrueTwoSeconds;
 import static com.hazelcast.internal.tpc.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_LONG;
+import static com.hazelcast.internal.tpc.util.BufferUtil.upcast;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -109,7 +110,7 @@ public abstract class AsyncSocket_ReadableTest {
     static class NullReadHandler extends ReadHandler {
         @Override
         public void onRead(ByteBuffer receiveBuffer) {
-            receiveBuffer.position(receiveBuffer.limit());
+            upcast(receiveBuffer).position(receiveBuffer.limit());
         }
     }
 }

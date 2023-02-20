@@ -18,6 +18,8 @@ package com.hazelcast.internal.tpc;
 
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.internal.tpc.util.BufferUtil.upcast;
+
 
 /**
  * A {@link ReadHandler} that disposes any bytes on the receive buffer.
@@ -25,6 +27,6 @@ import java.nio.ByteBuffer;
 public class DevNullReadHandler extends ReadHandler {
     @Override
     public void onRead(ByteBuffer receiveBuffer) {
-        receiveBuffer.position(receiveBuffer.limit());
+        upcast(receiveBuffer).position(receiveBuffer.limit());
     }
 }
