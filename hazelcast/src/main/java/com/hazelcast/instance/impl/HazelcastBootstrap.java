@@ -177,8 +177,7 @@ public final class HazelcastBootstrap {
                     try {
                         remembered.shutdown();
                     } catch (Exception exception) {
-                        System.err.println("Shutdown failed with:");
-                        exception.printStackTrace();
+                        LOGGER.severe("Shutdown failed with:", exception);
                     }
                 }
                 resetSupplier();
