@@ -22,6 +22,7 @@ import com.hazelcast.internal.tpc.AsyncSocketBuilder;
 import com.hazelcast.internal.tpc.Eventloop;
 import com.hazelcast.internal.tpc.Reactor;
 import com.hazelcast.internal.tpc.ReactorBuilder;
+import com.hazelcast.internal.tpc.StorageDeviceRegistry;
 
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;

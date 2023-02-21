@@ -18,9 +18,9 @@ package com.hazelcast.file;
 
 
 import com.hazelcast.internal.tpc.AsyncFile;
+import com.hazelcast.internal.tpc.StorageDeviceRegistry;
 import com.hazelcast.internal.tpc.iouring.IOUringReactor;
 import com.hazelcast.internal.tpc.iouring.IOUringReactorBuilder;
-import com.hazelcast.internal.tpc.iouring.StorageDeviceRegistry;
 import com.hazelcast.internal.util.ThreadAffinity;
 
 import java.nio.ByteBuffer;
@@ -48,11 +48,12 @@ import static com.hazelcast.internal.tpc.util.OS.pageSize;
 public class AsyncFileWriteBenchmark {
     private static String path = "/run/media/pveentjer/b72258e9-b9c9-4f7c-8b76-cef961eeec55";
 
+    public static final boolean sequential = true;
     public static final long operationsPerThread = 4 * 1000 * 1000;
     public static final int concurrencyPerThread = 64;
     public static final int openFlags = O_CREAT | O_DIRECT | O_WRONLY;
-    public static final int blockSize = pageSize();
-    public static final long fileSize = 1024 * blockSize;
+    public static final int blockSize = 8 * pageSize();
+    public static final long fileSize = 1024l * blockSize;
     public static final int reactorCount = 1;
 
     public static void main(String[] args) throws Exception {
@@ -112,7 +113,7 @@ public class AsyncFileWriteBenchmark {
         CountDownLatch completionLatch = new CountDownLatch(concurrencyPerThread);
         reactor.offer(() -> {
             for (int k = 0; k < concurrencyPerThread; k++) {
-                PWriteLoop loop = new PWriteLoop();
+                WriteLoop loop = new WriteLoop();
                 loop.latch = completionLatch;
                 loop.bufferAddress = bufferAddress;
                 loop.operations = sequentialOperations;
@@ -129,36 +130,42 @@ public class AsyncFileWriteBenchmark {
         CompletableFuture<AsyncFile> initFuture = new CompletableFuture<>();
         eventloop.offer(() -> {
             AsyncFile file = eventloop.eventloop().newAsyncFile(randomTmpFile(dir));
-            file.open(openFlags, PERMISSIONS_ALL)
-                    .then((o, o2) -> file.fallocate(0, 0, fileSize)
-                            .then((o1, o21) -> {
-                                initFuture.complete(file);
-                            }));
+            file.open(openFlags, PERMISSIONS_ALL).then((o, o2) -> file.fallocate(0, 0, fileSize).then((o1, o21) -> {
+                initFuture.complete(file);
+            }));
         });
 
         return initFuture.get();
     }
 
-    private static class PWriteLoop implements Runnable, BiConsumer<Integer, Throwable> {
+    private static class WriteLoop implements Runnable, BiConsumer<Integer, Throwable> {
         private long count;
         private AsyncFile file;
         private long bufferAddress;
         private long operations;
         private CountDownLatch latch;
         private IOUringReactor reactor;
-        private final int range = (int) (fileSize / blockSize);
+        private final int blockCount = (int) (fileSize / blockSize);
         private final ThreadLocalRandom random = ThreadLocalRandom.current();
+        private long block;
 
         @Override
         public void run() {
             if (count < operations) {
                 count++;
 
-                long offset = ((long) random.nextInt(range)) * blockSize;
+                long offset;
+                if (sequential) {
+                    offset = block * blockSize;
+                    block++;
+                    if (block > blockCount) {
+                        block = 0;
+                    }
+                } else {
+                    offset = ((long) random.nextInt(blockCount)) * blockSize;
+                }
 
-                file.pwrite(offset, blockSize, bufferAddress)
-                        .then(this)
-                        .releaseOnComplete();
+                file.pwrite(offset, blockSize, bufferAddress).then(this).releaseOnComplete();
             } else {
                 latch.countDown();
             }

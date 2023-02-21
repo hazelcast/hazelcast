@@ -32,6 +32,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiConsumer;
 
+import static com.hazelcast.internal.tpc.AsyncFile.O_CREAT;
+import static com.hazelcast.internal.tpc.AsyncFile.O_DIRECT;
+import static com.hazelcast.internal.tpc.AsyncFile.O_RDONLY;
+import static com.hazelcast.internal.tpc.AsyncFile.PERMISSIONS_ALL;
 import static com.hazelcast.internal.tpc.util.BufferUtil.addressOf;
 import static com.hazelcast.internal.tpc.util.BufferUtil.toPageAlignedAddress;
 import static com.hazelcast.internal.tpc.util.OS.pageSize;
@@ -39,21 +43,22 @@ import static com.hazelcast.internal.tpc.util.OS.pageSize;
 public class AsyncFileReadBenchmark {
     private static String path = System.getProperty("user.home");
 
+    public static boolean sequential = true;
     public static long operations = 100 * 1000 * 1000;
     public static int concurrency = 1;
-    public static int openFlags = AsyncFile.O_CREAT | AsyncFile.O_DIRECT | AsyncFile.O_RDONLY;
+    public static int openFlags = O_CREAT | O_DIRECT | O_RDONLY;
     public static final int blockSize = pageSize();
-    public static final long fileSize = 1024 * blockSize;
+    public static final long fileSize = 1024l * blockSize;
 
     public static void main(String[] args) throws InterruptedException, ExecutionException {
         IOUringReactorBuilder configuration = new IOUringReactorBuilder();
         configuration.setThreadAffinity(new ThreadAffinity("1"));
         configuration.setSpin(false);
-        IOUringReactor eventloop = new IOUringReactor(configuration);
-        eventloop.start();
+        IOUringReactor reactor = new IOUringReactor(configuration);
+        reactor.start();
 
         List<AsyncFile> files = new ArrayList<>();
-        files.add(initFile(eventloop, path));
+        files.add(initFile(reactor, path));
 
         System.out.println("Init done");
 
@@ -64,14 +69,14 @@ public class AsyncFileReadBenchmark {
         long sequentialOperations = operations / concurrency;
 
         CountDownLatch latch = new CountDownLatch(concurrency);
-        eventloop.offer(() -> {
+        reactor.offer(() -> {
             for (int k = 0; k < concurrency; k++) {
-                PReadLoop loop = new PReadLoop();
+                ReadLoop loop = new ReadLoop();
                 loop.latch = latch;
                 loop.file = files.get(k % files.size());
                 loop.sequentialOperations = sequentialOperations;
-                loop.eventloop = eventloop;
-                eventloop.offer(loop);
+                loop.eventloop = reactor;
+                reactor.offer(loop);
             }
         });
 
@@ -87,40 +92,42 @@ public class AsyncFileReadBenchmark {
         CompletableFuture<AsyncFile> initFuture = new CompletableFuture<>();
         eventloop.offer(() -> {
             AsyncFile file = eventloop.eventloop().newAsyncFile(path);
-            file.open(openFlags, AsyncFile.PERMISSIONS_ALL).then(new BiConsumer() {
-                @Override
-                public void accept(Object o, Object o2) {
-                    initFuture.complete(file);
-                }
-            });
+            file.open(openFlags, PERMISSIONS_ALL).then((BiConsumer) (o, o2) -> initFuture.complete(file));
         });
 
         return initFuture.get();
     }
 
-    private static class PReadLoop implements Runnable, BiConsumer<Integer, Throwable> {
+    private static class ReadLoop implements Runnable, BiConsumer<Integer, Throwable> {
         private long count;
         private AsyncFile file;
         private long sequentialOperations;
         private CountDownLatch latch;
         private IOUringReactor eventloop;
         private final ThreadLocalRandom random = ThreadLocalRandom.current();
-        private final int range = (int) (fileSize / blockSize);
-
-        ByteBuffer buffer = ByteBuffer.allocateDirect(20 * pageSize());
-        long rawAddress = addressOf(buffer);
-        long bufferAddress = toPageAlignedAddress(rawAddress);
+        private final int blockCount = (int) (fileSize / blockSize);
+        private final ByteBuffer buffer = ByteBuffer.allocateDirect(blockSize + pageSize());
+        private final long rawAddress = addressOf(buffer);
+        private final long bufferAddress = toPageAlignedAddress(rawAddress);
+        private long block;
 
         @Override
         public void run() {
             if (count < sequentialOperations) {
                 count++;
 
-                long offset = ((long) random.nextInt(range)) * blockSize;
+                long offset;
+                if (sequential) {
+                    offset = block * blockSize;
+                    block++;
+                    if (block > blockCount) {
+                        block = 0;
+                    }
+                } else {
+                    offset = ((long) random.nextInt(blockCount)) * blockSize;
+                }
 
-                //file.nop().then(this).releaseOnComplete();
                 file.pread(offset, blockSize, bufferAddress).then(this).releaseOnComplete();
-
             } else {
                 latch.countDown();
             }

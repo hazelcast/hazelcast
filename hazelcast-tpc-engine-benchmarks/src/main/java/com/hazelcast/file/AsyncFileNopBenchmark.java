@@ -19,7 +19,7 @@ package com.hazelcast.file;
 import com.hazelcast.internal.tpc.AsyncFile;
 import com.hazelcast.internal.tpc.iouring.IOUringReactor;
 import com.hazelcast.internal.tpc.iouring.IOUringReactorBuilder;
-import com.hazelcast.internal.tpc.iouring.StorageDeviceRegistry;
+import com.hazelcast.internal.tpc.StorageDeviceRegistry;
 import com.hazelcast.internal.util.ThreadAffinity;
 
 import java.nio.file.FileSystems;
@@ -31,6 +31,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 
+import static com.hazelcast.internal.tpc.AsyncFile.PERMISSIONS_ALL;
 import static com.hazelcast.internal.tpc.util.OS.pageSize;
 
 public class AsyncFileNopBenchmark {
@@ -48,12 +49,12 @@ public class AsyncFileNopBenchmark {
         configuration.setThreadAffinity(new ThreadAffinity("1"));
         //  configuration.setSpin(true);
         configuration.setStorageDeviceRegistry(storageDeviceRegistry);
-        IOUringReactor eventloop = new IOUringReactor(configuration);
-        eventloop.start();
+        IOUringReactor reactor = new IOUringReactor(configuration);
+        reactor.start();
 
         List<AsyncFile> files = new ArrayList<>();
-        //files.add(initFile(eventloop, "/home/pveentjer"));
-        files.add(initFile(eventloop, path));
+        //files.add(initFile(reactor, "/home/pveentjer"));
+        files.add(initFile(reactor, path));
 
         System.out.println("Init done");
 
@@ -64,14 +65,14 @@ public class AsyncFileNopBenchmark {
         long sequentialOperations = operations / concurrency;
 
         CountDownLatch latch = new CountDownLatch(concurrency);
-        eventloop.offer(() -> {
+        reactor.offer(() -> {
             for (int k = 0; k < concurrency; k++) {
                 NopLoop loop = new NopLoop();
                 loop.latch = latch;
                 loop.sequentialOperations = sequentialOperations;
-                loop.eventloop = eventloop;
+                loop.eventloop = reactor;
                 loop.file = files.get(k % files.size());
-                eventloop.offer(loop);
+                reactor.offer(loop);
             }
         });
 
@@ -85,8 +86,8 @@ public class AsyncFileNopBenchmark {
         CompletableFuture<AsyncFile> initFuture = new CompletableFuture<>();
         eventloop.offer(() -> {
             AsyncFile file = eventloop.eventloop().newAsyncFile(randomTmpFile(dir));
-            file.open(openFlags, AsyncFile.PERMISSIONS_ALL)
-                    .then((o, o2) -> file.fallocate(0, 0, 100 * 1024 * pageSize())
+            file.open(openFlags, PERMISSIONS_ALL)
+                    .then((o, o2) -> file.fallocate(0, 0, pageSize())
                             .then((o1, o21) -> {
                                 initFuture.complete(file);
                             }));

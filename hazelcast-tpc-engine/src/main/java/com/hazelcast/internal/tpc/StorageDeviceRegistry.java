@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc.iouring;
+package com.hazelcast.internal.tpc;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -22,15 +22,13 @@ import java.util.List;
 
 import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
 
-// This thing sucks because it is specific to io uring even though it should be something for all
-// eventloop implementations.
 public class StorageDeviceRegistry {
     private final List<StorageDevice> devs = new ArrayList<>();
 
     public StorageDeviceRegistry() {
     }
 
-    StorageDevice findStorageDevice(String path) {
+    public StorageDevice findStorageDevice(String path) {
         for (StorageDevice dev : devs) {
             if (path.startsWith(dev.path)) {
                 return dev;

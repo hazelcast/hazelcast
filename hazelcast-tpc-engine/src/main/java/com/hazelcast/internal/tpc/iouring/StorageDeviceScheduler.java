@@ -17,6 +17,7 @@
 package com.hazelcast.internal.tpc.iouring;
 
 import com.hazelcast.internal.tpc.Promise;
+import com.hazelcast.internal.tpc.StorageDevice;
 import com.hazelcast.internal.tpc.util.CircularQueue;
 import com.hazelcast.internal.tpc.util.LongObjectHashMap;
 import com.hazelcast.internal.tpc.util.SlabAllocator;

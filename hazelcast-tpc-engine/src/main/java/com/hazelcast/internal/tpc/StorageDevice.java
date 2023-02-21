@@ -1,4 +1,4 @@
-package com.hazelcast.internal.tpc.iouring;
+package com.hazelcast.internal.tpc;
 
 /**
  * Represents some storage device.
@@ -6,9 +6,9 @@ package com.hazelcast.internal.tpc.iouring;
  * One of the problems is that every eventloop will assume full ownership of this device.
  */
 public class StorageDevice {
-    final int maxConcurrent;
-    final String path;
-    final int maxPending;
+    public final int maxConcurrent;
+    public final String path;
+    public final int maxPending;
 
     public StorageDevice(String path,
                          int maxConcurrent,

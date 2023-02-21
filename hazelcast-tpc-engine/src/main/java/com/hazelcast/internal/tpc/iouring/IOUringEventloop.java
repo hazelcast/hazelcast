@@ -3,6 +3,8 @@ package com.hazelcast.internal.tpc.iouring;
 import com.hazelcast.internal.tpc.AsyncFile;
 import com.hazelcast.internal.tpc.Eventloop;
 import com.hazelcast.internal.tpc.Scheduler;
+import com.hazelcast.internal.tpc.StorageDevice;
+import com.hazelcast.internal.tpc.StorageDeviceRegistry;
 import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpc.iobuffer.NonConcurrentIOBufferAllocator;
 import com.hazelcast.internal.tpc.util.LongObjectHashMap;

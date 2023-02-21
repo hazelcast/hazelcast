@@ -19,6 +19,8 @@ package com.hazelcast.internal.tpc.iouring;
 
 import com.hazelcast.internal.tpc.AsyncFile;
 import com.hazelcast.internal.tpc.Promise;
+import com.hazelcast.internal.tpc.StorageDevice;
+import com.hazelcast.internal.tpc.StorageDeviceRegistry;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

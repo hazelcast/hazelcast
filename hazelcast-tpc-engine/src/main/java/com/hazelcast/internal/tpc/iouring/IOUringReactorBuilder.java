@@ -18,6 +18,7 @@ package com.hazelcast.internal.tpc.iouring;
 
 import com.hazelcast.internal.tpc.ReactorBuilder;
 import com.hazelcast.internal.tpc.ReactorType;
+import com.hazelcast.internal.tpc.StorageDeviceRegistry;
 
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
