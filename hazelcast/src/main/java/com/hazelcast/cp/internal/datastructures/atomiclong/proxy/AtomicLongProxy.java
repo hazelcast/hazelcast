@@ -37,7 +37,9 @@ import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
@@ -53,6 +55,7 @@ public class AtomicLongProxy implements IAtomicLong {
     private final RaftGroupId groupId;
     private final String proxyName;
     private final String objectName;
+    private final Executor internalAsyncExecutor;
 
     public AtomicLongProxy(NodeEngine nodeEngine, RaftGroupId groupId, String proxyName, String objectName) {
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
@@ -60,6 +63,7 @@ public class AtomicLongProxy implements IAtomicLong {
         this.groupId = groupId;
         this.proxyName = proxyName;
         this.objectName = objectName;
+        this.internalAsyncExecutor = nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
     @Override
@@ -232,9 +236,9 @@ public class AtomicLongProxy implements IAtomicLong {
             } else {
                 InternalCompletableFuture<Long> future =
                         invocationManager.query(groupId, new LocalGetOp(objectName), queryPolicy);
-                future.whenCompleteAsync(completingCallback(resultFuture));
+                future.whenCompleteAsync(completingCallback(resultFuture), internalAsyncExecutor);
             }
-        });
+        }, internalAsyncExecutor);
         return resultFuture;
     }
 
