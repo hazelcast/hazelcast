@@ -50,7 +50,7 @@ public final class ReflectionUtil {
      */
     public static <E> E findStaticFieldValue(String className, String fieldName) {
         try {
-            Class<?> clazz = Class.forName("jdk.net.ExtendedSocketOptions");
+            Class<?> clazz = Class.forName(className);
             Field field = clazz.getField(fieldName);
             return (E) field.get(null);
         } catch (Exception ignore) {
