@@ -16,9 +16,12 @@
 
 package com.hazelcast.mapstore;
 
+import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlService;
+
+import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
 
@@ -43,7 +46,11 @@ final class MappingHelper {
         sqlService.execute("DROP MAPPING IF EXISTS \"" + mappingName + "\"").close();
     }
 
-    public static SqlRowMetadata loadMetadataFromMapping(SqlService sqlService, String mapping) {
+    public static List<SqlColumnMetadata> loadColumnMetadataFromMapping(SqlService sqlService, String mapping) {
+        return loadRowMetadataFromMapping(sqlService,mapping).getColumns();
+    }
+
+    public static SqlRowMetadata loadRowMetadataFromMapping(SqlService sqlService, String mapping) {
         try (SqlResult result = sqlService.execute("SELECT * FROM \"" + mapping + "\" LIMIT 0")) {
             return result.getRowMetadata();
         }

@@ -8,7 +8,7 @@ import com.hazelcast.sql.SqlService;
 
 import java.util.List;
 
-import static com.hazelcast.mapstore.MappingHelper.loadMetadataFromMapping;
+import static com.hazelcast.mapstore.MappingHelper.loadRowMetadataFromMapping;
 import static com.hazelcast.mapstore.validators.ExistingMappingValidator.validateColumnsExist;
 
 class ExistingMappingReader {
@@ -27,7 +27,7 @@ class ExistingMappingReader {
             for (SqlRow sqlRow : mappings) {
                 String name = sqlRow.getObject(MAPPING_NAME_COLUMN);
                 if (name.equals(mappingName)) {
-                    SqlRowMetadata rowMetadata = loadMetadataFromMapping(sqlService, name);
+                    SqlRowMetadata rowMetadata = loadRowMetadataFromMapping(sqlService, name);
                     validateColumnsExist(rowMetadata, genericMapStoreProperties);
                     columnMetadataList = rowMetadata.getColumns();
                     break;

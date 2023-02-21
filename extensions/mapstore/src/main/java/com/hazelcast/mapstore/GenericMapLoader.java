@@ -52,7 +52,8 @@ import java.util.stream.Stream;
 import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
 import static com.hazelcast.mapstore.FromSqlRowConverter.toGenericRecord;
 import static com.hazelcast.mapstore.MappingHelper.dropMapping;
-import static com.hazelcast.mapstore.MappingHelper.loadMetadataFromMapping;
+import static com.hazelcast.mapstore.MappingHelper.loadColumnMetadataFromMapping;
+import static com.hazelcast.mapstore.MappingHelper.loadRowMetadataFromMapping;
 import static com.hazelcast.mapstore.MappingTypeGetter.getMappingType;
 import static com.hazelcast.mapstore.validators.ExistingMappingValidator.validateColumn;
 import static com.hazelcast.mapstore.validators.MapStoreConfigValidator.validateMapStoreConfig;
@@ -178,7 +179,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
             ).close();
 
             if (!genericMapStoreProperties.hasColumns()) {
-                columnMetadataList = loadMetadataFromMapping(sqlService, mappingName).getColumns();
+                columnMetadataList = loadColumnMetadataFromMapping(sqlService, mappingName);
             }
             queries = new Queries(mappingName, genericMapStoreProperties.idColumn, columnMetadataList);
         } catch (Exception e) {
@@ -198,7 +199,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
     private String resolveMappingColumns(String tableName, String dataLinkRef) {
         String tempMapping = "temp_mapping_" + UuidUtil.newUnsecureUuidString();
         createMapping(tempMapping, tableName, dataLinkRef);
-        SqlRowMetadata rowMetadata = loadMetadataFromMapping(sqlService, tempMapping);
+        SqlRowMetadata rowMetadata = loadRowMetadataFromMapping(sqlService, tempMapping);
         columnMetadataList = rowMetadata.getColumns();
         dropMapping(sqlService, tempMapping);
 
