@@ -306,6 +306,7 @@
                                     org.hibernate.engine.jdbc.connections.spi;resolution:=optional,
                                     org.hibernate.service;resolution:=optional,
                                     org.hibernate.service.spi;resolution:=optional,
+                                    net.openhft.affinity;resolution:=optional,
                                     *
                                 </Import-Package>
                                 <Bundle-Name>Hazelcast(Core)</Bundle-Name>
