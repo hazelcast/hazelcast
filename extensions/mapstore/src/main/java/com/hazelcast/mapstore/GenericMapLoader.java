@@ -51,7 +51,6 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.mapstore.FromSqlRowConverter.toGenericRecord;
 import static com.hazelcast.mapstore.MappingHelper.createMappingWithColumns;
-import static com.hazelcast.mapstore.MappingHelper.dropMapping;
 import static com.hazelcast.mapstore.MappingHelper.loadColumnMetadataFromMapping;
 import static com.hazelcast.mapstore.MappingHelper.loadRowMetadataFromMapping;
 import static com.hazelcast.mapstore.MappingTypeGetter.getMappingType;
@@ -199,7 +198,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
         createMapping(tempMapping, tableName, dataLinkRef);
         SqlRowMetadata rowMetadata = loadRowMetadataFromMapping(sqlService, tempMapping);
         columnMetadataList = rowMetadata.getColumns();
-        dropMapping(sqlService, tempMapping);
+        dropMapping(tempMapping);
 
         return Stream.concat(of(genericMapStoreProperties.idColumn), genericMapStoreProperties.columns.stream())
                 .distinct() // avoid duplicate id column if present in columns property
@@ -230,12 +229,25 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
 
     @Override
     public void destroy() {
-        ManagedExecutorService asyncExecutor = getMapStoreExecutor();
+        ManagedExecutorService asyncExecutor = nodeEngine()
+                .getExecutionService()
+                .getExecutor(ExecutionService.MAP_STORE_OFFLOADABLE_EXECUTOR);
 
         asyncExecutor.submit(() -> {
             awaitInitFinished();
-            dropMapping(sqlService, mappingName);
+            if (instance.isRunning()) {
+                dropMapping(mappingName);
+            }
         });
+    }
+
+    private void dropMapping(String mappingName) {
+        logger.info("Dropping mapping " + mappingName);
+        try {
+            MappingHelper.dropMapping(sqlService,mappingName);
+        } catch (Exception e) {
+            logger.warning("Failed to drop mapping " + mappingName, e);
+        }
     }
 
     @Override
