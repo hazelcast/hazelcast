@@ -22,16 +22,16 @@ import com.hazelcast.sql.SqlColumnMetadata;
 
 import java.util.List;
 
-final class GenericRecordUtils {
+final class ToJDBCParametersConverter {
 
-    private GenericRecordUtils() {
+    private ToJDBCParametersConverter() {
     }
 
-    // Get JDBC parameter values for columns from GenericRecord except for the primary key column
-    static <K> JDBCParameters toJDBCParameters(K key,
-                                               GenericRecord genericRecord,
-                                               List<SqlColumnMetadata> columnMetadataList,
-                                               String idColumn) {
+    // Convert key and GenericRecord to JDBC parameter values
+    static <K> JDBCParameters convert(K key,
+                                      GenericRecord genericRecord,
+                                      List<SqlColumnMetadata> columnMetadataList,
+                                      String idColumn) {
 
         JDBCParameters jdbcParameters = new JDBCParameters();
 

@@ -28,7 +28,7 @@ public class JDBCParametersTest {
         JDBCParameters jDBCParameters = new JDBCParameters();
         jDBCParameters.setParams(new Object[]{1, 2, 3});
 
-        jDBCParameters.shiftParametersForUpdate();
+        jDBCParameters.shiftIdParameterToEnd();
 
         Object[] params = jDBCParameters.getParams();
 
@@ -42,7 +42,7 @@ public class JDBCParametersTest {
         jDBCParameters.setParams(new Object[]{1, 2, 3});
         jDBCParameters.setIdPos(1);
 
-        jDBCParameters.shiftParametersForUpdate();
+        jDBCParameters.shiftIdParameterToEnd();
 
         Object[] params = jDBCParameters.getParams();
 

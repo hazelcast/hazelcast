@@ -27,7 +27,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class GenericRecordUtilsTest {
+public class ToJDBCParametersConverterTest {
 
     @Test
     public void testToJDBCParameters() {
@@ -46,7 +46,7 @@ public class GenericRecordUtilsTest {
                 .build();
 
         Integer key = 10;
-        JDBCParameters jdbcParameters = GenericRecordUtils.toJDBCParameters(key, genericRecord,
+        JDBCParameters jdbcParameters = ToJDBCParametersConverter.convert(key, genericRecord,
                 columnMetadata,
                 "id");
 

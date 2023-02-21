@@ -37,7 +37,7 @@ class JDBCParameters {
         this.params = params;
     }
 
-    void shiftParametersForUpdate() {
+    void shiftIdParameterToEnd() {
         // Move the id parameter to last position and shift everything else down
         List<Object> paramsList = new ArrayList<>(Arrays.asList(params));
         Object idValue = paramsList.remove(idPos);
