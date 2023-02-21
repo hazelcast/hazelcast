@@ -47,7 +47,7 @@ public class IOUringReactor extends Reactor {
 
     //todo: Litter; we need to come up with better solution.
     protected final Set<AutoCloseable> closeables = new CopyOnWriteArraySet<>();
-    protected final StorageDeviceRegistry storageScheduler;
+    protected final StorageDeviceRegistry deviceRegistry;
     private final EventFd eventFd;
 
     public IOUringReactor() {
@@ -56,7 +56,7 @@ public class IOUringReactor extends Reactor {
 
     public IOUringReactor(IOUringReactorBuilder builder) {
         super(builder);
-        this.storageScheduler = builder.deviceRegistry;
+        this.deviceRegistry = builder.deviceRegistry;
         this.eventFd = ((IOUringEventloop) eventloop()).eventfd;
     }
 

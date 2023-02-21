@@ -31,16 +31,14 @@ public class StorageDeviceScheduler {
     private int concurrent;
     private final CircularQueue<Op> pending;
     private final SlabAllocator<Op> opAllocator;
-    private final IOUringEventloop eventloop;
+    IOUringEventloop eventloop;
 
-    public StorageDeviceScheduler(String path,
-                                  int maxConcurrent,
-                                  int maxPending,
+    public StorageDeviceScheduler(StorageDevice dev,
                                   IOUringEventloop eventloop) {
-        this.path = path;
-        this.maxConcurrent = maxConcurrent;
-        this.pending = new CircularQueue<>(maxPending);
-        this.opAllocator = new SlabAllocator<>(maxPending, Op::new);
+        this.path = dev.path;
+        this.maxConcurrent = dev.maxConcurrent;
+        this.pending = new CircularQueue<>(dev.maxPending);
+        this.opAllocator = new SlabAllocator<>(dev.maxPending, Op::new);
         this.eventloop = eventloop;
         this.handlers = eventloop.handlers;
         this.sq = eventloop.sq;

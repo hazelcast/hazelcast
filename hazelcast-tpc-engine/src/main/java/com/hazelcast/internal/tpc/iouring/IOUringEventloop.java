@@ -11,6 +11,8 @@ import com.hazelcast.internal.tpc.util.UnsafeLocator;
 import org.jctools.queues.MpmcArrayQueue;
 import sun.misc.Unsafe;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.tpc.iouring.IOUring.IORING_OP_READ;
@@ -24,8 +26,8 @@ public class IOUringEventloop extends Eventloop {
     private final static Unsafe UNSAFE = UnsafeLocator.UNSAFE;
 
     private final IOUringReactor ioUringReactor;
-    private final StorageDeviceRegistry storageScheduler;
-
+    private final StorageDeviceRegistry deviceRegistry;
+    final Map<StorageDevice, StorageDeviceScheduler> deviceSchedulers = new HashMap<>();
     private final IOUring uring;
 
     final LongObjectHashMap<IOCompletionHandler> handlers = new LongObjectHashMap<>(4096);
@@ -46,10 +48,12 @@ public class IOUringEventloop extends Eventloop {
     private long permanentHandlerIdGenerator = 0;
     private long temporaryHandlerIdGenerator = -1;
 
+
+
     public IOUringEventloop(IOUringReactor reactor, IOUringReactorBuilder builder) {
         super(reactor, builder);
         this.ioUringReactor = reactor;
-        this.storageScheduler = reactor.storageScheduler;
+        this.deviceRegistry = reactor.deviceRegistry;
 
         // The uring instance needs to be created on the eventloop thread.
         // This is required for some of the setup flags.
@@ -61,15 +65,13 @@ public class IOUringEventloop extends Eventloop {
         this.cq = uring.getCompletionQueue();
 
         this.eventLoopHandler = new EventloopHandler();
-        //todo: ugly, should not be null
-        if (storageScheduler != null) {
-            storageScheduler.init(this);
-        }
         this.userdata_eventRead = nextPermanentHandlerId();
         this.userdata_timeout = nextPermanentHandlerId();
         handlers.put(userdata_eventRead, new EventFdCompletionHandler());
         handlers.put(userdata_timeout, new TimeoutCompletionHandler());
     }
+
+
 
     /**
      * Gets the next handler id for a permanent handler. A permanent handler stays registered after receiving

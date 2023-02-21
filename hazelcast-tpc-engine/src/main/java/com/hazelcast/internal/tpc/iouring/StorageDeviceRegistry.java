@@ -25,22 +25,13 @@ import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
 // This thing sucks because it is specific to io uring even though it should be something for all
 // eventloop implementations.
 public class StorageDeviceRegistry {
-    private final List<StorageDeviceScheduler> devs = new ArrayList<>();
-    private IOUringEventloop eventloop;
+    private final List<StorageDevice> devs = new ArrayList<>();
 
     public StorageDeviceRegistry() {
     }
 
-    void init(IOUringEventloop eventloop) {
-        this.eventloop = eventloop;
-
-        // nasty hack
-        // currently we do not have a nice mechanism to register the drives.
-        registerStorageDevice(System.getProperty("user.home"), 512, 512);
-    }
-
-    StorageDeviceScheduler findStorageDevice(String path) {
-        for (StorageDeviceScheduler dev : devs) {
+    StorageDevice findStorageDevice(String path) {
+        for (StorageDevice dev : devs) {
             if (path.startsWith(dev.path)) {
                 return dev;
             }
@@ -57,7 +48,7 @@ public class StorageDeviceRegistry {
      * @param maxConcurrent the maximum number of concurrent requests for the device.
      * @param maxPending    the maximum number of request that can be buffered
      */
-    public void registerStorageDevice(String path, int maxConcurrent, int maxPending) {
+    public void register(String path, int maxConcurrent, int maxPending) {
         File file = new File(path);
         if (!file.exists()) {
             throw new RuntimeException("A storage device [" + path + "] doesn't exit");
@@ -73,7 +64,7 @@ public class StorageDeviceRegistry {
 
         checkPositive(maxConcurrent, "maxConcurrent");
 
-        StorageDeviceScheduler storageDeviceScheduler = new StorageDeviceScheduler(path, maxConcurrent, maxPending, eventloop);
-        devs.add(storageDeviceScheduler);
+        StorageDevice dev = new StorageDevice(path, maxConcurrent, maxPending);
+        devs.add(dev);
     }
 }

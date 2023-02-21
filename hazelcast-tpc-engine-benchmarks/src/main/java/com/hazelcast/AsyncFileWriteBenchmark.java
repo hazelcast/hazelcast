@@ -30,22 +30,31 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiConsumer;
 
+import static com.hazelcast.internal.tpc.AsyncFile.O_CREAT;
+import static com.hazelcast.internal.tpc.AsyncFile.O_DIRECT;
+import static com.hazelcast.internal.tpc.AsyncFile.O_WRONLY;
+import static com.hazelcast.internal.tpc.AsyncFile.PERMISSIONS_ALL;
 import static com.hazelcast.internal.tpc.util.BufferUtil.addressOf;
 import static com.hazelcast.internal.tpc.util.BufferUtil.toPageAlignedAddress;
 import static com.hazelcast.internal.tpc.util.OS.pageSize;
 
+/**
+ *
+ * For a FIO based benchmark so you can compare
+ * fio --name=write_throughput --numjobs=64 --size=10G --time_based --runtime=60s --ramp_time=2s --ioengine=io_uring  --direct=1 --verify=0 --bs=4k --iodepth=64 --rw=write --group_reporting=1
+ */
 public class AsyncFileWriteBenchmark {
-    private static String path = System.getProperty("user.home");
+    private static String path = "/run/media/pveentjer/b72258e9-b9c9-4f7c-8b76-cef961eeec55";
 
-    public static long operationsPerThread = 10 * 1000 * 1000;
-    public static int concurrencyPerThread = 64;
-    public static int openFlags = AsyncFile.O_CREAT | AsyncFile.O_DIRECT | AsyncFile.O_WRONLY;
-    public static int blockSize = 4096;
-    public static int threadCount = 1;
+    public static final long fileSize = 128 * pageSize();
+    public static final long operationsPerThread = 24 * 1000 * 1000;
+    public static final int concurrencyPerThread = 64;
+    public static final int openFlags = O_CREAT | O_DIRECT | O_WRONLY;
+    public static final int blockSize = pageSize();
+    public static final int reactorCount = 1;
 
     public static void main(String[] args) throws Exception {
         ThreadAffinity threadAffinity = new ThreadAffinity("1,3");
@@ -53,7 +62,7 @@ public class AsyncFileWriteBenchmark {
         long startMs = System.currentTimeMillis();
 
         List<CountDownLatch> latches = new ArrayList<>();
-        for (int k = 0; k < threadCount; k++) {
+        for (int k = 0; k < reactorCount; k++) {
             latches.add(run(threadAffinity));
         }
 
@@ -62,7 +71,7 @@ public class AsyncFileWriteBenchmark {
         }
 
         long duration = System.currentTimeMillis() - startMs;
-        long operations = threadCount * operationsPerThread;
+        long operations = reactorCount * operationsPerThread;
 
         System.out.println((operations * 1000f / duration) + " IOPS");
         long dataSize = blockSize * operations;
@@ -70,7 +79,7 @@ public class AsyncFileWriteBenchmark {
         System.exit(0);
     }
 
-    public static CountDownLatch run(ThreadAffinity threadAffinity) throws ExecutionException, InterruptedException {
+    public static CountDownLatch run(ThreadAffinity threadAffinity) throws Exception {
         ByteBuffer buffer = ByteBuffer.allocateDirect(2 * pageSize());
         long rawAddress = addressOf(buffer);
         long bufferAddress = toPageAlignedAddress(rawAddress);
@@ -80,49 +89,49 @@ public class AsyncFileWriteBenchmark {
         }
 
         StorageDeviceRegistry storageDeviceRegistry = new StorageDeviceRegistry();
+        storageDeviceRegistry.register("/run/media/pveentjer/b72258e9-b9c9-4f7c-8b76-cef961eeec55", 512, 512);
 
         IOUringReactorBuilder configuration = new IOUringReactorBuilder();
         //configuration.setFlags(IORING_SETUP_IOPOLL);
         configuration.setThreadAffinity(threadAffinity);
         // configuration.setSpin(true);
         configuration.setStorageDeviceRegistry(storageDeviceRegistry);
-        IOUringReactor eventloop = new IOUringReactor(configuration);
-        eventloop.start();
+
+        IOUringReactor reactor = new IOUringReactor(configuration);
+        reactor.start();
 
         List<AsyncFile> files = new ArrayList<>();
-        files.add(createFile(eventloop, path));
-        //files.add(createFile(eventloop, "/mnt/testdrive1"));
+        files.add(createFile(reactor, path));
+        //files.add(createFile(reactor, "/mnt/testdrive1"));
 
         System.out.println("Init done");
-
-        long startMs = System.currentTimeMillis();
 
         System.out.println("Starting benchmark");
 
         long sequentialOperations = operationsPerThread / concurrencyPerThread;
 
         CountDownLatch completionLatch = new CountDownLatch(concurrencyPerThread);
-        eventloop.offer(() -> {
+        reactor.offer(() -> {
             for (int k = 0; k < concurrencyPerThread; k++) {
                 PWriteLoop loop = new PWriteLoop();
                 loop.latch = completionLatch;
                 loop.bufferAddress = bufferAddress;
                 loop.sequentialOperations = sequentialOperations;
-                loop.eventloop = eventloop;
+                loop.reactor = reactor;
                 loop.file = files.get(k % files.size());
-                eventloop.offer(loop);
+                reactor.offer(loop);
             }
         });
 
         return completionLatch;
     }
 
-    private static AsyncFile createFile(IOUringReactor eventloop, String dir) throws ExecutionException, InterruptedException {
+    private static AsyncFile createFile(IOUringReactor eventloop, String dir) throws Exception {
         CompletableFuture<AsyncFile> initFuture = new CompletableFuture<>();
         eventloop.offer(() -> {
             AsyncFile file = eventloop.eventloop().newAsyncFile(randomTmpFile(dir));
-            file.open(openFlags, AsyncFile.PERMISSIONS_ALL)
-                    .then((o, o2) -> file.fallocate(0, 0, 100 * 1024L * pageSize())
+            file.open(openFlags, PERMISSIONS_ALL)
+                    .then((o, o2) -> file.fallocate(0, 0, fileSize)
                             .then((o1, o21) -> {
                                 initFuture.complete(file);
                             }));
@@ -137,13 +146,14 @@ public class AsyncFileWriteBenchmark {
         private long bufferAddress;
         private long sequentialOperations;
         private CountDownLatch latch;
-        private IOUringReactor eventloop;
+        private IOUringReactor reactor;
 
         @Override
         public void run() {
             if (count < sequentialOperations) {
                 count++;
 
+                // todo: we can write outside of the file; so no good
                 long offset = ThreadLocalRandom.current().nextInt(10 * 1024) * blockSize;
 
                 file.pwrite(offset, blockSize, bufferAddress)
@@ -161,7 +171,7 @@ public class AsyncFileWriteBenchmark {
                 System.exit(1);
             }
 
-            eventloop.offer(this);
+            reactor.offer(this);
         }
     }
 

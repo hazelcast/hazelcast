@@ -42,21 +42,27 @@ import static com.hazelcast.internal.tpc.util.BufferUtil.addressOf;
  */
 public final class IOUringAsyncFile extends AsyncFile {
 
-    private final IOUringReactor reactor;
-    private final StorageDeviceRegistry storageScheduler;
+    private final StorageDeviceRegistry deviceRegistry;
     private final IOUringEventloop eventloop;
     private final String path;
+    private final StorageDeviceScheduler devScheduler;
 
-    StorageDeviceScheduler dev;
+    StorageDevice dev;
     int fd;
 
     IOUringAsyncFile(String path, IOUringReactor reactor) {
         this.path = path;
-        this.reactor = reactor;
         this.eventloop = (IOUringEventloop) reactor.eventloop();
-        this.storageScheduler = reactor.storageScheduler;
+        this.deviceRegistry = reactor.deviceRegistry;
 
-        this.dev = storageScheduler.findStorageDevice(path);
+        this.dev = deviceRegistry.findStorageDevice(path);
+        StorageDeviceScheduler scheduler = eventloop.deviceSchedulers.get(dev);
+        if(scheduler==null){
+            scheduler = new StorageDeviceScheduler(dev, eventloop);
+            eventloop.deviceSchedulers.put(dev,scheduler);
+        }
+        this.devScheduler = scheduler;
+
         if (dev == null) {
             throw new UncheckedIOException(new IOException("Could not find storage device for [" + path() + "]"));
         }
@@ -74,38 +80,38 @@ public final class IOUringAsyncFile extends AsyncFile {
 
     @Override
     public Promise<Integer> nop() {
-        return dev.schedule(this, IORING_OP_NOP, 0, 0, 0, 0, 0);
+        return devScheduler.schedule(this, IORING_OP_NOP, 0, 0, 0, 0, 0);
     }
 
     @Override
     public Promise<Integer> pread(long offset, int length, long bufferAddress) {
-        return dev.schedule(this, IORING_OP_READ, 0, 0, bufferAddress, length, offset);
+        return devScheduler.schedule(this, IORING_OP_READ, 0, 0, bufferAddress, length, offset);
     }
 
     @Override
     public Promise<Integer> pwrite(long offset, int length, long bufferAddress) {
-        return dev.schedule(this, IORING_OP_WRITE, 0, 0, bufferAddress, length, offset);
+        return devScheduler.schedule(this, IORING_OP_WRITE, 0, 0, bufferAddress, length, offset);
     }
 
     @Override
     public Promise<Integer> pwrite(long offset, int length, long bufferAddress, int flags, int rwFlags) {
-        return dev.schedule(this, IORING_OP_WRITE, flags, rwFlags, bufferAddress, length, offset);
+        return devScheduler.schedule(this, IORING_OP_WRITE, flags, rwFlags, bufferAddress, length, offset);
     }
 
     @Override
     public Promise<Integer> fsync() {
-        return dev.schedule(this, IORING_OP_FSYNC, 0, 0, 0, 0, 0);
+        return devScheduler.schedule(this, IORING_OP_FSYNC, 0, 0, 0, 0, 0);
     }
 
     @Override
     public Promise<Integer> fdatasync() {
-        return dev.schedule(this, IORING_OP_FSYNC, IORING_FSYNC_DATASYNC, 0, 0, 0, 0);
+        return devScheduler.schedule(this, IORING_OP_FSYNC, IORING_FSYNC_DATASYNC, 0, 0, 0, 0);
     }
 
     // for mapping see: https://patchwork.kernel.org/project/linux-fsdevel/patch/20191213183632.19441-2-axboe@kernel.dk/
     @Override
     public Promise<Integer> fallocate(int mode, long offset, long len) {
-        return dev.schedule(this, IORING_OP_FALLOCATE, 0, 0, len, mode, offset);
+        return devScheduler.schedule(this, IORING_OP_FALLOCATE, 0, 0, len, mode, offset);
     }
 
     @Override
@@ -126,7 +132,7 @@ public final class IOUringAsyncFile extends AsyncFile {
         pathBuffer.flip();
 
         // https://man.archlinux.org/man/io_uring_enter.2.en
-        Promise openat = dev.schedule(
+        Promise openat = devScheduler.schedule(
                 this,
                 IORING_OP_OPENAT,
                 0,
@@ -156,6 +162,6 @@ public final class IOUringAsyncFile extends AsyncFile {
 
     @Override
     public Promise<Integer> close() {
-        return dev.schedule(this, IORING_OP_CLOSE, 0, 0, 0, 0, 0);
+        return devScheduler.schedule(this, IORING_OP_CLOSE, 0, 0, 0, 0, 0);
     }
 }
