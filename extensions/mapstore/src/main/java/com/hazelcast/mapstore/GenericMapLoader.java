@@ -244,7 +244,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
     private void dropMapping(String mappingName) {
         logger.info("Dropping mapping " + mappingName);
         try {
-            MappingHelper.dropMapping(sqlService,mappingName);
+            MappingHelper.dropMapping(sqlService, mappingName);
         } catch (Exception e) {
             logger.warning("Failed to drop mapping " + mappingName, e);
         }
