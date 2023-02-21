@@ -36,63 +36,64 @@ final class FromSqlRowConverter {
     public static GenericRecord toGenericRecord(SqlRow sqlRow, GenericMapStoreProperties properties) {
         GenericRecordBuilder builder = GenericRecordBuilder.compact(properties.compactTypeName);
 
-        SqlRowMetadata metadata = sqlRow.getMetadata();
-        for (int i = 0; i < metadata.getColumnCount(); i++) {
-            SqlColumnMetadata column = metadata.getColumn(i);
+        SqlRowMetadata sqlRowMetadata = sqlRow.getMetadata();
+        for (int i = 0; i < sqlRowMetadata.getColumnCount(); i++) {
+            SqlColumnMetadata sqlColumnMetadata = sqlRowMetadata.getColumn(i);
 
-            if (column.getName().equals(properties.idColumn) && !properties.idColumnInColumns) {
+            String columnName = sqlColumnMetadata.getName();
+            if (columnName.equals(properties.idColumn) && !properties.idColumnInColumns) {
                 continue;
             }
 
-            switch (column.getType()) {
+            switch (sqlColumnMetadata.getType()) {
                 case VARCHAR:
-                    builder.setString(column.getName(), sqlRow.getObject(i));
+                    builder.setString(columnName, sqlRow.getObject(i));
                     break;
 
                 case BOOLEAN:
-                    builder.setBoolean(column.getName(), sqlRow.getObject(i));
+                    builder.setBoolean(columnName, sqlRow.getObject(i));
                     break;
 
                 case TINYINT:
                 case SMALLINT:
                 case INTEGER:
-                    builder.setInt32(column.getName(), sqlRow.getObject(i));
+                    builder.setInt32(columnName, sqlRow.getObject(i));
                     break;
 
                 case BIGINT:
-                    builder.setInt64(column.getName(), sqlRow.getObject(i));
+                    builder.setInt64(columnName, sqlRow.getObject(i));
                     break;
 
                 case DECIMAL:
-                    builder.setDecimal(column.getName(), sqlRow.getObject(i));
+                    builder.setDecimal(columnName, sqlRow.getObject(i));
                     break;
 
                 case REAL:
-                    builder.setFloat32(column.getName(), sqlRow.getObject(i));
+                    builder.setFloat32(columnName, sqlRow.getObject(i));
                     break;
 
                 case DOUBLE:
-                    builder.setFloat64(column.getName(), sqlRow.getObject(i));
+                    builder.setFloat64(columnName, sqlRow.getObject(i));
                     break;
 
                 case DATE:
-                    builder.setDate(column.getName(), sqlRow.getObject(i));
+                    builder.setDate(columnName, sqlRow.getObject(i));
                     break;
 
                 case TIME:
-                    builder.setTime(column.getName(), sqlRow.getObject(i));
+                    builder.setTime(columnName, sqlRow.getObject(i));
                     break;
 
                 case TIMESTAMP:
-                    builder.setTimestamp(column.getName(), sqlRow.getObject(i));
+                    builder.setTimestamp(columnName, sqlRow.getObject(i));
                     break;
 
                 case TIMESTAMP_WITH_TIME_ZONE:
-                    builder.setTimestampWithTimezone(column.getName(), sqlRow.getObject(i));
+                    builder.setTimestampWithTimezone(columnName, sqlRow.getObject(i));
                     break;
 
                 default:
-                    throw new HazelcastException("Column type " + column.getType() + " not supported");
+                    throw new HazelcastException("Column type " + sqlColumnMetadata.getType() + " not supported");
             }
         }
 

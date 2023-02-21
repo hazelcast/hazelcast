@@ -45,7 +45,7 @@ public class GenericMapStoreProperties {
     GenericMapStoreProperties(Properties properties, String mapName) {
         dataLinkRef = properties.getProperty(DATA_LINK_REF_PROPERTY);
         tableName = properties.getProperty(TABLE_NAME_PROPERTY, mapName);
-        this.mappingType = properties.getProperty(MAPPING_TYPE_PROPERTY);
+        mappingType = properties.getProperty(MAPPING_TYPE_PROPERTY);
         idColumn = properties.getProperty(ID_COLUMN_PROPERTY, "id");
 
         String columnsProperty = properties.getProperty(COLUMNS_PROPERTY);

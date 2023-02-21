@@ -186,7 +186,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
             if (e.getMessage() != null && e.getMessage().startsWith("Mapping or view already exists:")) {
                 readExistingMapping();
             } else {
-                logger.warning(e);
+                logger.severe(e);
                 initFailure = e;
             }
         } finally {
@@ -244,15 +244,16 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
 
         try (SqlResult queryResult = sqlService.execute(queries.load(), key)) {
             Iterator<SqlRow> it = queryResult.iterator();
+
+            GenericRecord genericRecord = null;
             if (it.hasNext()) {
-                SqlRow row = it.next();
+                SqlRow sqlRow = it.next();
                 if (it.hasNext()) {
                     throw new IllegalStateException("multiple matching rows for a key " + key);
                 }
-                return toGenericRecord(row, genericMapStoreProperties);
-            } else {
-                return null;
+                genericRecord = toGenericRecord(sqlRow, genericMapStoreProperties);
             }
+            return genericRecord;
         }
     }
 
@@ -265,14 +266,15 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
 
         Object[] keysArray = keys.toArray();
 
-        try (SqlResult queryResult = sqlService.execute(queries.loadAll(keys.size()), keysArray)) {
+        String sql = queries.loadAll(keys.size());
+        try (SqlResult queryResult = sqlService.execute(sql, keysArray)) {
             Iterator<SqlRow> it = queryResult.iterator();
 
             Map<K, GenericRecord> result = new HashMap<>();
             while (it.hasNext()) {
-                SqlRow row = it.next();
-                K id = row.getObject(genericMapStoreProperties.idColumn);
-                GenericRecord record = toGenericRecord(row, genericMapStoreProperties);
+                SqlRow sqlRow = it.next();
+                K id = sqlRow.getObject(genericMapStoreProperties.idColumn);
+                GenericRecord record = toGenericRecord(sqlRow, genericMapStoreProperties);
                 result.put(id, record);
             }
             return result;
@@ -283,7 +285,8 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
     public Iterable<K> loadAllKeys() {
         awaitSuccessfulInit();
 
-        SqlResult keysResult = sqlService.execute(queries.loadAllKeys());
+        String sql = queries.loadAllKeys();
+        SqlResult keysResult = sqlService.execute(sql);
 
         // The contract for loadAllKeys says that if iterator implements Closable
         // then it will be closed when the iteration is over

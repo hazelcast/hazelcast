@@ -33,7 +33,7 @@ public final class ExistingMappingValidator {
     }
 
     /**
-     * Validate if database rows contain all columns names in GenericMapStoreProperties
+     * Validate if database rows contain all column names in GenericMapStoreProperties
      */
     public static void validateColumnsExist(SqlRowMetadata sqlRowMetadata, GenericMapStoreProperties properties) {
         // If GenericMapStoreProperties has columns defined, they must exist on the database
