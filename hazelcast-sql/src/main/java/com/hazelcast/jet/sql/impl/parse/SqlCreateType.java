@@ -133,7 +133,7 @@ public class SqlCreateType extends SqlCreate {
         writer.keyword(")");
     }
 
-    public String getName() {
+    public String typeName() {
         return name.names.get(name.names.size() - 1);
     }
 

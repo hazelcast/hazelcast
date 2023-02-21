@@ -336,7 +336,7 @@ SqlDrop SqlDropType(Span span, boolean replace) :
     [
         <IF> <EXISTS> { ifExists = true; }
     ]
-    name = SimpleIdentifier()
+    name = CompoundIdentifier()
     {
         return new SqlDropType(name, ifExists, pos.plus(getPos()));
     }
@@ -626,7 +626,7 @@ SqlDrop SqlDropView(Span span, boolean replace) :
     [
         <IF> <EXISTS> { ifExists = true; }
     ]
-    name = SimpleIdentifier()
+    name = CompoundIdentifier()
     {
         return new SqlDropView(name, ifExists, pos.plus(getPos()));
     }

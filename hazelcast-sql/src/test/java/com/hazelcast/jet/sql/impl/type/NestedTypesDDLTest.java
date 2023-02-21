@@ -33,6 +33,7 @@ import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class NestedTypesDDLTest extends SqlTestSupport {
@@ -110,6 +111,9 @@ public class NestedTypesDDLTest extends SqlTestSupport {
         execute(format("CREATE TYPE hazelcast.public.FirstType OPTIONS ('format'='java','javaClass'='%s')",
                 FirstType.class.getName()));
         assertNotNull(storage.getType("FirstType"));
+
+        execute("DROP TYPE hazelcast.public.FirstType");
+        assertNull(storage.getType("FirstType"));
     }
 
     @Test
@@ -118,6 +122,14 @@ public class NestedTypesDDLTest extends SqlTestSupport {
                 + "OPTIONS ('format'='compact', 'compactTypeName'='TestType')"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("The type must be created in the \"public\" schema");
+        assertNull(storage.getType("TestType"));
+
+        execute(format("CREATE TYPE hazelcast.public.TestType OPTIONS ('format'='java','javaClass'='%s')",
+                FirstType.class.getName()));
+        assertThatThrownBy(() -> execute("DROP TYPE information_schema.TestType"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Type does not exist: information_schema.TestType");
+        assertNotNull(storage.getType("TestType"));
     }
 
     @Test

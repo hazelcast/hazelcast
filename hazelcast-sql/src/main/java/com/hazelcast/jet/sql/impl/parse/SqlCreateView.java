@@ -50,7 +50,7 @@ public class SqlCreateView extends SqlCreate {
     }
 
     public String name() {
-        return name.toString();
+        return name.names.get(name.names.size() - 1);
     }
 
     public SqlNode getQuery() {
