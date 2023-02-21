@@ -86,9 +86,6 @@ import static java.util.stream.Stream.of;
  * <p>
  * The GenericMapLoader creates a SQL mapping with name "__map-store." + mapName.
  * This mapping is removed when the map is destroyed.
- * <p>
- * Note : When GenericMapLoader uses GenericRecord as value, even if the GenericRecord contains the primary key as a field,
- * the primary key is still received from @{link {@link com.hazelcast.map.IMap} method call
  *
  * @param <K>
  */
@@ -107,7 +104,6 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
     static final String MAPPING_TYPE_PROPERTY = "mapping-type";
 
     static final String ID_COLUMN_PROPERTY = "id-column";
-    static final String ID_COLUMN_DEFAULT = "id";
 
     static final String COLUMNS_PROPERTY = "columns";
     static final String TYPE_NAME_PROPERTY = "type-name";
