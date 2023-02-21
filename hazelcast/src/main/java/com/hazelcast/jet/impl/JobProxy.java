@@ -44,6 +44,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.StreamSupport;
 
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
@@ -118,16 +119,24 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
 
     @Override
     protected CompletableFuture<Void> invokeSubmitJob(Object jobDefinition, JobConfig config) {
+        boolean serialize = true;
         if (isLightJob()) {
             if (jobDefinition instanceof DAG) {
-                ((DAG) jobDefinition).lock();
+                DAG dag = (DAG) jobDefinition;
+                dag.lock();
+                serialize = StreamSupport.stream(dag.spliterator(), false)
+                        .anyMatch(vertex -> vertex.getMetaSupplier().isStateful());
             }
             config.lock();
-            return invokeOp(new SubmitJobOperation(getId(), jobDefinition, config, null, null, isLightJob(), null));
         }
-        Data configData = serializationService().toData(config);
-        Data jobDefinitionData = serializationService().toData(jobDefinition);
-        return invokeOp(new SubmitJobOperation(getId(), null, null, jobDefinitionData, configData, isLightJob(), null));
+        if (serialize) {
+            Data configData = serializationService().toData(config);
+            Data jobDefinitionData = serializationService().toData(jobDefinition);
+            return invokeOp(new SubmitJobOperation(
+                    getId(), null, null, jobDefinitionData, configData, isLightJob(), null));
+        }
+        return invokeOp(new SubmitJobOperation(
+                getId(), jobDefinition, config, null, null, isLightJob(), null));
     }
 
     @Override

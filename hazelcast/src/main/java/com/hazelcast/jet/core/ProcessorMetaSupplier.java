@@ -183,6 +183,19 @@ public interface ProcessorMetaSupplier extends Serializable {
     }
 
     /**
+     * Returns {@code true} if this instance is stateful.
+     * <p>
+     * When a job is to be submitted, the job definition ({@link DAG} or
+     * {@link Pipeline}) is serialized. This serialization can be avoided if the
+     * local member is the job coordinator and the {@link DAG} is stateless.
+     *
+     * @since 5.3
+     */
+    default boolean isStateful() {
+        return true;
+    }
+
+    /**
      * Factory method that wraps the given {@code ProcessorSupplier} and
      * returns the same instance for each given {@code Address}.
      *
