@@ -26,6 +26,7 @@ import com.mongodb.client.model.ValidationOptions;
 import org.bson.BsonDocument;
 import org.bson.Document;
 import org.bson.types.Decimal128;
+import org.bson.types.ObjectId;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -50,6 +51,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AllTypesInsertMongoSqlConnectorTest extends MongoSqlTest {
+    private static final ObjectId EXAMPLE_OBJECT_ID = ObjectId.get();
 
     @Parameterized.Parameter
     public String type;
@@ -66,7 +68,7 @@ public class AllTypesInsertMongoSqlConnectorTest extends MongoSqlTest {
     @Parameterized.Parameter(4)
     public Object mongoValue;
 
-    @Parameterized.Parameters(name = "type:{0}, mappingType:{1}, sqlValue:{2}, javaValue:{3}, mongoType:{4}")
+    @Parameterized.Parameters(name = "type:{0}, mappingType:{1}, sqlValue:{2}, javaValue:{3}, mongoValue:{4}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {"string", "VARCHAR", "'dummy'", "dummy", "dummy"},
@@ -82,7 +84,8 @@ public class AllTypesInsertMongoSqlConnectorTest extends MongoSqlTest {
                         new Date(LocalDate.parse("2022-12-30").atStartOfDay(ZoneId.of("UTC")).toEpochSecond() * 1000)},
                 {"date", "TIMESTAMP", "'2022-12-30 23:59:59'",
                         LocalDateTime.of(2022, 12, 30, 23, 59, 59),
-                        new Date(Timestamp.valueOf("2022-12-30 23:59:59").getTime())}
+                        new Date(Timestamp.valueOf("2022-12-30 23:59:59").getTime())},
+                {"objectId", "OBJECT", null, EXAMPLE_OBJECT_ID, EXAMPLE_OBJECT_ID}
         });
     }
 
@@ -117,25 +120,30 @@ public class AllTypesInsertMongoSqlConnectorTest extends MongoSqlTest {
                 + "TYPE MongoDB " + options()
         );
 
-        execute("INSERT INTO " + mappingName + " VALUES(0, " + sqlValue + ")");
+        if (sqlValue != null) {
+            execute("INSERT INTO " + mappingName + " VALUES(0, " + sqlValue + ")");
+        }
         execute("INSERT INTO " + mappingName + " VALUES(1, ?)", javaValue);
 
         MongoCollection<Document> collection = database.getCollection(collectionName);
         ArrayList<Document> list = collection.find().into(new ArrayList<>());
-        List<Row> asRows = list.stream()
+        List<Row> fromMongo = list.stream()
                                .map(d -> new Row(d.getInteger("id"), d.get("table_column")))
                                .collect(Collectors.toList());
 
-        assertRowsAnyOrder("Select * from " + mappingName,
-                new Row(0, javaValue),
-                new Row(1, javaValue)
-        );
-
-        assertThat(asRows).containsExactlyInAnyOrder(
-                new Row(0, mongoValue),
-                new Row(1, mongoValue)
-        );
+        if (sqlValue == null) {
+            assertThat(fromMongo).containsExactlyInAnyOrder(new Row(1, mongoValue));
+            assertRowsAnyOrder("select * from " + mappingName, new Row(1, javaValue));
+        } else {
+            assertThat(fromMongo).containsExactlyInAnyOrder(
+                    new Row(0, mongoValue),
+                    new Row(1, mongoValue)
+            );
+            assertRowsAnyOrder("select * from " + mappingName,
+                    new Row(0, javaValue),
+                    new Row(1, javaValue)
+            );
+        }
     }
-
 
 }
