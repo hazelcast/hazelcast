@@ -200,7 +200,7 @@ by not using a data link, but directly providing connection parameters to the
 source/sink in question, or in the MAPPING for SQL, or by creating multiple data
 links, all connecting to the same remote system.
 
-# Two ways to define a of data link
+# Two ways to define a data link
 
 1. In config. This way allows a more reliable way of defining a data link. An
    SQL object can be lost in case of a cluster havoc. The user will have to
