@@ -109,21 +109,25 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
     static final String COLUMNS_PROPERTY = "columns";
     static final String TYPE_NAME_PROPERTY = "type-name";
 
+    protected SqlService sqlService;
+
+    protected GenericMapStoreProperties genericMapStoreProperties;
+
+    protected Queries queries;
+
+    protected List<SqlColumnMetadata> columnMetadataList;
+
     private ILogger logger;
 
     private HazelcastInstanceImpl instance;
 
-    protected SqlService sqlService;
-
-    protected GenericMapStoreProperties genericMapStoreProperties;
     private String mapName;
     private String mappingName;
-    protected Queries queries;
 
     private long initTimeoutMillis;
 
     private Exception initFailure; // uses initFinished latch to ensure visibility
-    protected List<SqlColumnMetadata> columnMetadataList;
+
     private final CountDownLatch initFinished = new CountDownLatch(1);
 
     @Override
@@ -163,13 +167,14 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
         try {
             String mappingColumns = null;
             if (genericMapStoreProperties.hasColumns()) {
-                mappingColumns = resolveMappingColumns(genericMapStoreProperties.tableName, genericMapStoreProperties.dataLinkRef);
+                mappingColumns = resolveMappingColumns(genericMapStoreProperties.tableName,
+                        genericMapStoreProperties.dataLinkRef);
                 logger.fine("Discovered following mapping columns: " + mappingColumns);
             }
 
             String mappingType = getMappingType(nodeEngine(), genericMapStoreProperties);
-            createMappingWithColumns(sqlService,mappingName,genericMapStoreProperties.tableName,mappingColumns,mappingType,
-                    genericMapStoreProperties.dataLinkRef);
+            createMappingWithColumns(sqlService, mappingName, genericMapStoreProperties.tableName, mappingColumns,
+                    mappingType, genericMapStoreProperties.dataLinkRef);
 
             if (!genericMapStoreProperties.hasColumns()) {
                 columnMetadataList = loadColumnMetadataFromMapping(sqlService, mappingName);

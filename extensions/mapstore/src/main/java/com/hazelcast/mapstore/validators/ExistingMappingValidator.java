@@ -24,18 +24,27 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.sql.SqlRowMetadata.COLUMN_NOT_FOUND;
 
+/**
+ * Validates if database and GenericMapStoreProperties columns match
+ */
 public final class ExistingMappingValidator {
 
     private ExistingMappingValidator() {
     }
 
+    /**
+     * Validate if database rows contain all columns names in GenericMapStoreProperties
+     */
     public static void validateColumnsExist(SqlRowMetadata sqlRowMetadata, GenericMapStoreProperties properties) {
         // If GenericMapStoreProperties has columns defined, they must exist on the database
-        Stream.concat(Stream.of(properties.idColumn), properties.columns.stream())
+        Stream.concat(Stream.of(properties.getIdColumn()), properties.getColumns().stream())
                 .distinct() // avoid duplicate id column if present in columns property
                 .forEach(columnName -> validateColumn(sqlRowMetadata, columnName));
     }
 
+    /**
+     * Validate if columnName exists in the database row
+     */
     public static int validateColumn(SqlRowMetadata sqlRowMetadata, String columnName) {
         int column = sqlRowMetadata.findColumn(columnName);
         if (column == COLUMN_NOT_FOUND) {

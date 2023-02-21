@@ -20,11 +20,17 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 
+/**
+ * Validates MapConfig object
+ */
 public final class MapStoreConfigValidator {
 
     private MapStoreConfigValidator() {
     }
 
+    /**
+     * Validate MapConfig of the given map
+     */
     public static void validateMapStoreConfig(HazelcastInstance instance, String mapName) {
         MapConfig mapConfig = instance.getConfig().findMapConfig(mapName);
         if (!mapConfig.getMapStoreConfig().isOffload()) {
