@@ -13,9 +13,7 @@ import static com.hazelcast.mapstore.validators.ExistingMappingValidator.validat
 
 class ExistingMappingReader {
 
-    static final String MAPPING_NAME_COLUMN = "name";
-
-    protected List<SqlColumnMetadata> columnMetadataList;
+    private List<SqlColumnMetadata> columnMetadataList;
 
     public List<SqlColumnMetadata> getColumnMetadataList() {
         return columnMetadataList;
@@ -25,7 +23,7 @@ class ExistingMappingReader {
                                     String mappingName) {
         try (SqlResult mappings = sqlService.execute("SHOW MAPPINGS")) {
             for (SqlRow sqlRow : mappings) {
-                String name = sqlRow.getObject(MAPPING_NAME_COLUMN);
+                String name = sqlRow.getObject("name");
                 if (name.equals(mappingName)) {
                     SqlRowMetadata rowMetadata = loadRowMetadataFromMapping(sqlService, name);
                     validateColumnsExist(rowMetadata, genericMapStoreProperties);

@@ -23,7 +23,6 @@ import com.hazelcast.sql.SqlRowMetadata;
 import java.util.stream.Stream;
 
 import static com.hazelcast.sql.SqlRowMetadata.COLUMN_NOT_FOUND;
-import static java.util.stream.Stream.of;
 
 public final class ExistingMappingValidator {
 
@@ -32,7 +31,7 @@ public final class ExistingMappingValidator {
 
     public static void validateColumnsExist(SqlRowMetadata sqlRowMetadata, GenericMapStoreProperties properties) {
         // If GenericMapStoreProperties has columns defined, they must exist on the database
-        Stream.concat(of(properties.idColumn), properties.columns.stream())
+        Stream.concat(Stream.of(properties.idColumn), properties.columns.stream())
                 .distinct() // avoid duplicate id column if present in columns property
                 .forEach(columnName -> validateColumn(sqlRowMetadata, columnName));
     }
