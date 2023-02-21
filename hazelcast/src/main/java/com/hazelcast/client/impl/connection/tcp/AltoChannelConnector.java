@@ -31,8 +31,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.BOOLEAN_SIZE_IN_BYTES;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.UUID_SIZE_IN_BYTES;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeUUID;
 
 /**
@@ -120,7 +119,7 @@ public final class AltoChannelConnector {
         // to the connection on the member.
         ClientMessage clientUuidMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(
-                new byte[BOOLEAN_SIZE_IN_BYTES + 2 * LONG_SIZE_IN_BYTES], UNFRAGMENTED_MESSAGE);
+                new byte[UUID_SIZE_IN_BYTES], UNFRAGMENTED_MESSAGE);
         encodeUUID(initialFrame.content, 0, clientUuid);
         clientUuidMessage.add(initialFrame);
         if (!channel.write(clientUuidMessage)) {

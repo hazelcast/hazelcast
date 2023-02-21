@@ -51,6 +51,8 @@ import static org.mockito.Mockito.when;
 @Category(QuickTest.class)
 public class AltoChannelConnectorTest {
 
+    private static final int CHANNEL_COUNT = 5;
+
     private AltoChannelConnector connector;
     private TcpClientConnection mockConnection;
     private Channel[] mockAltoChannels;
@@ -59,12 +61,11 @@ public class AltoChannelConnectorTest {
     @Before
     public void setup() {
         mockConnection = setupMockConnection();
-        int channelCount = 5;
-        mockAltoChannels = setupMockAltoChannels(channelCount);
+        mockAltoChannels = setupMockAltoChannels();
         mockChannelCreator = setupMockChannelCreator(mockAltoChannels);
         connector = new AltoChannelConnector(UuidUtil.newUnsecureUUID(),
                 mockConnection,
-                IntStream.range(0, channelCount).boxed().collect(Collectors.toList()),
+                IntStream.range(0, CHANNEL_COUNT).boxed().collect(Collectors.toList()),
                 setupMockExecutorService(),
                 mock(ChannelInitializer.class),
                 mockChannelCreator,
@@ -85,16 +86,19 @@ public class AltoChannelConnectorTest {
     }
 
     @Test
-    public void testConnector_whenChannelCreationFails() {
+    public void testConnector_whenChannelCreationFails() throws IOException {
         doThrow(new RuntimeException("expected"))
                 .when(mockChannelCreator)
                 .create(any(), any(), any());
 
         connector.initiate();
 
-        // Since no channel is returned from the channel creator,
-        // we can only assert that we have never called setAltoChannels
         verify(mockConnection, never()).setAltoChannels(any());
+
+        for (Channel channel : mockAltoChannels) {
+            verify(channel, never()).write(any());
+            verify(channel, never()).close();
+        }
     }
 
     @Test
@@ -104,6 +108,8 @@ public class AltoChannelConnectorTest {
         connector.initiate();
 
         verify(mockConnection, never()).setAltoChannels(any());
+
+        verify(mockChannelCreator, never()).create(any(), any(), any());
 
         // We should not even attempt to write anything if the connection
         // is already closed
@@ -186,13 +192,14 @@ public class AltoChannelConnectorTest {
             if (--count == 0) {
                 // The last channel is not even "created",
                 // we have thrown exception instead.
-                continue;
+                verify(channel, never()).write(any());
+                verify(channel, never()).close();
+            } else {
+                // Previously established channels must be closed
+                // after writing authentication bytes
+                verify(channel, times(1)).write(any());
+                verify(channel, times(1)).close();
             }
-
-            // Previously established channels must be closed
-            // after writing authentication bytes
-            verify(channel, times(1)).write(any());
-            verify(channel, times(1)).close();
         }
     }
 
@@ -233,9 +240,9 @@ public class AltoChannelConnectorTest {
         return executorService;
     }
 
-    private Channel[] setupMockAltoChannels(int count) {
-        Channel[] altoChannels = new Channel[count];
-        for (int i = 0; i < count; i++) {
+    private Channel[] setupMockAltoChannels() {
+        Channel[] altoChannels = new Channel[CHANNEL_COUNT];
+        for (int i = 0; i < CHANNEL_COUNT; i++) {
             Channel mockChannel = mock(Channel.class);
             when(mockChannel.write(any())).thenReturn(true);
             altoChannels[i] = mockChannel;
