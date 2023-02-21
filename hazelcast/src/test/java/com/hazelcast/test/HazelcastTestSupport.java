@@ -126,6 +126,8 @@ public abstract class HazelcastTestSupport {
     public static final String JVM_NAME = System.getProperty("java.vm.name");
     public static final String JAVA_VENDOR = System.getProperty("java.vendor");
 
+    public static final String OS_ARCHITECTURE = System.getProperty("os.arch");
+
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
     public static final int ASSERT_COMPLETES_STALL_TOLERANCE;
     public static final String PERSISTENT_MEMORY_DIRECTORIES;
@@ -1678,6 +1680,10 @@ public abstract class HazelcastTestSupport {
 
     public static void assumeThatLinuxOS() {
         Assume.assumeTrue("Only Linux platform supported", isLinux());
+    }
+
+    public static void assumeNoArm64Architecture() {
+        Assume.assumeFalse("Not supported on arm64 (aarch64) architecture", "aarch64".equals(OS_ARCHITECTURE));
     }
 
     /**

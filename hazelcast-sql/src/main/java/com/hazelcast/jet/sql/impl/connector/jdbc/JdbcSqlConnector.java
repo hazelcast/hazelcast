@@ -23,9 +23,9 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -43,10 +43,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -66,8 +66,6 @@ public class JdbcSqlConnector implements SqlConnector {
     public static final String OPTION_JDBC_BATCH_LIMIT = "jdbc.batch-limit";
 
     public static final String JDBC_BATCH_LIMIT_DEFAULT_VALUE = "100";
-
-    private static final ILogger LOG = Logger.getLogger(JdbcSqlConnector.class);
 
     @Override
     public String typeName() {
@@ -139,34 +137,52 @@ public class JdbcSqlConnector implements SqlConnector {
                 OPTION_DATA_LINK_REF + " must be set"
         );
         DataSource dataSource = createDataLink(nodeEngine, dataLinkRef);
-        try (
-                Connection connection = dataSource.getConnection();
-                Statement statement = connection.createStatement()
-        ) {
-            Set<String> pkColumns = readPrimaryKeyColumns(externalTableName, connection);
+        try (Connection connection = dataSource.getConnection()) {
 
-            boolean hasResultSet = statement.execute("SELECT * FROM " + externalTableName + " LIMIT 0");
-            if (!hasResultSet) {
-                throw new IllegalStateException("Could not resolve fields for table " + externalTableName);
+            DatabaseMetaData databaseMetaData = connection.getMetaData();
+
+            Set<String> pkColumns = readPrimaryKeyColumns(externalTableName, databaseMetaData);
+
+            return readColumns(externalTableName, databaseMetaData, pkColumns);
+
+        } catch (Exception e) {
+            throw new HazelcastException("Could not execute readDbFields for table " + externalTableName, e);
+        } finally {
+            closeDataSource(dataSource);
+        }
+    }
+
+    private static Set<String> readPrimaryKeyColumns(String externalTableName, DatabaseMetaData databaseMetaData) {
+        Set<String> pkColumns = new HashSet<>();
+        try (ResultSet resultSet = databaseMetaData.getPrimaryKeys(null, null, externalTableName)) {
+            while (resultSet.next()) {
+                String columnName = resultSet.getString("COLUMN_NAME");
+                pkColumns.add(columnName);
             }
-            ResultSet rs = statement.getResultSet();
-            ResultSetMetaData metaData = rs.getMetaData();
+        } catch (SQLException e) {
+            throw new HazelcastException("Could not read primary key columns for table " + externalTableName, e);
+        }
+        return pkColumns;
+    }
 
-            Map<String, DbField> fields = new LinkedHashMap<>();
-            for (int i = 1; i <= metaData.getColumnCount(); i++) {
-                String columnName = metaData.getColumnName(i);
+    private static Map<String, DbField> readColumns(String externalTableName, DatabaseMetaData databaseMetaData,
+                                                    Set<String> pkColumns) {
+        Map<String, DbField> fields = new LinkedHashMap<>();
+        try (ResultSet resultSet = databaseMetaData.getColumns(null, null, externalTableName,
+                null)) {
+            while (resultSet.next()) {
+                String columnTypeName = resultSet.getString("TYPE_NAME");
+                String columnName = resultSet.getString("COLUMN_NAME");
                 fields.put(columnName,
-                        new DbField(metaData.getColumnTypeName(i),
+                        new DbField(columnTypeName,
                                 columnName,
                                 pkColumns.contains(columnName)
                         ));
             }
-            return fields;
-        } catch (Exception e) {
-            throw new HazelcastException("Could not read column metadata for table " + externalTableName, e);
-        } finally {
-            closeDataSource(dataSource);
+        } catch (SQLException e) {
+            throw new HazelcastException("Could not read columns for table " + externalTableName, e);
         }
+        return fields;
     }
 
     private void closeDataSource(DataSource dataSource) {
@@ -186,24 +202,11 @@ public class JdbcSqlConnector implements SqlConnector {
         return dataLinkFactory.getDataLink();
     }
 
-    private Set<String> readPrimaryKeyColumns(@Nonnull String externalName, Connection connection) {
-        Set<String> primaryKeyColumns = new HashSet<>();
-        try (ResultSet rs = connection.getMetaData().getPrimaryKeys(null, connection.getSchema(), externalName)) {
-            while (rs.next()) {
-                String columnName = rs.getString("COLUMN_NAME");
-                primaryKeyColumns.add(columnName);
-            }
-        } catch (SQLException e) {
-            throw new HazelcastException("Could not read primary key columns for table " + externalName, e);
-        }
-        return primaryKeyColumns;
-    }
-
     private void validateType(MappingField field, DbField dbField) {
         QueryDataType type = resolveType(dbField.columnTypeName);
         if (!field.type().equals(type) && !type.getConverter().canConvertTo(field.type().getTypeFamily())) {
             throw new IllegalStateException("Type " + field.type().getTypeFamily() + " of field " + field.name()
-                    + " does not match db type " + type.getTypeFamily());
+                                            + " does not match db type " + type.getTypeFamily());
         }
     }
 
@@ -251,22 +254,13 @@ public class JdbcSqlConnector implements SqlConnector {
         DataSource dataSource = createDataLink(nodeEngine, dataLinkRef);
 
         try (Connection connection = dataSource.getConnection()) {
-            SqlDialect dialect = SqlDialectFactoryImpl.INSTANCE.create(connection.getMetaData());
-            String databaseProductName = connection.getMetaData().getDatabaseProductName();
-            switch (databaseProductName) {
-                case "MySQL":
-                case "PostgreSQL":
-                case "H2":
-                    return dialect;
-
-                default:
-                    LOG.warning("Database " + databaseProductName + " is not officially supported");
-                    return dialect;
-            }
-
+            DatabaseMetaData databaseMetaData = connection.getMetaData();
+            SqlDialect dialect = SqlDialectFactoryImpl.INSTANCE.create(databaseMetaData);
+            SupportedDatabases.logOnceIfDatabaseNotSupported(databaseMetaData);
+            return dialect;
         } catch (Exception e) {
             throw new HazelcastException("Could not determine dialect for dataLinkRef: "
-                    + dataLinkRef, e);
+                                         + dataLinkRef, e);
         } finally {
             closeDataSource(dataSource);
         }
@@ -276,8 +270,8 @@ public class JdbcSqlConnector implements SqlConnector {
     @Override
     public Vertex fullScanReader(
             @Nonnull DagBuildContext context,
-            @Nullable RexNode predicate,
-            @Nonnull List<RexNode> projection,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
@@ -285,7 +279,9 @@ public class JdbcSqlConnector implements SqlConnector {
         }
         JdbcTable table = (JdbcTable) context.getTable();
 
-        SelectQueryBuilder builder = new SelectQueryBuilder(context.getTable(), predicate, projection);
+        List<RexNode> projections = Util.toList(projection, n -> n.unwrap(RexNode.class));
+        RexNode filter = predicate == null ? null : predicate.unwrap(RexNode.class);
+        SelectQueryBuilder builder = new SelectQueryBuilder(context.getTable(), filter, projections);
         return context.getDag().newUniqueVertex(
                 "Select(" + table.getExternalName() + ")",
                 ProcessorMetaSupplier.forceTotalParallelismOne(
@@ -325,7 +321,7 @@ public class JdbcSqlConnector implements SqlConnector {
     public Vertex updateProcessor(
             @Nonnull DagBuildContext context,
             @Nonnull List<String> fieldNames,
-            @Nonnull List<RexNode> expressions
+            @Nonnull List<HazelcastRexNode> expressions
     ) {
         JdbcTable table = (JdbcTable) context.getTable();
 
@@ -334,7 +330,8 @@ public class JdbcSqlConnector implements SqlConnector {
                 .map(f -> table.getField(f).externalName())
                 .collect(toList());
 
-        UpdateQueryBuilder builder = new UpdateQueryBuilder(table, pkFields, fieldNames, expressions);
+        List<RexNode> projections = Util.toList(expressions, n -> n.unwrap(RexNode.class));
+        UpdateQueryBuilder builder = new UpdateQueryBuilder(table, pkFields, fieldNames, projections);
 
         return context.getDag().newUniqueVertex(
                 "Update(" + table.getExternalName() + ")",
@@ -366,6 +363,31 @@ public class JdbcSqlConnector implements SqlConnector {
                         table.getBatchLimit()
                 )
         );
+    }
+
+    @Nonnull
+    @Override
+    public Vertex sinkProcessor(@Nonnull DagBuildContext context) {
+        JdbcTable jdbcTable = (JdbcTable) context.getTable();
+
+        // If dialect is supported
+        if (SupportedDatabases.isDialectSupported(jdbcTable)) {
+            // Get the upsert statement
+            String upsertStatement = UpsertBuilder.getUpsertStatement(jdbcTable);
+
+            // Create Vertex with the UPSERT statement
+            return context.getDag().newUniqueVertex(
+                    "sinkProcessor(" + jdbcTable.getExternalName() + ")",
+                    new UpsertProcessorSupplier(
+                            jdbcTable.getDataLinkRef(),
+                            upsertStatement,
+                            jdbcTable.getBatchLimit()
+                    )
+            );
+        }
+        // Unsupported dialect. Create Vertex with the INSERT statement
+        VertexWithInputConfig vertexWithInputConfig = insertProcessor(context);
+        return vertexWithInputConfig.vertex();
     }
 
     /**
@@ -448,10 +470,10 @@ public class JdbcSqlConnector implements SqlConnector {
         @Override
         public String toString() {
             return "DbField{" +
-                    "name='" + columnName + '\'' +
-                    ", typeName='" + columnTypeName + '\'' +
-                    ", primaryKey=" + primaryKey +
-                    '}';
+                   "name='" + columnName + '\'' +
+                   ", typeName='" + columnTypeName + '\'' +
+                   ", primaryKey=" + primaryKey +
+                   '}';
         }
     }
 }
