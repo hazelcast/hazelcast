@@ -616,7 +616,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     public void testViridianPhoneHomeNullByDefault() {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
-        assertEquals(null, parameters.get(PhoneHomeMetrics.VIRIDIAN.getRequestParameterName()));
+        assertThat(parameters.get(PhoneHomeMetrics.VIRIDIAN.getRequestParameterName())).isNull();
     }
 
     private void testCounts(Function<String, ? extends DistributedObject> distributedObjectCreateFn,

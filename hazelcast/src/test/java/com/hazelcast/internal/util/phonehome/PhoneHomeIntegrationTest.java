@@ -78,7 +78,6 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
     private Node node;
     private PhoneHome phoneHome;
-
     private CloudInfoCollector cloudInfoCollector;
 
     @Mock
@@ -315,7 +314,6 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         PhoneHomeParameterCreator parameterCreator2 = new PhoneHomeParameterCreator();
         cloudInfoCollector.forEachMetric(node,
                 (type, value) -> parameterCreator2.addParam(type.getRequestParameterName(), value));
-
     }
 
     @Test
@@ -327,6 +325,5 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
                 .withRequestBody(containingParam("vrd", "SERVERLESS")));
-
     }
 }
