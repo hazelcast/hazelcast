@@ -27,21 +27,18 @@ import org.apache.kafka.connect.storage.OffsetStorageReader;
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 class TaskRunner {
     private static final ILogger LOGGER = Logger.getLogger(TaskRunner.class);
-    private static final int AWAIT_STOP_TIMEOUT = 1_000;
     private final SourceConnector connector;
-    private final AtomicBoolean running = new AtomicBoolean();
-    private CountDownLatch taskStoppedLatch = new CountDownLatch(1);
-    private SourceTask task;
-    private volatile boolean reconfigurationRequested;
+    private final ReentrantLock taskLifecycleLock = new ReentrantLock();
     private final Map<Map<String, ?>, Map<String, ?>> partitionsToOffset;
+    private volatile boolean running;
+    private volatile boolean reconfigurationRequested;
+    private SourceTask task;
 
     TaskRunner(SourceConnector connector, Map<Map<String, ?>, Map<String, ?>> partitionsToOffset) {
         this.connector = connector;
@@ -55,18 +52,17 @@ class TaskRunner {
 
     void stop() {
         LOGGER.info("Stopping task if running");
-        if (running.compareAndSet(true, false)) {
-            try {
-                if (task != null) {
-                    LOGGER.fine("Stopping task");
-                    task.stop();
-                    LOGGER.fine("Task stopped");
-                }
-            } finally {
-                taskStoppedLatch.countDown();
-                taskStoppedLatch = new CountDownLatch(1);
-                task = null;
+        try {
+            taskLifecycleLock.lock();
+            if (running) {
+                LOGGER.fine("Stopping task");
+                task.stop();
+                LOGGER.fine("Task stopped");
             }
+        } finally {
+            running = false;
+            task = null;
+            taskLifecycleLock.unlock();
         }
     }
 
@@ -87,31 +83,33 @@ class TaskRunner {
     private void restartTaskIfNeeded() {
         if (reconfigurationRequested) {
             reconfigurationRequested = false;
-            stopTaskAndAwait();
+            stop();
         }
-        if (running.get()) {
-            LOGGER.info("Not starting task, already running");
-            return;
-        }
-        startTaskIfNotRunning();
+        start();
     }
 
-    private void startTaskIfNotRunning() {
+    private void start() {
         LOGGER.info("Starting tasks if the previous not running");
-        if (running.compareAndSet(false, true)) {
-            LOGGER.info("Starting tasks");
+        try {
+            taskLifecycleLock.lock();
+            if (!running) {
+                LOGGER.info("Starting tasks");
 
-            List<Map<String, String>> taskConfigs = connector.taskConfigs(1);
-            if (!taskConfigs.isEmpty()) {
-                Map<String, String> taskConfig = taskConfigs.get(0);
-                this.task = newInstance(connector.taskClass().asSubclass(SourceTask.class));
-                LOGGER.info("Initializing task: " + task);
-                task.initialize(new JetSourceTaskContext(taskConfig));
-                LOGGER.info("Starting task: " + task + " with task config: " + taskConfig);
-                task.start(taskConfig);
-            } else {
-                LOGGER.info("No task configs!");
+                List<Map<String, String>> taskConfigs = connector.taskConfigs(1);
+                if (!taskConfigs.isEmpty()) {
+                    Map<String, String> taskConfig = taskConfigs.get(0);
+                    this.task = newInstance(connector.taskClass().asSubclass(SourceTask.class));
+                    LOGGER.info("Initializing task: " + task);
+                    task.initialize(new JetSourceTaskContext(taskConfig));
+                    LOGGER.info("Starting task: " + task + " with task config: " + taskConfig);
+                    task.start(taskConfig);
+                    running = true;
+                } else {
+                    LOGGER.info("No task configs!");
+                }
             }
+        } finally {
+            taskLifecycleLock.unlock();
         }
     }
 
@@ -121,22 +119,6 @@ class TaskRunner {
             return clazz.getConstructor().newInstance();
         } catch (Exception e) {
             throw rethrow(e);
-        }
-    }
-
-    private void stopTaskAndAwait() {
-        stop();
-        if (!awaitStop()) {
-            LOGGER.info("Waiting for stopping task timed-out");
-        }
-    }
-
-    private boolean awaitStop() {
-        try {
-            LOGGER.info("Waiting for stopping the previous task");
-            return taskStoppedLatch.await(AWAIT_STOP_TIMEOUT, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            return false;
         }
     }
 
