@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,12 @@ package com.hazelcast.jet.sql.impl.connector.test;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -34,6 +32,7 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -95,18 +94,17 @@ public class TestFailingSqlConnector implements SqlConnector {
 
     @Nonnull @Override
     public Vertex fullScanReader(
-            @Nonnull DAG dag,
-            @Nonnull Table table,
-            @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projection,
+            @Nonnull DagBuildContext context,
+            @Nullable RexNode predicate,
+            @Nonnull List<RexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
             throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
         }
 
-        return dag.newUniqueVertex(
-                "FailingSource[" + table.getSchemaName() + "." + table.getSqlName() + ']',
+        return context.getDag().newUniqueVertex(
+                "FailingSource[" + context.getTable().getSchemaName() + "." + context.getTable().getSqlName() + ']',
                 FailingP::new
         );
     }

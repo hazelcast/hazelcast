@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
@@ -47,8 +48,8 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
     private static final int OPERATION_COUNT = 10;
 
     private HazelcastInstance instance;
-    private String mapName = "mapName";
-    private String mapNameSet = "mapNameSet";
+    private final String mapName = "mapName";
+    private final String mapNameSet = "mapNameSet";
 
     @Before
     public void setUp() {
@@ -140,7 +141,9 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
         Map<Integer, Collection<? extends Integer>> expectedMultiMap = new HashMap<>();
         testPutAllAndHitsGeneratedTemplate(expectedMultiMap,
                 (o) -> {
-                    o.putAllAsync(expectedMultiMap);
+                    // We need to wait for putAllAsync() call to finish because
+                    // stats are being updated after the putAllAsync() completes
+                    o.putAllAsync(expectedMultiMap).toCompletableFuture().join();
                 }
         );
     }
@@ -150,9 +153,14 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
         Map<Integer, Collection<? extends Integer>> expectedMultiMap = new HashMap<>();
         testPutAllAndHitsGeneratedTemplate(expectedMultiMap,
                 (o) -> {
-                    for (int i = 0; i < 100; ++i) {
-                        o.putAllAsync(i, expectedMultiMap.get(i));
+                    // We need to wait for all putAllAsync() calls to finish because
+                    // stats are being updated after the putAllAsync() completes
+                    int loopLimit = 100;
+                    CompletableFuture<Void>[] futureList = new CompletableFuture[loopLimit];
+                    for (int i = 0; i < loopLimit; ++i) {
+                        futureList[i] = o.putAllAsync(i, expectedMultiMap.get(i)).toCompletableFuture();
                     }
+                    CompletableFuture.allOf(futureList).join();
                 }
         );
     }

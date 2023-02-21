@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,6 +67,7 @@ import static com.hazelcast.test.Accessors.getNode;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -574,6 +575,60 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         final Object putIfAbsent = map.putIfAbsent(1, 2);
 
         assertNull(putIfAbsent);
+    }
+
+    @Test
+    public void get_after_clear_loads_data_from_map_loader() {
+        EventBasedMapStore testMapStore = new EventBasedMapStore();
+        Config config = newConfig(testMapStore, 100);
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<Integer, Integer> map = instance.getMap("default");
+
+        final int keyCount = 1_000;
+
+        for (int i = 0; i < keyCount; i++) {
+            map.set(i, i);
+        }
+
+        map.clear();
+
+        for (int i = 0; i < keyCount; i++) {
+            map.get(i);
+        }
+
+        int actualLoadEventCount = 0;
+        BlockingQueue events = testMapStore.getEvents();
+        for (Object event : events) {
+            if (event == EventBasedMapStore.STORE_EVENTS.LOAD) {
+                actualLoadEventCount++;
+            }
+        }
+        assertEquals(keyCount, actualLoadEventCount);
+    }
+
+    @Test
+    public void clear_deletes_all_entries_in_map_store() {
+        final int keyCount = 1_000;
+        EventBasedMapStore testMapStore = new EventBasedMapStore();
+        testMapStore.deleteLatch = new CountDownLatch(keyCount);
+
+        Config config = newConfig(testMapStore, 3);
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<Integer, Integer> map = instance.getMap("default");
+
+        for (int i = 0; i < keyCount; i++) {
+            map.set(i, i);
+        }
+
+        map.clear();
+
+        for (int i = 0; i < keyCount; i++) {
+            assertFalse(map.containsKey(i));
+        }
+
+        assertOpenEventually(testMapStore.deleteLatch);
     }
 
     public static class RecordingMapStore implements MapStore<String, String> {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package com.hazelcast.internal.tpc;
 
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.internal.tpc.util.BufferUtil.upcast;
+
 
 /**
  * A {@link ReadHandler} that disposes any bytes on the receive buffer.
@@ -25,6 +27,6 @@ import java.nio.ByteBuffer;
 public class DevNullReadHandler extends ReadHandler {
     @Override
     public void onRead(ByteBuffer receiveBuffer) {
-        receiveBuffer.position(receiveBuffer.limit());
+        upcast(receiveBuffer).position(receiveBuffer.limit());
     }
 }

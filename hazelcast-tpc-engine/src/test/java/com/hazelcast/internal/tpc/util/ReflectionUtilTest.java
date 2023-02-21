@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,12 +32,29 @@ public class ReflectionUtilTest {
 
     @Test
     public void test_whenFieldExist() {
-        ClassWithStaticField.staticField = Integer.valueOf(255);
+        Integer value = findStaticFieldValue(ClassWithStaticField.class, "staticField");
+        assertEquals(ClassWithStaticField.staticField, value);
+    }
+
+    @Test
+    public void test_whenClassNotExist() {
+        Object value = findStaticFieldValue("com.foo.bar.Baz", "nonexisting");
+        assertNull(value);
+    }
+
+    @Test
+    public void test_whenClassExist_butFieldDoesNot() {
+        Integer value = findStaticFieldValue(ClassWithStaticField.class, "nonexisting");
+        assertNull(value);
+    }
+
+    @Test
+    public void test_whenClassAndFieldExist() {
         Integer value = findStaticFieldValue(ClassWithStaticField.class, "staticField");
         assertEquals(ClassWithStaticField.staticField, value);
     }
 
     public static class ClassWithStaticField {
-        public static Integer staticField;
+        public static Integer staticField = 255;
     }
 }

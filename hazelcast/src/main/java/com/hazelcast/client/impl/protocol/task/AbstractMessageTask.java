@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,7 @@ import java.util.Set;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
+import static com.hazelcast.internal.tpc.util.BufferUtil.upcast;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 
 /**
@@ -295,7 +296,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
                 frame = frame.next;
             }
             //nasty
-            buf.byteBuffer().flip();
+            upcast(buf.byteBuffer()).flip();
             asyncSocket.writeAndFlush(buf);
         }
         //TODO framing not implemented yet, should be split into frames before writing to connection

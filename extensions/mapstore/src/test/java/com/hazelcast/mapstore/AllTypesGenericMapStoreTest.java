@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import java.util.Collection;
 import java.util.Properties;
 import java.util.function.BiConsumer;
 
-import static com.hazelcast.mapstore.GenericMapStore.EXTERNAL_REF_ID_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapStore.DATA_LINK_REF_PROPERTY;
 import static java.time.OffsetDateTime.of;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -143,7 +143,7 @@ public class AllTypesGenericMapStoreTest extends JdbcSqlTestSupport {
         instance().getConfig().addMapConfig(mapConfig);
 
         Properties properties = new Properties();
-        properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
 
         mapStore = new GenericMapStore<>();
         mapStore.init(instance(), properties, tableName);

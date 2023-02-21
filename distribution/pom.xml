@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -44,7 +44,6 @@
                     <includedLicenses combine.children="append">
                         <includedLicense>CDDL</includedLicense>
                         <includedLicense>CDDL 1.1</includedLicense>
-                        <includedLicense>Eclipse Distribution License - v 1.0</includedLicense>
                         <includedLicense>Lesser General Public License (LGPL)</includedLicense>
                         <includedLicense>The GNU General Public License, v2 with FOSS exception</includedLicense>
                         <includedLicense>The Go license</includedLicense>
@@ -387,6 +386,18 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-mapstore</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-mongodb</artifactId>
+            <version>${project.version}</version>
+            <classifier>${fat.dependency.classifier}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-kafka-connect</artifactId>
+            <version>${project.version}</version>
+            <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
         <dependency>
             <groupId>org.awaitility</groupId>

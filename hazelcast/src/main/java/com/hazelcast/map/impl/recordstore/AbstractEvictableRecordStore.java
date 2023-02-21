@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -147,12 +147,25 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     @Override
     public void doPostEvictionOperations(Data dataKey, Object value,
                                          ExpiryReason expiryReason) {
+
+        // Decide event type and update stats
+        EntryEventType eventType;
+        if (expiryReason != NOT_EXPIRED) {
+            eventType = EXPIRED;
+            stats.increaseExpirations();
+        } else {
+            eventType = EVICTED;
+            stats.increaseEvictions();
+        }
+
+        // Publish event
         if (eventService.hasEventRegistration(SERVICE_NAME, name)) {
-            EntryEventType eventType = expiryReason != NOT_EXPIRED ? EXPIRED : EVICTED;
             mapEventPublisher.publishEvent(thisAddress, name,
                     eventType, dataKey, value, null);
         }
 
+        // Deal with idleness related expiry
+        // of entries on backup replicas
         if (expiryReason == MAX_IDLE_SECONDS) {
             // only send expired key to back-up if
             // it is expired according to idleness.
@@ -173,7 +186,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     public void mergeRecordExpiration(Data key, Record record,
-                                         MapMergeTypes mergingEntry, long now) {
+                                      MapMergeTypes mergingEntry, long now) {
         mergeRecordExpiration(record, mergingEntry.getCreationTime(),
                 mergingEntry.getLastAccessTime(), mergingEntry.getLastUpdateTime());
         // WAN events received from source cluster also carry null maxIdle

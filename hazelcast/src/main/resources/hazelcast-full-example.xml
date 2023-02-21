@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
   the directory where you start your Hazelcast member.
 
   To learn how to configure Hazelcast, please see the schema at
-  https://hazelcast.com/schema/config/hazelcast-config-5.2.xsd
+  https://hazelcast.com/schema/config/hazelcast-config-5.3.xsd
   or the Reference Manual at https://docs.hazelcast.com/
 -->
 
@@ -729,8 +729,7 @@
         </interfaces>
         <ssl enabled="false">
             <properties>
-                <property name="protocol">TLS</property>
-
+                <property name="protocol">TLSv1.3</property>
                 <property name="mutualAuthentication">REQUIRED</property>
                 <property name="keyStore">/opt/hazelcast.keystore</property>
                 <property name="keyStorePassword">secret.97531</property>
@@ -738,6 +737,7 @@
                 <property name="trustStore">/opt/hazelcast.truststore</property>
                 <property name="trustStorePassword">changeit</property>
                 <property name="trustStoreType">PKCS12</property>
+                <property name="keyMaterialDuration">PT10M</property>
             </properties>
         </ssl>
         <socket-interceptor enabled="false"/>
@@ -3944,22 +3944,22 @@
     <integrity-checker enabled="false"/>
 
     <!--
-      ===== HAZELCAST EXTERNAL DATA STORE CONFIGURATION =====
+      ===== HAZELCAST DATA LINK CONFIGURATION =====
     
-      Configuration element's name is <external-data-store>. Contains configuration of external data stores
+      Configuration element's name is <data-link>. Contains configuration of data links
       used by map stores and jdbc sinks and sources
       -->
-    <external-data-store name="mysql-database">
-        <class-name>com.hazelcast.datastore.JdbcDataStoreFactory</class-name>
+    <data-link name="mysql-database">
+        <class-name>com.hazelcast.datalink.JdbcDataLinkFactory</class-name>
         <properties>
             <property name="jdbcUrl">jdbc:mysql://dummy:3306</property>
         </properties>
         <shared>false</shared>
-    </external-data-store>
+    </data-link>
 
-    <external-data-store name="other-database">
-        <class-name>com.hazelcast.datastore.OtherDataStore</class-name>
-    </external-data-store>
+    <data-link name="other-database">
+        <class-name>com.hazelcast.datalink.OtherDataLink</class-name>
+    </data-link>
 
     <!--
     ===== HAZELCAST ALTO CONFIGURATION =====

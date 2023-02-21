@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.aws;
 
-import com.hazelcast.aws.AwsEcsApi.Task;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.discovery.integration.DiscoveryMode;
@@ -26,7 +25,6 @@ import java.util.Map;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonList;
 
 class AwsEcsClient implements AwsClient {
     private static final ILogger LOGGER = Logger.getLogger(AwsClient.class);
@@ -67,12 +65,6 @@ class AwsEcsClient implements AwsClient {
 
     @Override
     public String getAvailabilityZone() {
-        String taskArn = awsMetadataApi.metadataEcs().getTaskArn();
-        AwsCredentials credentials = awsCredentialsProvider.credentials();
-        List<Task> tasks = awsEcsApi.describeTasks(cluster, singletonList(taskArn), credentials);
-        return tasks.stream()
-                .map(Task::getAvailabilityZone)
-                .findFirst()
-                .orElse("unknown");
+        return  awsMetadataApi.availabilityZoneEcs();
     }
 }

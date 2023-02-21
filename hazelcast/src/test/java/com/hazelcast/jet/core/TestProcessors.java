@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -496,13 +496,15 @@ public final class TestProcessors {
         protected void init(@Nonnull Context context) throws InterruptedException {
             LOGGER.info("MockP.init called on " + Thread.currentThread().getName());
             initCount.incrementAndGet();
-            if (initError != null) {
-                throw sneakyThrow(initError);
-            }
 
+            // Block first to allow to control when the exception is thrown
             if (initBlocks) {
                 blockingSemaphore.acquire();
                 Thread.sleep(RANDOM.nextInt(500));
+            }
+
+            if (initError != null) {
+                throw sneakyThrow(initError);
             }
         }
 

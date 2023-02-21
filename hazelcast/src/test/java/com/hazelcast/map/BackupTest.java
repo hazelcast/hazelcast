@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,9 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.TestUtil;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -36,8 +38,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -47,6 +49,11 @@ import static org.junit.Assert.assertTrue;
 public class BackupTest extends HazelcastTestSupport {
 
     private final String mapName = randomMapName();
+
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfigWithoutJetAndMetrics();
+    }
 
     @Test
     public void testNodeStartAndGracefulShutdown_inSequence() throws Exception {
@@ -205,11 +212,11 @@ public class BackupTest extends HazelcastTestSupport {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory();
         final Config config = getConfig();
         config.setProperty(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "1");
-        config.getMapConfig(mapName).setBackupCount(1).setStatisticsEnabled(true);
+        config.getMapConfig(mapName)
+                .setBackupCount(1)
+                .setStatisticsEnabled(true);
 
-        final Random rand = new Random();
-        final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(nodeCount);
-        final int count = 10000;
+        final int count = 10_000;
         final int totalCount = count * (nodeCount - 1);
         final CountDownLatch latch = new CountDownLatch(nodeCount);
 
@@ -217,38 +224,50 @@ public class BackupTest extends HazelcastTestSupport {
             final int index = i;
             new Thread() {
                 public void run() {
-                    sleepMillis(index * rand.nextInt(1000));
-                    HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
-                    instances.set(index, instance);
-                    if (index != 0) {
-                        // do not run on master node,
-                        // let partition assignment be made during put ops.
-                        IMap<Object, Object> map = instance.getMap(mapName);
-                        for (int j = 0; j < count; j++) {
-                            map.put(getName() + "-" + j, "value");
+                    try {
+                        sleepMillis(index * ThreadLocalRandom.current().nextInt(1_000));
+                        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+                        if (!Accessors.getNode(instance).isMaster()) {
+                            // do not run on master node,
+                            // let partition assignment be made during put ops.
+                            IMap map = instance.getMap(mapName);
+                            for (int j = 0; j < count; j++) {
+                                map.put(getName() + "-" + j, "value");
+                            }
                         }
+                    } finally {
+                        latch.countDown();
                     }
-                    latch.countDown();
                 }
             }.start();
         }
 
         assertTrue(latch.await(5, TimeUnit.MINUTES));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                long totalOwned = 0L;
-                long totalBackup = 0L;
-                for (int i = 0; i < instances.length(); i++) {
-                    HazelcastInstance hz = instances.get(i);
-                    LocalMapStats stats = hz.getMap(mapName).getLocalMapStats();
-                    totalOwned += stats.getOwnedEntryCount();
-                    totalBackup += stats.getBackupEntryCount();
+        assertTrueEventually(() -> {
+            long totalOwned = 0L;
+            long totalBackup = 0L;
+            long totalCountOverRecordStores = 0L;
+
+            Collection<HazelcastInstance> instances = nodeFactory.getAllHazelcastInstances();
+            for (HazelcastInstance hz : instances) {
+                IMap map = hz.getMap(mapName);
+                LocalMapStats stats = map.getLocalMapStats();
+                int partitionCount = Accessors.getPartitionService(hz).getPartitionCount();
+                for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+                    RecordStore existingRecordStore = IMapAccessors.getMapServiceContext(map)
+                            .getPartitionContainer(partitionId).getExistingRecordStore(mapName);
+                    totalCountOverRecordStores += existingRecordStore != null ? existingRecordStore.size() : 0;
                 }
-                assertEquals("Owned entry count is wrong! ", totalCount, totalOwned);
-                assertEquals("Backup entry count is wrong! ", totalCount, totalBackup);
+                totalOwned += stats.getOwnedEntryCount();
+                totalBackup += stats.getBackupEntryCount();
             }
+
+            assertEquals("Total count of owned and backup entries "
+                            + "calculated over internal record-stores is wrong! ",
+                    2 * totalCount, totalCountOverRecordStores);
+            assertEquals("Owned entry count is wrong! ", totalCount, totalOwned);
+            assertEquals("Backup entry count is wrong! ", totalCount, totalBackup);
         });
     }
 

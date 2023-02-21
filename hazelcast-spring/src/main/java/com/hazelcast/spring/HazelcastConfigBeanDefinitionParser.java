@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
@@ -249,7 +249,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap<String, AbstractBeanDefinition> pnCounterManagedMap;
         private ManagedMap<EndpointQualifier, AbstractBeanDefinition> endpointConfigsMap;
         private ManagedMap<String, AbstractBeanDefinition> deviceConfigManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> externalDataStoreConfigMap;
+        private ManagedMap<String, AbstractBeanDefinition> dataLinkConfigMap;
 
         private boolean hasNetwork;
         private boolean hasAdvancedNetworkEnabled;
@@ -277,7 +277,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.pnCounterManagedMap = createManagedMap("PNCounterConfigs");
             this.endpointConfigsMap = new ManagedMap<>();
             this.deviceConfigManagedMap = createManagedMap("deviceConfigs");
-            this.externalDataStoreConfigMap = createManagedMap("externalDataStoreConfigs");
+            this.dataLinkConfigMap = createManagedMap("dataLinkConfigs");
         }
 
         private ManagedMap<String, AbstractBeanDefinition> createManagedMap(String configName) {
@@ -385,8 +385,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleDynamicConfiguration(node);
                     } else if ("integrity-checker".equals(nodeName)) {
                         handleIntegrityChecker(node);
-                    } else if ("external-data-store".equals(nodeName)) {
-                        handleExternalDataStore(node);
+                    } else if ("data-link".equals(nodeName)) {
+                        handleDataLink(node);
                     } else if ("alto".equals(nodeName)) {
                         handleAlto(node);
                     }
@@ -2347,8 +2347,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("integrityCheckerConfig", builder.getBeanDefinition());
         }
 
-        private void handleExternalDataStore(Node node) {
-            BeanDefinitionBuilder builder = createBeanBuilder(ExternalDataStoreConfig.class);
+        private void handleDataLink(Node node) {
+            BeanDefinitionBuilder builder = createBeanBuilder(DataLinkConfig.class);
             builder.addPropertyValue("name", getAttribute(node, "name"));
             fillValues(node, builder, "properties");
             for (Node child : childElements(node)) {
@@ -2358,7 +2358,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     break;
                 }
             }
-            externalDataStoreConfigMap.put(getAttribute(node, "name"), builder.getBeanDefinition());
+            dataLinkConfigMap.put(getAttribute(node, "name"), builder.getBeanDefinition());
         }
 
         private void handleAlto(Node node) {

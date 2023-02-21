@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package com.hazelcast.client.impl.clientside;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCacheConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCardinalityEstimatorConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDataLinkConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDurableExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExecutorConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExternalDataStoreConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGeneratorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddListConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMapConfigCodec;
@@ -50,11 +50,11 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.DynamicConfigurationConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
@@ -1119,37 +1119,43 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
-    public Map<String, ExternalDataStoreConfig> getExternalDataStoreConfigs() {
+    public Map<String, DataLinkConfig> getDataLinkConfigs() {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
-    public Config setExternalDataStoreConfigs(Map<String, ExternalDataStoreConfig> externalDataStoreConfigs) {
+    public Config setDataLinkConfigs(Map<String, DataLinkConfig> dataLinkConfigs) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
-    public Config addExternalDataStoreConfig(ExternalDataStoreConfig externalDataStoreConfig) {
-        ClientMessage request = DynamicConfigAddExternalDataStoreConfigCodec.encodeRequest(
-                externalDataStoreConfig.getName(), externalDataStoreConfig.getClassName(),
-                externalDataStoreConfig.isShared(), toMap(externalDataStoreConfig.getProperties()));
+    public Config addDataLinkConfig(DataLinkConfig dataLinkConfig) {
+        ClientMessage request = DynamicConfigAddDataLinkConfigCodec.encodeRequest(
+                dataLinkConfig.getName(), dataLinkConfig.getClassName(),
+                dataLinkConfig.isShared(), toMap(dataLinkConfig.getProperties()));
         invoke(request);
         return this;
     }
 
     @Override
-    public ExternalDataStoreConfig getExternalDataStoreConfig(String name) {
+    public DataLinkConfig getDataLinkConfig(String name) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
-    public ExternalDataStoreConfig findExternalDataStoreConfig(String name) {
+    public DataLinkConfig findDataLinkConfig(String name) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Nonnull
     @Override
     public AltoConfig getAltoConfig() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Nonnull
+    @Override
+    public Config setAltoConfig(@Nonnull AltoConfig altoConfig) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

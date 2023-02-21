@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -900,9 +900,8 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of JSON type, but OBJECT was found"),
 
                 // JSON
-                TestParams.failingCase(2501, JSON, VARCHAR, "CAST('\"foo\"' AS JSON)", new HazelcastJsonValue("\"foo\""))
-                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type JSON")
-                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type JSON")
+                TestParams.passingCase(2501, JSON, VARCHAR, "CAST('\"foo\"' AS JSON)", new HazelcastJsonValue("\"foo\""), "\"foo\"")
+                        // JSON->VARCHAR coercion is not supported for dynamic parameters
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of VARCHAR type, but JSON was found"),
                 TestParams.failingCase(2502, JSON, BOOLEAN, "CAST('true' AS JSON)", new HazelcastJsonValue("true"))
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type JSON")

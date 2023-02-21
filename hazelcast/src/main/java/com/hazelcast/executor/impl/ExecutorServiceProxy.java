@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
 import com.hazelcast.executor.impl.operations.ShutdownOperation;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.internal.util.Timer;
 import com.hazelcast.logging.ILogger;
@@ -372,12 +373,12 @@ public class ExecutorServiceProxy
                 .createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, partitionId)
                 .invoke();
         if (callback != null) {
-            future.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback))
+            future.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback), ConcurrencyUtil.getDefaultAsyncExecutor())
                     .whenCompleteAsync((v, t) -> {
                         if (t instanceof RejectedExecutionException) {
                             callback.onFailure(t);
                         }
-                    });
+                    }, ConcurrencyUtil.getDefaultAsyncExecutor());
         }
     }
 
@@ -414,12 +415,12 @@ public class ExecutorServiceProxy
                 .createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, address)
                 .invoke();
         if (callback != null) {
-            future.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback))
+            future.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback), ConcurrencyUtil.getDefaultAsyncExecutor())
                     .whenCompleteAsync((v, t) -> {
                         if (t instanceof RejectedExecutionException) {
                             callback.onFailure(t);
                         }
-                    });
+                    }, ConcurrencyUtil.getDefaultAsyncExecutor());
         }
     }
 

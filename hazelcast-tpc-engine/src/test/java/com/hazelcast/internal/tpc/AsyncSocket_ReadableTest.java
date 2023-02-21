@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import static com.hazelcast.internal.tpc.TpcTestSupport.assertTrueEventually;
 import static com.hazelcast.internal.tpc.TpcTestSupport.assertTrueTwoSeconds;
 import static com.hazelcast.internal.tpc.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_LONG;
+import static com.hazelcast.internal.tpc.util.BufferUtil.upcast;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -109,7 +110,7 @@ public abstract class AsyncSocket_ReadableTest {
     static class NullReadHandler extends ReadHandler {
         @Override
         public void onRead(ByteBuffer receiveBuffer) {
-            receiveBuffer.position(receiveBuffer.limit());
+            upcast(receiveBuffer).position(receiveBuffer.limit());
         }
     }
 }

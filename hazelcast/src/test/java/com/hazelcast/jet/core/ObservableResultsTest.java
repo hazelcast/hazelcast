@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.TestInClusterSupport;
 import com.hazelcast.jet.function.Observer;
+import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -157,7 +158,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
         //when
         job.cancel();
         //then
-        assertError(testObserver, "CancellationException");
+        assertError(testObserver, CancellationByUserException.class.getName());
         assertCompletions(testObserver, 0);
     }
 
@@ -367,7 +368,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
 
         //when
         job.cancel();
-        assertError(testObserver, "CancellationException");
+        assertError(testObserver, CancellationByUserException.class.getName());
         assertCompletions(testObserver, 0);
 
         //then - job2 is still running

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.junit.Test;
 
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.internal.tpc.util.BufferUtil.upcast;
 import static org.junit.Assert.assertEquals;
 
 public class BufferUtilTest {
@@ -28,13 +29,13 @@ public class BufferUtilTest {
         ByteBuffer src = ByteBuffer.allocate(8);
         src.putInt(1);
         src.putInt(2);
-        src.flip();
+        upcast(src).flip();
         int srcPos = src.position();
         int srcLimit = src.limit();
 
         ByteBuffer dst = ByteBuffer.allocate(8);
         BufferUtil.put(dst, src);
-        dst.flip();
+        upcast(dst).flip();
         assertEquals(8, dst.remaining());
         assertEquals(1, dst.getInt());
         assertEquals(2, dst.getInt());
@@ -48,13 +49,13 @@ public class BufferUtilTest {
         ByteBuffer src = ByteBuffer.allocate(8);
         src.putInt(1);
         src.putInt(2);
-        src.flip();
+        upcast(src).flip();
         int srcPos = src.position();
         int srcLimit = src.limit();
 
         ByteBuffer dst = ByteBuffer.allocate(12);
         BufferUtil.put(dst, src);
-        dst.flip();
+        upcast(dst).flip();
         assertEquals(8, dst.remaining());
         assertEquals(1, dst.getInt());
         assertEquals(2, dst.getInt());
@@ -67,13 +68,13 @@ public class BufferUtilTest {
         ByteBuffer src = ByteBuffer.allocate(8);
         src.putInt(1);
         src.putInt(2);
-        src.flip();
+        upcast(src).flip();
         int srcPos = src.position();
         int srcLimit = src.limit();
 
         ByteBuffer dst = ByteBuffer.allocate(4);
         BufferUtil.put(dst, src);
-        dst.flip();
+        upcast(dst).flip();
         assertEquals(4, dst.remaining());
         assertEquals(1, dst.getInt());
 

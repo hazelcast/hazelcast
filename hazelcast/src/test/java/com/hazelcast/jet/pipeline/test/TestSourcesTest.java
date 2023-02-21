@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 
 package com.hazelcast.jet.pipeline.test;
 
+import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.pipeline.PipelineTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.jitter.JitterRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -32,6 +34,7 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
 import static com.hazelcast.jet.pipeline.test.Assertions.assertCollectedEventually;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -156,17 +159,28 @@ public class TestSourcesTest extends PipelineTestSupport {
     public void test_itemStream_in_expected_range() throws Throwable {
         int itemsPerSecond = 109;
 
+        int windowSize = 1000;
         p.readFrom(TestSources.itemStream(itemsPerSecond))
-                .withNativeTimestamps(0)
-                .window(tumbling(1000))
-                .aggregate(counting())
-                .apply(assertCollectedEventually(10, windowResults -> {
+         .withNativeTimestamps(0)
+         .window(tumbling(windowSize))
+         .aggregate(counting())
+         .apply(assertCollectedEventually(10, windowResults -> {
                     // first window may be incomplete
                     assertTrue("sink list should contain some items", windowResults.size() > 1);
-                    assertTrue("emitted items is more than twice lower then expected itemsPerSecond",
-                            (long) windowResults.get(1).result() > itemsPerSecond / 2);
-                    assertTrue("emitted items is more than twice higher then expected itemsPerSecond",
-                            (long) windowResults.get(1).result() < itemsPerSecond * 2);
+                    WindowResult<Long> windowResult = windowResults.get(1);
+
+                    long pauses = JitterRule.getPausesBetween(windowResult.start(), windowResult.end());
+                    // Ignore if a long pause was recorded
+                    if (pauses < (windowSize / 2)) {
+                        assertThat(windowResult.result())
+                                .describedAs("emitted items is more than twice lower then expected itemsPerSecond")
+                                .isGreaterThan(itemsPerSecond / 2);
+
+                        assertThat(windowResult.result())
+                                .describedAs("emitted items is more than twice higher then expected itemsPerSecond")
+                                .isLessThan(itemsPerSecond * 2);
+
+                    }
                 }));
 
         expectAssertionsCompleted();

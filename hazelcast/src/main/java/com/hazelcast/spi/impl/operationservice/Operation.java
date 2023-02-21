@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.server.ServerConnection;
@@ -29,6 +30,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.SilentException;
+import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
@@ -582,6 +584,24 @@ public abstract class Operation implements DataSerializable, Tenantable {
      */
     public ExceptionAction onInvocationException(Throwable throwable) {
         return throwable instanceof RetryableException ? RETRY_INVOCATION : THROW_EXCEPTION;
+    }
+
+    /**
+     * Called when an <code>Exception</code>/<code>Error</code> is thrown
+     * during an invocation on master member. Invocation process will continue,
+     * it will retry or fail according to returned <code>ExceptionAction</code>.
+     * <p>
+     * This method is called on caller side of the invocation.
+     *
+     * @param throwable <code>Exception</code>/<code>Error</code> thrown during
+     *                  invocation
+     * @return <code>ExceptionAction</code>
+     */
+    public ExceptionAction onMasterInvocationException(Throwable throwable) {
+        if (throwable instanceof WrongTargetException || throwable instanceof MemberLeftException) {
+            return RETRY_INVOCATION;
+        }
+        return onInvocationException(throwable);
     }
 
     public UUID getCallerUuid() {

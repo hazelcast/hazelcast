@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,7 @@ import javax.annotation.Nonnull;
  * <ul>
  *     <li>{@link #isCooperative()}
  *     <li>{@link #init(Outbox, Context)}
+ *     <li>{@link #closeIsCooperative()}
  *     <li>{@link #close()}
  * </ul>
  *
@@ -87,12 +88,13 @@ import javax.annotation.Nonnull;
  *
  * <h3>How the methods are called</h3>
  * <p>
- * Besides {@link #init}, {@link #close} and {@link #isCooperative} the methods
- * are called in a tight loop with a possibly short back-off if the method does
- * no work. "No work" is defined as adding nothing to outbox and taking nothing
- * from inbox. If you do heavy work on each call (such as querying a remote
- * service), you can do additional back-off: use {@code sleep} in a
- * non-cooperative processor or do nothing if sufficient time didn't elapse.
+ * Except for {@link #init}, {@link #close}, {@link #isCooperative} and {@link
+ * #closeIsCooperative()}, the methods are called in a tight loop with a
+ * possibly short back-off if the method does no work. "No work" is defined as
+ * adding nothing to outbox and taking nothing from inbox. If you do heavy work
+ * on each call (such as querying a remote service), you can do additional
+ * back-off: use {@code sleep} in a non-cooperative processor or do nothing if
+ * sufficient time didn't elapse.
  *
  * @since Jet 3.0
  */
@@ -554,6 +556,13 @@ public interface Processor {
      * off-loaded to another thread.
      * <p>
      * This flag is ignored for non-cooperative processors.
+     * <p>
+     * By default, {@link #close()} is assumed to be non-cooperative to guarantee
+     * correct-by-default behavior for custom processors, even though default
+     * implementation of {@link #close()} is empty, so it's cooperative.
+     * Implementors are however encouraged to override this method if the
+     * default, empty {@link #close()} is used in a cooperative processor to
+     * avoid offloading an empty invocation to another thread.
      */
     default boolean closeIsCooperative() {
         return false;

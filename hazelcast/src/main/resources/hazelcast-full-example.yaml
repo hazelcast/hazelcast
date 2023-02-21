@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -708,8 +708,7 @@ hazelcast:
     ssl:
       enabled: false
       properties:
-        protocol: TLS
-
+        protocol: TLSv1.3
         mutualAuthentication: REQUIRED
         keyStore: /opt/hazelcast.keystore
         keyStorePassword: secret.97531
@@ -717,6 +716,7 @@ hazelcast:
         trustStore: /opt/hazelcast.truststore
         trustStorePassword: changeit
         trustStoreType: PKCS12
+        keyMaterialDuration: PT10M
     socket-interceptor:
       enabled: false
     member-address-provider:
@@ -3357,15 +3357,16 @@ hazelcast:
           password: thepassword
           iteration-count: 1000
     wan-server-socket-endpoint-config:
-      interfaces:
-        enabled: false
+      wan-server-socket-config:
         interfaces:
-          - 192.168.8.101
-          - 10.20.10.100
-      alto-socket:
-        port-range: 14000-16000
-        receive-buffer-size-kb: 256
-        send-buffer-size-kb: 256
+          enabled: false
+          interfaces:
+            - 192.168.8.101
+            - 10.20.10.100
+        alto-socket:
+          port-range: 14000-16000
+          receive-buffer-size-kb: 256
+          send-buffer-size-kb: 256
     memcache-server-socket-endpoint-config:
       name: memcache
       port:
@@ -3849,18 +3850,18 @@ hazelcast:
   # Integrity Checker is disabled by default.
   integrity-checker:
     enabled: false
-  #      ===== HAZELCAST EXTERNAL DATA STORE CONFIGURATION =====
+  #      ===== HAZELCAST DATA LINK CONFIGURATION =====
   #
-  #      Configuration element's name is <external-data-store>. Contains configuration of external data stores
+  #      Configuration element's name is <data-link>. Contains configuration of data links
   #      used by map stores and jdbc sinks and sources.
-  external-data-store:
+  data-link:
     mysql-database:
-      class-name: com.hazelcast.datastore.JdbcDataStoreFactory
+      class-name: com.hazelcast.datalink.JdbcDataLinkFactory
       properties:
         jdbcUrl: jdbc:mysql://dummy:3306
       shared: false
     other-database:
-      class-name: com.hazelcast.datastore.OtherDataStore
+      class-name: com.hazelcast.datalink.OtherDataLink
 
   #    ===== HAZELCAST ALTO CONFIGURATION =====
   #

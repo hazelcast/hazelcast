@@ -16,12 +16,9 @@
 |||
 |---|---|
 |Related Jira|[HZ-710](https://hazelcast.atlassian.net/browse/HZ-710)|
-|Related Github issues|_-_|
-|Document Status / Completeness|IN REVIEW|
+|Document Status / Completeness|DONE|
 |Requirement owner|Sandeep Akhouri|
 |Developer(s)|Sasha Syrotenko|
-|Quality Engineer|TBA|
-|Support Engineer|TBA|
 |Technical Reviewers|Viliam Durina|
 
 ### Background

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,8 +37,6 @@ import static com.hazelcast.cache.HazelcastCacheManager.CACHE_MANAGER_PREFIX;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -69,8 +67,12 @@ public class CacheUtilTest extends HazelcastTestSupport {
     @Parameters(name = "{index}: uri={0}, classLoader={1}")
     public static Collection<Object[]> parameters() throws URISyntaxException {
         final URI uri = new URI(URI_SCOPE);
-        final ClassLoader classLoader = mock(ClassLoader.class);
-        when(classLoader.toString()).thenReturn(CLASSLOADER_SCOPE);
+        final ClassLoader classLoader = new ClassLoader() {
+            @Override
+            public String toString() {
+                return CLASSLOADER_SCOPE;
+            }
+        };
         return asList(
                 new Object[]{
                         null, null, null, CACHE_NAME, CACHE_MANAGER_PREFIX + CACHE_NAME,
