@@ -153,11 +153,10 @@ public abstract class AsyncServerSocketTest {
     }
 
     @Test
-    public void test_createCloseLoop_withSamereactor() {
+    public void test_createCloseLoop_withSameReactor() {
         SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
         Reactor reactor = newReactor();
         for (int k = 0; k < 1000; k++) {
-            System.out.println("at:" + k);
             AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
                     .setAcceptConsumer(acceptRequest -> {
                         AsyncSocket clientSocket = reactor.newAsyncSocketBuilder(acceptRequest)
@@ -177,7 +176,6 @@ public abstract class AsyncServerSocketTest {
     public void test_createCloseLoop_withNewReactor() {
         SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
         for (int k = 0; k < 1000; k++) {
-            System.out.println("at:" + k);
             Reactor reactor = newReactor();
             reactors.remove(reactor);
             AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
