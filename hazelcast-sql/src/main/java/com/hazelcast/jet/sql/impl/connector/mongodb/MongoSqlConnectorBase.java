@@ -19,6 +19,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlProcessors;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -117,8 +118,8 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
     @Nonnull
     public Vertex fullScanReader(
             @Nonnull DagBuildContext context,
-            @Nullable RexNode predicate,
-            @Nonnull List<RexNode> projection,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
         MongoTable table = context.getTable();
 
@@ -190,12 +191,12 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         }
     }
 
-    private static TranslationResult<String> translateFilter(RexNode filterNode, RexToMongoVisitor visitor) {
+    private static TranslationResult<String> translateFilter(HazelcastRexNode filterNode, RexToMongoVisitor visitor) {
         try {
             if (filterNode == null) {
                 return new TranslationResult<>(null, true);
             }
-            Object result = filterNode.accept(visitor);
+            Object result = filterNode.unwrap(RexNode.class).accept(visitor);
             assert result instanceof Bson;
 
             BsonDocument expression = ((Bson) result).toBsonDocument(BsonDocument.class, defaultCodecRegistry());
@@ -205,12 +206,12 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         }
     }
 
-    private static TranslationResult<List<String>> translateProjections(List<RexNode> projectionNodes,
+    private static TranslationResult<List<String>> translateProjections(List<HazelcastRexNode> projectionNodes,
                                                                         DagBuildContext context,
                                                                         RexToMongoVisitor visitor) {
         try {
             List<String> fields = projectionNodes.stream()
-                                          .map(e -> e.accept(visitor))
+                                          .map(e -> e.unwrap(RexNode.class).accept(visitor))
                                           .filter(proj -> proj instanceof String)
                                           .map(p -> (String) p)
                                           .collect(toList());
