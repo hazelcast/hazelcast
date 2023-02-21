@@ -22,8 +22,20 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.client.model.CreateCollectionOptions;
 import com.mongodb.client.model.ValidationOptions;
+import org.bson.BasicBSONObject;
+import org.bson.BsonArray;
 import org.bson.BsonDocument;
+import org.bson.BsonJavaScript;
+import org.bson.BsonJavaScriptWithScope;
+import org.bson.BsonRegularExpression;
+import org.bson.BsonString;
+import org.bson.BsonTimestamp;
 import org.bson.Document;
+import org.bson.types.CodeWithScope;
+import org.bson.types.Decimal128;
+import org.bson.types.MaxKey;
+import org.bson.types.MinKey;
+import org.bson.types.ObjectId;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -33,17 +45,19 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.util.Collection;
 
+import static java.time.ZoneOffset.UTC;
 import static java.util.Arrays.asList;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AllTypesSelectMongoSqlConnectorTest extends MongoSqlTest {
+    private static final ObjectId EXAMPLE_OBJECT_ID = ObjectId.get();
 
     @Parameterized.Parameter(0)
     public String bsonType;
@@ -57,7 +71,7 @@ public class AllTypesSelectMongoSqlConnectorTest extends MongoSqlTest {
     @Parameterized.Parameter(3)
     public Object expected;
 
-    @Parameterized.Parameters(name = "mappingType:{0}, value:{1}, expected:{2}")
+    @Parameterized.Parameters(name = "bsonType:{0}, mappingType:{1}, value:{2}, expected:{3}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {"string", "VARCHAR", "dummy", "dummy"},
@@ -75,18 +89,37 @@ public class AllTypesSelectMongoSqlConnectorTest extends MongoSqlTest {
                 {"double", "REAL", 1.5f, 1.5f},
                 {"double", "DOUBLE", 1.8d, 1.8d},
                 {"date", "DATE", LocalDate.parse("2022-12-30"), LocalDate.of(2022, 12, 30)},
-                {"date", "TIMESTAMP", atUtc(), OffsetDateTime.of(
-                        LocalDate.of(2022, 12, 30),
-                        LocalTime.of(23, 59, 59),
-                        ZoneOffset.UTC).toLocalDateTime()}
+                {"date", "TIMESTAMP", atUtc(), atLocal()},
+                {"timestamp", "TIMESTAMP", atLocalTimestamp(), atUtc()},
+                {"timestamp", "DATE_TIME", atLocalTimestamp(), atUtc()},
+                {"minKey", "OBJECT", new MinKey(), new MinKey()},
+                {"maxKey", "OBJECT", new MaxKey(), new MaxKey()},
+                {"objectId", "OBJECT", EXAMPLE_OBJECT_ID, EXAMPLE_OBJECT_ID},
+                {"object", "OBJECT", new BasicBSONObject(), new Document()},
+                {"decimal", "DECIMAL", new Decimal128(new BigDecimal("1.23")), new BigDecimal("1.23")},
+                {"javascript", "VARCHAR", new BsonJavaScript("{}"), "{}"},
+                {"javascriptWithScope", "OBJECT", new BsonJavaScriptWithScope("{}", new BsonDocument()),
+                        new CodeWithScope("{}", new Document())},
+                {"javascriptWithScope", "OBJECT", new CodeWithScope("{}", new Document()),
+                        new CodeWithScope("{}", new Document())},
+                {"array", "OBJECT", new BsonArray(asList(new BsonString("1"), new BsonString("2"))),
+                        asList("1", "2")},
+                {"array", "OBJECT", asList("1", "2"), asList("1", "2")},
+                {"regex", "OBJECT", new BsonRegularExpression(".*"), new BsonRegularExpression(".*")}
         });
     }
 
-    private static Timestamp atUtc() {
-        return Timestamp.valueOf(OffsetDateTime.of(
+    private static LocalDateTime atLocal() {
+        return LocalDateTime.of(
                 LocalDate.of(2022, 12, 30),
-                LocalTime.of(23, 59, 59),
-                ZoneOffset.UTC).toLocalDateTime());
+                LocalTime.of(23, 59, 59));
+    }
+    private static BsonTimestamp atLocalTimestamp() {
+        return new BsonTimestamp(Timestamp.valueOf(atLocal()).getTime());
+    }
+    private static LocalDateTime atUtc() {
+        ZoneId zoneId = ZoneId.systemDefault();
+        return atLocal().atZone(zoneId).withZoneSameInstant(UTC).toLocalDateTime();
     }
 
     @Test

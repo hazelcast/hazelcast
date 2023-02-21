@@ -109,8 +109,16 @@ class FieldResolver {
                 return QueryDataType.DATE;
             case STRING:
             case OBJECT_ID:
+            case JAVASCRIPT:
+            case JAVASCRIPT_WITH_SCOPE:
                 return VARCHAR;
             case DECIMAL128: return QueryDataType.DECIMAL;
+            case BINARY:
+            case MIN_KEY:
+            case DOCUMENT:
+            case ARRAY:
+            case REGULAR_EXPRESSION:
+            case MAX_KEY: return QueryDataType.OBJECT;
             default:  throw QueryException.error("BSON type " + columnType + " is not yet supported");
         }
     }

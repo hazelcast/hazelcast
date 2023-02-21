@@ -15,25 +15,33 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import org.bson.BsonArray;
 import org.bson.BsonBoolean;
 import org.bson.BsonDateTime;
 import org.bson.BsonDecimal128;
 import org.bson.BsonDouble;
 import org.bson.BsonInt32;
 import org.bson.BsonInt64;
+import org.bson.BsonJavaScript;
+import org.bson.BsonRegularExpression;
 import org.bson.BsonString;
 import org.bson.BsonTimestamp;
 import org.bson.BsonType;
+import org.bson.types.Code;
+import org.bson.types.CodeWithScope;
 import org.bson.types.Decimal128;
 import org.bson.types.ObjectId;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Locale;
+import java.util.List;
 import java.util.Map;
+
+import static java.util.Locale.ROOT;
 
 /**
  * Utility class to help resolve BSON-Java types.
@@ -42,6 +50,7 @@ final class BsonTypes {
 
     private static final Map<String, BsonType> BSON_NAME_TO_TYPE = generateBsonNameToBsonTypeMapping();
     private static final Map<Class<?>, BsonType> JAVA_TYPE_TO_BSON_TYPE = generateJavaClassToBsonTypeMapping();
+    private static final int MILLIS_TO_NANOS = 1000 * 1000;
 
     private BsonTypes() {
     }
@@ -55,18 +64,19 @@ final class BsonTypes {
     }
 
     static BsonType resolveTypeByName(String bsonTypeName) {
-        BsonType bsonType = BSON_NAME_TO_TYPE.get(bsonTypeName);
+        BsonType bsonType = BSON_NAME_TO_TYPE.get(bsonTypeName.toLowerCase(ROOT));
         if (bsonType == null) {
             throw new IllegalArgumentException("BSON type " + bsonTypeName + " is not known");
         }
         return bsonType;
     }
 
+    @SuppressWarnings("SpellCheckingInspection")
     private static Map<String, BsonType> generateBsonNameToBsonTypeMapping() {
         Map<String, BsonType> result = new HashMap<>();
 
         for (BsonType type : BsonType.values()) {
-            result.put(type.name().toLowerCase(Locale.ROOT), type);
+            result.put(type.name().toLowerCase(ROOT), type);
         }
 
         result.put("int", BsonType.INT32);
@@ -74,9 +84,12 @@ final class BsonTypes {
         result.put("regex", BsonType.REGULAR_EXPRESSION);
         result.put("bool", BsonType.BOOLEAN);
         result.put("decimal", BsonType.DECIMAL128);
-        result.put("minKey", BsonType.MIN_KEY);
-        result.put("maxKey", BsonType.MAX_KEY);
+        result.put("minkey", BsonType.MIN_KEY);
+        result.put("maxkey", BsonType.MAX_KEY);
         result.put("date", BsonType.DATE_TIME);
+        result.put("objectid", BsonType.OBJECT_ID);
+        result.put("object", BsonType.DOCUMENT);
+        result.put("javascriptwithscope", BsonType.JAVASCRIPT_WITH_SCOPE);
 
         return result;
     }
@@ -101,8 +114,10 @@ final class BsonTypes {
         result.put(Timestamp.class, BsonType.TIMESTAMP);
         result.put(String.class, BsonType.STRING);
         result.put(Object[].class, BsonType.ARRAY);
+        result.put(List.class, BsonType.ARRAY);
         result.put(BigDecimal.class, BsonType.DECIMAL128);
         result.put(BsonDecimal128.class, BsonType.DECIMAL128);
+        result.put(BsonRegularExpression.class, BsonType.REGULAR_EXPRESSION);
         result.put(Boolean.class, BsonType.BOOLEAN);
         result.put(ObjectId.class, BsonType.OBJECT_ID);
 
@@ -137,6 +152,23 @@ final class BsonTypes {
         }
         if (value instanceof BsonBoolean) {
             return ((BsonBoolean) value).getValue();
+        }
+        if (value instanceof BsonJavaScript) {
+            return ((BsonJavaScript) value).getCode();
+        }
+        if (value instanceof CodeWithScope) {
+            return value;
+        }
+        if (value instanceof Code) {
+            return ((Code) value).getCode();
+        }
+        if (value instanceof BsonArray) {
+            return ((BsonArray) value).getValues();
+        }
+        if (value instanceof BsonTimestamp) {
+            long v = ((BsonTimestamp) value).getValue();
+            int nanoOfSecond = (int) (v % 1000) * MILLIS_TO_NANOS;
+            return LocalDateTime.ofEpochSecond(v / 1000, nanoOfSecond, ZoneOffset.UTC);
         }
         return value;
     }
