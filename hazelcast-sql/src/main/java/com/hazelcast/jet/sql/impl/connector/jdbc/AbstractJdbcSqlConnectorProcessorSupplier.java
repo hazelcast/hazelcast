@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.datastore.ExternalDataStoreFactory;
-import com.hazelcast.datastore.ExternalDataStoreService;
-import com.hazelcast.datastore.impl.CloseableDataSource;
+import com.hazelcast.datalink.DataLinkFactory;
+import com.hazelcast.datalink.DataLinkService;
+import com.hazelcast.datalink.impl.CloseableDataSource;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.jet.core.ProcessorSupplier;
 
@@ -30,25 +30,25 @@ import static java.util.Objects.requireNonNull;
 
 abstract class AbstractJdbcSqlConnectorProcessorSupplier implements ProcessorSupplier {
 
-    protected String externalDataStoreRef;
+    protected String dataLinkRef;
 
     protected transient DataSource dataSource;
 
     AbstractJdbcSqlConnectorProcessorSupplier() {
     }
 
-    AbstractJdbcSqlConnectorProcessorSupplier(String externalDataStoreRef) {
-        this.externalDataStoreRef = requireNonNull(externalDataStoreRef, "externalDataStoreRef must not be null");
+    AbstractJdbcSqlConnectorProcessorSupplier(String dataLinkRef) {
+        this.dataLinkRef = requireNonNull(dataLinkRef, "dataLinkRef must not be null");
     }
 
     public void init(@Nonnull Context context) throws Exception {
-        ExternalDataStoreService externalDataStoreService = ((HazelcastInstanceImpl) context.hazelcastInstance())
-                .node.getNodeEngine().getExternalDataStoreService();
+        DataLinkService dataLinkService = ((HazelcastInstanceImpl) context.hazelcastInstance())
+                .node.getNodeEngine().getDataLinkService();
 
-        ExternalDataStoreFactory<DataSource> factory = externalDataStoreService
-                .getExternalDataStoreFactory(externalDataStoreRef);
+        DataLinkFactory<DataSource> factory = dataLinkService
+                .getDataLinkFactory(dataLinkRef);
 
-        dataSource = factory.getDataStore();
+        dataSource = factory.getDataLink();
     }
 
     @Override

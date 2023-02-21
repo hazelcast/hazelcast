@@ -19,9 +19,12 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_EXTERNAL_DATASTORE_REF;
+import java.sql.SQLException;
+
+import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
 
 public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
@@ -70,7 +73,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ") "
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
+                        + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
         );
 
@@ -100,7 +103,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ") "
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
+                        + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
         );
 
@@ -136,7 +139,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ") "
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
+                        + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
         );
 
@@ -160,7 +163,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ") "
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
+                        + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
         );
 
@@ -180,12 +183,28 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 "CREATE MAPPING " + tableName
                         + " TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + " OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
+                        + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
         );
 
         execute("DELETE FROM " + tableName + " WHERE \"person-id\" = 0");
         assertJdbcRowsAnyOrder(tableName);
+    }
+
+    @Test
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/23476")
+    public void deleteFromTableNonDefaultSchema() throws SQLException {
+        String schemaName = randomName();
+        executeJdbc("CREATE SCHEMA " + schemaName);
+        String fullyQualifiedTable = schemaName + "." + tableName;
+
+        createTable(fullyQualifiedTable);
+        insertItems(fullyQualifiedTable, 2);
+        createMapping(fullyQualifiedTable);
+
+        execute("DELETE FROM \"" + fullyQualifiedTable + "\"");
+
+        assertJdbcRowsAnyOrder(fullyQualifiedTable);
     }
 
 }

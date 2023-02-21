@@ -87,13 +87,13 @@
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-it</artifactId>
+            <artifactId>hazelcast-3-connector-root</artifactId>
             <version>${project.version}</version>
             <type>pom</type>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-3-connector-root</artifactId>
+            <artifactId>hazelcast-it</artifactId>
             <version>${project.version}</version>
             <type>pom</type>
         </dependency>
@@ -171,18 +171,6 @@
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-grpc</artifactId>
-            <version>${project.version}</version>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-kinesis</artifactId>
-            <version>${project.version}</version>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-elasticsearch-6</artifactId>
             <version>${project.version}</version>
             <type>pom</type>
@@ -195,7 +183,13 @@
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-protobuf</artifactId>
+            <artifactId>hazelcast-jet-kafka-connect</artifactId>
+            <version>${project.version}</version>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-kinesis</artifactId>
             <version>${project.version}</version>
             <type>pom</type>
         </dependency>
@@ -208,6 +202,18 @@
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-s3</artifactId>
+            <version>${project.version}</version>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-grpc</artifactId>
+            <version>${project.version}</version>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-protobuf</artifactId>
             <version>${project.version}</version>
             <type>pom</type>
         </dependency>
@@ -261,19 +267,13 @@
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-hadoop</artifactId>
-            <version>${project.version}</version>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-hadoop-all</artifactId>
-            <version>${project.version}</version>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-files-azure</artifactId>
+            <version>${project.version}</version>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-files-gcs</artifactId>
             <version>${project.version}</version>
             <type>pom</type>
         </dependency>
@@ -285,7 +285,13 @@
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-files-gcs</artifactId>
+            <artifactId>hazelcast-jet-hadoop</artifactId>
+            <version>${project.version}</version>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-hadoop-all</artifactId>
             <version>${project.version}</version>
             <type>pom</type>
         </dependency>
