@@ -42,12 +42,25 @@ final class MappingHelper {
         ).close();
     }
 
+    public static void createMappingWithColumns(SqlService sqlService, String mappingName, String tableName,
+                                                String mappingColumns, String mappingType, String dataLinkRef) {
+        sqlService.execute(
+                "CREATE MAPPING \"" + mappingName + "\" "
+                + "EXTERNAL NAME \"" + tableName + "\" "
+                + (mappingColumns != null ? " ( " + mappingColumns + " ) " : "")
+                + "TYPE " + mappingType + " "
+                + "OPTIONS ("
+                + "    '" + OPTION_DATA_LINK_REF + "' = '" + dataLinkRef + "' "
+                + ")"
+        ).close();
+    }
+
     public static void dropMapping(SqlService sqlService, String mappingName) {
         sqlService.execute("DROP MAPPING IF EXISTS \"" + mappingName + "\"").close();
     }
 
     public static List<SqlColumnMetadata> loadColumnMetadataFromMapping(SqlService sqlService, String mapping) {
-        return loadRowMetadataFromMapping(sqlService,mapping).getColumns();
+        return loadRowMetadataFromMapping(sqlService, mapping).getColumns();
     }
 
     public static SqlRowMetadata loadRowMetadataFromMapping(SqlService sqlService, String mapping) {

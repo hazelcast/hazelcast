@@ -49,8 +49,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
 import static com.hazelcast.mapstore.FromSqlRowConverter.toGenericRecord;
+import static com.hazelcast.mapstore.MappingHelper.createMappingWithColumns;
 import static com.hazelcast.mapstore.MappingHelper.dropMapping;
 import static com.hazelcast.mapstore.MappingHelper.loadColumnMetadataFromMapping;
 import static com.hazelcast.mapstore.MappingHelper.loadRowMetadataFromMapping;
@@ -168,15 +168,8 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
             }
 
             String mappingType = getMappingType(nodeEngine(), genericMapStoreProperties);
-            sqlService.execute(
-                    "CREATE MAPPING \"" + mappingName + "\" "
-                    + "EXTERNAL NAME \"" + genericMapStoreProperties.tableName + "\" "
-                    + (mappingColumns != null ? " ( " + mappingColumns + " ) " : "")
-                    + "TYPE " + mappingType + " "
-                    + "OPTIONS ("
-                    + "    '" + OPTION_DATA_LINK_REF + "' = '" + genericMapStoreProperties.dataLinkRef + "' "
-                    + ")"
-            ).close();
+            createMappingWithColumns(sqlService,mappingName,genericMapStoreProperties.tableName,mappingColumns,mappingType,
+                    genericMapStoreProperties.dataLinkRef);
 
             if (!genericMapStoreProperties.hasColumns()) {
                 columnMetadataList = loadColumnMetadataFromMapping(sqlService, mappingName);
