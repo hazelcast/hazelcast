@@ -50,6 +50,7 @@ final class BsonTypes {
 
     private static final Map<String, BsonType> BSON_NAME_TO_TYPE = generateBsonNameToBsonTypeMapping();
     private static final Map<Class<?>, BsonType> JAVA_TYPE_TO_BSON_TYPE = generateJavaClassToBsonTypeMapping();
+
     private static final int MILLIS_TO_NANOS = 1000 * 1000;
 
     private BsonTypes() {
@@ -166,10 +167,15 @@ final class BsonTypes {
             return ((BsonArray) value).getValues();
         }
         if (value instanceof BsonTimestamp) {
-            long v = ((BsonTimestamp) value).getValue();
-            int nanoOfSecond = (int) (v % 1000) * MILLIS_TO_NANOS;
-            return LocalDateTime.ofEpochSecond(v / 1000, nanoOfSecond, ZoneOffset.UTC);
+            return timestampToLocalDateTime((BsonTimestamp) value);
         }
         return value;
+    }
+
+    @SuppressWarnings("checkstyle:MagicNumber")
+    private static LocalDateTime timestampToLocalDateTime(BsonTimestamp value) {
+        long v = value.getValue();
+        int nanoOfSecond = (int) (v % 1000) * MILLIS_TO_NANOS;
+        return LocalDateTime.ofEpochSecond(v / 1000, nanoOfSecond, ZoneOffset.UTC);
     }
 }

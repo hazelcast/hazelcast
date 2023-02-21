@@ -97,6 +97,7 @@ class FieldResolver {
         return "_id".equalsIgnoreCase(nameInMongo);
     }
 
+    @SuppressWarnings("checkstyle:ReturnCount")
     private QueryDataType resolveType(BsonType columnType) {
         switch (columnType) {
             case INT32: return QueryDataType.INT;
