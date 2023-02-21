@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast;
+package com.hazelcast.file;
 
 import com.hazelcast.internal.tpc.AsyncFile;
 import com.hazelcast.internal.tpc.iouring.IOUringReactor;

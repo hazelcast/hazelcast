@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast;
+package com.hazelcast.file;
 
 import com.hazelcast.internal.tpc.AsyncFile;
 import com.hazelcast.internal.tpc.iouring.IOUringReactor;
@@ -42,7 +42,8 @@ public class AsyncFileReadBenchmark {
     public static long operations = 100 * 1000 * 1000;
     public static int concurrency = 1;
     public static int openFlags = AsyncFile.O_CREAT | AsyncFile.O_DIRECT | AsyncFile.O_RDONLY;
-    public static int blockSize = 4096;
+    public static final int blockSize = pageSize();
+    public static final long fileSize = 1024 * blockSize;
 
     public static void main(String[] args) throws InterruptedException, ExecutionException {
         IOUringReactorBuilder configuration = new IOUringReactorBuilder();
@@ -103,6 +104,8 @@ public class AsyncFileReadBenchmark {
         private long sequentialOperations;
         private CountDownLatch latch;
         private IOUringReactor eventloop;
+        private final ThreadLocalRandom random = ThreadLocalRandom.current();
+        private final int range = (int) (fileSize / blockSize);
 
         ByteBuffer buffer = ByteBuffer.allocateDirect(20 * pageSize());
         long rawAddress = addressOf(buffer);
@@ -110,10 +113,10 @@ public class AsyncFileReadBenchmark {
 
         @Override
         public void run() {
-            System.out.println("foo");
             if (count < sequentialOperations) {
                 count++;
-                long offset = ThreadLocalRandom.current().nextInt(10 * 1024) * blockSize;
+
+                long offset = ((long) random.nextInt(range)) * blockSize;
 
                 //file.nop().then(this).releaseOnComplete();
                 file.pread(offset, blockSize, bufferAddress).then(this).releaseOnComplete();

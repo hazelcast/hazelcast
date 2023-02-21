@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast;
+package com.hazelcast.file;
 
 
 import com.hazelcast.internal.tpc.AsyncFile;
@@ -42,18 +42,17 @@ import static com.hazelcast.internal.tpc.util.BufferUtil.toPageAlignedAddress;
 import static com.hazelcast.internal.tpc.util.OS.pageSize;
 
 /**
- *
  * For a FIO based benchmark so you can compare
- * fio --name=write_throughput --numjobs=64 --size=10G --time_based --runtime=60s --ramp_time=2s --ioengine=io_uring  --direct=1 --verify=0 --bs=4k --iodepth=64 --rw=write --group_reporting=1
+ * fio --name=write_throughput --numjobs=1 --size=10G --time_based --runtime=60s --ramp_time=2s --ioengine=io_uring  --direct=1 --verify=0 --bs=4k --iodepth=64 --rw=write --group_reporting=1
  */
 public class AsyncFileWriteBenchmark {
     private static String path = "/run/media/pveentjer/b72258e9-b9c9-4f7c-8b76-cef961eeec55";
 
-    public static final long fileSize = 128 * pageSize();
-    public static final long operationsPerThread = 24 * 1000 * 1000;
+    public static final long operationsPerThread = 4 * 1000 * 1000;
     public static final int concurrencyPerThread = 64;
     public static final int openFlags = O_CREAT | O_DIRECT | O_WRONLY;
     public static final int blockSize = pageSize();
+    public static final long fileSize = 1024 * blockSize;
     public static final int reactorCount = 1;
 
     public static void main(String[] args) throws Exception {
@@ -80,7 +79,7 @@ public class AsyncFileWriteBenchmark {
     }
 
     public static CountDownLatch run(ThreadAffinity threadAffinity) throws Exception {
-        ByteBuffer buffer = ByteBuffer.allocateDirect(2 * pageSize());
+        ByteBuffer buffer = ByteBuffer.allocateDirect(blockSize + pageSize());
         long rawAddress = addressOf(buffer);
         long bufferAddress = toPageAlignedAddress(rawAddress);
 
@@ -116,7 +115,7 @@ public class AsyncFileWriteBenchmark {
                 PWriteLoop loop = new PWriteLoop();
                 loop.latch = completionLatch;
                 loop.bufferAddress = bufferAddress;
-                loop.sequentialOperations = sequentialOperations;
+                loop.operations = sequentialOperations;
                 loop.reactor = reactor;
                 loop.file = files.get(k % files.size());
                 reactor.offer(loop);
@@ -144,17 +143,18 @@ public class AsyncFileWriteBenchmark {
         private long count;
         private AsyncFile file;
         private long bufferAddress;
-        private long sequentialOperations;
+        private long operations;
         private CountDownLatch latch;
         private IOUringReactor reactor;
+        private final int range = (int) (fileSize / blockSize);
+        private final ThreadLocalRandom random = ThreadLocalRandom.current();
 
         @Override
         public void run() {
-            if (count < sequentialOperations) {
+            if (count < operations) {
                 count++;
 
-                // todo: we can write outside of the file; so no good
-                long offset = ThreadLocalRandom.current().nextInt(10 * 1024) * blockSize;
+                long offset = ((long) random.nextInt(range)) * blockSize;
 
                 file.pwrite(offset, blockSize, bufferAddress)
                         .then(this)
