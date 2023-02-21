@@ -18,6 +18,7 @@ package com.hazelcast.aws;
 
 import com.hazelcast.config.InvalidConfigurationException;
 import org.junit.Test;
+import org.junit.function.ThrowingRunnable;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertThrows;
 import static org.junit.Assert.assertEquals;
@@ -36,7 +37,7 @@ public class RegionValidatorTest {
         String expectedMessage = String.format("The provided region %s is not a valid AWS region.", region);
 
         //when
-        Runnable validateRegion = () -> RegionValidator.validateRegion(region);
+        ThrowingRunnable validateRegion = () -> RegionValidator.validateRegion(region);
 
         //then
         InvalidConfigurationException thrownEx = assertThrows(InvalidConfigurationException.class, validateRegion);
@@ -50,7 +51,7 @@ public class RegionValidatorTest {
         String expectedMessage = String.format("The provided region %s is not a valid AWS region.", region);
 
         // when
-        Runnable validateRegion = () -> RegionValidator.validateRegion(region);
+        ThrowingRunnable validateRegion = () -> RegionValidator.validateRegion(region);
 
         //then
         InvalidConfigurationException thrownEx = assertThrows(InvalidConfigurationException.class, validateRegion);
@@ -63,7 +64,7 @@ public class RegionValidatorTest {
         String expectedMessage = "The provided region is null.";
 
         // when
-        Runnable validateRegion = () -> RegionValidator.validateRegion(null);
+        ThrowingRunnable validateRegion = () -> RegionValidator.validateRegion(null);
 
         //then
         InvalidConfigurationException thrownEx = assertThrows(InvalidConfigurationException.class, validateRegion);
