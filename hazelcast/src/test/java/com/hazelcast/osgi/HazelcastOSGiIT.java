@@ -16,6 +16,7 @@
 
 package com.hazelcast.osgi;
 
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
@@ -59,7 +60,8 @@ public class HazelcastOSGiIT {
         oldMavenRepoProperty = System.getProperty(MAVEN_REPOSITORIES_PROP);
         System.setProperty(MAVEN_REPOSITORIES_PROP, MAVEN_REPOSITORIES);
 
-        String url = "reference:file:" + PathUtils.getBaseDir() + "/target/classes";
+        String url = "reference:file:" + PathUtils.getBaseDir() + "/target/"
+                + "hazelcast-" + BuildInfoProvider.getBuildInfo().getVersion() + ".jar";
         // modify url for Windows environment
         url = url.replace("\\", "/");
         UrlProvisionOption hzBundle = bundle(url);
