@@ -152,12 +152,6 @@ public class AllTypesSelectMongoSqlConnectorTest extends MongoSqlTest {
         );
 
         assertRowsAnyOrder("SELECT * FROM " + mappingName, new Row(expected));
-
-        // todo: mongo has no automatic coertion here
-//        assertRowsAnyOrder("SELECT * FROM " + mappingName + " WHERE document_column = ?",
-//                newArrayList(expected),
-//                new Row(expected)
-//        );
     }
 
 }

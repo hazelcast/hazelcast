@@ -38,3 +38,12 @@ in Java (nor any formats with timezones).
 
 The "Java Type" column represents an object returned by SQL query
 if the object put into the collection is of given BSON type.
+
+Bare in mind, that, while we are able to convert MongoDB type to requested SQL type
+in the projection, the argument binding will not always work the same 
+due to technical limitations. 
+
+For example: you can have object with type `timestamp` represented as `DATE_TIME`, 
+that in SELECT will give you LocalDateTime. However, binding LocalDateTime
+as an argument won't work, as only native MongoDB types will work for arguments.
+Same for e.g. having BSON column of type "string" mapped to "integer" in SQL.
