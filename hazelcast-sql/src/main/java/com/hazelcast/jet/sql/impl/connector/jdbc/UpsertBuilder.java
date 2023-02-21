@@ -29,14 +29,6 @@ final class UpsertBuilder {
     private UpsertBuilder() {
     }
 
-    // Returns if upsert is supported for the given dialect
-    static boolean isUpsertDialectSupported(JdbcTable jdbcTable) {
-        SqlDialect dialect = jdbcTable.sqlDialect();
-        return dialect instanceof MysqlSqlDialect ||
-               dialect instanceof PostgresqlSqlDialect ||
-               dialect instanceof H2SqlDialect;
-    }
-
     static String getUpsertStatement(JdbcTable jdbcTable) {
         SqlDialect sqlDialect = jdbcTable.sqlDialect();
 

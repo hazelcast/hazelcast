@@ -59,6 +59,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 
@@ -102,10 +103,12 @@ public class RaftSessionService extends AbstractCPMigrationAwareService
     private volatile RaftService raftService;
 
     private final Map<CPGroupId, RaftSessionRegistry> registries = new ConcurrentHashMap<>();
+    private final Executor internalAsyncExecutor;
 
     public RaftSessionService(NodeEngine nodeEngine) {
         super(nodeEngine);
         this.logger = nodeEngine.getLogger(getClass());
+        this.internalAsyncExecutor = nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
     @Override
@@ -174,14 +177,14 @@ public class RaftSessionService extends AbstractCPMigrationAwareService
         raftService.getCPGroup(groupName).whenCompleteAsync((group, t) -> {
             if (t == null) {
                 if (group != null) {
-                    getAllSessions(group.id()).whenCompleteAsync(completingCallback(future));
+                    getAllSessions(group.id()).whenCompleteAsync(completingCallback(future), internalAsyncExecutor);
                 } else {
                     future.completeExceptionally(new IllegalArgumentException());
                 }
             } else {
                 future.completeExceptionally(t);
             }
-        });
+        }, internalAsyncExecutor);
 
         return future;
     }
@@ -199,14 +202,14 @@ public class RaftSessionService extends AbstractCPMigrationAwareService
             if (t == null) {
                 if (group != null) {
                     raftService.getInvocationManager().<Boolean>invoke(group.id(), new CloseSessionOp(sessionId))
-                            .whenCompleteAsync(completingCallback(future));
+                            .whenCompleteAsync(completingCallback(future), internalAsyncExecutor);
                 } else {
                     future.complete(false);
                 }
             } else {
                 future.completeExceptionally(t);
             }
-        });
+        }, internalAsyncExecutor);
 
         return future;
     }

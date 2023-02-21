@@ -78,6 +78,8 @@ public class KinesisFailureTest extends AbstractKinesisTest {
     @BeforeClass
     public static void beforeClass() {
         assumeDockerEnabled();
+        //Newer version of localstack with arm64 support fails in KinesisIntegrationTest
+        assumeNoArm64Architecture();
 
         localStack = new LocalStackContainer(parse("localstack/localstack")
                 .withTag("0.12.3"))
