@@ -17,12 +17,13 @@
 package com.hazelcast.jet.mongodb.impl;
 
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.logging.ILogger;
+import com.mongodb.MongoException;
 import com.mongodb.MongoServerException;
 import com.mongodb.MongoSocketException;
 import com.mongodb.client.ChangeStreamIterable;
@@ -51,6 +52,7 @@ import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.mongodb.impl.MongoUtilities.partitionAggregate;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.readChunk;
 import static com.mongodb.client.model.Aggregates.sort;
 import static com.mongodb.client.model.Sorts.ascending;
 import static com.mongodb.client.model.changestream.FullDocument.UPDATE_LOOKUP;
@@ -85,7 +87,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
     private final MongoDbConnection connection;
 
     private Traverser<?> traverser;
-    private Traverser<? extends Entry<BroadcastKey<Integer>, ?>> snapshotTraverser;
+    private Traverser<Entry<BroadcastKey<Integer>, Object>> snapshotTraverser;
 
     public ReadMongoP(ReadMongoParams<I> params) {
         if (params.isStream()) {
@@ -164,6 +166,11 @@ public class ReadMongoP<I> extends AbstractProcessor {
                         snapshotTraverser = null;
                         getLogger().finest("Finished saving snapshot.");
                     });
+
+            Object watermark = reader.watermark();
+            if (processorIndex == 0 && watermark != null) {
+                snapshotTraverser = snapshotTraverser.append(entry(broadcastKey(-1), watermark));
+            }
         }
         return emitFromTraverserToSnapshot(snapshotTraverser);
     }
@@ -183,6 +190,9 @@ public class ReadMongoP<I> extends AbstractProcessor {
         int keyInteger = ((BroadcastKey<Integer>) key).key();
         if (keyInteger % totalParallelism == processorIndex) {
             reader.restore(value);
+        }
+        if (keyInteger == -1) {
+            reader.restoreWatermark((Long) value);
         }
     }
 
@@ -240,6 +250,13 @@ public class ReadMongoP<I> extends AbstractProcessor {
         }
 
         abstract boolean everCompletes();
+
+        public void restoreWatermark(Long value) {
+        }
+
+        public Object watermark() {
+            return null;
+        }
     }
 
     private final class BatchMongoReader extends MongoChunkedReader {
@@ -379,26 +396,41 @@ public class ReadMongoP<I> extends AbstractProcessor {
         @Nonnull
         @Override
         public Traverser<?> nextChunkTraverser() {
-            Traverser<ChangeStreamDocument<Document>> traverser = cursor::tryNext;
-            return traverser.flatMap(doc -> {
-                resumeToken = doc.getResumeToken();
-                long eventTime = clusterTime(doc);
-                I item = mapFn.apply(doc);
-                return item == null
-                        ? Traversers.empty()
-                        : eventTimeMapper.flatMapEvent(item, 0, eventTime);
-            });
+            try {
+                List<ChangeStreamDocument<Document>> chunk = readChunk(cursor, BATCH_SIZE);
+                if (chunk.isEmpty()) {
+                    return eventTimeMapper.flatMapIdle();
+                }
+
+                return traverseIterable(chunk)
+                        .flatMap(doc -> {
+                            resumeToken = doc.getResumeToken();
+                            long eventTime = clusterTime(doc);
+                            I item = mapFn.apply(doc);
+                            return item == null
+                                    ? eventTimeMapper.flatMapIdle()
+                                    : eventTimeMapper.flatMapEvent(item, 0, eventTime);
+                        });
+            } catch (MongoException e) {
+                throw new JetException("error while reading from mongodb", e);
+            }
         }
 
         private long clusterTime(ChangeStreamDocument<Document> changeStreamDocument) {
             BsonTimestamp clusterTime = changeStreamDocument.getClusterTime();
-            return clusterTime == null ? System.currentTimeMillis() : clusterTime.getValue();
+            return clusterTime == null ? System.currentTimeMillis() : clusterTime.getTime();
         }
 
         @Nullable
         @Override
         public Object snapshot() {
             return resumeToken;
+        }
+
+        @Nonnull
+        @Override
+        public Object watermark() {
+            return eventTimeMapper.getWatermark(0);
         }
 
         @Override
@@ -408,6 +440,11 @@ public class ReadMongoP<I> extends AbstractProcessor {
                     this.resumeToken = (BsonDocument) value;
                 }
             }
+        }
+
+        @Override
+        public void restoreWatermark(Long value) {
+            eventTimeMapper.restoreWatermark(0, value);
         }
 
         @Override

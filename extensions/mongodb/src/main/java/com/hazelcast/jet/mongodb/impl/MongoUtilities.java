@@ -15,6 +15,7 @@
  */
 package com.hazelcast.jet.mongodb.impl;
 
+import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Field;
 import com.mongodb.client.model.Filters;
 import org.bson.BsonArray;
@@ -66,6 +67,28 @@ final class MongoUtilities {
         aggregateList.add(match(Filters.eq("_thisPartition", true)));
         aggregateList.add(unset("_thisPartition"));
         return aggregateList;
+    }
+
+    /**
+     * Reads data from the cursor up to {@code maxSize} elements or until
+     * first null from {@link MongoCursor#tryNext()}
+     */
+    static <T> List<T> readChunk(MongoCursor<T> cursor, int maxSize) {
+        List<T> chunk = new ArrayList<>(maxSize);
+        int count = 0;
+        boolean eagerEnd = false;
+        while (count < maxSize && !eagerEnd) {
+            // note: do not use `hasNext` and `next` - those methods blocks for new elements
+            // and we don't want to block
+            T doc = cursor.tryNext();
+            if (doc != null) {
+                chunk.add(doc);
+                count++;
+            } else {
+                eagerEnd = true;
+            }
+        }
+        return chunk;
     }
 
 }
