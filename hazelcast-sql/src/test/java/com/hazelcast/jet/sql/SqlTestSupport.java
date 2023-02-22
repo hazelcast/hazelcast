@@ -44,6 +44,7 @@ import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.plan.cache.PlanCache;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.test.Accessors;
@@ -687,7 +688,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
             args = new Object[0];
         }
 
-        return new ExpressionEvalContext(
+        return new ExpressionEvalContextImpl(
                 Arrays.asList(args),
                 TEST_SS,
                 instances() != null ? Util.getNodeEngine(instance()) : mock(NodeEngine.class));

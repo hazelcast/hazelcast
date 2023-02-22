@@ -34,6 +34,7 @@ import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
@@ -97,7 +98,7 @@ public final class UpdatingEntryProcessor
 
     @Override
     public void setSerializationService(SerializationService serializationService) {
-        this.evalContext = new ExpressionEvalContext(
+        this.evalContext = new ExpressionEvalContextImpl(
                 arguments,
                 (InternalSerializationService) serializationService,
                 Util.getNodeEngine(hzInstance));

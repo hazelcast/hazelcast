@@ -74,6 +74,7 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.UpdateSqlResultImpl;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.type.Type;
@@ -407,7 +408,7 @@ public class PlanExecutor {
     SqlResult execute(IMapSelectPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
-        ExpressionEvalContext evalContext = new ExpressionEvalContext(
+        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
                 serializationService,
                 Util.getNodeEngine(hazelcastInstance));
@@ -427,7 +428,7 @@ public class PlanExecutor {
 
     SqlResult execute(IMapInsertPlan plan, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        ExpressionEvalContext evalContext = new ExpressionEvalContext(
+        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
                 Util.getSerializationService(hazelcastInstance),
                 Util.getNodeEngine(hazelcastInstance));
@@ -448,7 +449,7 @@ public class PlanExecutor {
 
     SqlResult execute(IMapSinkPlan plan, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        ExpressionEvalContext evalContext = new ExpressionEvalContext(
+        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
                 Util.getSerializationService(hazelcastInstance),
                 Util.getNodeEngine(hazelcastInstance));
@@ -462,7 +463,7 @@ public class PlanExecutor {
 
     SqlResult execute(IMapUpdatePlan plan, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        ExpressionEvalContext evalContext = new ExpressionEvalContext(
+        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
                 Util.getSerializationService(hazelcastInstance),
                 Util.getNodeEngine(hazelcastInstance));
@@ -476,7 +477,7 @@ public class PlanExecutor {
 
     SqlResult execute(IMapDeletePlan plan, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        ExpressionEvalContext evalContext = new ExpressionEvalContext(
+        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
                 Util.getSerializationService(hazelcastInstance),
                 Util.getNodeEngine(hazelcastInstance));

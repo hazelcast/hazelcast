@@ -34,6 +34,7 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -123,7 +124,6 @@ final class QueryUtil {
 
         private JoinProjection(KvRowProjector.Supplier rightRowProjectorSupplier, ExpressionEvalContext evalContext) {
             this.rightRowProjectorSupplier = rightRowProjectorSupplier;
-            this.hzInstance = evalContext.getNodeEngine().getHazelcastInstance();
             this.evalContext = evalContext;
             this.arguments = evalContext.getArguments();
         }
@@ -140,7 +140,7 @@ final class QueryUtil {
 
         @Override
         public void setSerializationService(SerializationService serializationService) {
-            this.evalContext = new ExpressionEvalContext(
+            this.evalContext = new ExpressionEvalContextImpl(
                     arguments,
                     (InternalSerializationService) serializationService,
                     Util.getNodeEngine(hzInstance));

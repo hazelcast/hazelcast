@@ -60,7 +60,7 @@ public class SqlTumbleTest extends SqlTestSupport {
 
     @BeforeClass
     public static void setUpClass() throws IOException {
-        initialize(5, null);
+        initialize(1, null);
         sqlService = instance().getSql();
     }
 

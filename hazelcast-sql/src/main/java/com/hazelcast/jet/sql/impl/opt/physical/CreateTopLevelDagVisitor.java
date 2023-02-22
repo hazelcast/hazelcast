@@ -23,7 +23,6 @@ import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ToLongFunctionEx;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.MutableByte;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation;
@@ -55,12 +54,12 @@ import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinProcessorSupplier;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.MockExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.Table;
@@ -90,11 +89,13 @@ import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 
 public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
+    // TODO https://github.com/hazelcast/hazelcast/issues/20383
+    private static final ExpressionEvalContext MOCK_EEC = new MockExpressionEvalContext();
+
     private static final int HIGH_PRIORITY = 1;
     private static final int LOW_PRIORITY = 10;
 
@@ -105,10 +106,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     private long watermarkThrottlingFrameSize = -1;
 
     private final DagBuildContextImpl dagBuildContext;
-
-    // TODO https://github.com/hazelcast/hazelcast/issues/20383
-    // TODO: I am still thinking about correct serialization
-    private final ExpressionEvalContext mockEec;
 
     public CreateTopLevelDagVisitor(
             NodeEngine nodeEngine,
@@ -123,11 +120,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         this.objectKeys.addAll(usedViews);
 
         dagBuildContext = new DagBuildContextImpl(getDag(), parameterMetadata);
-
-        mockEec = new ExpressionEvalContext(
-                emptyList(),
-                new DefaultSerializationServiceBuilder().build(),
-                (NodeEngineImpl) nodeEngine);
     }
 
     @Override
@@ -153,7 +145,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     @Override
     public Vertex onInsert(InsertPhysicalRel rel) {
         watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(
-                (PhysicalRel) rel.getInput(), mockEec);
+                (PhysicalRel) rel.getInput(), MOCK_EEC);
 
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
@@ -169,7 +161,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     @Override
     public Vertex onSink(SinkPhysicalRel rel) {
         watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(
-                (PhysicalRel) rel.getInput(), mockEec);
+                (PhysicalRel) rel.getInput(), MOCK_EEC);
 
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
@@ -185,7 +177,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     public Vertex onUpdate(UpdatePhysicalRel rel) {
         // currently it's not possible to have a unbounded UPDATE, but if we do, we'd need this calculation
         watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(
-                (PhysicalRel) rel.getInput(), mockEec);
+                (PhysicalRel) rel.getInput(), MOCK_EEC);
 
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
 
@@ -201,7 +193,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     public Vertex onDelete(DeletePhysicalRel rel) {
         // currently it's not possible to have a unbounded DELETE, but if we do, we'd need this calculation
         watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(
-                (PhysicalRel) rel.getInput(), mockEec);
+                (PhysicalRel) rel.getInput(), MOCK_EEC);
 
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
 
@@ -423,11 +415,9 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         AggregateOperation<?, JetSqlRow> aggregateOperation = rel.aggrOp();
 
         Expression<?> timestampExpression = rel.timestampExpression();
-        // TODO: I have no idea what should I do here now, but ocasionally it works.
-        final ExpressionEvalContext ctx = mockEec;
         ToLongFunctionEx<JetSqlRow> timestampFn = row ->
-                WindowUtils.extractMillis(timestampExpression.eval(row.getRow(), ctx));
-        SlidingWindowPolicy windowPolicy = rel.windowPolicyProvider().apply(ctx);
+                WindowUtils.extractMillis(timestampExpression.eval(row.getRow(), MOCK_EEC));
+        SlidingWindowPolicy windowPolicy = rel.windowPolicyProvider().apply(MOCK_EEC);
 
         KeyedWindowResultFunction<? super Object, ? super JetSqlRow, ?> resultMapping =
                 rel.outputValueMapping();
@@ -597,7 +587,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     @Override
     public Vertex onRoot(RootRel rootRel) {
         watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(
-                (PhysicalRel) rootRel.getInput(), mockEec);
+                (PhysicalRel) rootRel.getInput(), MOCK_EEC);
 
         RelNode input = rootRel.getInput();
 

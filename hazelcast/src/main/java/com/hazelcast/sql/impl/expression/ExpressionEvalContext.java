@@ -24,36 +24,19 @@ import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.spi.impl.NodeEngine;
 
-import javax.annotation.Nonnull;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Defines expression evaluation context contract for SQL {@link Expression
- * expressions}.
+ * Defines expression evaluation context contract for SQL {@link Expression expressions}.
  *
  * @see Expression#eval
  */
-public class ExpressionEvalContext implements Serializable {
+public interface ExpressionEvalContext {
 
-    public static final String SQL_ARGUMENTS_KEY_NAME = "__sql.arguments";
-
-    private final List<Object> arguments;
-    private final transient InternalSerializationService serializationService;
-    private final transient NodeEngine nodeEngine;
-
-    public ExpressionEvalContext(
-            @Nonnull List<Object> arguments,
-            @Nonnull InternalSerializationService serializationService,
-            @Nonnull NodeEngine nodeEngine
-    ) {
-        this.arguments = requireNonNull(arguments);
-        this.serializationService = requireNonNull(serializationService);
-        this.nodeEngine = requireNonNull(nodeEngine);
-    }
+    static final String SQL_ARGUMENTS_KEY_NAME = "__sql.arguments";
 
     public static ExpressionEvalContext from(ProcessorSupplier.Context ctx) {
         List<Object> arguments = ctx.jobConfig().getArgument(SQL_ARGUMENTS_KEY_NAME);
@@ -61,12 +44,12 @@ public class ExpressionEvalContext implements Serializable {
             if (arguments == null) {
                 arguments = new ArrayList<>();
             }
-            return new ExpressionEvalContext(
+            return new ExpressionEvalContextImpl(
                     arguments,
                     new DefaultSerializationServiceBuilder().build(),
                     Util.getNodeEngine(ctx.hazelcastInstance()));
         } else {
-            return new ExpressionEvalContext(
+            return new ExpressionEvalContextImpl(
                     requireNonNull(arguments),
                     ((Contexts.ProcSupplierCtx) ctx).serializationService(),
                     ((Contexts.ProcSupplierCtx) ctx).nodeEngine());
@@ -77,28 +60,20 @@ public class ExpressionEvalContext implements Serializable {
      * @param index argument index
      * @return the query argument
      */
-    public Object getArgument(int index) {
-        return arguments.get(index);
-    }
+    public Object getArgument(int index);
 
     /**
      * Return all the arguments.
      */
-    public List<Object> getArguments() {
-        return arguments;
-    }
+    public List<Object> getArguments();
 
     /**
      * @return serialization service
      */
-    public InternalSerializationService getSerializationService() {
-        return serializationService;
-    }
+    public InternalSerializationService getSerializationService();
 
     /**
      * @return node engine
      */
-    public NodeEngine getNodeEngine() {
-        return nodeEngine;
-    }
+    public NodeEngine getNodeEngine();
 }
