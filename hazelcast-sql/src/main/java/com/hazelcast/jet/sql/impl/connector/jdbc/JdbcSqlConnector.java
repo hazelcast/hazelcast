@@ -381,7 +381,7 @@ public class JdbcSqlConnector implements SqlConnector {
         // If dialect is supported
         if (SupportedDatabases.isDialectSupported(jdbcTable)) {
             // Get the upsert statement
-            String upsertStatement = UpsertBuilder.getUpsertStatement(jdbcTable);
+            String upsertStatement = UpsertQueryBuilder.getUpsertStatement(jdbcTable);
 
             // Create Vertex with the UPSERT statement
             return context.getDag().newUniqueVertex(

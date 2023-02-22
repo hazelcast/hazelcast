@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc.postgres;
 
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcTable;
-import com.hazelcast.jet.sql.impl.connector.jdbc.UpsertBuilder;
+import com.hazelcast.jet.sql.impl.connector.jdbc.QueryBuilder;
 import org.apache.calcite.sql.SqlDialect;
 
 import java.util.List;
@@ -40,7 +40,7 @@ public class PostgresUpsertQueryBuilder {
     public PostgresUpsertQueryBuilder(JdbcTable jdbcTable) {
         SqlDialect sqlDialect = jdbcTable.sqlDialect();
 
-        schemaName = UpsertBuilder.quoteSchemaName(jdbcTable);
+        schemaName = QueryBuilder.quoteSchemaName(jdbcTable);
 
         // Quote identifiers
         quotedTableName = sqlDialect.quoteIdentifier(jdbcTable.getExternalName());

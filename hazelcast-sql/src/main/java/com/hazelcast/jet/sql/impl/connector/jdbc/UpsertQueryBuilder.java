@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.sql.impl.connector.jdbc.h2.H2UpsertQueryBuilder;
 import com.hazelcast.jet.sql.impl.connector.jdbc.mysql.MySQLUpsertQueryBuilder;
 import com.hazelcast.jet.sql.impl.connector.jdbc.postgres.PostgresUpsertQueryBuilder;
@@ -25,26 +24,9 @@ import org.apache.calcite.sql.dialect.H2SqlDialect;
 import org.apache.calcite.sql.dialect.MysqlSqlDialect;
 import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
 
-public final class UpsertBuilder {
+public final class UpsertQueryBuilder {
 
-    private UpsertBuilder() {
-    }
-
-    public static String quoteSchemaName(JdbcTable jdbcTable) {
-        String externalSchemaName = jdbcTable.getExternalSchemaName();
-        if (!StringUtil.isNullOrEmpty(externalSchemaName)) {
-            SqlDialect sqlDialect = jdbcTable.sqlDialect();
-            return sqlDialect.quoteIdentifier(externalSchemaName) + ".";
-        }
-        return "";
-    }
-
-    // Returns if upsert is supported for the given dialect
-    static boolean isUpsertDialectSupported(JdbcTable jdbcTable) {
-        SqlDialect dialect = jdbcTable.sqlDialect();
-        return dialect instanceof MysqlSqlDialect ||
-               dialect instanceof PostgresqlSqlDialect ||
-               dialect instanceof H2SqlDialect;
+    private UpsertQueryBuilder() {
     }
 
     static String getUpsertStatement(JdbcTable jdbcTable) {
