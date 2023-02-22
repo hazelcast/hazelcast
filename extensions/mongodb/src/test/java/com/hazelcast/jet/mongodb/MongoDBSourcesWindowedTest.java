@@ -65,7 +65,7 @@ public class MongoDBSourcesWindowedTest extends AbstractMongoDBTest {
                 mongo.getDatabase(defaultDatabase()).getCollection(testName.getMethodName());
         AtomicInteger counter = new AtomicInteger(0);
         spawn(() -> {
-            while(counter.get() < 100) {
+            while (counter.get() < 100) {
                 ObjectId key = ObjectId.get();
                 collection.insertOne(new Document("test", "testowe").append("_id", key));
                 counter.incrementAndGet();
