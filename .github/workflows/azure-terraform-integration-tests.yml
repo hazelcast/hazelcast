@@ -1,9 +1,12 @@
 name: azure-tests
 on:
   workflow_dispatch:
-  push:
+  pull_request_target:
+    types:
+      - labeled
     branches:
-      - master
+      - "master"
+      - "*.z"
     paths:
       - 'hazelcast/src/main/java/com/hazelcast/azure/**'
       - '.github/terraform/azure/**'
@@ -20,7 +23,14 @@ jobs:
       ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'hazelcast'
+    if: >-
+      github.repository_owner == 'hazelcast' && 
+      ( github.event_name == 'workflow_dispatch' || 
+        (github.event_name == 'pull_request_target' && 
+          github.event.action == 'labeled' && 
+          github.event.label.name == 'run-discovery-tests' 
+        )
+      )
     steps:
       - name: Setup JDK
         uses: actions/setup-java@v2.1.0
@@ -29,7 +39,21 @@ jobs:
           architecture: x64
           distribution: adopt
 
-      - uses: actions/checkout@v3.3.0
+      - name: Decide which ref to checkout
+        id: decide-ref
+        run: |
+          if [[ "${{github.event_name}}" == "pull_request_target" ]]; then
+            echo "ref=refs/pull/${{ github.event.pull_request.number }}/merge" >> $GITHUB_OUTPUT
+          else
+            echo "ref=${{github.ref}}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v3.3.0
+        with:
+          path: hazelcast
+          ref: ${{steps.decide-ref.outputs.ref}}
+          fetch-depth: 0
 
       - name: Setup Local Maven Cache
         uses: actions/cache@v3
