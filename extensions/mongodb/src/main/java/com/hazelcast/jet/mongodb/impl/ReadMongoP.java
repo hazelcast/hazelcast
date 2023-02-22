@@ -246,7 +246,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
         private final FunctionEx<Document, I> mapItemFn;
         private final List<Bson> aggregates;
         private Traverser<Document> delegate;
-        private ObjectId lastKey;
+        private Object lastKey;
 
         private BatchMongoReader(
                 String databaseName,
@@ -303,7 +303,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
         public Traverser<I> nextChunkTraverser() {
             return delegate
                     .map(item -> {
-                        lastKey = item.getObjectId("_id");
+                        lastKey = item.get("_id");
                         return mapItemFn.apply(item);
                     });
         }
@@ -321,7 +321,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
         @Override
         public void restore(Object value) {
-            lastKey = (ObjectId) value;
+            lastKey = value;
         }
     }
 
