@@ -1,12 +1,6 @@
 name: aws-tests
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - master
-    paths:
-      - 'hazelcast/src/main/java/com/hazelcast/aws/**'
-      - '.github/terraform/aws/**'
   pull_request_target:
     types:
       - labeled
@@ -29,10 +23,10 @@ jobs:
     runs-on: ubuntu-latest
     if: >-
       github.repository_owner == 'hazelcast' && 
-      ( github.event_name == 'push' || 
+      ( github.event_name == 'workflow_dispatch' || 
         (github.event_name == 'pull_request_target' && 
           github.event.action == 'labeled' && 
-          github.event.label.name == 'safe-to-discover' 
+          github.event.label.name == 'run-discovery-tests' 
         )
       )
     steps:
