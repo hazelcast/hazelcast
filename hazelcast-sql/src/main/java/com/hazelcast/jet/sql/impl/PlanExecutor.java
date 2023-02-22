@@ -103,6 +103,7 @@ import java.util.stream.Stream;
 import static com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_QUERY_TEXT;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
+import static com.hazelcast.jet.impl.JetServiceBackend.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.impl.util.Util.getSerializationService;
@@ -111,7 +112,6 @@ import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFO
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
-import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static java.util.Collections.emptyIterator;
 import static java.util.Collections.singletonList;
 

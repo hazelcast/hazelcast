@@ -86,6 +86,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         LiveOperationsTracker, Consumer<Packet> {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
+    public static final String SQL_ARGUMENTS_KEY_NAME = "__sql.arguments";
     public static final String SQL_CATALOG_MAP_NAME = "__sql.catalog";
     public static final int MAX_PARALLEL_ASYNC_OPS = 1000;
 

@@ -41,7 +41,7 @@ import java.util.Map;
 import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static com.hazelcast.jet.sql.impl.schema.TableResolverImpl.SCHEMA_NAME_PUBLIC;
 import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
-import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
+import static com.hazelcast.jet.impl.JetServiceBackend.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;

@@ -27,6 +27,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.jet.impl.JetServiceBackend.SQL_ARGUMENTS_KEY_NAME;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -36,9 +37,7 @@ import static java.util.Objects.requireNonNull;
  */
 public interface ExpressionEvalContext {
 
-    static final String SQL_ARGUMENTS_KEY_NAME = "__sql.arguments";
-
-    public static ExpressionEvalContext from(ProcessorSupplier.Context ctx) {
+    static ExpressionEvalContext from(ProcessorSupplier.Context ctx) {
         List<Object> arguments = ctx.jobConfig().getArgument(SQL_ARGUMENTS_KEY_NAME);
         if (ctx instanceof TestProcessorSupplierContext) {
             if (arguments == null) {
@@ -60,20 +59,20 @@ public interface ExpressionEvalContext {
      * @param index argument index
      * @return the query argument
      */
-    public Object getArgument(int index);
+    Object getArgument(int index);
 
     /**
      * Return all the arguments.
      */
-    public List<Object> getArguments();
+    List<Object> getArguments();
 
     /**
      * @return serialization service
      */
-    public InternalSerializationService getSerializationService();
+    InternalSerializationService getSerializationService();
 
     /**
      * @return node engine
      */
-    public NodeEngine getNodeEngine();
+    NodeEngine getNodeEngine();
 }
