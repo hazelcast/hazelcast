@@ -275,7 +275,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         } else {
             vertex = dag.newUniqueVertex("Project", mapUsingServiceP(
                     ServiceFactories.nonSharedService(ctx ->
-                            ExpressionUtil.projectionFn(projection, ExpressionEvalContext.from(ctx))),
+                                    ExpressionUtil.projectionFn(projection, ExpressionEvalContext.from(ctx)))
+                            .setCooperative(projection.stream().allMatch(Expression::isCooperative)),
                     (Function<JetSqlRow, JetSqlRow> projectionFn, JetSqlRow row) -> projectionFn.apply(row)
             ));
         }

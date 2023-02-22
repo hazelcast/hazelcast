@@ -116,6 +116,16 @@ public class IndexCompositeFilter implements IndexFilter, IdentifiedDataSerializ
         throw new UnsupportedOperationException("Should not be called");
     }
 
+    @Override
+    public boolean isCooperative() {
+        for (IndexFilter f : filters) {
+            if (!f.isCooperative()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public List<IndexFilter> getFilters() {
         return filters;
     }

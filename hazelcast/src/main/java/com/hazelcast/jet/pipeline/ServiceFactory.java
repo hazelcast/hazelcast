@@ -249,6 +249,16 @@ public final class ServiceFactory<C, S> implements Serializable, Cloneable {
         return setCooperative(false);
     }
 
+    /**
+     * Returns a copy of this {@code ServiceFactory} with the {@code
+     * isCooperative} flag set to {@code cooperative} argument value.
+     * Note : if the service will perform async operations, you can
+     * typically use a cooperative processor.
+     * Cooperative processors offer higher performance.
+     *
+     * @return a copy of this factory with the {@code isCooperative} flag set
+     * to {@code false}.
+     */
     @Nonnull
     public ServiceFactory<C, S> setCooperative(boolean cooperative) {
         ServiceFactory<C, S> copy = clone();

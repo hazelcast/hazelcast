@@ -125,6 +125,16 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
         return descending;
     }
 
+    public boolean isCooperative() {
+        for (Expression<?> e : projection) {
+            if (!e.isCooperative()) {
+                return false;
+            }
+        }
+        return filter.isCooperative() && remainingFilter.isCooperative();
+    }
+
+
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override
     public boolean equals(Object o) {

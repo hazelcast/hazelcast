@@ -66,6 +66,11 @@ public class IndexEqualsFilter implements IndexFilter, IdentifiedDataSerializabl
     }
 
     @Override
+    public boolean isCooperative() {
+        return value.isCooperative();
+    }
+
+    @Override
     public int getFactoryId() {
         return SqlDataSerializerHook.F_ID;
     }

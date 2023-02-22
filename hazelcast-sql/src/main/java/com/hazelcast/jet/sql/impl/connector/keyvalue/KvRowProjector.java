@@ -128,6 +128,15 @@ public class KvRowProjector implements Row {
         return projections.size();
     }
 
+    public boolean isCooperative() {
+        for (Expression<?> e : projections) {
+            if (!e.isCooperative()) {
+                return false;
+            }
+        }
+        return predicate.isCooperative();
+    }
+
     public static Supplier supplier(
             QueryPath[] paths,
             QueryDataType[] types,
