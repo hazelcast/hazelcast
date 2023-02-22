@@ -612,6 +612,13 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertThat(twoMapsMemoryCost).isGreaterThan(oneMapMemoryCost);
     }
 
+    @Test
+    public void testViridianPhoneHomeNullByDefault() {
+        Map<String, String> parameters;
+        parameters = phoneHome.phoneHome(true);
+        assertThat(parameters.get(PhoneHomeMetrics.VIRIDIAN.getRequestParameterName())).isNull();
+    }
+
     private void testCounts(Function<String, ? extends DistributedObject> distributedObjectCreateFn,
                             int initial, PhoneHomeMetrics countMetric,
                             PhoneHomeMetrics totalCountMetric) {

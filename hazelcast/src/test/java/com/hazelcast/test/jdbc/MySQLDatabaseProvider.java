@@ -37,7 +37,7 @@ public class MySQLDatabaseProvider implements TestDatabaseProvider {
     public String createDatabase(String dbName) {
         if (rootUser) {
             // Connect as root user so that this user can create a new DB (aka schema)
-            jdbcUrl = "jdbc:tc:mysql:8.0.29:///" + dbName + "?user=root?password=test?TC_DAEMON=true&sessionVariables=sql_mode=ANSI";
+            jdbcUrl = "jdbc:tc:mysql:8.0.29:///" + dbName + "?user=root?password=test?TC_DAEMON=true&sessionVariables=sql_mode=ANSI&user=root&password=";
         } else {
             jdbcUrl = "jdbc:tc:mysql:8.0.29:///" + dbName + "?TC_DAEMON=true&sessionVariables=sql_mode=ANSI";
         }

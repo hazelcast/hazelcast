@@ -22,6 +22,7 @@ import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -59,6 +60,12 @@ public abstract class AbstractPostgresCdcIntegrationTest extends AbstractCdcInte
                     .withConnectTimeoutSeconds(300)
                     .withStartupTimeoutSeconds(300)
     );
+
+    @BeforeClass
+    public static void ignoreOnArm64() {
+        //There is no working arm64 version of example-postgres image
+        assumeNoArm64Architecture();
+    }
 
     protected PostgresCdcSources.Builder sourceBuilder(String name) {
         return PostgresCdcSources.postgres(name)

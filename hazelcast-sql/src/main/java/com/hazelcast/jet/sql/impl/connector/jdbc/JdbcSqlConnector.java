@@ -23,9 +23,9 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -66,8 +66,6 @@ public class JdbcSqlConnector implements SqlConnector {
     public static final String OPTION_JDBC_BATCH_LIMIT = "jdbc.batch-limit";
 
     public static final String JDBC_BATCH_LIMIT_DEFAULT_VALUE = "100";
-
-    private static final ILogger LOG = Logger.getLogger(JdbcSqlConnector.class);
 
     @Override
     public String typeName() {
@@ -264,19 +262,10 @@ public class JdbcSqlConnector implements SqlConnector {
         DataSource dataSource = createDataLink(nodeEngine, dataLinkRef);
 
         try (Connection connection = dataSource.getConnection()) {
-            SqlDialect dialect = SqlDialectFactoryImpl.INSTANCE.create(connection.getMetaData());
-            String databaseProductName = connection.getMetaData().getDatabaseProductName();
-            switch (databaseProductName) {
-                case "MySQL":
-                case "PostgreSQL":
-                case "H2":
-                    return dialect;
-
-                default:
-                    LOG.warning("Database " + databaseProductName + " is not officially supported");
-                    return dialect;
-            }
-
+            DatabaseMetaData databaseMetaData = connection.getMetaData();
+            SqlDialect dialect = SqlDialectFactoryImpl.INSTANCE.create(databaseMetaData);
+            SupportedDatabases.logOnceIfDatabaseNotSupported(databaseMetaData);
+            return dialect;
         } catch (Exception e) {
             throw new HazelcastException("Could not determine dialect for dataLinkRef: "
                                          + dataLinkRef, e);
@@ -289,8 +278,8 @@ public class JdbcSqlConnector implements SqlConnector {
     @Override
     public Vertex fullScanReader(
             @Nonnull DagBuildContext context,
-            @Nullable RexNode predicate,
-            @Nonnull List<RexNode> projection,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
@@ -298,7 +287,9 @@ public class JdbcSqlConnector implements SqlConnector {
         }
         JdbcTable table = (JdbcTable) context.getTable();
 
-        SelectQueryBuilder builder = new SelectQueryBuilder(context.getTable(), predicate, projection);
+        List<RexNode> projections = Util.toList(projection, n -> n.unwrap(RexNode.class));
+        RexNode filter = predicate == null ? null : predicate.unwrap(RexNode.class);
+        SelectQueryBuilder builder = new SelectQueryBuilder(context.getTable(), filter, projections);
         return context.getDag().newUniqueVertex(
                 "Select(" + table.getExternalName() + ")",
                 ProcessorMetaSupplier.forceTotalParallelismOne(
@@ -338,7 +329,7 @@ public class JdbcSqlConnector implements SqlConnector {
     public Vertex updateProcessor(
             @Nonnull DagBuildContext context,
             @Nonnull List<String> fieldNames,
-            @Nonnull List<RexNode> expressions
+            @Nonnull List<HazelcastRexNode> expressions
     ) {
         JdbcTable table = (JdbcTable) context.getTable();
 
@@ -347,7 +338,8 @@ public class JdbcSqlConnector implements SqlConnector {
                 .map(f -> table.getField(f).externalName())
                 .collect(toList());
 
-        UpdateQueryBuilder builder = new UpdateQueryBuilder(table, pkFields, fieldNames, expressions);
+        List<RexNode> projections = Util.toList(expressions, n -> n.unwrap(RexNode.class));
+        UpdateQueryBuilder builder = new UpdateQueryBuilder(table, pkFields, fieldNames, projections);
 
         return context.getDag().newUniqueVertex(
                 "Update(" + table.getExternalName() + ")",
@@ -387,7 +379,7 @@ public class JdbcSqlConnector implements SqlConnector {
         JdbcTable jdbcTable = (JdbcTable) context.getTable();
 
         // If dialect is supported
-        if (UpsertBuilder.isUpsertDialectSupported(jdbcTable)) {
+        if (SupportedDatabases.isDialectSupported(jdbcTable)) {
             // Get the upsert statement
             String upsertStatement = UpsertBuilder.getUpsertStatement(jdbcTable);
 

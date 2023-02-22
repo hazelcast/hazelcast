@@ -42,22 +42,23 @@ public class JobUploadStore {
     public void cleanExpiredUploads() {
         jobMap.forEach((key, value) -> {
             if (value.isExpired()) {
-                remove(key);
+                removeBadSession(key);
             }
         });
     }
 
     /**
-     * Remove the JobUploadStatus
+     * Remove the bad JobUploadStatus because of an exception or expiration
      *
      * @param sessionId specifies the key to be used
      */
-    public void remove(UUID sessionId) {
+    public JobUploadStatus removeBadSession(UUID sessionId) {
         JobUploadStatus jobUploadStatus = jobMap.remove(sessionId);
 
         if (jobUploadStatus != null) {
             jobUploadStatus.onRemove();
         }
+        return jobUploadStatus;
     }
 
     /**
@@ -65,13 +66,19 @@ public class JobUploadStore {
      *
      * @param parameterObject specifies the first message for the job upload
      */
-    public void processJobMetaData(JobMetaDataParameterObject parameterObject) {
+    public void processJobMetaData(JobMetaDataParameterObject parameterObject) throws IOException {
         UUID sessionId = parameterObject.getSessionId();
         String message = String.format("processJobMetaData : Session : %s ", sessionId);
         logger.info(message);
 
+        if (jobMap.containsKey(sessionId)) {
+            throw new JetException("Session already exists. sessionID " + sessionId);
+        }
+
         // Create a new JobUploadStatus object and save parameters
-        jobMap.computeIfAbsent(parameterObject.getSessionId(), key -> new JobUploadStatus(parameterObject));
+        JobUploadStatus jobUploadStatus = jobMap.computeIfAbsent(parameterObject.getSessionId(),
+                key -> new JobUploadStatus(parameterObject));
+        jobUploadStatus.createNewTemporaryFile();
 
     }
 
@@ -97,15 +104,16 @@ public class JobUploadStore {
         if (jobUploadStatus == null) {
             throw new JetException("Unknown session id : " + sessionId);
         }
-        // If we could get jobUploadStatus even if it expires we still can work on it
+
         JobMetaDataParameterObject partsComplete = jobUploadStatus.processJobMultipart(parameterObject);
 
-        // If job upload is complete, remove from the map
+        // If job upload is complete
         if (partsComplete != null) {
 
             message = String.format("Session : %s is complete. It will be removed from the map", sessionId);
             logger.info(message);
 
+            // Remove from the map so that it does not expire
             jobMap.remove(partsComplete.getSessionId());
         }
         return partsComplete;
