@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.tpc.util;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
+
 import java.util.PriorityQueue;
 
 /**
@@ -25,6 +27,7 @@ import java.util.PriorityQueue;
  *
  * @param <E> the type of elements in this BoundPriorityQueue.
  */
+@SerializableByConvention
 public class BoundPriorityQueue<E> extends PriorityQueue<E> {
 
     private final int capacity;

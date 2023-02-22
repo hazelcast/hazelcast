@@ -3357,15 +3357,16 @@ hazelcast:
           password: thepassword
           iteration-count: 1000
     wan-server-socket-endpoint-config:
-      interfaces:
-        enabled: false
+      wan-server-socket-config:
         interfaces:
-          - 192.168.8.101
-          - 10.20.10.100
-      alto-socket:
-        port-range: 14000-16000
-        receive-buffer-size-kb: 256
-        send-buffer-size-kb: 256
+          enabled: false
+          interfaces:
+            - 192.168.8.101
+            - 10.20.10.100
+        alto-socket:
+          port-range: 14000-16000
+          receive-buffer-size-kb: 256
+          send-buffer-size-kb: 256
     memcache-server-socket-endpoint-config:
       name: memcache
       port:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import static com.hazelcast.internal.tpc.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpc.util.BufferUtil.put;
+import static com.hazelcast.internal.tpc.util.BufferUtil.upcast;
 
 public abstract class AsyncSocket_LargePayloadTest {
     // use small buffers to cause a lot of network scheduling overhead (and shake down problems)
@@ -278,7 +279,7 @@ public abstract class AsyncSocket_LargePayloadTest {
                     System.out.println("server round:" + round);
                 }
 
-                payloadBuffer.flip();
+                upcast(payloadBuffer).flip();
                 IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
                 responseBuf.writeInt(payloadSize);
                 responseBuf.writeLong(round - 1);
@@ -327,7 +328,7 @@ public abstract class AsyncSocket_LargePayloadTest {
                     // not all bytes have been received.
                     break;
                 }
-                payloadBuffer.flip();
+                upcast(payloadBuffer).flip();
 
                 if (round % 100 == 0) {
                     System.out.println("client round:" + round);

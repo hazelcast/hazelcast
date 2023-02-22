@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,4 +40,21 @@ public final class ReflectionUtil {
         }
     }
 
+    /**
+     * Finds the value for a static field. If the field doesn't exist, null is returned.
+     *
+     * @param className name of the class.
+     * @param fieldName the name of the static field.
+     * @param <E>
+     * @return the value of the static field. If the field doesn't exist, null is returned.
+     */
+    public static <E> E findStaticFieldValue(String className, String fieldName) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            Field field = clazz.getField(fieldName);
+            return (E) field.get(null);
+        } catch (Exception ignore) {
+            return null;
+        }
+    }
 }

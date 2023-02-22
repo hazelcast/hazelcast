@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.hazelcast.internal.tpc.AsyncSocketOptions;
 import com.hazelcast.internal.tpc.Option;
 import com.hazelcast.internal.tpc.logging.TpcLogger;
 import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
-import jdk.net.ExtendedSocketOptions;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -36,11 +35,11 @@ import static com.hazelcast.internal.tpc.util.ReflectionUtil.findStaticFieldValu
 public class NioAsyncSocketOptions implements AsyncSocketOptions {
 
     private static final java.net.SocketOption<Integer> JDK_NET_TCP_KEEPCOUNT
-            = findStaticFieldValue(ExtendedSocketOptions.class, "TCP_KEEPCOUNT");
+            = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPCOUNT");
     private static final java.net.SocketOption<Integer> JDK_NET_TCP_KEEPIDLE
-            = findStaticFieldValue(ExtendedSocketOptions.class, "TCP_KEEPIDLE");
+            = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPIDLE");
     private static final java.net.SocketOption<Integer> JDK_NET_TCP_KEEPINTERVAL
-            = findStaticFieldValue(ExtendedSocketOptions.class, "TCP_KEEPINTERVAL");
+            = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPINTERVAL");
 
     private static final AtomicBoolean TCP_KEEPCOUNT_PRINTED = new AtomicBoolean();
     private static final AtomicBoolean TCP_KEEPIDLE_PRINTED = new AtomicBoolean();
