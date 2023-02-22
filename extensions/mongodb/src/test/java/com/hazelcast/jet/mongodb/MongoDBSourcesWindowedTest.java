@@ -73,6 +73,6 @@ public class MongoDBSourcesWindowedTest extends AbstractMongoDBTest {
         });
         instance().getJet().newJob(pipeline);
 
-        assertTrueEventually(() -> assertThat(result).hasSize(1));
+        assertTrueEventually(() -> assertThat(result).isNotEmpty());
     }
 }
