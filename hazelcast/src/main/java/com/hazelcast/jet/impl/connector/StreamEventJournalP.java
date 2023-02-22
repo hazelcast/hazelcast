@@ -382,10 +382,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         ClusterMetaSupplier(ClusterMetaSupplierParams clusterMetaSupplierParams) {
             this.clusterMetaSupplierParams = clusterMetaSupplierParams;
-
-            clientXml = clusterMetaSupplierParams.getClientXml();
-            dataLinkRef = clusterMetaSupplierParams.getDataLinkRef();
-
+            this.clientXml = clusterMetaSupplierParams.getClientXml();
+            this.dataLinkRef = clusterMetaSupplierParams.getDataLinkRef();
         }
 
         @Override
@@ -498,15 +496,13 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
                 @Nonnull ClusterMetaSupplierParams clusterMetaSupplierParams
         ) {
             this.ownedPartitions = ownedPartitions;
-
-            clientXml = clusterMetaSupplierParams.getClientXml();
-            eventJournalReaderSupplier = clusterMetaSupplierParams.getEventJournalReaderSupplier();
-            predicate = clusterMetaSupplierParams.getPredicate();
-            projection = clusterMetaSupplierParams.getProjection();
-            initialPos = clusterMetaSupplierParams.getInitialPos();
-            eventTimePolicy = clusterMetaSupplierParams.getEventTimePolicy();
-            dataLinkRef = clusterMetaSupplierParams.getDataLinkRef();
-
+            this.clientXml = clusterMetaSupplierParams.getClientXml();
+            this.eventJournalReaderSupplier = clusterMetaSupplierParams.getEventJournalReaderSupplier();
+            this.predicate = clusterMetaSupplierParams.getPredicate();
+            this.projection = clusterMetaSupplierParams.getProjection();
+            this.initialPos = clusterMetaSupplierParams.getInitialPos();
+            this.eventTimePolicy = clusterMetaSupplierParams.getEventTimePolicy();
+            this.dataLinkRef = clusterMetaSupplierParams.getDataLinkRef();
         }
 
         @Override

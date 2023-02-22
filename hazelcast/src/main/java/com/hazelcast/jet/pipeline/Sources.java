@@ -663,7 +663,7 @@ public final class Sources {
     /**
      * The same as the {@link #remoteMapJournal(String, ClientConfig, JournalInitialPosition, FunctionEx, PredicateEx)}
      * method. The only difference is instead of a ClientConfig parameter that is used to connect to remote cluster,
-     * this method receives an DataLinkConfig.
+     * this method receives a DataLinkConfig.
      * The DataLinkConfig caches the connection to remote cluster, so that it can be re-used
      *  <p>
      *      (Prerequisite) External dataLink configuration: <br/>
@@ -691,7 +691,24 @@ public final class Sources {
      *               predicate
      *            ));
      *       }</pre>
-     *      </p>
+     * </p>
+     * @param mapName the name of the map
+     * @param dataLinkRef the reference to DataLinkConfig
+     * @param initialPos describes which event to start receiving from
+     * @param projectionFn the projection to map the events. If the projection returns a {@code
+     *                      null} for an item, that item will be filtered out. You may use {@link
+     *                      Util#mapEventToEntry()} to extract just the key and
+     *                      the new value. It must be stateless and {@linkplain
+     *                      Processor#isCooperative() cooperative}.
+     * @param predicateFn the predicate to filter the events. If you want to specify just the
+     *                      projection, use {@link Util#mapPutEvents} to pass
+     *                      only {@link EntryEventType#ADDED ADDED} and
+     *                      {@link EntryEventType#UPDATED UPDATED} events. It must be stateless and
+     *                      {@linkplain Processor#isCooperative() cooperative}.
+     * @param <T> is the return type of the stream
+     * @param <K> is the key type of EventJournalMapEvent
+     * @param <V> is the vale type of EventJournalMapEvent
+     * @return a stream that can be used as a source
      * @since 5.3
      */
     @Nonnull

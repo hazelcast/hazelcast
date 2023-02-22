@@ -379,7 +379,6 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // Then
         testMapJournal_withPredicateAndProjection(map, source);
-
     }
 
     private void testMapJournal_withPredicateAndProjection(IMap<String, Integer> srcMap, StreamSource<Integer> source) {

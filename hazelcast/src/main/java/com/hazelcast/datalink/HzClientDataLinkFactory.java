@@ -52,19 +52,20 @@ public class HzClientDataLinkFactory implements DataLinkFactory<HazelcastInstanc
     /**
      * The cached client instance
      */
-    private HazelcastInstance hazelcastInstance;
+    private volatile HazelcastInstance hazelcastInstance;
 
     @Override
-    public synchronized HazelcastInstance getDataLink() {
+    public HazelcastInstance getDataLink() {
         if (hazelcastInstance == null) {
-
-            ClientConfig clientConfig = buildClientConfig();
-
-            if (clientConfig != null) {
-                hazelcastInstance = HazelcastClient.newHazelcastClient(clientConfig);
-                return hazelcastInstance;
+            synchronized (this) {
+                // Convert XML or YAML to object
+                ClientConfig clientConfig = buildClientConfig();
+                if (clientConfig != null) {
+                    hazelcastInstance = HazelcastClient.newHazelcastClient(clientConfig);
+                } else {
+                    throw new HazelcastException("XML or YAML in HzClientDataLinkFactory is null");
+                }
             }
-            throw new HazelcastException("XML or YAML in HzClientDataLinkFactory is null");
         }
         return hazelcastInstance;
     }
