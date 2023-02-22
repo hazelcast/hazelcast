@@ -162,7 +162,6 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     // Test remoteMapJournal() using default parameters with DataLinkRef
     @Test
     public void remoteMapJournal_withExternalConfigYaml() {
-
         for (HazelcastInstance hazelcastInstance : allHazelcastInstances()) {
             Config config = hazelcastInstance.getConfig();
             DataLinkConfig dataLinkConfig = config.getDataLinkConfig(HZ_CLIENT_EXTERNAL_REF);

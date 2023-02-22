@@ -31,10 +31,11 @@ import java.security.Permission;
 
 /**
  * Parameter object class
- * @param <T> is input type
- * @param <R> is return type
+ *
+ * @param <E> is the type of EventJournalMapEvent
+ * @param <T> is the return type of the stream
  */
-class ClusterMetaSupplierParams<T, R> implements Serializable {
+class ClusterMetaSupplierParams<E, T> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -52,7 +53,7 @@ class ClusterMetaSupplierParams<T, R> implements Serializable {
     /**
      * The function that creates EventJournalReader
      */
-    private FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<T>> eventJournalReaderSupplier;
+    private FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<E>> eventJournalReaderSupplier;
 
     /**
      * The predicate and projection for
@@ -60,8 +61,8 @@ class ClusterMetaSupplierParams<T, R> implements Serializable {
      * eventJournalReader.readFromEventJournal(offset, 1, MAX_FETCH_SIZE, partition, predicate, projection)
      * }</pre>
      */
-    private PredicateEx<? super T> predicate;
-    private FunctionEx<? super T, ? extends R> projection;
+    private PredicateEx<? super E> predicate;
+    private FunctionEx<? super E, ? extends T> projection;
     private JournalInitialPosition initialPos;
     /**
      * The parameter for StreamEventJournalP
@@ -70,7 +71,7 @@ class ClusterMetaSupplierParams<T, R> implements Serializable {
      * }
      * </pre>
      */
-    private EventTimePolicy<? super R> eventTimePolicy;
+    private EventTimePolicy<? super T> eventTimePolicy;
     private SupplierEx<Permission> permissionFn;
 
     /**
@@ -121,30 +122,30 @@ class ClusterMetaSupplierParams<T, R> implements Serializable {
     }
 
     @Nonnull
-    public FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<T>> getEventJournalReaderSupplier() {
+    public FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<E>> getEventJournalReaderSupplier() {
         return eventJournalReaderSupplier;
     }
 
     public void setEventJournalReaderSupplier(
-            @Nonnull FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<T>> eventJournalReaderSupplier) {
+            @Nonnull FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<E>> eventJournalReaderSupplier) {
         this.eventJournalReaderSupplier = eventJournalReaderSupplier;
     }
 
     @Nonnull
-    public PredicateEx<? super T> getPredicate() {
+    public PredicateEx<? super E> getPredicate() {
         return predicate;
     }
 
-    public void setPredicate(@Nonnull PredicateEx<? super T> predicate) {
+    public void setPredicate(@Nonnull PredicateEx<? super E> predicate) {
         this.predicate = predicate;
     }
 
     @Nonnull
-    public FunctionEx<? super T, ? extends R> getProjection() {
+    public FunctionEx<? super E, ? extends T> getProjection() {
         return projection;
     }
 
-    public void setProjection(@Nonnull FunctionEx<? super T, ? extends R> projection) {
+    public void setProjection(@Nonnull FunctionEx<? super E, ? extends T> projection) {
         this.projection = projection;
     }
 
@@ -158,11 +159,11 @@ class ClusterMetaSupplierParams<T, R> implements Serializable {
     }
 
     @Nonnull
-    public EventTimePolicy<? super R> getEventTimePolicy() {
+    public EventTimePolicy<? super T> getEventTimePolicy() {
         return eventTimePolicy;
     }
 
-    public void setEventTimePolicy(@Nonnull EventTimePolicy<? super R> eventTimePolicy) {
+    public void setEventTimePolicy(@Nonnull EventTimePolicy<? super T> eventTimePolicy) {
         this.eventTimePolicy = eventTimePolicy;
     }
 

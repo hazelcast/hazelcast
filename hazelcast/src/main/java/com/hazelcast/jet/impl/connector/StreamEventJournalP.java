@@ -364,13 +364,16 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         return (HzClientDataLinkFactory) dataLinkFactory;
     }
 
-    // Creates ClusterProcessorSupplier per member. Each ClusterProcessorSupplier is given a
-    // list of partitions IDs
-    private static class ClusterMetaSupplier<E> implements ProcessorMetaSupplier {
+    /**
+     * Creates ClusterProcessorSupplier per member. Each ClusterProcessorSupplier is given a list of partitions IDs
+     * @param <E> is the type of EventJournalMapEvent
+     * @param <T> is the return type of the stream
+     */
+    private static class ClusterMetaSupplier<E, T> implements ProcessorMetaSupplier {
 
         static final long serialVersionUID = 1L;
 
-        private ClusterMetaSupplierParams clusterMetaSupplierParams;
+        private final ClusterMetaSupplierParams<E, T> clusterMetaSupplierParams;
         private final String clientXml;
 
         private final DataLinkRef dataLinkRef;
@@ -380,7 +383,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         //Value : List of partitions ids on this member
         private transient Map<Address, List<Integer>> addrToPartitions;
 
-        ClusterMetaSupplier(ClusterMetaSupplierParams clusterMetaSupplierParams) {
+        ClusterMetaSupplier(ClusterMetaSupplierParams<E, T> clusterMetaSupplierParams) {
             this.clusterMetaSupplierParams = clusterMetaSupplierParams;
             this.clientXml = clusterMetaSupplierParams.getClientXml();
             this.dataLinkRef = clusterMetaSupplierParams.getDataLinkRef();
@@ -463,7 +466,11 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         }
     }
 
-    // Factory for processors
+    /**
+     * Factory for processors
+     * @param <E> is the type of EventJournalMapEvent
+     * @param <T> is the return type of the stream
+     */
     private static class ClusterProcessorSupplier<E, T> implements ProcessorSupplier {
 
         static final long serialVersionUID = 1L;
@@ -493,7 +500,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         ClusterProcessorSupplier(
                 @Nonnull List<Integer> ownedPartitions,
-                @Nonnull ClusterMetaSupplierParams clusterMetaSupplierParams
+                @Nonnull ClusterMetaSupplierParams<E, T> clusterMetaSupplierParams
         ) {
             this.ownedPartitions = ownedPartitions;
             this.clientXml = clusterMetaSupplierParams.getClientXml();
@@ -610,8 +617,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         params.setEventTimePolicy(eventTimePolicy);
         params.setPermissionFn(() -> new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
 
-        return new ClusterMetaSupplier<EventJournalMapEvent<K, V>>(params);
-
+        return new ClusterMetaSupplier<>(params);
     }
 
     /**
