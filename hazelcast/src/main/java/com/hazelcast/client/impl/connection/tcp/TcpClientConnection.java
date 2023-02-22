@@ -307,23 +307,6 @@ public class TcpClientConnection implements ClientConnection {
                 + '}';
     }
 
-    /**
-     * Returns a string that would be less descriptive than the one returned
-     * from the {@code toString} method, but still would contain enough
-     * information to identify the connection.
-     * <p>
-     * This method is mainly intended to be used for logging, where the
-     * {@code toString} method would clutter the logging text due to
-     * its length.
-     */
-    public String toLessDescriptiveString() {
-        return "ClientConnection{"
-                + "connectionId=" + connectionId
-                + ", remoteAddress=" + remoteAddress
-                + ", alive=" + isAlive()
-                + '}';
-    }
-
     @Override
     public EventHandler getEventHandler(long correlationId) {
         return eventHandlerMap.get(correlationId);

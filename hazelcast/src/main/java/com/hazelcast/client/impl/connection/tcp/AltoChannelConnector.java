@@ -78,7 +78,7 @@ public final class AltoChannelConnector {
      */
     public void initiate() {
         logger.info("Initiating connection attempts to Alto channels running on ports "
-                + altoPorts + " for " + connection.toLessDescriptiveString());
+                + altoPorts + " for " + connection);
         String host = connection.getRemoteAddress().getHost();
         int i = 0;
         for (int port : altoPorts) {
@@ -91,15 +91,13 @@ public final class AltoChannelConnector {
         if (connectionFailed()) {
             // No need to try to connect if one of the channels
             // or the connection itself is closed/failed.
-            logger.warning("The connection to Alto channel on port "
-                    + port + " for " + connection.toLessDescriptiveString()
-                    + " will not be made as either the connection or one of "
-                    + "the Alto channel connections has failed.");
+            logger.warning("The connection to Alto channel on port " + port + " for "
+                    + connection + " will not be made as either the connection or "
+                    + "one of the Alto channel connections has failed.");
             return;
         }
 
-        logger.info("Trying to connect to Alto channel on port " + port + " for "
-                + connection.toLessDescriptiveString());
+        logger.info("Trying to connect to Alto channel on port " + port + " for " + connection);
 
         Channel channel = null;
         try {
@@ -109,7 +107,7 @@ public final class AltoChannelConnector {
             onSuccessfulChannelConnection(channel, index);
         } catch (Exception e) {
             logger.warning("Exception during the connection to attempt to Alto channel on port "
-                    + port + " for " + connection.toLessDescriptiveString() + ": " + e, e);
+                    + port + " for " + connection + ": " + e, e);
             onFailure(channel);
         }
     }
@@ -124,7 +122,7 @@ public final class AltoChannelConnector {
         clientUuidMessage.add(initialFrame);
         if (!channel.write(clientUuidMessage)) {
             throw new HazelcastException("Cannot write authentication bytes to the Alto channel "
-                    + channel + " for " + connection.toLessDescriptiveString());
+                    + channel + " for " + connection);
         }
     }
 
@@ -135,9 +133,8 @@ public final class AltoChannelConnector {
                 // of the channels are failed after this channel
                 // is established. We need to close this one as well
                 // to not leak any channels.
-                logger.warning("Closing the Alto channel " + channel + " for "
-                        + connection.toLessDescriptiveString()
-                        + " as one of the connections are failed.");
+                logger.warning("Closing the Alto channel " + channel + " for " + connection
+                        + " as one of the connections is failed.");
                 onFailure(channel);
                 return;
             }
@@ -145,8 +142,7 @@ public final class AltoChannelConnector {
             altoChannels[index] = channel;
         }
 
-        logger.info("Successfully connected to Alto channel " + channel + " for "
-                + connection.toLessDescriptiveString());
+        logger.info("Successfully connected to Alto channel " + channel + " for " + connection);
 
         if (remaining.decrementAndGet() == 0) {
             connection.setAltoChannels(altoChannels);
@@ -163,11 +159,10 @@ public final class AltoChannelConnector {
             // OK to call close on already closed channels.
             if (!connection.isAlive()) {
                 logger.warning("Closing all Alto channel connections for "
-                        + connection.toLessDescriptiveString() + " as the connection is closed.");
+                        + connection + " as the connection is closed.");
                 closeAllChannels();
             } else {
-                logger.info("All Alto channel connections are established for the "
-                        + connection.toLessDescriptiveString());
+                logger.info("All Alto channel connections are established for the " + connection);
             }
         }
     }
