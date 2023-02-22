@@ -33,6 +33,7 @@ import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 
 import javax.annotation.Nonnull;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -53,11 +54,11 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     private final String databaseName;
     private final String collectionName;
     private final List<String> fieldNames;
-    private final List<Object> updates;
+    private final List<? extends Serializable> updates;
     private final List<String> pkFields;
     private ExpressionEvalContext evalContext;
 
-    UpdateProcessorSupplier(MongoTable table, List<String> fieldNames, List<Object> updates) {
+    UpdateProcessorSupplier(MongoTable table, List<String> fieldNames, List<? extends Serializable> updates) {
         this.connectionString = table.connectionString;
         this.databaseName = table.databaseName;
         this.collectionName = table.collectionName;

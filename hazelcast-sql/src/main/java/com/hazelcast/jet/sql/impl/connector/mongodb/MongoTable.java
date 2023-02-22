@@ -43,6 +43,8 @@ class MongoTable extends JetTable {
      * Streaming query always needs _id to be present, even if user don't request it
      */
     final boolean streaming;
+    private final String[] externalNames;
+    private final QueryDataType[] fieldTypes;
 
     MongoTable(
             @Nonnull String schemaName,
@@ -52,24 +54,32 @@ class MongoTable extends JetTable {
             @Nonnull Map<String, String> options,
             @Nonnull SqlConnector sqlConnector,
             @Nonnull List<TableField> fields,
-            @Nonnull TableStatistics statistics, boolean streaming) {
+            @Nonnull TableStatistics statistics,
+            boolean streaming) {
         super(sqlConnector, fields, schemaName, name, statistics);
         this.databaseName = databaseName;
         this.collectionName = collectionName;
         this.options = options;
         this.connectionString = options.get(Options.CONNECTION_STRING_OPTION);
         this.streaming = streaming;
+
+        this.externalNames = getFields().stream()
+                                   .map(field -> ((MongoTableField) field).externalName)
+                                   .toArray(String[]::new);
+        this.fieldTypes = getFields().stream()
+                                .map(TableField::getType)
+                                .toArray(QueryDataType[]::new);
     }
 
     public MongoTableField getField(String name) {
-        List<TableField> fields = getFields();
-        for (TableField field : fields) {
+        for (TableField field : getFields()) {
             if (field.getName().equals(name)) {
                 return (MongoTableField) field;
             }
         }
         throw new IllegalArgumentException("field " + name + " does not exist");
     }
+
     public MongoTableField getFieldByExternalName(String name) {
         return getFields().stream()
                           .map(f -> (MongoTableField) f)
@@ -78,16 +88,12 @@ class MongoTable extends JetTable {
                           .orElseThrow(() -> new IllegalArgumentException("field " + name + " does not exist"));
     }
 
-    String[] paths() {
-        return getFields().stream()
-                          .map(field -> ((MongoTableField) field).externalName)
-                          .toArray(String[]::new);
+    String[] externalNames() {
+        return externalNames;
     }
 
-    QueryDataType[] types() {
-        return getFields().stream()
-                          .map(TableField::getType)
-                          .toArray(QueryDataType[]::new);
+    QueryDataType[] fieldTypes() {
+        return fieldTypes;
     }
 
     SupplierEx<QueryTarget> queryTargetSupplier() {

@@ -15,6 +15,9 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import java.time.Instant;
+import java.util.Map;
+
 final class Options {
 
     static final String DATA_LINK_REF_OPTION = "dataLinkRef";
@@ -23,6 +26,19 @@ final class Options {
     static final String START_AT_OPTION = "startAt";
 
     private Options() {
+    }
+
+    static Long startAt(Map<String, String> options) {
+        String startAtValue = options.get(START_AT_OPTION);
+        if ("now".equalsIgnoreCase(startAtValue)) {
+            return System.currentTimeMillis();
+        } else {
+            try {
+                return Long.parseLong(startAtValue);
+            } catch (NumberFormatException e) {
+                return Instant.parse(startAtValue).toEpochMilli();
+            }
+        }
     }
 
 }

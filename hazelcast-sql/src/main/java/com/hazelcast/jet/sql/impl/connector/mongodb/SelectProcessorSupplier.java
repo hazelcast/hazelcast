@@ -42,7 +42,6 @@ import static com.mongodb.client.model.Aggregates.project;
 import static com.mongodb.client.model.Projections.excludeId;
 import static com.mongodb.client.model.Projections.fields;
 import static com.mongodb.client.model.Projections.include;
-import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -63,6 +62,8 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
 
     SelectProcessorSupplier(MongoTable table, String predicate, List<String> projection, Long startAt, boolean stream,
                             FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
+        checkArgument(projection != null && !projection.isEmpty(), "projection cannot be empty");
+
         this.predicate = predicate;
         this.projection = projection;
         this.connectionString = table.connectionString;
@@ -71,8 +72,6 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         this.startAt = startAt;
         this.stream = stream;
         this.eventTimePolicyProvider = eventTimePolicyProvider;
-
-        checkArgument(projection != null && !projection.isEmpty(), "projection cannot be empty");
         this.types = table.resolveColumnTypes(projection);
     }
 
@@ -108,7 +107,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
             aggregates.add(project(proj));
         }
 
-        Processor[] processors = new Processor[count];
+        List<Processor> processors = new ArrayList<>();
 
         EventTimePolicy<JetSqlRow> eventTimePolicy = eventTimePolicyProvider == null
                 ? EventTimePolicy.noEventTime()
@@ -126,9 +125,9 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
                             .setEventTimePolicy(eventTimePolicy)
             );
 
-            processors[i] = processor;
+            processors.add(processor);
         }
-        return asList(processors);
+        return processors;
     }
 
     private JetSqlRow convertDocToRow(Document doc) {

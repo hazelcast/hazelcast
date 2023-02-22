@@ -36,7 +36,6 @@ import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -123,7 +122,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
         MongoTable table = context.getTable();
 
-        RexToMongoVisitor visitor = new RexToMongoVisitor(table.paths());
+        RexToMongoVisitor visitor = new RexToMongoVisitor(table.externalNames());
 
         TranslationResult<String> filter = translateFilter(predicate, visitor);
         TranslationResult<List<String>> projections = translateProjections(projection, context, visitor);
@@ -138,7 +137,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
 
         SelectProcessorSupplier supplier;
         if (isStream()) {
-            Long startAt = parseStartAt(table.getOptions());
+            Long startAt = Options.startAt(table.getOptions());
             supplier = new SelectProcessorSupplier(table, filter.result, projectionList, startAt,
                     eventTimePolicyProvider);
         } else {
@@ -156,8 +155,8 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             Vertex vEnd = dag.newUniqueVertex(
                     "ProjectAndFilter(" + table + ")",
                     SqlProcessors.rowProjector(
-                            table.paths(),
-                            table.types(),
+                            table.externalNames(),
+                            table.fieldTypes(),
                             table.queryTargetSupplier(),
                             filterExpr,
                             projectionExpr
@@ -167,28 +166,6 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             return vEnd;
         }
         return sourceVertex;
-    }
-
-    private Long parseStartAt(Map<String, String> options) {
-        String startAtValue = options.get(Options.START_AT_OPTION);
-        if ("now".equalsIgnoreCase(startAtValue)) {
-            return System.currentTimeMillis();
-        } else {
-            Long aLong = asLong(startAtValue);
-            if (aLong != null) {
-                return aLong;
-            } else {
-                return Instant.parse(startAtValue).toEpochMilli();
-            }
-        }
-    }
-
-    private static Long asLong(String startAtValue) {
-        try {
-            return Long.parseLong(startAtValue);
-        } catch (NumberFormatException e) {
-            return null;
-        }
     }
 
     private static TranslationResult<String> translateFilter(HazelcastRexNode filterNode, RexToMongoVisitor visitor) {

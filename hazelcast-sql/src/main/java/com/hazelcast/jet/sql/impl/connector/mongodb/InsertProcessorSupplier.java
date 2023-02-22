@@ -56,8 +56,8 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
         this.connectionString = table.connectionString;
         this.databaseName = table.databaseName;
         this.collectionName = table.collectionName;
-        this.paths = table.paths();
-        this.types = table.types();
+        this.paths = table.externalNames();
+        this.types = table.fieldTypes();
         this.writeMode = writeMode;
     }
 

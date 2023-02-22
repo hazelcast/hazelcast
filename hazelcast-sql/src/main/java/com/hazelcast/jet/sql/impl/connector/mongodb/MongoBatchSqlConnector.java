@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nonnull;
+import java.io.Serializable;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
@@ -59,16 +60,19 @@ public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
                                   @Nonnull List<String> fieldNames,
                                   @Nonnull List<HazelcastRexNode> expressions) {
         MongoTable table = context.getTable();
-        RexToMongoVisitor visitor = new RexToMongoVisitor(table.paths());
-        List<Object> updates = expressions.stream()
-                                          .map(e -> e.unwrap(RexNode.class).accept(visitor))
-                                          .collect(toList());
+        RexToMongoVisitor visitor = new RexToMongoVisitor(table.externalNames());
+        List<? extends Serializable> updates = expressions.stream()
+                                                          .map(e -> e.unwrap(RexNode.class).accept(visitor))
+                                                          .map(doc -> {
+                                                              assert doc instanceof Serializable;
+                                                              return (Serializable) doc;
+                                                          })
+                                                          .collect(toList());
 
-        Vertex vertex = context.getDag().newUniqueVertex(
+        return context.getDag().newUniqueVertex(
                 "Update(" + table.getSqlName() + ")",
                 new UpdateProcessorSupplier(table, fieldNames, updates)
         );
-        return vertex;
     }
 
     @Nonnull
@@ -76,11 +80,10 @@ public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
     public Vertex sinkProcessor(@Nonnull DagBuildContext context) {
         MongoTable table = context.getTable();
 
-        Vertex vertex = context.getDag().newUniqueVertex(
-                "Update(" + table.getSqlName() + ")",
+        return context.getDag().newUniqueVertex(
+                "Sink(" + table.getSqlName() + ")",
                 new InsertProcessorSupplier(table, WriteMode.UPSERT)
         );
-        return vertex;
     }
 
 }
