@@ -123,7 +123,8 @@ public final class AltoChannelConnector {
         encodeUUID(initialFrame.content, 0, clientUuid);
         clientUuidMessage.add(initialFrame);
         if (!channel.write(clientUuidMessage)) {
-            throw new HazelcastException("Cannot write authentication bytes to the channel");
+            throw new HazelcastException("Cannot write authentication bytes to the Alto channel "
+                    + channel + " for " + connection.toLessDescriptiveString());
         }
     }
 
