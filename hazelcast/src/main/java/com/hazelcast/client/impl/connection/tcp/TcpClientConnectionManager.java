@@ -56,7 +56,6 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.nio.NioNetworking;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -366,7 +365,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
         executor.shutdownNow();
         ClientExecutionServiceImpl.awaitExecutorTermination("cluster", executor, logger);
-        for (Connection connection : activeConnections.values()) {
+        for (ClientConnection connection : activeConnections.values()) {
             connection.close("Hazelcast client is shutting down", null);
         }
 
@@ -471,7 +470,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         return false;
     }
 
-    <A> Connection connect(A target, Function<A, Connection> getOrConnectFunction,
+    <A> ClientConnection connect(A target, Function<A, ClientConnection> getOrConnectFunction,
                            Function<A, Address> addressTranslator) {
         try {
             logger.info("Trying to connect to " + target);
@@ -514,7 +513,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                     checkClientActive();
                     triedAddressesPerAttempt.add(member.getAddress());
                     connectionProcessListenerRunner.onAttemptingToConnectToTarget(this::translate, member);
-                    Connection connection = connect(member,
+                    ClientConnection connection = connect(member,
                             o -> getOrConnectToMember(o, switchingToNextCluster),
                             this::translate);
                     if (connection != null) {
@@ -529,7 +528,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         continue;
                     }
                     connectionProcessListenerRunner.onAttemptingToConnectToTarget(this::translate, address);
-                    Connection connection = connect(address,
+                    ClientConnection connection = connect(address,
                             o -> getOrConnectToAddress(o, switchingToNextCluster),
                             this::translate);
                     if (connection != null) {
@@ -618,7 +617,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     }
 
     @Override
-    public Collection<Connection> getActiveConnections() {
+    public Collection<ClientConnection> getActiveConnections() {
         return (Collection) activeConnections.values();
     }
 
@@ -1201,7 +1200,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                     logger.severe(cause);
                 }
 
-                Connection connection = (Connection) channel.attributeMap().get(TcpClientConnection.class);
+                ClientConnection connection = (ClientConnection) channel.attributeMap().get(TcpClientConnection.class);
                 if (cause instanceof EOFException) {
                     connection.close("Connection closed by the other side", cause);
                 } else {
@@ -1274,7 +1273,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     @Override
     public void memberRemoved(MembershipEvent membershipEvent) {
         Member member = membershipEvent.getMember();
-        Connection connection = getConnection(member.getUuid());
+        ClientConnection connection = getConnection(member.getUuid());
         if (connection != null) {
             connection.close(null,
                     new TargetDisconnectedException("The client has closed the connection to this member,"

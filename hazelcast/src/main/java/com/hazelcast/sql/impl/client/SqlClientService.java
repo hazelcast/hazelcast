@@ -30,7 +30,6 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -259,7 +258,7 @@ public class SqlClientService implements SqlService {
         return connectionType.equals(ConnectionType.MC_JAVA_CLIENT);
     }
 
-    private SqlResubmissionResult createResubmissionResult(ClientMessage message, Connection connection) {
+    private SqlResubmissionResult createResubmissionResult(ClientMessage message, ClientConnection connection) {
         SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(message);
         SqlError sqlError = response.error;
         if (sqlError != null) {
@@ -291,7 +290,7 @@ public class SqlClientService implements SqlService {
         }
     }
 
-    public void fetchAsync(Connection connection, QueryId queryId, int cursorBufferSize, SqlClientResult res) {
+    public void fetchAsync(ClientConnection connection, QueryId queryId, int cursorBufferSize, SqlClientResult res) {
         ClientMessage requestMessage = SqlFetchCodec.encodeRequest(queryId, cursorBufferSize);
 
         ClientInvocationFuture future = invokeAsync(requestMessage, connection);
@@ -300,7 +299,7 @@ public class SqlClientService implements SqlService {
                 (message, error) -> handleFetchResponse(connection, res, message, error)));
     }
 
-    private void handleFetchResponse(Connection connection, SqlClientResult res, ClientMessage message, Throwable error) {
+    private void handleFetchResponse(ClientConnection connection, SqlClientResult res, ClientMessage message, Throwable error) {
         if (error != null) {
             res.onFetchFinished(null, rethrow(error, connection));
 
@@ -328,7 +327,7 @@ public class SqlClientService implements SqlService {
      * @param connection Connection.
      * @param queryId    Query ID.
      */
-    void close(Connection connection, QueryId queryId) {
+    void close(ClientConnection connection, QueryId queryId) {
         try {
             ClientMessage requestMessage = SqlCloseCodec.encodeRequest(queryId);
 
@@ -356,7 +355,7 @@ public class SqlClientService implements SqlService {
     /**
      * For testing only.
      */
-    public ClientMessage invokeOnConnection(Connection connection, ClientMessage request) {
+    public ClientMessage invokeOnConnection(ClientConnection connection, ClientMessage request) {
         try {
             return invoke(request, connection);
         } catch (Exception e) {
@@ -382,13 +381,13 @@ public class SqlClientService implements SqlService {
         return client.getSerializationService();
     }
 
-    private ClientInvocationFuture invokeAsync(ClientMessage request, Connection connection) {
+    private ClientInvocationFuture invokeAsync(ClientMessage request, ClientConnection connection) {
         ClientInvocation invocation = new ClientInvocation(client, request, null, connection);
 
         return invocation.invoke();
     }
 
-    private ClientMessage invoke(ClientMessage request, Connection connection) throws Exception {
+    private ClientMessage invoke(ClientMessage request, ClientConnection connection) throws Exception {
         ClientInvocationFuture fut = invokeAsync(request, connection);
 
         return fut.get();
@@ -408,7 +407,7 @@ public class SqlClientService implements SqlService {
         }
     }
 
-    private RuntimeException rethrow(Throwable cause, Connection connection) {
+    private RuntimeException rethrow(Throwable cause, ClientConnection connection) {
         if (!connection.isAlive()) {
             return QueryUtils.toPublicException(
                     QueryException.memberConnection(connection.getRemoteAddress()),

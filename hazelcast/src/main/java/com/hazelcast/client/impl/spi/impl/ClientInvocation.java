@@ -24,7 +24,6 @@ import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -64,7 +63,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
     private final CallIdSequence callIdSequence;
     private final UUID uuid;
     private final int partitionId;
-    private final Connection connection;
+    private final ClientConnection connection;
     private final long startTimeMillis;
     private final long retryPauseMillis;
     private final Object objectName;
@@ -93,7 +92,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
                                Object objectName,
                                int partitionId,
                                UUID uuid,
-                               Connection connection) {
+                               ClientConnection connection) {
         super(((ClientInvocationServiceImpl) client.getInvocationService()).invocationLogger);
         this.lifecycleService = client.getLifecycleService();
         this.invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
@@ -139,7 +138,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
      * Create an invocation that will be executed on given {@code connection}.
      */
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage, Object objectName,
-                            Connection connection) {
+                            ClientConnection connection) {
         this(client, clientMessage, objectName, UNASSIGNED_PARTITION, null, connection);
     }
 
@@ -181,7 +180,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
             }
 
             if (isBindToSingleConnection()) {
-                boolean invoked = invocationService.invokeOnConnection(this, (ClientConnection) connection);
+                boolean invoked = invocationService.invokeOnConnection(this, connection);
                 if (!invoked) {
                     notifyExceptionWithOwnedPermission(new IOException("Could not invoke on connection " + connection));
                 }

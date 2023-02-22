@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.connection;
 
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListenable;
 
 import javax.annotation.Nonnull;
@@ -62,7 +61,7 @@ public interface ClientConnectionManager extends ConnectionListenable<ClientConn
      */
     boolean clientInitializedOnCluster();
 
-    Collection<Connection> getActiveConnections();
+    Collection<ClientConnection> getActiveConnections();
 
     UUID getClientUuid();
 
