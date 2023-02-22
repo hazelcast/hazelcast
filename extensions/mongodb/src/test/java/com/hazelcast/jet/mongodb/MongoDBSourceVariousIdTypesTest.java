@@ -32,9 +32,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.mongodb.MongoDBSources.batch;
 import static org.junit.Assert.assertEquals;
@@ -78,8 +75,7 @@ public class MongoDBSourceVariousIdTypesTest extends AbstractMongoDBTest {
 
         instance().getJet().newJob(pipeline, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE)).join();
 
-        List<Object> local = new ArrayList<>(list);
-        assertEquals(2, local.size());
+        assertEquals(2, list.size());
     }
 
 }
