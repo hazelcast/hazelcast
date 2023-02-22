@@ -164,7 +164,6 @@ public final class WriteKafkaP<T, K, V> implements Processor {
 
     @Override
     public boolean snapshotCommitFinish(boolean commitTransactions) {
-        context.logger().info("aaa kafka commit");
         return snapshotUtility.snapshotCommitFinish(commitTransactions);
     }
 
@@ -181,7 +180,7 @@ public final class WriteKafkaP<T, K, V> implements Processor {
     private void recoverTransaction(KafkaTransactionId txnId, boolean commit) {
         HashMap<String, Object> properties2 = new HashMap<>(properties);
         properties2.put("transactional.id", txnId.getKafkaId());
-        try (KafkaProducer<?, ?> p  = new KafkaProducer<>(properties2)) {
+        try (KafkaProducer<?, ?> p = new KafkaProducer<>(properties2)) {
             if (commit) {
                 ResumeTransactionUtil.resumeTransaction(p, txnId.producerId(), txnId.epoch());
                 try {
