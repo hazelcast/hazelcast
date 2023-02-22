@@ -75,6 +75,8 @@ class ClusterMetaSupplierParams<T, R> implements Serializable {
 
     /**
      * Create parameter object for connecting to a remote cluster using given XML
+     * @param <E> is the type of EventJournalMapEvent
+     * @param <T> is the return type of the stream
      */
     public static <E, T> ClusterMetaSupplierParams<E, T> fromXML(@Nonnull String clientXml) {
         ClusterMetaSupplierParams<E, T> params = new ClusterMetaSupplierParams<>();
@@ -84,6 +86,8 @@ class ClusterMetaSupplierParams<T, R> implements Serializable {
 
     /**
      * Create parameter object for connecting to a remote cluster using given DataLinkRef
+     * @param <E> is the type of EventJournalMapEvent
+     * @param <T> is the return type of the stream
      */
     public static <E, T> ClusterMetaSupplierParams<E, T> fromDataLinkRef(@Nonnull DataLinkRef dataLinkRef) {
         ClusterMetaSupplierParams<E, T> params = new ClusterMetaSupplierParams<>();
@@ -91,6 +95,11 @@ class ClusterMetaSupplierParams<T, R> implements Serializable {
         return params;
     }
 
+    /**
+     * Create parameter object for local cluster
+     * @param <E> is the type of EventJournalMapEvent
+     * @param <T> is the return type of the stream
+     */
     public static <E, T> ClusterMetaSupplierParams<E, T> empty() {
         return new ClusterMetaSupplierParams<>();
     }

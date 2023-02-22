@@ -558,18 +558,21 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
     /**
      * ProcessorMetaSupplier for MapJournal that accesses local cluster
+     * @param <K> is the key type of EventJournalMapEvent
+     * @param <V> is the value type of EventJournalMapEvent
+     * @param <T> is the return type of the stream
      */
-    public static <K, V, R> ProcessorMetaSupplier streamMapSupplier(
+    public static <K, V, T> ProcessorMetaSupplier streamMapSupplier(
             @Nonnull String mapName,
             @Nonnull PredicateEx<? super EventJournalMapEvent<K, V>> predicate,
-            @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends R> projection,
+            @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends T> projection,
             @Nonnull JournalInitialPosition initialPos,
-            @Nonnull EventTimePolicy<? super R> eventTimePolicy
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
         checkSerializable(predicate, "predicate");
         checkSerializable(projection, "projection");
 
-        ClusterMetaSupplierParams<EventJournalMapEvent<K, V>, R> params = ClusterMetaSupplierParams.empty();
+        ClusterMetaSupplierParams<EventJournalMapEvent<K, V>, T> params = ClusterMetaSupplierParams.empty();
 
         params.setEventJournalReaderSupplier(SecuredFunctions.mapEventJournalReaderFn(mapName));
         params.setPredicate(predicate);
@@ -583,18 +586,21 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
     /**
      * ProcessorMetaSupplier for MapJournal that uses the given clientXml to access remote cluster
+     * @param <K> is the key type of EventJournalMapEvent
+     * @param <V> is the value type of EventJournalMapEvent
+     * @param <T> is the return type of the stream
      */
-    public static <K, V, R> ProcessorMetaSupplier streamRemoteMapSupplier(
+    public static <K, V, T> ProcessorMetaSupplier streamRemoteMapSupplier(
             @Nonnull String mapName,
             @Nonnull String clientXml,
             @Nonnull PredicateEx<? super EventJournalMapEvent<K, V>> predicate,
-            @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends R> projection,
+            @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends T> projection,
             @Nonnull JournalInitialPosition initialPos,
-            @Nonnull EventTimePolicy<? super R> eventTimePolicy) {
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy) {
         checkSerializable(predicate, "predicate");
         checkSerializable(projection, "projection");
 
-        ClusterMetaSupplierParams<EventJournalMapEvent<K, V>, R> params = ClusterMetaSupplierParams
+        ClusterMetaSupplierParams<EventJournalMapEvent<K, V>, T> params = ClusterMetaSupplierParams
                 .fromXML(clientXml);
 
         params.setEventJournalReaderSupplier(SecuredFunctions.mapEventJournalReaderFn(mapName));
@@ -610,18 +616,21 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
     /**
      * ProcessorMetaSupplier for MapJournal that uses the given DataLinkRef to access remote cluster
+     * @param <K> is the key type of EventJournalMapEvent
+     * @param <V> is the value type of EventJournalMapEvent
+     * @param <T> is the return type of the stream
      */
-    public static <K, V, R> ProcessorMetaSupplier streamRemoteMapSupplier(
+    public static <K, V, T> ProcessorMetaSupplier streamRemoteMapSupplier(
             @Nonnull String mapName,
             @Nonnull DataLinkRef dataLinkRef,
             @Nonnull PredicateEx<? super EventJournalMapEvent<K, V>> predicate,
-            @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends R> projection,
+            @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends T> projection,
             @Nonnull JournalInitialPosition initialPos,
-            @Nonnull EventTimePolicy<? super R> eventTimePolicy) {
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy) {
         checkSerializable(predicate, "predicate");
         checkSerializable(projection, "projection");
 
-        ClusterMetaSupplierParams<EventJournalMapEvent<K, V>, R> params = ClusterMetaSupplierParams
+        ClusterMetaSupplierParams<EventJournalMapEvent<K, V>, T> params = ClusterMetaSupplierParams
                 .fromDataLinkRef(dataLinkRef);
 
         params.setEventJournalReaderSupplier(SecuredFunctions.mapEventJournalReaderFn(mapName));
@@ -636,17 +645,20 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
     /**
      * ProcessorMetaSupplier for CacheJournal that accesses local cluster
+     * @param <K> is the key type of EventJournalMapEvent
+     * @param <V> is the value type of EventJournalMapEvent
+     * @param <T> is the return type of the stream
      */
-    public static <K, V, R> ProcessorMetaSupplier streamCacheSupplier(
+    public static <K, V, T> ProcessorMetaSupplier streamCacheSupplier(
             @Nonnull String cacheName,
             @Nonnull PredicateEx<? super EventJournalCacheEvent<K, V>> predicate,
-            @Nonnull FunctionEx<? super EventJournalCacheEvent<K, V>, ? extends R> projection,
+            @Nonnull FunctionEx<? super EventJournalCacheEvent<K, V>, ? extends T> projection,
             @Nonnull JournalInitialPosition initialPos,
-            @Nonnull EventTimePolicy<? super R> eventTimePolicy) {
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy) {
         checkSerializable(predicate, "predicate");
         checkSerializable(projection, "projection");
 
-        ClusterMetaSupplierParams<EventJournalCacheEvent<K, V>, R> params = ClusterMetaSupplierParams.empty();
+        ClusterMetaSupplierParams<EventJournalCacheEvent<K, V>, T> params = ClusterMetaSupplierParams.empty();
 
         params.setEventJournalReaderSupplier(SecuredFunctions.cacheEventJournalReaderFn(cacheName));
         params.setPredicate(predicate);
@@ -662,17 +674,17 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
      * ProcessorMetaSupplier for CacheJournal that uses the given XML to access remote cluster
      */
     // remoteCacheJournal processor that uses the given clientXml
-    public static <K, V, R> ProcessorMetaSupplier streamRemoteCacheSupplier(
+    public static <K, V, T> ProcessorMetaSupplier streamRemoteCacheSupplier(
             @Nonnull String cacheName,
             @Nonnull String clientXml,
             @Nonnull PredicateEx<? super EventJournalCacheEvent<K, V>> predicate,
-            @Nonnull FunctionEx<? super EventJournalCacheEvent<K, V>, ? extends R> projection,
+            @Nonnull FunctionEx<? super EventJournalCacheEvent<K, V>, ? extends T> projection,
             @Nonnull JournalInitialPosition initialPos,
-            @Nonnull EventTimePolicy<? super R> eventTimePolicy) {
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy) {
         checkSerializable(predicate, "predicate");
         checkSerializable(projection, "projection");
 
-        ClusterMetaSupplierParams<EventJournalCacheEvent<K, V>, R> params = ClusterMetaSupplierParams
+        ClusterMetaSupplierParams<EventJournalCacheEvent<K, V>, T> params = ClusterMetaSupplierParams
                 .fromXML(clientXml);
 
         params.setEventJournalReaderSupplier(SecuredFunctions.cacheEventJournalReaderFn(cacheName));
