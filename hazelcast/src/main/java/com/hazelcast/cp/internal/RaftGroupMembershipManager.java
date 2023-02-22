@@ -58,6 +58,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -90,12 +91,14 @@ class RaftGroupMembershipManager {
     private final ILogger logger;
     private final RaftInvocationManager invocationManager;
     private final AtomicBoolean initialized = new AtomicBoolean();
+    private final Executor internalAsyncExecutor;
 
     RaftGroupMembershipManager(NodeEngine nodeEngine, RaftService raftService) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
         this.raftService = raftService;
         this.invocationManager = raftService.getInvocationManager();
+        this.internalAsyncExecutor = nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
     void init() {
@@ -158,7 +161,7 @@ class RaftGroupMembershipManager {
                     } else {
                         logger.warning("Could not get CP group info of " + groupId, t);
                     }
-                });
+                }, internalAsyncExecutor);
             }
         }
 
@@ -311,7 +314,7 @@ class RaftGroupMembershipManager {
                         latch.countDown();
                     }
                 }
-            });
+            }, internalAsyncExecutor);
         }
 
         private void addMember(CountDownLatch latch, Map<CPGroupId, BiTuple<Long, Long>> changedGroups,
@@ -326,7 +329,7 @@ class RaftGroupMembershipManager {
                     checkMemberAddCommitIndex(changedGroups, change, t);
                     latch.countDown();
                 }
-            });
+            }, internalAsyncExecutor);
         }
 
         private void checkMemberAddCommitIndex(Map<CPGroupId, BiTuple<Long, Long>> changedGroups, CPGroupMembershipChange change,

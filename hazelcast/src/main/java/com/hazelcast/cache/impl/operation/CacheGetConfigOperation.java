@@ -30,6 +30,8 @@ import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.io.IOException;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+
 /**
  * Gets a cache configuration or creates one, if a matching cache config is found in this member's config.
  *
@@ -75,7 +77,7 @@ public class CacheGetConfigOperation extends AbstractNamedOperation implements I
                 } else {
                     CacheGetConfigOperation.this.sendResponse(t);
                 }
-            });
+            }, CALLER_RUNS);
         }
     }
 

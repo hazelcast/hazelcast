@@ -18,19 +18,20 @@ package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.pipeline.Sink;
-import com.hazelcast.jet.pipeline.SinkBuilder;
+import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.InsertManyOptions;
 import org.bson.Document;
 
 import javax.annotation.Nonnull;
-import java.util.List;
 
 /**
  * Contains factory methods for MongoDB sinks.
+ *
+ * @since 5.3
  */
+@Beta
 public final class MongoDBSinks {
 
     private MongoDBSinks() {
@@ -40,54 +41,74 @@ public final class MongoDBSinks {
      * Returns a builder object that offers a step-by-step fluent API to build
      * a custom MongoDB {@link Sink} for the Pipeline API.
      * <p>
-     * The sink inserts the items it receives to specified collection using
-     * {@link MongoCollection#insertMany(List, InsertManyOptions)}.
-     *
+     * The sink inserts or replaces the items it receives to specified collection using
+     * {@link MongoCollection#bulkWrite}.
      * <p>
-     * These are the callback functions you can provide to implement the sink's
-     * behavior:
-     * <ol><li>
-     *     {@code connectionSupplier} supplies MongoDb client. It will be called
-     *     once for each worker thread. This component is required.
-     * </li><li>
-     *     {@code databaseFn} creates/obtains a database using the given client.
-     *     It will be called once for each worker thread. This component is
-     *     required.
-     * </li><li>
-     *     {@code collectionFn} creates/obtains a collection in the given
-     *     database. It will be called once for each worker thread. This
-     *     component is required.
-     * </li><li>
-     *     {@code destroyFn} destroys the client. It will be called upon
-     *     completion to release any resource. This component is optional.
-     * </li><li>
-     *     {@code ordered} sets {@link InsertManyOptions#ordered(boolean)}.
-     *     Defaults to {@code true}.
-     * </li><li>
-     *     {@code bypassValidation} sets {@link
-     *     InsertManyOptions#bypassDocumentValidation(Boolean)}. Defaults to
-     *     {@code false}.
-     * </li><li>
-     *     {@code preferredLocalParallelism} sets the local parallelism of the
-     *     sink. See {@link SinkBuilder#preferredLocalParallelism(int)} for more
-     *     information. Defaults to {@code 2}.
-     * </li></ol>
+     * All operations are done within transaction if processing guarantee
+     * of the job is {@link com.hazelcast.jet.config.ProcessingGuarantee#EXACTLY_ONCE}.
+     * <p>
+     * All writes are done using default MongoDB codecs with POJO class codec added.
+     *<p>
+     * Example usage:
+     * <pre>{@code
+     * Sink<Document> mongoSink =
+     *         MongoDBSinks.builder(
+     *                     "stream-sink",
+     *                     Document.class,
+     *                     () -> MongoClients.create("mongodb://127.0.0.1:27017")
+     *                 )
+     *                 .into("myDatabase", "myCollection")
+     *                 .identifyDocumentBy("_id", doc -> doc.get("_id"))
+     *                 .build()
+     *         );
+     *
+     * Pipeline p = Pipeline.create();
+     * (...)
+     * someStage.writeTo(mongoSink);
+     * }</pre>
+     * @since 5.3
      *
      * @param name               name of the sink
-     * @param connectionSupplier MongoDB client supplier
+     * @param clientSupplier MongoDB client supplier
+     * @param itemClass          type of document that will be saved
      * @param <T>                type of the items the sink accepts
      */
+    @Beta
     public static <T> MongoDBSinkBuilder<T> builder(
             @Nonnull String name,
-            @Nonnull SupplierEx<MongoClient> connectionSupplier
+            @Nonnull Class<T> itemClass,
+            @Nonnull SupplierEx<MongoClient> clientSupplier
     ) {
-        return new MongoDBSinkBuilder<>(name, connectionSupplier);
+        return new MongoDBSinkBuilder<>(name, itemClass, clientSupplier);
     }
 
 
     /**
-     * Convenience for {@link #builder(String, SupplierEx)}.
+     * Convenience for {@link #builder}.
+     *
+     * Example usage:
+     * <pre>{@code
+     * Sink<Document> mongoSink =
+     *         MongoDBSinks.builder(
+     *                 "mongoSink",
+     *                 "mongodb://127.0.0.1:27017",
+     *                 "myDatabase",
+     *                 "myCollection"
+     *         );
+     *
+     * Pipeline p = Pipeline.create();
+     * (...)
+     * someStage.writeTo(mongoSink);
+     * }</pre>
+     *
+     * @since 5.3
+     *
+     * @param name name of this sink
+     * @param connectionString connection string to MongoDB instance
+     * @param database database to which the documents will be put into
+     * @param collection collection to which the documents will be put into
      */
+    @Beta
     public static Sink<Document> mongodb(
             @Nonnull String name,
             @Nonnull String connectionString,
@@ -95,10 +116,9 @@ public final class MongoDBSinks {
             @Nonnull String collection
     ) {
         return MongoDBSinks
-                .<Document>builder(name, () -> MongoClients.create(connectionString))
-                .databaseFn(client -> client.getDatabase(database))
-                .collectionFn(db -> db.getCollection(collection))
-                .destroyFn(MongoClient::close)
+                .builder(name, Document.class, () -> MongoClients.create(connectionString))
+                .into(database, collection)
+                .identifyDocumentBy("_id", doc -> doc.get("_id"))
                 .build();
     }
 

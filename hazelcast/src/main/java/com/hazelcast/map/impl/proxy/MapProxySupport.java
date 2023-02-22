@@ -38,6 +38,7 @@ import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.IterableUtil;
 import com.hazelcast.internal.util.IterationType;
@@ -1044,7 +1045,7 @@ abstract class MapProxySupport<K, V>
             };
             for (Entry<Address, List<Integer>> entry : memberPartitionsMap.entrySet()) {
                 invokePutAllOperation(entry.getKey(), entry.getValue(), entriesPerPartition, triggerMapLoader)
-                        .whenCompleteAsync(callback);
+                        .whenCompleteAsync(callback, ConcurrencyUtil.getDefaultAsyncExecutor());
             }
             // if executing in sync mode, block for the responses
             if (future == null) {
@@ -1282,7 +1283,7 @@ abstract class MapProxySupport<K, V>
                     } else {
                         resultFuture.completeExceptionally(throwable);
                     }
-                });
+                }, ConcurrencyUtil.getDefaultAsyncExecutor());
         return resultFuture;
     }
 

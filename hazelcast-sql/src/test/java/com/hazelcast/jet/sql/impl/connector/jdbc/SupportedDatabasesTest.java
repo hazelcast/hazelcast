@@ -23,15 +23,17 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
-public class UpsertBuilderTest {
+public class SupportedDatabasesTest {
 
     @Mock
     JdbcTable jdbcTable;
 
+    // Create mock dialects for JdbcTable
     @Mock
     SybaseSqlDialect sybaseSqlDialect;
 
@@ -45,20 +47,45 @@ public class UpsertBuilderTest {
 
     @Test
     public void testUpsertDialectNotSupported() {
-
         when(jdbcTable.sqlDialect()).thenReturn(sybaseSqlDialect);
 
-        boolean result = UpsertBuilder.isUpsertDialectSupported(jdbcTable);
+        boolean result = SupportedDatabases.isDialectSupported(jdbcTable);
         assertFalse(result);
     }
 
     @Test
     public void testUpsertDialectSupported() {
-
         when(jdbcTable.sqlDialect()).thenReturn(mysqlSqlDialect);
 
-        boolean result = UpsertBuilder.isUpsertDialectSupported(jdbcTable);
+        boolean result = SupportedDatabases.isDialectSupported(jdbcTable);
         assertTrue(result);
     }
 
+    @Test
+    public void testMySQL() {
+        String dbName = "MYSQL";
+        boolean newDB1 = SupportedDatabases.isNewDatabase(dbName);
+        assertThat(newDB1).isFalse();
+    }
+
+    @Test
+    public void testPostgreSQL() {
+        String dbName = "POSTGRESQL";
+        boolean newDB = SupportedDatabases.isNewDatabase(dbName);
+        assertThat(newDB).isFalse();
+    }
+
+    @Test
+    public void testH2() {
+        String dbName = "H2";
+        boolean newDB = SupportedDatabases.isNewDatabase(dbName);
+        assertThat(newDB).isFalse();
+    }
+
+    @Test
+    public void test_notSupportedDB() {
+        String dbName = "cassandra";
+        boolean newDB = SupportedDatabases.isNewDatabase(dbName);
+        assertThat(newDB).isTrue();
+    }
 }

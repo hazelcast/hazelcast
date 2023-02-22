@@ -18,6 +18,7 @@ package com.hazelcast.jet;
 
 import javax.annotation.Nonnull;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -48,46 +49,50 @@ public class SubmitJobParameters {
     /**
      * Parameters to be used for the job
      */
-    private List<String> jobParameters;
+    private List<String> jobParameters = Collections.emptyList();
 
-    @Nonnull
     public Path getJarPath() {
         return jarPath;
     }
 
-    public void setJarPath(@Nonnull Path jarPath) {
+    public SubmitJobParameters setJarPath(@Nonnull Path jarPath) {
         this.jarPath = jarPath;
+        return this;
     }
 
     public String getSnapshotName() {
         return snapshotName;
     }
 
-    public void setSnapshotName(String snapshotName) {
+    public SubmitJobParameters setSnapshotName(String snapshotName) {
         this.snapshotName = snapshotName;
+        return this;
     }
 
     public String getJobName() {
         return jobName;
     }
 
-    public void setJobName(String jobName) {
+    public SubmitJobParameters setJobName(String jobName) {
         this.jobName = jobName;
+        return this;
     }
 
     public String getMainClass() {
         return mainClass;
     }
 
-    public void setMainClass(String mainClass) {
+    public SubmitJobParameters setMainClass(String mainClass) {
         this.mainClass = mainClass;
+        return this;
     }
 
     public List<String> getJobParameters() {
         return jobParameters;
     }
 
-    public void setJobParameters(List<String> jobParameters) {
+    public SubmitJobParameters setJobParameters(List<String> jobParameters) {
         this.jobParameters = jobParameters;
+        return this;
     }
 }
