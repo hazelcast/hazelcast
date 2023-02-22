@@ -21,9 +21,11 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelOptTable;
+import org.apache.calcite.plan.RelRule;
+import org.apache.calcite.rel.core.TableModify;
+import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rex.RexNode;
-
-import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
+import org.immutables.value.Value;
 
 /**
  * Planner rule that matches single key, constant expression,
@@ -34,23 +36,30 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
  * Such UPDATE is translated to optimized, direct key {@code IMap} operation
  * which does not involve starting any job.
  */
-final class UpdateByKeyMapLogicalRule extends RelOptRule {
+@Value.Enclosing
+final class UpdateByKeyMapLogicalRule extends RelRule<RelRule.Config> {
 
-    static final RelOptRule INSTANCE = new UpdateByKeyMapLogicalRule();
+    @Value.Immutable
+    public interface Config extends RelRule.Config {
+        UpdateByKeyMapLogicalRule.Config DEFAULT = ImmutableUpdateByKeyMapLogicalRule.Config.builder()
+                .description(UpdateByKeyMapLogicalRule.class.getSimpleName())
+                .operandSupplier(b0 -> b0.operand(TableModify.class)
+                        .predicate(modify -> !OptUtils.requiresJob(modify) && modify.isUpdate())
+                        .inputs(b1 -> b1.operand(TableScan.class)
+                                .predicate(scan -> OptUtils.hasTableType(scan, PartitionedMapTable.class))
+                                .noInputs())
+                ).build();
 
-    private UpdateByKeyMapLogicalRule() {
-        super(
-                operandJ(
-                        TableModifyLogicalRel.class, LOGICAL, modify -> !OptUtils.requiresJob(modify) && modify.isUpdate(),
-                        operandJ(
-                                FullScanLogicalRel.class,
-                                null,
-                                scan -> OptUtils.hasTableType(scan, PartitionedMapTable.class),
-                                none()
-                        )
-                ),
-                UpdateByKeyMapLogicalRule.class.getSimpleName()
-        );
+        @Override
+        default RelOptRule toRule() {
+            return new UpdateByKeyMapLogicalRule(this);
+        }
+    }
+
+    static final RelOptRule INSTANCE = new UpdateByKeyMapLogicalRule(Config.DEFAULT);
+
+    private UpdateByKeyMapLogicalRule(Config config) {
+        super(config);
     }
 
     @Override

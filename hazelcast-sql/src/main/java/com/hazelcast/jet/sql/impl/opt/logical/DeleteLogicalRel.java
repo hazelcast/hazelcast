@@ -25,6 +25,7 @@ import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
+import org.apache.calcite.rex.RexNode;
 
 import java.util.List;
 
@@ -32,15 +33,23 @@ import static org.apache.calcite.rel.core.TableModify.Operation.DELETE;
 
 public class DeleteLogicalRel extends TableModify implements LogicalRel {
 
+    private final RexNode predicate;
+
     protected DeleteLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
             Prepare.CatalogReader catalogReader,
             RelNode input,
-            boolean flattened
+            boolean flattened,
+            RexNode predicate
     ) {
         super(cluster, traitSet, table, catalogReader, input, DELETE, null, null, flattened);
+        this.predicate = predicate;
+    }
+
+    public RexNode getPredicate() {
+        return predicate;
     }
 
     @Override
@@ -50,6 +59,6 @@ public class DeleteLogicalRel extends TableModify implements LogicalRel {
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new DeleteLogicalRel(getCluster(), traitSet, getTable(), getCatalogReader(), sole(inputs), isFlattened());
+        return new DeleteLogicalRel(getCluster(), traitSet, getTable(), getCatalogReader(), sole(inputs), isFlattened(), predicate);
     }
 }

@@ -46,7 +46,8 @@ public final class DeletePhysicalRule extends ConverterRule {
                 logicalDelete.getTable(),
                 logicalDelete.getCatalogReader(),
                 OptUtils.toPhysicalInput(logicalDelete.getInput()),
-                logicalDelete.isFlattened()
+                logicalDelete.isFlattened(),
+                logicalDelete.getPredicate()
         );
     }
 }

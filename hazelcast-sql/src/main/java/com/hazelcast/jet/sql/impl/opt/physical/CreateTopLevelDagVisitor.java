@@ -44,6 +44,7 @@ import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
+import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
@@ -185,7 +186,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         dagBuildContext.setTable(table);
         dagBuildContext.setRel(rel);
         Vertex vertex = getJetSqlConnector(table).updateProcessor(
-                dagBuildContext, rel.getUpdateColumnList(), wrap(rel.getSourceExpressionList()));
+                dagBuildContext, rel.getUpdateColumnList(), wrap(rel.getSourceExpressionList()), null);
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }
@@ -199,7 +200,9 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
         dagBuildContext.setTable(table);
         dagBuildContext.setRel(rel);
-        Vertex vertex = getJetSqlConnector(table).deleteProcessor(dagBuildContext);
+        SqlConnector jetSqlConnector = getJetSqlConnector(table);
+        assert jetSqlConnector.dmlSupportsPredicates() ^ rel.getPredicate() == null;
+        Vertex vertex = jetSqlConnector.deleteProcessor(dagBuildContext, wrap(rel.getPredicate()));
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }

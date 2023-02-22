@@ -462,13 +462,19 @@ public final class OptUtils {
         }
     }
 
-    private static int findKeyIndex(Table table) {
+    /**
+     * Returns the index of the key field in the given `table`. If there's no
+     * primary key, or if there's more than ona primary key field, it returns
+     * -1.
+     */
+    public static int findKeyIndex(Table table) {
         List<String> primaryKey = SqlConnectorUtil.getJetSqlConnector(table).getPrimaryKey(table);
-        // just single field keys supported at the moment
-        assert primaryKey.size() == 1;
+        if (primaryKey.size() != 1) {
+            return -1;
+        }
 
         int keyIndex = table.getFieldIndex(primaryKey.get(0));
-        assert keyIndex > -1;
+        assert keyIndex >= 0;
 
         return keyIndex;
     }

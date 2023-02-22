@@ -316,13 +316,20 @@ public class JdbcSqlConnector implements SqlConnector {
         return table.getPrimaryKeyList();
     }
 
+    @Override
+    public boolean dmlSupportsPredicates() {
+        return false;
+    }
+
     @Nonnull
     @Override
     public Vertex updateProcessor(
             @Nonnull DagBuildContext context,
             @Nonnull List<String> fieldNames,
-            @Nonnull List<HazelcastRexNode> expressions
+            @Nonnull List<HazelcastRexNode> expressions,
+            @Nullable HazelcastRexNode predicate
     ) {
+        assert predicate != null;
         JdbcTable table = (JdbcTable) context.getTable();
 
         List<String> pkFields = getPrimaryKey(context.getTable())
@@ -346,7 +353,8 @@ public class JdbcSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public Vertex deleteProcessor(@Nonnull DagBuildContext context) {
+    public Vertex deleteProcessor(@Nonnull DagBuildContext context, @Nullable HazelcastRexNode predicate) {
+        // TODO use the predicate
         JdbcTable table = (JdbcTable) context.getTable();
 
         List<String> pkFields = getPrimaryKey(context.getTable())

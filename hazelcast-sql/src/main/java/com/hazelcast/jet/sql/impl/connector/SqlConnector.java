@@ -357,12 +357,15 @@ public interface SqlConnector {
      * Returns the supplier for the update processor that will update given
      * {@code table}. The input to the processor will be the fields
      * returned by {@link #getPrimaryKey(Table)}.
+     *
+     * TODO
      */
     @Nonnull
     default Vertex updateProcessor(
             @Nonnull DagBuildContext context,
             @Nonnull List<String> fieldNames,
-            @Nonnull List<HazelcastRexNode> expressions
+            @Nonnull List<HazelcastRexNode> expressions,
+            @Nullable HazelcastRexNode predicate
     ) {
         throw new UnsupportedOperationException("UPDATE not supported for " + typeName());
     }
@@ -373,8 +376,16 @@ public interface SqlConnector {
      * returned by {@link #getPrimaryKey(Table)}.
      */
     @Nonnull
-    default Vertex deleteProcessor(@Nonnull DagBuildContext context) {
+    default Vertex deleteProcessor(@Nonnull DagBuildContext context, @Nullable HazelcastRexNode predicate) {
         throw new UnsupportedOperationException("DELETE not supported for " + typeName());
+    }
+
+    /**
+     * Returns, whether this processor's {@link #deleteProcessor} and {@link
+     * #updateProcessor} methods support a predicate.
+     */
+    default boolean dmlSupportsPredicates() {
+        return true;
     }
 
     /**

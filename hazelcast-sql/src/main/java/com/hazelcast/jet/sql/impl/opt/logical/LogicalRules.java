@@ -87,8 +87,7 @@ public final class LogicalRules {
                 // imap-by-key access optimization rules
                 InsertMapLogicalRule.INSTANCE,
                 SinkMapLogicalRule.INSTANCE,
-                UpdateByKeyMapLogicalRule.INSTANCE,
-                DeleteByKeyMapLogicalRule.INSTANCE
+                UpdateByKeyMapLogicalRule.INSTANCE
         );
     }
 }
