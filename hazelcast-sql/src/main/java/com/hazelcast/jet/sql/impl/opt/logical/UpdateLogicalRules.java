@@ -26,8 +26,10 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
+import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
@@ -38,6 +40,8 @@ import org.immutables.value.Value;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 
 // no support for UPDATE FROM SELECT case (which is not yet implemented)
 // once joins are there we need to create complementary rule
@@ -72,6 +76,41 @@ final class UpdateLogicalRules {
         public void onMatch(RelOptRuleCall call) {
             TableModifyLogicalRel update = call.rel(0);
             FullScanLogicalRel scan = call.rel(1);
+
+            if (!OptUtils.requiresJob(update) && OptUtils.hasTableType(scan, PartitionedMapTable.class)) {
+                RelOptTable table = scan.getTable();
+                RexNode keyCondition = OptUtils.extractKeyConstantExpression(table, update.getCluster().getRexBuilder());
+                if (keyCondition != null) {
+                    UpdateByKeyMapLogicalRel rel = new UpdateByKeyMapLogicalRel(
+                            update.getCluster(),
+                            OptUtils.toLogicalConvention(update.getTraitSet()),
+                            table,
+                            keyCondition,
+                            update.getUpdateColumnList(),
+                            update.getSourceExpressionList()
+                    );
+                    call.transformTo(rel);
+                    return;
+                }
+            }
+
+            HazelcastTable hzTable = OptUtils.extractHazelcastTable(scan);
+            if (getJetSqlConnector(hzTable.getTarget()).dmlSupportsPredicates()) {
+                UpdateLogicalRel rel = new UpdateLogicalRel(
+                        update.getCluster(),
+                        OptUtils.toLogicalConvention(update.getTraitSet()),
+                        update.getTable(),
+                        update.getCatalogReader(),
+                        OptUtils.toLogicalInput(update.getInput()),
+                        update.getUpdateColumnList(),
+                        update.getSourceExpressionList(),
+                        update.isFlattened(),
+                        hzTable.getFilter()
+                );
+
+                call.transformTo(rel);
+                return;
+            }
 
             UpdateLogicalRel rel = new UpdateLogicalRel(
                     update.getCluster(),
