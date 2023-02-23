@@ -61,7 +61,7 @@ public abstract class Eventloop {
     protected long earliestDeadlineNanos = -1;
     protected boolean stop;
 
-    public Eventloop(Reactor reactor, ReactorBuilder builder) {
+    protected Eventloop(Reactor reactor, ReactorBuilder builder) {
         this.reactor = reactor;
         this.builder = builder;
         this.scheduledTaskQueue = new BoundPriorityQueue<>(builder.scheduledTaskQueueCapacity);
@@ -85,6 +85,7 @@ public abstract class Eventloop {
      * @throws Exception if something fails while running the eventloop. The reactor
      *                   terminates when this happens.
      */
+    @SuppressWarnings("java:S112")
     protected abstract void run() throws Exception;
 
     /**
@@ -92,27 +93,28 @@ public abstract class Eventloop {
      * <p>
      * Is called from the reactor thread.
      */
+    @SuppressWarnings("java:S112")
     protected void destroy() throws Exception {
     }
 
     protected final boolean runScheduledTasks() {
-        final PriorityQueue<ScheduledTask> scheduledTaskQueue = this.scheduledTaskQueue;
-        final NanoClock nanoClock = this.nanoClock;
-        final int batchSize = this.batchSize;
-        for (int k = 0; k < batchSize; k++) {
-            ScheduledTask scheduledTask = scheduledTaskQueue.peek();
+        final PriorityQueue<ScheduledTask> scheduledTaskQueue0 = scheduledTaskQueue;
+        final NanoClock nanoClock0 = nanoClock;
+        final int batchSize0 = batchSize;
+        for (int k = 0; k < batchSize0; k++) {
+            ScheduledTask scheduledTask = scheduledTaskQueue0.peek();
             if (scheduledTask == null) {
                 return false;
             }
 
-            if (scheduledTask.deadlineNanos > nanoClock.nanoTime()) {
+            if (scheduledTask.deadlineNanos > nanoClock0.nanoTime()) {
                 // Task should not yet be executed.
                 earliestDeadlineNanos = scheduledTask.deadlineNanos;
                 // we are done since all other tasks have a larger deadline.
                 return false;
             }
 
-            scheduledTaskQueue.poll();
+            scheduledTaskQueue0.poll();
             earliestDeadlineNanos = -1;
             try {
                 scheduledTask.run();
@@ -121,14 +123,14 @@ public abstract class Eventloop {
             }
         }
 
-        return !scheduledTaskQueue.isEmpty();
+        return !scheduledTaskQueue0.isEmpty();
     }
 
     protected final boolean runLocalTasks() {
-        final int batchSize = this.batchSize;
-        final CircularQueue localTaskQueue = this.localTaskQueue;
-        for (int k = 0; k < batchSize; k++) {
-            Object task = localTaskQueue.poll();
+        final int batchSize0 = batchSize;
+        final CircularQueue localTaskQueue0 = localTaskQueue;
+        for (int k = 0; k < batchSize0; k++) {
+            Object task = localTaskQueue0.poll();
             if (task == null) {
                 // there are no more tasks.
                 return false;
@@ -147,15 +149,15 @@ public abstract class Eventloop {
             }
         }
 
-        return !localTaskQueue.isEmpty();
+        return !localTaskQueue0.isEmpty();
     }
 
     protected final boolean runExternalTasks() {
-        final int batchSize = this.batchSize;
-        final MpmcArrayQueue concurrentTaskQueue = this.externalTaskQueue;
-        final Scheduler scheduler = this.scheduler;
-        for (int k = 0; k < batchSize; k++) {
-            Object task = concurrentTaskQueue.poll();
+        final int batchSize0 = batchSize;
+        final MpmcArrayQueue externalTaskQueue0 = externalTaskQueue;
+        final Scheduler scheduler0 = scheduler;
+        for (int k = 0; k < batchSize0; k++) {
+            Object task = externalTaskQueue0.poll();
             if (task == null) {
                 // there are no more tasks
                 return false;
@@ -167,14 +169,14 @@ public abstract class Eventloop {
                 }
             } else {
                 try {
-                    scheduler.schedule(task);
+                    scheduler0.schedule(task);
                 } catch (Exception e) {
                     logger.warning(e);
                 }
             }
         }
 
-        return !concurrentTaskQueue.isEmpty();
+        return !externalTaskQueue0.isEmpty();
     }
 
     /**

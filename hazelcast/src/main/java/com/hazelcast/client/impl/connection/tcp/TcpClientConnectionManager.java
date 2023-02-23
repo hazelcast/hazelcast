@@ -953,6 +953,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
      * The returned connection could be different than the one passed to this method if there is already an existing
      * connection to the given member.
      */
+    @SuppressWarnings("java:S1135")
     private TcpClientConnection onAuthenticated(TcpClientConnection connection,
                                                 ClientAuthenticationCodec.ResponseParameters response,
                                                 boolean switchingToNextCluster) {
@@ -973,7 +974,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                     connectToTpcPorts(connection, tpcPorts);
                 } catch (IOException e) {
                     // TODO: Improved handling.
-                    e.printStackTrace();
+                    logger.warning(e);
                 }
             }
 

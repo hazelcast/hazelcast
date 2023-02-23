@@ -48,24 +48,24 @@ public class AltoOperationScheduler implements Scheduler {
 
     @Override
     public boolean tick() {
-        final AltoPartitionOperationThread operationThread = this.operationThread;
-        final OperationQueue queue = this.queue;
-        final int batchSize = this.batchSize;
+        final AltoPartitionOperationThread operationThread0 = operationThread;
+        final OperationQueue queue0 = queue;
+        final int batchSize0 = batchSize;
 
-        for (int k = 0; k < batchSize; k++) {
-            if (operationThread.isShutdown()) {
+        for (int k = 0; k < batchSize0; k++) {
+            if (operationThread0.isShutdown()) {
                 return false;
             }
 
-            Object task = queue.poll();
+            Object task = queue0.poll();
             if (task == null) {
                 return false;
             }
 
-            operationThread.process(task);
+            operationThread0.process(task);
         }
 
-        return !queue.isEmpty();
+        return !queue0.isEmpty();
     }
 
     @Override

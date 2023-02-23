@@ -26,6 +26,7 @@ public final class TpcLoggerLocator {
     private TpcLoggerLocator() {
     }
 
+    @SuppressWarnings("java:S112")
     public static TpcLogger getLogger(Class clazz) {
         Object logger = LOGGER.get();
         if (logger != null) {

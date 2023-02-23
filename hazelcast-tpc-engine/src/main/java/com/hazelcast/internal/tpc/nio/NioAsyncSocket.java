@@ -48,7 +48,7 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 /**
  * Nio implementation of the {@link AsyncSocket}.
  */
-@SuppressWarnings({"checkstyle:DeclarationOrder", "checkstyle:VisibilityOrder", "checkstyle:MethodCount"})
+@SuppressWarnings({"checkstyle:DeclarationOrder", "checkstyle:VisibilityOrder", "checkstyle:MethodCount", "java:S1181"})
 public final class NioAsyncSocket extends AsyncSocket {
 
     private final NioAsyncSocketOptions options;
@@ -248,6 +248,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         }
     }
 
+    @SuppressWarnings("java:S1135")
     @Override
     public void flush() {
         Thread currentThread = Thread.currentThread();
@@ -268,13 +269,13 @@ public final class NioAsyncSocket extends AsyncSocket {
         }
     }
 
+    @SuppressWarnings("java:S3398")
     private void resetFlushed() {
         flushThread.set(null);
 
-        if (!unflushedBufs.isEmpty()) {
-            if (flushThread.compareAndSet(null, Thread.currentThread())) {
-                reactor.offer(handler);
-            }
+        if (!unflushedBufs.isEmpty()
+                && flushThread.compareAndSet(null, Thread.currentThread())) {
+            reactor.offer(handler);
         }
     }
 
@@ -334,6 +335,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         super.close0();
     }
 
+    @SuppressWarnings("java:S125")
     private final class Handler implements NioHandler, Runnable {
         private final ByteBuffer receiveBuffer;
 

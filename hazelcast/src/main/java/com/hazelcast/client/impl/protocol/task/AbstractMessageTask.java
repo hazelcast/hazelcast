@@ -274,6 +274,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     }
 
     // PETER:
+    @SuppressWarnings({"java:S125", "java:S1135"})
     protected void sendClientMessage(ClientMessage resultClientMessage) {
         resultClientMessage.setCorrelationId(clientMessage.getCorrelationId());
 

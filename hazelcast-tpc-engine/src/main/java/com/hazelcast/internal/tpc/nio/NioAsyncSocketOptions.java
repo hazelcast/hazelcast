@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpc.util.ReflectionUtil.findStaticFieldValue;
 
-@SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:returncount"})
+@SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:returncount", "java:S3776"})
 public class NioAsyncSocketOptions implements AsyncSocketOptions {
 
     private static final java.net.SocketOption<Integer> JDK_NET_TCP_KEEPCOUNT

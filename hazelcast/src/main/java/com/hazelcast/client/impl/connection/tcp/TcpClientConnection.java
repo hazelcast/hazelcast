@@ -245,6 +245,7 @@ public class TcpClientConnection implements ClientConnection {
         }
     }
 
+    @SuppressWarnings("java:S1135")
     protected void innerClose() throws IOException {
         // todo: closing needs to be improved because we can end up with some channels not closed.
         channel.close();

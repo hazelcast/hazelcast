@@ -42,7 +42,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     protected final ProgressIndicator writeEvents = new ProgressIndicator();
     protected final ProgressIndicator readEvents = new ProgressIndicator();
 
-    public AsyncSocket(boolean clientSide) {
+    protected AsyncSocket(boolean clientSide) {
         this.clientSide = clientSide;
     }
 

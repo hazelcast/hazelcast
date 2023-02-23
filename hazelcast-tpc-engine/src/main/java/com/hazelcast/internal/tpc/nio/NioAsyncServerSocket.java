@@ -109,6 +109,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         }
     }
 
+    @SuppressWarnings("java:S1181")
     @Override
     public void start() {
         if (Thread.currentThread() == eventloopThread) {
@@ -142,6 +143,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         }
     }
 
+    @SuppressWarnings("java:S1135")
     private final class Handler implements NioHandler {
 
         @Override

@@ -72,7 +72,7 @@ public abstract class AbstractAsyncSocket implements Closeable {
         checkNotNull(listener, "listener");
 
         // Using lock to make sure that there is a matching listener/executor.
-        boolean closeListenerChecked;
+        boolean closeListenerChecked0;
         synchronized (this) {
             if (closeListener != null) {
                 throw new IllegalStateException("Can't reset the closeListener");
@@ -80,10 +80,10 @@ public abstract class AbstractAsyncSocket implements Closeable {
 
             this.closeExecutor = executor;
             this.closeListener = listener;
-            closeListenerChecked = this.closeListenerChecked;
+            closeListenerChecked0 = closeListenerChecked;
         }
 
-        if (closeListenerChecked) {
+        if (closeListenerChecked0) {
             // the closing thread already checked the closeListener and therefor
             // it hasn't seen the close listener that is now being set. So we need
             // to notify the close listener ourselves to prevent omitting the
@@ -129,6 +129,7 @@ public abstract class AbstractAsyncSocket implements Closeable {
      * @param cause  the Throwable that caused this socket to be closed.
      *               Is allowed to be null.
      */
+    @SuppressWarnings("java:S3776")
     public final void close(String reason, Throwable cause) {
         if (!state.compareAndSet(State.OPEN, State.CLOSING)) {
             return;
@@ -163,19 +164,19 @@ public abstract class AbstractAsyncSocket implements Closeable {
             state.set(State.CLOSED);
         }
 
-        CloseListener closeListener;
-        Executor closeExecutor;
+        CloseListener closeListener0;
+        Executor closeExecutor0;
         synchronized (this) {
-            this.closeListenerChecked = true;
-            closeListener = this.closeListener;
-            closeExecutor = this.closeExecutor;
+            closeListenerChecked = true;
+            closeListener0 = closeListener;
+            closeExecutor0 = closeExecutor;
             // this will signal to a different thread calling the setCloseListener that
             // the socket is closed but the thread calling the close will not check any
             // change to the closeListener after this point.
         }
 
-        if (closeListener != null) {
-            notifyCloseListener(closeListener, closeExecutor);
+        if (closeListener0 != null) {
+            notifyCloseListener(closeListener0, closeExecutor0);
         }
     }
 

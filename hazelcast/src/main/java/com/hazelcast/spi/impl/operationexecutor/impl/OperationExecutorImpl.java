@@ -113,6 +113,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     private final int priorityThreadCount;
     private final TpcServerBootstrap tpcServerBootstrap;
 
+    @SuppressWarnings("java:S107")
     public OperationExecutorImpl(HazelcastProperties properties,
                                  LoggingService loggerService,
                                  Address thisAddress,
@@ -474,15 +475,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         return operationThread.currentRunner;
     }
 
-    @Override
-    public void runOrExecute(Operation op) {
-        if (isRunAllowed(op)) {
-            run(op);
-        } else {
-            execute(op);
-        }
-    }
-
+    @SuppressWarnings("java:S1135")
     @Override
     public boolean isRunAllowed(Operation op) {
         checkNotNull(op, "op can't be null");
@@ -510,6 +503,15 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         // so it's a partition operation thread, now we need to make sure that this operation thread is allowed
         // to execute operations for this particular partitionId
         return toPartitionThreadIndex(partitionId) == partitionThread.threadId;
+    }
+
+    @Override
+    public void runOrExecute(Operation op) {
+        if (isRunAllowed(op)) {
+            run(op);
+        } else {
+            execute(op);
+        }
     }
 
     @Override

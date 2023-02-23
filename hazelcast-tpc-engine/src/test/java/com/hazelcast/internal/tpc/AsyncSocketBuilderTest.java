@@ -63,7 +63,8 @@ public abstract class AsyncSocketBuilderTest {
         builder.setReadHandler(new DevNullReadHandler());
         builder.build();
 
-        assertThrows(IllegalStateException.class, () -> builder.setReadHandler(new DevNullReadHandler()));
+        DevNullReadHandler readHandler = new DevNullReadHandler();
+        assertThrows(IllegalStateException.class, () -> builder.setReadHandler(readHandler));
     }
 
     @Test

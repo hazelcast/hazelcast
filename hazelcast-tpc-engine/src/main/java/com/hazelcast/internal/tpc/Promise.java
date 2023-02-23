@@ -36,8 +36,9 @@ import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 @SuppressWarnings("checkstyle:VisibilityModifier")
 public class Promise<E> {
     private static final Object EMPTY = new Object();
-    public int refCount = 1;
-    public PromiseAllocator allocator;
+
+    int refCount = 1;
+    PromiseAllocator allocator;
 
     private Object value = EMPTY;
     private final Eventloop eventloop;
@@ -91,12 +92,11 @@ public class Promise<E> {
         this.value = value;
         this.exceptional = true;
 
-        int count = consumers.size();
         for (BiConsumer<E, Throwable> consumer : consumers) {
             try {
                 consumer.accept(null, value);
             } catch (Exception e) {
-                e.printStackTrace();
+                eventloop.logger.warning(e);
             }
         }
 
@@ -118,12 +118,11 @@ public class Promise<E> {
         this.value = value;
         this.exceptional = false;
 
-        int count = consumers.size();
         for (BiConsumer<E, Throwable> consumer : consumers) {
             try {
                 consumer.accept(value, null);
             } catch (Exception e) {
-                e.printStackTrace();
+                eventloop.logger.warning(e);
             }
         }
 

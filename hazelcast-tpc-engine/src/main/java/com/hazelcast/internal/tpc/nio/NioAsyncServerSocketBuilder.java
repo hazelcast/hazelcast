@@ -68,6 +68,7 @@ public class NioAsyncServerSocketBuilder implements AsyncServerSocketBuilder {
         return this;
     }
 
+    @SuppressWarnings("java:S1181")
     @Override
     public AsyncServerSocket build() {
         verifyNotBuild();

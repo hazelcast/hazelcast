@@ -286,7 +286,6 @@ public final class ClientMessage implements OutboundFrame {
         int frameLength = 0;
         Frame currentFrame = startFrame;
         while (currentFrame != null) {
-            //System.out.println(currentFrame+" "+currentFrame.getSize());
             frameLength += currentFrame.getSize();
             currentFrame = currentFrame.next;
         }
@@ -459,7 +458,7 @@ public final class ClientMessage implements OutboundFrame {
 
     }
 
-    @SuppressWarnings("checkstyle:VisibilityModifier")
+    @SuppressWarnings({"checkstyle:VisibilityModifier", "java:S1104"})
     public static class Frame {
         public final byte[] content;
         //begin-fragment end-fragment final begin-data-structure end-data-structure is-null is-event 9reserverd
@@ -531,12 +530,5 @@ public final class ClientMessage implements OutboundFrame {
             result = 31 * result + flags;
             return result;
         }
-
-        @Override
-        public String toString() {
-            new Exception().printStackTrace();
-            return super.toString();
-        }
     }
-
 }

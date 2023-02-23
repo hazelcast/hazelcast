@@ -31,6 +31,7 @@ public final class ExceptionUtil {
      *
      * @param t the exception to ignore
      */
+    @SuppressWarnings("java:S1172")
     public static void ignore(Throwable t) {
     }
 
