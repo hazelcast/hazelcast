@@ -287,7 +287,6 @@ public final class NioAsyncSocket extends AsyncSocket {
         }
     }
 
-    @SuppressWarnings({"java:S3398", "java:S1066"})
     private void resetFlushed() {
         flushThread.set(null);
 
@@ -361,7 +360,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
         private Handler(NioAsyncSocketBuilder builder) throws SocketException {
             int receiveBufferSize = builder.socketChannel.socket().getReceiveBufferSize();
-            this.rcvBuffer = builder.receiveBufferIsDirect
+            this.rcvBuffer = builder.directBuffers
                     ? ByteBuffer.allocateDirect(receiveBufferSize)
                     : ByteBuffer.allocate(receiveBufferSize);
         }
