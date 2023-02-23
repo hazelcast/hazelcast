@@ -28,6 +28,5 @@
         </Root>
         <Logger name="com.hazelcast.jet.sql.impl" level="info"/>
         <Logger name="com.hazelcast.jet.impl" level="info"/>
-<!--        <Logger name="com.hazelcast.map.impl.recordstore.expiry" level="trace"/>-->
     </Loggers>
 </Configuration>
