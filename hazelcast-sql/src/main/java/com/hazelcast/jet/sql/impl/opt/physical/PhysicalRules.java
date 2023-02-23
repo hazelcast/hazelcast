@@ -68,9 +68,6 @@ public final class PhysicalRules {
                 UpdatePhysicalRule.INSTANCE,
                 DeletePhysicalRule.INSTANCE,
 
-//                ScanIntoUpdatePhysicalRule.INSTANCE,
-                ScanIntoDeletePhysicalRule.INSTANCE,
-
                 SelectByKeyMapPhysicalRule.INSTANCE,
                 InsertMapPhysicalRule.INSTANCE,
                 SinkMapPhysicalRule.INSTANCE,

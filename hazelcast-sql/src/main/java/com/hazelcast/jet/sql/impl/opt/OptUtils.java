@@ -467,7 +467,7 @@ public final class OptUtils {
      * primary key, or if there's more than ona primary key field, it returns
      * -1.
      */
-    public static int findKeyIndex(Table table) {
+    private static int findKeyIndex(Table table) {
         List<String> primaryKey = SqlConnectorUtil.getJetSqlConnector(table).getPrimaryKey(table);
         if (primaryKey.size() != 1) {
             return -1;

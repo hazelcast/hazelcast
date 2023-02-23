@@ -51,6 +51,9 @@ final class UpdateLogicalRules {
     static final RelOptRule SCAN_INSTANCE = ScanInstanceConfig.DEFAULT.toRule();
     static final RelOptRule VALUES_INSTANCE = ValuesInstanceConfig.DEFAULT.toRule();
 
+    /**
+     * A rule to match a TableModify[operation=update], with a TableScan as input
+     */
     static class ScanRule extends RelRule<RelRule.Config> {
         @Value.Immutable
         interface ScanInstanceConfig extends RelRule.Config {
@@ -77,6 +80,7 @@ final class UpdateLogicalRules {
             TableModifyLogicalRel update = call.rel(0);
             FullScanLogicalRel scan = call.rel(1);
 
+            // IMap optimization to execute IMap operation directly
             if (!OptUtils.requiresJob(update) && OptUtils.hasTableType(scan, PartitionedMapTable.class)) {
                 RelOptTable table = scan.getTable();
                 RexNode keyCondition = OptUtils.extractKeyConstantExpression(table, update.getCluster().getRexBuilder());
@@ -96,6 +100,7 @@ final class UpdateLogicalRules {
 
             HazelcastTable hzTable = OptUtils.extractHazelcastTable(scan);
             if (getJetSqlConnector(hzTable.getTarget()).dmlSupportsPredicates()) {
+                // push the predicate down to the UpdateLogicalRel and remove the scan
                 UpdateLogicalRel rel = new UpdateLogicalRel(
                         update.getCluster(),
                         OptUtils.toLogicalConvention(update.getTraitSet()),
@@ -112,6 +117,7 @@ final class UpdateLogicalRules {
                 return;
             }
 
+            // keep the scan as is, convert the TableModify[delete] to UpdateLogicalRel
             UpdateLogicalRel rel = new UpdateLogicalRel(
                     update.getCluster(),
                     OptUtils.toLogicalConvention(update.getTraitSet()),
@@ -164,6 +170,9 @@ final class UpdateLogicalRules {
     // i.e. '... WHERE __key = 1 AND __key = 2'
     // could/should be optimized to no-op
 
+    /**
+     * A rule to match a TableModify[operation=update], with a Values as input
+     */
     static class ValuesRule extends RelRule<RelRule.Config> {
 
         @Value.Immutable

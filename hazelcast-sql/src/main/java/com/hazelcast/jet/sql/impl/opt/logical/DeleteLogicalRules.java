@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
-import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.DeleteLogicalRules.DeleteNoScanRule.NoScanConfig;
 import com.hazelcast.jet.sql.impl.opt.logical.DeleteLogicalRules.DeleteWithScanRule.WithScanConfig;
@@ -28,11 +27,8 @@ import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableScan;
-import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.immutables.value.Value;
-
-import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 
@@ -42,6 +38,9 @@ public final class DeleteLogicalRules {
     static final RelOptRule SCAN_INSTANCE = WithScanConfig.DEFAULT.toRule();
     static final RelOptRule NO_SCAN_INSTANCE = NoScanConfig.DEFAULT.toRule();
 
+    /**
+     * A rule that matches a TableModify[operation=delete], _with_ a TableScan as an input
+     */
     static class DeleteWithScanRule extends RelRule<RelRule.Config> {
         @Value.Immutable
         interface WithScanConfig extends RelRule.Config {
@@ -86,17 +85,7 @@ public final class DeleteLogicalRules {
 
             HazelcastTable hzTable = OptUtils.extractHazelcastTable(scan);
             if (getJetSqlConnector(hzTable.getTarget()).dmlSupportsPredicates()) {
-                // TODO do we need this check?
-                List<RexNode> projects = hzTable.getProjects();
-                SqlConnector connector = getJetSqlConnector(hzTable.getTarget());
-                List<String> primaryKey = connector.getPrimaryKey(hzTable.getTarget());
-                assert primaryKey.size() == projects.size() : "the projection isn't just for the primary key";
-                for (int i = 0; i < primaryKey.size(); i++) {
-                    int fieldIndex = ((RexInputRef) projects.get(i)).getIndex();
-                    String fieldName = scan.getTable().getRowType().getFieldList().get(fieldIndex).getName();
-                    assert fieldName.equals(primaryKey.get(i)) : "the projection isn't just for the primary key";
-                }
-
+                // push the predicate down to the DeleteLogicalRel and remove the scan
                 DeleteLogicalRel rel = new DeleteLogicalRel(
                         delete.getCluster(),
                         OptUtils.toLogicalConvention(delete.getTraitSet()),
@@ -110,6 +99,7 @@ public final class DeleteLogicalRules {
                 return;
             }
 
+            // keep the scan as is, convert the TableModify[delete] to DeleteLogicalRel
             DeleteLogicalRel logicalDelete = new DeleteLogicalRel(
                     delete.getCluster(),
                     OptUtils.toLogicalConvention(delete.getTraitSet()),
@@ -124,7 +114,9 @@ public final class DeleteLogicalRules {
         }
     }
 
-
+    /**
+     * A rule that matches a TableModify[operation=delete], _without_ a TableScan as an input
+     */
     static class DeleteNoScanRule extends RelRule<RelRule.Config> {
         @Value.Immutable
         interface NoScanConfig extends RelRule.Config {

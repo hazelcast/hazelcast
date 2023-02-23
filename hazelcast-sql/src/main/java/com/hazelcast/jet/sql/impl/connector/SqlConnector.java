@@ -355,10 +355,21 @@ public interface SqlConnector {
 
     /**
      * Returns the supplier for the update processor that will update given
-     * {@code table}. The input to the processor will be the fields
-     * returned by {@link #getPrimaryKey(Table)}.
+     * {@code table}.
+     * <p>
+     * The processor works in 2 modes, depending on the value returned from
+     * {@link #dmlSupportsPredicates()}:<ol>
      *
-     * TODO
+     *     <li><b>With a predicate:</b> There will be no input to the processor.
+     *     The processor is supposed to update all rows matching the given
+     *     predicate. In this mode the `predicate` is always not-null.
+     *
+     *     <li><b>Without a predicate:</b> The processor is supposed to delete
+     *     all rows with primary keys it receives on the input. In this mode the
+     *     `predicate` is always null. The primary key fields are specified by
+     *     the {@link #getPrimaryKey(Table)} method.
+     *
+     * </ol>
      */
     @Nonnull
     default Vertex updateProcessor(
@@ -372,8 +383,20 @@ public interface SqlConnector {
 
     /**
      * Returns the supplier for the delete processor that will delete from the
-     * given {@code table}. The input to the processor will be the fields
-     * returned by {@link #getPrimaryKey(Table)}.
+     * given {@code table}.
+     * <p>
+     * The processor works in 2 modes, depending on the value returned from
+     * {@link #dmlSupportsPredicates()}:<ol>
+     *
+     *     <li><b>With a predicate:</b> There will be no input to the processor.
+     *     The processor is supposed to update all rows matching the given
+     *     predicate. In this mode the `predicate` is always not-null.
+     *
+     *     <li><b>Without a predicate:</b> The processor is supposed to delete
+     *     all rows with primary keys it receives on the input. In this mode the
+     *     `predicate` is always null. The primary key fields are specified by
+     *     the {@link #getPrimaryKey(Table)} method.
+     *
      */
     @Nonnull
     default Vertex deleteProcessor(@Nonnull DagBuildContext context, @Nullable HazelcastRexNode predicate) {
@@ -381,8 +404,8 @@ public interface SqlConnector {
     }
 
     /**
-     * Returns, whether this processor's {@link #deleteProcessor} and {@link
-     * #updateProcessor} methods support a predicate.
+     * Returns whether this processor's {@link #deleteProcessor} and {@link
+     * #updateProcessor} methods use a predicate.
      */
     default boolean dmlSupportsPredicates() {
         return true;

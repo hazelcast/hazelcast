@@ -318,6 +318,7 @@ public class JdbcSqlConnector implements SqlConnector {
 
     @Override
     public boolean dmlSupportsPredicates() {
+        // TODO remove this method
         return false;
     }
 
@@ -329,7 +330,8 @@ public class JdbcSqlConnector implements SqlConnector {
             @Nonnull List<HazelcastRexNode> expressions,
             @Nullable HazelcastRexNode predicate
     ) {
-        assert predicate != null;
+        // TODO use the predicate
+        assert predicate == null;
         JdbcTable table = (JdbcTable) context.getTable();
 
         List<String> pkFields = getPrimaryKey(context.getTable())
@@ -355,6 +357,7 @@ public class JdbcSqlConnector implements SqlConnector {
     @Override
     public Vertex deleteProcessor(@Nonnull DagBuildContext context, @Nullable HazelcastRexNode predicate) {
         // TODO use the predicate
+        assert predicate == null;
         JdbcTable table = (JdbcTable) context.getTable();
 
         List<String> pkFields = getPrimaryKey(context.getTable())
