@@ -22,7 +22,6 @@ import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelRule;
-import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rex.RexNode;
 import org.immutables.value.Value;
@@ -43,7 +42,7 @@ final class UpdateByKeyMapLogicalRule extends RelRule<RelRule.Config> {
     public interface Config extends RelRule.Config {
         UpdateByKeyMapLogicalRule.Config DEFAULT = ImmutableUpdateByKeyMapLogicalRule.Config.builder()
                 .description(UpdateByKeyMapLogicalRule.class.getSimpleName())
-                .operandSupplier(b0 -> b0.operand(TableModify.class)
+                .operandSupplier(b0 -> b0.operand(TableModifyLogicalRel.class)
                         .predicate(modify -> !OptUtils.requiresJob(modify) && modify.isUpdate())
                         .inputs(b1 -> b1.operand(TableScan.class)
                                 .predicate(scan -> OptUtils.hasTableType(scan, PartitionedMapTable.class))
