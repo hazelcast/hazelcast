@@ -71,7 +71,8 @@ public final class DeleteLogicalRule extends RelRule<RelRule.Config> {
         if (scan != null) {
             // IMap optimization to execute IMap.delete() directly
             if (!OptUtils.requiresJob(delete) && OptUtils.hasTableType(scan, PartitionedMapTable.class)) {
-                RexNode keyCondition = OptUtils.extractKeyConstantExpression(scan.getTable(), delete.getCluster().getRexBuilder());
+                RexNode keyCondition =
+                        OptUtils.extractKeyConstantExpression(scan.getTable(), delete.getCluster().getRexBuilder());
                 if (keyCondition != null) {
                     DeleteByKeyMapLogicalRel rel = new DeleteByKeyMapLogicalRel(
                             delete.getCluster(),

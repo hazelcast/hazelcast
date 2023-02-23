@@ -59,6 +59,7 @@ public class DeleteLogicalRel extends TableModify implements LogicalRel {
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new DeleteLogicalRel(getCluster(), traitSet, getTable(), getCatalogReader(), sole(inputs), isFlattened(), predicate);
+        return new DeleteLogicalRel(getCluster(), traitSet, getTable(), getCatalogReader(), sole(inputs), isFlattened(),
+                predicate);
     }
 }

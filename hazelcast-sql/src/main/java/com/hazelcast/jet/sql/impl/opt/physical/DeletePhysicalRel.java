@@ -63,6 +63,7 @@ public class DeletePhysicalRel extends TableModify implements PhysicalRel {
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new DeletePhysicalRel(getCluster(), traitSet, getTable(), getCatalogReader(), sole(inputs), isFlattened(), predicate);
+        return new DeletePhysicalRel(getCluster(), traitSet, getTable(), getCatalogReader(), sole(inputs), isFlattened(),
+                predicate);
     }
 }
