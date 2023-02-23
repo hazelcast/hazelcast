@@ -83,7 +83,7 @@ public class KafkaConnectSource {
             return;
         }
         if (LOGGER.isFineEnabled()) {
-            LOGGER.fine("Get " + records.size() + " records from task poll");
+            LOGGER.fine("Got " + records.size() + " records from task poll");
         }
         for (SourceRecord record : records) {
             addToBuffer(record, buf);
