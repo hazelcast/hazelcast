@@ -22,12 +22,14 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.datalink.JdbcDataLinkFactory;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
+import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.test.bounce.BounceTestConfiguration;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -60,6 +62,8 @@ public class JdbcSqlConnectorBounceTest {
                 .driverCount(4)
                 .driverType(BounceTestConfiguration.DriverType.CLIENT)
                 .build();
+    @ClassRule
+    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-jdbc-sql-connector-bounce.xml");
 
     @Rule
     public RuleChain chain = RuleChain.outerRule(dbRule).around(bounceMemberRule);
