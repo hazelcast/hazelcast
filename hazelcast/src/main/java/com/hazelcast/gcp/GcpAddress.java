@@ -17,7 +17,6 @@
 package com.hazelcast.gcp;
 
 /**
- * Run
  * Structure that represents the discovery output information.
  */
 final class GcpAddress {

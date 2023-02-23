@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Run
  * Responsible for fetching discovery information from AWS APIs.
  */
 interface AwsClient {

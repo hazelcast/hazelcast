@@ -17,7 +17,6 @@
 package com.hazelcast.aws;
 
 import com.hazelcast.config.InvalidConfigurationException;
-import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 import static com.hazelcast.aws.AwsClientConfigurator.resolveEc2Endpoint;
@@ -155,11 +154,6 @@ public class AwsClientConfiguratorTest {
 
         // then
         // throws exception
-    }
-
-    @Test
-    public void fail() {
-        Assertions.fail("fail it");
     }
 
 }

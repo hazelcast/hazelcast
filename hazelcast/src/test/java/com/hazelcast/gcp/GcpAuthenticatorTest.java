@@ -17,7 +17,6 @@
 package com.hazelcast.gcp;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -59,11 +58,6 @@ public class GcpAuthenticatorTest {
         // then
         assertEquals(ACCESS_TOKEN, result);
 
-    }
-
-    @Test
-    public void fail() {
-        Assertions.fail("fail it");
     }
 
     private static String responseBody(String accessToken) {
