@@ -118,7 +118,7 @@
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.12.3</parquet.version>
         <picocli.version>4.7.1</picocli.version>
-        <postgresql.version>42.5.3</postgresql.version>
+        <postgresql.version>42.5.4</postgresql.version>
         <prometheus.version>0.17.2</prometheus.version>
 
         <!--
@@ -1869,7 +1869,7 @@
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.30.0</version>
+                <version>3.31.0</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
