@@ -515,6 +515,35 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
                 .hasMessage("From line 1, column 27 to line 1, column 66: Comparison operators are not supported for ROW type");
     }
 
+    @Test
+    public void test_nullValueInRow() {
+        instance().getSql().execute("CREATE TYPE Office ("
+                + "id BIGINT, "
+                + "name VARCHAR "
+                + ") OPTIONS ('format'='compact', 'compactTypeName'='OfficeCompactType')");
+
+        instance().getSql().execute("CREATE TYPE Organization ("
+                + "id BIGINT, "
+                + "name VARCHAR, "
+                + "office Office"
+                + ") OPTIONS ('format'='compact', 'compactTypeName'='OrganizationCompactType')");
+
+        instance().getSql().execute(
+                "CREATE MAPPING test ("
+                        + "__key BIGINT,"
+                        + "organization Organization"
+                        + ")"
+                        + "TYPE IMap "
+                        + "OPTIONS ("
+                        + "'keyFormat'='bigint',"
+                        + "'valueFormat'='compact',"
+                        + "'valueCompactTypeName'='UserCompactType'"
+                        + ")");
+
+        instance().getSql().execute("INSERT INTO test VALUES (1, (2, 'orgName', null))");
+        assertRowsAnyOrder("SELECT (organization).office FROM test", rows(1, new Object[]{null}));
+    }
+
     private User initDefault() {
         testInstance().getSql().execute(format("CREATE TYPE UserType (id BIGINT, name VARCHAR, organization OrganizationType) "
                 + "OPTIONS ('format'='java', 'javaClass'='%s')", User.class.getName()));

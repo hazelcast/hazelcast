@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
@@ -199,7 +200,8 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
             QueryFuture future = new QueryFuture(localPartitions.cardinality());
             getOperationService().executeOnPartitions(
                     new QueryTaskFactory(query, queryRunner, future), localPartitions);
-            future.whenCompleteAsync(new ExecutionCallbackImpl(queryRunner, query));
+            future.whenCompleteAsync(new ExecutionCallbackImpl(queryRunner, query),
+                    ConcurrencyUtil.getDefaultAsyncExecutor());
         }
     }
 
