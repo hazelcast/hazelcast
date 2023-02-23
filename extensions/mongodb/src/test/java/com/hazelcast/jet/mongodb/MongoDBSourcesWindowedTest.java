@@ -58,7 +58,7 @@ public class MongoDBSourcesWindowedTest extends AbstractMongoDBTest {
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(streamSource)
                 .withIngestionTimestamps()
-                .window(tumbling(100))
+                .window(tumbling(50))
                 .aggregate(counting())
                 .writeTo(list(result));
 
