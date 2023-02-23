@@ -83,7 +83,11 @@ class TaskRunner {
     private void restartTaskIfNeeded() {
         if (reconfigurationRequested) {
             reconfigurationRequested = false;
-            stop();
+            try {
+                stop();
+            } catch (Exception ex) {
+                LOGGER.warning("Stopping task failed but proceeding with re-start", ex);
+            }
         }
         start();
     }
