@@ -82,8 +82,8 @@ public final class LogicalRules {
                 SinkLogicalRule.INSTANCE,
                 UpdateLogicalRules.SCAN_INSTANCE,
                 UpdateLogicalRules.VALUES_INSTANCE,
-                DeleteLogicalRules.WITH_SCAN_INSTANCE,
-                DeleteLogicalRules.WITHOUT_SCAN_INSTANCE,
+                DeleteLogicalRules.SCAN_INSTANCE,
+                DeleteLogicalRules.NO_SCAN_INSTANCE,
 
                 // imap-by-key access optimization rules
                 InsertMapLogicalRule.INSTANCE,

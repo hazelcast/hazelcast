@@ -18,8 +18,8 @@ package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.logical.DeleteLogicalRules.DeleteNoScanRule.NoScanConfig;
 import com.hazelcast.jet.sql.impl.opt.logical.DeleteLogicalRules.DeleteWithScanRule.WithScanConfig;
-import com.hazelcast.jet.sql.impl.opt.logical.DeleteLogicalRules.DeleteWithoutScanRule.WithoutScanConfig;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
@@ -39,51 +39,10 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlCon
 @Value.Enclosing
 public final class DeleteLogicalRules {
 
-    static final RelOptRule WITH_SCAN_INSTANCE = new DeleteWithScanRule(WithScanConfig.DEFAULT);
-    static final RelOptRule WITHOUT_SCAN_INSTANCE = new DeleteWithoutScanRule(WithoutScanConfig.DEFAULT);
-
-    static class DeleteWithoutScanRule extends RelRule<RelRule.Config> {
-        @Value.Immutable
-        interface WithoutScanConfig extends RelRule.Config {
-            DeleteWithoutScanRule.Config DEFAULT = ImmutableDeleteLogicalRules.WithoutScanConfig.builder()
-                    .description(DeleteWithoutScanRule.class.getSimpleName())
-                    .operandSupplier(b0 -> b0.operand(TableModify.class)
-                            .predicate(TableModify::isDelete)
-                            .inputs(b1 -> b1.operand(RelNode.class)
-                                    // DELETE with TableScan input is matched by the other rule
-                                    .predicate(input -> !(input instanceof TableScan))
-                                    .anyInputs())
-                    ).build();
-
-            @Override
-            default RelOptRule toRule() {
-                return new DeleteWithoutScanRule(this);
-            }
-        }
-
-        DeleteWithoutScanRule(RelRule.Config config) {
-            super(config);
-        }
-
-        @Override
-        public void onMatch(RelOptRuleCall call) {
-            TableModify delete = call.rel(0);
-
-            DeleteLogicalRel logicalDelete = new DeleteLogicalRel(
-                    delete.getCluster(),
-                    OptUtils.toLogicalConvention(delete.getTraitSet()),
-                    delete.getTable(),
-                    delete.getCatalogReader(),
-                    OptUtils.toLogicalInput(delete.getInput()),
-                    delete.isFlattened(),
-                    null
-            );
-            call.transformTo(logicalDelete);
-        }
-    }
+    static final RelOptRule SCAN_INSTANCE = WithScanConfig.DEFAULT.toRule();
+    static final RelOptRule NO_SCAN_INSTANCE = NoScanConfig.DEFAULT.toRule();
 
     static class DeleteWithScanRule extends RelRule<RelRule.Config> {
-
         @Value.Immutable
         interface WithScanConfig extends RelRule.Config {
             DeleteWithScanRule.Config DEFAULT = ImmutableDeleteLogicalRules.WithScanConfig.builder()
@@ -162,6 +121,47 @@ public final class DeleteLogicalRules {
             );
             RelNode newRel = call.builder().push(scan).push(logicalDelete).build();
             call.transformTo(newRel);
+        }
+    }
+
+
+    static class DeleteNoScanRule extends RelRule<RelRule.Config> {
+        @Value.Immutable
+        interface NoScanConfig extends RelRule.Config {
+            DeleteNoScanRule.Config DEFAULT = ImmutableDeleteLogicalRules.NoScanConfig.builder()
+                    .description(DeleteNoScanRule.class.getSimpleName())
+                    .operandSupplier(b0 -> b0.operand(TableModify.class)
+                            .predicate(TableModify::isDelete)
+                            .inputs(b1 -> b1.operand(RelNode.class)
+                                    // DELETE with TableScan input is matched by the other rule
+                                    .predicate(input -> !(input instanceof TableScan))
+                                    .anyInputs())
+                    ).build();
+
+            @Override
+            default RelOptRule toRule() {
+                return new DeleteNoScanRule(this);
+            }
+        }
+
+        DeleteNoScanRule(RelRule.Config config) {
+            super(config);
+        }
+
+        @Override
+        public void onMatch(RelOptRuleCall call) {
+            TableModify delete = call.rel(0);
+
+            DeleteLogicalRel logicalDelete = new DeleteLogicalRel(
+                    delete.getCluster(),
+                    OptUtils.toLogicalConvention(delete.getTraitSet()),
+                    delete.getTable(),
+                    delete.getCatalogReader(),
+                    OptUtils.toLogicalInput(delete.getInput()),
+                    delete.isFlattened(),
+                    null
+            );
+            call.transformTo(logicalDelete);
         }
     }
 
