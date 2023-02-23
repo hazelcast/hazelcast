@@ -96,7 +96,8 @@ public class SessionAwareSemaphoreReleaseAcquiredSessionsOnFailureTest extends H
         assertEquals(1, getSessionAcquireCount());
         Future future = spawn(() -> {
             Thread.currentThread().interrupt();
-            semaphore.tryAcquire(10, TimeUnit.MINUTES);
+            //Make the semaphore block, so that Thread.interrupt() can be detected
+            semaphore.tryAcquire(2, 10, TimeUnit.MINUTES);
         });
 
         try {
