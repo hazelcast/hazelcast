@@ -17,10 +17,9 @@
 package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.collection.IList;
+import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
-import com.hazelcast.jet.pipeline.WindowDefinition;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.client.MongoCollection;
@@ -34,6 +33,8 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
+import static com.hazelcast.jet.pipeline.Sinks.list;
+import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -52,14 +53,14 @@ public class MongoDBSourcesWindowedTest extends AbstractMongoDBTest {
                 defaultDatabase(), testName.getMethodName(),
                 null, null);
 
-        IList<Object> result = instance().getList("result");
+        IList<WindowResult<Long>> result = instance().getList("result");
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(streamSource)
                 .withIngestionTimestamps()
-                .window(WindowDefinition.tumbling(100))
+                .window(tumbling(100))
                 .aggregate(counting())
-                .writeTo(Sinks.list(result));
+                .writeTo(list(result));
 
         MongoCollection<Document> collection =
                 mongo.getDatabase(defaultDatabase()).getCollection(testName.getMethodName());
@@ -73,6 +74,11 @@ public class MongoDBSourcesWindowedTest extends AbstractMongoDBTest {
         });
         instance().getJet().newJob(pipeline);
 
-        assertTrueEventually(() -> assertThat(result).isNotEmpty());
+        assertTrueEventually(() -> {
+            assertThat(result).isNotEmpty();
+            assertThat(result.stream().mapToLong(WindowResult::result).sum())
+                    .as("Sum of windows is equal to input element count")
+                    .isEqualTo(counter.get());
+        });
     }
 }
