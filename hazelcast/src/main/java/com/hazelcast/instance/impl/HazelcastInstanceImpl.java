@@ -161,6 +161,15 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
         return managementService;
     }
 
+    /**
+     * Indicates that instance is not shutting down or it has not already shut down
+     *
+     * @return true if instance is not shutting down or it has not already shut down
+     */
+    public boolean isRunning() {
+        return node.isRunning();
+    }
+
     @Nonnull
     @Override
     public String getName() {

@@ -24,6 +24,7 @@ import com.hazelcast.internal.nearcache.impl.invalidation.BatchNearCacheInvalida
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.InterceptorRegistry;
 import com.hazelcast.map.impl.MapEntries;
@@ -148,7 +149,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
                 } else {
                     invalidateNearCache(ncKey);
                 }
-            });
+            }, ConcurrencyUtil.getDefaultAsyncExecutor());
         }
         return future;
     }
