@@ -36,7 +36,6 @@ import org.bson.BsonDocument;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import org.bson.types.ObjectId;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -51,7 +50,9 @@ import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.mongodb.impl.MongoUtilities.partitionAggregate;
+import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.sort;
+import static com.mongodb.client.model.Filters.gt;
 import static com.mongodb.client.model.Sorts.ascending;
 import static com.mongodb.client.model.changestream.FullDocument.UPDATE_LOOKUP;
 
@@ -246,7 +247,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
         private final FunctionEx<Document, I> mapItemFn;
         private final List<Bson> aggregates;
         private Traverser<Document> delegate;
-        private ObjectId lastKey;
+        private Object lastKey;
 
         private BatchMongoReader(
                 String databaseName,
@@ -263,6 +264,9 @@ public class ReadMongoP<I> extends AbstractProcessor {
             List<Bson> aggregateList = new ArrayList<>(aggregates);
             if (supportsSnapshots && !hasSorts(aggregateList)) {
                 aggregateList.add(sort(ascending("_id")).toBsonDocument());
+            }
+            if (supportsSnapshots && lastKey != null) {
+                aggregateList.add(match(gt("_id", lastKey)).toBsonDocument());
             }
             if (totalParallelism > 1) {
                 aggregateList.addAll(0, partitionAggregate(totalParallelism, processorIndex, false));
@@ -303,7 +307,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
         public Traverser<I> nextChunkTraverser() {
             return delegate
                     .map(item -> {
-                        lastKey = item.getObjectId("_id");
+                        lastKey = item.get("_id");
                         return mapItemFn.apply(item);
                     });
         }
@@ -321,7 +325,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
         @Override
         public void restore(Object value) {
-            lastKey = (ObjectId) value;
+            lastKey = value;
         }
     }
 
