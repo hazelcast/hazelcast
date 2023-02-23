@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.kafka.connect.impl;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -24,7 +23,6 @@ import org.apache.kafka.connect.connector.ConnectorContext;
 import org.apache.kafka.connect.source.SourceConnector;
 import org.apache.kafka.connect.source.SourceRecord;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -33,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.hazelcast.client.impl.protocol.util.PropertiesUtil.toMap;
 import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
 
 public class KafkaConnectSource {
     private static final ILogger LOGGER = Logger.getLogger(KafkaConnectSource.class);
@@ -52,29 +51,10 @@ public class KafkaConnectSource {
 
     public KafkaConnectSource(Properties properties) {
         String connectorClazz = checkRequiredProperty(properties, "connector.class");
-        Class<?> connectorClass = loadConnectorClass(connectorClazz);
-        this.connector = (SourceConnector) newInstance(connectorClass);
+        this.connector = newInstance(Thread.currentThread().getContextClassLoader(), connectorClazz);
         this.connector.initialize(new JetConnectorContext());
         this.connector.start(toMap(properties));
         this.taskRunner = new TaskRunner(connector, partitionsToOffset);
-    }
-
-    @Nonnull
-    private <T> T newInstance(Class<? extends T> clazz) {
-        try {
-            return clazz.getConstructor().newInstance();
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
-    }
-
-    private static Class<?> loadConnectorClass(String connectorClazz) {
-        try {
-            return Thread.currentThread().getContextClassLoader().loadClass(connectorClazz);
-        } catch (ClassNotFoundException e) {
-            throw new HazelcastException("Connector class '" + connectorClazz + "' not found. " +
-                    "Did you add the connector jar to the job?", e);
-        }
     }
 
     public void fillBuffer(SourceBuilder.TimestampedSourceBuffer<SourceRecord> buf) {

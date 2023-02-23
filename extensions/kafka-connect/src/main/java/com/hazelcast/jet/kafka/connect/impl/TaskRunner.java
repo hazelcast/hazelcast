@@ -24,12 +24,12 @@ import org.apache.kafka.connect.source.SourceTask;
 import org.apache.kafka.connect.source.SourceTaskContext;
 import org.apache.kafka.connect.storage.OffsetStorageReader;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
 
 class TaskRunner {
     private static final ILogger LOGGER = Logger.getLogger(TaskRunner.class);
@@ -98,7 +98,8 @@ class TaskRunner {
                 List<Map<String, String>> taskConfigs = connector.taskConfigs(1);
                 if (!taskConfigs.isEmpty()) {
                     Map<String, String> taskConfig = taskConfigs.get(0);
-                    this.task = newInstance(connector.taskClass().asSubclass(SourceTask.class));
+                    Class<? extends SourceTask> taskClass = connector.taskClass().asSubclass(SourceTask.class);
+                    this.task = newInstance(Thread.currentThread().getContextClassLoader(), taskClass.getName());
                     LOGGER.info("Initializing task: " + task);
                     task.initialize(new JetSourceTaskContext(taskConfig));
                     LOGGER.info("Starting task: " + task + " with task config: " + taskConfig);
@@ -110,15 +111,6 @@ class TaskRunner {
             }
         } finally {
             taskLifecycleLock.unlock();
-        }
-    }
-
-    @Nonnull
-    private static <T> T newInstance(Class<? extends T> clazz) {
-        try {
-            return clazz.getConstructor().newInstance();
-        } catch (Exception e) {
-            throw rethrow(e);
         }
     }
 
