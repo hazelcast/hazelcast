@@ -269,13 +269,14 @@ public final class NioAsyncSocket extends AsyncSocket {
         }
     }
 
-    @SuppressWarnings("java:S3398")
+    @SuppressWarnings({"java:S3398", "java:S1066"})
     private void resetFlushed() {
         flushThread.set(null);
 
-        if (!unflushedBufs.isEmpty()
-                && flushThread.compareAndSet(null, Thread.currentThread())) {
-            reactor.offer(handler);
+        if (!unflushedBufs.isEmpty()) {
+            if (flushThread.compareAndSet(null, Thread.currentThread())) {
+                reactor.offer(handler);
+            }
         }
     }
 
