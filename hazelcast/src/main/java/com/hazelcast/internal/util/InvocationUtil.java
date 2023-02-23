@@ -63,9 +63,14 @@ public final class InvocationUtil {
      * implies the operation should be idempotent.
      *
      * <p>
-     * If there is an exception - other than {@link com.hazelcast.core.MemberLeftException} or
-     * {@link com.hazelcast.spi.exception.TargetNotMemberException} while invoking then the iteration
+     * If there is an exception - other than {@link MemberLeftException},
+     * {@link TargetNotMemberException} or
+     * {@link HazelcastInstanceNotActiveException} while invoking then the iteration
      * is interrupted and the exception is propagated to the caller.
+     * <p>
+     * When invocations fail with <b>only</b> {@link ClusterTopologyChangedException}, the invocations are retried.
+     * When invocations fail {@link MemberLeftException}, {@link TargetNotMemberException} or
+     * {@link HazelcastInstanceNotActiveException} the exceptions are ignored.
      */
     public static <V> InternalCompletableFuture<V> invokeOnStableClusterSerial(
             NodeEngine nodeEngine,
