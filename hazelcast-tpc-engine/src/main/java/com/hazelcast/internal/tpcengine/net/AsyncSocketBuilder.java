@@ -65,6 +65,8 @@ public interface AsyncSocketBuilder {
      */
     <T> boolean setIfSupported(Option<T> option, T value);
 
+    AsyncSocketBuilder setSSLEngineFactory(SSLEngineFactory sslEngineFactory);
+
     /**
      * Sets the AsyncSocketReader.
      *

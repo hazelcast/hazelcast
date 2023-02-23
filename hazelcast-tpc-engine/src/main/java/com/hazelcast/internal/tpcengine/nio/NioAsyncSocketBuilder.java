@@ -20,6 +20,7 @@ import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketBuilder;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
+import com.hazelcast.internal.tpcengine.net.SSLEngineFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -46,6 +47,7 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
     int writeQueueCapacity = DEFAULT_WRITE_QUEUE_CAPACITY;
     AsyncSocketReader reader;
     NioAsyncSocketOptions options;
+    SSLEngineFactory sslEngineFactory;
     private boolean build;
 
     NioAsyncSocketBuilder(NioReactor reactor, NioAcceptRequest acceptRequest) {
@@ -71,6 +73,14 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
         verifyNotBuild();
 
         return options.setIfSupported(option, value);
+    }
+
+    @Override
+    public AsyncSocketBuilder setSSLEngineFactory(SSLEngineFactory sslEngineFactory) {
+        verifyNotBuild();
+
+        this.sslEngineFactory = checkNotNull(sslEngineFactory, "sslEngineFactory");
+        return this;
     }
 
     public NioAsyncSocketBuilder setReceiveBufferIsDirect(boolean receiveBufferIsDirect) {
@@ -127,12 +137,16 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
         }
 
         if (Thread.currentThread() == reactor.eventloopThread()) {
-            return new NioAsyncSocket(NioAsyncSocketBuilder.this);
+            return sslEngineFactory == null
+                ? new NioAsyncSocket(NioAsyncSocketBuilder.this)
+                : new TLSNioAsyncSocket(NioAsyncSocketBuilder.this);
         } else {
-            CompletableFuture<NioAsyncSocket> future = new CompletableFuture<>();
+            CompletableFuture<AsyncSocket> future = new CompletableFuture<>();
             reactor.execute(() -> {
                 try {
-                    NioAsyncSocket asyncSocket = new NioAsyncSocket(NioAsyncSocketBuilder.this);
+                    AsyncSocket asyncSocket = sslEngineFactory == null
+                        ? new NioAsyncSocket(NioAsyncSocketBuilder.this)
+                        : new TLSNioAsyncSocket(NioAsyncSocketBuilder.this);
                     future.complete(asyncSocket);
                 } catch (Throwable e) {
                     future.completeExceptionally(e);
