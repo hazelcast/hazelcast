@@ -131,7 +131,15 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
                 return false;
             }
         }
-        return filter.isCooperative() && remainingFilter.isCooperative();
+
+        if (filter != null && !filter.isCooperative()) {
+            return false;
+        }
+
+        if (remainingFilter != null) {
+            return remainingFilter.isCooperative();
+        }
+        return true;
     }
 
 
