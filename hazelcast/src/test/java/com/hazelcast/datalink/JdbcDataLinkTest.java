@@ -34,7 +34,6 @@ import static com.hazelcast.datalink.impl.HikariTestUtil.assertDataSourceClosed;
 import static com.hazelcast.datalink.impl.HikariTestUtil.assertEventuallyNoHikariThreads;
 import static com.hazelcast.datalink.impl.HikariTestUtil.assertPoolNameEndsWith;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -65,24 +64,6 @@ public class JdbcDataLinkTest {
         if (dataSource instanceof AutoCloseable) {
             ((AutoCloseable) dataSource).close();
         }
-    }
-
-    @Test
-    public void should_return_TRUE_when_connection_is_ok() throws Exception {
-        jdbcDataLink.init(SHARED_DATA_LINK_CONFIG);
-
-        assertThat(jdbcDataLink.testConnection()).isTrue();
-    }
-
-    @Test
-    public void should_throw_when_data_link_is_closed() throws Exception {
-        jdbcDataLink.init(SHARED_DATA_LINK_CONFIG);
-
-        jdbcDataLink.close();
-
-        assertThatThrownBy(() -> jdbcDataLink.testConnection())
-                .isExactlyInstanceOf(SQLException.class)
-                .hasMessageContaining("has been closed");
     }
 
     @Test

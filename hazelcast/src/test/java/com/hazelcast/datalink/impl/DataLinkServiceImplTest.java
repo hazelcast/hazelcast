@@ -70,38 +70,6 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_connection_should_return_TRUE_when_dataLink_exists() throws Exception {
-        DataLinkConfig externalDSConfig = config.getDataLinkConfig(TEST_CONFIG_NAME);
-
-        assertThat(dataLinkService.testConnection(externalDSConfig)).isTrue();
-    }
-
-    @Test
-    public void test_connection_should_throw_when_no_db_is_present() {
-        DataLinkConfig externalDSConfig = new DataLinkConfig()
-                .setName(TEST_CONFIG_NAME)
-                .setClassName("com.hazelcast.datalink.JdbcDataLink")
-                .setProperty("jdbcUrl", "jdbc:h2:file:/random/path;IFEXISTS=TRUE");
-
-        assertThatThrownBy(() -> dataLinkService.testConnection(externalDSConfig))
-                .hasMessageContaining("Database \"/random/path\" not found");
-    }
-
-    @Test
-    public void test_connection_should_throw_when_no_suitable_driver_is_present() {
-        DataLinkConfig externalDSConfig = new DataLinkConfig()
-                .setName(TEST_CONFIG_NAME)
-                .setClassName("com.hazelcast.datalink.JdbcDataLink")
-                .setProperty("jdbcUrl", "jdbc:mysql:localhost:3306/random_db");
-
-
-        assertThatThrownBy(() -> dataLinkService.testConnection(externalDSConfig))
-                .isExactlyInstanceOf(RuntimeException.class)
-                .hasCauseInstanceOf(SQLException.class)
-                .hasRootCauseMessage("No suitable driver");
-    }
-
-    @Test
     public void should_return_working_dataLink() throws Exception {
         DataLink dataLink = dataLinkService.getDataLink(TEST_CONFIG_NAME);
         assertInstanceOf(JdbcDataLink.class, dataLink);

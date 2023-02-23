@@ -60,11 +60,6 @@ final class DataLinkTestUtil {
 
     private static class DummyDataLink implements DataLink {
 
-        @Override
-        public boolean testConnection() {
-            return true;
-        }
-
         public Object getDataLink() {
             return new Object();
         }

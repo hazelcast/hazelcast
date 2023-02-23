@@ -16,7 +16,6 @@
 
 package com.hazelcast.datalink;
 
-import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.spi.annotation.Beta;
 
@@ -27,16 +26,6 @@ import com.hazelcast.spi.annotation.Beta;
  */
 @Beta
 public interface DataLinkService extends AutoCloseable {
-
-    /**
-     * Tests data link configuration.
-     *
-     * @param config name of the data link
-     * @return {@code true} if test was successful
-     * @throws Exception if the test operation fails
-     * @since 5.3
-     */
-    boolean testConnection(DataLinkConfig config) throws Exception;
 
     /**
      * Returns data link with given name.

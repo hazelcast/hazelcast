@@ -35,13 +35,6 @@ public interface DataLink extends AutoCloseable {
     void init(DataLinkConfig config);
 
     /**
-     * Test connection of previously initialized data link.
-     *
-     * @since 5.3
-     */
-    boolean testConnection() throws Exception;
-
-    /**
      * Closes underlying resources
      *
      * @throws Exception

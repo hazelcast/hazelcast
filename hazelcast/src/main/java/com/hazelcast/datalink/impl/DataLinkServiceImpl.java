@@ -65,13 +65,6 @@ public class DataLinkServiceImpl implements DataLinkService {
     }
 
     @Override
-    public boolean testConnection(DataLinkConfig config) throws Exception {
-        try (DataLink dataLink = createDataLink(config)) {
-            return dataLink.testConnection();
-        }
-    }
-
-    @Override
     public <T extends DataLink> T getDataLink(String name) {
         DataLinkConfig dataLinkConfig = node.getConfig().getDataLinkConfigs().get(name);
         if (dataLinkConfig == null) {

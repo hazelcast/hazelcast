@@ -24,7 +24,6 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -59,14 +58,6 @@ public class JdbcDataLink implements DataLink {
 
     public DataSource getDataLink() {
         return config.isShared() ? sharedCloseableDataSource : CloseableDataSource.closing(doCreateDataSource());
-    }
-
-    @Override
-    public boolean testConnection() throws Exception {
-        try (CloseableDataSource dataSource = ((CloseableDataSource) getDataLink());
-             Connection connection = dataSource.getConnection()) {
-            return connection.isValid(JDBC_TEST_CONNECTION_TIMEOUT_SECONDS);
-        }
     }
 
     protected HikariDataSource doCreateDataSource() {
