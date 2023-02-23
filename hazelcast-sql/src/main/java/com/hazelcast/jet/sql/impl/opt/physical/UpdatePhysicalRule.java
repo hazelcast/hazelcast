@@ -48,7 +48,8 @@ final class UpdatePhysicalRule extends ConverterRule {
                 OptUtils.toPhysicalInput(logicalUpdate.getInput()),
                 logicalUpdate.getUpdateColumnList(),
                 logicalUpdate.getSourceExpressionList(),
-                logicalUpdate.isFlattened()
+                logicalUpdate.isFlattened(),
+                logicalUpdate.getPredicate()
         );
     }
 }

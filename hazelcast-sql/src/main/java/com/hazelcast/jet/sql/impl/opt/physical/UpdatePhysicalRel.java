@@ -32,6 +32,8 @@ import static org.apache.calcite.rel.core.TableModify.Operation.UPDATE;
 
 public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
 
+    private final RexNode predicate;
+
     UpdatePhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
@@ -40,14 +42,20 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
             RelNode input,
             List<String> updateColumnList,
             List<RexNode> sourceExpressionList,
-            boolean flattened
+            boolean flattened,
+            RexNode predicate
     ) {
         super(cluster, traitSet, table, catalogReader, input, UPDATE, updateColumnList, sourceExpressionList, flattened);
+        this.predicate = predicate;
     }
 
     @Override
     public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
         throw new UnsupportedOperationException();
+    }
+
+    public RexNode getPredicate() {
+        return predicate;
     }
 
     @Override
@@ -65,7 +73,8 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
                 sole(inputs),
                 getUpdateColumnList(),
                 getSourceExpressionList(),
-                isFlattened()
+                isFlattened(),
+                predicate
         );
     }
 }

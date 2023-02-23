@@ -21,7 +21,7 @@ import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
-import org.apache.calcite.prepare.Prepare;
+import org.apache.calcite.prepare.Prepare.CatalogReader;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
@@ -33,17 +33,21 @@ import static org.apache.calcite.rel.core.TableModify.Operation.UPDATE;
 
 public class UpdateLogicalRel extends TableModify implements LogicalRel {
 
+    private final RexNode predicate;
+
     UpdateLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
-            Prepare.CatalogReader catalogReader,
+            CatalogReader catalogReader,
             RelNode input,
             List<String> updateColumnList,
             List<RexNode> sourceExpressionList,
-            boolean flattened
+            boolean flattened,
+            RexNode predicate
     ) {
         super(cluster, traitSet, table, catalogReader, input, UPDATE, updateColumnList, sourceExpressionList, flattened);
+        this.predicate = predicate;
     }
 
     @Override
@@ -61,7 +65,12 @@ public class UpdateLogicalRel extends TableModify implements LogicalRel {
                 sole(inputs),
                 getUpdateColumnList(),
                 getSourceExpressionList(),
-                isFlattened()
+                isFlattened(),
+                predicate
         );
+    }
+
+    public RexNode getPredicate() {
+        return predicate;
     }
 }

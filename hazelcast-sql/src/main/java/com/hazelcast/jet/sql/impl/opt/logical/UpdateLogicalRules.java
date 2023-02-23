@@ -81,7 +81,8 @@ final class UpdateLogicalRules {
                     rewriteScan(scan),
                     update.getUpdateColumnList(),
                     update.getSourceExpressionList(),
-                    update.isFlattened()
+                    update.isFlattened(),
+                    null
             );
             call.transformTo(rel);
         }
@@ -159,7 +160,8 @@ final class UpdateLogicalRules {
                     OptUtils.toLogicalInput(values),
                     update.getUpdateColumnList(),
                     update.getSourceExpressionList(),
-                    update.isFlattened()
+                    update.isFlattened(),
+                    null
             );
             call.transformTo(rel);
         }
