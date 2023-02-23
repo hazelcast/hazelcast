@@ -48,7 +48,7 @@ public class KafkaConnectSource {
      * stored as map.
      * See {@link SourceRecord} for more information regarding the format.
      */
-    private Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new ConcurrentHashMap<>();
+    private final Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new ConcurrentHashMap<>();
 
     public KafkaConnectSource(Properties properties) {
         String connectorClazz = checkRequiredProperty(properties, "connector.class");
