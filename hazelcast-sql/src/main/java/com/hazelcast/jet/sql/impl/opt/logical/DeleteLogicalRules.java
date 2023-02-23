@@ -61,7 +61,7 @@ public final class DeleteLogicalRules {
             }
         }
 
-        public DeleteWithoutScanRule(RelRule.Config config) {
+        DeleteWithoutScanRule(RelRule.Config config) {
             super(config);
         }
 
@@ -100,7 +100,7 @@ public final class DeleteLogicalRules {
             }
         }
 
-        public DeleteWithScanRule(RelRule.Config config) {
+        DeleteWithScanRule(RelRule.Config config) {
             super(config);
         }
 
@@ -164,4 +164,6 @@ public final class DeleteLogicalRules {
             call.transformTo(newRel);
         }
     }
+
+    private DeleteLogicalRules() { }
 }
