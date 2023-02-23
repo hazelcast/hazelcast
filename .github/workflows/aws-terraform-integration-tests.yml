@@ -1,9 +1,12 @@
 name: aws-tests
 on:
   workflow_dispatch:
-  push:
+  pull_request_target:
+    types:
+      - labeled
     branches:
-      - master
+      - "master"
+      - "*.z"
     paths:
       - 'hazelcast/src/main/java/com/hazelcast/aws/**'
       - '.github/terraform/aws/**'
@@ -18,7 +21,14 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID:  ${{ secrets.AWS_ACCESS_KEY_ID }}
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'hazelcast'
+    if: >-
+      github.repository_owner == 'hazelcast' && 
+      ( github.event_name == 'workflow_dispatch' || 
+        (github.event_name == 'pull_request_target' && 
+          github.event.action == 'labeled' && 
+          github.event.label.name == 'run-discovery-tests' 
+        )
+      )
     steps:
       - name: Setup JDK
         uses: actions/setup-java@v2
@@ -27,7 +37,27 @@ jobs:
           architecture: x64
           distribution: adopt
 
-      - uses: actions/checkout@v3.3.0
+      - name: Decide which ref to checkout
+        id: decide-ref
+        run: |
+          if [[ "${{github.event_name}}" == "pull_request_target" ]]; then
+            echo "ref=refs/pull/${{ github.event.pull_request.number }}/merge" >> $GITHUB_OUTPUT
+          else
+            echo "ref=${{github.ref}}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v3.3.0
+        with:
+          ref: ${{steps.decide-ref.outputs.ref}}
+
+      - name: Setup Local Maven Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
 
       - name: Build hazelcast jar
         run: |
