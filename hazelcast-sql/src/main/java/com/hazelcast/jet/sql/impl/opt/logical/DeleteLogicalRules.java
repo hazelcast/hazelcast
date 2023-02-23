@@ -18,6 +18,8 @@ package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.logical.DeleteLogicalRules.DeleteWithScanRule.WithScanConfig;
+import com.hazelcast.jet.sql.impl.opt.logical.DeleteLogicalRules.DeleteWithoutScanRule.WithoutScanConfig;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
@@ -26,7 +28,6 @@ import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableScan;
-import org.apache.calcite.rel.core.Values;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.immutables.value.Value;
@@ -36,39 +37,78 @@ import java.util.List;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 
 @Value.Enclosing
-public final class DeleteLogicalRule extends RelRule<RelRule.Config> {
+public final class DeleteLogicalRules {
 
-    @Value.Immutable
-    interface Config extends RelRule.Config {
-        DeleteLogicalRule.Config DEFAULT = ImmutableDeleteLogicalRule.Config.builder()
-                .description(DeleteLogicalRule.class.getSimpleName())
-                .operandSupplier(b0 -> b0.operand(TableModify.class)
-                        .predicate(TableModify::isDelete)
-                        .inputs(b1 -> b1.operand(RelNode.class)
-                                .predicate(input -> input instanceof TableScan
-                                        || input instanceof Values)
-                                .noInputs())
-                ).build();
+    static final RelOptRule WITH_SCAN_INSTANCE = new DeleteWithScanRule(WithScanConfig.DEFAULT);
+    static final RelOptRule WITHOUT_SCAN_INSTANCE = new DeleteWithoutScanRule(WithoutScanConfig.DEFAULT);
+
+    static class DeleteWithoutScanRule extends RelRule<RelRule.Config> {
+        @Value.Immutable
+        interface WithoutScanConfig extends RelRule.Config {
+            DeleteWithoutScanRule.Config DEFAULT = ImmutableDeleteLogicalRules.WithoutScanConfig.builder()
+                    .description(DeleteWithoutScanRule.class.getSimpleName())
+                    .operandSupplier(b0 -> b0.operand(TableModify.class)
+                            .predicate(TableModify::isDelete)
+                            .inputs(b1 -> b1.operand(RelNode.class)
+                                    // DELETE with TableScan input is matched by the other rule
+                                    .predicate(input -> !(input instanceof TableScan))
+                                    .anyInputs())
+                    ).build();
+
+            @Override
+            default RelOptRule toRule() {
+                return new DeleteWithoutScanRule(this);
+            }
+        }
+
+        public DeleteWithoutScanRule(RelRule.Config config) {
+            super(config);
+        }
 
         @Override
-        default RelOptRule toRule() {
-            return new DeleteLogicalRule(this);
+        public void onMatch(RelOptRuleCall call) {
+            TableModify delete = call.rel(0);
+
+            DeleteLogicalRel logicalDelete = new DeleteLogicalRel(
+                    delete.getCluster(),
+                    OptUtils.toLogicalConvention(delete.getTraitSet()),
+                    delete.getTable(),
+                    delete.getCatalogReader(),
+                    OptUtils.toLogicalInput(delete.getInput()),
+                    delete.isFlattened(),
+                    null
+            );
+            call.transformTo(logicalDelete);
         }
     }
 
-    static final RelOptRule INSTANCE = new DeleteLogicalRule(Config.DEFAULT);
+    static class DeleteWithScanRule extends RelRule<RelRule.Config> {
 
-    public DeleteLogicalRule(RelRule.Config config) {
-        super(config);
-    }
+        @Value.Immutable
+        interface WithScanConfig extends RelRule.Config {
+            DeleteWithScanRule.Config DEFAULT = ImmutableDeleteLogicalRules.WithScanConfig.builder()
+                    .description(DeleteWithScanRule.class.getSimpleName())
+                    .operandSupplier(b0 -> b0.operand(TableModify.class)
+                            .predicate(TableModify::isDelete)
+                            .inputs(b1 -> b1.operand(TableScan.class)
+                                    .noInputs())
+                    ).build();
 
-    @Override
-    public void onMatch(RelOptRuleCall call) {
-        TableModify delete = call.rel(0);
-        RelNode input = call.rel(1);
-        TableScan scan = input instanceof TableScan ? (TableScan) input : null;
+            @Override
+            default RelOptRule toRule() {
+                return new DeleteWithScanRule(this);
+            }
+        }
 
-        if (scan != null) {
+        public DeleteWithScanRule(RelRule.Config config) {
+            super(config);
+        }
+
+        @Override
+        public void onMatch(RelOptRuleCall call) {
+            TableModify delete = call.rel(0);
+            TableScan scan = call.rel(1);
+
             // IMap optimization to execute IMap.delete() directly
             if (!OptUtils.requiresJob(delete) && OptUtils.hasTableType(scan, PartitionedMapTable.class)) {
                 RexNode keyCondition =
@@ -81,7 +121,6 @@ public final class DeleteLogicalRule extends RelRule<RelRule.Config> {
                             keyCondition
                     );
                     call.transformTo(rel);
-
                     return;
                 }
             }
@@ -111,18 +150,18 @@ public final class DeleteLogicalRule extends RelRule<RelRule.Config> {
                 call.transformTo(rel);
                 return;
             }
-        }
 
-        DeleteLogicalRel logicalDelete = new DeleteLogicalRel(
-                delete.getCluster(),
-                OptUtils.toLogicalConvention(delete.getTraitSet()),
-                delete.getTable(),
-                delete.getCatalogReader(),
-                OptUtils.toLogicalInput(delete.getInput()),
-                delete.isFlattened(),
-                null
-        );
-        RelNode newRel = call.builder().push(input).push(logicalDelete).build();
-        call.transformTo(newRel);
+            DeleteLogicalRel logicalDelete = new DeleteLogicalRel(
+                    delete.getCluster(),
+                    OptUtils.toLogicalConvention(delete.getTraitSet()),
+                    delete.getTable(),
+                    delete.getCatalogReader(),
+                    OptUtils.toLogicalInput(delete.getInput()),
+                    delete.isFlattened(),
+                    null
+            );
+            RelNode newRel = call.builder().push(scan).push(logicalDelete).build();
+            call.transformTo(newRel);
+        }
     }
 }
