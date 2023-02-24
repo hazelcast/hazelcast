@@ -26,11 +26,12 @@ import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
-class MainClassNameFinder {
+/**
+ * This class is public so that its log output can be tested
+ */
+public class MainClassNameFinder {
 
     private static final ILogger LOGGER = Logger.getLogger(MainClassNameFinder.class);
-
-    boolean calledByMember;
 
     private String errorMessage;
 
@@ -44,12 +45,13 @@ class MainClassNameFinder {
         return mainClassName;
     }
 
+    boolean hasError() {
+        return !StringUtil.isNullOrEmpty(errorMessage);
+    }
+
     // Find the mainClassName from the jar
-    public void findMainClass(String mainClassName, String jarPath, boolean calledByMember)
+    public void findMainClass(String mainClassName, String jarPath)
             throws IOException {
-
-        this.calledByMember = calledByMember;
-
         try (JarFile jarFile = new JarFile(jarPath)) {
             checkHazelcastCodebasePresence(jarFile);
 
@@ -77,13 +79,9 @@ class MainClassNameFinder {
         List<String> classFiles = JarScanner.findClassFiles(jarFile, HazelcastBootstrap.class.getSimpleName());
         if (!classFiles.isEmpty()) {
             String message = String.format("WARNING: Hazelcast code detected in the jar: %s. "
-                                         + "Hazelcast dependency should be set with the 'provided' scope or equivalent.%n",
+                                           + "Hazelcast dependency should be set with the 'provided' scope or equivalent.%n",
                     String.join(", ", classFiles));
-            if (calledByMember) {
-                LOGGER.info(message);
-            } else {
-                System.err.print(message); //NOSONAR
-            }
+            LOGGER.info(message);
         }
     }
 }

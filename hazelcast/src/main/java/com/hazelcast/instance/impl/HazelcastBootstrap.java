@@ -37,7 +37,6 @@ import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
-import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
@@ -188,11 +187,10 @@ public final class HazelcastBootstrap {
     static String findMainClassNameForJar(String mainClass, String jarPath, boolean calledByMember)
             throws IOException {
         MainClassNameFinder mainClassNameFinder = new MainClassNameFinder();
-        mainClassNameFinder.findMainClass(mainClass, jarPath, calledByMember);
+        mainClassNameFinder.findMainClass(mainClass, jarPath);
 
-        // Check if there is an error
-        String errorMessage = mainClassNameFinder.getErrorMessage();
-        if (!StringUtil.isNullOrEmpty(errorMessage)) {
+        if (mainClassNameFinder.hasError()) {
+            String errorMessage = mainClassNameFinder.getErrorMessage();
             // Client side immediately exits, server side throws JetException
             error(errorMessage, calledByMember);
         }
