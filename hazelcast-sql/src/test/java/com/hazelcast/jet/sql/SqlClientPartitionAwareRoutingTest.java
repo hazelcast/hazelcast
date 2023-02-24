@@ -83,7 +83,7 @@ public class SqlClientPartitionAwareRoutingTest extends SqlTestSupport {
         // warm up cache
         client().getSql().execute(sql, 0);
 
-        // collect pre-query-run metrics
+        // collect pre-execution metrics
         final List<Map<String, Object>> before = collectMetrics();
         final long[] expectedCounts = new long[instances().length];
         for (int i = 0; i < instances().length; i++) {

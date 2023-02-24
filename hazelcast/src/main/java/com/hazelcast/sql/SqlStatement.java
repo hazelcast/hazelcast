@@ -316,20 +316,29 @@ public final class SqlStatement {
     }
 
     /**
-     * Gets partition argument index value
+     * Get the partition argument index value
      *
-     * @return partitionArgumentIndex, -1 if not set
+     * @return partitionArgumentIndex, -1 if not set.
      */
     public int getPartitionArgumentIndex() {
         return partitionArgumentIndex;
     }
 
     /**
-     * Sets partition argument index
+     * Set the partition argument index. If there's no such argument, use -1.
+     * <p>
+     * Setting a wrong argument index will not cause incorrect query results,
+     * but might cause performance degradation due to more network
+     * communication. Setting a value higher than the actual number of arguments
+     * will have no effect.
      *
-     * @param partitionArgumentIndex - index of the partition-determining argument of the statement
+     * @param partitionArgumentIndex index of the partition-determining argument
+     *     of the statement
      */
     public void setPartitionArgumentIndex(final int partitionArgumentIndex) {
+        if (partitionArgumentIndex < -1) {
+            throw new IllegalArgumentException("The argument index must be >=0, or -1");
+        }
         this.partitionArgumentIndex = partitionArgumentIndex;
     }
 

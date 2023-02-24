@@ -306,6 +306,11 @@ public class SqlClientService implements SqlService {
             if (!isUniSocket && response.partitionArgumentIndex != originalPartitionArgumentIndex) {
                 if (response.partitionArgumentIndex != -1) {
                     partitionArgumentIndexCache.put(statement.getSql(), response.partitionArgumentIndex);
+                    // We're writing to a non-volatile field from multiple threads. But it's safe because all
+                    // writers write the same value, so it should be idempotent. Also, another thread might
+                    // not observe the written value, but that's not an issue either, the thread will fall
+                    // back to using query the partitionArgumentIndexCache, unless there's a change
+                    // from one argument to another, which can happen only if there's concurrent DDL.
                     statement.setPartitionArgumentIndex(response.partitionArgumentIndex);
                 } else {
                     partitionArgumentIndexCache.remove(statement.getSql());
@@ -387,14 +392,13 @@ public class SqlClientService implements SqlService {
         try {
             final UUID nodeId = client.getClientPartitionService().getPartitionOwner(partitionId);
             if (nodeId == null) {
-                // TODO: do something else here?
                 return getQueryConnection();
             }
 
             ClientConnection connection = client.getConnectionManager().getConnection(nodeId);
 
             if (connection == null) {
-                throw rethrow(QueryException.error(CONNECTION_PROBLEM, "Client is not connected"));
+                return getQueryConnection();
             }
 
             return connection;

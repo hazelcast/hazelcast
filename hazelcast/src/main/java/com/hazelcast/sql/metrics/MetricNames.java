@@ -17,13 +17,14 @@
 package com.hazelcast.sql.metrics;
 
 /**
- * This class contains names of metrics related to SQL module.
+ * This class contains names of metrics related to the SQL module.
+ *
  * @since 5.3
  */
 public final class MetricNames {
 
     /**
-     * Name of SQL module typically used in the MODULE metric tag.
+     * Name of SQL module used in the MODULE metric tag.
      */
     public static final String MODULE_TAG = "sql";
 
