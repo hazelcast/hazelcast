@@ -106,10 +106,15 @@ public final class ChunkSerDeHelper {
                 break;
             }
         }
+
         // indicates end of chunked state
         out.writeObject(null);
 
         logEndOfAllChunks(isEndOfChunk);
+
+        for (ChunkSupplier chunkSupplier : chunkSuppliers) {
+            chunkSupplier.signalEndOfChunkWith(null);
+        }
     }
 
     private void logCurrentChunk(ChunkSupplier chunkSupplier) {
