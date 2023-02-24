@@ -156,4 +156,29 @@ public class CreateViewStatementTest extends SqlTestSupport {
         assertThatThrownBy(() -> instance().getSql().execute(sql))
                 .hasMessageContaining("View does not exist: v");
     }
+
+    @Test
+    public void test_fullyQualifiedName() {
+        final IMap<String, Object> viewStorage = instance().getMap("__sql.catalog");
+
+        instance().getSql().execute("CREATE VIEW hazelcast.public.v AS SELECT 1");
+        assertThat(viewStorage.containsKey("v")).isTrue();
+        assertRowsAnyOrder("SELECT * FROM v", rows(1, (byte) 1));
+
+        instance().getSql().execute("DROP VIEW hazelcast.public.v");
+        assertThat(viewStorage.containsKey("v")).isFalse();
+    }
+
+    @Test
+    public void test_failOnIncorrectSchema() {
+        final IMap<String, Object> viewStorage = instance().getMap("__sql.catalog");
+        assertThatThrownBy(() -> instance().getSql().execute("CREATE VIEW information_schema.v AS SELECT 1"))
+                .hasMessageContaining("The view must be created in the \"public\" schema");
+        assertThat(viewStorage.containsKey("v")).isFalse();
+
+        instance().getSql().execute("CREATE VIEW hazelcast.public.v AS SELECT 1");
+        assertThatThrownBy(() -> instance().getSql().execute("DROP VIEW information_schema.v").updateCount())
+                .hasMessageContaining("View does not exist: information_schema.v");
+        assertThat(viewStorage.containsKey("v")).isTrue();
+    }
 }
