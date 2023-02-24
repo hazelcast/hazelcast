@@ -20,6 +20,7 @@ import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.datalink.DataLinkService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
@@ -146,22 +147,28 @@ public class PlanExecutor {
     }
 
     SqlResult execute(CreateDataLinkPlan plan) {
-        // TODO: implement after backend readiness.
-        throw new UnsupportedOperationException("CREATE DATA LINK is not implemented yet");
-//        return UpdateSqlResultImpl.createUpdateCountResult(0);
+        Util.getNodeEngine(hazelcastInstance).getDataLinkService()
+                .createSqlDataLink(plan.name(), plan.type(), plan.options());
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     SqlResult execute(DropDataLinkPlan plan) {
-        // TODO: implement after backend readiness.
-        throw new UnsupportedOperationException("DROP DATA LINK is not implemented yet");
+        DataLinkService dlService = getNodeEngine(hazelcastInstance).getDataLinkService();
+        if (plan.ifExists()) {
+            dlService.getDataLink(plan.name()); // throws 'HazelcastException("Data link ... not found")', if DL not exist
+        }
+        try {
+            dlService.removeDataLink(plan.name());
+        } finally {
+            return UpdateSqlResultImpl.createUpdateCountResult(0);
+        }
     }
 
     SqlResult execute(CreateIndexPlan plan) {
         if (!plan.ifNotExists()) {
             // If `IF NOT EXISTS` isn't specified, we do a simple check for the existence of the index. This is not
             // OK if two clients concurrently try to create the index (they could both succeed), but covers the
-            // common case. There's no atomic operation to create an index in IMDG, so it's not easy to
-            // implement.
+            // common case. There's no atomic operation to create an index in IMDG, so it's not easy to implement.
             MapContainer mapContainer = getMapContainer(hazelcastInstance.getMap(plan.mapName()));
 
             if (mapContainer.getIndexes().getIndex(plan.indexName()) != null) {

@@ -49,6 +49,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -265,6 +266,12 @@ abstract class SqlPlanImpl extends SqlPlan {
             SqlPlanImpl.ensureNoArguments("CREATE DATA LINK", arguments);
             SqlPlanImpl.ensureNoTimeout("CREATE DATA LINK", timeout);
             return planExecutor.execute(this);
+        }
+
+        private Properties props(Map<String, String> options) {
+            Properties properties = new Properties();
+            properties.putAll(options);
+            return properties;
         }
     }
 
