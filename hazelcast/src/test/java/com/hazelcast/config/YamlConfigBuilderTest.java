@@ -3451,14 +3451,15 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(MemoryUnit.GIGABYTES, memoryTierConfig.getCapacity().getUnit());
         assertEquals(1L, memoryTierConfig.getCapacity().getValue());
 
-        assertFalse(tieredStoreConfig.getDiskTierConfig().isEnabled());
+        assertTrue(tieredStoreConfig.getDiskTierConfig().isEnabled());
+        assertEquals(DEFAULT_DEVICE_NAME, tieredStoreConfig.getDiskTierConfig().getDeviceName());
 
         tieredStoreConfig = config.getMapConfig("map3").getTieredStoreConfig();
         memoryTierConfig = tieredStoreConfig.getMemoryTierConfig();
         assertEquals(DEFAULT_CAPACITY, memoryTierConfig.getCapacity());
 
         diskTierConfig = tieredStoreConfig.getDiskTierConfig();
-        assertFalse(diskTierConfig.isEnabled());
+        assertTrue(diskTierConfig.isEnabled());
         assertEquals(DEFAULT_DEVICE_NAME, diskTierConfig.getDeviceName());
 
         yaml = ""
