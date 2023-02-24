@@ -65,8 +65,6 @@ public interface DataLink extends AutoCloseable {
      */
     DataLinkConfig getConfig();
 
-    void retain();
-
     /**
      * Returns the properties / options this DataLink was created with.
      */
@@ -75,8 +73,12 @@ public interface DataLink extends AutoCloseable {
         return new HashMap<>((Map<String, String>) properties);
     }
 
+    void retain();
+
     /**
-     * Closes underlying resources
+     * Decrements the reference counter for this DataLink
+     * If the reference counter reaches zero it closes the underlying resources.
+     * TODO maybe rename this to release, but then we can't use try-with-resources
      */
     @Override
     default void close() throws Exception {

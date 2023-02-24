@@ -34,7 +34,7 @@ import java.util.Map;
  * When a new config is added via {@link #createConfigDataLink(DataLinkConfig)} is created and SQL DataLink already
  * exists the existing DataLink is replaced and closed.
  *
- * @since 5.2
+ * @since 5.3
  */
 @Beta
 public interface DataLinkService extends AutoCloseable {
@@ -79,7 +79,14 @@ public interface DataLinkService extends AutoCloseable {
      */
     <T extends DataLink> T getDataLink(String name);
 
-
+    /**
+     * Returns DataLink with given name.
+     * <p>
+     * Type checked against the provided clazz parameter.
+     *
+     * @param name name of the DataLink
+     * @param clazz type of the DataLink
+     */
     <T extends DataLink> T getDataLink(String name, Class<T> clazz);
 
     /**

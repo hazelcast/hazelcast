@@ -46,7 +46,7 @@ abstract class AbstractJdbcSqlConnectorProcessorSupplier implements ProcessorSup
                 .node.getNodeEngine().getDataLinkService();
 
         try (JdbcDataLink dataLink = dataLinkService
-                .getDataLink(dataLinkRef)) {
+                .getDataLink(dataLinkRef, JdbcDataLink.class)) {
             dataSource = dataLink.getDataSource();
         }
     }

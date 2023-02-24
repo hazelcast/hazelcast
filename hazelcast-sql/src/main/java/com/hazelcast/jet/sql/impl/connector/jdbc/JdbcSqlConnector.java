@@ -198,7 +198,7 @@ public class JdbcSqlConnector implements SqlConnector {
     private static DataSource createDataLink(NodeEngine nodeEngine, String dataLinkRef) {
         try (JdbcDataLink dataLink = nodeEngine
                 .getDataLinkService()
-                .getDataLink(dataLinkRef)) {
+                .getDataLink(dataLinkRef, JdbcDataLink.class)) {
             return dataLink.getDataSource();
         } catch (Exception e) {
             throw new HazelcastException("Could not close DataLink", e);
