@@ -121,6 +121,7 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
         }
     }
 
+    @SuppressWarnings("java:S112")
     protected void loop() throws Exception {
         while (!shutdown) {
             Object task;

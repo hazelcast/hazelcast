@@ -75,6 +75,7 @@ public final class SelectorOptimizer {
      * @return an FastSelectionKeySet if the optimization was a success, null otherwise.
      * @throws NullPointerException if selector or logger is null.
      */
+    @SuppressWarnings({"java:S1168", "java:S3011", "java:S1181", "java:S125"})
     static SelectionKeysSet optimize(Selector selector, TpcLogger logger) {
         checkNotNull(selector, "selector");
         checkNotNull(logger, "logger");

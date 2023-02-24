@@ -25,13 +25,13 @@ public class JVMTest {
     @Test
     public void getMajorVersion() {
         System.out.println(JVM.getMajorVersion());
-        assertEquals(JVM.parseVersionString("1.6.0_23"), 6);
-        assertEquals(JVM.parseVersionString("1.7.0"), 7);
-        assertEquals(JVM.parseVersionString("1.7.0_80"), 7);
-        assertEquals(JVM.parseVersionString("1.8.0_211"), 8);
-        assertEquals(JVM.parseVersionString("9.0.1"), 9);
-        assertEquals(JVM.parseVersionString("11.0.4"), 11);
-        assertEquals(JVM.parseVersionString("12"), 12);
-        assertEquals(JVM.parseVersionString("12.0.1"), 12);
+        assertEquals(6, JVM.parseVersionString("1.6.0_23"));
+        assertEquals(7, JVM.parseVersionString("1.7.0"));
+        assertEquals(7, JVM.parseVersionString("1.7.0_80"));
+        assertEquals(8, JVM.parseVersionString("1.8.0_211"));
+        assertEquals(9, JVM.parseVersionString("9.0.1"));
+        assertEquals(11, JVM.parseVersionString("11.0.4"));
+        assertEquals(12, JVM.parseVersionString("12"));
+        assertEquals(12, JVM.parseVersionString("12.0.1"));
     }
 }

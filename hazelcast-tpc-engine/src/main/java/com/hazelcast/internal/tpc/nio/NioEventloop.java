@@ -36,46 +36,45 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 class NioEventloop extends Eventloop {
 
     final Selector selector = SelectorOptimizer.newSelector();
-    private final NioReactor reactor;
 
     NioEventloop(NioReactor reactor, NioReactorBuilder builder) {
         super(reactor, builder);
-        this.reactor = reactor;
     }
 
+    @SuppressWarnings("java:S3776")
     @Override
     protected void run() throws Exception {
-        final NanoClock nanoClock = this.nanoClock;
-        final boolean spin = this.spin;
-        final Selector selector = this.selector;
-        final AtomicBoolean wakeupNeeded = this.wakeupNeeded;
-        final MpmcArrayQueue externalTaskQueue = this.externalTaskQueue;
-        final Scheduler scheduler = this.scheduler;
+        final NanoClock nanoClock0 = nanoClock;
+        final boolean spin0 = spin;
+        final Selector selector0 = selector;
+        final AtomicBoolean wakeupNeeded0 = wakeupNeeded;
+        final MpmcArrayQueue externalTaskQueue0 = externalTaskQueue;
+        final Scheduler scheduler0 = scheduler;
 
         boolean moreWork = false;
         do {
             int keyCount;
-            if (spin || moreWork) {
-                keyCount = selector.selectNow();
+            if (spin0 || moreWork) {
+                keyCount = selector0.selectNow();
             } else {
-                wakeupNeeded.set(true);
-                if (externalTaskQueue.isEmpty()) {
+                wakeupNeeded0.set(true);
+                if (externalTaskQueue0.isEmpty()) {
                     if (earliestDeadlineNanos == -1) {
-                        keyCount = selector.select();
+                        keyCount = selector0.select();
                     } else {
-                        long timeoutMillis = NANOSECONDS.toMillis(earliestDeadlineNanos - nanoClock.nanoTime());
+                        long timeoutMillis = NANOSECONDS.toMillis(earliestDeadlineNanos - nanoClock0.nanoTime());
                         keyCount = timeoutMillis <= 0
-                                ? selector.selectNow()
-                                : selector.select(timeoutMillis);
+                                ? selector0.selectNow()
+                                : selector0.select(timeoutMillis);
                     }
                 } else {
-                    keyCount = selector.selectNow();
+                    keyCount = selector0.selectNow();
                 }
-                wakeupNeeded.set(false);
+                wakeupNeeded0.set(false);
             }
 
             if (keyCount > 0) {
-                Iterator<SelectionKey> it = selector.selectedKeys().iterator();
+                Iterator<SelectionKey> it = selector0.selectedKeys().iterator();
                 while (it.hasNext()) {
                     SelectionKey key = it.next();
                     it.remove();
@@ -90,7 +89,7 @@ class NioEventloop extends Eventloop {
             }
 
             moreWork = runExternalTasks();
-            moreWork |= scheduler.tick();
+            moreWork |= scheduler0.tick();
             moreWork |= runScheduledTasks();
             moreWork |= runLocalTasks();
         } while (!stop);

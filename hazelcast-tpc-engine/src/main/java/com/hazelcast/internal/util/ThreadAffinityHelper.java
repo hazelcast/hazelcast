@@ -46,6 +46,7 @@ import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
  * to {@code true}, there is no attempt made for using the Hazelcast
  * library and the OpenHFT library is used instead in every case.
  */
+@SuppressWarnings("java:S1181")
 public final class ThreadAffinityHelper {
     private static final String AFFINITY_LIB_DISABLED = "hazelcast.affinity.lib.disabled";
     private static final TpcLogger LOGGER = TpcLoggerLocator.getLogger(ThreadAffinityHelper.class);
@@ -101,6 +102,7 @@ public final class ThreadAffinityHelper {
 
     private static native void setAffinity0(BitSet cpuMask);
 
+    @SuppressWarnings({"java:S5443", "java:S112"})
     private static String extractBundledLib() {
         InputStream src = null;
         try {
@@ -108,14 +110,11 @@ public final class ThreadAffinityHelper {
             File dest = File.createTempFile("hazelcast-libaffinity-helper-", ".so");
             Files.copy(src, dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
             return dest.getAbsolutePath();
-        } catch (Throwable t) {
-            if (t instanceof Error) {
-                throw (Error) t;
-            } else if (t instanceof RuntimeException) {
-                throw (RuntimeException) t;
-            } else {
-                throw new RuntimeException(t);
-            }
+
+        } catch (Error | RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         } finally {
             closeQuietly(src);
         }
@@ -127,7 +126,7 @@ public final class ThreadAffinityHelper {
         boolean libDisabled = false;
         String libDisabledString = System.getProperty(AFFINITY_LIB_DISABLED);
         if (libDisabledString != null) {
-            libDisabled = libDisabledString.toLowerCase().equals("true");
+            libDisabled = libDisabledString.equalsIgnoreCase("true");
         }
 
         if (!libDisabled && OS.isLinux() && !JVM.is32bit()) {

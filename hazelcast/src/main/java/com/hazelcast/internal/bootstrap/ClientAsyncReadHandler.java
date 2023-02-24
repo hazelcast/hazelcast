@@ -54,7 +54,6 @@ public class ClientAsyncReadHandler extends ReadHandler {
             }
 
             ClientMessage message = clientMessageReader.getClientMessage();
-            //System.out.println("TPC server: read message " + message);
 
             clientMessageReader.reset();
 

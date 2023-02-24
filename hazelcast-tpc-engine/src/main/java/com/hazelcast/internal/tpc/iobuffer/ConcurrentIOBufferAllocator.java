@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * It also allows the {@link #allocate()} of a {@link IOBuffer} to be done by a different
  * thread than {@link #free(IOBuffer)}.
  */
-@SuppressWarnings("checkstyle:MagicNumber")
+@SuppressWarnings({"checkstyle:MagicNumber", "java:S1068", "java:S125", "java:S112"})
 public class ConcurrentIOBufferAllocator implements IOBufferAllocator {
 
     // this is for debugging. We do not want to track these calls normally
@@ -38,6 +38,7 @@ public class ConcurrentIOBufferAllocator implements IOBufferAllocator {
     private static final AtomicLong ALLOCATE_CALLS = new AtomicLong();
     private static final AtomicLong RELEASE_CALLS = new AtomicLong();
 
+    @SuppressWarnings("java:S5164")
     private static final ThreadLocal<Pool> POOL = new ThreadLocal<>();
 
     private final MpmcArrayQueue<IOBuffer> queue = new MpmcArrayQueue<>(4096);
@@ -68,6 +69,7 @@ public class ConcurrentIOBufferAllocator implements IOBufferAllocator {
         return buf;
     }
 
+    @SuppressWarnings("java:S3776")
     @Override
     public IOBuffer allocate() {
         Pool pool = POOL.get();

@@ -18,6 +18,7 @@ package com.hazelcast.internal.tpc;
 
 import com.hazelcast.internal.tpc.util.ProgressIndicator;
 
+import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketAddress;
 import java.util.function.Consumer;
@@ -52,14 +53,12 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
     public final SocketAddress getLocalAddress() {
         try {
             return getLocalAddress0();
-        } catch (Error e) {
-            throw e;
         } catch (Exception e) {
             return null;
         }
     }
 
-    protected abstract SocketAddress getLocalAddress0() throws Exception;
+    protected abstract SocketAddress getLocalAddress0() throws IOException;
 
     /**
      * Gets the {@link Reactor} this ServerSocket belongs to.

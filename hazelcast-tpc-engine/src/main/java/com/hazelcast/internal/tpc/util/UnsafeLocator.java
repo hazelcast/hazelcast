@@ -20,6 +20,7 @@ import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
 
+@SuppressWarnings({"java:S112", "java:S3011"})
 public final class UnsafeLocator {
 
     public static final Unsafe UNSAFE;

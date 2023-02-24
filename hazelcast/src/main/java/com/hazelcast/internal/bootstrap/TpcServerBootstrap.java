@@ -25,7 +25,6 @@ import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.tpc.AsyncServerSocket;
 import com.hazelcast.internal.tpc.AsyncSocket;
 import com.hazelcast.internal.tpc.Configuration;
@@ -67,14 +66,11 @@ public class TpcServerBootstrap {
     public static final HazelcastProperty ALTO_EVENTLOOP_COUNT = new HazelcastProperty(
             "hazelcast.internal.alto.eventloop.count");
     private static final int TERMINATE_TIMEOUT_SECONDS = 5;
-
-    // todo: nothing is done with this.
-    private volatile boolean shutdown;
     private final NodeEngineImpl nodeEngine;
-    private final InternalSerializationService ss;
     private final ILogger logger;
     private final Address thisAddress;
     private TpcEngine tpcEngine;
+    @SuppressWarnings("java:S1170")
     private final boolean tcpNoDelay = true;
     private final boolean enabled;
     private final Map<Reactor, Supplier<? extends ReadHandler>> readHandlerSuppliers = new HashMap<>();
@@ -85,22 +81,21 @@ public class TpcServerBootstrap {
     public TpcServerBootstrap(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(TpcServerBootstrap.class);
-        this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
         this.config = nodeEngine.getConfig();
         this.enabled = loadAltoEnabled();
         this.thisAddress = nodeEngine.getThisAddress();
     }
 
     private boolean loadAltoEnabled() {
-        boolean enabled;
+        boolean enabled0;
         String enabledString = nodeEngine.getProperties().getString(ALTO_ENABLED);
         if (enabledString != null) {
-            enabled = Boolean.parseBoolean(enabledString);
+            enabled0 = Boolean.parseBoolean(enabledString);
         } else {
-            enabled = config.getAltoConfig().isEnabled();
+            enabled0 = config.getAltoConfig().isEnabled();
         }
-        logger.info("TPC: " + (enabled ? "enabled" : "disabled"));
-        return enabled;
+        logger.info("TPC: " + (enabled0 ? "enabled" : "disabled"));
+        return enabled0;
     }
 
     public boolean isEnabled() {
@@ -284,7 +279,6 @@ public class TpcServerBootstrap {
 
         logger.info("TcpBootstrap shutdown");
 
-        shutdown = true;
         tpcEngine.shutdown();
 
         try {

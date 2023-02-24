@@ -37,6 +37,7 @@ public final class NonConcurrentIOBufferAllocator implements IOBufferAllocator {
         this.direct = direct;
     }
 
+    @SuppressWarnings("java:S125")
     @Override
     public IOBuffer allocate() {
         allocateCnt++;

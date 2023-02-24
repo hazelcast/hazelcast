@@ -57,6 +57,7 @@ public final class CloseUtil {
      *
      * @param closeable the AutoClosable to close.
      */
+    @SuppressWarnings("java:S108")
     public static void closeQuietly(AutoCloseable closeable) {
         if (closeable == null) {
             return;

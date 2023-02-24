@@ -74,6 +74,8 @@ public abstract class Reactor implements Executor {
     private final CountDownLatch terminationLatch = new CountDownLatch(1);
     private final CountDownLatch startLatch = new CountDownLatch(1);
     private final Scheduler scheduler;
+
+    @SuppressWarnings("java:S1845")
     protected volatile State state = NEW;
 
     /**
@@ -216,9 +218,9 @@ public abstract class Reactor implements Executor {
     public abstract AsyncServerSocketBuilder newAsyncServerSocketBuilder();
 
     protected void verifyRunning() {
-        State state = this.state;
-        if (RUNNING != state) {
-            throw new IllegalStateException("Reactor not in RUNNING state, but " + state);
+        State state0 = state;
+        if (RUNNING != state0) {
+            throw new IllegalStateException("Reactor not in RUNNING state, but " + state0);
         }
     }
 
@@ -279,7 +281,10 @@ public abstract class Reactor implements Executor {
      * @throws InterruptedException if the thread was interrupted while waiting.
      */
     public final boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-        terminationLatch.await(timeout, unit);
+        if (!terminationLatch.await(timeout, unit)) {
+            logger.warning("Termination latch timed out.");
+        }
+
         return state == TERMINATED;
     }
 
@@ -358,23 +363,24 @@ public abstract class Reactor implements Executor {
             this.builder = builder;
         }
 
+        @SuppressWarnings({"java:S1181", "java:S1141"})
         @Override
         public void run() {
             try {
                 try {
                     configureThreadAffinity();
-                    Eventloop eventloop = newEventloop(builder);
-                    future.complete(eventloop);
+                    Eventloop eventloop0 = newEventloop(builder);
+                    future.complete(eventloop0);
 
                     startLatch.await();
                     try {
                         // it could be that the thread wakes up due to termination. So we need
                         // to check the state first before running.
                         if (state == RUNNING) {
-                            eventloop.run();
+                            eventloop0.run();
                         }
                     } finally {
-                        eventloop.destroy();
+                        eventloop0.destroy();
                     }
                 } catch (Throwable e) {
                     future.completeExceptionally(e);

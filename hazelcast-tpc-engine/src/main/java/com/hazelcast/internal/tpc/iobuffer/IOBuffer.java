@@ -54,18 +54,18 @@ import static com.hazelcast.internal.tpc.util.BufferUtil.upcast;
  * E.g. in case of the buffer pool (application specific page cache) we just want to take a pointer to
  * some memory in the bufferpool and pass it to the IOBuffer for reading/writing that page to disk.
  */
-@SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:MethodCount"})
+@SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:MethodCount", "java:S1149", "java:S1135"})
 public class IOBuffer {
 
-    public IOBuffer next;
-    public AsyncSocket socket;
+    IOBuffer next;
+    AsyncSocket socket;
 
-    public boolean trackRelease;
-    public IOBufferAllocator allocator;
-    public boolean concurrent;
+    boolean trackRelease;
+    IOBufferAllocator allocator;
+    boolean concurrent;
 
     // make field?
-    protected AtomicInteger refCount = new AtomicInteger();
+    AtomicInteger refCount = new AtomicInteger();
 
     private ByteBuffer buff;
 
@@ -282,7 +282,7 @@ public class IOBuffer {
         return refCount.get();
     }
 
-    @SuppressWarnings("checkstyle:NestedIfDepth")
+    @SuppressWarnings({"checkstyle:NestedIfDepth", "java:S3776"})
     public void release() {
         if (allocator == null) {
             return;

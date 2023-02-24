@@ -24,6 +24,7 @@ public final class UnpooledIOBufferAllocator implements IOBufferAllocator {
     public UnpooledIOBufferAllocator() {
     }
 
+    @SuppressWarnings("java:S112")
     @Override
     public IOBuffer allocate() {
         throw new RuntimeException();

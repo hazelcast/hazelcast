@@ -74,6 +74,7 @@ public final class OS {
      *
      * @return true if x86-64, false otherwise.
      */
+    @SuppressWarnings("java:S100")
     public static boolean isX86_64() {
         return IS_X86_64;
     }

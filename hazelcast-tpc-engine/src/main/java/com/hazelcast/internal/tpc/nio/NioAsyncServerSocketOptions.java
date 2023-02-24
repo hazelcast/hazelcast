@@ -28,9 +28,6 @@ import java.net.StandardSocketOptions;
 import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.internal.tpc.AsyncSocketOptions.SO_RCVBUF;
-import static com.hazelcast.internal.tpc.AsyncSocketOptions.SO_REUSEADDR;
-import static com.hazelcast.internal.tpc.AsyncSocketOptions.SO_REUSEPORT;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpc.util.ReflectionUtil.findStaticFieldValue;
 
