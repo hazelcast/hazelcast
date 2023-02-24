@@ -19,7 +19,7 @@ package com.hazelcast.internal.partition;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.Iterator;
-import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 
 /**
  * An iterator over collection of {@link Operation} which has
@@ -34,7 +34,7 @@ public interface ChunkSupplier extends Iterator<Operation> {
     /**
      * @param isEndOfChunk boolean supplier to signal end of chunk.
      */
-    default void signalEndOfChunkWith(BooleanSupplier isEndOfChunk) {
+    default void signalEndOfChunkWith(Predicate isEndOfChunk) {
 
     }
 }

@@ -22,7 +22,7 @@ import com.hazelcast.map.impl.operation.MapChunk;
 import com.hazelcast.map.impl.operation.MapChunkContext;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 
 /**
  * Once instance created per record-store during migration.
@@ -31,7 +31,7 @@ class MapChunkSupplier implements ChunkSupplier {
 
     protected final MapChunkContext context;
 
-    protected BooleanSupplier isEndOfChunk;
+    protected Predicate isEndOfChunk;
 
     private final int partitionId;
     private final int replicaIndex;
@@ -60,7 +60,7 @@ class MapChunkSupplier implements ChunkSupplier {
     }
 
     @Override
-    public final void signalEndOfChunkWith(BooleanSupplier isEndOfChunk) {
+    public final void signalEndOfChunkWith(Predicate isEndOfChunk) {
         this.isEndOfChunk = isEndOfChunk;
     }
 
