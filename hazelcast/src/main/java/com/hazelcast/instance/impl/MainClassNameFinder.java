@@ -82,7 +82,7 @@ class MainClassNameFinder {
             if (calledByMember) {
                 LOGGER.info(message);
             } else {
-                System.err.print(message);
+                System.err.print(message); //NOSONAR
             }
         }
     }
