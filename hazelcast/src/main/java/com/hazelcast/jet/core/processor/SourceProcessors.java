@@ -18,9 +18,7 @@ package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datalink.DataLinkFactory;
-import com.hazelcast.datalink.JdbcDataLinkFactory;
+import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.ConsumerEx;
@@ -458,19 +456,18 @@ public final class SourceProcessors {
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return ReadJdbcP.supplier(context -> getDataLinkFactory(context, dataLinkRef.getName()).getDataLink(),
+        return ReadJdbcP.supplier(context -> {
+                    try (JdbcDataLink dataLink = getDataLink(context, dataLinkRef.getName())) {
+                        return dataLink.getDataSource();
+                    }
+                },
                 resultSetFn,
                 mapOutputFn);
     }
 
-    private static JdbcDataLinkFactory getDataLinkFactory(ProcessorSupplier.Context context, String name) {
+    private static JdbcDataLink getDataLink(ProcessorSupplier.Context context, String name) {
         NodeEngineImpl nodeEngine = Util.getNodeEngine(context.hazelcastInstance());
-        DataLinkFactory<?> dataLinkFactory = nodeEngine.getDataLinkService().getDataLinkFactory(name);
-        if (!(dataLinkFactory instanceof JdbcDataLinkFactory)) {
-            String className = JdbcDataLinkFactory.class.getSimpleName();
-            throw new HazelcastException("Data link factory '" + name + "' must be an instance of " + className);
-        }
-        return (JdbcDataLinkFactory) dataLinkFactory;
+        return nodeEngine.getDataLinkService().getDataLink(name, JdbcDataLink.class);
     }
 
     /**

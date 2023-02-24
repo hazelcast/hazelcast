@@ -25,6 +25,7 @@ import com.hazelcast.internal.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.internal.util.Timer;
@@ -154,7 +155,8 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                 }
             };
             for (Map.Entry<Address, List<Integer>> entry : memberPartitionsMap.entrySet()) {
-                invokePutAllOperation(entry.getKey(), entry.getValue(), entriesPerPartition).whenCompleteAsync(callback);
+                invokePutAllOperation(entry.getKey(), entry.getValue(), entriesPerPartition)
+                        .whenCompleteAsync(callback, ConcurrencyUtil.getDefaultAsyncExecutor());
             }
             // if executing in sync mode, block for the responses
             if (future == null) {

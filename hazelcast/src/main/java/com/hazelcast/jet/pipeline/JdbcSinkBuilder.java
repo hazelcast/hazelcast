@@ -199,7 +199,7 @@ public class JdbcSinkBuilder<T> {
      *      properties.put("password", password);
      *      DataLinkConfig dataLinkConfig = new DataLinkConfig()
      *              .setName("my-jdbc-data-link")
-     *              .setClassName(JdbcDataLinkFactory.class.getName())
+     *              .setClassName(JdbcDataLink.class.getName())
      *              .setProperties(properties);
      *      config.getDataLinkConfigs().put(name, dataLinkConfig);
      * }</pre>

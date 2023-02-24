@@ -16,6 +16,11 @@
 
 package com.hazelcast.jet.impl.jobupload;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
@@ -24,6 +29,8 @@ import java.util.UUID;
  * The wrapper for all parameters to run an uploaded jar as Jet job
  */
 public class JobMetaDataParameterObject {
+
+    private static final ILogger LOGGER = Logger.getLogger(JobMetaDataParameterObject.class);
 
     private UUID sessionId;
 
@@ -39,6 +46,9 @@ public class JobMetaDataParameterObject {
     private List<String> jobParameters;
 
     private Path jarPath;
+
+    // Indicates if the jar should be deleted after the job execution
+    private boolean deleteJarAfterExecution;
 
     public UUID getSessionId() {
         return sessionId;
@@ -102,5 +112,35 @@ public class JobMetaDataParameterObject {
 
     public void setJarPath(Path jarPath) {
         this.jarPath = jarPath;
+    }
+
+    public void setDeleteJarAfterExecution(boolean deleteJarAfterExecution) {
+        this.deleteJarAfterExecution = deleteJarAfterExecution;
+    }
+
+    public void afterExecution() {
+        if (deleteJarAfterExecution) {
+            deleteJar();
+        }
+    }
+
+    private void deleteJar() {
+        try {
+            Files.delete(jarPath);
+        } catch (IOException exception) {
+            LOGGER.severe("Could not delete the jar : " + jarPath, exception);
+        }
+    }
+
+    // Not all parameters need to be exposed
+    // Convert only parameters that should be with an exception
+    public String exceptionString() {
+        return "SubmittedParameters{" +
+               "fileName='" + fileName + '\'' +
+               ", snapshotName='" + snapshotName + '\'' +
+               ", jobName='" + jobName + '\'' +
+               ", mainClass='" + mainClass + '\'' +
+               ", jobParameters=" + jobParameters +
+               '}';
     }
 }

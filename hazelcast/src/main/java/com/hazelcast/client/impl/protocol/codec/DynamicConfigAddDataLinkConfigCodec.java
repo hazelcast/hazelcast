@@ -60,7 +60,7 @@ public final class DynamicConfigAddDataLinkConfigCodec {
         public java.lang.String name;
 
         /**
-         * Name for the DataLinkFactory implementation class.
+         * Name for the DataLink implementation class.
          */
         public java.lang.String className;
 

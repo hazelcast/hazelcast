@@ -58,8 +58,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.impl.connector.DataLinkTestUtil.configureDummyDataLink;
-import static com.hazelcast.jet.impl.connector.DataLinkTestUtil.configureJdbcDataLink;
+import static com.hazelcast.datalink.impl.DataLinkTestUtil.configureDummyDataLink;
+import static com.hazelcast.datalink.impl.DataLinkTestUtil.configureJdbcDataLink;
 import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;

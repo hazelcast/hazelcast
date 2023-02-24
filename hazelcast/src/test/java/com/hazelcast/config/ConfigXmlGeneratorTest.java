@@ -1470,7 +1470,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         properties.put("jdbcUrl", "jdbc:h2:mem:" + DataLinkServiceImplTest.class.getSimpleName());
         DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName("test-data-link")
-                .setClassName("com.hazelcast.dtalink.JdbcDataLinkFactory")
+                .setClassName("com.hazelcast.dtalink.JdbcDataLink")
                 .setProperties(properties);
 
         expectedConfig.addDataLinkConfig(dataLinkConfig);

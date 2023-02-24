@@ -27,6 +27,7 @@ import com.hazelcast.internal.util.iterator.RestartingMemberIterator;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -242,7 +243,7 @@ public final class InvocationUtil {
                     } else {
                         future.completeExceptionally(t);
                     }
-                });
+                }, nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR));
             }
         }
     }

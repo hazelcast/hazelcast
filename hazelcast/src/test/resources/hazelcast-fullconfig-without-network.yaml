@@ -1017,7 +1017,7 @@ hazelcast:
 
   data-link:
     mysql-database:
-      class-name: com.hazelcast.datalink.JdbcDataLinkFactory
+      class-name: com.hazelcast.datalink.JdbcDataLink
       properties:
         jdbcUrl: jdbc:mysql://dummy:3306
       shared: false

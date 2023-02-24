@@ -30,7 +30,6 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.rex.RexInputRef;
-import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -269,8 +268,8 @@ public interface SqlConnector {
     @Nonnull
     default Vertex fullScanReader(
             @Nonnull DagBuildContext context,
-            @Nullable RexNode predicate,
-            @Nonnull List<RexNode> projection,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         throw new UnsupportedOperationException("Full scan not supported for " + typeName());
@@ -320,8 +319,8 @@ public interface SqlConnector {
     @Nonnull
     default VertexWithInputConfig nestedLoopReader(
             @Nonnull DagBuildContext context,
-            @Nullable RexNode predicate,
-            @Nonnull List<RexNode> projection,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
             @Nonnull JetJoinInfo joinInfo
     ) {
         throw new UnsupportedOperationException("Nested-loop join not supported for " + typeName());
@@ -330,7 +329,7 @@ public interface SqlConnector {
     default boolean isNestedLoopReaderSupported() {
         try {
             // nestedLoopReader() is supported, if the class overrides the default method in this class
-            Method m = getClass().getMethod("nestedLoopReader", DagBuildContext.class, RexNode.class, List.class,
+            Method m = getClass().getMethod("nestedLoopReader", DagBuildContext.class, HazelcastRexNode.class, List.class,
                     JetJoinInfo.class);
             return m.getDeclaringClass() != SqlConnector.class;
         } catch (NoSuchMethodException e) {
@@ -363,7 +362,7 @@ public interface SqlConnector {
     default Vertex updateProcessor(
             @Nonnull DagBuildContext context,
             @Nonnull List<String> fieldNames,
-            @Nonnull List<RexNode> expressions
+            @Nonnull List<HazelcastRexNode> expressions
     ) {
         throw new UnsupportedOperationException("UPDATE not supported for " + typeName());
     }
@@ -413,7 +412,7 @@ public interface SqlConnector {
         Table getTable();
 
         /**
-         * Converts a boolean RexNode. When evaluating a {@link RexInputRef},
+         * Converts a boolean {@link HazelcastRexNode}. When evaluating a {@link RexInputRef},
          * this context is assumed:<ul>
          *     <li>If a table is set (see {@link #getTable()}), then it's assumed that it's that table's fields
          *     <li>If it's a single-input rel, then it's then input
@@ -421,14 +420,14 @@ public interface SqlConnector {
          * </ul>
          */
         @Nullable
-        Expression<Boolean> convertFilter(@Nullable RexNode node);
+        Expression<Boolean> convertFilter(@Nullable HazelcastRexNode node);
 
         /**
-         * Converts a list of RexNodes. See also {@link #convertFilter(RexNode)}
+         * Converts a list of {@link HazelcastRexNode}. See also {@link #convertFilter(HazelcastRexNode)}
          * for information about {@link RexInputRef} conversion.
          */
         @Nonnull
-        List<Expression<?>> convertProjection(@Nonnull List<RexNode> nodes);
+        List<Expression<?>> convertProjection(@Nonnull List<HazelcastRexNode> nodes);
     }
 
     /**
