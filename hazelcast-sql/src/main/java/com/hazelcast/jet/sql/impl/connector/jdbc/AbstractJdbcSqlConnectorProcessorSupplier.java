@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.datalink.DataLinkService;
 import com.hazelcast.datalink.JdbcDataLink;
-import com.hazelcast.datalink.impl.CloseableDataSource;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.jet.core.ProcessorSupplier;
 

@@ -89,8 +89,10 @@ public class JdbcDataLink implements DataLink {
         return new DataSourceFromConnectionSupplier(
                 () -> {
                     try {
-                        // TODO pass other properties
-                        return DriverManager.getConnection(jdbcUrl);
+                        Properties connectionProps = new Properties();
+                        properties.entrySet().stream().filter(e -> !"jdbcUrl".equals(e.getKey()))
+                                  .forEach(e -> connectionProps.put(e.getKey(), e.getValue()));
+                        return DriverManager.getConnection(jdbcUrl, connectionProps);
                     } catch (SQLException e) {
                         throw new HazelcastException("Could not create a new connection", e);
                     }
