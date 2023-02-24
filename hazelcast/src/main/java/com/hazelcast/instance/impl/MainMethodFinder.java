@@ -46,13 +46,9 @@ class MainMethodFinder {
         }
     }
 
-    public Result findMainMethod(ClassLoader classLoader, String mainClassName) {
-        try {
-            Class<?> clazz = classLoader.loadClass(mainClassName);
-            getMainMethodOfClass(clazz);
-        } catch (ClassNotFoundException e) {
-            result.errorMessage = "Cannot find or load main class: " + mainClassName;
-        }
+    public Result findMainMethod(ClassLoader classLoader, String mainClassName) throws ClassNotFoundException {
+        Class<?> clazz = classLoader.loadClass(mainClassName);
+        getMainMethodOfClass(clazz);
         return result;
     }
 

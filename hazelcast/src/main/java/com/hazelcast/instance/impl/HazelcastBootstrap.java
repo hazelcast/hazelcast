@@ -199,7 +199,8 @@ public final class HazelcastBootstrap {
         return mainClassNameFinder.getMainClassName();
     }
 
-    static Method findMainMethodForJar(ClassLoader classLoader, String mainClassName, boolean calledByMember) {
+    static Method findMainMethodForJar(ClassLoader classLoader, String mainClassName, boolean calledByMember)
+            throws ClassNotFoundException {
         MainMethodFinder mainMethodFinder = new MainMethodFinder();
         MainMethodFinder.Result result = mainMethodFinder.findMainMethod(classLoader, mainClassName);
 
