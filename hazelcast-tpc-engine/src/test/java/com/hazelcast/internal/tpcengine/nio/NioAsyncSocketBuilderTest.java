@@ -84,10 +84,10 @@ public class NioAsyncSocketBuilderTest extends AsyncSocketBuilderTest {
         Reactor reactor = newReactor();
         NioAsyncSocketBuilder builder = (NioAsyncSocketBuilder) reactor.newAsyncSocketBuilder();
 
-        builder.setReceiveBufferIsDirect(false);
-        assertFalse(builder.receiveBufferIsDirect);
+        builder.setDirectBuffers(false);
+        assertFalse(builder.directBuffers);
 
-        builder.setReceiveBufferIsDirect(true);
-        assertTrue(builder.receiveBufferIsDirect);
+        builder.setDirectBuffers(true);
+        assertTrue(builder.directBuffers);
     }
 }

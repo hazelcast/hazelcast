@@ -11,6 +11,7 @@ import org.jctools.queues.MpmcArrayQueue;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSession;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -20,7 +21,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
@@ -33,6 +33,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static java.nio.channels.SelectionKey.OP_CONNECT;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
+import static javax.net.ssl.SSLEngineResult.HandshakeStatus.FINISHED;
 
 
 /**
@@ -82,6 +83,9 @@ public class TLSNioAsyncSocket extends AsyncSocket {
             this.handler = new Handler(builder);
             this.key = socketChannel.register(reactor.selector, 0, handler);
             this.reader = builder.reader;
+            // There is no need for the socket to be scheduled on startup because the
+            // Handshake is already executing. Only when the handshake is done, the
+            // flushthread will be unset.
             this.flushThread.set(eventloopThread);
             reader.init(this);
         } catch (IOException e) {
@@ -182,7 +186,7 @@ public class TLSNioAsyncSocket extends AsyncSocket {
             key.interestOps(key.interestOps() | OP_READ);
 
             // we immediately need to schedule the handler so that the TLS handshake can start
-            localTaskQueue.add(handler);
+            handler.run();
         }
     }
 
@@ -305,21 +309,42 @@ public class TLSNioAsyncSocket extends AsyncSocket {
     }
 
     private class Handler implements NioHandler, Runnable {
-        final ByteBuffer receiveBuffer;
-        final ByteBuffer sendBuffer;
+        private final ByteBuffer receiveBuffer;
+        private final ByteBuffer sendBuffer;
         private final SSLEngine sslEngine;
+        private final boolean directBuffers;
+        private SSLSession sslSession;
         private final ByteBuffer appBuffer;
         private final ByteBuffer emptyBuffer = ByteBuffer.allocate(0);
         private boolean handshakeComplete;
+        private IOBuffer current;
 
         private Handler(NioAsyncSocketBuilder builder) throws SocketException {
-            int receiveBufferSize = builder.socketChannel.socket().getReceiveBufferSize();
-            this.receiveBuffer = builder.receiveBufferIsDirect
-                    ? ByteBuffer.allocateDirect(receiveBufferSize)
-                    : ByteBuffer.allocate(receiveBufferSize);
+            this.directBuffers = builder.directBuffers;
+
+            //todo: we need to pass the correct address.
             this.sslEngine = builder.sslEngineFactory.create(clientSide, null);
-            this.appBuffer = ByteBuffer.allocate(64 * 1024);
-            this.sendBuffer = ByteBuffer.allocate(64 * 1024);
+
+            int bufSize = 1024 * 1024;
+//            int receiveBufferSize = builder.socketChannel.socket().getReceiveBufferSize();
+//            if(receiveBufferSize<bufSize){
+//                receiveBufferSize = bufSize;
+//            }
+            this.receiveBuffer = directBuffers
+                    ? ByteBuffer.allocateDirect(bufSize)
+                    : ByteBuffer.allocate(bufSize);
+            this.appBuffer = directBuffers
+                    ? ByteBuffer.allocateDirect(bufSize)
+                    : ByteBuffer.allocate(bufSize);
+
+//            int sendBufferSize = builder.socketChannel.socket().getSendBufferSize();
+//            if(sendBufferSize<bufSize){
+//                sendBufferSize = bufSize;
+//            }
+
+            this.sendBuffer = directBuffers
+                    ? ByteBuffer.allocateDirect(bufSize)
+                    : ByteBuffer.allocate(bufSize);
 
             try {
                 sslEngine.beginHandshake();
@@ -371,52 +396,66 @@ public class TLSNioAsyncSocket extends AsyncSocket {
         }
 
         private void handleRead() throws IOException {
-            System.out.println(TLSNioAsyncSocket.this + " handleRead " + BufferUtil.toDebugString("receiveBuffer", receiveBuffer));
+            System.out.println(TLSNioAsyncSocket.this + " handleRead");
             metrics.incReadEvents();
 
-            if (handshakeComplete) {
-                metrics.incReadEvents();
+            if (!handshakeComplete && !handshake()) {
+                return;
+            }
 
-                int read = socketChannel.read(receiveBuffer);
-//                System.out.println(TLSNioAsyncSocket.this + " bytes read: " + read);
+            int read = socketChannel.read(receiveBuffer);
+            System.out.println(TLSNioAsyncSocket.this + " bytes read: " + read);
 
-                if (read == -1) {
-                    throw new EOFException("Remote socket closed!");
-                }
+            if (read == -1) {
+                throw new EOFException("Remote socket closed!");
+            }
 
-                metrics.incBytesRead(read);
-                upcast(receiveBuffer).flip();
+            metrics.incBytesRead(read);
+            upcast(receiveBuffer).flip();
 
+            boolean unwrapMore = true;
+            do {
                 SSLEngineResult unwrapResult = sslEngine.unwrap(receiveBuffer, appBuffer);
-                compactOrClear(receiveBuffer);
-                appBuffer.flip();
 
-                System.out.println(TLSNioAsyncSocket.this + " handleRead: unwrapStatus " + unwrapResult);
-                System.out.println(TLSNioAsyncSocket.this + " scheduled: " + (flushThread.get() != null));
+                System.out.println(TLSNioAsyncSocket.this + " handleRead: unwrapResult " + unwrapResult.toString().replace("\n", " "));
 
                 switch (unwrapResult.getStatus()) {
                     case OK:
-                        reader.onRead(appBuffer);
-                        compactOrClear(appBuffer);
+                        if (!receiveBuffer.hasRemaining()) {
+                            // no point in asking for another unwrap if there is no more data to unwrap.
+                            unwrapMore = false;
+                        }
                         break;
                     case CLOSED:
-                        throw new RuntimeException();
+                        throw new EOFException("Socket closed!");
                     case BUFFER_OVERFLOW:
-                        System.out.println(TLSNioAsyncSocket.this + " handleRead appBuffer " + BufferUtil.toDebugString(appBuffer));
-                        throw new RuntimeException();
+                        if (appBuffer.capacity() >= sslSession.getApplicationBufferSize()) {
+                            // we accumulated too much data into the appBuffer. So lets drain that to the read handler
+                            // and go for another round of unwrapping
+                            appBuffer.flip();
+                            reader.onRead(appBuffer);
+                            compactOrClear(appBuffer);
+                        } else {
+                            //todo: we need to grow the appBuffer and try again
+                            throw new RuntimeException();
+                        }
                     case BUFFER_UNDERFLOW:
-                        // not enough data available.
-                        compactOrClear(appBuffer);
+                        // not enough data available to decode, so wait for more data.
+                        //compactOrClear(appBuffer);
+                        System.out.println(TLSNioAsyncSocket.this + " receiveBuffer " + BufferUtil.toDebugString(receiveBuffer));
+                        System.out.println(TLSNioAsyncSocket.this + " appBuffer " + BufferUtil.toDebugString(appBuffer));
+                        unwrapMore = false;
                         break;
                     default:
                         throw new IllegalStateException("Unknown unwrapResult:" + unwrapResult);
                 }
-            } else {
-                doHandshake();
-                if (handshakeComplete) {
-                    handleRead();
-                }
-            }
+            } while (unwrapMore);
+
+            appBuffer.flip();
+            reader.onRead(appBuffer);
+            compactOrClear(appBuffer);
+
+            compactOrClear(receiveBuffer);
         }
 
         public void handleWrite() throws IOException {
@@ -427,165 +466,164 @@ public class TLSNioAsyncSocket extends AsyncSocket {
 
             metrics.incWriteEvents();
 
-            if (!handshakeComplete) {
-                doHandshake();
-                if (handshakeComplete) {
-                    handleWrite();
-                }
-            } else {
-                assert flushThread.get() != null;
+            if (!handshakeComplete && !handshake()) {
+                return;
+            }
 
-                System.out.println(this + " ------------------------------- handle normal write");
+            if (current == null) {
+                current = writeQueue.poll();
+            }
 
-                boolean stop = false;
-                while (!stop) {
-                    IOBuffer buffer = writeQueue.poll();
-                    if (buffer == null) {
+            //todo: use wrapMore variable
+            boolean bufferOverflow = false;
+            while (current != null && !bufferOverflow) {
+                SSLEngineResult wrapResult = sslEngine.wrap(current.byteBuffer(), sendBuffer);
+                System.out.println(TLSNioAsyncSocket.this + " handleWrite: wrapResult " + wrapResult.toString().replace("\n", " "));
+                switch (wrapResult.getStatus()) {
+                    case OK:
+                        System.out.println(TLSNioAsyncSocket.this + " current:" + BufferUtil.toDebugString(current.byteBuffer()));
+                        System.out.println(TLSNioAsyncSocket.this + " sendBuffer:" + BufferUtil.toDebugString(sendBuffer));
+                        if (!current.byteBuffer().hasRemaining()) {
+                            current.release();
+                            current = writeQueue.poll();
+                            if (current == null) {
+                                System.out.println(TLSNioAsyncSocket.this + " no more buffers found");
+                            } else {
+                                System.out.println(TLSNioAsyncSocket.this + " another buffer found");
+                            }
+                        } else {
+                            System.out.println(TLSNioAsyncSocket.this + " more wrapping on same buffer");
+                        }
                         break;
-                    }
+                    case CLOSED:
+                        current.release();
+                        throw new EOFException("Remote socket closed!");
+                    case BUFFER_OVERFLOW:
+                        // there is not enough space in the sendBuffer, so lets submit what is there
+                        // todo: what if the capacity of the buffer isn't sufficient?
+                        bufferOverflow = true;
+                        break;
+                    case BUFFER_UNDERFLOW:
+                        // can this happen?
+                        throw new RuntimeException();
+                    default:
+                        throw new IllegalStateException("Unknown wrapResult:" + wrapResult);
+                }
+            }
 
-                    System.out.println("------------ writing user stuff");
-                    SSLEngineResult wrapStatus = sslEngine.wrap(buffer.byteBuffer(), sendBuffer);
-                    System.out.println(TLSNioAsyncSocket.this + " handleWrite: wrapStatus " + wrapStatus);
-                    switch (wrapStatus.getStatus()) {
-                        case OK:
-                            stop = true;
-                            break;
-                        case CLOSED:
-                            break;
-                        case BUFFER_OVERFLOW:
-                            break;
-                        case BUFFER_UNDERFLOW:
-                            break;
-                        default:
-                            throw new IllegalStateException("Unknown wrapStatus:" + wrapStatus);
-                    }
+            sendBuffer.flip();
+            long written = socketChannel.write(sendBuffer);
+            metrics.incBytesWritten(written);
+            compactOrClear(sendBuffer);
+
+            System.out.println(TLSNioAsyncSocket.this + " bytes written:" + written);
+
+            System.out.println(TLSNioAsyncSocket.this + " current " + current + " bufferOverflow:" + bufferOverflow+" writeQueue.size:"+ writeQueue.size());
+
+            if (current == null && !bufferOverflow) {
+                // everything got written
+                int interestOps = key.interestOps();
+
+                // clear the OP_WRITE flag if it was set
+                if ((interestOps & OP_WRITE) != 0) {
+                    key.interestOps(interestOps & ~OP_WRITE);
                 }
 
-                sendBuffer.flip();
-                long written = socketChannel.write(sendBuffer);
-                compactOrClear(sendBuffer);
-
-                metrics.incBytesWritten(written);
-//                System.out.println(TLSNioAsyncSocket.this + " bytes written:" + written);
-
-                if (true) {
-                    // everything got written
-                    int interestOps = key.interestOps();
-
-                    // clear the OP_WRITE flag if it was set
-                    if ((interestOps & OP_WRITE) != 0) {
-                        key.interestOps(interestOps & ~OP_WRITE);
-                    }
-
-                    resetFlushed();
-                } else {
-                    // We need to register for the OP_WRITE because not everything got written
-                    key.interestOps(key.interestOps() | OP_WRITE);
-                }
+                resetFlushed();
+            } else {
+                // We need to register for the OP_WRITE because not everything got written
+                key.interestOps(key.interestOps() | OP_WRITE);
             }
         }
 
-        private void doHandshake() throws IOException {
+        private boolean handshake() throws IOException {
             while (true) {
                 SSLEngineResult.HandshakeStatus handshakeStatus = sslEngine.getHandshakeStatus();
                 System.out.println(TLSNioAsyncSocket.this + " handshakeStatus " + handshakeStatus);
-//                try {
-//                    Thread.sleep(100);
-//                } catch (InterruptedException e) {
-//                    throw new RuntimeException(e);
-//                }
 
                 switch (handshakeStatus) {
-                    case FINISHED:
-                        throw new IllegalStateException("This result can never be returned by sslEngine.getHandhshake status; only through wrap/unwrap");
                     case NEED_TASK:
                         // todo: this is blocking, no good.
                         Runnable runnable = sslEngine.getDelegatedTask();
                         while (runnable != null) {
-                            System.out.println(TLSNioAsyncSocket.this + " handshakeStatus processing " + runnable);
+                            //System.out.println(TLSNioAsyncSocket.this + " handshakeStatus processing " + runnable);
                             runnable.run();
                             runnable = sslEngine.getDelegatedTask();
                         }
                         break;
-                    case NEED_WRAP: {
-                        System.out.println(BufferUtil.toDebugString(sendBuffer));
+                    case NEED_WRAP:
                         SSLEngineResult wrapResult = sslEngine.wrap(emptyBuffer, sendBuffer);
-
-                        System.out.println(TLSNioAsyncSocket.this + " handshake wrapResult " + wrapResult);
+                        //System.out.println(TLSNioAsyncSocket.this + " handshake wrapResult " + wrapResult);
                         switch (wrapResult.getStatus()) {
                             case BUFFER_UNDERFLOW:
                                 throw new RuntimeException("Buffer underflow");
                             case BUFFER_OVERFLOW:
                                 throw new RuntimeException("Buffer overflow");
                             case CLOSED:
-                                throw new RemoteException("Closed");
+                                throw new EOFException("Remote socket closed!");
                             case OK:
                                 sendBuffer.flip();
                                 long written = socketChannel.write(sendBuffer);
 
                                 metrics.incBytesWritten(written);
-                                System.out.println(TLSNioAsyncSocket.this + " handshakeStatus bytes written:" + written);
+                                //System.out.println(TLSNioAsyncSocket.this + " handshakeStatus bytes written:" + written);
                                 compactOrClear(sendBuffer);
 
-                                if (wrapResult.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED) {
+                                // todo: we need to deal with situation that not everything got written
+
+                                if (wrapResult.getHandshakeStatus() == FINISHED) {
                                     handshakeComplete = true;
+                                    sslSession = sslEngine.getSession();
                                     System.out.println(TLSNioAsyncSocket.this + " handshake complete!!");
                                     resetFlushed();
+                                    return true;
                                 }
 
-                                return;
+                                return false;
                             default:
                                 throw new RuntimeException("Unknown wrapResult:" + wrapResult);
                         }
-                    }
-                    case NEED_UNWRAP: {
-                        System.out.println(TLSNioAsyncSocket.this + " " + BufferUtil.toDebugString(receiveBuffer));
+                    case NEED_UNWRAP:
                         int read = socketChannel.read(receiveBuffer);
-                        System.out.println(TLSNioAsyncSocket.this + " handshake bytes read: " + read);
+                        //System.out.println(TLSNioAsyncSocket.this + " handshake bytes read: " + read);
 
                         if (read == -1) {
                             throw new EOFException("Remote socket closed!");
                         }
 
                         receiveBuffer.flip();
-                        if (receiveBuffer.remaining() == 0) {
-                            receiveBuffer.clear();
-                            System.out.println(TLSNioAsyncSocket.this + " handshake no data for NEED_UNWRAP");
-                            return;
-                        }
-
-                        SSLEngineResult wrapResult = sslEngine.unwrap(receiveBuffer, emptyBuffer);
+                        SSLEngineResult unwrapResult = sslEngine.unwrap(receiveBuffer, emptyBuffer);
 
                         compactOrClear(receiveBuffer);
-                        System.out.println(TLSNioAsyncSocket.this + " handshake wrapResult " + wrapResult);
+                        //System.out.println(TLSNioAsyncSocket.this + " handshake unwrapResult " + unwrapResult);
 
-                        switch (wrapResult.getStatus()) {
+                        switch (unwrapResult.getStatus()) {
                             case BUFFER_UNDERFLOW:
-                                //todo: we should do more reading at some point in the future.
-                                throw new RuntimeException("Buffer underflow");
+                                // not enough data is available to decode, so lets wait for more data.
+                                return false;
                             case BUFFER_OVERFLOW:
                                 throw new RuntimeException("Buffer overflow");
                             case CLOSED:
-                                throw new RemoteException("Closed");
+                                throw new RuntimeException("Closed");
                             case OK:
-                                if (wrapResult.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED) {
+                                if (unwrapResult.getHandshakeStatus() == FINISHED) {
                                     System.out.println(TLSNioAsyncSocket.this + "handshake complete!!");
                                     handshakeComplete = true;
+                                    sslSession = sslEngine.getSession();
                                     resetFlushed();
-                                    return;
+                                    return true;
                                 }
 
                                 break;
                             default:
-                                throw new RuntimeException("Unknown wrapResult:" + wrapResult);
+                                throw new RuntimeException("Unknown unwrapResult:" + unwrapResult);
                         }
                         break;
-                    }
                     case NOT_HANDSHAKING:
                         throw new IOException("Failed to complete the SSL/TLS handshake");
                     default:
-                        throw new IllegalStateException("Unknown handshakeStatus:" + handshakeStatus);
+                        // This also deals with FINISHED (which can only be returned on wrap/unwrap)
+                        throw new IllegalStateException("Illegal handshakeStatus:" + handshakeStatus);
                 }
             }
         }

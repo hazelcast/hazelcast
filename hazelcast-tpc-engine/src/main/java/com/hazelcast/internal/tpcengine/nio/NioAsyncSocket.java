@@ -279,7 +279,6 @@ public final class NioAsyncSocket extends AsyncSocket {
         }
     }
 
-    @SuppressWarnings({"java:S3398", "java:S1066"})
     private void resetFlushed() {
         flushThread.set(null);
 
@@ -348,12 +347,12 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     @SuppressWarnings("java:S125")
     private final class Handler implements NioHandler, Runnable {
-        private final ByteBuffer rcvBuffer;
+        private final ByteBuffer receiveBuffer;
         private final AsyncSocketMetrics metrics = NioAsyncSocket.this.metrics;
 
         private Handler(NioAsyncSocketBuilder builder) throws SocketException {
             int receiveBufferSize = builder.socketChannel.socket().getReceiveBufferSize();
-            this.rcvBuffer = builder.receiveBufferIsDirect
+            this.receiveBuffer = builder.directBuffers
                     ? ByteBuffer.allocateDirect(receiveBufferSize)
                     : ByteBuffer.allocate(receiveBufferSize);
         }
@@ -403,7 +402,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         private void handleRead() throws IOException {
             metrics.incReadEvents();
 
-            int read = socketChannel.read(rcvBuffer);
+            int read = socketChannel.read(receiveBuffer);
             //System.out.println(NioAsyncSocket.this + " bytes read: " + read);
 
             if (read == -1) {
@@ -411,9 +410,9 @@ public final class NioAsyncSocket extends AsyncSocket {
             }
 
             metrics.incBytesRead(read);
-            upcast(rcvBuffer).flip();
-            reader.onRead(rcvBuffer);
-            compactOrClear(rcvBuffer);
+            upcast(receiveBuffer).flip();
+            reader.onRead(receiveBuffer);
+            compactOrClear(receiveBuffer);
         }
 
         private void handleWrite() throws IOException {
