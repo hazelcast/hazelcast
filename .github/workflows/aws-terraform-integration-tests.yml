@@ -1,15 +1,19 @@
 name: aws-tests
 on:
   workflow_dispatch:
-  push:
+  pull_request_target:
+    types:
+      - labeled
     branches:
-      - master
+      - "master"
+      - "*.z"
     paths:
       - 'hazelcast/src/main/java/com/hazelcast/aws/**'
       - '.github/terraform/aws/**'
 
 jobs:
   build:
+    name: AWS Tests
     defaults:
       run:
         shell: bash
@@ -17,50 +21,81 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID:  ${{ secrets.AWS_ACCESS_KEY_ID }}
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'hazelcast'
-    strategy:
-      matrix:
-        java: [ '8' ]
-        architecture: [ 'x64' ]
-        distribution: [ 'adopt' ]
+    if: >-
+      github.repository_owner == 'hazelcast' && 
+      ( github.event_name == 'workflow_dispatch' || 
+        (github.event_name == 'pull_request_target' && 
+          github.event.action == 'labeled' && 
+          github.event.label.name == 'run-discovery-tests' 
+        )
+      )
     steps:
-      # SET UP JDK
       - name: Setup JDK
         uses: actions/setup-java@v2
         with:
-          java-version: ${{ matrix.java }}
-          architecture: ${{ matrix.architecture }}
-          distribution: ${{ matrix.distribution }}
+          java-version: 11
+          architecture: x64
+          distribution: adopt
 
-      - run: java -version
+      - name: Decide which ref to checkout
+        id: decide-ref
+        run: |
+          if [[ "${{github.event_name}}" == "pull_request_target" ]]; then
+            echo "ref=refs/pull/${{ github.event.pull_request.number }}/merge" >> $GITHUB_OUTPUT
+          else
+            echo "ref=${{github.ref}}" >> $GITHUB_OUTPUT
+          fi
 
-      # BUILD HAZELCAST AWS SNAPSHOT
-      - uses: actions/checkout@v3.3.0
+      - name: Checkout
+        uses: actions/checkout@v3.3.0
         with:
-          path: hazelcast
+          ref: ${{steps.decide-ref.outputs.ref}}
+
+      - name: Setup Local Maven Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
 
       - name: Build hazelcast jar
         run: |
-          cd hazelcast
-          mvn clean install -DskipTests -Dcheckstyle.skip
+          ./mvnw -T 4 -B -V -e clean package \
+          -Dfindbugs.skip \
+          -Dcheckstyle.skip \
+          -Dpmd.skip=true \
+          -Dspotbugs.skip \
+          -Denforcer.skip \
+          -Dmaven.javadoc.skip \
+          -DskipTests \
+          -Dlicense.skip=true \
+          -Drat.skip=true \
+          -Dspotless.check.skip=true \
+          -Dattribution.skip \
+          -Danimal.sniffer.skip=true \
+          -Dmaven.source.skip=true
           echo "Hazelcast jar is: " hazelcast/target/hazelcast-*-SNAPSHOT.jar
           cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ~/hazelcast.jar
 
-      # INSTALL TERRAFORM
       - name : Set-up Terraform
-        uses: hashicorp/setup-terraform@v1.3.2
+        uses: hashicorp/setup-terraform@v2.0.0
         with:
           terraform_version: 1.1.8
 
       - name: Terraform Init
-        working-directory: hazelcast/.github/terraform/aws
+        working-directory: .github/terraform/aws
         run: terraform init
 
       - name: Terraform Apply
-        working-directory: hazelcast/.github/terraform/aws
-        run: terraform apply -var="hazelcast_mancenter_version=latest-snapshot" -var="hazelcast_path=~/hazelcast.jar" -auto-approve
+        working-directory: .github/terraform/aws
+        run: |
+          terraform apply \
+            -var="hazelcast_mancenter_version=latest-snapshot" \
+            -var="hazelcast_path=~/hazelcast.jar" \
+            -auto-approve
 
       - name: Terraform Destroy
         if: ${{ always() }}
-        working-directory: hazelcast/.github/terraform/aws
+        working-directory: .github/terraform/aws
         run: terraform destroy -auto-approve

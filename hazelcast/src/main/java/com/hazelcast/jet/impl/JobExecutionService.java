@@ -758,10 +758,8 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
         @Override
         public void collectLong(MetricDescriptor descriptor, long value) {
-            System.out.println("bbb: " + descriptor + ", v=" + value);
             Long executionId = JobMetricsUtil.getExecutionIdFromMetricsDescriptor(descriptor);
             if (this.executionId.equals(executionId)) {
-                System.out.println("taken");
                 compressor.addLong(addPrefixFn.apply(descriptor), value);
             }
         }

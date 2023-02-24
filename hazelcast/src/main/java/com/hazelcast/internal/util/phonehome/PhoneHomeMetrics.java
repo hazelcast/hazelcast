@@ -139,7 +139,13 @@ public enum PhoneHomeMetrics {
      *   D means it runs in docker but not on kubernetes ,
      *   N means it doesn't run in docker
      */
+
     DOCKER("dck"),
+
+    /*
+     *  Value of the environment variable "HZ_CLOUD_ENVIRONMENT" passed to this member.
+     */
+    VIRIDIAN("vrd"),
 
     //JET METRICS
     JET_ENABLED("jet"),

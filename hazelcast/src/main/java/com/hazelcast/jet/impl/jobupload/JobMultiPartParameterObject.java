@@ -24,9 +24,13 @@ import java.util.UUID;
 public class JobMultiPartParameterObject {
 
     private UUID sessionId;
+
     private int currentPartNumber;
+
     private int totalPartNumber;
+
     private byte[] partData;
+
     private int partSize;
 
     private String sha256Hex;
