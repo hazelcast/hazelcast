@@ -45,7 +45,7 @@ public class NioTlsAsyncSocket extends AsyncSocket {
     private final NioAsyncSocketOptions options;
     private final AtomicReference<Thread> flushThread = new AtomicReference<>();
     private final MpmcArrayQueue<IOBuffer> writeQueue;
-    private final Handler handler;
+    private final TLsHandler handler;
     private final SocketChannel socketChannel;
     private final NioReactor reactor;
     private final Thread eventloopThread;
@@ -79,7 +79,7 @@ public class NioTlsAsyncSocket extends AsyncSocket {
             this.writeThrough = builder.writeThrough;
             this.regularSchedule = builder.regularSchedule;
             this.writeQueue = new MpmcArrayQueue<>(builder.writeQueueCapacity);
-            this.handler = new Handler(builder);
+            this.handler = new TLsHandler(builder);
             this.key = socketChannel.register(reactor.selector, 0, handler);
             this.reader = builder.reader;
             // There is no need for the socket to be scheduled on startup because the
@@ -307,7 +307,7 @@ public class NioTlsAsyncSocket extends AsyncSocket {
         super.close0();
     }
 
-    private class Handler implements NioHandler, Runnable {
+    private class TLsHandler implements NioHandler, Runnable {
         private final ByteBuffer receiveBuffer;
         private final ByteBuffer sendBuffer;
         private final SSLEngine sslEngine;
@@ -318,13 +318,13 @@ public class NioTlsAsyncSocket extends AsyncSocket {
         private boolean handshakeComplete;
         private IOBuffer current;
 
-        private Handler(NioAsyncSocketBuilder builder) throws SocketException {
+        private TLsHandler(NioAsyncSocketBuilder builder) throws SocketException {
             this.directBuffers = builder.directBuffers;
 
             //todo: we need to pass the correct address.
             this.sslEngine = builder.sslEngineFactory.create(clientSide, null);
 
-            int bufSize = 64 * 1024;
+            int bufSize = 32 * 1024;
 //            int receiveBufferSize = builder.socketChannel.socket().getReceiveBufferSize();
 //            if(receiveBufferSize<bufSize){
 //                receiveBufferSize = bufSize;
@@ -395,7 +395,6 @@ public class NioTlsAsyncSocket extends AsyncSocket {
         }
 
         private void handleRead() throws IOException {
-            //System.out.println(TLSNioAsyncSocket.this + " handleRead");
             metrics.incReadEvents();
 
             if (!handshakeComplete && !handshake()) {
@@ -404,7 +403,6 @@ public class NioTlsAsyncSocket extends AsyncSocket {
 
             int read = socketChannel.read(receiveBuffer);
             //System.out.println(TLSNioAsyncSocket.this + " bytes read: " + read);
-
             if (read == -1) {
                 throw new EOFException("Remote socket closed!");
             }
@@ -414,10 +412,8 @@ public class NioTlsAsyncSocket extends AsyncSocket {
 
             boolean unwrapMore = true;
             do {
-                SSLEngineResult unwrapResult = sslEngine.unwrap(receiveBuffer, appBuffer);
-
+                 SSLEngineResult unwrapResult = sslEngine.unwrap(receiveBuffer, appBuffer);
                 //System.out.println(TLSNioAsyncSocket.this + " handleRead: unwrapResult " + unwrapResult.toString().replace("\n", " "));
-
                 switch (unwrapResult.getStatus()) {
                     case OK:
                         if (!receiveBuffer.hasRemaining()) {
@@ -431,10 +427,9 @@ public class NioTlsAsyncSocket extends AsyncSocket {
                         if (appBuffer.capacity() >= sslSession.getApplicationBufferSize()) {
                             // we accumulated too much data into the appBuffer. So lets drain that to the read handler
                             // and go for another round of unwrapping
-                            appBuffer.flip();
-                            reader.onRead(appBuffer);
-                            compactOrClear(appBuffer);
-                        } else {
+                            readHandlerOnRead();
+                        }
+                        else {
                             //todo: we need to grow the appBuffer and try again
                             throw new RuntimeException();
                         }
@@ -450,11 +445,15 @@ public class NioTlsAsyncSocket extends AsyncSocket {
                 }
             } while (unwrapMore);
 
+            readHandlerOnRead();
+
+            compactOrClear(receiveBuffer);
+        }
+
+        private void readHandlerOnRead() {
             appBuffer.flip();
             reader.onRead(appBuffer);
             compactOrClear(appBuffer);
-
-            compactOrClear(receiveBuffer);
         }
 
         public void handleWrite() throws IOException {
@@ -481,18 +480,9 @@ public class NioTlsAsyncSocket extends AsyncSocket {
                 //System.out.println(TLSNioAsyncSocket.this + " handleWrite: wrapResult " + wrapResult.toString().replace("\n", " "));
                 switch (wrapResult.getStatus()) {
                     case OK:
-                        //System.out.println(TLSNioAsyncSocket.this + " current:" + BufferUtil.toDebugString(current.byteBuffer()));
-                        //System.out.println(TLSNioAsyncSocket.this + " sendBuffer:" + BufferUtil.toDebugString(sendBuffer));
                         if (!current.byteBuffer().hasRemaining()) {
                             current.release();
                             current = writeQueue.poll();
-                            //if (current == null) {
-                            //    System.out.println(TLSNioAsyncSocket.this + " no more buffers found");
-                            //} else {
-                            //    System.out.println(TLSNioAsyncSocket.this + " another buffer found");
-                            //}
-                        } else {
-                            //System.out.println(TLSNioAsyncSocket.this + " more wrapping on same buffer");
                         }
                         break;
                     case CLOSED:
@@ -513,12 +503,9 @@ public class NioTlsAsyncSocket extends AsyncSocket {
 
             sendBuffer.flip();
             long written = socketChannel.write(sendBuffer);
+            //System.out.println(TLSNioAsyncSocket.this + " bytes written:" + written);
             metrics.incBytesWritten(written);
             compactOrClear(sendBuffer);
-
-            //System.out.println(TLSNioAsyncSocket.this + " bytes written:" + written);
-
-            //System.out.println(TLSNioAsyncSocket.this + " current " + current + " bufferOverflow:" + bufferOverflow+" writeQueue.size:"+ writeQueue.size());
 
             if (current == null && !bufferOverflow) {
                 // everything got written

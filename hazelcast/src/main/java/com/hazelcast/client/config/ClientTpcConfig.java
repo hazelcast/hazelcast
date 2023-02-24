@@ -35,7 +35,7 @@ import java.util.Objects;
 @Beta
 public final class ClientTpcConfig {
 
-    private boolean enabled;
+    private boolean enabled = System.getProperty("hazelcast.internal.alto.enabled", "false").equals("true");
 
     public ClientTpcConfig() {
     }
