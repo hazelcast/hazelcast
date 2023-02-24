@@ -33,6 +33,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.ASSERT_TRUE_EVENTUALLY_TIMEOUT;
@@ -46,6 +47,7 @@ import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.put;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.upcast;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Mimics an RPC call. So there are worker threads that send request with a call id and a payload. This request is
@@ -136,16 +138,26 @@ public abstract class AsyncSocket_RpcTest {
     public void test_concurrency_1_payload_256KB() throws InterruptedException {
         test(256 * 1024, 1);
     }
-//
-//    @Test
-//    public void test_concurrency_1_payload_512KB() throws InterruptedException {
-//        test(512 * 1024, 1);
-//    }
-//
-//    @Test
-//    public void test_concurrency_1_payload_1MB() throws InterruptedException {
-//        test(1024 * 1024, 1);
-//    }
+
+    @Test
+    public void test_concurrency_1_payload_512KB() throws InterruptedException {
+        test(512 * 1024, 1);
+    }
+
+    @Test
+    public void test_concurrency_1_payload_1MB() throws InterruptedException {
+        test(1024 * 1024, 1);
+    }
+
+    @Test
+    public void test_concurrency_1_payload_2MB() throws InterruptedException {
+        test(2 * 1024 * 1024, 1);
+    }
+
+    @Test
+    public void test_concurrency_1_payload_16MB() throws InterruptedException {
+        test(16 * 1024 * 1024, 1);
+    }
 
     @Test
     public void test_concurrency_10_payload_0B() throws InterruptedException {
@@ -187,25 +199,30 @@ public abstract class AsyncSocket_RpcTest {
         test(64 * 1024, 10);
     }
 
-//    @Test
-//    public void test_concurrency_10_payload_128KB() throws InterruptedException {
-//        test(128 * 1024, 10);
-//    }
-//
-//    @Test
-//    public void test_concurrency_10_payload_256KB() throws InterruptedException {
-//        test(256 * 1024, 10);
-//    }
-//
-//    @Test
-//    public void test_concurrency_10_payload_512KB() throws InterruptedException {
-//        test(512 * 1024, 10);
-//    }
-//
-//    @Test
-//    public void test_concurrency_10_payload_1MB() throws InterruptedException {
-//        test(1024 * 1024, 10);
-//    }
+    @Test
+    public void test_concurrency_10_payload_128KB() throws InterruptedException {
+        test(128 * 1024, 10);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_256KB() throws InterruptedException {
+        test(256 * 1024, 10);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_512KB() throws InterruptedException {
+        test(512 * 1024, 10);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_1MB() throws InterruptedException {
+        test(1024 * 1024, 10);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_2MB() throws InterruptedException {
+        test(2 * 1024 * 1024, 10);
+    }
 
     @Test
     public void test_concurrency_100_payload_1KB() throws InterruptedException {
@@ -226,21 +243,26 @@ public abstract class AsyncSocket_RpcTest {
     public void test_concurrency_100_payload_16KB() throws InterruptedException {
         test(16 * 1024, 100);
     }
-//
-//    @Test
-//    public void test_concurrency_100_payload_32KB() throws InterruptedException {
-//        test(32 * 1024, 100);
-//    }
-//
-//    @Test
-//    public void test_concurrency_100_payload_64KB() throws InterruptedException {
-//        test(64 * 1024, 100);
-//    }
-//
-//    @Test
-//    public void test_concurrency_100_payload_128KB() throws InterruptedException {
-//        test(128 * 1024, 100);
-//    }
+
+    @Test
+    public void test_concurrency_100_payload_32KB() throws InterruptedException {
+        test(32 * 1024, 100);
+    }
+
+    @Test
+    public void test_concurrency_100_payload_64KB() throws InterruptedException {
+        test(64 * 1024, 100);
+    }
+
+    @Test
+    public void test_concurrency_100_payload_128KB() throws InterruptedException {
+        test(128 * 1024, 100);
+    }
+
+    @Test
+    public void test_concurrency_100_payload_1MB() throws InterruptedException {
+        test(1024 * 1024, 100);
+    }
 
     public void test(int payloadSize, int concurrency) throws InterruptedException {
         AsyncServerSocket serverSocket = newServer();
@@ -298,9 +320,16 @@ public abstract class AsyncSocket_RpcTest {
         private long callId;
         private int payloadSize = -1;
         private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
+        private long nextPrintMs = System.currentTimeMillis() + SECONDS.toMillis(1);
+        private long round;
 
         @Override
         public void onRead(ByteBuffer receiveBuffer) {
+            if (nextPrintMs < System.currentTimeMillis()) {
+                nextPrintMs += SECONDS.toMillis(1);
+                System.out.println(socket + " round " + round);
+            }
+
             for (; ; ) {
                 if (payloadSize == -1) {
                     if (receiveBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
@@ -314,12 +343,13 @@ public abstract class AsyncSocket_RpcTest {
 
                 put(payloadBuffer, receiveBuffer);
                 if (payloadBuffer.remaining() > 0) {
-                    System.out.println(socket+" not all bytes received");
+                    // System.out.println(socket + " not all bytes received");
                     // not all bytes have been received.
                     break;
                 }
 
-                System.out.println(socket+"  all bytes received");
+                round++;
+                // System.out.println(socket + "  all bytes received");
 
                 upcast(payloadBuffer).flip();
                 IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
@@ -375,9 +405,16 @@ public abstract class AsyncSocket_RpcTest {
         private ByteBuffer payloadBuffer;
         private long callId;
         private int payloadSize = -1;
+        private long nextPrintMs = System.currentTimeMillis() + SECONDS.toMillis(1);
+        private long round;
 
         @Override
         public void onRead(ByteBuffer receiveBuffer) {
+            if (nextPrintMs < System.currentTimeMillis()) {
+                nextPrintMs += SECONDS.toMillis(1);
+                System.out.println(socket + " round " + round);
+            }
+
             for (; ; ) {
                 if (payloadSize == -1) {
                     if (receiveBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
@@ -393,11 +430,14 @@ public abstract class AsyncSocket_RpcTest {
                 put(payloadBuffer, receiveBuffer);
 
                 if (payloadBuffer.remaining() > 0) {
-                    System.out.println(socket+" not all bytes received");
+                    //System.out.println(socket + " not all bytes received");
                     // not all bytes have been received.
                     break;
                 }
-                System.out.println(socket+" all bytes received");
+
+                round++;
+
+                //System.out.println(socket + " all bytes received");
                 upcast(payloadBuffer).flip();
 
                 iteration.incrementAndGet();
