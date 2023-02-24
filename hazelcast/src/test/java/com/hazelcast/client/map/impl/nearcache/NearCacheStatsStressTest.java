@@ -18,6 +18,8 @@ package com.hazelcast.client.map.impl.nearcache;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.NearCache;
@@ -25,7 +27,8 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nearcache.NearCacheStats;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,6 +37,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -48,16 +52,26 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class NearCacheStatsStressTest extends HazelcastTestSupport {
 
     private static final int KEY_SPACE = 1000;
 
+    @Parameterized.Parameters(name = "eviction enabled: {0}")
+    public static Object[][] parameters() {
+        return new Object[][] {{false}, {true}};
+    }
+
+    @Parameterized.Parameter
+    public boolean evictionEnabled;
+
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
     private final AtomicBoolean stop = new AtomicBoolean(false);
 
     private InternalSerializationService ss;
+    private IMap map;
     private NearCache<Object, Object> nearCache;
 
     @Before
@@ -65,18 +79,25 @@ public class NearCacheStatsStressTest extends HazelcastTestSupport {
         HazelcastInstance server = factory.newHazelcastInstance();
         ss = getSerializationService(server);
 
-        String mapName = "test";
+        String mapName = randomMapName();
 
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
         nearCacheConfig.setName(mapName);
         nearCacheConfig.setInvalidateOnChange(true);
+
+        if (evictionEnabled) {
+            nearCacheConfig.getEvictionConfig()
+                    .setEvictionPolicy(EvictionPolicy.LFU)
+                    .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT)
+                    .setSize(20);
+        }
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.addNearCacheConfig(nearCacheConfig);
 
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
 
-        IMap map = client.getMap(mapName);
+        map = client.getMap(mapName);
         nearCache = ((NearCachedClientMapProxy) map).getNearCache();
     }
 
@@ -87,8 +108,10 @@ public class NearCacheStatsStressTest extends HazelcastTestSupport {
 
     @Test
     public void stress_stats_by_doing_put_and_remove() throws Exception {
-        ExecutorService pool = Executors.newFixedThreadPool(2);
+        ExecutorService pool = Executors.newFixedThreadPool(4);
         pool.execute(new Put());
+        pool.execute(new Put());
+        pool.execute(new Remove());
         pool.execute(new Remove());
 
         sleepSeconds(3);

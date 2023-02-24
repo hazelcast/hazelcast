@@ -96,7 +96,9 @@ public class HeapNearCacheRecordMap<K, V extends NearCacheRecord>
         if (evictionCandidate == null) {
             return false;
         }
-        if (remove(evictionCandidate.getAccessor()) == null) {
+        V record = remove(evictionCandidate.getAccessor());
+        if (record == null || record.getReservationId() != NearCacheRecord.READ_PERMITTED) {
+            // no record was removed or the record was a placeholder marked for update
             return false;
         }
         if (evictionListener != null) {
