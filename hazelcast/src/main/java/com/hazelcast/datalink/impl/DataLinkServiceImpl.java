@@ -209,7 +209,7 @@ public class DataLinkServiceImpl implements DataLinkService {
         final DataLink instance;
         final DataLinkSource source;
 
-        public DataLinkSourcePair(DataLink instance, DataLinkSource source) {
+        DataLinkSourcePair(DataLink instance, DataLinkSource source) {
             this.instance = instance;
             this.source = source;
         }
@@ -218,7 +218,7 @@ public class DataLinkServiceImpl implements DataLinkService {
             return new DataLinkSourcePair(dataLink, source);
         }
 
-        public void close() {
+        void close() {
             try {
                 instance.close();
             } catch (Exception e) {

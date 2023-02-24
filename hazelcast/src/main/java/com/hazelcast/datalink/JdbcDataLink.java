@@ -26,8 +26,13 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -66,6 +71,26 @@ public class JdbcDataLink implements DataLink {
     @Override
     public String getName() {
         return config.getName();
+    }
+
+    @Override
+    public List<Resource> listResources() {
+        try (Connection connection = singleUseDataSource.getConnection()) {
+            DatabaseMetaData metaData = connection.getMetaData();
+            String[] types = {"TABLE", "VIEW"};
+            //Retrieving the columns in the database
+            ResultSet tables = metaData.getTables(null, null, "%", types);
+            List<Resource> result = new ArrayList<>();
+            while (tables.next()) {
+                result.add(new Resource(
+                        tables.getString("TABLE_TYPE"),
+                        tables.getString("TABLE_SCHEM") + "." + tables.getString("TABLE_NAME")
+                ));
+            }
+            return result;
+        } catch (Exception e) {
+            throw new HazelcastException("Could not read resources for DataLink " + config.getName());
+        }
     }
 
     private DataSource createSingleUseDataSource() {

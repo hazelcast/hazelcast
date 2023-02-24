@@ -20,7 +20,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.datalink.DataLink;
 import com.hazelcast.datalink.JdbcDataLink;
+import com.hazelcast.datalink.Resource;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 
 public final class DataLinkTestUtil {
@@ -69,6 +72,11 @@ public final class DataLinkTestUtil {
         @Override
         public String getName() {
             return config.getName();
+        }
+
+        @Override
+        public List<Resource> listResources() {
+            return Collections.emptyList();
         }
 
         @Override

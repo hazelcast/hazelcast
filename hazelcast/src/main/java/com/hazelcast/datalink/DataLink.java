@@ -19,10 +19,22 @@ package com.hazelcast.datalink;
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.spi.annotation.Beta;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
- * Creates data link. Configuration is provided by {@link #init(DataLinkConfig)}.
+ * DataLink is a reference to a single external system.
+ * <p>
+ * It contains metadata needed to connect, and might or might not maintain
+ * a physical connection or connections, depending on the connector. Typically,
+ * it is a {@link java.sql.Connection}, instance of a driver / client to a
+ * 3rd party system etc.
+ * <p>
+ * DataLink is supposed to be used in Jet jobs or SQL queries where the
+ * same connection metadata, or even the same connection is to be reused,
  *
- * @since 5.2
+ * @since 5.3
  */
 @Beta
 public interface DataLink extends AutoCloseable {
@@ -37,16 +49,34 @@ public interface DataLink extends AutoCloseable {
     String getName();
 
     /**
-     * Returns the configuration of this data link
+     * Returns list of {@link Resource}s accessible via this DataLink.
+     * <p>
+     * However, it is not strictly required that the data link lists
+     * all resources; a mapping can be created for a resource that is
+     * not listed. For example, the list of resources in Oracle might
+     * not include tables available through a database link. In fact,
+     * it might list no resources at all, perhaps if the security in
+     * the target system prevents reading of such a list.
+     */
+    List<Resource> listResources();
+
+    /**
+     * Returns the configuration of this DataLink
      */
     DataLinkConfig getConfig();
 
     void retain();
 
     /**
+     * Returns the properties / options this DataLink was created with.
+     */
+    default Map<String, String> options() {
+        Map<?, ?> properties = getConfig().getProperties();
+        return new HashMap<>((Map<String, String>) properties);
+    }
+
+    /**
      * Closes underlying resources
-     *
-     * @throws Exception
      */
     @Override
     default void close() throws Exception {

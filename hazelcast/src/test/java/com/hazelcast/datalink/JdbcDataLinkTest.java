@@ -28,8 +28,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.List;
 
 import static com.hazelcast.datalink.impl.HikariTestUtil.assertDataSourceClosed;
 import static com.hazelcast.datalink.impl.HikariTestUtil.assertEventuallyNoHikariThreads;
@@ -41,9 +45,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class JdbcDataLinkTest {
 
     private static final String TEST_CONFIG_NAME = JdbcDataLinkTest.class.getSimpleName();
+    private static final String JDBC_URL_SHARED = "jdbc:h2:mem:" + JdbcDataLinkTest.class.getSimpleName() + "_shared";
+
     private static final DataLinkConfig SHARED_DATA_LINK_CONFIG = new DataLinkConfig()
             .setName(TEST_CONFIG_NAME)
-            .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataLinkTest.class.getSimpleName() + "_shared")
+            .setProperty("jdbcUrl", JDBC_URL_SHARED)
             .setShared(true);
 
     private static final DataLinkConfig NOT_SHARED_DATA_LINK_CONFIG = new DataLinkConfig()
@@ -141,6 +147,52 @@ public class JdbcDataLinkTest {
 
     private ResultSet executeQuery(DataSource dataSource, String sql) throws SQLException {
         return dataSource.getConnection().prepareStatement(sql).executeQuery();
+    }
+
+    @Test
+    public void list_resources_should_return_table() throws Exception {
+        jdbcDataLink = new JdbcDataLink(SHARED_DATA_LINK_CONFIG);
+
+        executeJdbc(JDBC_URL_SHARED, "CREATE TABLE MY_TABLE (ID INT, NAME VARCHAR)");
+
+        List<Resource> resources = jdbcDataLink.listResources();
+        assertThat(resources).contains(
+                new Resource("BASE TABLE", "PUBLIC.MY_TABLE")
+        );
+    }
+
+    @Test
+    public void list_resources_should_return_table_in_schema() throws Exception {
+        jdbcDataLink = new JdbcDataLink(SHARED_DATA_LINK_CONFIG);
+
+        executeJdbc(JDBC_URL_SHARED, "CREATE SCHEMA MY_SCHEMA");
+        executeJdbc(JDBC_URL_SHARED, "CREATE TABLE MY_SCHEMA.MY_TABLE (ID INT, NAME VARCHAR)");
+
+        List<Resource> resources = jdbcDataLink.listResources();
+        assertThat(resources).contains(
+                new Resource("BASE TABLE", "MY_SCHEMA.MY_TABLE")
+        );
+    }
+
+    @Test
+    public void list_resources_should_return_view() throws Exception {
+        jdbcDataLink = new JdbcDataLink(SHARED_DATA_LINK_CONFIG);
+
+        executeJdbc(JDBC_URL_SHARED, "CREATE TABLE MY_TABLE (ID INT, NAME VARCHAR)");
+        executeJdbc(JDBC_URL_SHARED, "CREATE VIEW MY_TABLE_VIEW AS SELECT * FROM MY_TABLE");
+
+        List<Resource> resources = jdbcDataLink.listResources();
+        assertThat(resources).contains(
+                new Resource("VIEW", "PUBLIC.MY_TABLE_VIEW")
+        );
+    }
+
+    public static void executeJdbc(String url, String sql) throws SQLException {
+        try (Connection conn = DriverManager.getConnection(url);
+             Statement stmt = conn.createStatement()
+        ) {
+            stmt.execute(sql);
+        }
     }
 
 }
