@@ -16,6 +16,8 @@
 
 package com.hazelcast.instance.impl;
 
+import com.hazelcast.internal.util.StringUtil;
+
 import java.lang.reflect.Method;
 
 import static java.lang.reflect.Modifier.isPublic;
@@ -23,48 +25,53 @@ import static java.lang.reflect.Modifier.isStatic;
 
 class MainMethodFinder {
 
-    private String errorMessage;
+    Result result = new Result();
 
-    private Method mainMethod;
+    static class Result {
 
-    public String getErrorMessage() {
-        return errorMessage;
+        Method mainMethod;
+
+        private String errorMessage;
+
+        public String getErrorMessage() {
+            return errorMessage;
+        }
+
+        public Method getMainMethod() {
+            return mainMethod;
+        }
+
+        boolean hasError() {
+            return !StringUtil.isNullOrEmpty(errorMessage);
+        }
     }
 
-    public Method getMainMethod() {
-        return mainMethod;
-    }
-
-    // Public for testing purpose
-    public void setMainMethod(Method mainMethod) {
-        this.mainMethod = mainMethod;
-    }
-
-    public void findMainMethod(ClassLoader classLoader, String mainClassName) {
+    public Result findMainMethod(ClassLoader classLoader, String mainClassName) {
         try {
             Class<?> clazz = classLoader.loadClass(mainClassName);
             getMainMethodOfClass(clazz);
         } catch (ClassNotFoundException e) {
-            errorMessage = "Cannot find or load main class: " + mainClassName;
+            result.errorMessage = "Cannot find or load main class: " + mainClassName;
         }
+        return result;
     }
 
     void getMainMethodOfClass(Class<?> clazz) {
         try {
-            mainMethod = clazz.getDeclaredMethod("main", String[].class);
+            result.mainMethod = clazz.getDeclaredMethod("main", String[].class);
 
             if (!isPublicAndStatic()) {
-                errorMessage = "Class " + clazz.getName()
-                               + " has a main(String[] args) method which is not public static";
+                result.errorMessage = "Class " + clazz.getName()
+                                      + " has a main(String[] args) method which is not public static";
             }
         } catch (NoSuchMethodException exception) {
-            errorMessage = "Class " + clazz.getName()
-                           + " does not have a main(String[] args) method";
+            result.errorMessage = "Class " + clazz.getName()
+                                  + " does not have a main(String[] args) method";
         }
     }
 
     boolean isPublicAndStatic() {
-        int modifiers = mainMethod.getModifiers();
+        int modifiers = result.mainMethod.getModifiers();
         return isPublic(modifiers) && isStatic(modifiers);
     }
 }

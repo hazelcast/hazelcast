@@ -201,15 +201,16 @@ public final class HazelcastBootstrap {
 
     static Method findMainMethodForJar(ClassLoader classLoader, String mainClassName, boolean calledByMember) {
         MainMethodFinder mainMethodFinder = new MainMethodFinder();
-        mainMethodFinder.findMainMethod(classLoader, mainClassName);
+        MainMethodFinder.Result result = mainMethodFinder.findMainMethod(classLoader, mainClassName);
 
         // Check if there is an error
-        String errorMessage = mainMethodFinder.getErrorMessage();
-        if (!StringUtil.isNullOrEmpty(errorMessage)) {
+
+        if (result.hasError()) {
             // Client side immediately exits, server side throws JetException
+            String errorMessage = result.getErrorMessage();
             error(errorMessage, calledByMember);
         }
-        return mainMethodFinder.getMainMethod();
+        return result.getMainMethod();
     }
 
     private static void resetJetParametersForMember(String jar, String snapshotName, String jobName) {

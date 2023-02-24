@@ -35,7 +35,7 @@ public class MainMethodFinderTest {
         Method method = MainMethodFinderTest.class.getDeclaredMethod("main", String[].class);
 
         MainMethodFinder mainMethodFinder = new MainMethodFinder();
-        mainMethodFinder.setMainMethod(method);
+        mainMethodFinder.result.mainMethod = method;
         boolean publicAndStatic = mainMethodFinder.isPublicAndStatic();
         assertTrue(publicAndStatic);
     }
@@ -45,7 +45,7 @@ public class MainMethodFinderTest {
         Method method = MainMethodFinderTest.class.getDeclaredMethod("testPublicAndStaticForSelf");
 
         MainMethodFinder mainMethodFinder = new MainMethodFinder();
-        mainMethodFinder.setMainMethod(method);
+        mainMethodFinder.result.mainMethod = method;
         boolean publicAndStatic = mainMethodFinder.isPublicAndStatic();
         assertFalse(publicAndStatic);
     }
@@ -54,6 +54,6 @@ public class MainMethodFinderTest {
     public void testGetMainMethod() {
         MainMethodFinder mainMethodFinder = new MainMethodFinder();
         mainMethodFinder.getMainMethodOfClass(MainMethodFinderTest.class);
-        assertNotNull(mainMethodFinder.getMainMethod());
+        assertNotNull(mainMethodFinder.result.mainMethod);
     }
 }
