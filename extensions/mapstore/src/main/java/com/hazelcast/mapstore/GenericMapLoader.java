@@ -47,18 +47,15 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.hazelcast.mapstore.FromSqlRowConverter.toGenericRecord;
 import static com.hazelcast.mapstore.MappingHelper.createMappingWithColumns;
 import static com.hazelcast.mapstore.MappingHelper.loadColumnMetadataFromMapping;
 import static com.hazelcast.mapstore.MappingHelper.loadRowMetadataFromMapping;
-import static com.hazelcast.mapstore.MappingTypeGetter.getMappingType;
 import static com.hazelcast.mapstore.validators.ExistingMappingValidator.validateColumn;
 import static com.hazelcast.mapstore.validators.MapStoreConfigValidator.validateMapStoreConfig;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.util.stream.Stream.of;
 
 /**
  * GenericMapLoader is an implementation of {@link MapLoader} built
@@ -80,7 +77,7 @@ import static java.util.stream.Stream.of;
  * <pre>{@code MapConfig mapConfig = new MapConfig(mapName);
  * MapStoreConfig mapStoreConfig = new MapStoreConfig();
  * mapStoreConfig.setClassName(GenericMapLoader.class.getName());
- * mapStoreConfig.setProperty(OPTION_DATA_LINK_REF, "mysql-ref");
+ * mapStoreConfig.setProperty(JdbcSqlConnector.OPTION_DATA_LINK_REF, "mysql-ref");
  * mapConfig.setMapStoreConfig(mapStoreConfig);
  * instance().getConfig().addMapConfig(mapConfig);}</pre>
  * <p>
@@ -166,12 +163,11 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
         try {
             String mappingColumns = null;
             if (genericMapStoreProperties.hasColumns()) {
-                mappingColumns = resolveMappingColumns(genericMapStoreProperties.tableName,
-                        genericMapStoreProperties.dataLinkRef);
+                mappingColumns = resolveMappingColumns();
                 logger.fine("Discovered following mapping columns: " + mappingColumns);
             }
 
-            String mappingType = getMappingType(nodeEngine(), genericMapStoreProperties);
+            String mappingType = genericMapStoreProperties.getMappingType(nodeEngine());
             createMappingWithColumns(sqlService, mappingName, genericMapStoreProperties.tableName, mappingColumns,
                     mappingType, genericMapStoreProperties.dataLinkRef);
 
@@ -193,33 +189,32 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
         }
     }
 
-    private String resolveMappingColumns(String tableName, String dataLinkRef) {
+    private String resolveMappingColumns() {
+        // Create a temporary mapping
         String tempMapping = "temp_mapping_" + UuidUtil.newUnsecureUuidString();
-        createMapping(tempMapping, tableName, dataLinkRef);
+        MappingHelper.createMapping(sqlService,
+                tempMapping,
+                genericMapStoreProperties.tableName,
+                genericMapStoreProperties.getMappingType(nodeEngine()),
+                genericMapStoreProperties.dataLinkRef);
+
         SqlRowMetadata rowMetadata = loadRowMetadataFromMapping(sqlService, tempMapping);
         columnMetadataList = rowMetadata.getColumns();
         dropMapping(tempMapping);
 
-        return Stream.concat(of(genericMapStoreProperties.idColumn), genericMapStoreProperties.columns.stream())
-                .distinct() // avoid duplicate id column if present in columns property
+        return genericMapStoreProperties.getAllColumns().stream()
                 .map(columnName -> validateColumn(rowMetadata, columnName))
                 .map(rowMetadata::getColumn)
                 .map(columnMetadata1 -> columnMetadata1.getName() + " " + columnMetadata1.getType())
                 .collect(Collectors.joining(", "));
     }
 
-    private void createMapping(String mappingName, String tableName, String dataLinkRef) {
-        String mappingType = getMappingType(nodeEngine(), genericMapStoreProperties);
-        MappingHelper.createMapping(sqlService, mappingName, tableName, mappingType, dataLinkRef);
-    }
-
     private void readExistingMapping() {
         logger.fine("Reading existing mapping for map" + mapName);
         try {
-            ExistingMappingReader existingMappingReader = new ExistingMappingReader();
-            existingMappingReader.readExistingMapping(sqlService, genericMapStoreProperties, mappingName);
-
-            columnMetadataList = existingMappingReader.getColumnMetadataList();
+            columnMetadataList = ExistingMappingReader.readExistingMapping(sqlService, mappingName,
+                    genericMapStoreProperties.getAllColumns()
+            );
             queries = new Queries(mappingName, genericMapStoreProperties.idColumn, columnMetadataList);
 
         } catch (Exception e) {
@@ -235,6 +230,8 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
 
         asyncExecutor.submit(() -> {
             awaitInitFinished();
+            // Instance is not shutting down.
+            // Only GenericMapLoader is being closed
             if (instance.isRunning()) {
                 dropMapping(mappingName);
             }

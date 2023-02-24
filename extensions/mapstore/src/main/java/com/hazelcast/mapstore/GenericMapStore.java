@@ -49,7 +49,7 @@ import static com.hazelcast.mapstore.ToJDBCParametersConverter.convert;
  * <pre>{@code MapConfig mapConfig = new MapConfig(mapName);
  * MapStoreConfig mapStoreConfig = new MapStoreConfig();
  * mapStoreConfig.setClassName(GenericMapStore.class.getName());
- * mapStoreConfig.setProperty(OPTION_DATA_LINK_REF, "mysql-ref");
+ * mapStoreConfig.setProperty(JdbcSqlConnector.OPTION_DATA_LINK_REF, "mysql-ref");
  * mapConfig.setMapStoreConfig(mapStoreConfig);
  * instance().getConfig().addMapConfig(mapConfig);}</pre>
  * <p>

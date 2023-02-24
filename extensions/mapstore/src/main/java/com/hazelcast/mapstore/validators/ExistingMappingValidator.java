@@ -17,10 +17,9 @@
 package com.hazelcast.mapstore.validators;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.mapstore.GenericMapStoreProperties;
 import com.hazelcast.sql.SqlRowMetadata;
 
-import java.util.stream.Stream;
+import java.util.Set;
 
 import static com.hazelcast.sql.SqlRowMetadata.COLUMN_NOT_FOUND;
 
@@ -35,11 +34,9 @@ public final class ExistingMappingValidator {
     /**
      * Validate if database rows contain all column names in GenericMapStoreProperties
      */
-    public static void validateColumnsExist(SqlRowMetadata sqlRowMetadata, GenericMapStoreProperties properties) {
-        // If GenericMapStoreProperties has columns defined, they must exist on the database
-        Stream.concat(Stream.of(properties.getIdColumn()), properties.getColumns().stream())
-                .distinct() // avoid duplicate id column if present in columns property
-                .forEach(columnName -> validateColumn(sqlRowMetadata, columnName));
+    public static void validateColumnsExist(SqlRowMetadata sqlRowMetadata, Set<String> allColumns) {
+        // All columns must exist on the database
+        allColumns.forEach(columnName -> validateColumn(sqlRowMetadata, columnName));
     }
 
     /**

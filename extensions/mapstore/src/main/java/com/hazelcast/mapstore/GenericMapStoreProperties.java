@@ -16,11 +16,17 @@
 
 package com.hazelcast.mapstore;
 
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.datalink.DataLinkFactory;
+import com.hazelcast.datalink.JdbcDataLinkFactory;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 import static com.hazelcast.mapstore.GenericMapLoader.COLUMNS_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.DATA_LINK_REF_PROPERTY;
@@ -38,7 +44,9 @@ public class GenericMapStoreProperties {
     final String tableName;
     final String mappingType;
     final String idColumn;
-    final Collection<String> columns;
+    final List<String> columns;
+
+    final Set<String> allColumns = new HashSet<>();
     final boolean idColumnInColumns;
     final String compactTypeName;
 
@@ -55,25 +63,39 @@ public class GenericMapStoreProperties {
         } else {
             columns = Collections.emptyList();
         }
+
+        allColumns.add(idColumn);
+        allColumns.addAll(columns);
+
         idColumnInColumns = columns.isEmpty() || columns.contains(idColumn);
         compactTypeName = properties.getProperty(TYPE_NAME_PROPERTY, mapName);
     }
 
-    /**
-     * Return the column name for primary key
-     */
-    public String getIdColumn() {
-        return idColumn;
-    }
-
-    /**
-     * Returns the column names
-     */
-    public Collection<String> getColumns() {
-        return columns;
-    }
-
     boolean hasColumns() {
         return !columns.isEmpty();
+    }
+
+    /**
+     * Get all columns including id column
+     */
+    public Set<String> getAllColumns() {
+        return allColumns;
+    }
+
+    String getMappingType(NodeEngineImpl nodeEngine) {
+        if (mappingType != null) {
+            return mappingType;
+        } else {
+            DataLinkFactory<?> factory = nodeEngine
+                    .getDataLinkService()
+                    .getDataLinkFactory(dataLinkRef);
+
+            if (factory instanceof JdbcDataLinkFactory) {
+                return "JDBC";
+            } else {
+                throw new HazelcastException("Unknown DataLinkFactory class " + factory.getClass()
+                                             + ". Set the mapping type using '" + MAPPING_TYPE_PROPERTY + "' property");
+            }
+        }
     }
 }
