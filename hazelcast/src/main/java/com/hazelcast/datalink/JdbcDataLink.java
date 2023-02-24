@@ -17,13 +17,17 @@
 package com.hazelcast.datalink;
 
 import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.datalink.impl.CloseableDataSource;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.jet.impl.connector.DataSourceFromConnectionSupplier;
 import com.hazelcast.spi.annotation.Beta;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import javax.sql.DataSource;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -43,24 +47,61 @@ public class JdbcDataLink implements DataLink {
     private static final int JDBC_TEST_CONNECTION_TIMEOUT_SECONDS = 5;
     private static final AtomicInteger DATA_SOURCE_COUNTER = new AtomicInteger();
 
-    protected HikariDataSource sharedDataSource;
-    protected CloseableDataSource sharedCloseableDataSource;
-    protected DataLinkConfig config;
+    protected final ReferenceCounter refCounter;
+    protected final DataLinkConfig config;
+
+    protected CloseableDataSource pooledDataSource;
+    protected DataSource singleUseDataSource;
+
+    public JdbcDataLink(DataLinkConfig config) {
+        this.refCounter = new ReferenceCounter(() -> {
+            destroy();
+            return null;
+        });
+        this.config = config;
+        this.pooledDataSource = createHikariDataSource();
+        this.singleUseDataSource = createSingleUseDataSource();
+    }
 
     @Override
-    public void init(DataLinkConfig config) {
-        this.config = config;
-        if (config.isShared()) {
-            sharedDataSource = doCreateDataSource();
-            sharedCloseableDataSource = CloseableDataSource.nonClosing(sharedDataSource);
-        }
+    public String getName() {
+        return config.getName();
     }
 
-    public DataSource getDataLink() {
-        return config.isShared() ? sharedCloseableDataSource : CloseableDataSource.closing(doCreateDataSource());
+    private DataSource createSingleUseDataSource() {
+        Properties properties = config.getProperties();
+        String jdbcUrl = properties.getProperty("jdbcUrl");
+        return new DataSourceFromConnectionSupplier(
+                () -> {
+                    try {
+                        // TODO pass other properties
+                        return DriverManager.getConnection(jdbcUrl);
+                    } catch (SQLException e) {
+                        throw new HazelcastException("Could not create a new connection", e);
+                    }
+                }
+        );
     }
 
-    protected HikariDataSource doCreateDataSource() {
+    @Override
+    public DataLinkConfig getConfig() {
+        return config;
+    }
+
+    public DataSource pooledDataSource() {
+        retain();
+        return pooledDataSource;
+    }
+
+    public DataSource singleUseDataSource() {
+        return singleUseDataSource;
+    }
+
+    public DataSource getDataSource() {
+        return config.isShared() ? pooledDataSource() : singleUseDataSource();
+    }
+
+    protected CloseableDataSource createHikariDataSource() {
         Properties properties = new Properties();
         properties.putAll(config.getProperties());
         if (!properties.containsKey("poolName")) {
@@ -68,13 +109,33 @@ public class JdbcDataLink implements DataLink {
             properties.put("poolName", "HikariPool-" + DATA_SOURCE_COUNTER.getAndIncrement() + suffix);
         }
         HikariConfig dataSourceConfig = new HikariConfig(properties);
-        return new HikariDataSource(dataSourceConfig);
+        return new CloseableDataSource(new HikariDataSource(dataSourceConfig)) {
+
+            @Override
+            public void close() throws Exception {
+                refCounter.release();
+            }
+        };
+    }
+
+    @Override
+    public void retain() {
+        refCounter.retain();
     }
 
     @Override
     public void close() throws Exception {
-        if (sharedDataSource != null) {
-            sharedDataSource.close();
+        refCounter.release();
+    }
+
+    protected void destroy() {
+        if (pooledDataSource != null) {
+            try {
+                pooledDataSource.getDataSource().unwrap(HikariDataSource.class).close();
+            } catch (Exception e) {
+                throw new HazelcastException("Could not close connection pool", e);
+            }
+            pooledDataSource = null;
         }
     }
 }

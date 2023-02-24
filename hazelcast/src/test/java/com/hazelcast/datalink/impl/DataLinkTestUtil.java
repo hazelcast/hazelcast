@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.connector;
+package com.hazelcast.datalink.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataLinkConfig;
@@ -23,12 +23,12 @@ import com.hazelcast.datalink.JdbcDataLink;
 
 import java.util.Properties;
 
-final class DataLinkTestUtil {
+public final class DataLinkTestUtil {
+
     private DataLinkTestUtil() {
     }
 
-
-    static void configureJdbcDataLink(String name, String jdbcUrl, Config config) {
+    public static void configureJdbcDataLink(String name, String jdbcUrl, Config config) {
         Properties properties = new Properties();
         properties.put("jdbcUrl", jdbcUrl);
         DataLinkConfig dataLinkConfig = new DataLinkConfig()
@@ -38,8 +38,7 @@ final class DataLinkTestUtil {
         config.getDataLinkConfigs().put(name, dataLinkConfig);
     }
 
-
-    static void configureJdbcDataLink(String name, String jdbcUrl, String username, String password, Config config) {
+    public static void configureJdbcDataLink(String name, String jdbcUrl, String username, String password, Config config) {
         Properties properties = new Properties();
         properties.put("jdbcUrl", jdbcUrl);
         properties.put("username", username);
@@ -51,22 +50,48 @@ final class DataLinkTestUtil {
         config.getDataLinkConfigs().put(name, dataLinkConfig);
     }
 
-    static void configureDummyDataLink(String name, Config config) {
+    public static void configureDummyDataLink(String name, Config config) {
         DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName(name)
                 .setClassName(DummyDataLink.class.getName());
         config.getDataLinkConfigs().put(name, dataLinkConfig);
     }
 
-    private static class DummyDataLink implements DataLink {
+    public static class DummyDataLink implements DataLink {
+
+        private final DataLinkConfig config;
+        private boolean closed;
+
+        public DummyDataLink(DataLinkConfig config) {
+            this.config = config;
+        }
+
+        @Override
+        public String getName() {
+            return config.getName();
+        }
+
+        @Override
+        public DataLinkConfig getConfig() {
+            return config;
+        }
+
+        @Override
+        public void retain() {
+
+        }
 
         public Object getDataLink() {
             return new Object();
         }
 
         @Override
-        public void init(DataLinkConfig config) {
+        public void close() throws Exception {
+            closed = true;
+        }
 
+        public boolean isClosed() {
+            return closed;
         }
     }
 }

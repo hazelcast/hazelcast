@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datalink.DataLink;
 import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.datalink.impl.CloseableDataSource;
 import com.hazelcast.function.FunctionEx;
@@ -200,7 +199,7 @@ public class JdbcSqlConnector implements SqlConnector {
         final JdbcDataLink dataLink = nodeEngine
                 .getDataLinkService()
                 .getDataLink(dataLinkRef);
-        return dataLink.getDataLink();
+        return dataLink.getDataSource();
     }
 
     private void validateType(MappingField field, DbField dbField) {

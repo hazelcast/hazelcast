@@ -425,7 +425,7 @@ public final class SinkProcessors {
     }
 
     private static FunctionEx<ProcessorMetaSupplier.Context, DataSource> dataSourceSupplier(String dataLinkName) {
-        return context -> getDataLink(context, dataLinkName).getDataLink();
+        return context -> getDataLink(context, dataLinkName).getDataSource();
     }
 
     private static JdbcDataLink getDataLink(ProcessorMetaSupplier.Context context, String name) {

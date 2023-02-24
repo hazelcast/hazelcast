@@ -1369,7 +1369,7 @@ public final class Sources {
      * See also {@link Sources#jdbc(SupplierEx, ToResultSetFunction, FunctionEx)}.
      *</p>
      *
-     * @since 5.2
+     * @since 5.3
      */
     @Beta
     public static <T> BatchSource<T> jdbc(

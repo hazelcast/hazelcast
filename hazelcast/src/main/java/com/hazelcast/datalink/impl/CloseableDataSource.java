@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 public abstract class CloseableDataSource implements DataSource, AutoCloseable {
     private final DataSource dataSource;
 
-    private CloseableDataSource(DataSource dataSource) {
+    public CloseableDataSource(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
@@ -81,6 +81,10 @@ public abstract class CloseableDataSource implements DataSource, AutoCloseable {
     @Override
     public Logger getParentLogger() throws SQLFeatureNotSupportedException {
         return dataSource.getParentLogger();
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 
     public static CloseableDataSource closing(DataSource dataSource) {

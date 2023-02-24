@@ -18,8 +18,6 @@ package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datalink.DataLink;
 import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.BiFunctionEx;
@@ -458,19 +456,14 @@ public final class SourceProcessors {
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return ReadJdbcP.supplier(context -> getDataLink(context, dataLinkRef.getName()).getDataLink(),
+        return ReadJdbcP.supplier(context -> getDataLink(context, dataLinkRef.getName()).getDataSource(),
                 resultSetFn,
                 mapOutputFn);
     }
 
     private static JdbcDataLink getDataLink(ProcessorSupplier.Context context, String name) {
         NodeEngineImpl nodeEngine = Util.getNodeEngine(context.hazelcastInstance());
-        DataLink dataLink = nodeEngine.getDataLinkService().getDataLink(name);
-        if (!(dataLink instanceof JdbcDataLink)) {
-            String className = JdbcDataLink.class.getSimpleName();
-            throw new HazelcastException("Data link '" + name + "' must be an instance of " + className);
-        }
-        return (JdbcDataLink) dataLink;
+        return nodeEngine.getDataLinkService().getDataLink(name, JdbcDataLink.class);
     }
 
     /**

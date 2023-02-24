@@ -16,11 +16,23 @@
 
 package com.hazelcast.datalink;
 
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.spi.annotation.Beta;
 
+import java.util.Map;
+
 /**
- * Service for accessing data links
+ * Service for managing {@link DataLink}s and their lifecycle.
+ * <p>
+ * {@link DataLink}s defined in the configuration are created at startup.
+ * {@link DataLink}s added to the configuration dynamically are created via
+ * {@link #createConfigDataLink(DataLinkConfig)}.
+ * {@link DataLink}s created via SQL are added via {@link #createSqlDataLink(String, String, Map)},
+ * these can be removed via {@link #removeDataLink(String)}.
+ * <p>
+ * When a new config is added via {@link #createConfigDataLink(DataLinkConfig)} is created and SQL DataLink already
+ * exists the existing DataLink is replaced and closed.
  *
  * @since 5.2
  */
@@ -28,15 +40,62 @@ import com.hazelcast.spi.annotation.Beta;
 public interface DataLinkService extends AutoCloseable {
 
     /**
-     * Returns data link with given name.
+     * Creates a new DataLink with the given config
+     * <p>
+     * Such DataLink is considered immutable and can't be updated.
+     * The DataLink is closed when {@link #close()} is called.
      *
-     * @param name name of the data link
-     * @param <T> type of the data link
-     * @return instance of the factory
-     * @throws HazelcastException if the factory with given name is not found or misconfigured*
+     * @param config the configuration of the DataLink
+     */
+    void createConfigDataLink(DataLinkConfig config);
+
+    /**
+     * Creates a new DataLink with the given parameters.
+     *
+     * @param name    name of the DataLink
+     * @param type    type of the DataLink
+     * @param options options configuring the DataLink
+     */
+    void createSqlDataLink(String name, String type, Map<String, String> options);
+
+    /**
+     * Replaces an existing DataLink with a new one with given parameters.
+     * <p>
+     * The old DataLink is closed.
+     *
+     * @param name    name of the DataLink
+     * @param type    type of the DataLink
+     * @param options options configuring the DataLink
+     */
+    void replaceSqlDataLink(String name, String type, Map<String, String> options);
+
+    /**
+     * Returns DataLink with given name.
+     *
+     * @param name name of the DataLink
+     * @param <T>  type of the DataLink
+     * @return instance of the DataLink
+     * @throws HazelcastException if the DataLink with given name is not found or misconfigured*
      */
     <T extends DataLink> T getDataLink(String name);
 
+
+    <T extends DataLink> T getDataLink(String name, Class<T> clazz);
+
+    /**
+     * Removes DataLink created by {@link #createSqlDataLink(String, String, Map)}
+     * <p>
+     * Removed DataLink is closed.
+     *
+     * @param name name of the DataLink
+     * @throws IllegalArgumentException if the DataLink is defined in the config,
+     *                                  not created via {@link #createSqlDataLink(String, String, Map)}
+     */
+    void removeDataLink(String name);
+
+    /**
+     * Close this DataLinkService, should be called only on member shutdown.
+     */
     @Override
     void close();
 }

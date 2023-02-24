@@ -18,6 +18,7 @@ package com.hazelcast.datalink;
 
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.datalink.impl.CloseableDataSource;
+import com.hazelcast.jet.impl.connector.DataSourceFromConnectionSupplier;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -44,13 +45,16 @@ public class JdbcDataLinkTest {
             .setName(TEST_CONFIG_NAME)
             .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataLinkTest.class.getSimpleName() + "_shared")
             .setShared(true);
+
     private static final DataLinkConfig NOT_SHARED_DATA_LINK_CONFIG = new DataLinkConfig()
             .setName(TEST_CONFIG_NAME)
             .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataLinkTest.class.getSimpleName() + "_not_shared")
             .setShared(false);
+
     DataSource dataSource1;
     DataSource dataSource2;
-    JdbcDataLink jdbcDataLink = new JdbcDataLink();
+
+    JdbcDataLink jdbcDataLink;
 
     @After
     public void tearDown() throws Exception {
@@ -68,10 +72,10 @@ public class JdbcDataLinkTest {
 
     @Test
     public void should_return_same_datastore_when_shared() {
-        jdbcDataLink.init(SHARED_DATA_LINK_CONFIG);
+        jdbcDataLink = new JdbcDataLink(SHARED_DATA_LINK_CONFIG);
 
-        dataSource1 = jdbcDataLink.getDataLink();
-        dataSource2 = jdbcDataLink.getDataLink();
+        dataSource1 = jdbcDataLink.getDataSource();
+        dataSource2 = jdbcDataLink.getDataSource();
 
         assertThat(dataSource1).isNotNull();
         assertThat(dataSource2).isNotNull();
@@ -80,60 +84,63 @@ public class JdbcDataLinkTest {
 
     @Test
     public void should_use_custom_hikari_pool_name() throws SQLException {
-        jdbcDataLink.init(SHARED_DATA_LINK_CONFIG);
+        jdbcDataLink = new JdbcDataLink(SHARED_DATA_LINK_CONFIG);
 
-        dataSource1 = jdbcDataLink.getDataLink();
+        dataSource1 = jdbcDataLink.getDataSource();
         assertPoolNameEndsWith(dataSource1, TEST_CONFIG_NAME);
     }
 
     @Test
-    public void should_NOT_return_closing_datastore_when_shared() throws Exception {
-        jdbcDataLink.init(SHARED_DATA_LINK_CONFIG);
+    public void should_return_hikari_pool_when_shared() throws Exception {
+        jdbcDataLink = new JdbcDataLink(SHARED_DATA_LINK_CONFIG);
 
-        CloseableDataSource closeableDataSource = (CloseableDataSource) jdbcDataLink.getDataLink();
-        closeableDataSource.close();
-
-        ResultSet resultSet = executeQuery(closeableDataSource, "select 'some-name' as name");
-        resultSet.next();
-        String actualName = resultSet.getString(1);
-
-        assertThat(actualName).isEqualTo("some-name");
+        DataSource dataSource = jdbcDataLink.getDataSource();
+        assertThat(dataSource).isInstanceOf(CloseableDataSource.class);
     }
 
     @Test
-    public void should_return_closing_datastore_when_not_shared() throws Exception {
-        jdbcDataLink.init(NOT_SHARED_DATA_LINK_CONFIG);
+    public void should_return_single_use_data_source_when_NOT_shared() throws Exception {
+        jdbcDataLink = new JdbcDataLink(NOT_SHARED_DATA_LINK_CONFIG);
 
-        CloseableDataSource closeableDataSource = (CloseableDataSource) jdbcDataLink.getDataLink();
-        closeableDataSource.close();
-
-        assertDataSourceClosed(closeableDataSource, TEST_CONFIG_NAME);
-    }
-
-    private ResultSet executeQuery(CloseableDataSource closeableDataSource, String sql) throws SQLException {
-        return closeableDataSource.getConnection().prepareStatement(sql).executeQuery();
+        DataSource dataSource = jdbcDataLink.getDataSource();
+        assertThat(dataSource).isInstanceOf(DataSourceFromConnectionSupplier.class);
     }
 
     @Test
-    public void should_return_different_datastore_when_NOT_shared() {
-        jdbcDataLink.init(NOT_SHARED_DATA_LINK_CONFIG);
+    public void should_close_shared_datasource_when_data_source_and_link_closed() throws Exception {
+        jdbcDataLink = new JdbcDataLink(SHARED_DATA_LINK_CONFIG);
+        CloseableDataSource dataSource = (CloseableDataSource) jdbcDataLink.getDataSource();
 
-        dataSource1 = jdbcDataLink.getDataLink();
-        dataSource2 = jdbcDataLink.getDataLink();
-
-        assertThat(dataSource1).isNotNull();
-        assertThat(dataSource2).isNotNull();
-        assertThat(dataSource1).isNotSameAs(dataSource2);
-    }
-
-    @Test
-    public void should_close_shared_datasource_on_close() throws Exception {
-        jdbcDataLink.init(SHARED_DATA_LINK_CONFIG);
-
-        DataSource dataSource = jdbcDataLink.getDataLink();
+        dataSource.close();
         jdbcDataLink.close();
 
         assertDataSourceClosed(dataSource, TEST_CONFIG_NAME);
+    }
+
+    /**
+     * This test closes the data link and source in the opposite order then
+     * {@link #should_close_shared_datasource_when_data_source_and_link_closed()}
+     */
+    @Test
+    public void should_close_shared_datasource_when_data_link_and_source_closed() throws Exception {
+        jdbcDataLink = new JdbcDataLink(SHARED_DATA_LINK_CONFIG);
+
+        CloseableDataSource dataSource = (CloseableDataSource) jdbcDataLink.getDataSource();
+        jdbcDataLink.close();
+
+        String actualName;
+        try (ResultSet resultSet = executeQuery(dataSource, "select 'some-name' as name")) {
+            resultSet.next();
+            actualName = resultSet.getString(1);
+        }
+        assertThat(actualName).isEqualTo("some-name");
+
+        dataSource.close();
+        assertDataSourceClosed(dataSource, TEST_CONFIG_NAME);
+    }
+
+    private ResultSet executeQuery(DataSource dataSource, String sql) throws SQLException {
+        return dataSource.getConnection().prepareStatement(sql).executeQuery();
     }
 
 }

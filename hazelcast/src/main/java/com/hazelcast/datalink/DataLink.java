@@ -28,11 +28,20 @@ import com.hazelcast.spi.annotation.Beta;
 public interface DataLink extends AutoCloseable {
 
     /**
-     * Initialize factory with the config
+     * Returns the name of this DataLink as specified in the
+     * {@link DataLinkConfig} or given to the {@code CREATE DATA LINK}
+     * command.
      *
-     * @param config configuration of the given data link
+     * @return the name of this DataLink
      */
-    void init(DataLinkConfig config);
+    String getName();
+
+    /**
+     * Returns the configuration of this data link
+     */
+    DataLinkConfig getConfig();
+
+    void retain();
 
     /**
      * Closes underlying resources
