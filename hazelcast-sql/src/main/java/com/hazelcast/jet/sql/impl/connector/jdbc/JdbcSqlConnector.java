@@ -196,10 +196,13 @@ public class JdbcSqlConnector implements SqlConnector {
     }
 
     private static DataSource createDataLink(NodeEngine nodeEngine, String dataLinkRef) {
-        final JdbcDataLink dataLink = nodeEngine
+        try (JdbcDataLink dataLink = nodeEngine
                 .getDataLinkService()
-                .getDataLink(dataLinkRef);
-        return dataLink.getDataSource();
+                .getDataLink(dataLinkRef)) {
+            return dataLink.getDataSource();
+        } catch (Exception e) {
+            throw new HazelcastException("Could not close DataLink", e);
+        }
     }
 
     private void validateType(MappingField field, DbField dbField) {

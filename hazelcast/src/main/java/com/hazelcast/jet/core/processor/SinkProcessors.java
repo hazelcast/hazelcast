@@ -425,17 +425,16 @@ public final class SinkProcessors {
     }
 
     private static FunctionEx<ProcessorMetaSupplier.Context, DataSource> dataSourceSupplier(String dataLinkName) {
-        return context -> getDataLink(context, dataLinkName).getDataSource();
+        return context -> {
+            try (JdbcDataLink dataLink = getDataLink(context, dataLinkName)) {
+                return dataLink.getDataSource();
+            }
+        };
     }
 
     private static JdbcDataLink getDataLink(ProcessorMetaSupplier.Context context, String name) {
         NodeEngineImpl nodeEngine = Util.getNodeEngine(context.hazelcastInstance());
-        DataLink dataLink = nodeEngine.getDataLinkService().getDataLink(name);
-        if (!(dataLink instanceof JdbcDataLink)) {
-            String className = JdbcDataLink.class.getName();
-            throw new HazelcastException("Data link '" + name + "' must be an instance of " + className);
-        }
-        return (JdbcDataLink) dataLink;
+        return nodeEngine.getDataLinkService().getDataLink(name, JdbcDataLink.class);
     }
 
     /**

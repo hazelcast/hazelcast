@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <a href="https://github.com/brettwooldridge/HikariCP#gear-configuration-knobs-baby">HikariCP configuration</a>
  * </p>
  *
- * @since 5.2
+ * @since 5.3
  */
 @Beta
 public class JdbcDataLink implements DataLink {
@@ -52,6 +52,9 @@ public class JdbcDataLink implements DataLink {
     private static final int JDBC_TEST_CONNECTION_TIMEOUT_SECONDS = 5;
     private static final AtomicInteger DATA_SOURCE_COUNTER = new AtomicInteger();
 
+    /*
+     * Reference counter to handle closing of the pooledDataSource.
+     */
     protected final ReferenceCounter refCounter;
     protected final DataLinkConfig config;
 
@@ -66,6 +69,21 @@ public class JdbcDataLink implements DataLink {
         this.config = config;
         this.pooledDataSource = createHikariDataSource();
         this.singleUseDataSource = createSingleUseDataSource();
+    }
+
+    private DataSource createSingleUseDataSource() {
+        Properties properties = config.getProperties();
+        String jdbcUrl = properties.getProperty("jdbcUrl");
+        return new DataSourceFromConnectionSupplier(
+                () -> {
+                    try {
+                        // TODO pass other properties
+                        return DriverManager.getConnection(jdbcUrl);
+                    } catch (SQLException e) {
+                        throw new HazelcastException("Could not create a new connection", e);
+                    }
+                }
+        );
     }
 
     @Override
@@ -91,21 +109,6 @@ public class JdbcDataLink implements DataLink {
         } catch (Exception e) {
             throw new HazelcastException("Could not read resources for DataLink " + config.getName());
         }
-    }
-
-    private DataSource createSingleUseDataSource() {
-        Properties properties = config.getProperties();
-        String jdbcUrl = properties.getProperty("jdbcUrl");
-        return new DataSourceFromConnectionSupplier(
-                () -> {
-                    try {
-                        // TODO pass other properties
-                        return DriverManager.getConnection(jdbcUrl);
-                    } catch (SQLException e) {
-                        throw new HazelcastException("Could not create a new connection", e);
-                    }
-                }
-        );
     }
 
     @Override

@@ -45,10 +45,10 @@ abstract class AbstractJdbcSqlConnectorProcessorSupplier implements ProcessorSup
         DataLinkService dataLinkService = ((HazelcastInstanceImpl) context.hazelcastInstance())
                 .node.getNodeEngine().getDataLinkService();
 
-        JdbcDataLink dataLink = dataLinkService
-                .getDataLink(dataLinkRef);
-
-        dataSource = dataLink.getDataSource();
+        try (JdbcDataLink dataLink = dataLinkService
+                .getDataLink(dataLinkRef)) {
+            dataSource = dataLink.getDataSource();
+        }
     }
 
     @Override

@@ -209,15 +209,18 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         if (properties.mappingType != null) {
             return properties.mappingType;
         } else {
-            DataLink dataLink = nodeEngine()
+            try (DataLink dataLink = nodeEngine()
                     .getDataLinkService()
-                    .getDataLink(properties.dataLinkRef);
+                    .getDataLink(properties.dataLinkRef)) {
 
-            if (dataLink instanceof JdbcDataLink) {
-                return "JDBC";
-            } else {
-                throw new HazelcastException("Unknown DataLink class " + dataLink.getClass()
-                        + ". Set the mapping type using '" + MAPPING_TYPE_PROPERTY + "' property");
+                if (dataLink instanceof JdbcDataLink) {
+                    return "JDBC";
+                } else {
+                    throw new HazelcastException("Unknown DataLink class " + dataLink.getClass()
+                            + ". Set the mapping type using '" + MAPPING_TYPE_PROPERTY + "' property");
+                }
+            } catch (Exception e) {
+                throw new HazelcastException("Could not close DataLink", e);
             }
         }
     }

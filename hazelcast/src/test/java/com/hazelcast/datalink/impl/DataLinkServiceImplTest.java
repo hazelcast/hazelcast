@@ -22,7 +22,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.datalink.DataLink;
 import com.hazelcast.datalink.DataLinkService;
-import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.datalink.impl.DataLinkTestUtil.DummyDataLink;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -32,16 +31,10 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.sql.DataSource;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-import static com.hazelcast.datalink.impl.HikariTestUtil.assertDataSourceClosed;
 import static com.hazelcast.datalink.impl.HikariTestUtil.assertEventuallyNoHikariThreads;
 import static com.hazelcast.jet.core.TestUtil.createMap;
 import static org.assertj.core.api.Assertions.assertThat;

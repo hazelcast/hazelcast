@@ -456,7 +456,11 @@ public final class SourceProcessors {
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return ReadJdbcP.supplier(context -> getDataLink(context, dataLinkRef.getName()).getDataSource(),
+        return ReadJdbcP.supplier(context -> {
+                    try (JdbcDataLink dataLink = getDataLink(context, dataLinkRef.getName())) {
+                        return dataLink.getDataSource();
+                    }
+                },
                 resultSetFn,
                 mapOutputFn);
     }
@@ -536,20 +540,19 @@ public final class SourceProcessors {
      * using the {@link SourceBuilder}. This variant creates a source that
      * emits timestamped events.
      *
-     * @param createFn function that creates the source's context object
-     * @param fillBufferFn function that fills Jet's buffer with items to emit
-     * @param eventTimePolicy parameters for watermark generation
-     * @param createSnapshotFn function that returns a snapshot of the context object's state
-     * @param restoreSnapshotFn function that restores the context object's state from a snapshot
-     * @param destroyFn function that cleans up the resources held by the context object
+     * @param createFn                  function that creates the source's context object
+     * @param fillBufferFn              function that fills Jet's buffer with items to emit
+     * @param eventTimePolicy           parameters for watermark generation
+     * @param createSnapshotFn          function that returns a snapshot of the context object's state
+     * @param restoreSnapshotFn         function that restores the context object's state from a snapshot
+     * @param destroyFn                 function that cleans up the resources held by the context object
      * @param preferredLocalParallelism preferred local parallelism of the source vertex. Special values:
      *                                  {@value Vertex#LOCAL_PARALLELISM_USE_DEFAULT} ->
      *                                  use the cluster's default local parallelism;
      *                                  0 -> create a single processor for the entire cluster (total parallelism = 1)
-     *
-     * @param <C> type of the context object
-     * @param <T> type of items the source emits
-     * @param <S> type of the object saved to state snapshot
+     * @param <C>                       type of the context object
+     * @param <T>                       type of items the source emits
+     * @param <S>                       type of the object saved to state snapshot
      */
     @Nonnull
     @SuppressWarnings("unchecked")
