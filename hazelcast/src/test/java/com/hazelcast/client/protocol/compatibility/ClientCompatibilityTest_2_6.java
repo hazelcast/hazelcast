@@ -7104,16 +7104,18 @@ public class ClientCompatibilityTest_2_6 {
     }
 
     @Test
-    public void test_JetSetJobConfigCodec_encodeRequest() {
+    public void test_JetUpdateJobConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 905;
-        ClientMessage encoded = JetSetJobConfigCodec.encodeRequest(aLong, aData);
+        ClientMessage encoded = JetUpdateJobConfigCodec.encodeRequest(aLong, aData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
 
     @Test
-    public void test_JetSetJobConfigCodec_decodeResponse() {
+    public void test_JetUpdateJobConfigCodec_decodeResponse() {
         int fileClientMessageIndex = 906;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aData, JetUpdateJobConfigCodec.decodeResponse(fromFile)));
     }
 
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {

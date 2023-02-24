@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
@@ -33,7 +34,6 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -157,23 +157,15 @@ public class MasterContext {
         return jobRecord.getConfig();
     }
 
-    public void setJobConfig(JobConfig config) {
-        JobConfig currentConfig = jobConfig();
-        BiConsumer<Function<JobConfig, Object>, String> assertEquals = (accessor, name) -> {
-            if (!Objects.equals(accessor.apply(currentConfig), accessor.apply(config))) {
-                throw new UnsupportedOperationException("Job " + name + " cannot be changed");
-            }
-        };
-        assertEquals.accept(JobConfig::getName, "name");
-        assertEquals.accept(JobConfig::getResourceConfigs, "resources");
-        assertEquals.accept(JobConfig::getProcessingGuarantee, "processing guarantee");
+    public JobConfig updateJobConfig(DeltaJobConfig deltaConfig) {
         lock();
         try {
             if (jobStatus != SUSPENDED && jobStatus != SUSPENDED_EXPORTING_SNAPSHOT) {
                 throw new IllegalStateException("Job not suspended");
             }
-            jobRecord.setConfig(config);
+            jobConfig().apply(deltaConfig);
             jobRepository.updateJobRecord(jobRecord);
+            return jobConfig();
         } finally {
             unlock();
         }

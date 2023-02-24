@@ -28,9 +28,9 @@ import com.hazelcast.client.impl.protocol.codec.JetGetJobSuspensionCauseCodec;
 import com.hazelcast.client.impl.protocol.codec.JetIsJobUserCancelledCodec;
 import com.hazelcast.client.impl.protocol.codec.JetJoinSubmittedJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetResumeJobCodec;
-import com.hazelcast.client.impl.protocol.codec.JetSetJobConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetTerminateJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetUpdateJobConfigCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.Data;
@@ -38,6 +38,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.JobSuspensionCause;
@@ -210,10 +211,14 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     }
 
     @Override
-    public CompletableFuture<Void> invokeSetConfig(JobConfig config) {
-        Data configData = serializationService().toData(config);
-        ClientMessage request = JetSetJobConfigCodec.encodeRequest(getId(), configData);
-        return invocation(request, masterId()).invoke().thenApply(c -> null);
+    protected JobConfig doUpdateJobConfig(DeltaJobConfig deltaConfig) {
+        return callAndRetryIfTargetNotFound(() -> {
+            Data deltaConfigData = serializationService().toData(deltaConfig);
+            ClientMessage request = JetUpdateJobConfigCodec.encodeRequest(getId(), deltaConfigData);
+            ClientMessage response = invocation(request, masterId()).invoke().get();
+            Data configData = JetUpdateJobConfigCodec.decodeResponse(response);
+            return serializationService().toObject(configData);
+        });
     }
 
     @Nonnull @Override

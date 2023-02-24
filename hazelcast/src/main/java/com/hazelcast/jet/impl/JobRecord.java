@@ -46,7 +46,7 @@ public class JobRecord implements IdentifiedDataSerializable {
     private Data dag;
     // JSON representation of DAG, used by Management Center
     private String dagJson;
-    private volatile JobConfig config;
+    private JobConfig config;
     private Set<String> ownedObservables;
     private Subject subject;
 
@@ -92,10 +92,6 @@ public class JobRecord implements IdentifiedDataSerializable {
 
     public JobConfig getConfig() {
         return config;
-    }
-
-    public void setConfig(JobConfig config) {
-        this.config = config;
     }
 
     public Set<String> getOwnedObservables() {

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.operation;
 
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -24,36 +25,36 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
-public class SetJobConfigOperation extends AsyncJobOperation {
-    private JobConfig config;
+public class UpdateJobConfigOperation extends AsyncJobOperation {
+    private DeltaJobConfig deltaConfig;
 
-    public SetJobConfigOperation() {
+    public UpdateJobConfigOperation() {
     }
 
-    public SetJobConfigOperation(long jobId, JobConfig config) {
+    public UpdateJobConfigOperation(long jobId, DeltaJobConfig deltaConfig) {
         super(jobId);
-        this.config = config;
+        this.deltaConfig = deltaConfig;
     }
 
     @Override
-    public CompletableFuture<Void> doRun() {
-        return getJobCoordinationService().setJobConfig(jobId(), config);
+    public CompletableFuture<JobConfig> doRun() {
+        return getJobCoordinationService().updateJobConfig(jobId(), deltaConfig);
     }
 
     @Override
     public int getClassId() {
-        return JetInitDataSerializerHook.SET_JOB_CONFIG_OP;
+        return JetInitDataSerializerHook.UPDATE_JOB_CONFIG_OP;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(config);
+        out.writeObject(deltaConfig);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        config = in.readObject();
+        deltaConfig = in.readObject();
     }
 }

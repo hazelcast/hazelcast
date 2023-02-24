@@ -17,6 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.config.MetricsConfig;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.DAG;
@@ -172,13 +173,14 @@ public interface Job {
     JobConfig getConfig();
 
     /**
-     * Sets the specified configuration if this job is suspended.
+     * Applies the specified delta configuration if this job is suspended and
+     * returns the updated configuration.
      *
      * @throws IllegalStateException if this job is not suspended
      * @throws UnsupportedOperationException if called for a light job
      * @since 5.3
      */
-    void setConfig(@Nonnull JobConfig config);
+    JobConfig updateConfig(@Nonnull DeltaJobConfig deltaConfig);
 
     /**
      * Return a {@link JobSuspensionCause description of the cause} that has

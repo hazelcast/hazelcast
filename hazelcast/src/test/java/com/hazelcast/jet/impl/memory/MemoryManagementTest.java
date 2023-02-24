@@ -22,6 +22,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperations;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.JoinClause;
@@ -139,7 +140,7 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
             assertJobStatusEventually(job, SUSPENDED);
             assertThat(job.getSuspensionCause().errorCause())
                     .contains("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
-            job.setConfig(new JobConfig().setMaxProcessorAccumulatedRecords(itemCount));
+            job.updateConfig(new DeltaJobConfig().setMaxProcessorAccumulatedRecords((long) itemCount));
             job.resume();
         }
         job.join();

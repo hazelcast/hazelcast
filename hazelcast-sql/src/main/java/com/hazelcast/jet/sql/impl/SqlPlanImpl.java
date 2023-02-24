@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.config.IndexType;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
@@ -401,21 +402,21 @@ abstract class SqlPlanImpl extends SqlPlan {
 
     static class AlterJobPlan extends SqlPlanImpl {
         private final String jobName;
-        private final Map<String, Object> options;
+        private final DeltaJobConfig deltaConfig;
         private final AlterJobOperation operation;
         private final PlanExecutor planExecutor;
 
         AlterJobPlan(
                 PlanKey planKey,
                 String jobName,
-                Map<String, Object> options,
+                DeltaJobConfig deltaConfig,
                 AlterJobOperation operation,
                 PlanExecutor planExecutor
         ) {
             super(planKey);
 
             this.jobName = jobName;
-            this.options = options;
+            this.deltaConfig = deltaConfig;
             this.operation = operation;
             this.planExecutor = planExecutor;
         }
@@ -424,8 +425,8 @@ abstract class SqlPlanImpl extends SqlPlan {
             return jobName;
         }
 
-        Map<String, Object> getOptions() {
-            return options;
+        DeltaJobConfig getDeltaConfig() {
+            return deltaConfig;
         }
 
         AlterJobOperation getOperation() {

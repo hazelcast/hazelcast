@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import org.apache.calcite.sql.SqlAlter;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
@@ -31,46 +32,51 @@ import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.util.ImmutableNullableList;
 
 import javax.annotation.Nonnull;
-import java.util.Collection;
-import java.util.Collections;
+import javax.annotation.Nullable;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
 
-import static com.hazelcast.jet.sql.impl.parse.SqlCreateJob.parseOptions;
+import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
 import static java.util.Objects.requireNonNull;
 
 public class SqlAlterJob extends SqlAlter {
 
     private static final SqlSpecialOperator OPERATOR =
             new SqlSpecialOperator("ALTER JOB", SqlKind.OTHER_DDL);
-    private static final Collection<String> UNSUPPORTED_OPTIONS =
-            Collections.singletonList("processingGuarantee");
 
     private final SqlIdentifier name;
     private final SqlNodeList options;
     private final AlterJobOperation operation;
 
-    private Map<String, Object> parsedOptions;
+    private final DeltaJobConfig deltaConfig;
 
     public SqlAlterJob(SqlIdentifier name, SqlNodeList options, AlterJobOperation operation, SqlParserPos pos) {
         super(pos, "JOB");
 
         this.name = requireNonNull(name, "Name must not be null");
-        this.options = requireNonNull(options, "Options should not be null");
+        this.options = options;
         this.operation = operation;
 
         Preconditions.checkTrue(name.names.size() == 1, name.toString());
+        Preconditions.checkTrueUnsupportedOperation(
+                options == null || operation == null || operation == AlterJobOperation.RESUME,
+                "Options can only be specified for RESUME operation");
+
+        deltaConfig = options == null || options.isEmpty() ? null : new DeltaJobConfig();
     }
 
     public String name() {
         return name.toString();
     }
 
-    @Nonnull
-    public Map<String, Object> getOptions() {
-        return parsedOptions;
+    @Nullable
+    public DeltaJobConfig getDeltaConfig() {
+        return deltaConfig;
     }
 
+    @Nullable
     public AlterJobOperation getOperation() {
         return operation;
     }
@@ -89,7 +95,7 @@ public class SqlAlterJob extends SqlAlter {
     protected void unparseAlterOperation(SqlWriter writer, int leftPrec, int rightPrec) {
         name.unparse(writer, leftPrec, rightPrec);
 
-        if (!options.isEmpty()) {
+        if (options != null && !options.isEmpty()) {
             writer.newlineAndIndent();
             writer.keyword("OPTIONS");
             SqlWriter.Frame withFrame = writer.startList("(", ")");
@@ -114,7 +120,54 @@ public class SqlAlterJob extends SqlAlter {
 
     @Override
     public void validate(SqlValidator validator, SqlValidatorScope scope) {
-        parsedOptions = parseOptions(options, validator, UNSUPPORTED_OPTIONS);
+        if (options == null) {
+            return;
+        }
+        Set<String> optionNames = new HashSet<>();
+        for (SqlNode option0 : options) {
+            SqlOption option = (SqlOption) option0;
+            String key = option.keyString();
+            String value = option.valueString();
+
+            if (!optionNames.add(key)) {
+                throw validator.newValidationError(option, RESOURCE.duplicateOption(key));
+            }
+
+            Supplier<Long> valueAsLong = () -> {
+                try {
+                    return Long.parseLong(value);
+                } catch (NumberFormatException e) {
+                    throw validator.newValidationError(option.value(),
+                            RESOURCE.jobOptionIncorrectNumber(key, value));
+                }
+            };
+
+            switch (key) {
+                case "snapshotIntervalMillis":
+                    deltaConfig.setSnapshotIntervalMillis(valueAsLong.get());
+                    break;
+                case "autoScaling":
+                    deltaConfig.setAutoScaling(Boolean.parseBoolean(value));
+                    break;
+                case "splitBrainProtectionEnabled":
+                    deltaConfig.setSplitBrainProtection(Boolean.parseBoolean(value));
+                    break;
+                case "metricsEnabled":
+                    deltaConfig.setMetricsEnabled(Boolean.parseBoolean(value));
+                    break;
+                case "storeMetricsAfterJobCompletion":
+                    deltaConfig.setStoreMetricsAfterJobCompletion(Boolean.parseBoolean(value));
+                    break;
+                case "maxProcessorAccumulatedRecords":
+                    deltaConfig.setMaxProcessorAccumulatedRecords(valueAsLong.get());
+                    break;
+                case "suspendOnFailure":
+                    deltaConfig.setSuspendOnFailure(Boolean.parseBoolean(value));
+                    break;
+                default:
+                    throw validator.newValidationError(option.key(), RESOURCE.unknownJobOption(key));
+            }
+        }
     }
 
     public enum AlterJobOperation {

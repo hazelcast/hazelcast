@@ -24,6 +24,7 @@ import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.Identity;
 import com.hazelcast.jet.core.TestProcessors.ListSource;
@@ -48,7 +49,6 @@ import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -60,7 +60,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
@@ -1035,16 +1034,16 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_changeJobConfig_member() {
-        test_changeJobConfig(instances()[1]);
+    public void test_updateJobConfig_member() {
+        test_updateJobConfig(instances()[1]);
     }
 
     @Test
-    public void test_changeJobConfig_client() {
-        test_changeJobConfig(client());
+    public void test_updateJobConfig_client() {
+        test_updateJobConfig(client());
     }
 
-    private void test_changeJobConfig(HazelcastInstance instance) {
+    private void test_updateJobConfig(HazelcastInstance instance) {
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(TestSources.items(asList(2, 3, 1)))
                 .sort()
@@ -1056,70 +1055,64 @@ public class JobTest extends SimpleTestInClusterSupport {
         assertThat(job.getSuspensionCause().errorCause())
                 .contains("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
 
-        assertThatThrownBy(() -> job.setConfig(new JobConfig().setName("job")))
-                .hasMessage("Job name cannot be changed");
-        assertThatThrownBy(() -> job.setConfig(new JobConfig().addJar(new URL("http://site/path/to/file.jar"))))
-                .hasMessage("Job resources cannot be changed");
-        assertThatThrownBy(() -> job.setConfig(new JobConfig().setProcessingGuarantee(AT_LEAST_ONCE)))
-                .hasMessage("Job processing guarantee cannot be changed");
 
-        job.setConfig(new JobConfig().setMaxProcessorAccumulatedRecords(3));
+        job.updateConfig(new DeltaJobConfig().setMaxProcessorAccumulatedRecords(3L));
         Stream.of(instances()[0], instances()[1], client()).forEach(hz ->
                 assertEquals(3, hz.getJet().getJob(job.getId()).getConfig().getMaxProcessorAccumulatedRecords()));
 
         job.resume();
         job.join();
 
-        assertThatThrownBy(() -> job.setConfig(new JobConfig())).hasMessage("Job not suspended");
+        assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig())).hasMessage("Job not suspended");
     }
 
     @Test
-    public void test_tryChangingJobConfig_then_fail_member() {
-        test_tryChangingJobConfig_then_fail(instances()[1]);
+    public void test_tryUpdatingJobConfig_then_fail_member() {
+        test_tryUpdatingJobConfig_then_fail(instances()[1]);
     }
 
     @Test
-    public void test_tryChangingJobConfig_then_fail_client() {
-        test_tryChangingJobConfig_then_fail(client());
+    public void test_tryUpdatingJobConfig_then_fail_client() {
+        test_tryUpdatingJobConfig_then_fail(client());
     }
 
-    private void test_tryChangingJobConfig_then_fail(HazelcastInstance instance) {
+    private void test_tryUpdatingJobConfig_then_fail(HazelcastInstance instance) {
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(TestSources.itemStream(1))
                 .withoutTimestamps()
                 .writeTo(Sinks.noop());
 
         Job job = instance.getJet().newJob(pipeline);
-        assertThatThrownBy(() -> job.setConfig(new JobConfig())).hasMessage("Job not suspended");
+        assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig())).hasMessage("Job not suspended");
 
         assertJobStatusEventually(job, RUNNING);
-        assertThatThrownBy(() -> job.setConfig(new JobConfig())).hasMessage("Job not suspended");
+        assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig())).hasMessage("Job not suspended");
 
         cancelAndJoin(job);
-        assertThatThrownBy(() -> job.setConfig(new JobConfig())).hasMessage("Job not suspended");
+        assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig())).hasMessage("Job not suspended");
     }
 
     // ### Tests for light jobs
 
     @Test
-    public void test_tryChangingLightJobConfig_then_fail_member() {
-        test_tryChangingLightJobConfig_then_fail(instances()[1]);
+    public void test_tryUpdatingLightJobConfig_then_fail_member() {
+        test_tryUpdatingLightJobConfig_then_fail(instances()[1]);
     }
 
     @Test
-    public void test_tryChangingLightJobConfig_then_fail_client() {
-        test_tryChangingLightJobConfig_then_fail(client());
+    public void test_tryUpdatingLightJobConfig_then_fail_client() {
+        test_tryUpdatingLightJobConfig_then_fail(client());
     }
 
-    private void test_tryChangingLightJobConfig_then_fail(HazelcastInstance instance) {
+    private void test_tryUpdatingLightJobConfig_then_fail(HazelcastInstance instance) {
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(TestSources.itemStream(1))
                 .withoutTimestamps()
                 .writeTo(Sinks.noop());
 
         Job job = instance.getJet().newLightJob(pipeline);
-        assertThatThrownBy(() -> job.setConfig(new JobConfig()))
-                .hasMessage("not supported for light jobs: setConfig");
+        assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig()))
+                .hasMessage("not supported for light jobs: updateConfig");
         cancelAndJoin(job);
     }
 

@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
@@ -35,7 +36,7 @@ import com.hazelcast.jet.impl.operation.GetJobSuspensionCauseOperation;
 import com.hazelcast.jet.impl.operation.IsJobUserCancelledOperation;
 import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
 import com.hazelcast.jet.impl.operation.ResumeJobOperation;
-import com.hazelcast.jet.impl.operation.SetJobConfigOperation;
+import com.hazelcast.jet.impl.operation.UpdateJobConfigOperation;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
 import com.hazelcast.jet.impl.operation.TerminateJobOperation;
 import com.hazelcast.logging.LoggingService;
@@ -192,8 +193,12 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     @Override
-    public CompletableFuture<Void> invokeSetConfig(JobConfig config) {
-        return invokeOp(new SetJobConfigOperation(getId(), config));
+    protected JobConfig doUpdateJobConfig(DeltaJobConfig deltaConfig) {
+        try {
+            return this.<JobConfig>invokeOp(new UpdateJobConfigOperation(getId(), deltaConfig)).get();
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
     }
 
     @Override

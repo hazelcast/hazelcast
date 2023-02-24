@@ -486,7 +486,7 @@ SqlAlterJob SqlAlterJob() :
     SqlParserPos pos = getPos();
 
     SqlIdentifier name;
-    SqlNodeList sqlOptions = SqlNodeList.EMPTY;
+    SqlNodeList sqlOptions = null;
     SqlAlterJob.AlterJobOperation operation = null;
 }
 {

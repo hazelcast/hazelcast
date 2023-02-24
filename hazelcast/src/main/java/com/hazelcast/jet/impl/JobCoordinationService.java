@@ -35,6 +35,7 @@ import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JobAlreadyExistsException;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.JobConfigArguments;
@@ -825,18 +826,19 @@ public class JobCoordinationService {
     }
 
     /**
-     * Sets the specified configuration if the given job is suspended.
+     * Applies the specified delta configuration if the job is suspended.
      * Otherwise, an {@link IllegalStateException} is thrown by the returned future.
      */
-    public CompletableFuture<Void> setJobConfig(long jobId, @Nonnull JobConfig config) {
-        return runWithJob(jobId,
-                masterContext -> masterContext.setJobConfig(config),
+    public CompletableFuture<JobConfig> updateJobConfig(long jobId, @Nonnull DeltaJobConfig deltaConfig) {
+        return callWithJob(jobId,
+                masterContext -> masterContext.updateJobConfig(deltaConfig),
                 jobResult -> {
                     throw new IllegalStateException("Job not suspended");
                 },
                 jobRecord -> {
                     throw new IllegalStateException("Job not suspended");
-                }
+                },
+                null
         );
     }
 

@@ -398,7 +398,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return new AlterJobPlan(
                 planKey,
                 sqlAlterJob.name(),
-                sqlAlterJob.getOptions(),
+                sqlAlterJob.getDeltaConfig(),
                 sqlAlterJob.getOperation(),
                 planExecutor
         );

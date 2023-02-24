@@ -8008,18 +8008,18 @@ public class MemberCompatibilityTest_2_6 {
     }
 
     @Test
-    public void test_JetSetJobConfigCodec_decodeRequest() {
+    public void test_JetUpdateJobConfigCodec_decodeRequest() {
         int fileClientMessageIndex = 905;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        JetSetJobConfigCodec.RequestParameters parameters = JetSetJobConfigCodec.decodeRequest(fromFile);
+        JetUpdateJobConfigCodec.RequestParameters parameters = JetUpdateJobConfigCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aLong, parameters.jobId));
-        assertTrue(isEqual(aData, parameters.config));
+        assertTrue(isEqual(aData, parameters.deltaConfig));
     }
 
     @Test
-    public void test_JetSetJobConfigCodec_encodeResponse() {
+    public void test_JetUpdateJobConfigCodec_encodeResponse() {
         int fileClientMessageIndex = 906;
-        ClientMessage encoded = JetSetJobConfigCodec.encodeResponse();
+        ClientMessage encoded = JetUpdateJobConfigCodec.encodeResponse(aData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

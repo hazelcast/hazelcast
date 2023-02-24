@@ -35,8 +35,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("423299c68d71cfae8ed825b00ae4742f")
-public final class JetSetJobConfigCodec {
+@Generated("90e4bc0fb7a1738b72a7ec96a9125d91")
+public final class JetUpdateJobConfigCodec {
     //hex: 0xFE1500
     public static final int REQUEST_MESSAGE_TYPE = 16651520;
     //hex: 0xFE1501
@@ -45,7 +45,7 @@ public final class JetSetJobConfigCodec {
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
-    private JetSetJobConfigCodec() {
+    private JetUpdateJobConfigCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -57,38 +57,48 @@ public final class JetSetJobConfigCodec {
 
         /**
          */
-        public com.hazelcast.internal.serialization.Data config;
+        public com.hazelcast.internal.serialization.Data deltaConfig;
     }
 
-    public static ClientMessage encodeRequest(long jobId, com.hazelcast.internal.serialization.Data config) {
+    public static ClientMessage encodeRequest(long jobId, com.hazelcast.internal.serialization.Data deltaConfig) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(true);
-        clientMessage.setOperationName("Jet.SetJobConfig");
+        clientMessage.setOperationName("Jet.UpdateJobConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET, jobId);
         clientMessage.add(initialFrame);
-        DataCodec.encode(clientMessage, config);
+        DataCodec.encode(clientMessage, deltaConfig);
         return clientMessage;
     }
 
-    public static JetSetJobConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static JetUpdateJobConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.jobId = decodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET);
-        request.config = DataCodec.decode(iterator);
+        request.deltaConfig = DataCodec.decode(iterator);
         return request;
     }
 
-    public static ClientMessage encodeResponse() {
+    public static ClientMessage encodeResponse(com.hazelcast.internal.serialization.Data updatedConfig) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
+        DataCodec.encode(clientMessage, updatedConfig);
         return clientMessage;
+    }
+
+    /**
+     */
+    public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
+        //empty initial frame
+        iterator.next();
+        return DataCodec.decode(iterator);
     }
 }

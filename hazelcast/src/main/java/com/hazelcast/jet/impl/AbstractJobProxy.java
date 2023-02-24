@@ -21,11 +21,12 @@ import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.exception.CancellationByUserException;
-import com.hazelcast.jet.impl.operation.SetJobConfigOperation;
+import com.hazelcast.jet.impl.operation.UpdateJobConfigOperation;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -74,6 +75,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     private final AtomicBoolean joinedJob = new AtomicBoolean();
     private final BiConsumer<Void, Throwable> joinJobCallback;
 
+    /** Used as a cache for {@link #getName()} and may be outdated. */
     private volatile JobConfig jobConfig;
     private final Supplier<Long> submissionTimeSup = memoizeConcurrent(this::doGetJobSubmissionTime);
 
@@ -137,15 +139,11 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     }
 
     @Override
-    public void setConfig(@Nonnull JobConfig config) {
-        checkNotLightJob("setConfig");
+    public JobConfig updateConfig(@Nonnull DeltaJobConfig deltaConfig) {
+        checkNotLightJob("updateConfig");
         synchronized (this) {
-            try {
-                invokeSetConfig(config).get();
-                jobConfig = config;
-            } catch (Throwable t) {
-                throw rethrow(t);
-            }
+            jobConfig = doUpdateJobConfig(deltaConfig);
+            return jobConfig;
         }
     }
 
@@ -314,14 +312,14 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     protected abstract JobConfig doGetJobConfig();
 
     /**
-     * Sends a {@link SetJobConfigOperation} to the master member. On the master member,
+     * Sends a {@link UpdateJobConfigOperation} to the master member. On the master member,
      * if the job is SUSPENDED, the job record is updated both locally and {@linkplain
      * JobRepository#JOB_RECORDS_MAP_NAME globally} (in order for {@link #getConfig()} to
      * reflect the changes); otherwise, the operation fails. If the operation succeeds, on
      * the request-initiating member, {@link #jobConfig} is updated, which is used as a
      * cache for {@link #getName()}.
      */
-    protected abstract CompletableFuture<Void> invokeSetConfig(JobConfig config);
+    protected abstract JobConfig doUpdateJobConfig(DeltaJobConfig deltaConfig);
 
     /**
      * Return the ID of the coordinator - the master member for normal jobs and

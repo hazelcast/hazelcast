@@ -107,7 +107,6 @@ import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.impl.util.Util.getSerializationService;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
-import static com.hazelcast.jet.sql.impl.parse.SqlCreateJob.processOptions;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
@@ -210,11 +209,9 @@ public class PlanExecutor {
         if (job == null) {
             throw QueryException.error("The job '" + plan.getJobName() + "' doesn't exist");
         }
-        if (!plan.getOptions().isEmpty()) {
-            JobConfig jobConfig = job.getConfig();
-            processOptions(plan.getOptions(), jobConfig);
+        if (plan.getDeltaConfig() != null) {
             try {
-                job.setConfig(jobConfig);
+                job.updateConfig(plan.getDeltaConfig());
             } catch (IllegalStateException e) {
                 throw QueryException.error(e.getMessage(), e);
             }
