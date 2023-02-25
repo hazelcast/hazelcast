@@ -16,6 +16,27 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataInputStream;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataOutputStream;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -26,21 +47,6 @@ import com.hazelcast.nio.serialization.VersionedPortable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-
-import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataInputStream;
-import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataOutputStream;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -100,6 +106,21 @@ public class SerializationUtilTest {
         byte[] bytes = new byte[1];
         bytes[0] = 55;
         deserialize(bytes);
+    }
+
+    @Test
+    public void testGetInterfacesCalledVerified() {
+
+        SerializationUtil serializationUtil = mock(SerializationUtil.class);
+
+       // HashSet implements Set<E>, Cloneable, java.io.Serializable, hence using it for this test
+        Class type = new HashSet().getClass();
+        final Set<Class> interfaces = new LinkedHashSet<Class>(5);
+
+        serializationUtil.getInterfaces(type, interfaces);
+
+        verify(serializationUtil, times(1)).getInterfaces(type, interfaces);
+
     }
 
     private byte[] serialize(Boolean b) throws IOException {
