@@ -296,6 +296,52 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void should_return_false_when_data_link_does_not_exist() {
+        boolean exists = dataLinkService.existsDataLink("does-not-exist");
+        assertThat(exists)
+                .describedAs("DataLink should not exist")
+                .isFalse();
+    }
+
+    @Test
+    public void should_return_true_when_config_data_link_exists() {
+        boolean exists = dataLinkService.existsDataLink(TEST_CONFIG_NAME);
+        assertThat(exists)
+                .describedAs("DataLink created via config should exist")
+                .isTrue();
+    }
+
+    @Test
+    public void should_return_true_when_sql_data_link_exists() {
+        dataLinkService.createSqlDataLink(
+                TEST_VIA_SERVICE_CONFIG_NAME,
+                DummyDataLink.class.getName(),
+                createMap("customProperty", "value")
+        );
+
+        boolean exists = dataLinkService.existsDataLink(TEST_CONFIG_NAME);
+        assertThat(exists)
+                .describedAs("DataLink created via service should exist")
+                .isTrue();
+    }
+
+    @Test
+    public void exists_should_return_false_when_data_link_removed() {
+        dataLinkService.createSqlDataLink(
+                TEST_VIA_SERVICE_CONFIG_NAME,
+                DummyDataLink.class.getName(),
+                createMap("customProperty", "value")
+        );
+
+        dataLinkService.removeDataLink(TEST_VIA_SERVICE_CONFIG_NAME);
+
+        boolean exists = dataLinkService.existsDataLink(TEST_CONFIG_NAME);
+        assertThat(exists)
+                .describedAs("Removed DataLink should not exist")
+                .isTrue();
+    }
+
+    @Test
     public void given_data_link_in_config_when_remove_then_fail() {
         assertThatThrownBy(() -> dataLinkService.removeDataLink(TEST_CONFIG_NAME))
                 .isInstanceOf(HazelcastException.class)

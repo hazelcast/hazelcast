@@ -177,6 +177,11 @@ public class DataLinkServiceImpl implements DataLinkService {
     }
 
     @Override
+    public boolean existsDataLink(String name) {
+        return dataLinks.containsKey(name);
+    }
+
+    @Override
     public void removeDataLink(String name) {
         DataLinkSourcePair dataLink = dataLinks.get(name);
         if (CONFIG.equals(dataLink.source)) {

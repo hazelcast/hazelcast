@@ -90,6 +90,14 @@ public interface DataLinkService extends AutoCloseable {
     <T extends DataLink> T getDataLink(String name, Class<T> clazz);
 
     /**
+     * Returns if a DataLink with given name exists or not
+     *
+     * @param name name of the DataLink
+     * @return true if a DataLink exists, false otherwise
+     */
+    boolean existsDataLink(String name);
+
+    /**
      * Removes DataLink created by {@link #createSqlDataLink(String, String, Map)}
      * <p>
      * Removed DataLink is closed.
