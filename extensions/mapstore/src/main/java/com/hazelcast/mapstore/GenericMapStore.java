@@ -73,6 +73,7 @@ public class GenericMapStore<K> extends GenericMapLoader<K>
 
 
         try (SqlResult ignored = sqlService.execute(queries.storeSink(), jdbcParameters.getParams())) {
+            // empty try-with-resources
         } catch (Exception e) {
 
             if (isIntegrityConstraintViolation(e)) {
