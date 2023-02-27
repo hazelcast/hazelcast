@@ -77,7 +77,7 @@ public class JdbcDataLinkTest {
     }
 
     @Test
-    public void should_return_same_datastore_when_shared() {
+    public void should_return_same_data_link_when_shared() {
         jdbcDataLink = new JdbcDataLink(SHARED_DATA_LINK_CONFIG);
 
         dataSource1 = jdbcDataLink.getDataSource();
