@@ -37,6 +37,8 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * TODO move this class to impl package when changing {@link DataLinkConfig#className} to type
+ *
  * Creates a JDBC data link as a {@link DataSource}.
  * <p>
  * Implementation is based on {@link HikariDataSource}. {@link DataLinkConfig#getProperties()} are passed directly
@@ -52,20 +54,8 @@ public class JdbcDataLink implements DataLink {
     private static final int JDBC_TEST_CONNECTION_TIMEOUT_SECONDS = 5;
     private static final AtomicInteger DATA_SOURCE_COUNTER = new AtomicInteger();
 
-    /*
-     * Reference counter to handle closing of the pooledDataSource:
-     * - when a new JdbcDataLink is created it starts with counter=1
-     * - everytime the DataLink is retrieved from the DataLinkService the counter increases
-     * - the caller must call `close()` on this data link after it's done (e.g. when it retrieves the dataSource)
-     * - everytime pooledDataSource is returned from this DataLink the counter increases
-     * - when the pooledDataSource is closed, it's not actually closed, only the counter decreases
-     * - the DataLink is closed when removed or on instance shutdown - leading to actual closing of
-     * the pooledDataSource
-     *
-     * We increase the counter both in DataLinkService and DataLink to avoid race condition when
-     * - a JdbcDataLink is retrieved from the service
-     * - the DataLink is removed and the pooledDataSource is closed
-     * - a closed pooledDataSource is returned
+    /**
+     * See {@link ReferenceCounter} for details
      */
     protected final ReferenceCounter refCounter;
     protected final DataLinkConfig config;

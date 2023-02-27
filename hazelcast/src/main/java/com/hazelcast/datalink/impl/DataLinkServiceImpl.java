@@ -19,7 +19,6 @@ package com.hazelcast.datalink.impl;
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.datalink.DataLink;
-import com.hazelcast.datalink.DataLinkService;
 import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.logging.ILogger;
@@ -34,7 +33,7 @@ import static com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource.SQL
 import static com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSourcePair.pair;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
-public class DataLinkServiceImpl implements DataLinkService {
+public class DataLinkServiceImpl implements InternalDataLinkService {
 
     private final Map<String, DataLinkSourcePair> dataLinks = new ConcurrentHashMap<>();
 
@@ -197,7 +196,7 @@ public class DataLinkServiceImpl implements DataLinkService {
     }
 
     @Override
-    public void close() {
+    public void shutdown() {
         for (Map.Entry<String, DataLinkSourcePair> entry : dataLinks.entrySet()) {
             logger.finest("Closing '" + entry.getKey() + "' data link");
             DataLinkSourcePair dataLink = entry.getValue();

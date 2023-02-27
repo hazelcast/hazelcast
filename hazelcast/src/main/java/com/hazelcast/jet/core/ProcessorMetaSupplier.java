@@ -18,6 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.datalink.DataLinkService;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.serialization.SerializableByConvention;
@@ -678,5 +679,13 @@ public interface ProcessorMetaSupplier extends Serializable {
          * @return processor classloader, null if no custom classpath elements are configured
          */
         ClassLoader classLoader();
+
+        /**
+         * {@link DataLinkService} to access {@link com.hazelcast.datalink.DataLink}s
+         * in processors.
+         *
+         * @since 5.3
+         */
+        DataLinkService dataLinkService();
     }
 }

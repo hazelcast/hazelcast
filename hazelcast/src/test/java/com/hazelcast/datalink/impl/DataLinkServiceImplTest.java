@@ -21,7 +21,6 @@ import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.datalink.DataLink;
-import com.hazelcast.datalink.DataLinkService;
 import com.hazelcast.datalink.impl.DataLinkTestUtil.DummyDataLink;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -51,7 +50,7 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
     private final Config config = smallInstanceConfig();
     private final TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory(1);
     private HazelcastInstance instance;
-    private DataLinkService dataLinkService;
+    private InternalDataLinkService dataLinkService;
 
     @Before
     public void configure() {
@@ -354,10 +353,10 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void given_data_link_when_close_service_then_should_close_data_links() {
+    public void given_data_link_when_shutdown_service_then_should_close_data_links() {
         DummyDataLink dataLink = dataLinkService.getDataLink(TEST_CONFIG_NAME);
 
-        dataLinkService.close();
+        dataLinkService.shutdown();
 
         assertThat(dataLink.isClosed())
                 .describedAs("DataLink should have been closed")
@@ -371,7 +370,7 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
                 .hasMessage("Data link 'non-existing-data-link' not found");
     }
 
-    private DataLinkService getDataLinkService() {
+    private InternalDataLinkService getDataLinkService() {
         instance = hazelcastInstanceFactory.newHazelcastInstance(config);
         return Util.getNodeEngine(instance).getDataLinkService();
     }

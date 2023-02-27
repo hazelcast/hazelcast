@@ -18,6 +18,7 @@ package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.datalink.DataLinkService;
 import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.BiFunctionEx;
@@ -43,7 +44,6 @@ import com.hazelcast.jet.impl.connector.StreamFilesP;
 import com.hazelcast.jet.impl.connector.StreamJmsP;
 import com.hazelcast.jet.impl.connector.StreamSocketP;
 import com.hazelcast.jet.impl.pipeline.SourceBufferImpl;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.jet.pipeline.FileSourceBuilder;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
@@ -57,7 +57,6 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -466,8 +465,8 @@ public final class SourceProcessors {
     }
 
     private static JdbcDataLink getDataLink(ProcessorSupplier.Context context, String name) {
-        NodeEngineImpl nodeEngine = Util.getNodeEngine(context.hazelcastInstance());
-        return nodeEngine.getDataLinkService().getDataLink(name, JdbcDataLink.class);
+        DataLinkService dataLinkService = context.dataLinkService();
+        return dataLinkService.getDataLink(name, JdbcDataLink.class);
     }
 
     /**

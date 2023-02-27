@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.datalink.DataLinkService;
 import com.hazelcast.datalink.JdbcDataLink;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.jet.core.ProcessorSupplier;
 
 import javax.annotation.Nonnull;
@@ -41,11 +40,8 @@ abstract class AbstractJdbcSqlConnectorProcessorSupplier implements ProcessorSup
     }
 
     public void init(@Nonnull Context context) throws Exception {
-        DataLinkService dataLinkService = ((HazelcastInstanceImpl) context.hazelcastInstance())
-                .node.getNodeEngine().getDataLinkService();
-
-        try (JdbcDataLink dataLink = dataLinkService
-                .getDataLink(dataLinkRef, JdbcDataLink.class)) {
+        DataLinkService dataLinkService = context.dataLinkService();
+        try (JdbcDataLink dataLink = dataLinkService.getDataLink(dataLinkRef, JdbcDataLink.class)) {
             dataSource = dataLink.getDataSource();
         }
     }

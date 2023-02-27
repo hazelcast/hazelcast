@@ -37,7 +37,47 @@ import java.util.Map;
  * DataLink is closely related to Jet connectors (sources and sinks) and
  * to {@code SqlConnector}s. While the DataLink handles initialization,
  * maintenance and closing of connections to the external system; the
- * connectors read and write actuall data from/into them.
+ * connectors read and write actual data from/into them.
+ * <p>
+ * Instances of the DataLinks should be obtained by calling
+ * {@link DataLinkService#getDataLink} method.
+ * <p>
+ * Conceptually, there are 3 types of sharing of the underlying
+ * instance between multiple (concurrent) Jet jobs or SQL queries:
+ * <ul>
+ * <li>
+ *     Single-use - the instance is created each time it is requested,
+ *     it is destroyed after closing. It can be used by single processor
+ *     (thread) at a time and after use it cannot be re-used.
+ * </li>
+ * <li>
+ *     Pooled - the instance is obtained from a pool and it is
+ *     returned to the pool after closing. It can be used by
+ *     a single processor (thread) at a time, but it can be
+ *     reused when the processor no longer needs it.
+ * </li>
+ * <li>
+ *     Shared - the instance may be shared by multiple threads,
+ *     hence it must be thread-safe, and it is only closed when
+ *     the data link is closed.
+ * </li>
+ * </ul>
+ * A job or a SQL query uses the same instance of a DataLink during
+ * its whole duration.<br>
+ * When a DataLink is removed the existing jobs and SQL queries
+ * continue to run without any changes. Subsequent jobs and queries
+ * fail.<br>
+ * When a DataLink is replaced the existing jobs and queries
+ * continue to run without any changes. Subsequent jobs and queries
+ * start using the new configuration.
+ * <p>
+ * To support this behaviour the implementations of this interface
+ * must override the {@link #retain()} and {@link #close()} methods
+ * to implement reference counting for the shared/pooled instance type.
+ * This ensures a correct release of any resources when the last job
+ * or query using the data link completes. See the {@link ReferenceCounter}
+ * for details how to implement it.
+ * <p>
  *
  * @since 5.3
  */
@@ -82,15 +122,29 @@ public interface DataLink extends AutoCloseable {
         return new HashMap<>((Map<String, String>) properties);
     }
 
-    void retain();
+    /**
+     * To be used to implement reference counting for the
+     * shared / pooled instance of the physical connection.
+     * <p>
+     * Called by {@link DataLinkService} when the DataLink is retrieved from it.
+     * <p>
+     * See the {@link ReferenceCounter} for details how to implement it.
+     */
+    default void retain() {
+        // no-op by default
+    }
 
     /**
-     * Decrements the reference counter for this DataLink
-     * If the reference counter reaches zero it closes the underlying resources.
-     * TODO maybe rename this to release, but then we can't use try-with-resources
+     * To be used to implement reference counting for the
+     * shared / pooled instance of the physical connection.
+     * <p>
+     * The user must call this method when the DataLink is
+     * no longer required.
+     * <p>
+     * See the {@link ReferenceCounter} for details how to implement it.
      */
     @Override
     default void close() throws Exception {
-        //no op
+        // no-op by default
     }
 }

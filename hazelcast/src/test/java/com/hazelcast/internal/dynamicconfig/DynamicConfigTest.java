@@ -67,6 +67,7 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.datalink.impl.DataLinkTestUtil.DummyDataLink;
 import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
@@ -682,7 +683,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         properties.setProperty("prop2", "val2");
         DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName("some-name")
-                .setClassName("some-class-name")
+                .setClassName(DummyDataLink.class.getName())
                 .setProperties(properties);
 
 

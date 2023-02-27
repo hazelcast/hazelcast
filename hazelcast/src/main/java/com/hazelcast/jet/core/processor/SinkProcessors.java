@@ -32,14 +32,12 @@ import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
 import com.hazelcast.jet.impl.connector.WriteJdbcP;
 import com.hazelcast.jet.impl.connector.WriteJmsP;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.spi.annotation.Beta;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -431,8 +429,7 @@ public final class SinkProcessors {
     }
 
     private static JdbcDataLink getDataLink(ProcessorMetaSupplier.Context context, String name) {
-        NodeEngineImpl nodeEngine = Util.getNodeEngine(context.hazelcastInstance());
-        return nodeEngine.getDataLinkService().getDataLink(name, JdbcDataLink.class);
+        return context.dataLinkService().getDataLink(name, JdbcDataLink.class);
     }
 
     /**
