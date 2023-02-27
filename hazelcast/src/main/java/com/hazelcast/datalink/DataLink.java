@@ -57,6 +57,10 @@ public interface DataLink extends AutoCloseable {
      * not include tables available through a database link. In fact,
      * it might list no resources at all, perhaps if the security in
      * the target system prevents reading of such a list.
+     * <p>
+     * The returned list contains up-to-date list of resources.
+     * Any changes (added or removed resources) must be reflected in
+     * subsequent calls to this method.
      */
     List<DataLinkResource> listResources();
 
