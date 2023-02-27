@@ -26,6 +26,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.security.permission.ManagementPermission;
 
 import java.security.Permission;
@@ -35,8 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-
-import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 
 public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<Void, List<SimpleEntry<UUID, UUID>>> {
 
@@ -60,7 +59,7 @@ public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<Void, List
                         result.add(new SimpleEntry<>(cpMember.getUuid(), apUuid));
                     }
                     return result;
-                }, CALLER_RUNS);
+                }, ConcurrencyUtil.getDefaultAsyncExecutor());
     }
 
     @Override

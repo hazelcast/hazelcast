@@ -23,10 +23,9 @@ import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 
 import java.security.Permission;
-
-import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 
 /**
  * Client message task for Raft group creation
@@ -40,7 +39,8 @@ public class CreateRaftGroupMessageTask extends AbstractCPMessageTask<String> {
     @Override
     protected void processMessage() {
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        service.createRaftGroupForProxyAsync(parameters).whenCompleteAsync(this, CALLER_RUNS);
+        service.createRaftGroupForProxyAsync(parameters).whenCompleteAsync(this,
+                ConcurrencyUtil.getDefaultAsyncExecutor());
     }
 
     @Override

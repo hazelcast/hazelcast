@@ -24,6 +24,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.permission.ConfigPermission;
 
@@ -72,7 +73,7 @@ public abstract class AbstractAddConfigMessageTask<P> extends AbstractMessageTas
         ClusterWideConfigurationService service = getService(ConfigurationService.SERVICE_NAME);
         if (checkStaticConfigDoesNotExist(config)) {
             service.broadcastConfigAsync(config)
-                   .whenCompleteAsync(this, internalAsyncExecutor);
+                   .whenCompleteAsync(this, ConcurrencyUtil.getDefaultAsyncExecutor());
         } else {
             sendResponse(null);
         }

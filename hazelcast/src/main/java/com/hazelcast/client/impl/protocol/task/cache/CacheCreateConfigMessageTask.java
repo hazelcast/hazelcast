@@ -26,6 +26,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 
@@ -58,7 +59,7 @@ public class CacheCreateConfigMessageTask
 
         InternalCompletableFuture future =
                 cacheService.createCacheConfigOnAllMembersAsync(PreJoinCacheConfig.of(cacheConfig));
-        future.whenCompleteAsync(this, internalAsyncExecutor);
+        future.whenCompleteAsync(this, ConcurrencyUtil.getDefaultAsyncExecutor());
     }
 
     @Override

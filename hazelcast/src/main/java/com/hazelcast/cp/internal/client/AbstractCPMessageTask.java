@@ -29,7 +29,7 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.function.BiConsumer;
 
-import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getDefaultAsyncExecutor;
 
 public abstract class AbstractCPMessageTask<P> extends AbstractMessageTask<P> implements BiConsumer<Object, Throwable> {
 
@@ -40,13 +40,13 @@ public abstract class AbstractCPMessageTask<P> extends AbstractMessageTask<P> im
     protected void query(CPGroupId groupId, RaftOp op, QueryPolicy policy) {
         RaftInvocationManager invocationManager = getInvocationManager();
         InternalCompletableFuture<Object> future = invocationManager.query(groupId, op, policy, false);
-        future.whenCompleteAsync(this, CALLER_RUNS);
+        future.whenCompleteAsync(this, getDefaultAsyncExecutor());
     }
 
     protected void invoke(CPGroupId groupId, RaftOp op) {
         RaftInvocationManager invocationManager = getInvocationManager();
         InternalCompletableFuture<Object> future = invocationManager.invoke(groupId, op, false);
-        future.whenCompleteAsync(this, CALLER_RUNS);
+        future.whenCompleteAsync(this, getDefaultAsyncExecutor());
     }
 
     private RaftInvocationManager getInvocationManager() {
