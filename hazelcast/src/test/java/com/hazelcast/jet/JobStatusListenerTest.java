@@ -45,6 +45,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletionException;
@@ -194,12 +195,14 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
                 TestSources.itemStream(1, (t, s) -> 1 / (2 - s)),
                 (job, listener) -> {
                     assertJobStatusEventually(job, SUSPENDED);
-                    String failure = job.getSuspensionCause().errorCause().split("\n", 3)[1];
+                    String[] failure = new String[1];
+                    assertTrueEventually(() ->
+                            failure[0] = job.getSuspensionCause().errorCause().split("\n", 3)[1]);
                     cancelAndJoin(job);
                     assertTailEqualsEventually(listener.log,
                             "Jet: NOT_RUNNING -> STARTING",
                             "Jet: STARTING -> RUNNING",
-                            "Jet: RUNNING -> SUSPENDED (" + failure + ")",
+                            "Jet: RUNNING -> SUSPENDED (" + failure[0] + ")",
                             "User: SUSPENDED -> FAILED (Cancel)");
                 });
     }
@@ -333,14 +336,15 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     @SafeVarargs
     protected static <T> void assertTailEqualsEventually(List<T> actual, T... expected) {
         assertTrueEventually(() -> {
-            assertBetween("length", actual.size(), expected.length - 2, expected.length);
-            List<T> tail = asList(expected).subList(expected.length - actual.size(), expected.length);
-            assertEquals(tail, actual);
+            List<T> actualCopy = new ArrayList<>(actual);
+            assertBetween("length", actualCopy.size(), expected.length - 2, expected.length);
+            List<T> tail = asList(expected).subList(expected.length - actualCopy.size(), expected.length);
+            assertEquals(tail, actualCopy);
         });
     }
 
     protected class JobStatusLogger implements JobStatusListener {
-        public final List<String> log = new ArrayList<>();
+        public final List<String> log = Collections.synchronizedList(new ArrayList<>());
         public final UUID registrationId;
         final Job job;
         final int jobId;
