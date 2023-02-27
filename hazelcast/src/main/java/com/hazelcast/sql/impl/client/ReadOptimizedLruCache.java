@@ -96,7 +96,10 @@ public class ReadOptimizedLruCache<K, V> {
 
     private void doCleanup() {
         // if no thread is cleaning up, we'll do it
-        cleanupLock.compareAndSet(false, true);
+        if (!cleanupLock.compareAndSet(false, true)) {
+            return;
+        }
+
         try {
             int entriesToRemove = cache.size() - capacity;
             if (entriesToRemove <= 0) {
