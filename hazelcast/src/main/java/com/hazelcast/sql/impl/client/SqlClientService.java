@@ -75,7 +75,7 @@ public class SqlClientService implements SqlService {
 
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
-    private final boolean isUniSocket;
+    private final boolean isSmartRouting;
 
     /**
      * The field to indicate whether a query should update phone home statistics or not.
@@ -93,7 +93,7 @@ public class SqlClientService implements SqlService {
         long resubmissionTimeoutMillis = client.getProperties().getPositiveMillisOrDefault(INVOCATION_TIMEOUT_SECONDS);
         this.resubmissionTimeoutNano = TimeUnit.MILLISECONDS.toNanos(resubmissionTimeoutMillis);
         this.resubmissionRetryPauseMillis = client.getProperties().getPositiveMillisOrDefault(INVOCATION_RETRY_PAUSE_MILLIS);
-        this.isUniSocket = !client.getClientConfig().getNetworkConfig().isSmartRouting();
+        this.isSmartRouting = client.getClientConfig().getNetworkConfig().isSmartRouting();
         final int partitionArgCacheSize = client.getProperties().getInteger(PARTITION_ARGUMENT_CACHE_SIZE);
         final int partitionArgCacheThreshold = partitionArgCacheSize + Math.min(partitionArgCacheSize / 10, 50);
         this.partitionArgumentIndexCache = new ReadOptimizedLruCache<>(partitionArgCacheSize, partitionArgCacheThreshold);
@@ -303,7 +303,7 @@ public class SqlClientService implements SqlService {
                     sqlError.getSuggestion()
             );
         } else {
-            if (!isUniSocket && response.partitionArgumentIndex != originalPartitionArgumentIndex) {
+            if (isSmartRouting && response.partitionArgumentIndex != originalPartitionArgumentIndex) {
                 if (response.partitionArgumentIndex != -1) {
                     partitionArgumentIndexCache.put(statement.getSql(), response.partitionArgumentIndex);
                     // We're writing to a non-volatile field from multiple threads. But it's safe because all
@@ -449,7 +449,7 @@ public class SqlClientService implements SqlService {
     }
 
     private Integer extractPartitionId(SqlStatement statement, int argIndex) {
-        if (isUniSocket) {
+        if (!isSmartRouting) {
             return null;
         }
 
