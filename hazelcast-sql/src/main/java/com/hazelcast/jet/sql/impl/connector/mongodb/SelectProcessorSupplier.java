@@ -15,6 +15,7 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
@@ -37,6 +38,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.JSON;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.project;
 import static com.mongodb.client.model.Projections.excludeId;
@@ -143,6 +145,10 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
 
     private Object convert(Object value, int index) {
         value = BsonTypes.unwrap(value);
+        if (value instanceof Document && types[index].getTypeFamily() == JSON) {
+            Document doc = (Document) value;
+            return new HazelcastJsonValue(doc.toJson());
+        }
         return types[index].convert(value);
     }
 

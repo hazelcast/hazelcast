@@ -15,6 +15,7 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.mongodb.WriteMode;
@@ -109,6 +110,8 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
                 ZonedDateTime atUtc = v.atZoneSameInstant(ZoneId.of("UTC"));
                 Timestamp jdbcTimestamp = Timestamp.valueOf(atUtc.toLocalDateTime());
                 value = new BsonDateTime(jdbcTimestamp.getTime());
+            } else if (value instanceof HazelcastJsonValue) {
+                value = Document.parse(((HazelcastJsonValue) value).getValue());
             } else {
                 // todo other coercions?
                 value = types[i].convert(value);

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -105,7 +106,8 @@ public class AllTypesSelectMongoSqlConnectorTest extends MongoSqlTest {
                 {"array", "OBJECT", new BsonArray(asList(new BsonString("1"), new BsonString("2"))),
                         asList("1", "2")},
                 {"array", "OBJECT", asList("1", "2"), asList("1", "2")},
-                {"regex", "OBJECT", new BsonRegularExpression(".*"), new BsonRegularExpression(".*")}
+                {"regex", "OBJECT", new BsonRegularExpression(".*"), new BsonRegularExpression(".*")},
+                {"object", "json", new Document("test", "abc"), new HazelcastJsonValue("{\"test\": \"abc\"}")}
         });
     }
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -85,7 +86,8 @@ public class AllTypesInsertMongoSqlConnectorTest extends MongoSqlTest {
                 {"date", "TIMESTAMP", "'2022-12-30 23:59:59'",
                         LocalDateTime.of(2022, 12, 30, 23, 59, 59),
                         new Date(Timestamp.valueOf("2022-12-30 23:59:59").getTime())},
-                {"objectId", "OBJECT", null, EXAMPLE_OBJECT_ID, EXAMPLE_OBJECT_ID}
+                {"objectId", "OBJECT", null, EXAMPLE_OBJECT_ID, EXAMPLE_OBJECT_ID},
+                {"object", "JSON", "JSON_OBJECT('test':'abc')", new HazelcastJsonValue("{\"test\": \"abc\"}"), new Document("test", "abc")}
         });
     }
 
