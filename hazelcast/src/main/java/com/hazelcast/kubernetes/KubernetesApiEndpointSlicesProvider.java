@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.kubernetes.KubernetesApiProvider.toJsonArray;
 import static com.hazelcast.kubernetes.KubernetesClient.Endpoint;
@@ -61,7 +62,8 @@ public class KubernetesApiEndpointSlicesProvider
     public Map<EndpointAddress, String> extractServices(JsonObject endpointsListJson,
                                                         List<EndpointAddress> privateAddresses) {
         Map<EndpointAddress, String> result = new HashMap<>();
-        Set<EndpointAddress> left = new HashSet<>(privateAddresses);
+        Set<String> privateAddressesIsp = privateAddresses.stream().map(EndpointAddress::getIp).collect(Collectors.toSet());
+        Set<String> left = new HashSet<>(privateAddressesIsp);
         for (JsonValue item : toJsonArray(endpointsListJson.get("items"))) {
             JsonValue ownerRefsValue = item.asObject().get("metadata").asObject().get("ownerReferences");
             if (ownerRefsValue == null || ownerRefsValue.asArray().size() > 1
@@ -74,12 +76,12 @@ public class KubernetesApiEndpointSlicesProvider
             // Service must point to exactly one endpoint address, otherwise the public IP would be ambiguous.
             if (endpoints.size() == 1) {
                 EndpointAddress address = endpoints.get(0).getPrivateAddress();
-                if (privateAddresses.contains(address)) {
+                if (privateAddressesIsp.contains(address.getIp())) {
                     // If multiple services match the pod, then match service and pod names
                     if (!result.containsKey(address) || service.equals(extractTargetRefName(item))) {
                         result.put(address, service);
                     }
-                    left.remove(address);
+                    left.remove(address.getIp());
                 }
             }
         }
@@ -119,7 +121,8 @@ public class KubernetesApiEndpointSlicesProvider
     public Map<EndpointAddress, String> extractNodes(JsonObject jsonObject,
                                                      List<EndpointAddress> privateAddresses) {
         Map<EndpointAddress, String> result = new HashMap<>();
-        Set<EndpointAddress> left = new HashSet<>(privateAddresses);
+        Set<String> privateAddressesIsp = privateAddresses.stream().map(EndpointAddress::getIp).collect(Collectors.toSet());
+        Set<String> left = new HashSet<>(privateAddressesIsp);
         for (JsonValue item : toJsonArray(jsonObject.get("items"))) {
             List<Integer> ports = new ArrayList<>();
             for (JsonValue port : toJsonArray(item.asObject().get("ports"))) {
@@ -134,9 +137,9 @@ public class KubernetesApiEndpointSlicesProvider
                         endpointObject.get("addresses"), ports, nodeName, targetRefName);
                 for (Map.Entry<EndpointAddress, String> nodeEntry : nodes.entrySet()) {
                     EndpointAddress address = nodeEntry.getKey();
-                    if (privateAddresses.contains(address)) {
+                    if (privateAddressesIsp.contains(address.getIp())) {
                         result.put(address, nodes.get(address));
-                        left.remove(address);
+                        left.remove(address.getIp());
                     }
                 }
             }

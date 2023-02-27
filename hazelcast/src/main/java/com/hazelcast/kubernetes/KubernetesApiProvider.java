@@ -58,7 +58,7 @@ interface KubernetesApiProvider {
                 }
             }
         }
-        if (ports.size() == 1) {
+        if (ports.size() > 0) {
             JsonValue port = ports.get(0);
             return port.asObject().get("port").asInt();
         }
@@ -78,13 +78,13 @@ interface KubernetesApiProvider {
         return result;
     }
 
-    default KubernetesClientException noCorrespondingServicesException(Set<EndpointAddress> endpoints) {
+    default KubernetesClientException noCorrespondingServicesException(Set<String> endpoints) {
         return new KubernetesClientException(String.format("Cannot expose externally, the following Hazelcast"
                                    + " member pods do not have corresponding Kubernetes services: %s", endpoints));
     }
 
 
-    default KubernetesClientException noNodeNameAssignedException(Set<EndpointAddress> endpoints) {
+    default KubernetesClientException noNodeNameAssignedException(Set<String> endpoints) {
         return new KubernetesClientException(String.format("Cannot expose externally, the following Hazelcast"
                                    + " member pods do not have corresponding Endpoint.nodeName value assigned: %s", endpoints));
     }
