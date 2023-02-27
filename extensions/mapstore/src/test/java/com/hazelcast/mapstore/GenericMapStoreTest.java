@@ -22,16 +22,12 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
 import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -65,23 +61,10 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, SerialTest.class})
-public class GenericMapStoreTest extends JdbcSqlTestSupport {
+public class GenericMapStoreTest extends GenericMapLoaderTest {
 
-    public String mapName;
-
-    private HazelcastInstance hz;
     private GenericMapStore<Integer> mapStore;
 
-    @BeforeClass
-    public static void beforeClass() {
-        initialize(new H2DatabaseProvider());
-    }
-
-    @Before
-    public void setUp() {
-        hz = instances()[0];
-        mapName = "people_" + randomName();
-    }
 
     @After
     public void after() {
@@ -689,9 +672,8 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
     }
 
     private void assertMappingCreated() {
-        assertTrueEventually(() -> {
-            assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList(new Row(MAPPING_PREFIX + mapName)));
-        }, 60);
+        assertTrueEventually(() -> assertRowsAnyOrder(hz, "SHOW MAPPINGS",
+                newArrayList(new Row(MAPPING_PREFIX + mapName))), 60);
     }
 
     private void assertMappingDestroyed() {

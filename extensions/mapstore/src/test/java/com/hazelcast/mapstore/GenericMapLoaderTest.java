@@ -56,9 +56,9 @@ import static org.assertj.core.util.Lists.newArrayList;
 @Category({QuickTest.class, SerialTest.class})
 public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
-    public String mapName;
+    protected String mapName;
 
-    private HazelcastInstance hz;
+    protected HazelcastInstance hz;
     private GenericMapLoader<Integer> mapLoader;
 
     @BeforeClass

@@ -17,6 +17,7 @@
 package com.hazelcast.mapstore;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.datalink.JdbcDataLinkFactory;
@@ -45,6 +46,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
@@ -53,7 +55,7 @@ import static com.hazelcast.mapstore.MappingHelper.createMappingWithColumns;
 import static com.hazelcast.mapstore.MappingHelper.loadColumnMetadataFromMapping;
 import static com.hazelcast.mapstore.MappingHelper.loadRowMetadataFromMapping;
 import static com.hazelcast.mapstore.validators.ExistingMappingValidator.validateColumn;
-import static com.hazelcast.mapstore.validators.MapStoreConfigValidator.validateMapStoreConfig;
+import static com.hazelcast.mapstore.validators.ExistingMappingValidator.validateColumnsExist;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -148,6 +150,13 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
         asyncExecutor.submit(this::createOrReadMapping);
     }
 
+    public static void validateMapStoreConfig(HazelcastInstance instance, String mapName) {
+        MapConfig mapConfig = instance.getConfig().findMapConfig(mapName);
+        if (!mapConfig.getMapStoreConfig().isOffload()) {
+            throw new HazelcastException("Config for GenericMapStore must have `offload` property set to true");
+        }
+    }
+
     private ManagedExecutorService getMapStoreExecutor() {
         return nodeEngine()
                 .getExecutionService()
@@ -212,7 +221,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
     private void readExistingMapping() {
         logger.fine("Reading existing mapping for map" + mapName);
         try {
-            columnMetadataList = ExistingMappingReader.readExistingMapping(sqlService, mappingName,
+            columnMetadataList = readExistingMapping(sqlService, mappingName,
                     genericMapStoreProperties.getAllColumns()
             );
             queries = new Queries(mappingName, genericMapStoreProperties.idColumn, columnMetadataList);
@@ -220,6 +229,15 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
         } catch (Exception e) {
             initFailure = e;
         }
+    }
+
+    public static List<SqlColumnMetadata> readExistingMapping(SqlService sqlService,
+                                                              String mappingName,
+                                                              Set<String> allColumns) {
+        // If mappingName does not exist, we get "... did you forget to CREATE MAPPING?" exception
+        SqlRowMetadata sqlRowMetadata = loadRowMetadataFromMapping(sqlService, mappingName);
+        validateColumnsExist(sqlRowMetadata, allColumns);
+        return sqlRowMetadata.getColumns();
     }
 
     @Override
