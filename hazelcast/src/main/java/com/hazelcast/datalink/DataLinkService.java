@@ -17,7 +17,6 @@
 package com.hazelcast.datalink;
 
 import com.hazelcast.config.DataLinkConfig;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.spi.annotation.Beta;
 
 /**
@@ -33,20 +32,6 @@ import com.hazelcast.spi.annotation.Beta;
  */
 @Beta
 public interface DataLinkService {
-
-    /**
-     * Returns DataLink with the given name.
-     * <p>
-     * The callers must call {@link DataLink#close()} after obtaining required
-     * resources (e.g. connections) from the data link to ensure correct
-     * cleanup of resources.
-     *
-     * @param name name of the DataLink
-     * @param <T>  type of the DataLink
-     * @return instance of the DataLink
-     * @throws HazelcastException if the DataLink with given name is not found or misconfigured*
-     */
-    <T extends DataLink> T getDataLink(String name);
 
     /**
      * Returns DataLink with the given name.

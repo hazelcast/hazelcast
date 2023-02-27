@@ -150,17 +150,6 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
     }
 
     @Override
-    public <T extends DataLink> T getDataLink(String name) {
-        DataLinkSourcePair dataLink = dataLinks.get(name);
-        if (dataLink == null) {
-            throw new HazelcastException("Data link '" + name + "' not found");
-        }
-        T instance = (T) dataLink.instance;
-        instance.retain();
-        return instance;
-    }
-
-    @Override
     public <T extends DataLink> T getDataLink(String name, Class<T> clazz) {
         DataLinkSourcePair dataLink = dataLinks.get(name);
         if (dataLink == null) {
