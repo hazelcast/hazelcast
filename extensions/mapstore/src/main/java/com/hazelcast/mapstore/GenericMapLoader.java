@@ -46,7 +46,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
@@ -150,7 +149,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
         asyncExecutor.submit(this::createOrReadMapping);
     }
 
-    public static void validateMapStoreConfig(HazelcastInstance instance, String mapName) {
+    private void validateMapStoreConfig(HazelcastInstance instance, String mapName) {
         MapConfig mapConfig = instance.getConfig().findMapConfig(mapName);
         if (!mapConfig.getMapStoreConfig().isOffload()) {
             throw new HazelcastException("Config for GenericMapStore must have `offload` property set to true");
@@ -221,23 +220,15 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
     private void readExistingMapping() {
         logger.fine("Reading existing mapping for map" + mapName);
         try {
-            columnMetadataList = readExistingMapping(sqlService, mappingName,
-                    genericMapStoreProperties.getAllColumns()
-            );
+            // If mappingName does not exist, we get "... did you forget to CREATE MAPPING?" exception
+            SqlRowMetadata sqlRowMetadata = loadRowMetadataFromMapping(sqlService, mappingName);
+            validateColumnsExist(sqlRowMetadata, genericMapStoreProperties.getAllColumns());
+            columnMetadataList = sqlRowMetadata.getColumns();
             queries = new Queries(mappingName, genericMapStoreProperties.idColumn, columnMetadataList);
 
         } catch (Exception e) {
             initFailure = e;
         }
-    }
-
-    public static List<SqlColumnMetadata> readExistingMapping(SqlService sqlService,
-                                                              String mappingName,
-                                                              Set<String> allColumns) {
-        // If mappingName does not exist, we get "... did you forget to CREATE MAPPING?" exception
-        SqlRowMetadata sqlRowMetadata = loadRowMetadataFromMapping(sqlService, mappingName);
-        validateColumnsExist(sqlRowMetadata, allColumns);
-        return sqlRowMetadata.getColumns();
     }
 
     @Override
