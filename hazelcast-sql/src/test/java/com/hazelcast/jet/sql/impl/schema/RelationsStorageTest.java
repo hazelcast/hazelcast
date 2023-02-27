@@ -33,8 +33,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class TablesStorageTest extends SimpleTestInClusterSupport {
-    private TablesStorage storage;
+public class RelationsStorageTest extends SimpleTestInClusterSupport {
+    private RelationsStorage storage;
 
     @BeforeClass
     public static void setUpClass() {
@@ -43,7 +43,7 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
 
     @Before
     public void before() {
-        storage = new TablesStorage(Accessors.getNodeEngineImpl(instance()));
+        storage = new RelationsStorage(Accessors.getNodeEngineImpl(instance()));
     }
 
     @Test

@@ -84,10 +84,17 @@ public interface DataLinkService extends AutoCloseable {
      * <p>
      * Type checked against the provided clazz parameter.
      *
-     * @param name name of the DataLink
+     * @param name  name of the DataLink
      * @param clazz type of the DataLink
      */
     <T extends DataLink> T getDataLink(String name, Class<T> clazz);
+
+    /**
+     * Returns existence status of given data link name.
+     *
+     * @param name name of the DataLink
+     */
+    boolean dataLinkExists(String name);
 
     /**
      * Removes DataLink created by {@link #createSqlDataLink(String, String, Map)}

@@ -85,7 +85,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
-import com.hazelcast.jet.sql.impl.schema.TablesStorage;
+import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
 import com.hazelcast.jet.sql.impl.schema.TypeDefinitionColumn;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.permission.ActionConstants;
@@ -213,7 +213,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private final IMapResolver iMapResolver;
     private final List<TableResolver> tableResolvers;
     private final PlanExecutor planExecutor;
-    private final TablesStorage tablesStorage;
+    private final RelationsStorage relationsStorage;
 
     private final ILogger logger;
 
@@ -221,18 +221,18 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         this.nodeEngine = nodeEngine;
 
         this.iMapResolver = new MetadataResolver(nodeEngine);
-        this.tablesStorage = new TablesStorage(nodeEngine);
+        this.relationsStorage = new RelationsStorage(nodeEngine);
 
-        TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine, this.tablesStorage);
+        TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine, this.relationsStorage);
         this.tableResolvers = singletonList(tableResolverImpl);
         this.planExecutor = new PlanExecutor(tableResolverImpl, nodeEngine.getHazelcastInstance(), resultRegistry);
 
         this.logger = nodeEngine.getLogger(getClass());
     }
 
-    private static TableResolverImpl mappingCatalog(NodeEngine nodeEngine, TablesStorage tablesStorage) {
+    private static TableResolverImpl mappingCatalog(NodeEngine nodeEngine, RelationsStorage relationsStorage) {
         SqlConnectorCache connectorCache = new SqlConnectorCache(nodeEngine);
-        return new TableResolverImpl(nodeEngine, tablesStorage, connectorCache);
+        return new TableResolverImpl(nodeEngine, relationsStorage, connectorCache);
     }
 
     @Nullable
@@ -247,8 +247,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return tableResolvers;
     }
 
-    public TablesStorage tablesStorage() {
-        return tablesStorage;
+    public RelationsStorage relationsStorage() {
+        return relationsStorage;
     }
 
     @Override

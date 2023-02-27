@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl;
 import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.datalink.DataLinkService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -147,8 +148,17 @@ public class PlanExecutor {
     }
 
     SqlResult execute(CreateDataLinkPlan plan) {
-        Util.getNodeEngine(hazelcastInstance).getDataLinkService()
-                .createSqlDataLink(plan.name(), plan.type(), plan.options());
+        DataLinkService dlService = getNodeEngine(hazelcastInstance).getDataLinkService();
+        if (plan.ifNotExists()) {
+            if (dlService.dataLinkExists(plan.name())) {
+                dlService.createSqlDataLink(plan.name(), plan.type(), plan.options());
+                return UpdateSqlResultImpl.createUpdateCountResult(0);
+            } else {
+                throw new HazelcastException("Data link '" + plan.name() + "' already exists");
+            }
+        }
+
+        dlService.createSqlDataLink(plan.name(), plan.type(), plan.options());
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
