@@ -155,7 +155,7 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
         if (dataLink == null) {
             throw new HazelcastException("Data link '" + name + "' not found");
         }
-        if (dataLink.instance.getClass().isAssignableFrom(clazz)) {
+        if (clazz.isInstance(dataLink.instance)) {
             T instance = clazz.cast(dataLink.instance);
             instance.retain();
             return instance;
