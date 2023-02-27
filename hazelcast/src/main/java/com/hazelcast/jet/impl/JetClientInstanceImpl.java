@@ -153,10 +153,9 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
 
             // Send job meta data
-            boolean result = sendJobMetaData(jobUploadCall, submitJobParameters);
-            if (result) {
-                logFine(getLogger(), "Submitted JobMetaData successfully for jarPath: %s", jarPath);
-            }
+            logFine(getLogger(), "Submitting JobMetaData for jarPath: %s", jarPath);
+            sendJobMetaData(jobUploadCall, submitJobParameters);
+
             // Send job parts
             sendJobMultipart(jobUploadCall, jarPath);
 
@@ -175,7 +174,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         return jobUploadCall;
     }
 
-    private boolean sendJobMetaData(JobUploadCall jobUploadCall,
+    private void sendJobMetaData(JobUploadCall jobUploadCall,
                                     SubmitJobParameters submitJobParameters) {
         ClientMessage jobMetaDataRequest = JetUploadJobMetaDataCodec.encodeRequest(
                 jobUploadCall.getSessionId(),
@@ -186,7 +185,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                 submitJobParameters.getMainClass(),
                 submitJobParameters.getJobParameters());
 
-        return invokeRequestAndDecodeResponseNoRetryOnRandom(jobUploadCall.getMemberUuid(), jobMetaDataRequest,
+        invokeRequestAndDecodeResponseNoRetryOnRandom(jobUploadCall.getMemberUuid(), jobMetaDataRequest,
                 JetUploadJobMetaDataCodec::decodeResponse);
     }
 
@@ -214,12 +213,11 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                         currentPartNumber,
                         jobUploadCall.getTotalParts(), dataToSend, bytesRead, sha256Hex);
 
-                boolean result = invokeRequestAndDecodeResponseNoRetryOnRandom(jobUploadCall.getMemberUuid(), jobMultipartRequest,
+                logFine(getLogger(), "Submitting Job Part for jarPath: %s PartNumber %d",
+                        jarPath, currentPartNumber);
+
+                invokeRequestAndDecodeResponseNoRetryOnRandom(jobUploadCall.getMemberUuid(), jobMultipartRequest,
                         JetUploadJobMultipartCodec::decodeResponse);
-                if (result) {
-                    logFine(getLogger(), "Submitted Job Part successfully for jarPath: %s PartNumber %d",
-                            jarPath, currentPartNumber);
-                }
             }
         }
     }
@@ -242,11 +240,11 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     }
 
     // Do not retry on random member if invocation fails
-    private <S> S invokeRequestAndDecodeResponseNoRetryOnRandom(UUID uuid, ClientMessage request,
+    private void invokeRequestAndDecodeResponseNoRetryOnRandom(UUID uuid, ClientMessage request,
                                                                 Function<ClientMessage, Object> decoder) {
         ClientInvocation invocation = new ClientInvocation(client, request, null, uuid);
         invocation.disallowRetryOnRandom();
-        return invoke(decoder, invocation);
+        invoke(decoder, invocation);
     }
 
 
