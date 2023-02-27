@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 /**
  * Wrapper of the datasource which handles the closing of the non-shared datasources
  *
- * @since 5.2
+ * @since 5.3
  */
 @Beta
 public abstract class CloseableDataSource implements DataSource, AutoCloseable {
