@@ -18,7 +18,6 @@ package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.datalink.DataLinkService;
 import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.BiFunctionEx;
@@ -35,7 +34,6 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.function.ToResultSetFunction;
 import com.hazelcast.jet.impl.connector.ConvenientSourceP;
 import com.hazelcast.jet.impl.connector.ConvenientSourceP.SourceBufferConsumerSide;
-import com.hazelcast.jet.impl.connector.DataSourceFromConnectionSupplier;
 import com.hazelcast.jet.impl.connector.HazelcastReaders;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
 import com.hazelcast.jet.impl.connector.ReadJdbcP;
@@ -440,8 +438,7 @@ public final class SourceProcessors {
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return ReadJdbcP.supplier(context -> new DataSourceFromConnectionSupplier(newConnectionFn),
-                resultSetFn, mapOutputFn);
+        return ReadJdbcP.supplier(context -> newConnectionFn.get(), resultSetFn, mapOutputFn);
     }
 
     /**
@@ -456,17 +453,14 @@ public final class SourceProcessors {
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
         return ReadJdbcP.supplier(context -> {
-                    try (JdbcDataLink dataLink = getDataLink(context, dataLinkRef.getName())) {
-                        return dataLink.getDataSource();
+                    try (JdbcDataLink dataLink = context.dataLinkService()
+                                                        .getDataLink(dataLinkRef.getName(), JdbcDataLink.class)) {
+                        return dataLink.getConnection();
                     }
                 },
                 resultSetFn,
-                mapOutputFn);
-    }
-
-    private static JdbcDataLink getDataLink(ProcessorSupplier.Context context, String name) {
-        DataLinkService dataLinkService = context.dataLinkService();
-        return dataLinkService.getDataLink(name, JdbcDataLink.class);
+                mapOutputFn
+        );
     }
 
     /**

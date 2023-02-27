@@ -18,7 +18,6 @@ package com.hazelcast.security.impl.function;
 
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.impl.CloseableDataSource;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
@@ -48,7 +47,6 @@ import com.hazelcast.security.permission.ReplicatedMapPermission;
 import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
-import javax.sql.DataSource;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
@@ -56,6 +54,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.Permission;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.Collection;
 import java.util.List;
@@ -275,31 +274,24 @@ public final class SecuredFunctions {
 
     public static <T> ProcessorSupplier readJdbcProcessorFn(
             String connectionUrl,
-            FunctionEx<ProcessorSupplier.Context, ? extends DataSource> newDataSourceFn,
+            FunctionEx<ProcessorSupplier.Context, ? extends Connection> newConnectionFn,
             ToResultSetFunction resultSetFn,
             FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
         return new ProcessorSupplier() {
 
-            private DataSource dataSource;
+            private Context context;
 
             @Override
             public void init(@Nonnull ProcessorSupplier.Context context) {
-                dataSource = newDataSourceFn.apply(context);
-            }
-
-            @Override
-            public void close(Throwable error) throws Exception {
-                if (dataSource instanceof CloseableDataSource) {
-                    ((CloseableDataSource) dataSource).close();
-                }
+                this.context = context;
             }
 
             @Nonnull
             @Override
             public Collection<? extends Processor> get(int count) {
                 return IntStream.range(0, count)
-                        .mapToObj(i -> new ReadJdbcP<T>(dataSource::getConnection, resultSetFn, mapOutputFn))
+                        .mapToObj(i -> new ReadJdbcP<T>(() -> newConnectionFn.apply(context), resultSetFn, mapOutputFn))
                         .collect(Collectors.toList());
             }
 

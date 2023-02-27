@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.datalink.DataLinkService;
 import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.impl.connector.DataSourceFromConnectionSupplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -30,6 +30,7 @@ abstract class AbstractJdbcSqlConnectorProcessorSupplier implements ProcessorSup
 
     protected String dataLinkRef;
 
+    protected transient JdbcDataLink dataLink;
     protected transient DataSource dataSource;
 
     AbstractJdbcSqlConnectorProcessorSupplier() {
@@ -40,16 +41,12 @@ abstract class AbstractJdbcSqlConnectorProcessorSupplier implements ProcessorSup
     }
 
     public void init(@Nonnull Context context) throws Exception {
-        DataLinkService dataLinkService = context.dataLinkService();
-        try (JdbcDataLink dataLink = dataLinkService.getDataLink(dataLinkRef, JdbcDataLink.class)) {
-            dataSource = dataLink.getDataSource();
-        }
+        dataLink = context.dataLinkService().getDataLink(dataLinkRef, JdbcDataLink.class);
+        dataSource = new DataSourceFromConnectionSupplier(dataLink::getConnection);
     }
 
     @Override
     public void close(@Nullable Throwable error) throws Exception {
-        if (dataSource instanceof AutoCloseable) {
-            ((AutoCloseable) dataSource).close();
-        }
+        dataLink.close();
     }
 }

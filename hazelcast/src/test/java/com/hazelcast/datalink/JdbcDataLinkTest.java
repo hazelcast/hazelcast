@@ -17,28 +17,29 @@
 package com.hazelcast.datalink;
 
 import com.hazelcast.config.DataLinkConfig;
-import com.hazelcast.datalink.impl.CloseableDataSource;
-import com.hazelcast.jet.impl.connector.DataSourceFromConnectionSupplier;
+import com.hazelcast.datalink.impl.ConnectionDelegate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.zaxxer.hikari.HikariDataSource;
+import com.zaxxer.hikari.pool.HikariProxyConnection;
+import org.h2.jdbc.JdbcConnection;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.Map;
 
-import static com.hazelcast.datalink.impl.HikariTestUtil.assertDataSourceClosed;
 import static com.hazelcast.datalink.impl.HikariTestUtil.assertEventuallyNoHikariThreads;
 import static com.hazelcast.datalink.impl.HikariTestUtil.assertPoolNameEndsWith;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -57,96 +58,132 @@ public class JdbcDataLinkTest {
             .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataLinkTest.class.getSimpleName() + "_not_shared")
             .setShared(false);
 
-    DataSource dataSource1;
-    DataSource dataSource2;
+    Connection connection1;
+    Connection connection2;
 
     JdbcDataLink jdbcDataLink;
 
     @After
     public void tearDown() throws Exception {
-        close(dataSource1);
-        close(dataSource2);
+        close(connection1);
+        close(connection2);
         jdbcDataLink.close();
         assertEventuallyNoHikariThreads(TEST_CONFIG_NAME);
     }
 
-    private static void close(DataSource dataSource) throws Exception {
-        if (dataSource instanceof AutoCloseable) {
-            ((AutoCloseable) dataSource).close();
+    private static void close(Connection connection) throws Exception {
+        if (connection != null) {
+            connection.close();
         }
     }
 
     @Test
-    public void should_return_same_data_link_when_shared() {
+    public void should_return_name() {
+        jdbcDataLink = new JdbcDataLink(SHARED_DATA_LINK_CONFIG);
+        assertThat(jdbcDataLink.getName()).isEqualTo(TEST_CONFIG_NAME);
+    }
+
+    @Test
+    public void should_return_config() {
         jdbcDataLink = new JdbcDataLink(SHARED_DATA_LINK_CONFIG);
 
-        dataSource1 = jdbcDataLink.getDataSource();
-        dataSource2 = jdbcDataLink.getDataSource();
+        DataLinkConfig config = jdbcDataLink.getConfig();
 
-        assertThat(dataSource1).isNotNull();
-        assertThat(dataSource2).isNotNull();
-        assertThat(dataSource1).isSameAs(dataSource2);
+        assertThat(config).isSameAs(SHARED_DATA_LINK_CONFIG);
+    }
+
+    @Test
+    public void should_return_options() {
+        jdbcDataLink = new JdbcDataLink(SHARED_DATA_LINK_CONFIG);
+
+        Map<String, String> options = jdbcDataLink.options();
+        assertThat(options).containsExactly(
+                entry("jdbcUrl", JDBC_URL_SHARED)
+        );
+    }
+
+    @Test
+    public void should_return_same_connection_when_shared() throws Exception {
+        DataLinkConfig config = new DataLinkConfig(SHARED_DATA_LINK_CONFIG)
+                .setProperty("maximumPoolSize", "1");
+
+        jdbcDataLink = new JdbcDataLink(config);
+
+        connection1 = jdbcDataLink.getConnection();
+        assertThat(connection1).isNotNull();
+        Connection unwrapped1 = connection1.unwrap(Connection.class);
+
+        connection1.close();
+
+        // used maximumPoolSize above, after closing it should return same connection
+        connection2 = jdbcDataLink.getConnection();
+        assertThat(connection2).isNotNull();
+        Connection unwrapped2 = connection2.unwrap(Connection.class);
+
+        assertThat(unwrapped1).isSameAs(unwrapped2);
     }
 
     @Test
     public void should_use_custom_hikari_pool_name() throws SQLException {
         jdbcDataLink = new JdbcDataLink(SHARED_DATA_LINK_CONFIG);
+        HikariDataSource pool = jdbcDataLink.pooledDataSource();
 
-        dataSource1 = jdbcDataLink.getDataSource();
-        assertPoolNameEndsWith(dataSource1, TEST_CONFIG_NAME);
+        assertPoolNameEndsWith(pool, TEST_CONFIG_NAME);
     }
 
     @Test
-    public void should_return_hikari_pool_when_shared() throws Exception {
+    public void should_return_hikari_connection_when_shared() throws Exception {
         jdbcDataLink = new JdbcDataLink(SHARED_DATA_LINK_CONFIG);
 
-        DataSource dataSource = jdbcDataLink.getDataSource();
-        assertThat(dataSource).isInstanceOf(CloseableDataSource.class);
+        try (ConnectionDelegate connection = (ConnectionDelegate) jdbcDataLink.getConnection()) {
+            assertThat(connection.getDelegate()).isInstanceOf(HikariProxyConnection.class);
+        }
     }
 
     @Test
-    public void should_return_single_use_data_source_when_NOT_shared() throws Exception {
+    public void should_return_h2_jdbc_connection_when_NOT_shared() throws Exception {
         jdbcDataLink = new JdbcDataLink(NOT_SHARED_DATA_LINK_CONFIG);
 
-        DataSource dataSource = jdbcDataLink.getDataSource();
-        assertThat(dataSource).isInstanceOf(DataSourceFromConnectionSupplier.class);
+        try (Connection connection = jdbcDataLink.getConnection()) {
+            assertThat(connection).isInstanceOf(JdbcConnection.class);
+        }
     }
 
     @Test
-    public void should_close_shared_datasource_when_data_source_and_link_closed() throws Exception {
+    public void should_close_shared_pool_when_connection_and_data_link_closed() throws Exception {
         jdbcDataLink = new JdbcDataLink(SHARED_DATA_LINK_CONFIG);
-        CloseableDataSource dataSource = (CloseableDataSource) jdbcDataLink.getDataSource();
+        HikariDataSource pool = jdbcDataLink.pooledDataSource();
 
-        dataSource.close();
+        Connection connection = jdbcDataLink.getConnection();
+
+        connection.close();
         jdbcDataLink.close();
 
-        assertDataSourceClosed(dataSource, TEST_CONFIG_NAME);
+        assertThat(pool.isClosed())
+                .describedAs("Connection pool should have been closed")
+                .isTrue();
     }
 
     /**
      * This test closes the data link and source in the opposite order then
-     * {@link #should_close_shared_datasource_when_data_source_and_link_closed()}
+     * {@link #should_close_shared_pool_when_connection_and_data_link_closed()}
      */
     @Test
-    public void should_close_shared_datasource_when_data_link_and_source_closed() throws Exception {
+    public void should_close_shared_pool_when_data_link_and_connection_closed() throws Exception {
         jdbcDataLink = new JdbcDataLink(SHARED_DATA_LINK_CONFIG);
+        HikariDataSource pool = jdbcDataLink.pooledDataSource();
 
-        CloseableDataSource dataSource = (CloseableDataSource) jdbcDataLink.getDataSource();
-        jdbcDataLink.close();
+        try (Connection connection = jdbcDataLink.getConnection()) {
+            jdbcDataLink.close();
 
-        String actualName;
-        try (ResultSet resultSet = executeQuery(dataSource, "select 'some-name' as name")) {
-            resultSet.next();
-            actualName = resultSet.getString(1);
+            assertThat(pool.isClosed())
+                    .describedAs("Connection pool should be still open")
+                    .isFalse();
         }
-        assertThat(actualName).isEqualTo("some-name");
 
-        dataSource.close();
-        assertDataSourceClosed(dataSource, TEST_CONFIG_NAME);
-    }
-
-    private ResultSet executeQuery(DataSource dataSource, String sql) throws SQLException {
-        return dataSource.getConnection().prepareStatement(sql).executeQuery();
+        assertThat(pool.isClosed())
+                .describedAs("Connection pool should have been closed")
+                .isTrue();
     }
 
     @Test

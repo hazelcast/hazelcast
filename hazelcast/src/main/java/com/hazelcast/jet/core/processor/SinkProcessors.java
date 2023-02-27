@@ -27,6 +27,7 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.impl.connector.DataSourceFromConnectionSupplier;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
@@ -423,7 +424,7 @@ public final class SinkProcessors {
     private static FunctionEx<ProcessorMetaSupplier.Context, DataSource> dataSourceSupplier(String dataLinkName) {
         return context -> {
             try (JdbcDataLink dataLink = getDataLink(context, dataLinkName)) {
-                return dataLink.getDataSource();
+                return new DataSourceFromConnectionSupplier(dataLink::getConnection);
             }
         };
     }
