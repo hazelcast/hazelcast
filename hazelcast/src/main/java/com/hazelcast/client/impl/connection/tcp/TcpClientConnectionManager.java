@@ -972,8 +972,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 try {
                     connectToTpcPorts(connection, tpcPorts);
                 } catch (IOException e) {
-                    // TODO: Improved handling.
-                    e.printStackTrace();
+                    logger.warning("TPC CLient: Failed to connect to the new TPC ports. Falling back to classic port.", e);
                 }
             }
 
