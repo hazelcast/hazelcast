@@ -34,7 +34,7 @@
         <main.basedir>${project.parent.basedir}</main.basedir>
 
         <maven-artifact.version>3.9.0</maven-artifact.version>
-        <hazelcast-hibernate5.version>2.0.0</hazelcast-hibernate5.version>
+        <hazelcast-hibernate5.version>2.2.1</hazelcast-hibernate5.version>
     </properties>
 
     <dependencies>
@@ -97,7 +97,7 @@
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-core</artifactId>
-            <version>5.0.9.Final</version>
+            <version>5.6.15.Final</version>
             <scope>test</scope>
         </dependency>
         <dependency>
