@@ -296,6 +296,11 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void remove_non_existing_data_link_should_be_no_op() {
+        dataLinkService.removeDataLink("does-not-exist");
+    }
+
+    @Test
     public void should_return_false_when_data_link_does_not_exist() {
         boolean exists = dataLinkService.existsDataLink("does-not-exist");
         assertThat(exists)

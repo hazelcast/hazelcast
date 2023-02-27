@@ -184,6 +184,9 @@ public class DataLinkServiceImpl implements DataLinkService {
     @Override
     public void removeDataLink(String name) {
         DataLinkSourcePair dataLink = dataLinks.get(name);
+        if (dataLink == null) {
+            return;
+        }
         if (CONFIG.equals(dataLink.source)) {
             throw new HazelcastException("Data link '" + name + "' is configured via Config and can't be removed");
         }
