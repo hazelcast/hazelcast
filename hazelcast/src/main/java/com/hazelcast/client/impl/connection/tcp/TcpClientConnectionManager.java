@@ -972,7 +972,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 try {
                     connectToTpcPorts(connection, tpcPorts);
                 } catch (IOException e) {
-                    logger.warning("Alto: Failed to connect to the new TPC ports. Falling back to classic port.", e);
+                    logger.warning("Alto: Failed to connect to the new TPC ports. "
+                            + "Falling back to classic port. "
+                            + "Check your firewall configuration.", e);
                 }
             }
 
