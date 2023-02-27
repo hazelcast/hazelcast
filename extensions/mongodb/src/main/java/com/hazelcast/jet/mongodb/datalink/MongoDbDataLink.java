@@ -90,6 +90,16 @@ public class MongoDbDataLink implements DataLink {
     }
 
     @Override
+    public MongoClient getLink() {
+        return getClient();
+    }
+
+    @Override
+    public String type() {
+        return "MONGODB";
+    }
+
+    @Override
     public void close() throws Exception {
         refCounter.release();
     }
