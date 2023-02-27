@@ -78,6 +78,8 @@ import java.util.Map;
  * or query using the data link completes. See the {@link ReferenceCounter}
  * for details how to implement it.
  * <p>
+ * Implementations of DataLink must provide a constructor with
+ * single argument of type {@link DataLinkConfig}.
  *
  * @since 5.3
  */
