@@ -36,6 +36,9 @@ import static javax.net.ssl.SSLEngineResult.HandshakeStatus.FINISHED;
 
 
 /**
+ * A {@link AsyncSocket} that is Nio based (so uses a selector) and provides
+ * TLS.
+ *
  * https://docs.oracle.com/javase/10/security/sample-code-illustrating-use-sslengine.htm#JSSEC-GUID-EDE915F0-427B-48C7-918F-23C44384B862
  * <p>
  * https://github.com/alkarn/sslengine.example/blob/master/src/main/java/alkarn/github/io/sslengine/example/NioSslServer.java
@@ -476,6 +479,11 @@ public class NioTlsAsyncSocket extends AsyncSocket {
             //todo: use wrapMore variable
             boolean bufferOverflow = false;
             while (current != null && !bufferOverflow) {
+                // todo: what happens when the src byteBuffer is a lot larger than the sendBuffer?
+                // I guess it will partly encrypted.
+
+                // todo: instead of passing individual buffers, an array should be passed.
+                // This reduces the overhead of encryption
                 SSLEngineResult wrapResult = sslEngine.wrap(current.byteBuffer(), sendBuffer);
                 //System.out.println(TLSNioAsyncSocket.this + " handleWrite: wrapResult " + wrapResult.toString().replace("\n", " "));
                 switch (wrapResult.getStatus()) {
