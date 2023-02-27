@@ -965,14 +965,14 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             connection.setClusterUuid(response.clusterId);
 
             if (!isAltoAwareClient || tpcPorts == null || tpcPorts.isEmpty()) {
-                logger.finest("TPC Client: disabled, no TPC ports detected");
+                logger.finest("Alto: disabled, no TPC ports detected");
             } else {
-                logger.info("TPC Client: connecting to ports (" + tpcPorts.size() + "): " + tpcPorts
+                logger.info("Alto: connecting to ports (" + tpcPorts.size() + "): " + tpcPorts
                         + " for connection: " + connection);
                 try {
                     connectToTpcPorts(connection, tpcPorts);
                 } catch (IOException e) {
-                    logger.warning("TPC CLient: Failed to connect to the new TPC ports. Falling back to classic port.", e);
+                    logger.warning("Alto: Failed to connect to the new TPC ports. Falling back to classic port.", e);
                 }
             }
 
@@ -1062,7 +1062,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         Channel[] tpcChannels = new Channel[tpcPorts.size()];
         for (int k = 0; k < tpcChannels.length; k++) {
             Address address = new Address(connection.getRemoteAddress().getHost(), tpcPorts.get(k));
-            logger.info("TPC Client: Connecting to:" + address);
+            logger.info("Alto: Connecting to:" + address);
             SocketChannel tpcSocketChannel = SocketChannel.open();
 
             Channel tpcChannel = networking.register(connection.getChannelInitializer(), tpcSocketChannel, true);
@@ -1073,7 +1073,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
             tpcChannel.connect(tpcSocketChannelAddress, connectionTimeoutMillis);
 
-            logger.info("TPC Client: Successfully connected to " + tpcSocketChannelAddress);
+            logger.info("Alto: Successfully connected to " + tpcSocketChannelAddress);
 
             tpcChannel.start();
 
@@ -1088,7 +1088,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             tpcChannels[k] = tpcChannel;
         }
 
-        logger.info("TPC Client: All channel connections made for connection: " + connection);
+        logger.info("Alto: All channel connections made for connection: " + connection);
         connection.setTpcChannels(tpcChannels);
     }
 
