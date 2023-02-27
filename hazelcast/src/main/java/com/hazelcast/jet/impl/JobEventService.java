@@ -47,8 +47,7 @@ public class JobEventService implements EventPublishingService<JobStatusEvent, J
 
     public void publishEvent(long jobId, JobStatus oldStatus, JobStatus newStatus,
                              String description, boolean userRequested) {
-        Collection<EventRegistration> registrations = eventService.getRegistrations(
-                SERVICE_NAME, idToString(jobId));
+        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, idToString(jobId));
         if (!registrations.isEmpty()) {
             JobStatusEvent event = new JobStatusEvent(jobId, oldStatus, newStatus, description, userRequested);
             eventService.publishEvent(SERVICE_NAME, registrations, event, (int) jobId);
@@ -77,6 +76,6 @@ public class JobEventService implements EventPublishingService<JobStatusEvent, J
     }
 
     public void removeAllEventListeners(long jobId) {
-        eventService.deregisterAllListeners(SERVICE_NAME, idToString(jobId));
+        eventService.deregisterAllListeners(SERVICE_NAME, idToString(jobId), (int) jobId);
     }
 }

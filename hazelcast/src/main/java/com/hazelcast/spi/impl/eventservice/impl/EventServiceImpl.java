@@ -405,13 +405,13 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
     }
 
     @Override
-    public void deregisterAllListeners(@Nonnull String serviceName, @Nonnull String topic) {
+    public void deregisterAllListeners(@Nonnull String serviceName, @Nonnull String topic, int orderKey) {
         EventServiceSegment segment = getSegment(serviceName, false);
         Collection<Registration> registrations = segment == null ? null : segment.removeRegistrations(topic);
         ClusterService clusterService = nodeEngine.getClusterService();
 
         if (clusterService.getClusterVersion().isGreaterOrEqual(V5_3)) {
-            Supplier<Operation> op = new DeregistrationOperationSupplier(serviceName, topic, clusterService);
+            Supplier<Operation> op = new DeregistrationOperationSupplier(serviceName, topic, orderKey, clusterService);
             invokeOnStableClusterSerial(nodeEngine, op, MAX_RETRIES);
         } else if (registrations != null) {
             for (Registration reg : registrations) {

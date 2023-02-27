@@ -30,25 +30,28 @@ public class DeregistrationOperationSupplier implements Supplier<Operation> {
     private final String serviceName;
     private final String topic;
     private final UUID id;
+    private final int orderKey;
     private final ClusterService clusterService;
 
     public DeregistrationOperationSupplier(Registration reg, ClusterService clusterService) {
         serviceName = reg.getServiceName();
         topic = reg.getTopic();
         id = reg.getId();
+        orderKey = -1;
         this.clusterService = clusterService;
     }
 
-    public DeregistrationOperationSupplier(String serviceName, String topic, ClusterService clusterService) {
+    public DeregistrationOperationSupplier(String serviceName, String topic, int orderKey, ClusterService clusterService) {
         this.serviceName = serviceName;
         this.topic = topic;
         id = null;
+        this.orderKey = orderKey;
         this.clusterService = clusterService;
     }
 
     @Override
     public Operation get() {
-        return new DeregistrationOperation(topic, id, clusterService.getMemberListVersion())
+        return new DeregistrationOperation(topic, id, orderKey, clusterService.getMemberListVersion())
                 .setServiceName(serviceName);
     }
 }

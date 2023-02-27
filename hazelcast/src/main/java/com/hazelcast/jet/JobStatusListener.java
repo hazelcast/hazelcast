@@ -17,7 +17,6 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.core.JobStatus;
-import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 
 import java.util.UUID;
 
@@ -39,12 +38,7 @@ import java.util.UUID;
  *      {@link JobStatus#RUNNING RUNNING} to {@link JobStatus#FAILED FAILED}
  *      upon job {@linkplain Job#cancel termination}.
  * <li> This listener is automatically deregistered after a {@linkplain
- *      JobStatus#isTerminal terminal event}.
- * <li> Events are transmitted asynchronously by default, which may result in
- *      out-of-order events, or the deregistration of this listener before a
- *      terminal event is received. To disable asynchronous transmission, system
- *      property {@value EventServiceImpl#EVENT_SYNC_FREQUENCY_PROP} should be
- *      set to 1. </ol>
+ *      JobStatus#isTerminal terminal event}. </ol>
  *
  * @see Job#addStatusListener(JobStatusListener)
  * @see Job#removeStatusListener(UUID)
@@ -69,12 +63,7 @@ public interface JobStatusListener {
      *      {@link JobStatus#RUNNING RUNNING} to {@link JobStatus#FAILED FAILED}
      *      upon job {@linkplain Job#cancel termination}.
      * <li> This listener is automatically deregistered after a {@linkplain
-     *      JobStatus#isTerminal terminal event}.
-     * <li> Events are transmitted asynchronously by default, which may result in
-     *      out-of-order events, or the deregistration of this listener before a
-     *      terminal event is received. To disable asynchronous transmission, system
-     *      property {@value EventServiceImpl#EVENT_SYNC_FREQUENCY_PROP} should be
-     *      set to 1. </ol>
+     *      JobStatus#isTerminal terminal event}. </ol>
      *
      * @param event Holds information about the previous and new job statuses,
      *        reason for the status change, and whether it is user-initiated.

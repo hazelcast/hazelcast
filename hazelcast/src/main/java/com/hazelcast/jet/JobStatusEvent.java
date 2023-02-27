@@ -118,7 +118,7 @@ public class JobStatusEvent implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "JobEvent{jobId=" + idToString(jobId)
+        return "JobStatusEvent{jobId=" + idToString(jobId)
                 + ", previousStatus=" + previousStatus
                 + ", newStatus=" + newStatus
                 + ", description=" + description
