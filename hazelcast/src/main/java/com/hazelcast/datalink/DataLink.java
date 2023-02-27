@@ -32,7 +32,12 @@ import java.util.Map;
  * 3rd party system etc.
  * <p>
  * DataLink is supposed to be used in Jet jobs or SQL queries where the
- * same connection metadata, or even the same connection is to be reused,
+ * same connection metadata, or even the same connection is to be reused.
+ * <p>
+ * DataLink is closely related to Jet connectors (sources and sinks) and
+ * to {@code SqlConnector}s. While the DataLink handles initialization,
+ * maintenance and closing of connections to the external system; the
+ * connectors read and write actuall data from/into them.
  *
  * @since 5.3
  */
