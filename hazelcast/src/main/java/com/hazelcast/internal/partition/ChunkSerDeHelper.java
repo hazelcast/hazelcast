@@ -76,6 +76,9 @@ public final class ChunkSerDeHelper {
 
 
     public void writeChunkedOperations(ObjectDataOutput out) throws IOException {
+        assert out instanceof BufferObjectDataOutput;
+        
+        BufferObjectDataOutput bufferedOut = (BufferObjectDataOutput) out;
         IsEndOfChunk isEndOfChunk = new IsEndOfChunk(maxTotalChunkedDataInBytes);
 
         for (ChunkSupplier chunkSupplier : chunkSuppliers) {
@@ -96,13 +99,13 @@ public final class ChunkSerDeHelper {
 
                 out.writeObject(chunk);
 
-                if (isEndOfChunk.test(out)) {
+                if (isEndOfChunk.test(bufferedOut)) {
                     break;
                 }
             }
 
-            if (isEndOfChunk.test(out)) {
-                logEndOfChunk(out, isEndOfChunk);
+            if (isEndOfChunk.test(bufferedOut)) {
+                logEndOfChunk(bufferedOut, isEndOfChunk);
                 break;
             }
         }
@@ -110,7 +113,7 @@ public final class ChunkSerDeHelper {
         // indicates end of chunked state
         out.writeObject(null);
 
-        logEndOfAllChunks(out, isEndOfChunk);
+        logEndOfAllChunks(bufferedOut, isEndOfChunk);
     }
 
     private void logCurrentChunk(ChunkSupplier chunkSupplier) {
@@ -122,7 +125,7 @@ public final class ChunkSerDeHelper {
                 partitionId, chunkSupplier));
     }
 
-    private void logEndOfChunk(ObjectDataOutput out, IsEndOfChunk isEndOfChunk) {
+    private void logEndOfChunk(BufferObjectDataOutput out, IsEndOfChunk isEndOfChunk) {
         if (!logger.isFinestEnabled()) {
             return;
         }
@@ -133,7 +136,7 @@ public final class ChunkSerDeHelper {
                 Capacity.toPrettyString(isEndOfChunk.bytesWrittenSoFar(out))));
     }
 
-    private void logEndOfAllChunks(ObjectDataOutput out, IsEndOfChunk isEndOfChunk) {
+    private void logEndOfAllChunks(BufferObjectDataOutput out, IsEndOfChunk isEndOfChunk) {
         if (!logger.isFinestEnabled()) {
             return;
         }
@@ -154,7 +157,7 @@ public final class ChunkSerDeHelper {
         }
     }
 
-    private static final class IsEndOfChunk implements Predicate<ObjectDataOutput> {
+    private static final class IsEndOfChunk implements Predicate<BufferObjectDataOutput> {
 
         private int positionStart;
         private boolean initialized;
@@ -168,16 +171,16 @@ public final class ChunkSerDeHelper {
         }
 
         @Override
-        public boolean test(ObjectDataOutput out) {
+        public boolean test(BufferObjectDataOutput out) {
             return bytesWrittenSoFar(out) >= maxTotalChunkedDataInBytes;
         }
 
-        public int bytesWrittenSoFar(ObjectDataOutput out) {
+        public int bytesWrittenSoFar(BufferObjectDataOutput out) {
             if (!initialized) {
-                positionStart = ((BufferObjectDataOutput) out).position();
+                positionStart = out.position();
                 initialized = true;
             }
-            return ((BufferObjectDataOutput) out).position() - positionStart;
+            return out.position() - positionStart;
         }
     }
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.partition.ChunkSupplier;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.map.impl.operation.MapChunk;
@@ -31,7 +32,7 @@ class MapChunkSupplier implements ChunkSupplier {
 
     protected final MapChunkContext context;
 
-    protected Predicate isEndOfChunk;
+    protected Predicate<BufferObjectDataOutput> isEndOfChunk;
 
     private final int partitionId;
     private final int replicaIndex;
@@ -60,7 +61,7 @@ class MapChunkSupplier implements ChunkSupplier {
     }
 
     @Override
-    public final void signalEndOfChunkWith(Predicate isEndOfChunk) {
+    public final void signalEndOfChunkWith(Predicate<BufferObjectDataOutput> isEndOfChunk) {
         this.isEndOfChunk = isEndOfChunk;
     }
 

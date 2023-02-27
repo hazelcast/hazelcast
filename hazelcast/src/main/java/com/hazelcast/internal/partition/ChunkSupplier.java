@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.Iterator;
@@ -34,7 +35,7 @@ public interface ChunkSupplier extends Iterator<Operation> {
     /**
      * @param isEndOfChunk boolean supplier to signal end of chunk.
      */
-    default void signalEndOfChunkWith(Predicate isEndOfChunk) {
+    default void signalEndOfChunkWith(Predicate<BufferObjectDataOutput> isEndOfChunk) {
 
     }
 }

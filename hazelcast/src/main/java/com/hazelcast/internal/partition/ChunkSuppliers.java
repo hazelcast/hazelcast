@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
@@ -111,7 +112,7 @@ public final class ChunkSuppliers {
         }
 
         @Override
-        public void signalEndOfChunkWith(Predicate isEndOfChunk) {
+        public void signalEndOfChunkWith(Predicate<BufferObjectDataOutput> isEndOfChunk) {
             for (int i = 0; i < chain.size(); i++) {
                 chain.get(i).signalEndOfChunkWith(isEndOfChunk);
             }
