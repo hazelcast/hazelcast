@@ -83,6 +83,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlDropType;
 import com.hazelcast.jet.sql.impl.parse.SqlDropView;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
+import com.hazelcast.jet.sql.impl.schema.DataLinkStorage;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
@@ -214,6 +215,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private final List<TableResolver> tableResolvers;
     private final PlanExecutor planExecutor;
     private final RelationsStorage relationsStorage;
+    private final DataLinkStorage dataLinkStorage;
 
     private final ILogger logger;
 
@@ -222,17 +224,21 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         this.iMapResolver = new MetadataResolver(nodeEngine);
         this.relationsStorage = new RelationsStorage(nodeEngine);
+        this.dataLinkStorage = new DataLinkStorage(nodeEngine);
 
-        TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine, this.relationsStorage);
+        TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine, this.relationsStorage, this.dataLinkStorage);
         this.tableResolvers = singletonList(tableResolverImpl);
         this.planExecutor = new PlanExecutor(tableResolverImpl, nodeEngine.getHazelcastInstance(), resultRegistry);
 
         this.logger = nodeEngine.getLogger(getClass());
     }
 
-    private static TableResolverImpl mappingCatalog(NodeEngine nodeEngine, RelationsStorage relationsStorage) {
+    private static TableResolverImpl mappingCatalog(
+            NodeEngine nodeEngine,
+            RelationsStorage relationsStorage,
+            DataLinkStorage dataLinkStorage) {
         SqlConnectorCache connectorCache = new SqlConnectorCache(nodeEngine);
-        return new TableResolverImpl(nodeEngine, relationsStorage, connectorCache);
+        return new TableResolverImpl(nodeEngine, relationsStorage, dataLinkStorage, connectorCache);
     }
 
     @Nullable

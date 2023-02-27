@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 
 public class DataLinkStorage extends AbstractSchemaStorage {
 
-    DataLinkStorage(NodeEngine nodeEngine) {
+    public DataLinkStorage(NodeEngine nodeEngine) {
         super(nodeEngine);
     }
 

@@ -35,6 +35,7 @@ import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
+import com.hazelcast.sql.impl.schema.datalink.DataLink;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 
@@ -74,6 +75,7 @@ public class TableResolverImpl implements TableResolver {
 
     private final NodeEngine nodeEngine;
     private final RelationsStorage relationsStorage;
+    private final DataLinkStorage dataLinkStorage;
     private final SqlConnectorCache connectorCache;
     private final List<TableListener> listeners;
 
@@ -88,10 +90,12 @@ public class TableResolverImpl implements TableResolver {
     public TableResolverImpl(
             NodeEngine nodeEngine,
             RelationsStorage relationsStorage,
+            DataLinkStorage dataLinkStorage,
             SqlConnectorCache connectorCache
     ) {
         this.nodeEngine = nodeEngine;
         this.relationsStorage = relationsStorage;
+        this.dataLinkStorage = dataLinkStorage;
         this.connectorCache = connectorCache;
         this.listeners = new CopyOnWriteArrayList<>();
 
@@ -222,6 +226,31 @@ public class TableResolverImpl implements TableResolver {
 
     // endregion
 
+    // region data link
+
+    public void createDataLink(DataLink dl, boolean replace, boolean ifNotExists) {
+        if (ifNotExists) {
+            dataLinkStorage.putIfAbsent(dl.getName(), dl);
+        } else if (replace) {
+            dataLinkStorage.put(dl.getName(), dl);
+        } else if (!dataLinkStorage.putIfAbsent(dl.getName(), dl)) {
+            throw QueryException.error("Data link already exists: " + dl.getName());
+        }
+    }
+
+    public void removeDataLink(String name, boolean ifExists) {
+        if (dataLinkStorage.removeDataLink(name) == null && !ifExists) {
+            throw QueryException.error("Data link does not exist: " + name);
+        }
+    }
+
+    @Nonnull
+    public Collection<String> getDataLinkNames() {
+        return dataLinkStorage.dataLinkNames();
+    }
+
+    // endregion
+
     @Nonnull
     @Override
     public List<List<String>> getDefaultSearchPaths() {
@@ -252,6 +281,9 @@ public class TableResolverImpl implements TableResolver {
                 views.add((View) o);
             } else if (o instanceof Type) {
                 types.add((Type) o);
+            } else if (o instanceof DataLink) {
+                // Note: data link is not a 'table' or 'relation'
+                continue;
             } else {
                 throw new RuntimeException("Unexpected: " + o);
             }

@@ -79,6 +79,7 @@ import com.hazelcast.sql.impl.UpdateSqlResultImpl;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.schema.datalink.DataLink;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.schema.view.View;
@@ -149,16 +150,15 @@ public class PlanExecutor {
 
     SqlResult execute(CreateDataLinkPlan plan) {
         DataLinkService dlService = getNodeEngine(hazelcastInstance).getDataLinkService();
-        if (plan.ifNotExists()) {
-            if (dlService.dataLinkExists(plan.name())) {
-                dlService.createSqlDataLink(plan.name(), plan.type(), plan.options());
-                return UpdateSqlResultImpl.createUpdateCountResult(0);
-            } else {
-                throw new HazelcastException("Data link '" + plan.name() + "' already exists");
-            }
+        if (plan.ifNotExists() && dlService.dataLinkExists(plan.name())) {
+            throw new HazelcastException("Data link '" + plan.name() + "' already exists");
         }
 
         dlService.createSqlDataLink(plan.name(), plan.type(), plan.options());
+        catalog.createDataLink(
+                new DataLink(plan.name(), plan.type(), plan.options()),
+                plan.isReplace(),
+                plan.ifNotExists());
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
@@ -168,7 +168,9 @@ public class PlanExecutor {
             dlService.getDataLink(plan.name()); // throws 'HazelcastException("Data link ... not found")', if DL not exist
         }
         try {
+            // Here, any throwable is not expected, but it may happen inside removeDataLink() call.
             dlService.removeDataLink(plan.name());
+            catalog.removeDataLink(plan.name(), plan.ifExists());
         } finally {
             return UpdateSqlResultImpl.createUpdateCountResult(0);
         }

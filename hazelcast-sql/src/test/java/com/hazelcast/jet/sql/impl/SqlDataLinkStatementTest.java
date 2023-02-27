@@ -118,7 +118,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_dropNonExistentDataLink_woIfExists_then_throws() {
+    public void when_dropNonExistentDataLink_withoutIfExists_then_success() {
         String dlName = randomName();
         SqlResult result = instance().getSql().execute("DROP DATA LINK " + dlName);
         assertThat(result).isInstanceOf(UpdateSqlResultImpl.class);

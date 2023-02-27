@@ -66,6 +66,9 @@ public class TableResolverImplTest {
     private RelationsStorage relationsStorage;
 
     @Mock
+    private DataLinkStorage dataLinkStorage;
+
+    @Mock
     private SqlConnectorCache connectorCache;
 
     @Mock
@@ -86,7 +89,7 @@ public class TableResolverImplTest {
 
         when(nodeEngine.getHazelcastInstance()).thenReturn(hazelcastInstance);
         when(hazelcastInstance.getLifecycleService()).thenReturn(lifecycleService);
-        catalog = new TableResolverImpl(nodeEngine, relationsStorage, connectorCache);
+        catalog = new TableResolverImpl(nodeEngine, relationsStorage, dataLinkStorage, connectorCache);
         catalog.registerListener(listener);
     }
 
