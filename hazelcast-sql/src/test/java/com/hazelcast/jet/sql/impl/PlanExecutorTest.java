@@ -91,7 +91,7 @@ public class PlanExecutorTest {
         given(job.getFuture()).willReturn(new CompletableFuture<>());
         given(registry.newMetricDescriptor()).willReturn(metricDescriptor).getMock();
         given(metricDescriptor.withTag(anyString(), anyString())).willReturn(metricDescriptor);
-        planExecutor = new PlanExecutor(catalog, hazelcastInstance, null, registry);
+        planExecutor = new PlanExecutor(catalog, hazelcastInstance, null);
     }
 
     @Test

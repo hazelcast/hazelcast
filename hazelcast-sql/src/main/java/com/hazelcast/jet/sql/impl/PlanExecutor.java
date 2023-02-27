@@ -20,17 +20,11 @@ import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.metrics.MetricDescriptor;
-import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.util.counters.Counter;
-import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
@@ -87,7 +81,6 @@ import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.metrics.MetricNames;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
@@ -103,6 +96,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -130,21 +124,17 @@ public class PlanExecutor {
     private final HazelcastInstance hazelcastInstance;
     private final QueryResultRegistry resultRegistry;
 
-    @Probe(name = MetricNames.FAST_QUERIES_EXECUTED)
-    private final Counter queriesExecuted = MwCounter.newMwCounter();
+    // test-only
+    private final AtomicLong directIMapQueriesExecuted = new AtomicLong();
 
     public PlanExecutor(
             TableResolverImpl catalog,
             HazelcastInstance hazelcastInstance,
-            QueryResultRegistry resultRegistry,
-            MetricsRegistry registry
+            QueryResultRegistry resultRegistry
     ) {
         this.catalog = catalog;
         this.hazelcastInstance = hazelcastInstance;
         this.resultRegistry = resultRegistry;
-        final MetricDescriptor descriptor = registry.newMetricDescriptor()
-                .withTag(MetricTags.MODULE, MetricNames.MODULE_TAG);
-        registry.registerStaticMetrics(descriptor, this);
     }
 
     SqlResult execute(CreateMappingPlan plan) {
@@ -434,7 +424,7 @@ public class PlanExecutor {
                 ? new StaticQueryResultProducerImpl(row)
                 : new StaticQueryResultProducerImpl(emptyIterator());
 
-        queriesExecuted.inc();
+        directIMapQueriesExecuted.getAndIncrement();
 
         return new SqlResultImpl(
                 queryId,
@@ -461,7 +451,7 @@ public class PlanExecutor {
             }
         }
 
-        queriesExecuted.inc();
+        directIMapQueriesExecuted.getAndIncrement();
 
         return UpdateSqlResultImpl.createUpdateCountResult(0, plan.keyParamIndex());
     }
@@ -485,7 +475,7 @@ public class PlanExecutor {
                 .submitToKey(key, plan.updaterSupplier().get(arguments))
                 .toCompletableFuture();
         await(future, timeout);
-        queriesExecuted.inc();
+        directIMapQueriesExecuted.getAndIncrement();
         return UpdateSqlResultImpl.createUpdateCountResult(0, plan.keyConditionParamIndex());
     }
 
@@ -498,7 +488,7 @@ public class PlanExecutor {
                 .toCompletableFuture();
         await(future, timeout);
 
-        queriesExecuted.inc();
+        directIMapQueriesExecuted.getAndIncrement();
 
         return UpdateSqlResultImpl.createUpdateCountResult(0, plan.keyConditionParamIndex());
     }
@@ -656,5 +646,9 @@ public class PlanExecutor {
         MapService mapService = mapProxy.getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         return mapServiceContext.getMapContainer(map.getName());
+    }
+
+    public long getDirectIMapQueriesExecuted() {
+        return directIMapQueriesExecuted.get();
     }
 }

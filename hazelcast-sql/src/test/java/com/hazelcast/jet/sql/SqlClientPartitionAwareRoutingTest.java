@@ -19,24 +19,18 @@ package com.hazelcast.jet.sql;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.metrics.MetricDescriptor;
-import com.hazelcast.internal.metrics.collectors.MetricsCollector;
-import com.hazelcast.jet.core.metrics.MetricTags;
+import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
+import com.hazelcast.jet.sql.impl.PlanExecutor;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.sql.metrics.MetricNames;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -54,25 +48,25 @@ public class SqlClientPartitionAwareRoutingTest extends SqlTestSupport {
 
     @Test
     public void test_selectRouting() {
-        testQuery("SELECT * FROM test WHERE __key = ?", MetricNames.FAST_QUERIES_EXECUTED, 100);
+        testQuery("SELECT * FROM test WHERE __key = ?", 100);
     }
 
     @Test
     public void test_insertRouting() {
-        testQuery("INSERT INTO test (this, __key) VALUES ('testVal', ?)", MetricNames.FAST_QUERIES_EXECUTED, 100);
+        testQuery("INSERT INTO test (this, __key) VALUES ('testVal', ?)", 100);
     }
 
     @Test
     public void test_updateRouting() {
-        testQuery("UPDATE test SET this = 'testVal' WHERE __key = ?", MetricNames.FAST_QUERIES_EXECUTED, 100);
+        testQuery("UPDATE test SET this = 'testVal' WHERE __key = ?", 100);
     }
 
     @Test
     public void test_deleteRouting() {
-        testQuery("DELETE FROM test WHERE __key = ?", MetricNames.FAST_QUERIES_EXECUTED, 100);
+        testQuery("DELETE FROM test WHERE __key = ?", 100);
     }
 
-    private void testQuery(String sql, String metricName, int keysNumber) {
+    private void testQuery(String sql, int keyCount) {
         // wait for client to receive partition table
         assertTrueEventually(() -> {
             for (final Partition partition : client().getPartitionService().getPartitions()) {
@@ -84,23 +78,26 @@ public class SqlClientPartitionAwareRoutingTest extends SqlTestSupport {
         client().getSql().execute(sql, 0);
 
         // collect pre-execution metrics
-        final List<Map<String, Object>> before = collectMetrics();
-        final long[] expectedCounts = new long[instances().length];
-        for (int i = 0; i < instances().length; i++) {
-            expectedCounts[i] = (long) before.get(i).get(metricName);
-        }
+        final long[] expectedCounts = Arrays.stream(instances())
+                .mapToLong(inst -> getPlanExecutor(inst).getDirectIMapQueriesExecuted())
+                .toArray();
 
         // run queries
-        for (long i = 1L; i < keysNumber; i++) {
+        for (long i = 1L; i < keyCount; i++) {
             client().getSql().execute(sql, i);
             expectedCounts[getPartitionOwnerIndex(i)]++;
         }
 
         // assert
-        final List<Map<String, Object>> after = collectMetrics();
-        for (int i = 0; i < instances().length; i++) {
-            assertEquals(expectedCounts[i], after.get(i).get(metricName));
-        }
+        final long[] actualCounts = Arrays.stream(instances())
+                .mapToLong(inst -> getPlanExecutor(inst).getDirectIMapQueriesExecuted())
+                .toArray();
+        assertArrayEquals(expectedCounts, actualCounts);
+    }
+
+    private static PlanExecutor getPlanExecutor(HazelcastInstance instance) {
+        CalciteSqlOptimizer optimizer = (CalciteSqlOptimizer) getNodeEngineImpl(instance).getSqlService().getOptimizer();
+        return optimizer.getPlanExecutor();
     }
 
     private int getPartitionOwnerIndex(Object key) {
@@ -112,41 +109,5 @@ public class SqlClientPartitionAwareRoutingTest extends SqlTestSupport {
             }
         }
         throw new HazelcastException("Partition Owner not found for key: " + key);
-    }
-
-    private List<Map<String, Object>> collectMetrics() {
-        final List<Map<String, Object>> metricsList = new ArrayList<>();
-
-        for (final HazelcastInstance instance : instances()) {
-            final Map<String, Object> metrics = new HashMap<>();
-            Accessors.getMetricsRegistry(instance).collect(new MetricsCollector() {
-                @Override
-                public void collectLong(final MetricDescriptor descriptor, final long value) {
-                    if (MetricNames.MODULE_TAG.equals(descriptor.tagValue(MetricTags.MODULE))) {
-                        metrics.put(descriptor.metric(), value);
-                    }
-                }
-
-                @Override
-                public void collectDouble(final MetricDescriptor descriptor, final double value) {
-                    if (MetricNames.MODULE_TAG.equals(descriptor.tagValue(MetricTags.MODULE))) {
-                        metrics.put(descriptor.metric(), value);
-                    }
-                }
-
-                @Override
-                public void collectException(final MetricDescriptor descriptor, final Exception e) {
-
-                }
-
-                @Override
-                public void collectNoValue(final MetricDescriptor descriptor) {
-
-                }
-            });
-            metricsList.add(metrics);
-        }
-
-        return metricsList;
     }
 }
