@@ -49,7 +49,7 @@ public interface DataLink extends AutoCloseable {
     String getName();
 
     /**
-     * Returns list of {@link Resource}s accessible via this DataLink.
+     * Returns list of {@link DataLinkResource}s accessible via this DataLink.
      * <p>
      * However, it is not strictly required that the data link lists
      * all resources; a mapping can be created for a resource that is
@@ -58,7 +58,7 @@ public interface DataLink extends AutoCloseable {
      * it might list no resources at all, perhaps if the security in
      * the target system prevents reading of such a list.
      */
-    List<Resource> listResources();
+    List<DataLinkResource> listResources();
 
     /**
      * Returns the configuration of this DataLink

@@ -103,15 +103,15 @@ public class JdbcDataLink implements DataLink {
     }
 
     @Override
-    public List<Resource> listResources() {
+    public List<DataLinkResource> listResources() {
         try (Connection connection = singleUseDataSource.getConnection()) {
             DatabaseMetaData metaData = connection.getMetaData();
             String[] types = {"TABLE", "VIEW"};
             //Retrieving the columns in the database
             ResultSet tables = metaData.getTables(null, null, "%", types);
-            List<Resource> result = new ArrayList<>();
+            List<DataLinkResource> result = new ArrayList<>();
             while (tables.next()) {
-                result.add(new Resource(
+                result.add(new DataLinkResource(
                         tables.getString("TABLE_TYPE"),
                         tables.getString("TABLE_SCHEM") + "." + tables.getString("TABLE_NAME")
                 ));
