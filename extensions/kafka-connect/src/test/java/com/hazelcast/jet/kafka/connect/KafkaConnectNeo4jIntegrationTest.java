@@ -60,6 +60,8 @@ public class KafkaConnectNeo4jIntegrationTest extends JetTestSupport {
             .withoutAuthentication();
     private static final ILogger LOGGER = Logger.getLogger(KafkaConnectNeo4jIntegrationTest.class);
     private static final int ITEM_COUNT = 1_000;
+
+    //This is the last JDK8-compatible version of the Neo4j connector
     private static final String CONNECTOR_URL = "https://repository.hazelcast.com/download"
             + "/tests/neo4j-kafka-connect-neo4j-2.0.1.zip";
 
