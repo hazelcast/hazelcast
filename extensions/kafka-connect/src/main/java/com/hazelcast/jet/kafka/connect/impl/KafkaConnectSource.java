@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.kafka.connect.impl;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -51,10 +52,22 @@ public class KafkaConnectSource {
 
     public KafkaConnectSource(Properties properties) {
         String connectorClazz = checkRequiredProperty(properties, "connector.class");
-        this.connector = newInstance(Thread.currentThread().getContextClassLoader(), connectorClazz);
+        this.connector = newConnectorInstance(connectorClazz);
         this.connector.initialize(new JetConnectorContext());
         this.connector.start(toMap(properties));
         this.taskRunner = new TaskRunner(connector, partitionsToOffset);
+    }
+
+    private static SourceConnector newConnectorInstance(String connectorClazz) {
+        try {
+            return newInstance(Thread.currentThread().getContextClassLoader(), connectorClazz);
+        } catch (Exception e) {
+            if (e instanceof ClassNotFoundException) {
+                throw new HazelcastException("Connector class '" + connectorClazz + "' not found. " +
+                        "Did you add the connector jar to the job?", e);
+            }
+            throw rethrow(e);
+        }
     }
 
     public void fillBuffer(SourceBuilder.TimestampedSourceBuffer<SourceRecord> buf) {
