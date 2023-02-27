@@ -18,15 +18,14 @@ package com.hazelcast.datalink;
 
 import com.hazelcast.core.HazelcastException;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ReferenceCounter {
 
     private final AtomicInteger referenceCount = new AtomicInteger(1);
-    private final Callable<Void> destroy;
+    private final Runnable destroy;
 
-    public ReferenceCounter(Callable<Void> destroy) {
+    public ReferenceCounter(Runnable destroy) {
         this.destroy = destroy;
     }
 
@@ -46,7 +45,7 @@ public class ReferenceCounter {
         long newCount = referenceCount.decrementAndGet();
         if (newCount == 0) {
             try {
-                destroy.call();
+                destroy.run();
             } catch (Exception e) {
                 throw new HazelcastException("Could not destroy reference counted object", e);
             }

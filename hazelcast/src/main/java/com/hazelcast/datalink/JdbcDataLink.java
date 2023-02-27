@@ -74,10 +74,7 @@ public class JdbcDataLink implements DataLink {
     protected DataSource singleUseDataSource;
 
     public JdbcDataLink(DataLinkConfig config) {
-        this.refCounter = new ReferenceCounter(() -> {
-            destroy();
-            return null;
-        });
+        this.refCounter = new ReferenceCounter(this::destroy);
         this.config = config;
         this.pooledDataSource = createHikariDataSource();
         this.singleUseDataSource = createSingleUseDataSource();
