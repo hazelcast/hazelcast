@@ -77,7 +77,7 @@ public class JdbcDataLinkTest {
     }
 
     @Test
-    public void should_return_same_datastore_when_shared() {
+    public void should_return_same_data_link_when_shared() {
         jdbcDataLink = new JdbcDataLink(SHARED_DATA_LINK_CONFIG);
 
         dataSource1 = jdbcDataLink.getDataSource();
@@ -155,9 +155,9 @@ public class JdbcDataLinkTest {
 
         executeJdbc(JDBC_URL_SHARED, "CREATE TABLE MY_TABLE (ID INT, NAME VARCHAR)");
 
-        List<Resource> resources = jdbcDataLink.listResources();
-        assertThat(resources).contains(
-                new Resource("BASE TABLE", "PUBLIC.MY_TABLE")
+        List<DataLinkResource> dataLinkResources = jdbcDataLink.listResources();
+        assertThat(dataLinkResources).contains(
+                new DataLinkResource("BASE TABLE", "PUBLIC.MY_TABLE")
         );
     }
 
@@ -168,9 +168,9 @@ public class JdbcDataLinkTest {
         executeJdbc(JDBC_URL_SHARED, "CREATE SCHEMA MY_SCHEMA");
         executeJdbc(JDBC_URL_SHARED, "CREATE TABLE MY_SCHEMA.MY_TABLE (ID INT, NAME VARCHAR)");
 
-        List<Resource> resources = jdbcDataLink.listResources();
-        assertThat(resources).contains(
-                new Resource("BASE TABLE", "MY_SCHEMA.MY_TABLE")
+        List<DataLinkResource> dataLinkResources = jdbcDataLink.listResources();
+        assertThat(dataLinkResources).contains(
+                new DataLinkResource("BASE TABLE", "MY_SCHEMA.MY_TABLE")
         );
     }
 
@@ -181,9 +181,9 @@ public class JdbcDataLinkTest {
         executeJdbc(JDBC_URL_SHARED, "CREATE TABLE MY_TABLE (ID INT, NAME VARCHAR)");
         executeJdbc(JDBC_URL_SHARED, "CREATE VIEW MY_TABLE_VIEW AS SELECT * FROM MY_TABLE");
 
-        List<Resource> resources = jdbcDataLink.listResources();
-        assertThat(resources).contains(
-                new Resource("VIEW", "PUBLIC.MY_TABLE_VIEW")
+        List<DataLinkResource> dataLinkResources = jdbcDataLink.listResources();
+        assertThat(dataLinkResources).contains(
+                new DataLinkResource("VIEW", "PUBLIC.MY_TABLE_VIEW")
         );
     }
 

@@ -21,7 +21,6 @@ import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateDataLink;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlDropDataLink;
-import com.hazelcast.jet.sql.impl.parse.SqlDropView;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
@@ -132,10 +131,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     @Override
     public SqlNode validate(SqlNode topNode) {
-        if (topNode instanceof SqlDropView) {
-            return topNode;
-        }
-
         if (topNode.getKind().belongsTo(SqlKind.DDL)) {
             topNode.validate(this, getEmptyScope());
             return topNode;

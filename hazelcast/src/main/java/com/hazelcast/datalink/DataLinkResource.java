@@ -26,7 +26,7 @@ import static java.util.Objects.requireNonNull;
  * For JDBC it is the list of tables and views, for Kafka the list
  * of topics, and for a filesystem the list of files etc.
  */
-public class Resource {
+public class DataLinkResource {
 
     private final String type;
     private final String name;
@@ -34,7 +34,7 @@ public class Resource {
     /**
      * Create a Resource with given type and name
      */
-    public Resource(@Nonnull String type, @Nonnull String name) {
+    public DataLinkResource(@Nonnull String type, @Nonnull String name) {
         this.type = requireNonNull(type);
         this.name = requireNonNull(name);
     }
@@ -72,12 +72,12 @@ public class Resource {
             return false;
         }
 
-        Resource resource = (Resource) o;
+        DataLinkResource dataLinkResource = (DataLinkResource) o;
 
-        if (!type.equals(resource.type)) {
+        if (!type.equals(dataLinkResource.type)) {
             return false;
         }
-        return name.equals(resource.name);
+        return name.equals(dataLinkResource.name);
     }
 
     @Override
