@@ -32,6 +32,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import io.debezium.connector.mongodb.MongoDbConnector;
 import io.debezium.connector.mysql.MySqlConnector;
+import io.debezium.connector.postgresql.PostgresConnector;
 import org.bson.Document;
 import org.junit.Assume;
 import org.junit.Test;
@@ -136,7 +137,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
         return DebeziumCdcSources.debezium("mysql",
                         MySqlConnector.class)
                         .setProperty("include.schema.changes", "true")
-                        .setProperty("database.hostname", container.getContainerIpAddress())
+                        .setProperty("database.hostname", container.getHost())
                         .setProperty("database.port", Integer.toString(container.getMappedPort(MYSQL_PORT)))
                         .setProperty("database.user", "debezium")
                         .setProperty("database.password", "dbz")
@@ -199,7 +200,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
             StreamSource<Entry<String, String>> source = DebeziumCdcSources.debeziumJson("mysql",
                     MySqlConnector.class)
                     .setProperty("include.schema.changes", "false")
-                    .setProperty("database.hostname", container.getContainerIpAddress())
+                    .setProperty("database.hostname", container.getHost())
                     .setProperty("database.port", Integer.toString(container.getMappedPort(MYSQL_PORT)))
                     .setProperty("database.user", "debezium")
                     .setProperty("database.password", "dbz")
@@ -256,7 +257,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
             StreamSource<ChangeRecord> source = DebeziumCdcSources.debezium("postgres",
                     "io.debezium.connector.postgresql.PostgresConnector")
                     .setProperty("database.server.name", "dbserver1")
-                    .setProperty("database.hostname", container.getContainerIpAddress())
+                    .setProperty("database.hostname", container.getHost())
                     .setProperty("database.port", Integer.toString(container.getMappedPort(POSTGRESQL_PORT)))
                     .setProperty("database.user", "postgres")
                     .setProperty("database.password", "postgres")
@@ -352,7 +353,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
             StreamSource<Entry<String, String>> source = DebeziumCdcSources.debeziumJson("postgres",
                     "io.debezium.connector.postgresql.PostgresConnector")
                     .setProperty("database.server.name", "dbserver1")
-                    .setProperty("database.hostname", container.getContainerIpAddress())
+                    .setProperty("database.hostname", container.getHost())
                     .setProperty("database.port", Integer.toString(container.getMappedPort(POSTGRESQL_PORT)))
                     .setProperty("database.user", "postgres")
                     .setProperty("database.password", "postgres")
@@ -435,6 +436,42 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
             hz.getJet().newJob(pipeline);
 
             assertTrueEventually(() -> assertThat(hz.getList("notFailWhenOldValueNotPresent")).isNotEmpty());
+        }
+    }
+    @Test
+    public void noFailWhenNoPrimaryKey() throws Exception {
+        try (PostgreSQLContainer<?> container = postgresContainer()) {
+            container.start();
+            //when
+            try (Connection connection = getPostgreSqlConnection(container.getJdbcUrl(), container.getUsername(),
+                    container.getPassword())) {
+                connection.setSchema("inventory");
+                Statement statement = connection.createStatement();
+                statement.addBatch("CREATE TABLE NO_PK (SOME_INT INT);");
+                statement.addBatch("INSERT INTO NO_PK VALUES (1)");
+                statement.executeBatch();
+            }
+
+            Pipeline pipeline = Pipeline.create();
+
+            StreamSource<ChangeRecord> source = DebeziumCdcSources
+                    .debezium("postgres", PostgresConnector.class)
+                    .setProperty("database.server.name", "dbserver1")
+                    .setProperty("database.hostname", container.getHost())
+                    .setProperty("database.port", Integer.toString(container.getMappedPort(POSTGRESQL_PORT)))
+                    .setProperty("database.user", "postgres")
+                    .setProperty("database.password", "postgres")
+                    .setProperty("database.dbname", "postgres")
+                    .setProperty("table.whitelist", "inventory.no_pk")
+                    .build();
+            pipeline.readFrom(source)
+                    .withNativeTimestamps(1)
+                    .writeTo(Sinks.list("no_pk"));
+
+            HazelcastInstance hz = createHazelcastInstances(1)[0];
+            hz.getJet().newJob(pipeline);
+
+            assertTrueEventually(() -> assertThat(hz.getList("no_pk")).isNotEmpty());
         }
     }
 
