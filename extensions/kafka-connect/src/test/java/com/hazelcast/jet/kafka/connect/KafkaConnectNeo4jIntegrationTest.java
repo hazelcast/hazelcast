@@ -61,7 +61,7 @@ public class KafkaConnectNeo4jIntegrationTest extends JetTestSupport {
     private static final ILogger LOGGER = Logger.getLogger(KafkaConnectNeo4jIntegrationTest.class);
     private static final int ITEM_COUNT = 1_000;
     private static final String CONNECTOR_URL = "https://repository.hazelcast.com/download"
-            + "/tests/neo4j-kafka-connect-neo4j-5.0.2.zip";
+            + "/tests/neo4j-kafka-connect-neo4j-2.0.1.zip";
 
     @Test
     public void testReadFromNeo4jConnector() throws Exception {
