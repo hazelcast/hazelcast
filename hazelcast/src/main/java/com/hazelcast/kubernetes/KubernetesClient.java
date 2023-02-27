@@ -249,7 +249,7 @@ class KubernetesClient {
             JsonValue container = containers.get(0);
             JsonArray ports = toJsonArray(container.asObject().get("ports"));
             // If multiple ports are exposed by a container, then use the default Hazelcast port from the configuration.
-            if (ports.size() == 1) {
+            if (ports.size() > 1) {
                 JsonValue port = ports.get(0);
                 JsonValue containerPort = port.asObject().get("containerPort");
                 if (containerPort != null && containerPort.isNumber()) {
@@ -325,9 +325,10 @@ class KubernetesClient {
             Map<EndpointAddress, String> services = apiProvider.extractServices(endpointsJson, privateAddresses);
             Map<EndpointAddress, String> nodeAddresses = apiProvider.extractNodes(endpointsJson, privateAddresses);
 
-            Map<EndpointAddress, String> publicIps = new HashMap<>();
-            Map<EndpointAddress, Integer> publicPorts = new HashMap<>();
+            Map<String, String> publicIps = new HashMap<>();
+            Map<String, Integer> publicPorts = new HashMap<>();
             Map<String, String> cachedNodePublicIps = new HashMap<>();
+
 
             for (Map.Entry<EndpointAddress, String> serviceEntry : services.entrySet()) {
                 EndpointAddress privateAddress = serviceEntry.getKey();
@@ -337,8 +338,8 @@ class KubernetesClient {
                 try {
                     String loadBalancerAddress = extractLoadBalancerAddress(serviceJson);
                     Integer servicePort = extractServicePort(serviceJson);
-                    publicIps.put(privateAddress, loadBalancerAddress);
-                    publicPorts.put(privateAddress, servicePort);
+                    publicIps.put(privateAddress.getIp(), loadBalancerAddress);
+                    publicPorts.put(privateAddress.getIp(), servicePort);
                 } catch (Exception e) {
                     // Load Balancer public IP cannot be found, try using NodePort.
                     Integer nodePort = extractNodePort(serviceJson);
@@ -350,8 +351,8 @@ class KubernetesClient {
                         nodePublicAddress = externalAddressForNode(node);
                         cachedNodePublicIps.put(node, nodePublicAddress);
                     }
-                    publicIps.put(privateAddress, nodePublicAddress);
-                    publicPorts.put(privateAddress, nodePort);
+                    publicIps.put(privateAddress.getIp(), nodePublicAddress);
+                    publicPorts.put(privateAddress.getIp(), nodePort);
                 }
             }
 
@@ -362,6 +363,7 @@ class KubernetesClient {
             }
             // If expose-externally not set (exposeExternallyMode == ExposeExternallyMode.AUTO), silently ignore any exception
             LOGGER.finest(e);
+            e.printStackTrace();
             // Log warning only once.
             if (!isNoPublicIpAlreadyLogged) {
                 LOGGER.warning(
@@ -446,13 +448,13 @@ class KubernetesClient {
                 + " assigned", nodeJson.get("metadata").asObject().get("name")));
     }
 
-    private static List<Endpoint> createEndpoints(List<Endpoint> endpoints, Map<EndpointAddress, String> publicIps,
-                                                  Map<EndpointAddress, Integer> publicPorts) {
+    private static List<Endpoint> createEndpoints(List<Endpoint> endpoints, Map<String, String> publicIps,
+                                                  Map<String, Integer> publicPorts) {
         List<Endpoint> result = new ArrayList<>();
         for (Endpoint endpoint : endpoints) {
             EndpointAddress privateAddress = endpoint.getPrivateAddress();
-            EndpointAddress publicAddress = new EndpointAddress(publicIps.get(privateAddress),
-                    publicPorts.get(privateAddress), privateAddress.getTargetRefName());
+            EndpointAddress publicAddress = new EndpointAddress(publicIps.get(privateAddress.getIp()),
+                    publicPorts.get(privateAddress.getIp()), privateAddress.getTargetRefName());
             result.add(new Endpoint(privateAddress, publicAddress, endpoint.isReady(), endpoint.getAdditionalProperties()));
         }
         return result;
