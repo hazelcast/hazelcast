@@ -173,13 +173,9 @@ public class PlanExecutor {
                 throw new HazelcastException("Data link '" + plan.name() + "' not found");
             }
         }
-        try {
-            // Here, any throwable is not expected, but it may happen inside removeDataLink() call.
-            dlService.removeDataLink(plan.name());
-            dataLinksCatalog.removeDataLink(plan.name(), plan.ifExists());
-        } finally {
-            return UpdateSqlResultImpl.createUpdateCountResult(0);
-        }
+        dlService.removeDataLink(plan.name());
+        dataLinksCatalog.removeDataLink(plan.name(), plan.ifExists());
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     SqlResult execute(CreateIndexPlan plan) {

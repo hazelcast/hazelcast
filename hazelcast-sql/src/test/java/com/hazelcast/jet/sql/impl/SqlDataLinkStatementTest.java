@@ -16,12 +16,13 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.datalink.DataLink;
 import com.hazelcast.datalink.impl.DataLinkTestUtil.DummyDataLink;
+import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.sql.SqlResult;
-import com.hazelcast.sql.impl.UpdateSqlResultImpl;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -29,9 +30,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SqlDataLinkStatementTest extends SqlTestSupport {
+    private InternalDataLinkService dataLinkService;
+
     @BeforeClass
     public static void beforeClass() throws Exception {
         initialize(1, null);
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        dataLinkService = getNodeEngineImpl(instance()).getDataLinkService();
     }
 
     @Test
@@ -40,7 +48,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         instance().getSql().execute("CREATE DATA LINK " + dlName
                 + " TYPE \"" + DummyDataLink.class.getName() + "\" "
                 + " OPTIONS ('b' = 'c')");
-        DataLink dataLink = getNodeEngineImpl(instance()).getDataLinkService().getDataLink(dlName, DummyDataLink.class);
+        DataLink dataLink = dataLinkService.getDataLink(dlName, DummyDataLink.class);
         assertThat(dataLink).isNotNull();
         assertThat(dataLink.getConfig().getClassName()).isEqualTo(DummyDataLink.class.getName());
         assertThat(dataLink.getConfig().getProperties().get("b")).isEqualTo("c");
@@ -52,8 +60,24 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         instance().getSql().execute("CREATE DATA LINK " + dlName
                 + " TYPE \"" + DummyDataLink.class.getName() + "\" "
                 + " OPTIONS ('b' = 'c')");
-        DataLink dataLink = getNodeEngineImpl(instance()).getDataLinkService().getDataLink(dlName, DummyDataLink.class);
+        DataLink dataLink = dataLinkService.getDataLink(dlName, DummyDataLink.class);
         assertThat(dataLink).isNotNull();
+
+        assertThatThrownBy(() ->
+                instance().getSql().execute("CREATE DATA LINK " + dlName
+                        + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                        + " OPTIONS ('b' = 'c')"))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("Data link '" + dlName + "' already exists");
+    }
+
+    @Test
+    public void when_createDataLinkIfAlreadyExistsCreatedByConfig_then_throws() {
+        String dlName = randomName();
+        DataLinkConfig dataLinkConfig = new DataLinkConfig(dlName)
+                .setClassName(DummyDataLink.class.getName())
+                .setProperty("b", "c");
+        dataLinkService.createConfigDataLink(dataLinkConfig);
 
         assertThatThrownBy(() ->
                 instance().getSql().execute("CREATE DATA LINK " + dlName
@@ -98,14 +122,29 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         instance().getSql().execute("DROP DATA LINK IF EXISTS " + dlName2);
 
         assertThatThrownBy(() ->
-                getNodeEngineImpl(instance()).getDataLinkService().getDataLink(dlName1, DummyDataLink.class))
+                dataLinkService.getDataLink(dlName1, DummyDataLink.class))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessageContaining("Data link '" + dlName1 + "' not found");
 
         assertThatThrownBy(() ->
-                getNodeEngineImpl(instance()).getDataLinkService().getDataLink(dlName2, DummyDataLink.class))
+                dataLinkService.getDataLink(dlName2, DummyDataLink.class))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessageContaining("Data link '" + dlName2 + "' not found");
+    }
+
+    @Test
+    public void when_dropDataLinkCreatedByConfig_then_throw() {
+        String dlName = randomName();
+
+        DataLinkConfig dataLinkConfig = new DataLinkConfig(dlName)
+                .setClassName(DummyDataLink.class.getName())
+                .setProperty("b", "c");
+        dataLinkService.createConfigDataLink(dataLinkConfig);
+
+        assertThatThrownBy(() ->
+                instance().getSql().execute("DROP DATA LINK " + dlName))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("is configured via Config and can't be removed");
     }
 
     @Test
@@ -118,11 +157,11 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_dropNonExistentDataLink_withoutIfExists_then_success() {
+    public void when_dropNonExistentDataLink_withoutIfExists_then_throws() {
         String dlName = randomName();
-        SqlResult result = instance().getSql().execute("DROP DATA LINK " + dlName);
-        assertThat(result).isInstanceOf(UpdateSqlResultImpl.class);
-        UpdateSqlResultImpl updateSqlResult = (UpdateSqlResultImpl) result;
-        assertThat(updateSqlResult.updateCount()).isZero();
+        assertThatThrownBy(() ->
+                instance().getSql().execute("DROP DATA LINK " + dlName))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("Data link does not exist");
     }
 }

@@ -309,7 +309,6 @@ abstract class SqlPlanImpl extends SqlPlan {
             return false;
         }
 
-
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             SqlPlanImpl.ensureNoTimeout("DROP DATA LINK", timeout);
