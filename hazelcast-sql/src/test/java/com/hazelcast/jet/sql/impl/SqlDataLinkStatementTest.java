@@ -97,6 +97,17 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_createdDataLinkCreatedAfterMappingWithSameName_then_success() {
+        String dlName = randomName();
+        createMapping(dlName, int.class, int.class);
+        instance().getSql().execute("CREATE DATA LINK " + dlName
+                + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                + " OPTIONS ('b' = 'c')");
+        DataLink dataLink = dataLinkService.getDataLink(dlName, DummyDataLink.class);
+        assertThat(dataLink).isNotNull();
+    }
+
+    @Test
     public void when_createDataLinkWithoutOptions_then_throws() {
         String dlName = randomName();
         assertThatThrownBy(() ->

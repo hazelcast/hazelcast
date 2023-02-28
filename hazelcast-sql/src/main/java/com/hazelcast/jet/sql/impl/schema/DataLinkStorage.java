@@ -23,22 +23,26 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_DATA_LINK;
+
 public class DataLinkStorage extends AbstractSchemaStorage {
+    private static final String KEY_PREFIX = "\"" + CATALOG + "\".\"" + SCHEMA_NAME_DATA_LINK + "\".";
 
     public DataLinkStorage(NodeEngine nodeEngine) {
         super(nodeEngine);
     }
 
     void put(String name, DataLink dataLink) {
-        storage().put(name, dataLink);
+        storage().put(wrap(name), dataLink);
     }
 
     boolean putIfAbsent(String name, DataLink dataLink) {
-        return storage().putIfAbsent(name, dataLink) == null;
+        return storage().putIfAbsent(wrap(name), dataLink) == null;
     }
 
     DataLink removeDataLink(String name) {
-        return (DataLink) storage().remove(name);
+        return (DataLink) storage().remove(wrap(name));
     }
 
     Collection<String> dataLinkNames() {
@@ -55,5 +59,9 @@ public class DataLinkStorage extends AbstractSchemaStorage {
                 .filter(obj -> obj instanceof DataLink)
                 .map(obj -> (DataLink) obj)
                 .collect(Collectors.toList());
+    }
+
+    private static String wrap(String dataLinkKey) {
+        return KEY_PREFIX + dataLinkKey + "\"";
     }
 }
