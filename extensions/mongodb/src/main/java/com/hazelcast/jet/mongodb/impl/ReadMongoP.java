@@ -169,9 +169,9 @@ public class ReadMongoP<I> extends AbstractProcessor {
                         getLogger().finest("Finished saving snapshot.");
                     });
 
-            if (processorIndex == 0 && reader.supportsWatermarks()) {
+            if (reader.supportsWatermarks()) {
                 Object watermark = reader.watermark();
-                snapshotTraverser = snapshotTraverser.append(entry(broadcastKey(-1), watermark));
+                snapshotTraverser = snapshotTraverser.append(entry(broadcastKey(-partition), watermark));
             }
         }
         return emitFromTraverserToSnapshot(snapshotTraverser);
@@ -190,10 +190,12 @@ public class ReadMongoP<I> extends AbstractProcessor {
     @SuppressWarnings("unchecked")
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         int keyInteger = ((BroadcastKey<Integer>) key).key();
-        if (keyInteger % totalParallelism == processorIndex) {
+        boolean wm = keyInteger < 0;
+        int keyAb = Math.abs(keyInteger);
+        if (!wm && keyAb % totalParallelism == processorIndex) {
             reader.restore(value);
         }
-        if (keyInteger == -1 && reader.supportsWatermarks()) {
+        if (wm && keyAb % totalParallelism == processorIndex && reader.supportsWatermarks()) {
             reader.restoreWatermark((Long) value);
         }
     }
