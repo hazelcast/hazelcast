@@ -16,14 +16,20 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.impl.HazelcastBootstrap;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
+import com.hazelcast.jet.Job;
+import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
+import com.hazelcast.jet.impl.JobUploadCall;
 import com.hazelcast.jet.test.SerialTest;
 import org.junit.After;
 import org.junit.Test;
@@ -40,13 +46,16 @@ import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Stream;
 
-import static java.util.Collections.emptyList;
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doAnswer;
 
 @Category({SerialTest.class})
 public class JobUploadClientFailureTest extends JetTestSupport {
@@ -90,7 +99,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
 
     @Test
     public void testNullMainClass() {
-        HazelcastInstance client = createResourceUploadEnabledMemberAndClient();
+        HazelcastInstance client = createCluster();
         JetService jetService = client.getJet();
 
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
@@ -102,8 +111,8 @@ public class JobUploadClientFailureTest extends JetTestSupport {
     }
 
     @Test
-    public void testTooLongFileName() {
-        HazelcastInstance client = createResourceUploadEnabledMemberAndClient();
+    public void testTooLongFileName() throws IOException, NoSuchAlgorithmException {
+        HazelcastInstance client = createCluster();
         JetService jetService = client.getJet();
         JetClientInstanceImpl spyJetService = (JetClientInstanceImpl) Mockito.spy(jetService);
 
@@ -113,8 +122,13 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         char[] charArray = new char[300];
         Arrays.fill(charArray, 'a');
         String longFileName = new String(charArray);
-        // JetClientInstanceImpl.getFileNameWithoutExtension return the long file name
-        when(spyJetService.getFileNameWithoutExtension(jarPath)).thenReturn(longFileName);
+
+        doAnswer(invocation -> {
+            JobUploadCall jobUploadCall = (JobUploadCall) invocation.callRealMethod();
+            jobUploadCall.setFileNameWithoutExtension(longFileName);
+            return jobUploadCall;
+        }).when(spyJetService).initializeJobUploadCall(jarPath);
+
 
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
                 .setJarPath(jarPath);
@@ -142,7 +156,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
 
     @Test
     public void test_jarUpload_withWrongMainClassname() {
-        HazelcastInstance client = createResourceUploadEnabledMemberAndClient();
+        HazelcastInstance client = createCluster();
         JetService jetService = client.getJet();
 
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
@@ -161,7 +175,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
             String newSimpleJob = "newsimplejob.jar";
             deleteLeftOverFilesIfAny(newSimpleJob);
 
-            HazelcastInstance client = createResourceUploadEnabledMemberAndClient();
+            HazelcastInstance client = createCluster();
             JetService jetService = client.getJet();
 
             // Copy as new jar to make it unique
@@ -186,32 +200,109 @@ public class JobUploadClientFailureTest extends JetTestSupport {
 
     @Test
     public void test_jarUpload_withIncorrectChecksum() throws IOException, NoSuchAlgorithmException {
-        HazelcastInstance client = createResourceUploadEnabledMemberAndClient();
+        HazelcastInstance client = createCluster();
 
         // Mock the JetClientInstanceImpl to return an incorrect checksum
         JetClientInstanceImpl jetService = (JetClientInstanceImpl) client.getJet();
         JetClientInstanceImpl spyJetService = Mockito.spy(jetService);
 
         Path jarPath = getJarPath();
-        when(spyJetService.calculateSha256Hex(jarPath)).thenReturn("1");
-        List<String> jobParameters = emptyList();
+        doAnswer(invocation -> {
+            JobUploadCall jobUploadCall = (JobUploadCall) invocation.callRealMethod();
+            jobUploadCall.setSha256HexOfJar("1");
+            return jobUploadCall;
+        }).when(spyJetService).initializeJobUploadCall(jarPath);
+
 
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                .setJarPath(getJarPath())
-                .setJobParameters(jobParameters);
+                .setJarPath(getJarPath());
 
         assertThrows(JetException.class, () -> spyJetService.submitJobFromJar(submitJobParameters));
 
         assertEqualsEventually(() -> jetService.getJobs().size(), 0);
     }
 
-    private HazelcastInstance createResourceUploadEnabledMemberAndClient() {
+    @Test
+    public void test_jobAlreadyExists() {
+        createCluster();
+
+        HazelcastInstance client = createHazelcastClient();
+        JetService jetService = client.getJet();
+
+        String job1 = "job1";
+        SubmitJobParameters submitJobParameters1 = new SubmitJobParameters()
+                .setJarPath(getJarPath())
+                .setJobName(job1);
+
+        jetService.submitJobFromJar(submitJobParameters1);
+
+
+        String job2 = "job1";
+        SubmitJobParameters submitJobParameters2 = new SubmitJobParameters()
+                .setJarPath(getJarPath())
+                .setJobName(job2);
+
+        assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters2))
+                .isInstanceOf(JetException.class)
+                .hasRootCauseInstanceOf(JobAlreadyExistsException.class);
+
+        assertTrueEventually(() -> {
+            List<Job> jobs = jetService.getJobs();
+            assertEquals(1, jobs.size());
+            assertTrue(containsName(jobs, job1));
+        });
+    }
+
+    @Test
+    public void test_jarUpload_whenMemberShutsDown() throws IOException, NoSuchAlgorithmException {
+        HazelcastInstance[] cluster = createCluster(2);
+
+        // Speed up the test by waiting less on invocation timeout
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "10");
+        HazelcastInstance client = createHazelcastClient(clientConfig);
+
+        JetClientInstanceImpl jetService = (JetClientInstanceImpl) client.getJet();
+        JetClientInstanceImpl spyJetService = Mockito.spy(jetService);
+
+        assertClusterSizeEventually(2, client);
+
+        Path jarPath = getJarPath();
+        doAnswer(invocation -> {
+            JobUploadCall jobUploadCall = (JobUploadCall) invocation.callRealMethod();
+            UUID memberUuid = jobUploadCall.getMemberUuid();
+            for (HazelcastInstance hazelcastInstance : cluster) {
+                if (hazelcastInstance.getCluster().getLocalMember().getUuid().equals(memberUuid)) {
+                    hazelcastInstance.shutdown();
+                    break;
+                }
+            }
+            assertClusterSizeEventually(1, client);
+            return jobUploadCall;
+        }).when(spyJetService).initializeJobUploadCall(jarPath);
+
+        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+                .setJarPath(getJarPath());
+
+        // Should throw OperationTimeoutException because target instance was shut down
+        assertThrows(OperationTimeoutException.class, () -> spyJetService.submitJobFromJar(submitJobParameters));
+    }
+
+    private HazelcastInstance createCluster() {
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
 
         createHazelcastInstance(config);
         return createHazelcastClient();
+    }
+
+    private HazelcastInstance[] createCluster(int nodeCount) {
+        Config config = smallInstanceConfig();
+        JetConfig jetConfig = config.getJetConfig();
+        jetConfig.setResourceUploadEnabled(true);
+
+        return createHazelcastInstances(config, nodeCount);
     }
 
     // this jar is only as below
@@ -242,7 +333,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         }
     }
     */
-    static Path getJarPath() {
+    public static Path getJarPath() {
         return getPath(SIMPLE_JAR);
     }
 
@@ -299,5 +390,9 @@ public class JobUploadClientFailureTest extends JetTestSupport {
                 return fileName.startsWith(newJarName);
             });
         }
+    }
+
+    static boolean containsName(List<Job> list, String name) {
+        return list.stream().anyMatch(job -> Objects.equals(job.getName(), name));
     }
 }

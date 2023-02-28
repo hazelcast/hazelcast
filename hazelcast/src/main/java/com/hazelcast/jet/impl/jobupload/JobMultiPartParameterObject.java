@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.jobupload;
 import java.util.UUID;
 
 /**
- * The wrapper for all part parameters to run an uploaded jar as Jet job
+ * Used by the member side as the wrapper for all part parameters to run an uploaded jar as Jet job
  */
 public class JobMultiPartParameterObject {
 
