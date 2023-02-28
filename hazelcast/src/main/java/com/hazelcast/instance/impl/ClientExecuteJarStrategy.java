@@ -71,7 +71,7 @@ class ClientExecuteJarStrategy {
                 main.invoke(null, (Object) jobArgs);
             }
 
-            // Wait for the job to start only if called by the client side
+            // Wait for the job to start
             awaitJobsStarted(singleton);
 
         } finally {
