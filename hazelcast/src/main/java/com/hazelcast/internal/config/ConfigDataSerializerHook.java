@@ -37,6 +37,7 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.config.FunctionArgument;
 import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.IndexConfig;
@@ -165,8 +166,9 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int DISK_TIER_CONFIG = 66;
     public static final int BTREE_INDEX_CONFIG = 67;
     public static final int DATA_LINK_CONFIG = 68;
+    public static final int FUNCTION_ARGUMENT = 69;
 
-    private static final int LEN = DATA_LINK_CONFIG + 1;
+    private static final int LEN = FUNCTION_ARGUMENT + 1;
 
     @Override
     public int getFactoryId() {
@@ -245,6 +247,7 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[DISK_TIER_CONFIG] = arg -> new DiskTierConfig();
         constructors[BTREE_INDEX_CONFIG] = arg -> new BTreeIndexConfig();
         constructors[DATA_LINK_CONFIG] = arg -> new DataLinkConfig();
+        constructors[FUNCTION_ARGUMENT] = arg -> new FunctionArgument();
 
         return new ArrayDataSerializableFactory(constructors);
     }

@@ -83,6 +83,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -4582,5 +4583,56 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertEquals(Integer.MAX_VALUE, mapConfig.getTimeToLiveSeconds());
         assertEquals(Integer.MAX_VALUE, mapConfig.getMaxIdleSeconds());
+    }
+
+    @Override
+    @Test
+    public void testMapPartitionStrategyArguments() {
+        String mapName = "testMapPartitionStrategyArguments";
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    " + mapName + ":\n"
+                + "      partition-strategy-arguments:\n"
+                + "        - name: \"intArg\"\n"
+                + "          data-type: \"Integer\"\n"
+                + "          value: 1\n"
+                + "        - name: \"boolArg\"\n"
+                + "          data-type: \"Boolean\"\n"
+                + "          value: true\n"
+                + "        - name: \"doubleArg\"\n"
+                + "          data-type: \"Double\"\n"
+                + "          value: 1.0\n"
+                + "        - name: \"arrayArg\"\n"
+                + "          data-type: \"String\"\n"
+                + "          values: \n"
+                + "            - \"ele1\"\n"
+                + "            - \"ele2\"\n"
+                ;
+
+        final Config config = buildConfig(yaml);
+        final List<FunctionArgument> arguments = config.getMapConfig(mapName).getPartitioningStrategyArguments();
+
+        assertThat(arguments).hasSize(4);
+
+        assertEquals("intArg", arguments.get(0).getFieldName());
+        assertEquals("Integer", arguments.get(0).getTypeName());
+        assertFalse(arguments.get(0).isArray());
+        assertArrayEquals(new String[] {"1"}, arguments.get(0).getValues());
+
+        assertEquals("boolArg", arguments.get(1).getFieldName());
+        assertEquals("Boolean", arguments.get(1).getTypeName());
+        assertFalse(arguments.get(1).isArray());
+        assertArrayEquals(new String[] {"true"}, arguments.get(1).getValues());
+
+        assertEquals("doubleArg", arguments.get(2).getFieldName());
+        assertEquals("Double", arguments.get(2).getTypeName());
+        assertFalse(arguments.get(2).isArray());
+        assertArrayEquals(new String[] {"1.0"}, arguments.get(2).getValues());
+
+        assertEquals("arrayArg", arguments.get(3).getFieldName());
+        assertEquals("String", arguments.get(3).getTypeName());
+        assertTrue(arguments.get(3).isArray());
+        assertArrayEquals(new String[] {"ele1", "ele2"}, arguments.get(3).getValues());
     }
 }

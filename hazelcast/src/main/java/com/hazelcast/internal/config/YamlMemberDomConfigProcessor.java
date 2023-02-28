@@ -967,4 +967,23 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory));
         }
     }
+
+    @Override
+    protected boolean isArrayFunctionArg(final Node node) {
+        return getAttribute(node, "values") != null;
+    }
+
+    @Override
+    protected String[] getFunctionArgValue(final Node node, final boolean isArray) {
+        if (!isArray) {
+            return new String[]{getAttribute(node, "value")};
+        }
+
+        final List<String> elements = new ArrayList<>();
+        for (final Node element : childElements(node.getAttributes().getNamedItem("values"))) {
+            elements.add(getTextContent(element));
+        }
+
+        return elements.toArray(new String[0]);
+    }
 }
