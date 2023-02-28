@@ -28,15 +28,39 @@ import java.util.function.Supplier;
  * The provided {@code Supplier} must return a non-null value.
  */
 public final class ConcurrentMemoizingSupplier<T> implements Supplier<T> {
-    private final Supplier<T> onceSupplier;
+    private Supplier<T> onceSupplier;
     private volatile T remembered;
+
+    public ConcurrentMemoizingSupplier() {
+    }
 
     public ConcurrentMemoizingSupplier(Supplier<T> onceSupplier) {
         this.onceSupplier = onceSupplier;
     }
 
-    @Override @Nonnull
+    @Override
+    @Nonnull
     public T get() {
+        // The common path will use a single volatile load
+        T loadResult = remembered;
+        if (loadResult != null) {
+            return loadResult;
+        }
+        synchronized (this) {
+            // The uncommon path can use simpler code with multiple volatile loads
+            if (remembered != null) {
+                return remembered;
+            }
+            remembered = onceSupplier.get();
+            if (remembered == null) {
+                throw new NullPointerException("Supplier returned null");
+            }
+            return remembered;
+        }
+    }
+
+    @Nonnull
+    public T get(Supplier<T> onceSupplier) {
         // The common path will use a single volatile load
         T loadResult = remembered;
         if (loadResult != null) {
@@ -61,5 +85,9 @@ public final class ConcurrentMemoizingSupplier<T> implements Supplier<T> {
     @Nullable
     public T remembered() {
         return remembered;
+    }
+
+    public void resetRemembered() {
+        remembered = null;
     }
 }

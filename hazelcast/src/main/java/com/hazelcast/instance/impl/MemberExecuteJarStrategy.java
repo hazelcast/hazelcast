@@ -1,0 +1,86 @@
+/*
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.instance.impl;
+
+import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.List;
+
+class MemberExecuteJarStrategy {
+
+    public void executeJar(@Nonnull ConcurrentMemoizingSupplier<BootstrappedInstanceProxy> singleton,
+                           @Nonnull String jarPath,
+                           @Nullable String snapshotName,
+                           @Nullable String jobName,
+                           @Nullable String mainClassName,
+                           @Nonnull List<String> args
+    ) throws IOException, InvocationTargetException, IllegalAccessException, ClassNotFoundException {
+
+        mainClassName = findMainClassNameForJar(mainClassName, jarPath);
+
+        URL jarUrl = new File(jarPath).toURI().toURL();
+        try (URLClassLoader classLoader = URLClassLoader.newInstance(
+                new URL[]{jarUrl},
+                MemberExecuteJarStrategy.class.getClassLoader())) {
+
+            Method main = findMainMethodForJar(classLoader, mainClassName);
+
+            String[] jobArgs = args.toArray(new String[0]);
+
+            synchronized (this) {
+                ExecuteJarStrategyHelper.resetJetParametersOfJetProxy(singleton, jarPath, snapshotName, jobName);
+
+                // upcast args to Object, so it's passed as a single array-typed argument
+                main.invoke(null, (Object) jobArgs);
+            }
+        }
+    }
+
+    static String findMainClassNameForJar(String mainClassName, String jarPath)
+            throws IOException {
+        MainClassNameFinder mainClassNameFinder = new MainClassNameFinder();
+        mainClassNameFinder.findMainClass(mainClassName, jarPath);
+
+        if (mainClassNameFinder.hasError()) {
+            String errorMessage = mainClassNameFinder.getErrorMessage();
+            throw new JetException(errorMessage);
+        }
+        return mainClassNameFinder.getMainClassName();
+    }
+
+    Method findMainMethodForJar(ClassLoader classLoader, String mainClassName) throws ClassNotFoundException {
+        MainMethodFinder mainMethodFinder = new MainMethodFinder();
+        mainMethodFinder.findMainMethod(classLoader, mainClassName);
+
+        if (mainMethodFinder.hasError()) {
+            String errorMessage = mainMethodFinder.getErrorMessage();
+            throw new JetException(errorMessage);
+        }
+        return mainMethodFinder.getMainMethod();
+    }
+
+
+}

@@ -25,49 +25,43 @@ import static java.lang.reflect.Modifier.isStatic;
 
 class MainMethodFinder {
 
-    Result result = new Result();
+    Method mainMethod;
 
-    static class Result {
+    private String errorMessage;
 
-        Method mainMethod;
-
-        private String errorMessage;
-
-        public String getErrorMessage() {
-            return errorMessage;
-        }
-
-        public Method getMainMethod() {
-            return mainMethod;
-        }
-
-        boolean hasError() {
-            return !StringUtil.isNullOrEmpty(errorMessage);
-        }
+    public String getErrorMessage() {
+        return errorMessage;
     }
 
-    public Result findMainMethod(ClassLoader classLoader, String mainClassName) throws ClassNotFoundException {
+    public Method getMainMethod() {
+        return mainMethod;
+    }
+
+    boolean hasError() {
+        return !StringUtil.isNullOrEmpty(errorMessage);
+    }
+
+    public void findMainMethod(ClassLoader classLoader, String mainClassName) throws ClassNotFoundException {
         Class<?> clazz = classLoader.loadClass(mainClassName);
         getMainMethodOfClass(clazz);
-        return result;
     }
 
     void getMainMethodOfClass(Class<?> clazz) {
         try {
-            result.mainMethod = clazz.getDeclaredMethod("main", String[].class);
+            mainMethod = clazz.getDeclaredMethod("main", String[].class);
 
             if (!isPublicAndStatic()) {
-                result.errorMessage = "Class " + clazz.getName()
-                                      + " has a main(String[] args) method which is not public static";
+                errorMessage = "Class " + clazz.getName()
+                               + " has a main(String[] args) method which is not public static";
             }
         } catch (NoSuchMethodException exception) {
-            result.errorMessage = "Class " + clazz.getName()
-                                  + " does not have a main(String[] args) method";
+            errorMessage = "Class " + clazz.getName()
+                           + " does not have a main(String[] args) method";
         }
     }
 
     boolean isPublicAndStatic() {
-        int modifiers = result.mainMethod.getModifiers();
+        int modifiers = mainMethod.getModifiers();
         return isPublic(modifiers) && isStatic(modifiers);
     }
 }
