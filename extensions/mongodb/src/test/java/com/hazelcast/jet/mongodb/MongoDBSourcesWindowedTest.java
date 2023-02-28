@@ -52,7 +52,8 @@ public class MongoDBSourcesWindowedTest extends AbstractMongoDBTest {
     public void testWindows() {
         StreamSource<? extends Document> streamSource = MongoDBSources.stream("src", mongoContainer.getConnectionString(),
                 defaultDatabase(), testName.getMethodName(),
-                null, null);
+                null, null)
+                .setPartitionIdleTimeout(1000);
 
         IList<WindowResult<Long>> result = instance().getList("result");
 
