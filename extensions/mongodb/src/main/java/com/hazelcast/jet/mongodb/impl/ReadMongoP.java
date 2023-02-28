@@ -33,6 +33,7 @@ import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
+import org.bson.BsonDateTime;
 import org.bson.BsonDocument;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
@@ -422,9 +423,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
                             resumeToken = doc.getResumeToken();
                             long eventTime = clusterTime(doc);
                             I item = mapFn.apply(doc);
-                            return item == null
-                                    ? eventTimeMapper.flatMapIdle()
-                                    : eventTimeMapper.flatMapEvent(item, 0, eventTime);
+                            return eventTimeMapper.flatMapEvent(item, 0, eventTime);
                         });
             } catch (MongoException e) {
                 throw new JetException("error while reading from mongodb", e);
@@ -432,8 +431,8 @@ public class ReadMongoP<I> extends AbstractProcessor {
         }
 
         private long clusterTime(ChangeStreamDocument<Document> changeStreamDocument) {
-            BsonTimestamp clusterTime = changeStreamDocument.getClusterTime();
-            return clusterTime == null ? System.currentTimeMillis() : clusterTime.getTime();
+            BsonDateTime time = changeStreamDocument.getWallTime();
+            return time == null ? System.currentTimeMillis() : time.getValue();
         }
 
         @Nullable

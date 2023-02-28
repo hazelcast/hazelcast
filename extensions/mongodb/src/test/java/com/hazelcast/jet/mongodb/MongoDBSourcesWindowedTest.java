@@ -17,6 +17,7 @@
 package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.collection.IList;
+import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.StreamSource;
@@ -57,9 +58,11 @@ public class MongoDBSourcesWindowedTest extends AbstractMongoDBTest {
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(streamSource)
-                .withIngestionTimestamps()
-                .window(tumbling(50))
+                .withNativeTimestamps(0).setLocalParallelism(2)
+                .groupingKey(d -> d.getString("test"))
+                .window(tumbling(5))
                 .aggregate(counting())
+//                .peek()
                 .writeTo(list(result));
 
         MongoCollection<Document> collection =
@@ -71,12 +74,20 @@ public class MongoDBSourcesWindowedTest extends AbstractMongoDBTest {
                 collection.insertOne(new Document("test", "testowe").append("_id", key));
                 counter.incrementAndGet();
             }
+            for (int i = 0; i < 5; i++) {
+                ObjectId key = ObjectId.get();
+                collection.insertOne(new Document("test", "other").append("_id", key));
+            }
         });
         instance().getJet().newJob(pipeline);
 
         assertTrueEventually(() -> {
             assertThat(result).isNotEmpty();
-            assertThat(result.stream().mapToLong(WindowResult::result).sum())
+            long currentSum = result.stream()
+                                    .filter(w -> ((KeyedWindowResult<String, Long>) w).getKey().equalsIgnoreCase("testowe"))
+                                    .mapToLong(WindowResult::result)
+                                    .sum();
+            assertThat(currentSum)
                     .as("Sum of windows is equal to input element count")
                     .isEqualTo(counter.get());
         });
