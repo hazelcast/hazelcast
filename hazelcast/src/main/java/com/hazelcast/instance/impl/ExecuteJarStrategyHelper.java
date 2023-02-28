@@ -17,7 +17,6 @@
 package com.hazelcast.instance.impl;
 
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -50,15 +49,11 @@ final class ExecuteJarStrategyHelper {
         return mainMethodFinder.getMainMethod();
     }
 
-    static BootstrappedJetProxy setupJetProxy(ConcurrentMemoizingSupplier<BootstrappedInstanceProxy> singleton,
+    static BootstrappedJetProxy setupJetProxy(BootstrappedInstanceProxy instanceProxy,
                                               String jar,
                                               String snapshotName,
                                               String jobName) {
-        // BootstrappedInstanceProxy is a singleton that owns a HazelcastInstance and BootstrappedJetProxy
-        // Change the state of the singleton
-        BootstrappedInstanceProxy bootstrappedInstanceProxy = singleton.remembered();
-
-        BootstrappedJetProxy bootstrappedJetProxy = bootstrappedInstanceProxy.getJet();
+        BootstrappedJetProxy bootstrappedJetProxy = instanceProxy.getJet();
         bootstrappedJetProxy.setJarName(jar);
         bootstrappedJetProxy.setSnapshotName(snapshotName);
         bootstrappedJetProxy.setJobName(jobName);

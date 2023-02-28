@@ -61,12 +61,6 @@ class BootstrappedInstanceProxy implements HazelcastInstance {
     private HazelcastInstance instance;
     private BootstrappedJetProxy jetProxy;
 
-    static BootstrappedInstanceProxy createWithoutJetProxy(@Nonnull HazelcastInstance instance) {
-        BootstrappedInstanceProxy proxy = new BootstrappedInstanceProxy();
-        proxy.instance = instance;
-        return proxy;
-    }
-
     static BootstrappedInstanceProxy createWithJetProxy(@Nonnull HazelcastInstance instance) {
         BootstrappedInstanceProxy proxy = new BootstrappedInstanceProxy();
         proxy.instance = instance;

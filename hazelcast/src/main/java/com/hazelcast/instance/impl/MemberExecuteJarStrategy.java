@@ -16,7 +16,7 @@
 
 package com.hazelcast.instance.impl;
 
-import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
+import com.hazelcast.jet.impl.util.ResettableConcurrentMemoizingSupplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -30,7 +30,7 @@ import java.util.List;
 
 class MemberExecuteJarStrategy {
 
-    public void executeJar(@Nonnull ConcurrentMemoizingSupplier<BootstrappedInstanceProxy> singleton,
+    public void executeJar(@Nonnull ResettableConcurrentMemoizingSupplier<BootstrappedInstanceProxy> singleton,
                            @Nonnull String jarPath,
                            @Nullable String snapshotName,
                            @Nullable String jobName,
@@ -49,9 +49,10 @@ class MemberExecuteJarStrategy {
 
             String[] jobArgs = args.toArray(new String[0]);
 
+            // synchronize until the main method is invoked
             synchronized (this) {
-                BootstrappedJetProxy bootstrappedJetProxy = ExecuteJarStrategyHelper
-                        .setupJetProxy(singleton, jarPath, snapshotName, jobName);
+                BootstrappedJetProxy bootstrappedJetProxy =
+                        ExecuteJarStrategyHelper.setupJetProxy(singleton.remembered(), jarPath, snapshotName, jobName);
 
                 // Clear jobs. We don't need them
                 bootstrappedJetProxy.clearSubmittedJobs();

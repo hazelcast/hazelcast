@@ -21,22 +21,16 @@ import javax.annotation.Nullable;
 import java.util.function.Supplier;
 
 /**
- * Wraps a {@code Supplier} and returns a thread-safe memoizing supplier
- * which calls it only on the first invocation of {@code get()} and
+ * Uses a {@code Supplier} to get a value on the first invocation of  {@link #get(Supplier)}  and
  * afterwards returns the remembered instance.
  * <p>
  * The provided {@code Supplier} must return a non-null value.
  */
-public final class ConcurrentMemoizingSupplier<T> implements Supplier<T> {
-    private final Supplier<T> onceSupplier;
+public final class ResettableConcurrentMemoizingSupplier<T> {
     private volatile T remembered;
 
-    public ConcurrentMemoizingSupplier(Supplier<T> onceSupplier) {
-        this.onceSupplier = onceSupplier;
-    }
-
-    @Override @Nonnull
-    public T get() {
+    @Nonnull
+    public T get(Supplier<T> onceSupplier) {
         // The common path will use a single volatile load
         T loadResult = remembered;
         if (loadResult != null) {
@@ -61,5 +55,12 @@ public final class ConcurrentMemoizingSupplier<T> implements Supplier<T> {
     @Nullable
     public T remembered() {
         return remembered;
+    }
+
+    /**
+     * Reset the remembered value
+     */
+    public void resetRemembered() {
+        remembered = null;
     }
 }

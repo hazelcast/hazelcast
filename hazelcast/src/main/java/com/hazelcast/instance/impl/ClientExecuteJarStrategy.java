@@ -16,12 +16,10 @@
 
 package com.hazelcast.instance.impl;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.JobStatus;
-import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
+import com.hazelcast.jet.impl.util.ResettableConcurrentMemoizingSupplier;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -42,25 +40,13 @@ import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
-/**
- * This class shouldn't be directly used, instead see {@link Hazelcast#bootstrappedInstance()}
- * for the replacement and docs.
- * <p>
- * A helper class that allows one to create a standalone runnable JAR which
- * contains all the code needed to submit a job to a running Hazelcast cluster.
- * The main issue with achieving this is that the JAR must be attached as a
- * resource to the job being submitted, so the Hazelcast cluster will be able
- * to load and use its classes. However, from within a running {@code main()}
- * method it is not trivial to find out the filename of the JAR containing
- * it.
- **/
-public final class ClientExecuteJarStrategy {
+class ClientExecuteJarStrategy {
 
     private static final ILogger LOGGER = Logger.getLogger(ClientExecuteJarStrategy.class.getName());
     private static final int JOB_START_CHECK_INTERVAL_MILLIS = 1_000;
     private static final EnumSet<JobStatus> STARTUP_STATUSES = EnumSet.of(NOT_RUNNING, STARTING);
 
-    public synchronized void executeJar(@Nonnull ConcurrentMemoizingSupplier<BootstrappedInstanceProxy> singleton,
+    public synchronized void executeJar(@Nonnull ResettableConcurrentMemoizingSupplier<BootstrappedInstanceProxy> singleton,
                                         @Nonnull String jarPath,
                                         @Nullable String snapshotName,
                                         @Nullable String jobName,
@@ -79,7 +65,7 @@ public final class ClientExecuteJarStrategy {
 
                 String[] jobArgs = args.toArray(new String[0]);
 
-                ExecuteJarStrategyHelper.setupJetProxy(singleton, jarPath, snapshotName, jobName);
+                ExecuteJarStrategyHelper.setupJetProxy(singleton.remembered(), jarPath, snapshotName, jobName);
 
                 // upcast args to Object so it's passed as a single array-typed argument
                 main.invoke(null, (Object) jobArgs);
@@ -88,15 +74,13 @@ public final class ClientExecuteJarStrategy {
             // Wait for the job to start only if called by the client side
             awaitJobsStarted(singleton);
 
-
         } finally {
-            HazelcastInstance remembered = singleton.remembered();
+            BootstrappedInstanceProxy instanceProxy = singleton.remembered();
             try {
-                remembered.shutdown();
+                instanceProxy.shutdown();
             } catch (Exception exception) {
                 LOGGER.severe("Shutdown failed with:", exception);
             }
-
             singleton.resetRemembered();
         }
     }
@@ -123,7 +107,7 @@ public final class ClientExecuteJarStrategy {
     }
 
     // Method is call by synchronized executeJar() so, it is safe to access submittedJobs array in BootstrappedJetProxy
-    private void awaitJobsStarted(ConcurrentMemoizingSupplier<BootstrappedInstanceProxy> singleton) {
+    private void awaitJobsStarted(ResettableConcurrentMemoizingSupplier<BootstrappedInstanceProxy> singleton) {
 
         List<Job> submittedJobs = singleton.remembered().getJet().submittedJobs();
         int submittedCount = submittedJobs.size();

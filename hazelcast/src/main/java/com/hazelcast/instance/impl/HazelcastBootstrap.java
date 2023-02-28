@@ -21,8 +21,8 @@ import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.jet.impl.util.JetConsoleLogHandler;
+import com.hazelcast.jet.impl.util.ResettableConcurrentMemoizingSupplier;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -55,7 +55,8 @@ import static com.hazelcast.spi.properties.ClusterProperty.LOGGING_TYPE;
  **/
 public final class HazelcastBootstrap {
 
-    private static final ConcurrentMemoizingSupplier<BootstrappedInstanceProxy> SINGLETON = new ConcurrentMemoizingSupplier<>();
+    private static final ResettableConcurrentMemoizingSupplier<BootstrappedInstanceProxy> SINGLETON =
+            new ResettableConcurrentMemoizingSupplier<>();
 
     private static final ClientExecuteJarStrategy CLIENT_EXECUTE_JAR_STRATEGY = new ClientExecuteJarStrategy();
 
@@ -81,7 +82,7 @@ public final class HazelcastBootstrap {
                                   @Nonnull List<String> args,
                                   boolean calledByMember
     ) throws IOException, ClassNotFoundException, InvocationTargetException, IllegalAccessException {
-        SINGLETON.initOnce(() -> BootstrappedInstanceProxy.createWithJetProxy(supplierOfInstance.get()));
+        SINGLETON.get(() -> BootstrappedInstanceProxy.createWithJetProxy(supplierOfInstance.get()));
 
         if (calledByMember) {
             MEMBER_EXECUTE_JAR_STRATEGY.executeJar(SINGLETON, jarPath, snapshotName, jobName, mainClassName, args);
@@ -97,8 +98,7 @@ public final class HazelcastBootstrap {
      */
     @Nonnull
     public static synchronized HazelcastInstance getInstance() {
-        SINGLETON.initOnce(() -> BootstrappedInstanceProxy.createWithoutJetProxy(createStandaloneInstance()));
-        return SINGLETON.get();
+        return SINGLETON.get(() -> BootstrappedInstanceProxy.createWithJetProxy(createStandaloneInstance()));
     }
 
     private static HazelcastInstance createStandaloneInstance() {

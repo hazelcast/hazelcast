@@ -796,7 +796,7 @@ public class HazelcastCommandLineTest extends JetTestSupport {
     }
 
     private void test_custom_configuration(String configFile) {
-        run(cfg -> createHazelcastClient(cfg), "-f", configFile, "cluster");
+        run(this::createHazelcastClient, "-f", configFile, "cluster");
 
         String actual = captureOut();
         assertContains(actual, hz.getCluster().getLocalMember().getUuid().toString());
@@ -844,11 +844,11 @@ public class HazelcastCommandLineTest extends JetTestSupport {
 
     private String captureOut() {
         out.flush();
-        return new String(baosOut.toByteArray());
+        return baosOut.toString();
     }
 
     private String captureErr() {
         err.flush();
-        return new String(baosErr.toByteArray());
+        return baosErr.toString();
     }
 }
