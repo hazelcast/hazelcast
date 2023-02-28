@@ -82,4 +82,28 @@ public class SqlCreateMappingTest {
                 ")"
         );
     }
+
+    @Test
+    public void test_unparse_external_name_with_schema() {
+        Mapping mapping = new Mapping(
+                "name",
+                new String[]{"external\"schema", "external\"name"},
+                null,
+                "Type",
+                null,
+                singletonList(new MappingField("field", QueryDataType.VARCHAR, "__key.field")),
+                ImmutableMap.of("key", "value")
+        );
+
+        String sql = SqlCreateMapping.unparse(mapping);
+        assertThat(sql).isEqualTo("CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"name\" " +
+                "EXTERNAL NAME \"external\"\"schema\".\"external\"\"name\" (" + LE +
+                "  \"field\" VARCHAR EXTERNAL NAME \"__key.field\"" + LE +
+                ")" + LE +
+                "TYPE \"Type\"" + LE +
+                "OPTIONS (" + LE +
+                "  'key'='value'" + LE +
+                ")"
+        );
+    }
 }

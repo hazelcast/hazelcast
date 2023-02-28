@@ -33,6 +33,7 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolvers;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProcessors;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
@@ -47,6 +48,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.sql.impl.CompoundIdentifierUtil.quoteCompoundIdentifier;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
 
@@ -78,22 +80,30 @@ public class KafkaSqlConnector implements SqlConnector {
         return true;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
-            @Nonnull String externalName
+            @Nonnull String[] externalName
     ) {
+        if (externalName.length > 1) {
+            throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
+                    + ", external name for Kafka is allowed to have only a single component referencing the topic " +
+                    "name");
+        }
+
         return METADATA_RESOLVERS.resolveAndValidateFields(userFields, options, nodeEngine);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String mappingName,
-            @Nonnull String externalName,
+            @Nonnull String[] externalName,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> resolvedFields
     ) {
@@ -108,7 +118,7 @@ public class KafkaSqlConnector implements SqlConnector {
                 mappingName,
                 fields,
                 new ConstantTableStatistics(0),
-                externalName,
+                externalName[0],
                 options,
                 keyMetadata.getQueryTargetDescriptor(),
                 keyMetadata.getUpsertTargetDescriptor(),
@@ -117,7 +127,8 @@ public class KafkaSqlConnector implements SqlConnector {
         );
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public Vertex fullScanReader(
             @Nonnull DagBuildContext context,
             @Nullable HazelcastRexNode predicate,
@@ -145,12 +156,14 @@ public class KafkaSqlConnector implements SqlConnector {
         );
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public VertexWithInputConfig insertProcessor(@Nonnull DagBuildContext context) {
         return new VertexWithInputConfig(writeProcessor(context));
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public Vertex sinkProcessor(@Nonnull DagBuildContext context) {
         return writeProcessor(context);
     }

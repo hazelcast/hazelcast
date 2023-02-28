@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
+import static com.hazelcast.sql.impl.CompoundIdentifierUtil.quoteCompoundIdentifier;
 import static java.util.Arrays.asList;
 
 /**
@@ -74,7 +75,7 @@ public class MappingsTable extends InfoSchemaTable {
                     catalog(),
                     mappingsSchema,
                     mapping.name(),
-                    mapping.externalName(),
+                    quoteCompoundIdentifier(mapping.externalName()),
                     mapping.connectorType(),
                     uncheckCall(() -> JsonUtil.toJson(mapping.options()))
             };

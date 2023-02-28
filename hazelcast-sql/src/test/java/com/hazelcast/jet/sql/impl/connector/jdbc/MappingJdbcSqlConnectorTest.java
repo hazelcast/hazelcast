@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import com.google.common.collect.ImmutableList;
 import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
@@ -66,6 +67,66 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         assertRowsAnyOrder("SHOW MAPPINGS",
                 newArrayList(new Row(mappingName))
         );
+    }
+
+    @Test
+    public void createMappingWithExternalSchemaAndTableName() throws Exception {
+        executeJdbc("CREATE SCHEMA schema1");
+        createTable("schema1." + tableName);
+
+        String mappingName = "mapping_" + randomName();
+        createMapping("schema1\".\"" + tableName, mappingName);
+
+        assertRowsAnyOrder("SHOW MAPPINGS",
+                newArrayList(new Row(mappingName))
+        );
+
+        String expectedMappingQuery = "CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\"" +
+                ".\"" + mappingName + "\" EXTERNAL NAME \"schema1\"" +
+                ".\"" + tableName + "\" (\n" +
+                "  \"id\" INTEGER,\n" +
+                "  \"name\" VARCHAR\n" +
+                ")\n" +
+                "TYPE \"JDBC\"\n" +
+                "OPTIONS (\n" +
+                "  'data-link-name'='test-database-ref'\n" +
+                ")";
+        assertRowsAnyOrder("SELECT GET_DDL('relation', '" + mappingName + "')",
+                ImmutableList.of(new Row(expectedMappingQuery)));
+    }
+
+    @Test
+    public void createMappingWithExternalTableNameTooManyComponents() throws Exception {
+        createTable(tableName);
+
+        assertThatThrownBy(() ->
+                execute("CREATE MAPPING " + tableName
+                        + " EXTERNAL NAME \"aaaa\".\"bbbb\".\"cccc\".\"dddd\" "
+                        + " ("
+                        + " id INT, "
+                        + " name VARCHAR "
+                        + ") "
+                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
+                )
+        ).isInstanceOf(HazelcastSqlException.class)
+         .hasMessageContaining("Invalid external name \"aaaa\".\"bbbb\".\"cccc\".\"dddd\"");
+    }
+
+    @Test
+    public void createMappingWithExternalTableNameTooManyComponentsNoQuotes() throws Exception {
+        createTable(tableName);
+
+        assertThatThrownBy(() ->
+                execute("CREATE MAPPING " + tableName
+                        + " EXTERNAL NAME aaaa.bbbb.cccc.dddd "
+                        + " ("
+                        + " id INT, "
+                        + " name VARCHAR "
+                        + ") "
+                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
+                )
+        ).isInstanceOf(HazelcastSqlException.class)
+         .hasMessageContaining("Invalid external name \"aaaa\".\"bbbb\".\"cccc\".\"dddd\"");
     }
 
     @Test

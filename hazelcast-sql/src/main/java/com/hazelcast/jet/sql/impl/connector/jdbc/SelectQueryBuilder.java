@@ -65,7 +65,7 @@ class SelectQueryBuilder {
             sb.append("*");
         }
         sb.append(" FROM ")
-          .append(table.getExternalName());
+          .append(table.getExternalName()[0]);
         if (predicateFragment != null) {
             sb.append(" WHERE ")
               .append(predicateFragment);

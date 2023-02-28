@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.parse;
 
-import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.sql.impl.schema.Mapping;
 import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -86,11 +85,6 @@ public class SqlCreateMapping extends SqlCreate {
         this.objectType = objectType;
         this.options = requireNonNull(options, "Options should not be null");
 
-        Preconditions.checkTrue(
-                externalName == null || externalName.isSimple(),
-                externalName == null ? null : externalName.toString()
-        );
-
         assert dataLink == null || connectorType == null; // the syntax doesn't allow this
     }
 
@@ -98,8 +92,8 @@ public class SqlCreateMapping extends SqlCreate {
         return name.names.get(name.names.size() - 1);
     }
 
-    public String externalName() {
-        return externalName == null ? nameWithoutSchema() : externalName.getSimple();
+    public String[] externalName() {
+        return externalName == null ? new String[]{nameWithoutSchema()} : externalName.names.toArray(new String[0]);
     }
 
     public Stream<SqlMappingColumn> columns() {

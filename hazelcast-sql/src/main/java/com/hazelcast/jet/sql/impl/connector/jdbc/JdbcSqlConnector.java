@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.sql.impl.CompoundIdentifierUtil.quoteCompoundIdentifier;
 import static java.lang.Integer.parseInt;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
@@ -81,9 +82,14 @@ public class JdbcSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
-            @Nonnull String externalName
+            @Nonnull String[] externalName
     ) {
-        Map<String, DbField> dbFields = readDbFields(nodeEngine, options, externalName);
+        if (externalName.length == 0 || externalName.length > 3) {
+            throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
+                    + ", external name for Jdbc must have either 1, 2 or 3 components (catalog, schema and relation)");
+        }
+        ExternalJdbcTableName externalTableName = new ExternalJdbcTableName(externalName);
+        Map<String, DbField> dbFields = readDbFields(nodeEngine, options, externalTableName);
 
         List<MappingField> resolvedFields = new ArrayList<>();
         if (userFields.isEmpty()) {
@@ -128,7 +134,7 @@ public class JdbcSqlConnector implements SqlConnector {
     private Map<String, DbField> readDbFields(
             NodeEngine nodeEngine,
             Map<String, String> options,
-            String externalTableName
+            ExternalJdbcTableName externalTableName
     ) {
         String dataLinkRef = requireNonNull(
                 options.get(OPTION_DATA_LINK_NAME),
@@ -146,9 +152,13 @@ public class JdbcSqlConnector implements SqlConnector {
         }
     }
 
-    private static Set<String> readPrimaryKeyColumns(String externalTableName, DatabaseMetaData databaseMetaData) {
+    private static Set<String> readPrimaryKeyColumns(ExternalJdbcTableName externalTableName, DatabaseMetaData databaseMetaData) {
         Set<String> pkColumns = new HashSet<>();
-        try (ResultSet resultSet = databaseMetaData.getPrimaryKeys(null, null, externalTableName)) {
+        try (ResultSet resultSet = databaseMetaData.getPrimaryKeys(
+                externalTableName.catalog,
+                externalTableName.schema,
+                externalTableName.table)
+        ) {
             while (resultSet.next()) {
                 String columnName = resultSet.getString("COLUMN_NAME");
                 pkColumns.add(columnName);
@@ -159,10 +169,13 @@ public class JdbcSqlConnector implements SqlConnector {
         return pkColumns;
     }
 
-    private static Map<String, DbField> readColumns(String externalTableName, DatabaseMetaData databaseMetaData,
+    private static Map<String, DbField> readColumns(ExternalJdbcTableName externalTableName, DatabaseMetaData databaseMetaData,
                                                     Set<String> pkColumns) {
         Map<String, DbField> fields = new LinkedHashMap<>();
-        try (ResultSet resultSet = databaseMetaData.getColumns(null, null, externalTableName,
+        try (ResultSet resultSet = databaseMetaData.getColumns(
+                externalTableName.catalog,
+                externalTableName.schema,
+                externalTableName.table,
                 null)) {
             while (resultSet.next()) {
                 String columnTypeName = resultSet.getString("TYPE_NAME");
@@ -199,7 +212,7 @@ public class JdbcSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String mappingName,
-            @Nonnull String externalName,
+            @Nonnull String[] externalName,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> resolvedFields
     ) {
@@ -279,7 +292,7 @@ public class JdbcSqlConnector implements SqlConnector {
     public VertexWithInputConfig insertProcessor(@Nonnull DagBuildContext context) {
         JdbcTable table = (JdbcTable) context.getTable();
 
-        InsertQueryBuilder builder = new InsertQueryBuilder(table.getExternalName(), table.dbFieldNames());
+        InsertQueryBuilder builder = new InsertQueryBuilder(table.getExternalName()[0], table.dbFieldNames());
         return new VertexWithInputConfig(context.getDag().newUniqueVertex(
                 "Insert(" + table.getExternalName() + ")",
                 new InsertProcessorSupplier(
@@ -335,7 +348,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 .map(f -> table.getField(f).externalName())
                 .collect(toList());
 
-        DeleteQueryBuilder builder = new DeleteQueryBuilder(table.getExternalName(), pkFields);
+        DeleteQueryBuilder builder = new DeleteQueryBuilder(table.getExternalName()[0], pkFields);
         return context.getDag().newUniqueVertex(
                 "Delete(" + table.getExternalName() + ")",
                 new DeleteProcessorSupplier(
@@ -455,6 +468,32 @@ public class JdbcSqlConnector implements SqlConnector {
                    ", typeName='" + columnTypeName + '\'' +
                    ", primaryKey=" + primaryKey +
                    '}';
+        }
+    }
+
+    private static class ExternalJdbcTableName {
+
+        final String catalog;
+        final String schema;
+        final String table;
+
+        ExternalJdbcTableName(String[] externalName) {
+            if (externalName.length == 1) {
+                catalog = null;
+                schema = null;
+                table = externalName[0];
+            } else if (externalName.length == 2) {
+                catalog = null;
+                schema = externalName[0];
+                table = externalName[1];
+            } else if (externalName.length == 3) {
+                catalog = externalName[0];
+                schema = externalName[1];
+                table = externalName[2];
+            } else {
+                // external name length was validater earlier, we should never get here
+                throw new IllegalStateException("Invalid external name length");
+            }
         }
     }
 }

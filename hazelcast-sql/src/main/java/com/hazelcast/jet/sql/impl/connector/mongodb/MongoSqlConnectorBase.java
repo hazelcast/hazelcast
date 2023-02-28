@@ -23,6 +23,7 @@ import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlProcessors;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -46,6 +47,7 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.mongodb.impl.Mappers.bsonDocumentToDocument;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
+import static com.hazelcast.sql.impl.CompoundIdentifierUtil.quoteCompoundIdentifier;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
@@ -71,8 +73,13 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
-            @Nonnull String externalName
+            @Nonnull String[] externalName
     ) {
+        if (externalName.length > 2) {
+            throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
+                    + ", external name for Mongo is allowed to have only one component (collection)"
+                    + " or two components (database and collection)");
+        }
         FieldResolver fieldResolver = new FieldResolver(nodeEngine);
         return fieldResolver.resolveFields(externalName, options, userFields, isStream());
     }
@@ -87,8 +94,9 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
     @Nonnull
     @Override
     public Table createTable(@Nonnull NodeEngine nodeEngine, @Nonnull String schemaName, @Nonnull String mappingName,
-                             @Nonnull String collectionName, @Nonnull Map<String, String> options,
+                             @Nonnull String[] externalName, @Nonnull Map<String, String> options,
                              @Nonnull List<MappingField> resolvedFields) {
+        String collectionName = externalName[0];
         FieldResolver fieldResolver = new FieldResolver(nodeEngine);
         String databaseName = Options.getDatabaseName(nodeEngine, options);
         ConstantTableStatistics stats = new ConstantTableStatistics(0);

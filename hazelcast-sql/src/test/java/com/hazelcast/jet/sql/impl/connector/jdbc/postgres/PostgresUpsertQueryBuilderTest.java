@@ -21,18 +21,18 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.sql.SqlDialect;
+import org.apache.calcite.sql.dialect.CalciteSqlDialect;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -42,22 +42,17 @@ public class PostgresUpsertQueryBuilderTest {
     @Mock
     JdbcTable jdbcTable;
 
-    @Mock
-    SqlDialect sqlDialect;
+    SqlDialect sqlDialect = CalciteSqlDialect.DEFAULT;
 
     @Before
     public void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        when(jdbcTable.getExternalName()).thenReturn("table1");
+        when(jdbcTable.getExternalName()).thenReturn(new String[]{"table1"});
+        when(jdbcTable.getExternalNameList()).thenReturn(Collections.singletonList("table1"));
         when(jdbcTable.getPrimaryKeyList()).thenReturn(Arrays.asList("pk1", "pk2"));
         when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
         when(jdbcTable.sqlDialect()).thenReturn(sqlDialect);
-
-        when(sqlDialect.quoteIdentifier(anyString())).thenAnswer((InvocationOnMock invocation) -> {
-            Object argument = invocation.getArguments()[0];
-            return "\"" + argument + "\"";
-        });
     }
 
     @Test
@@ -88,7 +83,7 @@ public class PostgresUpsertQueryBuilderTest {
 
         String valuesClause = stringBuilder.toString();
         assertEquals("ON CONFLICT (\"pk1\",\"pk2\") " +
-                     "DO UPDATE SET \"field1\" = EXCLUDED.\"field1\",\"field2\" = EXCLUDED.\"field2\"", valuesClause);
+                "DO UPDATE SET \"field1\" = EXCLUDED.\"field1\",\"field2\" = EXCLUDED.\"field2\"", valuesClause);
     }
 
     @Test
@@ -96,7 +91,7 @@ public class PostgresUpsertQueryBuilderTest {
         PostgresUpsertQueryBuilder builder = new PostgresUpsertQueryBuilder(jdbcTable);
         String result = builder.query();
         String expected = "INSERT INTO \"table1\" (\"field1\",\"field2\") VALUES (?,?) ON CONFLICT (\"pk1\",\"pk2\") " +
-                          "DO UPDATE SET \"field1\" = EXCLUDED.\"field1\",\"field2\" = EXCLUDED.\"field2\"";
+                "DO UPDATE SET \"field1\" = EXCLUDED.\"field1\",\"field2\" = EXCLUDED.\"field2\"";
         assertEquals(expected, result);
     }
 }
