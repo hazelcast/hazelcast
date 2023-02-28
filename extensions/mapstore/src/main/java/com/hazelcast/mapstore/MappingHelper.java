@@ -29,7 +29,7 @@ final class MappingHelper {
 
     private final SqlService sqlService;
 
-    public MappingHelper(SqlService sqlService) {
+    MappingHelper(SqlService sqlService) {
         this.sqlService = sqlService;
     }
 
