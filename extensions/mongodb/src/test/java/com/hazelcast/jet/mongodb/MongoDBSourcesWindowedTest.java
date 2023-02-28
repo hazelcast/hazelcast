@@ -62,7 +62,6 @@ public class MongoDBSourcesWindowedTest extends AbstractMongoDBTest {
                 .groupingKey(d -> d.getString("test"))
                 .window(tumbling(5))
                 .aggregate(counting())
-//                .peek()
                 .writeTo(list(result));
 
         MongoCollection<Document> collection =
@@ -83,10 +82,11 @@ public class MongoDBSourcesWindowedTest extends AbstractMongoDBTest {
 
         assertTrueEventually(() -> {
             assertThat(result).isNotEmpty();
-            long currentSum = result.stream()
-                                    .filter(w -> ((KeyedWindowResult<String, Long>) w).getKey().equalsIgnoreCase("testowe"))
-                                    .mapToLong(WindowResult::result)
-                                    .sum();
+            long currentSum = result
+                    .stream()
+                    .filter(w -> ((KeyedWindowResult<String, Long>) w).getKey().equalsIgnoreCase("testowe"))
+                    .mapToLong(WindowResult::result)
+                    .sum();
             assertThat(currentSum)
                     .as("Sum of windows is equal to input element count")
                     .isEqualTo(counter.get());
