@@ -135,12 +135,7 @@ public interface Job {
      * submission. For light jobs it always returns {@code null}.
      */
     @Nullable
-    default String getName() {
-        if (isLightJob()) {
-            return null;
-        }
-        return getConfig().getName();
-    }
+    String getName();
 
     /**
      * Returns the current status of this job. Each invocation queries the
