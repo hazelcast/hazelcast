@@ -442,14 +442,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         long heartbeatInterval = properties.getPositiveMillisOrDefault(HEARTBEAT_INTERVAL);
         ILogger logger = loggingService.getLogger(HeartbeatManager.class);
         HeartbeatManager.start(this, executionService, logger,
-                heartbeatInterval, heartbeatTimeout,
-                Collections.unmodifiableCollection(connectionManager.getActiveConnections()));
+                heartbeatInterval, heartbeatTimeout, connectionManager.getActiveConnections());
     }
 
     private void startIcmpPing() {
         ILogger logger = loggingService.getLogger(HeartbeatManager.class);
         ClientICMPManager.start(config.getNetworkConfig().getClientIcmpPingConfig(), executionService, logger,
-                Collections.unmodifiableCollection(connectionManager.getActiveConnections()));
+                connectionManager.getActiveConnections());
     }
 
     public void disposeOnClusterChange(Disposable disposable) {
