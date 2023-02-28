@@ -249,7 +249,7 @@ class KubernetesClient {
             JsonValue container = containers.get(0);
             JsonArray ports = toJsonArray(container.asObject().get("ports"));
             // If multiple ports are exposed by a container, then use the default Hazelcast port from the configuration.
-            if (ports.size() > 1) {
+            if (ports.size() > 0) {
                 JsonValue port = ports.get(0);
                 JsonValue containerPort = port.asObject().get("containerPort");
                 if (containerPort != null && containerPort.isNumber()) {
