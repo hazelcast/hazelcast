@@ -110,17 +110,12 @@ public class SerializationUtilTest {
 
     @Test
     public void testGetInterfacesCalledVerified() {
-
         SerializationUtil serializationUtil = mock(SerializationUtil.class);
-
        // HashSet implements Set<E>, Cloneable, java.io.Serializable, hence using it for this test
-        Class type = new HashSet().getClass();
+        Class type = HashSet.class;
         final Set<Class> interfaces = new LinkedHashSet<Class>(5);
-
         serializationUtil.getInterfaces(type, interfaces);
-
         verify(serializationUtil, times(1)).getInterfaces(type, interfaces);
-
     }
 
     private byte[] serialize(Boolean b) throws IOException {
