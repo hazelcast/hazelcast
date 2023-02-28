@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance.impl;
+package com.hazelcast.instance.impl.executejar;
 
+import com.hazelcast.instance.impl.HazelcastBootstrap;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;

@@ -34,6 +34,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
@@ -138,20 +139,7 @@ public class ClientExecuteJarStrategy {
             if (remainingCount == previousCount) {
                 continue;
             }
-            for (Job job : startedJobs) {
-                // The change of job statuses after the check above
-                // won't be a problem here. Because they cannot revert
-                // back to startup statuses.
-                if (job.getName() != null) {
-                    LOGGER.info("Job '" + job.getName() + "' submitted at "
-                                + toLocalDateTime(job.getSubmissionTime()) + " changed status to "
-                                + job.getStatus() + " at " + toLocalDateTime(System.currentTimeMillis()) + ".");
-                } else {
-                    LOGGER.info("Job '" + job.getIdString() + "' submitted at "
-                                + toLocalDateTime(job.getSubmissionTime()) + " changed status to "
-                                + job.getStatus() + " at " + toLocalDateTime(System.currentTimeMillis()) + ".");
-                }
-            }
+            logJobs(startedJobs);
             if (remainingCount == 1) {
                 LOGGER.info("A job is still starting...");
             } else if (remainingCount > 1) {
@@ -159,6 +147,22 @@ public class ClientExecuteJarStrategy {
                 LOGGER.info(message);
             }
             previousCount = remainingCount;
+        }
+    }
+
+    private void logJobs(List<Job> startedJobs) {
+        for (Job job : startedJobs) {
+            // The change of job statuses after the check above
+            // won't be a problem here. Because they cannot revert
+            // back to startup statuses.
+            String nameOrId = Objects.toString(job.getName(), job.getIdString());
+
+            String message = String.format("Job '%s ' submitted at %s changed status to %s at %s.",
+                    nameOrId,
+                    toLocalDateTime(job.getSubmissionTime()),
+                    job.getStatus(),
+                    toLocalDateTime(System.currentTimeMillis()));
+            LOGGER.info(message);
         }
     }
 
