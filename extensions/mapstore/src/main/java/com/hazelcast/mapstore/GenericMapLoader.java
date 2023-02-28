@@ -50,9 +50,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.mapstore.FromSqlRowConverter.toGenericRecord;
-import static com.hazelcast.mapstore.MappingHelper.createMappingWithColumns;
-import static com.hazelcast.mapstore.MappingHelper.loadColumnMetadataFromMapping;
-import static com.hazelcast.mapstore.MappingHelper.loadRowMetadataFromMapping;
 import static com.hazelcast.mapstore.validators.ExistingMappingValidator.validateColumn;
 import static com.hazelcast.mapstore.validators.ExistingMappingValidator.validateColumnsExist;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -118,6 +115,8 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
 
     private HazelcastInstanceImpl instance;
 
+    private MappingHelper mappingHelper;
+
     private String mapName;
     private String mappingName;
 
@@ -136,6 +135,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
         this.instance = Util.getHazelcastInstanceImpl(instance);
         this.genericMapStoreProperties = new GenericMapStoreProperties(properties, mapName);
         this.sqlService = instance.getSql();
+        this.mappingHelper = new MappingHelper(this.sqlService);
 
         this.mapName = mapName;
         this.mappingName = MAPPING_PREFIX + mapName;
@@ -176,11 +176,11 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
             }
 
             String mappingType = genericMapStoreProperties.getMappingType(nodeEngine());
-            createMappingWithColumns(sqlService, mappingName, genericMapStoreProperties.tableName, mappingColumns,
+            mappingHelper.createMappingWithColumns(mappingName, genericMapStoreProperties.tableName, mappingColumns,
                     mappingType, genericMapStoreProperties.dataLinkRef);
 
             if (!genericMapStoreProperties.hasColumns()) {
-                columnMetadataList = loadColumnMetadataFromMapping(sqlService, mappingName);
+                columnMetadataList = mappingHelper.loadColumnMetadataFromMapping(mappingName);
             }
             queries = new Queries(mappingName, genericMapStoreProperties.idColumn, columnMetadataList);
         } catch (Exception e) {
@@ -200,13 +200,12 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
     private String resolveMappingColumns() {
         // Create a temporary mapping
         String tempMapping = "temp_mapping_" + UuidUtil.newUnsecureUuidString();
-        MappingHelper.createMapping(sqlService,
-                tempMapping,
+        mappingHelper.createMapping(tempMapping,
                 genericMapStoreProperties.tableName,
                 genericMapStoreProperties.getMappingType(nodeEngine()),
                 genericMapStoreProperties.dataLinkRef);
 
-        SqlRowMetadata rowMetadata = loadRowMetadataFromMapping(sqlService, tempMapping);
+        SqlRowMetadata rowMetadata = mappingHelper.loadRowMetadataFromMapping(tempMapping);
         columnMetadataList = rowMetadata.getColumns();
         dropMapping(tempMapping);
 
@@ -221,7 +220,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
         logger.fine("Reading existing mapping for map" + mapName);
         try {
             // If mappingName does not exist, we get "... did you forget to CREATE MAPPING?" exception
-            SqlRowMetadata sqlRowMetadata = loadRowMetadataFromMapping(sqlService, mappingName);
+            SqlRowMetadata sqlRowMetadata = mappingHelper.loadRowMetadataFromMapping(mappingName);
             validateColumnsExist(sqlRowMetadata, genericMapStoreProperties.getAllColumns());
             columnMetadataList = sqlRowMetadata.getColumns();
             queries = new Queries(mappingName, genericMapStoreProperties.idColumn, columnMetadataList);
@@ -250,7 +249,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
     private void dropMapping(String mappingName) {
         logger.info("Dropping mapping " + mappingName);
         try {
-            MappingHelper.dropMapping(sqlService, mappingName);
+            mappingHelper.dropMapping(mappingName);
         } catch (Exception e) {
             logger.warning("Failed to drop mapping " + mappingName, e);
         }

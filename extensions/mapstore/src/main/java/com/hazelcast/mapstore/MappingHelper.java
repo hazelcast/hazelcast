@@ -27,11 +27,13 @@ import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_
 
 final class MappingHelper {
 
-    private MappingHelper() {
+    private final SqlService sqlService;
+
+    public MappingHelper(SqlService sqlService) {
+        this.sqlService = sqlService;
     }
 
-    public static void createMapping(SqlService sqlService, String mappingName, String tableName, String mappingType,
-                                     String dataLinkRef) {
+    public void createMapping(String mappingName, String tableName, String mappingType, String dataLinkRef) {
         sqlService.execute(
                 "CREATE MAPPING \"" + mappingName + "\""
                 + " EXTERNAL NAME \"" + tableName + "\" "
@@ -42,8 +44,8 @@ final class MappingHelper {
         ).close();
     }
 
-    public static void createMappingWithColumns(SqlService sqlService, String mappingName, String tableName,
-                                                String mappingColumns, String mappingType, String dataLinkRef) {
+    public void createMappingWithColumns(String mappingName, String tableName, String mappingColumns,
+                                         String mappingType, String dataLinkRef) {
         sqlService.execute(
                 "CREATE MAPPING \"" + mappingName + "\" "
                 + "EXTERNAL NAME \"" + tableName + "\" "
@@ -55,15 +57,15 @@ final class MappingHelper {
         ).close();
     }
 
-    public static void dropMapping(SqlService sqlService, String mappingName) {
+    public void dropMapping(String mappingName) {
         sqlService.execute("DROP MAPPING IF EXISTS \"" + mappingName + "\"").close();
     }
 
-    public static List<SqlColumnMetadata> loadColumnMetadataFromMapping(SqlService sqlService, String mapping) {
-        return loadRowMetadataFromMapping(sqlService, mapping).getColumns();
+    public List<SqlColumnMetadata> loadColumnMetadataFromMapping(String mapping) {
+        return loadRowMetadataFromMapping(mapping).getColumns();
     }
 
-    public static SqlRowMetadata loadRowMetadataFromMapping(SqlService sqlService, String mapping) {
+    public SqlRowMetadata loadRowMetadataFromMapping(String mapping) {
         try (SqlResult result = sqlService.execute("SELECT * FROM \"" + mapping + "\" LIMIT 0")) {
             return result.getRowMetadata();
         }
