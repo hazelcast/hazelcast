@@ -51,7 +51,6 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
@@ -59,29 +58,20 @@ import java.util.concurrent.ConcurrentMap;
 // A special HazelcastInstance that has a BootstrappedJetProxy
 @SuppressWarnings({"checkstyle:methodcount"})
 class BootstrappedInstanceProxy implements HazelcastInstance {
-    private final HazelcastInstance instance;
-    private final BootstrappedJetProxy jetProxy;
-
-    BootstrappedInstanceProxy(@Nonnull HazelcastInstance instance) {
-        this(instance, null, null, null);
-    }
-
-    BootstrappedInstanceProxy(
-            @Nonnull HazelcastInstance instance,
-            @Nullable String jar,
-            @Nullable String snapshotName,
-            @Nullable String jobName
-    ) {
-        this.instance = instance;
-        this.jetProxy = new BootstrappedJetProxy(instance.getJet(), jar, snapshotName, jobName);
-    }
+    private HazelcastInstance instance;
+    private BootstrappedJetProxy jetProxy;
 
     static BootstrappedInstanceProxy createWithoutJetProxy(@Nonnull HazelcastInstance instance) {
-        return new BootstrappedInstanceProxy(instance);
+        BootstrappedInstanceProxy proxy = new BootstrappedInstanceProxy();
+        proxy.instance = instance;
+        return proxy;
     }
 
     static BootstrappedInstanceProxy createWithJetProxy(@Nonnull HazelcastInstance instance) {
-        return new BootstrappedInstanceProxy(instance, null, null, null);
+        BootstrappedInstanceProxy proxy = new BootstrappedInstanceProxy();
+        proxy.instance = instance;
+        proxy.jetProxy = new BootstrappedJetProxy(instance.getJet());
+        return proxy;
     }
 
     @Nonnull

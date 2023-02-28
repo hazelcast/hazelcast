@@ -36,7 +36,6 @@ import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -49,17 +48,9 @@ class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
     private String jobName;
     private final CopyOnWriteArrayList<Job> submittedJobs = new CopyOnWriteArrayList<>();
 
-    BootstrappedJetProxy(
-            @Nonnull JetService jet,
-            @Nullable String jar,
-            @Nullable String snapshotName,
-            @Nullable String jobName
-    ) {
+    BootstrappedJetProxy(@Nonnull JetService jet) {
         super(((AbstractJetInstance) jet).getHazelcastInstance());
         this.jet = (AbstractJetInstance<M>) jet;
-        this.jar = jar;
-        this.snapshotName = snapshotName;
-        this.jobName = jobName;
     }
 
     @Nonnull

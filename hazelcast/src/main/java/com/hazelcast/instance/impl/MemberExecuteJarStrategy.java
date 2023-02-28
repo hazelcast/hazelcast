@@ -16,7 +16,6 @@
 
 package com.hazelcast.instance.impl;
 
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 
 import javax.annotation.Nonnull;
@@ -39,48 +38,27 @@ class MemberExecuteJarStrategy {
                            @Nonnull List<String> args
     ) throws IOException, InvocationTargetException, IllegalAccessException, ClassNotFoundException {
 
-        mainClassName = findMainClassNameForJar(mainClassName, jarPath);
+        mainClassName = ExecuteJarStrategyHelper.findMainClassNameForJar(mainClassName, jarPath);
 
         URL jarUrl = new File(jarPath).toURI().toURL();
         try (URLClassLoader classLoader = URLClassLoader.newInstance(
                 new URL[]{jarUrl},
                 MemberExecuteJarStrategy.class.getClassLoader())) {
 
-            Method main = findMainMethodForJar(classLoader, mainClassName);
+            Method main = ExecuteJarStrategyHelper.findMainMethodForJar(classLoader, mainClassName);
 
             String[] jobArgs = args.toArray(new String[0]);
 
             synchronized (this) {
-                ExecuteJarStrategyHelper.resetJetParametersOfJetProxy(singleton, jarPath, snapshotName, jobName);
+                BootstrappedJetProxy bootstrappedJetProxy = ExecuteJarStrategyHelper
+                        .setupJetProxy(singleton, jarPath, snapshotName, jobName);
+
+                // Clear jobs. We don't need them
+                bootstrappedJetProxy.clearSubmittedJobs();
 
                 // upcast args to Object, so it's passed as a single array-typed argument
                 main.invoke(null, (Object) jobArgs);
             }
         }
     }
-
-    static String findMainClassNameForJar(String mainClassName, String jarPath)
-            throws IOException {
-        MainClassNameFinder mainClassNameFinder = new MainClassNameFinder();
-        mainClassNameFinder.findMainClass(mainClassName, jarPath);
-
-        if (mainClassNameFinder.hasError()) {
-            String errorMessage = mainClassNameFinder.getErrorMessage();
-            throw new JetException(errorMessage);
-        }
-        return mainClassNameFinder.getMainClassName();
-    }
-
-    Method findMainMethodForJar(ClassLoader classLoader, String mainClassName) throws ClassNotFoundException {
-        MainMethodFinder mainMethodFinder = new MainMethodFinder();
-        mainMethodFinder.findMainMethod(classLoader, mainClassName);
-
-        if (mainMethodFinder.hasError()) {
-            String errorMessage = mainMethodFinder.getErrorMessage();
-            throw new JetException(errorMessage);
-        }
-        return mainMethodFinder.getMainMethod();
-    }
-
-
 }

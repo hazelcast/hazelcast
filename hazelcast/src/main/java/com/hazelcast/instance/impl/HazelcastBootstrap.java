@@ -29,6 +29,8 @@ import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -53,12 +55,14 @@ import static com.hazelcast.spi.properties.ClusterProperty.LOGGING_TYPE;
  **/
 public final class HazelcastBootstrap {
 
-    private static ConcurrentMemoizingSupplier<BootstrappedInstanceProxy> singleton = new ConcurrentMemoizingSupplier<>();
+    private static final ConcurrentMemoizingSupplier<BootstrappedInstanceProxy> SINGLETON = new ConcurrentMemoizingSupplier<>();
 
-    private static final ClientExecuteJarStrategy clientExecuteJarStrategy = new ClientExecuteJarStrategy();
-    private static final MemberExecuteJarStrategy memberExecuteJarStrategy = new MemberExecuteJarStrategy();
+    private static final ClientExecuteJarStrategy CLIENT_EXECUTE_JAR_STRATEGY = new ClientExecuteJarStrategy();
+
+    private static final MemberExecuteJarStrategy MEMBER_EXECUTE_JAR_STRATEGY = new MemberExecuteJarStrategy();
 
     private static final ILogger LOGGER = Logger.getLogger(HazelcastBootstrap.class.getName());
+
     private static final AtomicBoolean LOGGING_CONFIGURED = new AtomicBoolean(false);
 
     private HazelcastBootstrap() {
@@ -66,25 +70,23 @@ public final class HazelcastBootstrap {
 
     // Public for testing
     public static void resetSupplier() {
-        singleton.resetRemembered();
+        SINGLETON.resetRemembered();
     }
 
     public static void executeJar(@Nonnull Supplier<HazelcastInstance> supplierOfInstance,
-                                               @Nonnull String jarPath,
-                                               @Nullable String snapshotName,
-                                               @Nullable String jobName,
-                                               @Nullable String mainClassName,
-                                               @Nonnull List<String> args,
-                                               boolean calledByMember
-    ) throws Exception {
-
-        // Initialize singleton
-        singleton.get(() -> BootstrappedInstanceProxy.createWithJetProxy(supplierOfInstance.get()));
+                                  @Nonnull String jarPath,
+                                  @Nullable String snapshotName,
+                                  @Nullable String jobName,
+                                  @Nullable String mainClassName,
+                                  @Nonnull List<String> args,
+                                  boolean calledByMember
+    ) throws IOException, ClassNotFoundException, InvocationTargetException, IllegalAccessException {
+        SINGLETON.initOnce(() -> BootstrappedInstanceProxy.createWithJetProxy(supplierOfInstance.get()));
 
         if (calledByMember) {
-            memberExecuteJarStrategy.executeJar(singleton, jarPath, snapshotName, jobName, mainClassName, args);
+            MEMBER_EXECUTE_JAR_STRATEGY.executeJar(SINGLETON, jarPath, snapshotName, jobName, mainClassName, args);
         } else {
-            clientExecuteJarStrategy.executeJar(singleton, jarPath, snapshotName, jobName, mainClassName, args);
+            CLIENT_EXECUTE_JAR_STRATEGY.executeJar(SINGLETON, jarPath, snapshotName, jobName, mainClassName, args);
         }
     }
 
@@ -95,11 +97,8 @@ public final class HazelcastBootstrap {
      */
     @Nonnull
     public static synchronized HazelcastInstance getInstance() {
-        if (singleton == null) {
-            singleton = new ConcurrentMemoizingSupplier<>(() ->
-                    BootstrappedInstanceProxy.createWithoutJetProxy(createStandaloneInstance()));
-        }
-        return singleton.get();
+        SINGLETON.initOnce(() -> BootstrappedInstanceProxy.createWithoutJetProxy(createStandaloneInstance()));
+        return SINGLETON.get();
     }
 
     private static HazelcastInstance createStandaloneInstance() {

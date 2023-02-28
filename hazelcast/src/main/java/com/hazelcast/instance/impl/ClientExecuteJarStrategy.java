@@ -18,6 +18,7 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
@@ -78,14 +79,13 @@ public final class ClientExecuteJarStrategy {
 
                 String[] jobArgs = args.toArray(new String[0]);
 
-                ExecuteJarStrategyHelper.resetJetParametersOfJetProxy(singleton, jarPath, snapshotName, jobName);
+                ExecuteJarStrategyHelper.setupJetProxy(singleton, jarPath, snapshotName, jobName);
 
                 // upcast args to Object so it's passed as a single array-typed argument
                 main.invoke(null, (Object) jobArgs);
             }
 
             // Wait for the job to start only if called by the client side
-
             awaitJobsStarted(singleton);
 
 
@@ -101,36 +101,31 @@ public final class ClientExecuteJarStrategy {
         }
     }
 
-    static String findMainClassNameForJar(String mainClass, String jarPath)
+    String findMainClassNameForJar(String mainClass, String jarPath)
             throws IOException {
-        MainClassNameFinder mainClassNameFinder = new MainClassNameFinder();
-        mainClassNameFinder.findMainClass(mainClass, jarPath);
-
-        if (mainClassNameFinder.hasError()) {
-            String errorMessage = mainClassNameFinder.getErrorMessage();
-            // Exit immediately
-            error(errorMessage);
+        String mainClasName = null;
+        try {
+            mainClasName =  ExecuteJarStrategyHelper.findMainClassNameForJar(mainClass, jarPath);
+        } catch (JetException exception) {
+            logAndExit(exception);
         }
-        return mainClassNameFinder.getMainClassName();
+        return mainClasName;
     }
 
-    static Method findMainMethodForJar(ClassLoader classLoader, String mainClassName) throws ClassNotFoundException {
-        MainMethodFinder mainMethodFinder = new MainMethodFinder();
-        mainMethodFinder.findMainMethod(classLoader, mainClassName);
-
-        if (mainMethodFinder.hasError()) {
-            // Exit immediately
-            String errorMessage = mainMethodFinder.getErrorMessage();
-            error(errorMessage);
+    Method findMainMethodForJar(ClassLoader classLoader, String mainClassName) throws ClassNotFoundException {
+        Method mainMethod = null;
+        try {
+            mainMethod =  ExecuteJarStrategyHelper.findMainMethodForJar(classLoader, mainClassName);
+        } catch (JetException exception) {
+            logAndExit(exception);
         }
-        return mainMethodFinder.getMainMethod();
+        return mainMethod;
     }
-
 
     // Method is call by synchronized executeJar() so, it is safe to access submittedJobs array in BootstrappedJetProxy
-    private void awaitJobsStarted(ConcurrentMemoizingSupplier<BootstrappedInstanceProxy> supplier) {
+    private void awaitJobsStarted(ConcurrentMemoizingSupplier<BootstrappedInstanceProxy> singleton) {
 
-        List<Job> submittedJobs = supplier.remembered().getJet().submittedJobs();
+        List<Job> submittedJobs = singleton.remembered().getJet().submittedJobs();
         int submittedCount = submittedJobs.size();
         if (submittedCount == 0) {
             LOGGER.info("The JAR didn't submit any jobs.");
@@ -179,8 +174,9 @@ public final class ClientExecuteJarStrategy {
         }
     }
 
-    private static void error(String msg) {
-        LOGGER.severe(msg);
+    private void logAndExit(JetException exception) {
+        String errorMessage = exception.getMessage();
+        LOGGER.severe(errorMessage);
         System.exit(1);
     }
 }

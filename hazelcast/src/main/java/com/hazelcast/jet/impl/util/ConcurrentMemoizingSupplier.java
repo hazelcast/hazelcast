@@ -60,7 +60,7 @@ public final class ConcurrentMemoizingSupplier<T> implements Supplier<T> {
     }
 
     @Nonnull
-    public T get(Supplier<T> onceSupplier) {
+    public T initOnce(Supplier<T> onceSupplier) {
         // The common path will use a single volatile load
         T loadResult = remembered;
         if (loadResult != null) {
