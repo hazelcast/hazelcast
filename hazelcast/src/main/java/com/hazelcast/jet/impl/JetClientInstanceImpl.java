@@ -258,7 +258,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         try {
             ClientMessage response = invocation.invoke().get();
             return serializationService.toObject(decoder.apply(response));
-        } catch (Throwable t) {
+        } catch (Exception t) {
             throw rethrow(t);
         }
     }
@@ -266,7 +266,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     private void invoke(ClientInvocation invocation) {
         try {
             invocation.invoke().get();
-        } catch (Throwable t) {
+        } catch (Exception t) {
             throw rethrow(t);
         }
     }
