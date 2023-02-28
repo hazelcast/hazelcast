@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * The wrapper for all parameters to run an uploaded jar as Jet job
+ * Used by the member side as the wrapper for all parameters to run an uploaded jar as Jet job
  */
 public class JobMetaDataParameterObject {
 
