@@ -20,6 +20,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.schema.datalink.DataLink;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class DataLinkStorage extends AbstractSchemaStorage {
@@ -45,6 +46,14 @@ public class DataLinkStorage extends AbstractSchemaStorage {
                 .stream()
                 .filter(m -> m instanceof DataLink)
                 .map(m -> ((DataLink) m).getName())
+                .collect(Collectors.toList());
+    }
+
+    List<DataLink> dataLinks() {
+        return storage().values()
+                .stream()
+                .filter(obj -> obj instanceof DataLink)
+                .map(obj -> (DataLink) obj)
                 .collect(Collectors.toList());
     }
 }

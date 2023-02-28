@@ -21,7 +21,6 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.test.TestAbstractSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
-import com.hazelcast.jet.sql.impl.schema.DataLinkStorage;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTableStatistic;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
@@ -56,7 +55,6 @@ public class PhysicalJoinTest extends OptimizerTestSupport {
         resolver = new TableResolverImpl(
                 nodeEngine,
                 new RelationsStorage(nodeEngine),
-                new DataLinkStorage(nodeEngine),
                 new SqlConnectorCache(nodeEngine));
     }
 

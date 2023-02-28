@@ -48,6 +48,8 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_INFORMATION_SCHEMA;
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PUBLIC;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
@@ -56,10 +58,6 @@ import static java.util.Collections.singletonList;
  * information_schema}.
  */
 public class TableResolverImpl implements TableResolver {
-
-    public static final String SCHEMA_NAME_PUBLIC = "public";
-    public static final String SCHEMA_NAME_INFORMATION_SCHEMA = "information_schema";
-
     private static final List<List<String>> SEARCH_PATHS = singletonList(
             asList(CATALOG, SCHEMA_NAME_PUBLIC)
     );
@@ -75,7 +73,6 @@ public class TableResolverImpl implements TableResolver {
 
     private final NodeEngine nodeEngine;
     private final RelationsStorage relationsStorage;
-    private final DataLinkStorage dataLinkStorage;
     private final SqlConnectorCache connectorCache;
     private final List<TableListener> listeners;
 
@@ -90,12 +87,10 @@ public class TableResolverImpl implements TableResolver {
     public TableResolverImpl(
             NodeEngine nodeEngine,
             RelationsStorage relationsStorage,
-            DataLinkStorage dataLinkStorage,
             SqlConnectorCache connectorCache
     ) {
         this.nodeEngine = nodeEngine;
         this.relationsStorage = relationsStorage;
-        this.dataLinkStorage = dataLinkStorage;
         this.connectorCache = connectorCache;
         this.listeners = new CopyOnWriteArrayList<>();
 
@@ -226,31 +221,6 @@ public class TableResolverImpl implements TableResolver {
 
     // endregion
 
-    // region data link
-
-    public void createDataLink(DataLink dl, boolean replace, boolean ifNotExists) {
-        if (ifNotExists) {
-            dataLinkStorage.putIfAbsent(dl.getName(), dl);
-        } else if (replace) {
-            dataLinkStorage.put(dl.getName(), dl);
-        } else if (!dataLinkStorage.putIfAbsent(dl.getName(), dl)) {
-            throw QueryException.error("Data link already exists: " + dl.getName());
-        }
-    }
-
-    public void removeDataLink(String name, boolean ifExists) {
-        if (dataLinkStorage.removeDataLink(name) == null && !ifExists) {
-            throw QueryException.error("Data link does not exist: " + name);
-        }
-    }
-
-    @Nonnull
-    public Collection<String> getDataLinkNames() {
-        return dataLinkStorage.dataLinkNames();
-    }
-
-    // endregion
-
     @Nonnull
     @Override
     public List<List<String>> getDefaultSearchPaths() {
@@ -282,7 +252,8 @@ public class TableResolverImpl implements TableResolver {
             } else if (o instanceof Type) {
                 types.add((Type) o);
             } else if (o instanceof DataLink) {
-                // Note: data link is not a 'table' or 'relation'
+                // Note: data link is not a 'table' or 'relation',
+                // it contains in a separate schema.
                 continue;
             } else {
                 throw new RuntimeException("Unexpected: " + o);

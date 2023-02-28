@@ -54,6 +54,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.schema.DataLinksResolver;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.TypeDefinitionColumn;
 import com.hazelcast.jet.sql.impl.schema.TypesUtils;
@@ -125,15 +126,18 @@ public class PlanExecutor {
     private static final String DEFAULT_UNIQUE_KEY_TRANSFORMATION = "OBJECT";
 
     private final TableResolverImpl catalog;
+    private final DataLinksResolver dataLinksCatalog;
     private final HazelcastInstance hazelcastInstance;
     private final QueryResultRegistry resultRegistry;
 
     public PlanExecutor(
             TableResolverImpl catalog,
+            DataLinksResolver dataLinksCatalog,
             HazelcastInstance hazelcastInstance,
             QueryResultRegistry resultRegistry
     ) {
         this.catalog = catalog;
+        this.dataLinksCatalog = dataLinksCatalog;
         this.hazelcastInstance = hazelcastInstance;
         this.resultRegistry = resultRegistry;
     }
@@ -155,7 +159,7 @@ public class PlanExecutor {
         }
 
         dlService.createSqlDataLink(plan.name(), plan.type(), plan.options());
-        catalog.createDataLink(
+        dataLinksCatalog.createDataLink(
                 new DataLink(plan.name(), plan.type(), plan.options()),
                 plan.isReplace(),
                 plan.ifNotExists());
@@ -170,7 +174,7 @@ public class PlanExecutor {
         try {
             // Here, any throwable is not expected, but it may happen inside removeDataLink() call.
             dlService.removeDataLink(plan.name());
-            catalog.removeDataLink(plan.name(), plan.ifExists());
+            dataLinksCatalog.removeDataLink(plan.name(), plan.ifExists());
         } finally {
             return UpdateSqlResultImpl.createUpdateCountResult(0);
         }

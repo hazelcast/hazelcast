@@ -22,7 +22,6 @@ import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
-import com.hazelcast.jet.sql.impl.schema.DataLinkStorage;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
@@ -122,7 +121,6 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
         resolver = new TableResolverImpl(
                 nodeEngine,
                 new RelationsStorage(nodeEngine),
-                new DataLinkStorage(nodeEngine),
                 new SqlConnectorCache(nodeEngine));
 
         mapName = randomName();

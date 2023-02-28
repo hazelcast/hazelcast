@@ -32,7 +32,6 @@ import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.UnionPhysicalRel;
-import com.hazelcast.jet.sql.impl.schema.DataLinkStorage;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
@@ -148,7 +147,6 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
         TableResolverImpl resolver = new TableResolverImpl(
                 nodeEngine,
                 new RelationsStorage(nodeEngine),
-                new DataLinkStorage(nodeEngine),
                 new SqlConnectorCache(nodeEngine));
 
         TestStreamSqlConnector.create(
@@ -206,7 +204,6 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
         TableResolverImpl resolver = new TableResolverImpl(
                 nodeEngine,
                 new RelationsStorage(nodeEngine),
-                new DataLinkStorage(nodeEngine),
                 new SqlConnectorCache(nodeEngine));
 
         String stream = "s";

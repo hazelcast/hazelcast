@@ -84,9 +84,10 @@ import com.hazelcast.jet.sql.impl.parse.SqlDropView;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.DataLinkStorage;
+import com.hazelcast.jet.sql.impl.schema.DataLinksResolver;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
-import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
+import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.TypeDefinitionColumn;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.permission.ActionConstants;
@@ -133,6 +134,7 @@ import org.apache.calcite.tools.RuleSets;
 import javax.annotation.Nullable;
 import java.security.Permission;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -142,7 +144,6 @@ import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataLinkPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.DropIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.ExplainStatementPlan;
-import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -226,19 +227,27 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         this.relationsStorage = new RelationsStorage(nodeEngine);
         this.dataLinkStorage = new DataLinkStorage(nodeEngine);
 
-        TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine, this.relationsStorage, this.dataLinkStorage);
-        this.tableResolvers = singletonList(tableResolverImpl);
-        this.planExecutor = new PlanExecutor(tableResolverImpl, nodeEngine.getHazelcastInstance(), resultRegistry);
+        TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine, this.relationsStorage);
+        DataLinksResolver dataLinksResolver = dataLinkCatalog(this.dataLinkStorage);
+        this.tableResolvers = Arrays.asList(tableResolverImpl, dataLinksResolver);
+        this.planExecutor = new PlanExecutor(
+                tableResolverImpl,
+                dataLinksResolver,
+                nodeEngine.getHazelcastInstance(),
+                resultRegistry);
 
         this.logger = nodeEngine.getLogger(getClass());
     }
 
     private static TableResolverImpl mappingCatalog(
             NodeEngine nodeEngine,
-            RelationsStorage relationsStorage,
-            DataLinkStorage dataLinkStorage) {
+            RelationsStorage relationsStorage) {
         SqlConnectorCache connectorCache = new SqlConnectorCache(nodeEngine);
-        return new TableResolverImpl(nodeEngine, relationsStorage, dataLinkStorage, connectorCache);
+        return new TableResolverImpl(nodeEngine, relationsStorage, connectorCache);
+    }
+
+    private static DataLinksResolver dataLinkCatalog(DataLinkStorage storage) {
+        return new DataLinksResolver(storage);
     }
 
     @Nullable
