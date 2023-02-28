@@ -27,19 +27,18 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.impl.connector.DataSourceFromConnectionSupplier;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
 import com.hazelcast.jet.impl.connector.WriteJdbcP;
 import com.hazelcast.jet.impl.connector.WriteJmsP;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.spi.annotation.Beta;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -425,14 +424,13 @@ public final class SinkProcessors {
     private static FunctionEx<ProcessorMetaSupplier.Context, DataSource> dataSourceSupplier(String dataLinkName) {
         return context -> {
             try (JdbcDataLink dataLink = getDataLink(context, dataLinkName)) {
-                return dataLink.getDataSource();
+                return new DataSourceFromConnectionSupplier(dataLink::getConnection);
             }
         };
     }
 
     private static JdbcDataLink getDataLink(ProcessorMetaSupplier.Context context, String name) {
-        NodeEngineImpl nodeEngine = Util.getNodeEngine(context.hazelcastInstance());
-        return nodeEngine.getDataLinkService().getDataLink(name, JdbcDataLink.class);
+        return context.dataLinkService().getDataLink(name, JdbcDataLink.class);
     }
 
     /**

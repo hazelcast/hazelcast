@@ -21,7 +21,7 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.DataLinkService;
+import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
@@ -153,8 +153,8 @@ public class PlanExecutor {
     }
 
     SqlResult execute(CreateDataLinkPlan plan) {
-        DataLinkService dlService = getNodeEngine(hazelcastInstance).getDataLinkService();
-        if (plan.ifNotExists() && dlService.dataLinkExists(plan.name())) {
+        InternalDataLinkService dlService = getNodeEngine(hazelcastInstance).getDataLinkService();
+        if (plan.ifNotExists() && dlService.existsDataLink(plan.name())) {
             throw new HazelcastException("Data link '" + plan.name() + "' already exists");
         }
 
@@ -167,9 +167,11 @@ public class PlanExecutor {
     }
 
     SqlResult execute(DropDataLinkPlan plan) {
-        DataLinkService dlService = getNodeEngine(hazelcastInstance).getDataLinkService();
+        InternalDataLinkService dlService = getNodeEngine(hazelcastInstance).getDataLinkService();
         if (plan.ifExists()) {
-            dlService.getDataLink(plan.name()); // throws 'HazelcastException("Data link ... not found")', if DL not exist
+            if (!dlService.existsDataLink(plan.name())) {
+                throw new HazelcastException("Data link '" + plan.name() + "' not found");
+            }
         }
         try {
             // Here, any throwable is not expected, but it may happen inside removeDataLink() call.

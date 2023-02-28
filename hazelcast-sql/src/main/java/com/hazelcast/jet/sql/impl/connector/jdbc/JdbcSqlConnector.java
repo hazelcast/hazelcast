@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.datalink.JdbcDataLink;
-import com.hazelcast.datalink.impl.CloseableDataSource;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -41,7 +40,6 @@ import org.apache.calcite.sql.SqlDialectFactoryImpl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -136,8 +134,8 @@ public class JdbcSqlConnector implements SqlConnector {
                 options.get(OPTION_DATA_LINK_REF),
                 OPTION_DATA_LINK_REF + " must be set"
         );
-        DataSource dataSource = createDataLink(nodeEngine, dataLinkRef);
-        try (Connection connection = dataSource.getConnection()) {
+        try (JdbcDataLink dataLink = getDataLink(nodeEngine, dataLinkRef);
+             Connection connection = dataLink.getConnection()) {
 
             DatabaseMetaData databaseMetaData = connection.getMetaData();
 
@@ -147,8 +145,6 @@ public class JdbcSqlConnector implements SqlConnector {
 
         } catch (Exception e) {
             throw new HazelcastException("Could not execute readDbFields for table " + externalTableName, e);
-        } finally {
-            closeDataSource(dataSource);
         }
     }
 
@@ -185,24 +181,10 @@ public class JdbcSqlConnector implements SqlConnector {
         return fields;
     }
 
-    private void closeDataSource(DataSource dataSource) {
-        if (dataSource instanceof CloseableDataSource) {
-            try {
-                ((CloseableDataSource) dataSource).close();
-            } catch (Exception e) {
-                throw new HazelcastException("Could not close datasource " + dataSource, e);
-            }
-        }
-    }
-
-    private static DataSource createDataLink(NodeEngine nodeEngine, String dataLinkRef) {
-        try (JdbcDataLink dataLink = nodeEngine
+    private static JdbcDataLink getDataLink(NodeEngine nodeEngine, String dataLinkRef) {
+        return nodeEngine
                 .getDataLinkService()
-                .getDataLink(dataLinkRef, JdbcDataLink.class)) {
-            return dataLink.getDataSource();
-        } catch (Exception e) {
-            throw new HazelcastException("Could not close DataLink", e);
-        }
+                .getDataLink(dataLinkRef, JdbcDataLink.class);
     }
 
     private void validateType(MappingField field, DbField dbField) {
@@ -254,18 +236,14 @@ public class JdbcSqlConnector implements SqlConnector {
     }
 
     private SqlDialect resolveDialect(NodeEngine nodeEngine, String dataLinkRef) {
-        DataSource dataSource = createDataLink(nodeEngine, dataLinkRef);
-
-        try (Connection connection = dataSource.getConnection()) {
+        try (JdbcDataLink dataLink = getDataLink(nodeEngine, dataLinkRef);
+             Connection connection = dataLink.getConnection()) {
             DatabaseMetaData databaseMetaData = connection.getMetaData();
             SqlDialect dialect = SqlDialectFactoryImpl.INSTANCE.create(databaseMetaData);
             SupportedDatabases.logOnceIfDatabaseNotSupported(databaseMetaData);
             return dialect;
         } catch (Exception e) {
-            throw new HazelcastException("Could not determine dialect for dataLinkRef: "
-                                         + dataLinkRef, e);
-        } finally {
-            closeDataSource(dataSource);
+            throw new HazelcastException("Could not determine dialect for dataLinkRef: " + dataLinkRef, e);
         }
     }
 

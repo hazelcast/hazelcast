@@ -20,6 +20,7 @@ import com.hazelcast.internal.util.StringUtil;
 import com.zaxxer.hikari.HikariDataSource;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -51,6 +52,19 @@ public final class HikariTestUtil {
 
     private static void executeQuery(DataSource dataSource, String sql) throws SQLException {
         try (PreparedStatement preparedStatement = dataSource.getConnection().prepareStatement(sql);
+             ResultSet ignored = preparedStatement.executeQuery()) {
+            //NOP
+        }
+    }
+
+    public static void assertConnectionClosed(Connection connection, String configName) {
+        assertThatThrownBy(() -> executeQuery(connection, "select 'some-name' as name"))
+                .isInstanceOf(SQLException.class)
+                .hasMessageMatching("HikariDataSource HikariDataSource \\(" + hikariPoolRegex(configName) + "\\) has been closed.");
+    }
+
+    private static void executeQuery(Connection connection, String sql) throws SQLException {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql);
              ResultSet ignored = preparedStatement.executeQuery()) {
             //NOP
         }

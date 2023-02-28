@@ -19,12 +19,13 @@ package com.hazelcast.datalink.impl;
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.datalink.DataLink;
-import com.hazelcast.datalink.DataLinkService;
-import com.hazelcast.datalink.JdbcDataLink;
+import com.hazelcast.datalink.DataLinkRegistration;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.logging.ILogger;
 
 import java.lang.reflect.Constructor;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,8 +35,9 @@ import static com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource.SQL
 import static com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSourcePair.pair;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
-public class DataLinkServiceImpl implements DataLinkService {
+public class DataLinkServiceImpl implements InternalDataLinkService {
 
+    private final Map<String, Class<? extends DataLink>> typeToDataLinkClass = new HashMap<>();
     private final Map<String, DataLinkSourcePair> dataLinks = new ConcurrentHashMap<>();
 
     private final ClassLoader classLoader;
@@ -44,9 +46,23 @@ public class DataLinkServiceImpl implements DataLinkService {
     public DataLinkServiceImpl(Node node, ClassLoader classLoader) {
         this.classLoader = classLoader;
         this.logger = node.getLogger(DataLinkServiceImpl.class);
+        processDataLinkRegistrations(classLoader);
+
         for (Map.Entry<String, DataLinkConfig> entry : node.getConfig().getDataLinkConfigs().entrySet()) {
             DataLink dataLink = createDataLinkInstance(entry.getValue());
             dataLinks.put(entry.getKey(), pair(dataLink, CONFIG));
+        }
+    }
+
+    private void processDataLinkRegistrations(ClassLoader classLoader) {
+        try {
+            ServiceLoader.iterator(
+                    DataLinkRegistration.class,
+                    DataLinkRegistration.class.getName(),
+                    classLoader
+            ).forEachRemaining(registration -> typeToDataLinkClass.put(registration.type(), registration.clazz()));
+        } catch (Exception e) {
+            throw new HazelcastException("Could not register DataLinks", e);
         }
     }
 
@@ -94,38 +110,32 @@ public class DataLinkServiceImpl implements DataLinkService {
         Properties properties = new Properties();
         properties.putAll(options);
         DataLinkConfig config = new DataLinkConfig(name)
-                .setClassName(typeToClass(type))
+                .setClassName(type)
                 .setProperties(properties);
         return config;
     }
 
-    String typeToClass(String type) {
-        switch (type.toUpperCase()) {
-            case "JDBC":
-                return JdbcDataLink.class.getName();
-
-            default:
-                // Default to the type itself - allows testing with DummyDataLink without listing it here
-                return type;
-        }
-    }
-
-    private <T extends DataLink> T createDataLinkInstance(DataLinkConfig config) {
+    private DataLink createDataLinkInstance(DataLinkConfig config) {
         logger.finest("Creating '" + config.getName() + "' data link");
-        String className = config.getClassName();
+        String type = config.getClassName();
         try {
-            Class<T> dataLinkClass = getDataLinkClass(className);
-            Constructor<T> constructor = dataLinkClass.getConstructor(DataLinkConfig.class);
-            T instance = constructor.newInstance(config);
-            return instance;
+            Class<? extends DataLink> dataLinkClass;
+            if (typeToDataLinkClass.containsKey(type)) {
+                dataLinkClass = typeToDataLinkClass.get(type);
+            } else {
+                // TODO get rid of this branch when change className -> type in config
+                dataLinkClass = getDataLinkClass(type);
+            }
+            Constructor<? extends DataLink> constructor = dataLinkClass.getConstructor(DataLinkConfig.class);
+            return constructor.newInstance(config);
         } catch (ClassCastException e) {
             throw new HazelcastException("Data link '" + config.getName() + "' misconfigured: "
-                    + "'" + className + "' must implement '"
+                    + "'" + type + "' must implement '"
                     + DataLink.class.getName() + "'", e);
 
         } catch (ClassNotFoundException e) {
             throw new HazelcastException("Data link '" + config.getName() + "' misconfigured: "
-                    + "class '" + className + "' not found", e);
+                    + "class '" + type + "' not found", e);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -151,23 +161,12 @@ public class DataLinkServiceImpl implements DataLinkService {
     }
 
     @Override
-    public <T extends DataLink> T getDataLink(String name) {
-        DataLinkSourcePair dataLink = dataLinks.get(name);
-        if (dataLink == null) {
-            throw new HazelcastException("Data link '" + name + "' not found");
-        }
-        T instance = (T) dataLink.instance;
-        instance.retain();
-        return instance;
-    }
-
-    @Override
     public <T extends DataLink> T getDataLink(String name, Class<T> clazz) {
         DataLinkSourcePair dataLink = dataLinks.get(name);
         if (dataLink == null) {
             throw new HazelcastException("Data link '" + name + "' not found");
         }
-        if (dataLink.instance.getClass().isAssignableFrom(clazz)) {
+        if (clazz.isInstance(dataLink.instance)) {
             T instance = clazz.cast(dataLink.instance);
             instance.retain();
             return instance;
@@ -177,13 +176,16 @@ public class DataLinkServiceImpl implements DataLinkService {
     }
 
     @Override
-    public boolean dataLinkExists(String name) {
+    public boolean existsDataLink(String name) {
         return dataLinks.containsKey(name);
     }
 
     @Override
     public void removeDataLink(String name) {
         DataLinkSourcePair dataLink = dataLinks.get(name);
+        if (dataLink == null) {
+            return;
+        }
         if (CONFIG.equals(dataLink.source)) {
             throw new HazelcastException("Data link '" + name + "' is configured via Config and can't be removed");
         }
@@ -194,7 +196,7 @@ public class DataLinkServiceImpl implements DataLinkService {
     }
 
     @Override
-    public void close() {
+    public void shutdown() {
         for (Map.Entry<String, DataLinkSourcePair> entry : dataLinks.entrySet()) {
             logger.finest("Closing '" + entry.getKey() + "' data link");
             DataLinkSourcePair dataLink = entry.getValue();

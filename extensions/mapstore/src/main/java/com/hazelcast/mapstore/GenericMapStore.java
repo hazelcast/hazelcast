@@ -211,7 +211,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         } else {
             try (DataLink dataLink = nodeEngine()
                     .getDataLinkService()
-                    .getDataLink(properties.dataLinkRef)) {
+                    .getDataLink(properties.dataLinkRef, DataLink.class)) {
 
                 if (dataLink instanceof JdbcDataLink) {
                     return "JDBC";

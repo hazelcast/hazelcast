@@ -14,9 +14,24 @@
  * limitations under the License.
  */
 
-/**
- * <p>This package contains implementation of handling data links.<br>
- *
- * @since 5.3
- */
 package com.hazelcast.datalink.impl;
+
+import com.hazelcast.datalink.DataLink;
+import com.hazelcast.datalink.DataLinkRegistration;
+import com.hazelcast.datalink.JdbcDataLink;
+
+/**
+ * Registration for {@link JdbcDataLink}
+ */
+public class JdbcDataLinkRegistration implements DataLinkRegistration {
+
+    @Override
+    public String type() {
+        return "JDBC";
+    }
+
+    @Override
+    public Class<? extends DataLink> clazz() {
+        return JdbcDataLink.class;
+    }
+}

@@ -43,7 +43,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * <li>Data link for {@link MapStore} and {@link MapLoader} </li>
  * </ul>
  *
- * @since 5.2
+ * @since 5.3
  */
 @Beta
 public class DataLinkConfig implements IdentifiedDataSerializable, NamedConfig {

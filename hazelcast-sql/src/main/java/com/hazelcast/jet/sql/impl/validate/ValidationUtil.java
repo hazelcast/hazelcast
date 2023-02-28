@@ -66,7 +66,7 @@ public final class ValidationUtil {
      * <ul>
      *     <li>a simple name
      *     <li>a name in schema "public"
-     *     <li>a name in schema "hazelcast.public"
+     *     <li>a name in schema "hazelcast.public" or "hazelcast.datalink"
      * </ul>
      */
     @SuppressWarnings({"checkstyle:BooleanExpressionComplexity", "BooleanMethodIsAlwaysInverted"})

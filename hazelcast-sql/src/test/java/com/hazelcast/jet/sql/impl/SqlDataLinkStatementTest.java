@@ -40,7 +40,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         instance().getSql().execute("CREATE DATA LINK " + dlName
                 + " TYPE \"" + DummyDataLink.class.getName() + "\" "
                 + " OPTIONS ('b' = 'c')");
-        DataLink dataLink = getNodeEngineImpl(instance()).getDataLinkService().getDataLink(dlName);
+        DataLink dataLink = getNodeEngineImpl(instance()).getDataLinkService().getDataLink(dlName, DummyDataLink.class);
         assertThat(dataLink).isNotNull();
         assertThat(dataLink.getConfig().getClassName()).isEqualTo(DummyDataLink.class.getName());
         assertThat(dataLink.getConfig().getProperties().get("b")).isEqualTo("c");
@@ -52,7 +52,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         instance().getSql().execute("CREATE DATA LINK " + dlName
                 + " TYPE \"" + DummyDataLink.class.getName() + "\" "
                 + " OPTIONS ('b' = 'c')");
-        DataLink dataLink = getNodeEngineImpl(instance()).getDataLinkService().getDataLink(dlName);
+        DataLink dataLink = getNodeEngineImpl(instance()).getDataLinkService().getDataLink(dlName, DummyDataLink.class);
         assertThat(dataLink).isNotNull();
 
         assertThatThrownBy(() ->
@@ -98,12 +98,12 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         instance().getSql().execute("DROP DATA LINK IF EXISTS " + dlName2);
 
         assertThatThrownBy(() ->
-                getNodeEngineImpl(instance()).getDataLinkService().getDataLink(dlName1))
+                getNodeEngineImpl(instance()).getDataLinkService().getDataLink(dlName1, DummyDataLink.class))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessageContaining("Data link '" + dlName1 + "' not found");
 
         assertThatThrownBy(() ->
-                getNodeEngineImpl(instance()).getDataLinkService().getDataLink(dlName2))
+                getNodeEngineImpl(instance()).getDataLinkService().getDataLink(dlName2, DummyDataLink.class))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessageContaining("Data link '" + dlName2 + "' not found");
     }
