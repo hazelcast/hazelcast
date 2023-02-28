@@ -21,6 +21,8 @@ import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.executejar.ClientExecuteJarStrategy;
+import com.hazelcast.instance.impl.executejar.MemberExecuteJarStrategy;
 import com.hazelcast.jet.impl.util.JetConsoleLogHandler;
 import com.hazelcast.jet.impl.util.ResettableConcurrentMemoizingSupplier;
 import com.hazelcast.logging.ILogger;

@@ -41,7 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
+public class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
     private final AbstractJetInstance<M> jet;
     private String jar;
     private String snapshotName;
@@ -106,11 +106,11 @@ class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
         return addToSubmittedJobs(jet.newJobIfAbsent(dag, updateJobConfig(config)));
     }
 
-    void clearSubmittedJobs() {
+    public void clearSubmittedJobs() {
         submittedJobs.clear();
     }
 
-    List<Job> submittedJobs() {
+    public List<Job> submittedJobs() {
         return new ArrayList<>(submittedJobs);
     }
 

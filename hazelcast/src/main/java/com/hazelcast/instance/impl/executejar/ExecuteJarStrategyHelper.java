@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance.impl;
+package com.hazelcast.instance.impl.executejar;
 
+import com.hazelcast.instance.impl.BootstrappedInstanceProxy;
+import com.hazelcast.instance.impl.BootstrappedJetProxy;
+import com.hazelcast.instance.impl.MainClassNameFinder;
+import com.hazelcast.instance.impl.MainMethodFinder;
 import com.hazelcast.jet.JetException;
 
 import java.io.IOException;

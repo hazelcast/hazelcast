@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance.impl;
+package com.hazelcast.instance.impl.executejar;
 
+import com.hazelcast.instance.impl.BootstrappedInstanceProxy;
+import com.hazelcast.instance.impl.BootstrappedJetProxy;
 import com.hazelcast.jet.impl.util.ResettableConcurrentMemoizingSupplier;
 
 import javax.annotation.Nonnull;
@@ -28,7 +30,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.List;
 
-class MemberExecuteJarStrategy {
+public class MemberExecuteJarStrategy {
 
     public void executeJar(@Nonnull ResettableConcurrentMemoizingSupplier<BootstrappedInstanceProxy> singleton,
                            @Nonnull String jarPath,

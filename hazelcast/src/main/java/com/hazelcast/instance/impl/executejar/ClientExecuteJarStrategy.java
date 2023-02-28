@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance.impl;
+package com.hazelcast.instance.impl.executejar;
 
+import com.hazelcast.instance.impl.BootstrappedInstanceProxy;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.JobStatus;
@@ -40,12 +41,15 @@ import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
-class ClientExecuteJarStrategy {
+public class ClientExecuteJarStrategy {
 
     private static final ILogger LOGGER = Logger.getLogger(ClientExecuteJarStrategy.class.getName());
     private static final int JOB_START_CHECK_INTERVAL_MILLIS = 1_000;
     private static final EnumSet<JobStatus> STARTUP_STATUSES = EnumSet.of(NOT_RUNNING, STARTING);
 
+    /**
+     * This method needs to be fully synchronized because it shuts down the remembered object
+     */
     public synchronized void executeJar(@Nonnull ResettableConcurrentMemoizingSupplier<BootstrappedInstanceProxy> singleton,
                                         @Nonnull String jarPath,
                                         @Nullable String snapshotName,
@@ -89,7 +93,7 @@ class ClientExecuteJarStrategy {
             throws IOException {
         String mainClasName = null;
         try {
-            mainClasName =  ExecuteJarStrategyHelper.findMainClassNameForJar(mainClass, jarPath);
+            mainClasName = ExecuteJarStrategyHelper.findMainClassNameForJar(mainClass, jarPath);
         } catch (JetException exception) {
             logAndExit(exception);
         }
@@ -99,7 +103,7 @@ class ClientExecuteJarStrategy {
     Method findMainMethodForJar(ClassLoader classLoader, String mainClassName) throws ClassNotFoundException {
         Method mainMethod = null;
         try {
-            mainMethod =  ExecuteJarStrategyHelper.findMainMethodForJar(classLoader, mainClassName);
+            mainMethod = ExecuteJarStrategyHelper.findMainMethodForJar(classLoader, mainClassName);
         } catch (JetException exception) {
             logAndExit(exception);
         }
