@@ -321,7 +321,7 @@ class KubernetesClient {
             }
             JsonObject endpointsJson = callGet(endpointsUrl);
 
-            List<EndpointAddress> privateAddresses = privateAddresses(endpoints);
+            List<String> privateAddresses = privateAddresses(endpoints);
             Map<EndpointAddress, String> services = apiProvider.extractServices(endpointsJson, privateAddresses);
             Map<EndpointAddress, String> nodeAddresses = apiProvider.extractNodes(endpointsJson, privateAddresses);
 
@@ -363,7 +363,6 @@ class KubernetesClient {
             }
             // If expose-externally not set (exposeExternallyMode == ExposeExternallyMode.AUTO), silently ignore any exception
             LOGGER.finest(e);
-            e.printStackTrace();
             // Log warning only once.
             if (!isNoPublicIpAlreadyLogged) {
                 LOGGER.warning(
@@ -386,10 +385,10 @@ class KubernetesClient {
         return nodeName;
     }
 
-    private static List<EndpointAddress> privateAddresses(List<Endpoint> endpoints) {
-        List<EndpointAddress> result = new ArrayList<>();
+    private static List<String> privateAddresses(List<Endpoint> endpoints) {
+        List<String> result = new ArrayList<>();
         for (Endpoint endpoint : endpoints) {
-            result.add(endpoint.getPrivateAddress());
+            result.add(endpoint.getPrivateAddress().getIp());
         }
         return result;
     }

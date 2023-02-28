@@ -42,10 +42,10 @@ interface KubernetesApiProvider {
     List<Endpoint> parseEndpoints(JsonValue jsonValue);
 
     Map<EndpointAddress, String> extractServices(JsonObject jsonObject,
-                                                 List<EndpointAddress> addresses);
+                                                 List<String> addresses);
 
     Map<EndpointAddress, String> extractNodes(JsonObject jsonObject,
-                                              List<EndpointAddress> addresses);
+                                              List<String> addresses);
 
     default Integer extractPort(JsonValue subsetJson) {
         JsonArray ports = toJsonArray(subsetJson.asObject().get("ports"));
