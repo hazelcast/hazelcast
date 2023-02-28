@@ -168,8 +168,8 @@ public class ReadMongoP<I> extends AbstractProcessor {
                         getLogger().finest("Finished saving snapshot.");
                     });
 
-            Object watermark = reader.watermark();
-            if (processorIndex == 0 && watermark != null) {
+            if (processorIndex == 0 && reader.supportsWatermarks()) {
+                Object watermark = reader.watermark();
                 snapshotTraverser = snapshotTraverser.append(entry(broadcastKey(-1), watermark));
             }
         }
@@ -192,7 +192,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
         if (keyInteger % totalParallelism == processorIndex) {
             reader.restore(value);
         }
-        if (keyInteger == -1) {
+        if (keyInteger == -1 && reader.supportsWatermarks()) {
             reader.restoreWatermark((Long) value);
         }
     }
@@ -252,12 +252,13 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
         abstract boolean everCompletes();
 
-        public void restoreWatermark(Long value) {
+        boolean supportsWatermarks() {
+            return !everCompletes();
         }
 
-        public Object watermark() {
-            return null;
-        }
+        public abstract void restoreWatermark(Long value);
+
+        public abstract Object watermark();
     }
 
     private final class BatchMongoReader extends MongoChunkedReader {
@@ -332,6 +333,16 @@ public class ReadMongoP<I> extends AbstractProcessor {
         @Override
         boolean everCompletes() {
             return true;
+        }
+
+        @Override
+        public void restoreWatermark(Long value) {
+            throw new UnsupportedOperationException("watermarks are only in streaming case");
+        }
+
+        @Override
+        public Object watermark() {
+            throw new UnsupportedOperationException("watermarks are only in streaming case");
         }
 
         @Nonnull
