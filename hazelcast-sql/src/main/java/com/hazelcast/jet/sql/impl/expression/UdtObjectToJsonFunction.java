@@ -40,7 +40,7 @@ import static java.util.Collections.newSetFromMap;
 
 public class UdtObjectToJsonFunction extends UniExpressionWithType<HazelcastJsonValue> implements IdentifiedDataSerializable {
     // Unlike FieldAccessExpression UdtToJson function typically works with many classes and all of their fields
-    private static final int MAX_CLASS_COUNT = 10;
+    private static final int MAX_CLASS_COUNT = 64;
     private static final int MAX_GETTER_PER_CLASS_COUNT = 100;
 
     // single instance for all calls to eval, used only during execution on particular node
