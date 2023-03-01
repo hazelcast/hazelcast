@@ -22,6 +22,7 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
+import com.hazelcast.jet.mongodb.impl.CursorTraverser.EmptyItem;
 import com.hazelcast.logging.ILogger;
 import com.mongodb.MongoException;
 import com.mongodb.MongoServerException;
@@ -38,7 +39,6 @@ import org.bson.BsonDocument;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import org.bson.types.ObjectId;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -53,7 +53,6 @@ import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.mongodb.impl.MongoUtilities.partitionAggregate;
-import static com.hazelcast.jet.mongodb.impl.MongoUtilities.readChunk;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.sort;
 import static com.mongodb.client.model.Filters.gt;
@@ -196,14 +195,8 @@ public class ReadMongoP<I> extends AbstractProcessor {
         boolean forThisProcessor = keyAb % totalParallelism == processorIndex;
         if (forThisProcessor) {
             if (!wm) {
-                Document currentRT = (Document) reader.snapshot();
-                ObjectId currentRTId = currentRT == null ? null : currentRT.getObjectId("_data");
-
-                ObjectId valueId = ((Document) value).getObjectId("_data");
-                if (currentRTId == null || valueId.getTimestamp() < currentRTId.getTimestamp()) {
-                    reader.restore(value);
-                    reader.connect(connection.client(), true);
-                }
+                reader.restore(value);
+                reader.connect(connection.client(), true);
             } else if (reader.supportsWatermarks()) {
                 reader.restoreWatermark((Long) value);
             }
@@ -421,17 +414,17 @@ public class ReadMongoP<I> extends AbstractProcessor {
             return false;
         }
 
+        @SuppressWarnings("unchecked")
         @Nonnull
         @Override
         public Traverser<?> nextChunkTraverser() {
             try {
-                List<ChangeStreamDocument<Document>> chunk = readChunk(cursor, BATCH_SIZE);
-                if (chunk.isEmpty()) {
-                    return eventTimeMapper.flatMapIdle();
-                }
-
-                return traverseIterable(chunk)
-                        .flatMap(doc -> {
+                return new CursorTraverser(cursor)
+                        .flatMap(input -> {
+                            if (input instanceof EmptyItem) {
+                                return eventTimeMapper.flatMapIdle();
+                            }
+                            ChangeStreamDocument<Document> doc = (ChangeStreamDocument<Document>) input;
                             resumeToken = doc.getResumeToken();
                             long eventTime = clusterTime(doc);
                             I item = mapFn.apply(doc);
