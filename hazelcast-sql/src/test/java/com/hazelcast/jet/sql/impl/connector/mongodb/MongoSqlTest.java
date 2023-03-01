@@ -15,7 +15,6 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
@@ -32,6 +31,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.MongoDBContainer;
+
+import static com.hazelcast.internal.util.EmptyStatement.noop;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
@@ -68,7 +69,7 @@ public abstract class MongoSqlTest extends SqlTestSupport {
 
     protected void execute(String sql, Object... arguments) {
         try (SqlResult ignored = sqlService.execute(sql, arguments)) {
-            EmptyStatement.ignore(null);
+            noop();
         }
     }
 
