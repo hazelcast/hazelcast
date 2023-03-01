@@ -64,7 +64,7 @@
         </maven.javadoc.plugin.excludePackageNames>
         <maven.antrun.plugin.version>3.0.0</maven.antrun.plugin.version>
         <maven.gpg.plugin.version>3.0.1</maven.gpg.plugin.version>
-        <maven.assembly.plugin.version>3.4.2</maven.assembly.plugin.version>
+        <maven.assembly.plugin.version>3.5.0</maven.assembly.plugin.version>
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
         <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
         <maven.shade.plugin.version>3.2.4</maven.shade.plugin.version>
