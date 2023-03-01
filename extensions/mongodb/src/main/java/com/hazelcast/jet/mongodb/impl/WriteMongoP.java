@@ -82,6 +82,30 @@ import static java.util.stream.Collectors.toList;
  * <p>
  * Transactional guarantees are provided using {@linkplain UnboundedTransactionsProcessorUtility}.
  *
+ * <p>
+ * Flow of the data in processor:
+ * <ol>
+ *     <li>Data arrives in some format IN in the inbox</li>
+ *     <li>Data is mapped to intermediate format I using {@link #intermediateMappingFn}; it's the target format of
+ *          documents in the collection.</li>
+ *     <li>Inbound items are now grouped per collection to which they point</li>
+ *     <li>{@link #writeModelFn} creates a {@link WriteModel write model} for each item.
+ *          By default this function is derived from {@link #writeMode}:
+ *          <ul>
+ *              <li>for {@linkplain WriteMode#INSERT_ONLY} it creates {@linkplain InsertOneModel}</li>
+ *              <li>for {@linkplain WriteMode#UPDATE_ONLY} it creates {@linkplain UpdateOneModel} with upsert = false</li>
+ *              <li>for {@linkplain WriteMode#UPSERT} it creates {@linkplain UpdateOneModel} with upsert = true</li>
+ *              <li>for {@linkplain WriteMode#REPLACE} it creates {@linkplain ReplaceOneModel}</li>
+ *          </ul>
+ *          User can also provide own implementation, that takes item of type I and returns some {@link WriteModel}.
+ *     </li>
+ *
+ *     <li>{@link WriteModel}s are then saved and will be used as a parameter for {@link MongoCollection#bulkWrite(List)
+ *          MongoDB bulkWrite method}</li>
+ *
+ *     <li>Entities are recognized as the same if their {@link #documentIdentityFieldName} are the same.</li>
+ * </ol>
+ *
  * @param <IN> input type
  * @param <I> type of saved item
  */
