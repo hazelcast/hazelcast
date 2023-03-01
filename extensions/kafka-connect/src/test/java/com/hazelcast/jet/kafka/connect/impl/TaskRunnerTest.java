@@ -37,20 +37,26 @@ public class TaskRunnerTest {
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
     private final DummySourceConnector connector = new DummySourceConnector();
     private final HashMap<Map<String, ?>, Map<String, ?>> partitionsToOffset = new HashMap<>();
-    private final TaskRunner taskRunner = new TaskRunner(connector, partitionsToOffset);
+    private final TaskRunner taskRunner = new TaskRunner(partitionsToOffset, DummyTask::new);
 
     @Test
     public void should_poll_data() {
         connector.start(minimalProperties());
+        taskRunner.updateTaskConfig(dummyTaskConfig());
 
         assertPolledRecordsSize(3);
         assertThat(DummyTask.INSTANCE.isStarted()).isTrue();
         assertThat(DummyTask.INSTANCE.isInitialized()).isTrue();
     }
 
+    private Map<String, String> dummyTaskConfig() {
+        return connector.taskConfigs(1).get(0);
+    }
+
     @Test
     public void should_stop_and_recreate_task() {
         connector.start(minimalProperties());
+        taskRunner.updateTaskConfig(dummyTaskConfig());
 
         taskRunner.poll();
         DummyTask taskInstance_1 = DummyTask.INSTANCE;
@@ -59,6 +65,7 @@ public class TaskRunnerTest {
         taskRunner.stop();
         assertThat(taskInstance_1.isStopped()).isTrue();
         connector.setProperty(ITEMS_SIZE, String.valueOf(5));
+        taskRunner.updateTaskConfig(dummyTaskConfig());
 
         assertPolledRecordsSize(5);
 
@@ -70,11 +77,13 @@ public class TaskRunnerTest {
     @Test
     public void should_reconfigure_task() {
         connector.start(minimalProperties());
+        taskRunner.updateTaskConfig(dummyTaskConfig());
+
         assertPolledRecordsSize(3);
         connector.setProperty(ITEMS_SIZE, String.valueOf(5));
         assertPolledRecordsSize(3);
 
-        taskRunner.requestReconfiguration();
+        taskRunner.updateTaskConfig(dummyTaskConfig());
 
         assertPolledRecordsSize(5);
     }

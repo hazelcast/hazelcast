@@ -45,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class KafkaConnectSourceTest {
     @Test
     public void should_create_and_start_source_with_minimal_properties() {
-        new KafkaConnectSource(minimalProperties());
+        new KafkaConnectSource(new ConnectorWrapper(minimalProperties()));
 
         assertThat(INSTANCE.isInitialized()).isTrue();
         assertThat(INSTANCE.isStarted()).isTrue();
@@ -56,7 +56,7 @@ public class KafkaConnectSourceTest {
         Properties properties = new Properties();
         properties.setProperty("name", "some-name");
         properties.setProperty("connector.class", "com.example.non.existing.Connector");
-        assertThatThrownBy(() -> new KafkaConnectSource(properties))
+        assertThatThrownBy(() -> new KafkaConnectSource(new ConnectorWrapper(properties)))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessage("Connector class 'com.example.non.existing.Connector' not found. " +
                         "Did you add the connector jar to the job?");
@@ -68,7 +68,7 @@ public class KafkaConnectSourceTest {
         Properties properties = minimalProperties();
         properties.setProperty(ITEMS_SIZE, String.valueOf(3));
         SourceBufferImpl.Timestamped<SourceRecord> buf = new SourceBufferImpl.Timestamped<>();
-        KafkaConnectSource kafkaConnectSource = new KafkaConnectSource(properties);
+        KafkaConnectSource kafkaConnectSource = new KafkaConnectSource(new ConnectorWrapper(properties));
         kafkaConnectSource.fillBuffer(buf);
         assertThat(INSTANCE.isStarted()).isTrue();
         assertThat(DummyTask.INSTANCE.isStarted()).isTrue();
@@ -84,7 +84,7 @@ public class KafkaConnectSourceTest {
         Properties properties = minimalProperties();
         properties.setProperty(ITEMS_SIZE, String.valueOf(3));
         SourceBufferImpl.Timestamped<SourceRecord> buf = new SourceBufferImpl.Timestamped<>();
-        KafkaConnectSource kafkaConnectSource = new KafkaConnectSource(properties);
+        KafkaConnectSource kafkaConnectSource = new KafkaConnectSource(new ConnectorWrapper(properties));
 
         kafkaConnectSource.fillBuffer(buf);
 
@@ -100,7 +100,7 @@ public class KafkaConnectSourceTest {
         Properties properties = minimalProperties();
         properties.setProperty(ITEMS_SIZE, String.valueOf(3));
         SourceBufferImpl.Timestamped<SourceRecord> buf = new SourceBufferImpl.Timestamped<>();
-        KafkaConnectSource kafkaConnectSource = new KafkaConnectSource(properties);
+        KafkaConnectSource kafkaConnectSource = new KafkaConnectSource(new ConnectorWrapper(properties));
         assertThat(kafkaConnectSource.createSnapshot()).isEmpty();
 
         kafkaConnectSource.fillBuffer(buf);
@@ -114,13 +114,13 @@ public class KafkaConnectSourceTest {
         Properties properties = minimalProperties();
         properties.setProperty(ITEMS_SIZE, String.valueOf(3));
         SourceBufferImpl.Timestamped<SourceRecord> buf = new SourceBufferImpl.Timestamped<>();
-        KafkaConnectSource kafkaConnectSource = new KafkaConnectSource(properties);
+        KafkaConnectSource kafkaConnectSource = new KafkaConnectSource(new ConnectorWrapper(properties));
         kafkaConnectSource.fillBuffer(buf);
         Map<Map<String, ?>, Map<String, ?>> snapshotToRestore = kafkaConnectSource.createSnapshot();
         //create new source and restore the state
         Properties newProperties = minimalProperties();
         newProperties.setProperty(ITEMS_SIZE, String.valueOf(5));
-        KafkaConnectSource otherKafkaConnectSource = new KafkaConnectSource(newProperties);
+        KafkaConnectSource otherKafkaConnectSource = new KafkaConnectSource(new ConnectorWrapper(newProperties));
 
         otherKafkaConnectSource.restoreSnapshot(singletonList(snapshotToRestore));
         otherKafkaConnectSource.fillBuffer(buf);

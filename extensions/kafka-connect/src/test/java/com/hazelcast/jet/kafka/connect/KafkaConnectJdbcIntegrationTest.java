@@ -109,6 +109,49 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
         }
     }
 
+    @Test
+    public void testParallelJobWithJdbcConnector() throws Exception {
+        Properties randomProperties = new Properties();
+        randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
+        randomProperties.setProperty("connector.class", "io.confluent.connect.jdbc.JdbcSourceConnector");
+        randomProperties.setProperty("mode", "incrementing");
+        randomProperties.setProperty("tasks.max", "2");
+        String connectionUrl = mysql.getJdbcUrl();
+        randomProperties.setProperty("connection.url", connectionUrl);
+        randomProperties.setProperty("connection.user", USERNAME);
+        randomProperties.setProperty("connection.password", PASSWORD);
+        randomProperties.setProperty("incrementing.column.name", "id");
+        randomProperties.setProperty("table.whitelist", "parallel_items_1");
+        randomProperties.setProperty("table.poll.interval.ms", "5000");
+
+        createTable(connectionUrl, "parallel_items_1");
+
+
+        Pipeline pipeline = Pipeline.create();
+        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties))
+                .withoutTimestamps()
+                .map(record -> Values.convertToString(record.valueSchema(), record.value()));
+        streamStage.writeTo(Sinks.logger());
+        streamStage
+                .writeTo(AssertionSinks.assertCollectedEventually(60,
+                        list -> assertEquals(ITEM_COUNT, list.size())));
+
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setResourceUploadEnabled(true);
+        Job job = createHazelcastInstances(config, 3)[0].getJet().newJob(pipeline, jobConfig);
+
+        try {
+            job.join();
+            fail("Job should have completed with an AssertionCompletedException, but completed normally");
+        } catch (CompletionException e) {
+            String errorMsg = e.getCause().getMessage();
+            assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
+                    + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
+        }
+    }
 
     @Test
     public void testDynamicReconfiguration() throws Exception {

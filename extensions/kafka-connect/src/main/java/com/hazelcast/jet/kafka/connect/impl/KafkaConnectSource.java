@@ -16,58 +16,24 @@
 
 package com.hazelcast.jet.kafka.connect.impl;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import org.apache.kafka.connect.connector.ConnectorContext;
-import org.apache.kafka.connect.source.SourceConnector;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static com.hazelcast.client.impl.protocol.util.PropertiesUtil.toMap;
-import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
 
 public class KafkaConnectSource {
     private static final ILogger LOGGER = Logger.getLogger(KafkaConnectSource.class);
 
-    private final SourceConnector connector;
+    private final ConnectorWrapper connectorWrapper;
 
     private final TaskRunner taskRunner;
 
-    /**
-     * Key represents the partition which the record originated from. Value
-     * represents the offset within that partition. Kafka Connect represents
-     * the partition and offset as arbitrary values so that is why it is
-     * stored as map.
-     * See {@link SourceRecord} for more information regarding the format.
-     */
-    private final Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new ConcurrentHashMap<>();
-
-    public KafkaConnectSource(Properties properties) {
-        String connectorClazz = checkRequiredProperty(properties, "connector.class");
-        this.connector = newConnectorInstance(connectorClazz);
-        this.connector.initialize(new JetConnectorContext());
-        this.connector.start(toMap(properties));
-        this.taskRunner = new TaskRunner(connector, partitionsToOffset);
-    }
-
-    private static SourceConnector newConnectorInstance(String connectorClazz) {
-        try {
-            return newInstance(Thread.currentThread().getContextClassLoader(), connectorClazz);
-        } catch (Exception e) {
-            if (e instanceof ClassNotFoundException) {
-                throw new HazelcastException("Connector class '" + connectorClazz + "' not found. " +
-                        "Did you add the connector jar to the job?", e);
-            }
-            throw rethrow(e);
-        }
+    public KafkaConnectSource(ConnectorWrapper connectorWrapper) {
+        this.connectorWrapper = connectorWrapper;
+        this.taskRunner = connectorWrapper.createTaskRunner();
     }
 
     public void fillBuffer(SourceBuilder.TimestampedSourceBuffer<SourceRecord> buf) {
@@ -80,10 +46,9 @@ public class KafkaConnectSource {
         }
         for (SourceRecord record : records) {
             addToBuffer(record, buf);
-            partitionsToOffset.put(record.sourcePartition(), record.sourceOffset());
+            taskRunner.commitRecord(record);
         }
     }
-
 
     private void addToBuffer(SourceRecord record, SourceBuilder.TimestampedSourceBuffer<SourceRecord> buf) {
         long ts = record.timestamp() == null ? 0 : record.timestamp();
@@ -94,29 +59,17 @@ public class KafkaConnectSource {
         try {
             taskRunner.stop();
         } finally {
-            connector.stop();
+            // TODO: 01/03/2023 Probably need to be moved out of this class to some ProcessSupplier or somewhere else
+            connectorWrapper.stop();
         }
     }
 
     public Map<Map<String, ?>, Map<String, ?>> createSnapshot() {
-        return partitionsToOffset;
+        return connectorWrapper.createSnapshot();
     }
 
     public void restoreSnapshot(List<Map<Map<String, ?>, Map<String, ?>>> snapshots) {
-        this.partitionsToOffset.clear();
-        this.partitionsToOffset.putAll(snapshots.get(0));
+        connectorWrapper.restoreSnapshot(snapshots);
     }
 
-    private class JetConnectorContext implements ConnectorContext {
-
-        @Override
-        public void requestTaskReconfiguration() {
-            taskRunner.requestReconfiguration();
-        }
-
-        @Override
-        public void raiseError(Exception e) {
-            throw rethrow(e);
-        }
-    }
 }

@@ -1,0 +1,124 @@
+/*
+ * Copyright 2023 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.jet.kafka.connect.impl;
+
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import org.apache.kafka.connect.connector.ConnectorContext;
+import org.apache.kafka.connect.source.SourceConnector;
+import org.apache.kafka.connect.source.SourceRecord;
+import org.apache.kafka.connect.source.SourceTask;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import static com.hazelcast.client.impl.protocol.util.PropertiesUtil.toMap;
+import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
+
+public class ConnectorWrapper {
+    private static final ILogger LOGGER = Logger.getLogger(ConnectorWrapper.class);
+    private final SourceConnector connector;
+    private final int tasksMax;
+    private final List<TaskRunner> taskRunners = new CopyOnWriteArrayList<>();
+
+    /**
+     * Key represents the partition which the record originated from. Value
+     * represents the offset within that partition. Kafka Connect represents
+     * the partition and offset as arbitrary values so that is why it is
+     * stored as map.
+     * See {@link SourceRecord} for more information regarding the format.
+     */
+    private final Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new ConcurrentHashMap<>();
+
+    public ConnectorWrapper(Properties properties) {
+        String connectorClazz = checkRequiredProperty(properties, "connector.class");
+        tasksMax = Integer.parseInt(properties.getProperty("tasks.max", "1"));
+        this.connector = newConnectorInstance(connectorClazz);
+        this.connector.initialize(new JetConnectorContext());
+        this.connector.start(toMap(properties));
+    }
+
+    private static SourceConnector newConnectorInstance(String connectorClazz) {
+        try {
+            return newInstance(Thread.currentThread().getContextClassLoader(), connectorClazz);
+        } catch (Exception e) {
+            if (e instanceof ClassNotFoundException) {
+                throw new HazelcastException("Connector class '" + connectorClazz + "' not found. " +
+                        "Did you add the connector jar to the job?", e);
+            }
+            throw rethrow(e);
+        }
+    }
+
+    public void stop() {
+        connector.stop();
+    }
+
+    public TaskRunner createTaskRunner() {
+        TaskRunner taskRunner = new TaskRunner(partitionsToOffset, this::createSourceTask);
+        taskRunners.add(taskRunner);
+        requestTaskReconfiguration();
+        return taskRunner;
+    }
+
+    private SourceTask createSourceTask() {
+        Class<? extends SourceTask> taskClass = connector.taskClass().asSubclass(SourceTask.class);
+        return newInstance(Thread.currentThread().getContextClassLoader(), taskClass.getName());
+    }
+
+    public Map<Map<String, ?>, Map<String, ?>> createSnapshot() {
+        return partitionsToOffset;
+    }
+
+    public void restoreSnapshot(List<Map<Map<String, ?>, Map<String, ?>>> snapshots) {
+        this.partitionsToOffset.clear();
+        this.partitionsToOffset.putAll(snapshots.get(0));
+    }
+
+    private class JetConnectorContext implements ConnectorContext {
+
+        @Override
+        public void requestTaskReconfiguration() {
+            ConnectorWrapper.this.requestTaskReconfiguration();
+        }
+
+        @Override
+        public void raiseError(Exception e) {
+            throw rethrow(e);
+        }
+    }
+
+    private void requestTaskReconfiguration() {
+        if (tasksMax > taskRunners.size()) {
+            LOGGER.warning("tasks.max (" + tasksMax + ") is larger than size of the task runners ("
+                    + taskRunners.size() + ")");
+        }
+        List<Map<String, String>> taskConfigs = connector.taskConfigs(Math.min(tasksMax, taskRunners.size()));
+
+        for (int i = 0; i < taskRunners.size(); i++) {
+            Map<String, String> taskConfig = i < taskConfigs.size() ? taskConfigs.get(i) : null;
+            taskRunners.get(i).updateTaskConfig(taskConfig);
+        }
+    }
+
+}

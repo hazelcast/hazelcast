@@ -17,6 +17,7 @@
 package com.hazelcast.jet.kafka.connect;
 
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.jet.kafka.connect.impl.ConnectorWrapper;
 import com.hazelcast.jet.kafka.connect.impl.KafkaConnectSource;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.StreamSource;
@@ -72,7 +73,7 @@ public final class KafkaConnectSources {
         checkRequiredProperty(properties, "connector.class");
 
         return SourceBuilder.timestampedStream(name, ctx ->
-                        new KafkaConnectSource(properties))
+                        new KafkaConnectSource(new ConnectorWrapper(properties)))
                 .fillBufferFn(KafkaConnectSource::fillBuffer)
                 .createSnapshotFn(KafkaConnectSource::createSnapshot)
                 .restoreSnapshotFn(KafkaConnectSource::restoreSnapshot)

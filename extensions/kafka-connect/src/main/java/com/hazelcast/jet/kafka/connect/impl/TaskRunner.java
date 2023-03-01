@@ -18,7 +18,6 @@ package com.hazelcast.jet.kafka.connect.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import org.apache.kafka.connect.source.SourceConnector;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 import org.apache.kafka.connect.source.SourceTaskContext;
@@ -29,20 +28,20 @@ import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
 
 class TaskRunner {
     private static final ILogger LOGGER = Logger.getLogger(TaskRunner.class);
-    private final SourceConnector connector;
     private final ReentrantLock taskLifecycleLock = new ReentrantLock();
     private final Map<Map<String, ?>, Map<String, ?>> partitionsToOffset;
+    private final SourceTaskFactory sourceTaskFactory;
     private volatile boolean running;
-    private volatile boolean reconfigurationRequested;
+    private volatile boolean reconfigurationNeeded;
     private SourceTask task;
+    private Map<String, String> newTaskConfig;
 
-    TaskRunner(SourceConnector connector, Map<Map<String, ?>, Map<String, ?>> partitionsToOffset) {
-        this.connector = connector;
+    TaskRunner(Map<Map<String, ?>, Map<String, ?>> partitionsToOffset, SourceTaskFactory sourceTaskFactory) {
         this.partitionsToOffset = partitionsToOffset;
+        this.sourceTaskFactory = sourceTaskFactory;
     }
 
     List<SourceRecord> poll() {
@@ -61,14 +60,8 @@ class TaskRunner {
             }
         } finally {
             running = false;
-            task = null;
             taskLifecycleLock.unlock();
         }
-    }
-
-    void requestReconfiguration() {
-        LOGGER.info("Task reconfiguration requested");
-        reconfigurationRequested = true;
     }
 
     private List<SourceRecord> doPoll() {
@@ -81,8 +74,8 @@ class TaskRunner {
     }
 
     private void restartTaskIfNeeded() {
-        if (reconfigurationRequested) {
-            reconfigurationRequested = false;
+        if (reconfigurationNeeded) {
+            reconfigurationNeeded = false;
             try {
                 stop();
             } catch (Exception ex) {
@@ -92,25 +85,31 @@ class TaskRunner {
         start();
     }
 
+    void updateTaskConfig(Map<String, String> taskConfig) {
+        try {
+            taskLifecycleLock.lock();
+            this.newTaskConfig = taskConfig;
+        } finally {
+            taskLifecycleLock.unlock();
+        }
+        reconfigurationNeeded = true;
+    }
+
     private void start() {
-        LOGGER.info("Starting tasks if the previous not running");
+        LOGGER.info("Starting task if the previous not running");
         try {
             taskLifecycleLock.lock();
             if (!running) {
-                LOGGER.info("Starting tasks");
-
-                List<Map<String, String>> taskConfigs = connector.taskConfigs(1);
-                if (!taskConfigs.isEmpty()) {
-                    Map<String, String> taskConfig = taskConfigs.get(0);
-                    Class<? extends SourceTask> taskClass = connector.taskClass().asSubclass(SourceTask.class);
-                    this.task = newInstance(Thread.currentThread().getContextClassLoader(), taskClass.getName());
+                if (newTaskConfig != null) {
+                    SourceTask taskLocal = sourceTaskFactory.create();
                     LOGGER.info("Initializing task: " + task);
-                    task.initialize(new JetSourceTaskContext(taskConfig));
-                    LOGGER.info("Starting task: " + task + " with task config: " + taskConfig);
-                    task.start(taskConfig);
+                    taskLocal.initialize(new JetSourceTaskContext(newTaskConfig, partitionsToOffset));
+                    LOGGER.info("Starting task: " + taskLocal + " with task config: " + newTaskConfig);
+                    taskLocal.start(newTaskConfig);
+                    this.task = taskLocal;
                     running = true;
                 } else {
-                    LOGGER.info("No task configs!");
+                    LOGGER.info("No task config");
                 }
             }
         } finally {
@@ -118,11 +117,14 @@ class TaskRunner {
         }
     }
 
-    private final class JetSourceTaskContext implements SourceTaskContext {
+    private static final class JetSourceTaskContext implements SourceTaskContext {
         private final Map<String, String> taskConfig;
+        private final Map<Map<String, ?>, Map<String, ?>> partitionsToOffset;
 
-        private JetSourceTaskContext(Map<String, String> taskConfig) {
+        private JetSourceTaskContext(Map<String, String> taskConfig,
+                                     Map<Map<String, ?>, Map<String, ?>> partitionsToOffset) {
             this.taskConfig = taskConfig;
+            this.partitionsToOffset = partitionsToOffset;
         }
 
         @Override
@@ -134,5 +136,15 @@ class TaskRunner {
         public OffsetStorageReader offsetStorageReader() {
             return new SourceOffsetStorageReader(partitionsToOffset);
         }
+    }
+
+    public void commitRecord(SourceRecord record) {
+        partitionsToOffset.put(record.sourcePartition(), record.sourceOffset());
+    }
+
+
+    @FunctionalInterface
+    interface SourceTaskFactory {
+        SourceTask create();
     }
 }
