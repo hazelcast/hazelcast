@@ -1,6 +1,6 @@
 package com.hazelcast.jet.mongodb.datalink;
 
-import com.hazelcast.datalink.Resource;
+import com.hazelcast.datalink.DataLinkResource;
 import com.hazelcast.jet.mongodb.AbstractMongoDBTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -31,7 +31,7 @@ public class MongoDbDataLinkTest extends AbstractMongoDBTest {
     }
 
     @After
-    public void cleanup() throws Exception {
+    public void cleanup() {
         dataLink.close();
         dataLink = null;
     }
@@ -59,6 +59,8 @@ public class MongoDbDataLinkTest extends AbstractMongoDBTest {
         assertNotClosed(client2);
         client2.close();
 
+        dataLink.close();
+
         assertClosed(client1);
         assertClosed(client2);
     }
@@ -76,9 +78,9 @@ public class MongoDbDataLinkTest extends AbstractMongoDBTest {
         db2.createCollection("col3");
 
         assertThat(dataLink.listResources()).contains(
-                new Resource("collection", "col1"),
-                new Resource("collection", "col2"),
-                new Resource("collection", "col3")
+                new DataLinkResource("collection", "col1"),
+                new DataLinkResource("collection", "col2"),
+                new DataLinkResource("collection", "col3")
         );
     }
 

@@ -15,6 +15,7 @@
  */
 package com.hazelcast.jet.mongodb.datalink;
 
+import com.hazelcast.datalink.DataLink;
 import com.hazelcast.datalink.DataLinkRegistration;
 
 public class MongoDataLinkRegistration implements DataLinkRegistration {
@@ -24,7 +25,8 @@ public class MongoDataLinkRegistration implements DataLinkRegistration {
     }
 
     @Override
-    public String className() {
-        return MongoDbDataLink.class.getName();
+    public Class<? extends DataLink> clazz() {
+        return MongoDbDataLink.class;
     }
+
 }

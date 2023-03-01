@@ -17,8 +17,8 @@ package com.hazelcast.jet.mongodb.datalink;
 
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.datalink.DataLink;
+import com.hazelcast.datalink.DataLinkResource;
 import com.hazelcast.datalink.ReferenceCounter;
-import com.hazelcast.datalink.Resource;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
@@ -47,10 +47,7 @@ public class MongoDbDataLink implements DataLink {
 
     public MongoDbDataLink(DataLinkConfig config) {
         this.config = config;
-        this.refCounter = new ReferenceCounter(() -> {
-            destroy();
-            return null;
-        });
+        this.refCounter = new ReferenceCounter(this::destroy);
 
         String connectionString = config.getProperty(CONNECTION_STRING_PROPERTY);
         checkNotNull(connectionString, "connectionString property cannot be null");
@@ -68,12 +65,12 @@ public class MongoDbDataLink implements DataLink {
     }
 
     @Override
-    public List<Resource> listResources() {
-        List<Resource> resources = new ArrayList<>();
+    public List<DataLinkResource> listResources() {
+        List<DataLinkResource> resources = new ArrayList<>();
         for (String databaseName : mongoClient.listDatabaseNames()) {
             MongoDatabase database = mongoClient.getDatabase(databaseName);
             for (String collectionName : database.listCollectionNames()) {
-                resources.add(new Resource("collection", collectionName));
+                resources.add(new DataLinkResource("collection", collectionName));
             }
         }
         return resources;
@@ -90,17 +87,7 @@ public class MongoDbDataLink implements DataLink {
     }
 
     @Override
-    public MongoClient getLink() {
-        return getClient();
-    }
-
-    @Override
-    public String type() {
-        return "MONGODB";
-    }
-
-    @Override
-    public void close() throws Exception {
+    public void close() {
         refCounter.release();
     }
 
