@@ -15,7 +15,6 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.mongodb.WriteMode;
@@ -24,15 +23,9 @@ import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.mongodb.client.MongoClients;
-import org.bson.BsonDateTime;
 import org.bson.Document;
 
 import javax.annotation.Nonnull;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.Collection;
 
 import static com.hazelcast.jet.mongodb.MongoDBSinkBuilder.DEFAULT_COMMIT_RETRY_STRATEGY;

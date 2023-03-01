@@ -184,7 +184,7 @@ final class BsonTypes {
      * Note, that most of the type coercions are done automatically by MongoDB client, so no need to e.g. transform
      * int to BsonInt32.
      */
-    static Object wrap (Object value, FunctionEx<Object, Object> orElse) {
+    static Object wrap(Object value, FunctionEx<Object, Object> orElse) {
         if (value instanceof LocalDateTime) {
             Timestamp jdbcTimestamp = Timestamp.valueOf((LocalDateTime) value);
             return new BsonDateTime(jdbcTimestamp.getTime());
