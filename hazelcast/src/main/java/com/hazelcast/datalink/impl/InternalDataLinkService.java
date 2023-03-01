@@ -87,6 +87,13 @@ public interface InternalDataLinkService extends DataLinkService {
     void removeDataLink(String name);
 
     /**
+     * Return type of the DataLink with the given name
+     * @param name name of the DataLink
+     * @return type of the data link
+     */
+    String typeForDataLink(String name);
+
+    /**
      * Close this DataLinkService, should be called only on member shutdown.
      */
     void shutdown();

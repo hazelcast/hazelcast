@@ -38,6 +38,8 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 public class DataLinkServiceImpl implements InternalDataLinkService {
 
     private final Map<String, Class<? extends DataLink>> typeToDataLinkClass = new HashMap<>();
+    private final Map<Class<? extends DataLink>, String> dataLinkClassToType = new HashMap<>();
+
     private final Map<String, DataLinkSourcePair> dataLinks = new ConcurrentHashMap<>();
 
     private final ClassLoader classLoader;
@@ -60,7 +62,10 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
                     DataLinkRegistration.class,
                     DataLinkRegistration.class.getName(),
                     classLoader
-            ).forEachRemaining(registration -> typeToDataLinkClass.put(registration.type(), registration.clazz()));
+            ).forEachRemaining(registration -> {
+                typeToDataLinkClass.put(registration.type(), registration.clazz());
+                dataLinkClassToType.put(registration.clazz(), registration.type());
+            });
         } catch (Exception e) {
             throw new HazelcastException("Could not register DataLinks", e);
         }
@@ -147,6 +152,19 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
         } else {
             return (Class<T>) DataLinkServiceImpl.class.getClassLoader().loadClass(className);
         }
+    }
+
+    @Override
+    public String typeForDataLink(String name) {
+        DataLinkSourcePair dataLink = dataLinks.get(name);
+        if (dataLink == null) {
+            throw new HazelcastException("DataLink with name '" + name + "' does not exist");
+        }
+        String type = dataLinkClassToType.get(dataLink.instance.getClass());
+        if (type == null) {
+            throw new HazelcastException("DataLink type for class '" + dataLink.getClass() + "' is not known");
+        }
+        return type;
     }
 
     @Override
