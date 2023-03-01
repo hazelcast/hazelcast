@@ -203,6 +203,25 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
     }
 
     @Test
+    public void whenSetNonExistingColumnOnSecondMapStore_thenFailToInitialize() throws Exception {
+        createTable(mapName, "id INT PRIMARY KEY", "name VARCHAR(100)", "age INT");
+        executeJdbc("INSERT INTO " + mapName + " VALUES(0, 'name-0', 42)");
+        createMapping(mapName, MAPPING_PREFIX + mapName);
+        assertMappingCreated();
+        // This simulates a second map store on a different instance. The mapping is created, but must be validated
+        // (e.g. the config might differ on members)
+        Properties secondProps = new Properties();
+        secondProps.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        secondProps.setProperty(COLUMNS_PROPERTY, "id,name,age");
+        mapLoader = createMapLoader(secondProps, hz, false);
+        mapLoader.init(hz, secondProps, mapName);
+
+        assertThatThrownBy(() -> mapLoader.load(0))
+                .isInstanceOf(HazelcastException.class)
+                .hasStackTraceContaining("Column 'age' not found");
+    }
+
+    @Test
     public void whenSetNonExistingColumn_thenFailToInitialize() throws Exception {
         createTable(mapName, "id INT PRIMARY KEY", "name VARCHAR(100)");
         insertItems(mapName, 1);
