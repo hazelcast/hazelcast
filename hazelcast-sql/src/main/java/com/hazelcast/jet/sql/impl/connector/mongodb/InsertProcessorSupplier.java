@@ -26,7 +26,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.mongodb.client.MongoClients;
 import org.bson.BsonDateTime;
 import org.bson.Document;
-import org.bson.types.ObjectId;
 
 import javax.annotation.Nonnull;
 import java.sql.Timestamp;
@@ -38,6 +37,7 @@ import java.util.Collection;
 
 import static com.hazelcast.jet.mongodb.MongoDBSinkBuilder.DEFAULT_COMMIT_RETRY_STRATEGY;
 import static com.hazelcast.jet.mongodb.MongoDBSinkBuilder.DEFAULT_TRANSACTION_OPTION;
+import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.wrap;
 import static java.util.Arrays.asList;
 
 /**
@@ -96,26 +96,11 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
             String fieldName = paths[i];
             Object value = values[i];
 
-            if (fieldName.equals("_id")) {
-                if (value instanceof String) {
-                    value = new ObjectId((String) value);
-                } else if (value == null) {
-                    continue;
-                }
-            } else if (value instanceof LocalDateTime) {
-                Timestamp jdbcTimestamp = Timestamp.valueOf((LocalDateTime) value);
-                value = new BsonDateTime(jdbcTimestamp.getTime());
-            } else if (value instanceof OffsetDateTime) {
-                OffsetDateTime v = (OffsetDateTime) value;
-                ZonedDateTime atUtc = v.atZoneSameInstant(ZoneId.of("UTC"));
-                Timestamp jdbcTimestamp = Timestamp.valueOf(atUtc.toLocalDateTime());
-                value = new BsonDateTime(jdbcTimestamp.getTime());
-            } else if (value instanceof HazelcastJsonValue) {
-                value = Document.parse(((HazelcastJsonValue) value).getValue());
-            } else {
-                // todo other coercions?
-                value = types[i].convert(value);
+            if (fieldName.equals("_id") && value == null) {
+                continue;
             }
+            QueryDataType type = types[i];
+            value = wrap(value, type::convert);
             doc = doc.append(fieldName, value);
         }
 

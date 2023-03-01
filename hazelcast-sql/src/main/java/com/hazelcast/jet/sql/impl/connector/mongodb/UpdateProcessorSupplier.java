@@ -30,7 +30,6 @@ import com.mongodb.client.model.Updates;
 import com.mongodb.client.model.WriteModel;
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import org.bson.types.ObjectId;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
@@ -42,6 +41,7 @@ import java.util.List;
 import static com.hazelcast.jet.mongodb.MongoDBSinkBuilder.DEFAULT_COMMIT_RETRY_STRATEGY;
 import static com.hazelcast.jet.mongodb.MongoDBSinkBuilder.DEFAULT_TRANSACTION_OPTION;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
+import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.wrap;
 import static java.util.Arrays.asList;
 
 /**
@@ -138,7 +138,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
         int index = 0;
         for (String pkField : pkFields)  {
             Object value = values[index++];
-            doc.append(pkField, value);
+            doc.append(pkField, wrap(value, v -> v));
         }
 
         return doc;

@@ -15,6 +15,8 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.function.FunctionEx;
 import org.bson.BsonArray;
 import org.bson.BsonBoolean;
 import org.bson.BsonDateTime;
@@ -27,6 +29,7 @@ import org.bson.BsonRegularExpression;
 import org.bson.BsonString;
 import org.bson.BsonTimestamp;
 import org.bson.BsonType;
+import org.bson.Document;
 import org.bson.types.Code;
 import org.bson.types.CodeWithScope;
 import org.bson.types.Decimal128;
@@ -35,7 +38,10 @@ import org.bson.types.ObjectId;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -170,6 +176,27 @@ final class BsonTypes {
             return ((Code) value).getCode();
         }
         return value;
+    }
+
+    /**
+     * Wraps given value into BSON wrapper.
+     *
+     * Note, that most of the type coercions are done automatically by MongoDB client, so no need to e.g. transform
+     * int to BsonInt32.
+     */
+    static Object wrap (Object value, FunctionEx<Object, Object> orElse) {
+        if (value instanceof LocalDateTime) {
+            Timestamp jdbcTimestamp = Timestamp.valueOf((LocalDateTime) value);
+            return new BsonDateTime(jdbcTimestamp.getTime());
+        } else if (value instanceof OffsetDateTime) {
+            OffsetDateTime v = (OffsetDateTime) value;
+            ZonedDateTime atUtc = v.atZoneSameInstant(ZoneId.of("UTC"));
+            Timestamp jdbcTimestamp = Timestamp.valueOf(atUtc.toLocalDateTime());
+            return new BsonDateTime(jdbcTimestamp.getTime());
+        } else if (value instanceof HazelcastJsonValue) {
+            return Document.parse(((HazelcastJsonValue) value).getValue());
+        }
+        return orElse.apply(value);
     }
 
     @SuppressWarnings("checkstyle:MagicNumber")

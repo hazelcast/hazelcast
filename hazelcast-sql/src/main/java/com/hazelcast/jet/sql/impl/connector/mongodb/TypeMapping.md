@@ -47,3 +47,17 @@ For example: you can have object with type `timestamp` represented as `DATE_TIME
 that in SELECT will give you LocalDateTime. However, binding LocalDateTime
 as an argument won't work, as only native MongoDB types will work for arguments.
 Same for e.g. having BSON column of type "string" mapped to "integer" in SQL.
+
+Type coercion
+-------------
+
+Below is the table with possible and supported type coercions.
+
+All the default mappings from previous chapter are always valid.
+
+
+| Type of provided argument        | Resolved insertion type |
+|----------------------------------|-------------------------|
+| LocalDateTime                    | BsonDateTime            |
+| OffsetDateTime                   | BsonDateTime            |
+| HazelcastJsonValue (json column) | Document                |

@@ -25,6 +25,7 @@ import com.mongodb.MongoBulkWriteException;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -227,9 +228,9 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
     @Test
     public void insertsIntoMongo_duplicate() {
         MongoCollection<Document> collection = database.getCollection(methodName());
-        String insertedId =
+        ObjectId insertedId =
                 collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi",
-                        true)).getInsertedId().asObjectId().getValue().toHexString();
+                        true)).getInsertedId().asObjectId().getValue();
         createMapping(true);
         assertThatThrownBy(() -> execute("insert into " + methodName() + " (id, firstName, jedi) values (?, ?, ?)",
                 insertedId, "yolo", false))
