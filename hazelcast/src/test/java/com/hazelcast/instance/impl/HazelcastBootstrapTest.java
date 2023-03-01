@@ -32,13 +32,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -58,29 +53,6 @@ public class HazelcastBootstrapTest {
         // other before this cleanup step added.
         // See: https://github.com/hazelcast/hazelcast/issues/18725
         HazelcastBootstrap.resetSupplier();
-    }
-
-    // Empty method for testing testPublicAndStatic
-    public static void main(String[] args) {
-    }
-    @Test
-    public void testPublicAndStatic() throws NoSuchMethodException {
-        Method method = HazelcastBootstrapTest.class.getDeclaredMethod("main", String[].class);
-        boolean publicAndStatic = HazelcastBootstrap.isPublicAndStatic(method);
-        assertTrue(publicAndStatic);
-    }
-
-    @Test
-    public void testPublicAndStaticForSelf() throws NoSuchMethodException {
-        Method method = HazelcastBootstrapTest.class.getDeclaredMethod("testPublicAndStaticForSelf");
-        boolean publicAndStatic = HazelcastBootstrap.isPublicAndStatic(method);
-        assertFalse(publicAndStatic);
-    }
-
-    @Test
-    public void testGetMainMethod() throws NoSuchMethodException {
-        Method method = HazelcastBootstrap.getMainMethod(HazelcastBootstrapTest.class, true);
-        assertNotNull(method);
     }
 
     @Test

@@ -469,7 +469,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 .collect(toList());
         return new CreateTypePlan(
                 planKey,
-                sqlNode.getName(),
+                sqlNode.typeName(),
                 sqlNode.getReplace(),
                 sqlNode.ifNotExists(),
                 columns,

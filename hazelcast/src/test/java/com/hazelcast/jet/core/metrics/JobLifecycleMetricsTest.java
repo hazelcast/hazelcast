@@ -87,7 +87,7 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
         Vertex source = dag.newVertex("source", ListSource.supplier(singletonList(1)));
 
         Vertex process = dag.newVertex("faulty",
-                new MockPMS(() -> new MockPS(() -> new MockP().initBlocks().setProcessError(e), MEMBER_COUNT)))
+                new MockPMS(() -> new MockPS(() -> new MockP().initBlocks().setProcessError(() -> e), MEMBER_COUNT)))
                             .localParallelism(1);
         dag.edge(between(source, process));
 
