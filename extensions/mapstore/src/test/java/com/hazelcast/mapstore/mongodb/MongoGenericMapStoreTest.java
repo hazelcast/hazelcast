@@ -1,4 +1,4 @@
-package com.hazelcast.jet.mongodb.datalink;
+package com.hazelcast.mapstore.mongodb;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
@@ -8,17 +8,17 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.jet.mongodb.datalink.MongoDbDataLink;
 import com.hazelcast.map.IMap;
 import com.hazelcast.mapstore.GenericMapStore;
-import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.CreateCollectionOptions;
 import com.mongodb.client.model.ValidationOptions;
+import org.assertj.core.api.Assertions;
 import org.bson.BsonDocument;
 import org.bson.Document;
 import org.example.Person;
@@ -45,10 +45,6 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
     public static MongoDBContainer mongoContainer = new MongoDBContainer("mongo:" + TEST_MONGO_VERSION);
 
     private static final String TEST_DATABASE_REF = "test-database-ref";
-
-    private static Config memberConfig;
-    private static String connectionString;
-    private static SqlService sqlService;
     private static MongoClient mongoClient;
     private static MongoDatabase database;
     private String tableName;
@@ -57,11 +53,12 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
     public static void beforeClass() {
         assumeDockerEnabled();
         mongoContainer.start();
-        connectionString = mongoContainer.getConnectionString();
+        String connectionString = mongoContainer.getConnectionString();
         mongoClient = MongoClients.create(connectionString);
         database = mongoClient.getDatabase(randomName()).withCodecRegistry(defaultCodecRegistry());
 
-        memberConfig = smallInstanceConfig()
+        // Need to set filtering class loader so the members don't deserialize into class but into GenericRecord
+        Config memberConfig = smallInstanceConfig()
                 // Need to set filtering class loader so the members don't deserialize into class but into GenericRecord
                 .setClassLoader(new FilteringClassLoader(newArrayList("org.example"), null))
                 .addDataLinkConfig(
@@ -73,7 +70,6 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
         ClientConfig clientConfig = new ClientConfig();
 
         initializeWithClient(2, memberConfig, clientConfig);
-        sqlService = instance().getSql();
     }
     
     @AfterClass
@@ -160,11 +156,11 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
         HazelcastInstance client = client();
         IMap<Integer, Person> map = client.getMap(tableName);
 
-        assertThat(database.getCollection(tableName).countDocuments()).isEqualTo(1);
+        Assertions.assertThat(database.getCollection(tableName).countDocuments()).isEqualTo(1);
 
         map.remove(0);
 
-        assertThat(database.getCollection(tableName).countDocuments()).isEqualTo(0);
+        Assertions.assertThat(database.getCollection(tableName).countDocuments()).isEqualTo(0);
     }
 
     private void assertMongoRowsAnyOrder(String tableName, Person... p) {
