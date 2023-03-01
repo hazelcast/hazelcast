@@ -172,10 +172,12 @@ public final class CalcIntoScanRule extends RelRule<Config> implements Transform
         );
 
         if (newProjects != null) {
-            assert remainingFilter == null;
             RexProgramBuilder progBuilder = new RexProgramBuilder(convertedTable.getRowType(), rexBuilder);
             for (Pair<RexNode, String> pair : Pair.zip(newProjects, calc.getRowType().getFieldNames())) {
                 progBuilder.addProject(pair.left, pair.right);
+            }
+            if (remainingFilter != null) {
+                progBuilder.addCondition(remainingFilter);
             }
             Calc newCalc = calc.copy(calc.getTraitSet(), newScan, progBuilder.getProgram());
             call.transformTo(newCalc);
