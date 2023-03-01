@@ -318,7 +318,7 @@ public class NioTlsAsyncSocket extends AsyncSocket {
         private SSLSession sslSession;
         private final ByteBuffer appBuffer;
         private final ByteBuffer emptyBuffer = ByteBuffer.allocate(0);
-        private boolean handshakeComplete;
+        private boolean handshakeInProgress = true;
         private IOBuffer current;
 
         private TLsHandler(NioAsyncSocketBuilder builder) throws SocketException {
@@ -400,7 +400,7 @@ public class NioTlsAsyncSocket extends AsyncSocket {
         private void handleRead() throws IOException {
             metrics.incReadEvents();
 
-            if (!handshakeComplete && !handshake()) {
+            if (handshakeInProgress && !completeHandshake()) {
                 return;
             }
 
@@ -415,7 +415,36 @@ public class NioTlsAsyncSocket extends AsyncSocket {
 
             boolean unwrapMore = true;
             do {
-                 SSLEngineResult unwrapResult = sslEngine.unwrap(receiveBuffer, appBuffer);
+                // Reducing ByteBuffer-array litter.
+                //
+                // The following method leads to 2 ByteBuffer arrays being created
+                //
+                //      public SSLEngineResult unwrap(ByteBuffer src, ByteBuffer dst) throws SSLException {
+                //
+                // 1 for the receiveBuffer and 1 for the appBuffer. What happens internally is that src/dst
+                // Are wrapped into singleton arrays e.g.
+                //
+                //      public SSLEngineResult unwrap(ByteBuffer src, ByteBuffer dst) throws SSLException {
+                //          return unwrap(src, new ByteBuffer [] { dst }, 0, 1);
+                //      }
+                //
+                // One slightly better version is this method.
+                //
+                //      public SSLEngineResult unwrap(ByteBuffer src, ByteBuffer [] dsts) throws SSLException {
+                //
+                // And manage the dst singleton array yourself. This way we can at least remove the array creation for
+                // the dst. But removing the ByteBuffer array creation for source, is more complicated since the
+                // SSLEngine doesn't expose the following method as part of the API:
+                //
+                //  public SSLEngineResult unwrap(
+                //        ByteBuffer[] srcs, int srcsOffset, int srcsLength,
+                //        ByteBuffer[] dsts, int dstsOffset, int dstsLength) throws SSLException {
+                //
+                // So we should just cast to the appropriate SSLEngine implementations if they are detected and
+                // use the one that doesn't create the ByteBuffer array litter.
+                // Do not try to perform this task because you see the comment here. Only perform this task
+                // if you know what you are doing and are able to benchmark the before and after situation.
+                SSLEngineResult unwrapResult = sslEngine.unwrap(receiveBuffer, appBuffer);
                 //System.out.println(TLSNioAsyncSocket.this + " handleRead: unwrapResult " + unwrapResult.toString().replace("\n", " "));
                 switch (unwrapResult.getStatus()) {
                     case OK:
@@ -428,11 +457,11 @@ public class NioTlsAsyncSocket extends AsyncSocket {
                         throw new EOFException("Socket closed!");
                     case BUFFER_OVERFLOW:
                         if (appBuffer.capacity() >= sslSession.getApplicationBufferSize()) {
-                            // we accumulated too much data into the appBuffer. So lets drain that to the read handler
-                            // and go for another round of unwrapping
+                            // The appBuffer is large enough, but too much data was accumulated. So lets drain
+                            // that to the read handler and go for another round of unwrapping
                             readHandlerOnRead();
-                        }
-                        else {
+                        } else {
+                            // The appBuffer isn't large enough, so we need to grow it and try again.
                             //todo: we need to grow the appBuffer and try again
                             throw new RuntimeException();
                         }
@@ -454,8 +483,11 @@ public class NioTlsAsyncSocket extends AsyncSocket {
         }
 
         private void readHandlerOnRead() {
+            // the appBuffer was in writing mode, we first need to set to reading mode
             appBuffer.flip();
+            // offer the appBuffer to the readHandler
             reader.onRead(appBuffer);
+            // and set the appBuffer back into writing mode for more rounds of unwrapping
             compactOrClear(appBuffer);
         }
 
@@ -468,7 +500,7 @@ public class NioTlsAsyncSocket extends AsyncSocket {
             //System.out.println(this + " handleWrite");
             metrics.incWriteEvents();
 
-            if (!handshakeComplete && !handshake()) {
+            if (handshakeInProgress && !completeHandshake()) {
                 return;
             }
 
@@ -509,17 +541,20 @@ public class NioTlsAsyncSocket extends AsyncSocket {
                 }
             }
 
+            // The sendbuffer has received some data, so lets put it into reading mode
+            // So it can be written to the socket
             sendBuffer.flip();
             long written = socketChannel.write(sendBuffer);
             //System.out.println(TLSNioAsyncSocket.this + " bytes written:" + written);
             metrics.incBytesWritten(written);
+            // and set the sendBuffer back to writing mode for more rounds of wrapping.
             compactOrClear(sendBuffer);
 
             if (current == null && !bufferOverflow) {
                 // everything got written
-                int interestOps = key.interestOps();
 
                 // clear the OP_WRITE flag if it was set
+                int interestOps = key.interestOps();
                 if ((interestOps & OP_WRITE) != 0) {
                     key.interestOps(interestOps & ~OP_WRITE);
                 }
@@ -531,7 +566,7 @@ public class NioTlsAsyncSocket extends AsyncSocket {
             }
         }
 
-        private boolean handshake() throws IOException {
+        private boolean completeHandshake() throws IOException {
             while (true) {
                 SSLEngineResult.HandshakeStatus handshakeStatus = sslEngine.getHandshakeStatus();
                 //System.out.println(NioTlsAsyncSocket.this + " handshakeStatus " + handshakeStatus);
@@ -567,7 +602,7 @@ public class NioTlsAsyncSocket extends AsyncSocket {
                                 // todo: we need to deal with situation that not everything got written
 
                                 if (wrapResult.getHandshakeStatus() == FINISHED) {
-                                    handshakeComplete = true;
+                                    handshakeInProgress = false;
                                     sslSession = sslEngine.getSession();
                                     //System.out.println(TLSNioAsyncSocket.this + " handshake complete!!");
                                     resetFlushed();
@@ -603,7 +638,7 @@ public class NioTlsAsyncSocket extends AsyncSocket {
                             case OK:
                                 if (unwrapResult.getHandshakeStatus() == FINISHED) {
                                     //System.out.println(NioTlsAsyncSocket.this + "handshake complete!!");
-                                    handshakeComplete = true;
+                                    handshakeInProgress = false;
                                     sslSession = sslEngine.getSession();
                                     resetFlushed();
                                     return true;
