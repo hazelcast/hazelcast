@@ -16,10 +16,8 @@
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.logging.LogListener;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.SqlResult;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.MongoBulkWriteException;
@@ -114,9 +112,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
 
 
     protected void execute(String sql, Object... arguments) {
-        try (SqlResult ignored = sqlService.execute(sql, arguments)) {
-            EmptyStatement.ignore(null);
-        }
+        sqlService.execute(sql, arguments).close();
     }
 
     @Test

@@ -18,8 +18,7 @@ package com.hazelcast.internal.util;
 
 /**
  * This class makes CheckStyle happy, if you have an ignored or expected exception,
- * but need at least a single statement in the {@code catch} clause or you want to have empty try block
- * (e.g. try-with-resources).
+ * but need at least a single statement in the {@code catch} clause.
  */
 public final class EmptyStatement {
 
@@ -32,11 +31,5 @@ public final class EmptyStatement {
      * @param t the exception to ignore
      */
     public static void ignore(Throwable t) {
-    }
-
-    /**
-     * Does nothing.
-     */
-    public static void noop() {
     }
 }
