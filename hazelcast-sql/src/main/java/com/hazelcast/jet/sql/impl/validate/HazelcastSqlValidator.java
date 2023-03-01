@@ -138,6 +138,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
         // CREATE or DROP DATA LINK
         if (topNode instanceof SqlCreateDataLink || topNode instanceof SqlDropDataLink) {
+            topNode.validate(this, getEmptyScope());
             return topNode;
         }
 

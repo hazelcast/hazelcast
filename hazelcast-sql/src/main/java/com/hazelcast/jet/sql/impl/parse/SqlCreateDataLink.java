@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.google.common.collect.ImmutableList;
+import com.hazelcast.jet.sql.impl.validate.ValidationUtil;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastCreateDataLinkOperator;
 import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -123,6 +124,10 @@ public class SqlCreateDataLink extends SqlCreate {
     public void validate(SqlValidator validator, SqlValidatorScope scope) {
         if (getReplace() && ifNotExists) {
             throw validator.newValidationError(this, RESOURCE.orReplaceWithIfNotExistsNotSupported());
+        }
+
+        if (!ValidationUtil.isCatalogObjectNameValid(name)) {
+            throw validator.newValidationError(this, RESOURCE.dataLinkIncorrectSchema());
         }
     }
 

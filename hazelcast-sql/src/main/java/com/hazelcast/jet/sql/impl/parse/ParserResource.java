@@ -34,6 +34,9 @@ public interface ParserResource {
     @BaseMessage("The mapping must be created in the \"public\" schema")
     ExInst<SqlValidatorException> mappingIncorrectSchema();
 
+    @BaseMessage("The data link must be created in the \"public\" schema")
+    ExInst<SqlValidatorException> dataLinkIncorrectSchema();
+
     @BaseMessage("The view must be created in the \"public\" schema")
     ExInst<SqlValidatorException> viewIncorrectSchema();
 

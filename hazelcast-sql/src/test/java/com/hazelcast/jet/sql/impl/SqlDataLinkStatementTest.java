@@ -55,6 +55,17 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_createDataLinkInWrongNameSpace_then_throws() {
+        String dlName = randomName();
+        assertThatThrownBy(() ->
+                instance().getSql().execute("CREATE DATA LINK hazelcast.yyy." + dlName
+                        + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                        + " OPTIONS ('b' = 'c')"))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("The data link must be created in the \"public\" schema");
+    }
+
+    @Test
     public void when_createDataLinkIfAlreadyExists_then_throws() {
         String dlName = randomName();
         instance().getSql().execute("CREATE DATA LINK " + dlName
