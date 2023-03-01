@@ -22,6 +22,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlProcessors;
+import com.hazelcast.jet.sql.impl.connector.mongodb.FieldResolver.DocumentField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -45,7 +46,7 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.mongodb.impl.Mappers.bsonDocumentToDocument;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
-import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
+import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -93,6 +94,8 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
 
         List<TableField> fields = new ArrayList<>(resolvedFields.size());
         boolean containsId = false;
+
+        Map<String, DocumentField> documentFields = fieldResolver.readFields(collectionName, options, isStream());
         for (MappingField resolvedField : resolvedFields) {
             String externalNameFromName = (isStream() ? "fullDocument." : "") + resolvedField.name();
             String fieldExternalName = firstNonNull(resolvedField.externalName(), externalNameFromName);
@@ -104,12 +107,14 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                     resolvedField.name(),
                     resolvedField.type(),
                     fieldExternalName,
-                    resolvedField.isPrimaryKey()
+                    resolvedField.isPrimaryKey(),
+                    documentFields.get(resolvedField.externalName()).columnType
             ));
         }
 
         if (isStream() && !containsId) {
-            fields.add(0, new MongoTableField("fullDocument._id", VARCHAR, "fullDocument._id", true));
+            fields.add(0, new MongoTableField("fullDocument._id", OBJECT, "fullDocument._id", true,
+                    documentFields.get("_id").columnType));
         }
         return new MongoTable(schemaName, mappingName, databaseName, collectionName, options, this,
                 fields, stats, isStream());

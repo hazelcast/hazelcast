@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -133,7 +134,7 @@ public class FieldResolverTest {
             readOpts.put("database", databaseName);
             List<MappingField> fields = resolver.resolveFields(collectionName, readOpts, Collections.emptyList(), false);
             assertThat(fields).contains(
-                    fieldWithSameExternal("_id", VARCHAR).setPrimaryKey(true),
+                    fieldWithSameExternal("_id", OBJECT).setPrimaryKey(true),
                     fieldWithSameExternal("firstName", VARCHAR),
                     fieldWithSameExternal("lastName", VARCHAR),
                     fieldWithSameExternal("birthYear", INT)
@@ -162,7 +163,7 @@ public class FieldResolverTest {
             assertThat(fields).contains(
                     fieldWithSameExternal("resumeToken", VARCHAR),
                     fieldWithSameExternal("operationType", VARCHAR),
-                    fieldWithSameExternal("fullDocument._id", VARCHAR).setPrimaryKey(true),
+                    fieldWithSameExternal("fullDocument._id", OBJECT).setPrimaryKey(true),
                     fieldWithSameExternal("fullDocument.firstName", VARCHAR),
                     fieldWithSameExternal("fullDocument.lastName", VARCHAR),
                     fieldWithSameExternal("fullDocument.birthYear", INT)
@@ -192,11 +193,11 @@ public class FieldResolverTest {
             readOpts.put("connectionString", mongoContainer.getConnectionString());
             readOpts.put("database", databaseName);
             List<MappingField> fields = resolver.resolveFields(collectionName, readOpts, Arrays.asList(
-                    new MappingField("id", VARCHAR).setExternalName("_id"),
+                    new MappingField("id", OBJECT).setExternalName("_id"),
                     new MappingField("birthYear", QueryDataType.BIGINT)
             ), false);
             assertThat(fields).contains(
-                    new MappingField("id", VARCHAR).setPrimaryKey(true).setExternalName("_id"),
+                    new MappingField("id", OBJECT).setPrimaryKey(true).setExternalName("_id"),
                     new MappingField("birthYear", QueryDataType.BIGINT).setExternalName("birthYear").setPrimaryKey(false)
             );
         }
@@ -224,7 +225,7 @@ public class FieldResolverTest {
                         new MappingField("id", QueryDataType.MAP).setExternalName("_id")
                 ), false);
             } catch (IllegalStateException e) {
-                assertThat(e.getMessage()).isEqualTo("Type MAP of field id does not match db type VARCHAR");
+                assertThat(e.getMessage()).isEqualTo("Type MAP of field id does not match db type OBJECT");
             }
         }
     }

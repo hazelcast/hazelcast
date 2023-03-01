@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.mongodb.client.MongoClients;
 import org.bson.BsonDateTime;
+import org.bson.BsonType;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
@@ -38,6 +39,7 @@ import java.util.Collection;
 
 import static com.hazelcast.jet.mongodb.MongoDBSinkBuilder.DEFAULT_COMMIT_RETRY_STRATEGY;
 import static com.hazelcast.jet.mongodb.MongoDBSinkBuilder.DEFAULT_TRANSACTION_OPTION;
+import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static java.util.Arrays.asList;
 
 /**
@@ -49,16 +51,18 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
     private final String connectionString;
     private final String databaseName;
     private final String collectionName;
-    private final String[] paths;
+    private final String[] externalNames;
     private final WriteMode writeMode;
     private final QueryDataType[] types;
+    private final BsonType[] bsonTypes;
 
     InsertProcessorSupplier(MongoTable table, WriteMode writeMode) {
         this.connectionString = table.connectionString;
         this.databaseName = table.databaseName;
         this.collectionName = table.collectionName;
-        this.paths = table.externalNames();
+        this.externalNames = table.externalNames();
         this.types = table.fieldTypes();
+        this.bsonTypes = table.fieldBsonTypes();
         this.writeMode = writeMode;
     }
 
@@ -93,11 +97,11 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
 
         // assuming values is exactly the length of schema
         for (int i = 0; i < row.getFieldCount(); i++) {
-            String fieldName = paths[i];
+            String fieldName = externalNames[i];
             Object value = values[i];
 
             if (fieldName.equals("_id")) {
-                if (value instanceof String) {
+                if (value instanceof String && bsonTypes[i] == BsonType.OBJECT_ID) {
                     value = new ObjectId((String) value);
                 } else if (value == null) {
                     continue;
