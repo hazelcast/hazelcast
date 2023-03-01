@@ -26,7 +26,8 @@ import org.apache.calcite.rel.core.TableScan;
 import org.immutables.value.Value;
 
 /**
- * A rule that matches a TableModify[operation=delete], _without_ a TableScan as an input
+ * A rule that matches a TableModify[operation=delete], _without_ a TableScan as
+ * an input (that's handled by {@link DeleteWithScanLogicalRule}.
  */
 @Value.Enclosing
 class DeleteNoScanLogicalRule extends RelRule<RelRule.Config> {
@@ -40,7 +41,6 @@ class DeleteNoScanLogicalRule extends RelRule<RelRule.Config> {
                 .operandSupplier(b0 -> b0.operand(TableModify.class)
                         .predicate(TableModify::isDelete)
                         .inputs(b1 -> b1.operand(RelNode.class)
-                                // DELETE with TableScan input is matched by the other rule
                                 .predicate(input -> !(input instanceof TableScan))
                                 .anyInputs())
                 ).build();

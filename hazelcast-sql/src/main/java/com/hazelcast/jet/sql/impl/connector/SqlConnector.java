@@ -354,7 +354,7 @@ public interface SqlConnector {
     }
 
     /**
-     * Returns the supplier for the update processor that will update given
+     * Returns the supplier for the update processor that will update the given
      * {@code table}.
      * <p>
      * The processor works in 2 modes, depending on the  `hasInput`
@@ -369,7 +369,8 @@ public interface SqlConnector {
      *     rows with primary keys it receives on the input. In this mode the
      *     `predicate` is always null. The primary key fields are specified by
      *     the {@link #getPrimaryKey(Table)} method. If {@link
-     *     #dmlSupportsPredicates()} returned false, `hasInput` is always true.
+     *     #dmlSupportsPredicates()} returned false, or if {@link
+     *     #supportsExpression} always returns false, `hasInput` is always true.
      *
      * </ol>
      */
@@ -399,7 +400,8 @@ public interface SqlConnector {
      *     rows with primary keys it receives on the input. In this mode the
      *     `predicate` is always null. The primary key fields are specified by
      *     the {@link #getPrimaryKey(Table)} method. If {@link
-     *     #dmlSupportsPredicates()} returned false, `hasInput` is always true.
+     *     #dmlSupportsPredicates()} returned false, or if {@link
+     *     #supportsExpression} always returns false, `hasInput` is always true.
      *
      * </ol>
      */
@@ -414,16 +416,18 @@ public interface SqlConnector {
 
     /**
      * Returns whether this processor's {@link #deleteProcessor} and {@link
-     * #updateProcessor} methods use a predicate.
+     * #updateProcessor} methods can use a predicate.
      */
     default boolean dmlSupportsPredicates() {
         return true;
     }
 
     /**
-     * Returns whether the given `expression` is supported by the remote system.
-     * That is if it can be evaluated remotely. If it returns true, then this expression
-     * will be passed as a projection or predicate to the other vertex-generating methods.
+     * Returns whether the given `expression` is supported by the processors
+     * this connector returns. If it returns true, then this expression will be
+     * passed as a projection or predicate to the other vertex-generating
+     * methods. Otherwise, the projection will be simple input references, and
+     * the predicate will be always-true or null.
      * <p>
      * The default implementation returns false.
      *

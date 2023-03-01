@@ -44,7 +44,6 @@ import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
-import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
@@ -178,15 +177,15 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     @Override
     public Vertex onUpdate(UpdatePhysicalRel rel) {
-        // currently it's not possible to have a unbounded UPDATE, but if we do, we'd need this calculation
+        // currently it's not possible to have an unbounded UPDATE, but if we do, we'd need this calculation
         watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate((PhysicalRel) rel.getInput());
 
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
 
         dagBuildContext.setTable(table);
         dagBuildContext.setRel(rel);
-        SqlConnector connector = getJetSqlConnector(table);
-        Vertex vertex = connector.updateProcessor(dagBuildContext, rel.getUpdateColumnList(), wrap(rel.getSourceExpressionList()),
+        Vertex vertex = getJetSqlConnector(table).updateProcessor(
+                dagBuildContext, rel.getUpdateColumnList(), wrap(rel.getSourceExpressionList()),
                 wrap(rel.getPredicate()), rel.getInput() != null);
         connectInput(rel.getInput(), vertex, null);
         return vertex;
@@ -201,8 +200,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
         dagBuildContext.setTable(table);
         dagBuildContext.setRel(rel);
-        SqlConnector connector = getJetSqlConnector(table);
-        Vertex vertex = connector.deleteProcessor(dagBuildContext, wrap(rel.getPredicate()), rel.getInput() != null);
+        Vertex vertex = getJetSqlConnector(table).deleteProcessor(dagBuildContext,
+                wrap(rel.getPredicate()), rel.getInput() != null);
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }

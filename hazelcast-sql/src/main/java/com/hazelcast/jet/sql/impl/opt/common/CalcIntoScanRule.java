@@ -52,20 +52,9 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static org.apache.calcite.rex.RexUtil.EXECUTOR;
 
 /**
- * Logical rule that pushes a {@link Calc} down into a {@link TableScan} to allow for constrained scans.
- * See {@link HazelcastTable} for more information about constrained scans.
- * <p>
- * Before:
- * <pre>
- * Calc[filter=exp1]
- *     TableScan[table[filter=exp2]]
- * </pre>
- * After:
- * <pre>
- * TableScan[table[filter=exp1 AND exp2]]
- * </pre>
- *
- * If the scan doesn't support the whole calc's predicate, only a part might be pushed down.
+ * Logical rule that pushes supported expressions from a {@link Calc} down into
+ * a {@link TableScan} to allow for constrained scans. See {@link
+ * HazelcastTable} for more information about constrained scans.
  * <p>
  * Before:
  * <pre>
@@ -77,6 +66,11 @@ import static org.apache.calcite.rex.RexUtil.EXECUTOR;
  * Calc[filter=expUnsupported]
  *     TableScan[table[filter=expSupported AND exp1]]
  * </pre>
+ *
+ * If we cannot push down the entire filter, projections aren't merged down.
+ * They are also not merged if any of the Calc's projections contains an
+ * unsupported expression; splitting the supported an unsupported projections is
+ * not implemented.
  */
 @Value.Enclosing
 public final class CalcIntoScanRule extends RelRule<Config> implements TransformationRule {
@@ -123,28 +117,31 @@ public final class CalcIntoScanRule extends RelRule<Config> implements Transform
         SqlConnector sqlConnector = getJetSqlConnector(table.getTarget());
         RexProgram calcProgram = calc.getProgram();
         assert scan.getConvention() == LOGICAL;
-
-        // Merge filters first. Filters are evaluated before the projection, if some filter isn't supported, we
-        // can't push the projection.
-
         HazelcastTable newTable = table;
         RexNode remainingFilter = null;
         RexBuilder rexBuilder = call.builder().getRexBuilder();
         RexSimplify rexSimplify = new RexSimplify(rexBuilder, RelOptPredicateList.EMPTY, EXECUTOR);
+
+        // Merge filters first. Filters are evaluated before the projection; if some filter isn't supported, we
+        // can't push the projection.
         if (calcProgram.getCondition() != null) {
             RexNode calcFilter = calcProgram.expandLocalRef(calcProgram.getCondition());
             RexNode scanFilter = table.getFilter();
 
-            List<RexNode> supportedCalcParts = new ArrayList<>();
-            List<RexNode> unsupportedCalcParts = new ArrayList<>();
+            List<RexNode> supportedParts = new ArrayList<>();
+            List<RexNode> unsupportedParts = new ArrayList<>();
             for (RexNode expr : RelOptUtil.conjunctions(calcFilter)) {
-                (sqlConnector.supportsExpression(wrap(expr)) ? supportedCalcParts : unsupportedCalcParts).add(expr);
+                (sqlConnector.supportsExpression(wrap(expr)) ? supportedParts : unsupportedParts)
+                        .add(expr);
             }
 
-            supportedCalcParts.add(scanFilter);
-            RexNode simplifiedCondition = rexSimplify.simplifyFilterPredicates(supportedCalcParts);
+            supportedParts.add(scanFilter);
+            RexNode simplifiedCondition = rexSimplify.simplifyFilterPredicates(supportedParts);
+            if (simplifiedCondition == null) {
+                simplifiedCondition = rexBuilder.makeLiteral(false);
+            }
             newTable = newTable.withFilter(simplifiedCondition);
-            remainingFilter = RexUtil.composeConjunction(rexBuilder, unsupportedCalcParts, true);
+            remainingFilter = RexUtil.composeConjunction(rexBuilder, unsupportedParts, true);
         }
 
         List<RexNode> newProjects = calcProgram.expandList(calcProgram.getProjectList());
@@ -182,6 +179,7 @@ public final class CalcIntoScanRule extends RelRule<Config> implements Transform
             Calc newCalc = calc.copy(calc.getTraitSet(), newScan, progBuilder.getProgram());
             call.transformTo(newCalc);
         } else {
+            assert remainingFilter == null;
             call.transformTo(newScan);
         }
     }

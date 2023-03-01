@@ -46,7 +46,7 @@ import static java.util.Collections.singletonList;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class CalcIntoUpdateWithScanLogicalRuleTest extends OptimizerTestSupport {
+public class CalcIntoScanRuleTest extends OptimizerTestSupport {
     private SqlService sqlService;
     private TableResolverImpl resolver;
 
