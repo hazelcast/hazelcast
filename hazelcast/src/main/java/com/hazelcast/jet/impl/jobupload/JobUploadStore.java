@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class JobUploadStore {
 
-    private static ILogger logger = Logger.getLogger(JobUploadStore.class);
+    private static final ILogger logger = Logger.getLogger(JobUploadStore.class);
 
     // Key is sessionID
     private ConcurrentHashMap<UUID, JobUploadStatus> jobMap = new ConcurrentHashMap<>();
@@ -102,7 +102,15 @@ public class JobUploadStore {
 
         JobUploadStatus jobUploadStatus = jobMap.get(sessionId);
         if (jobUploadStatus == null) {
-            throw new JetException("Unknown session id : " + sessionId);
+            String exceptionMessage = String.format(
+                    "Unknown session id : %s. " +
+                    "Session has timed out due to upload inactivity? \n " +
+                    "If the network is slow, uploading with smaller parts may help.\n" +
+                    "Use a smaller value\n"  +
+                    "1. By setting \"hazelcast.client.jobupload.partsize\" environment value or \n" +
+                    "2. By setting ClientProperty.JOB_UPLOAD_PART_SIZE property of ClientConfig",
+                    sessionId);
+            throw new JetException(exceptionMessage + sessionId);
         }
 
         JobMetaDataParameterObject partsComplete = jobUploadStatus.processJobMultipart(parameterObject);

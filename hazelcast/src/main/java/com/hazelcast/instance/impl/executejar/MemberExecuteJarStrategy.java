@@ -19,6 +19,8 @@ package com.hazelcast.instance.impl.executejar;
 import com.hazelcast.instance.impl.BootstrappedInstanceProxy;
 import com.hazelcast.instance.impl.BootstrappedJetProxy;
 import com.hazelcast.jet.impl.util.ResettableConcurrentMemoizingSupplier;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -31,6 +33,8 @@ import java.net.URLClassLoader;
 import java.util.List;
 
 public class MemberExecuteJarStrategy {
+
+    private static final ILogger LOGGER = Logger.getLogger(MemberExecuteJarStrategy.class.getName());
 
     public void executeJar(@Nonnull ResettableConcurrentMemoizingSupplier<BootstrappedInstanceProxy> singleton,
                            @Nonnull String jarPath,
@@ -48,6 +52,8 @@ public class MemberExecuteJarStrategy {
                 MemberExecuteJarStrategy.class.getClassLoader())) {
 
             Method main = ExecuteJarStrategyHelper.findMainMethodForJar(classLoader, mainClassName);
+
+            LOGGER.info("Found mainClassName :" + mainClassName + " and main method");
 
             String[] jobArgs = args.toArray(new String[0]);
 

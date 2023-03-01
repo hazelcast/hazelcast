@@ -487,16 +487,15 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         checkResourceUploadEnabled();
 
         try {
-            HazelcastBootstrap.executeJar(this::getHazelcastInstance,
+            HazelcastBootstrap.executeJarOnMember(this::getHazelcastInstance,
                     jobMetaDataParameterObject.getJarPath().toString(),
                     jobMetaDataParameterObject.getSnapshotName(),
                     jobMetaDataParameterObject.getJobName(),
                     jobMetaDataParameterObject.getMainClass(),
-                    jobMetaDataParameterObject.getJobParameters(),
-                    true
+                    jobMetaDataParameterObject.getJobParameters()
             );
         } catch (Exception exception) {
-            logger.severe("executeJar caught exception when running the jar", exception);
+            logger.severe("caught exception when running the jar", exception);
             // Rethrow the exception back to client to notify  that job did not run
             throwJetExceptionFromJobMetaData(jobMetaDataParameterObject, exception);
         } finally {

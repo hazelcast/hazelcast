@@ -191,9 +191,9 @@ public class HazelcastCommandLine implements Runnable {
 
         // calledByMember is false because when job upload is called by client side we want the HazelcastInstance
         // to be closed
-        HazelcastBootstrap.executeJar(
+        HazelcastBootstrap.executeJarOnClient(
                 () -> getHazelcastClient(false),
-                file.getAbsolutePath(), snapshotName, name, mainClass, params, false);
+                file.getAbsolutePath(), snapshotName, name, mainClass, params);
     }
 
     @Command(

@@ -76,21 +76,26 @@ public final class HazelcastBootstrap {
         SINGLETON.resetRemembered();
     }
 
-    public static void executeJar(@Nonnull Supplier<HazelcastInstance> supplierOfInstance,
-                                  @Nonnull String jarPath,
-                                  @Nullable String snapshotName,
-                                  @Nullable String jobName,
-                                  @Nullable String mainClassName,
-                                  @Nonnull List<String> args,
-                                  boolean calledByMember
-    ) throws IOException, ClassNotFoundException, InvocationTargetException, IllegalAccessException {
+    public static void executeJarOnClient(@Nonnull Supplier<HazelcastInstance> supplierOfInstance,
+                                          @Nonnull String jarPath,
+                                          @Nullable String snapshotName,
+                                          @Nullable String jobName,
+                                          @Nullable String mainClassName,
+                                          @Nonnull List<String> args)
+            throws IOException, ClassNotFoundException, InvocationTargetException, IllegalAccessException {
         SINGLETON.get(() -> BootstrappedInstanceProxy.createWithJetProxy(supplierOfInstance.get()));
+        CLIENT_EXECUTE_JAR_STRATEGY.executeJar(SINGLETON, jarPath, snapshotName, jobName, mainClassName, args);
+    }
 
-        if (calledByMember) {
-            MEMBER_EXECUTE_JAR_STRATEGY.executeJar(SINGLETON, jarPath, snapshotName, jobName, mainClassName, args);
-        } else {
-            CLIENT_EXECUTE_JAR_STRATEGY.executeJar(SINGLETON, jarPath, snapshotName, jobName, mainClassName, args);
-        }
+    public static void executeJarOnMember(@Nonnull Supplier<HazelcastInstance> supplierOfInstance,
+                                          @Nonnull String jarPath,
+                                          @Nullable String snapshotName,
+                                          @Nullable String jobName,
+                                          @Nullable String mainClassName,
+                                          @Nonnull List<String> args)
+            throws IOException, ClassNotFoundException, InvocationTargetException, IllegalAccessException {
+        SINGLETON.get(() -> BootstrappedInstanceProxy.createWithJetProxy(supplierOfInstance.get()));
+        MEMBER_EXECUTE_JAR_STRATEGY.executeJar(SINGLETON, jarPath, snapshotName, jobName, mainClassName, args);
     }
 
 
@@ -149,7 +154,7 @@ public final class HazelcastBootstrap {
                     }
                 }
             } catch (Exception e) {
-                System.err.println("Error configuring java.util.logging for Hazelcast: " + e);
+                LOGGER.severe("Error configuring java.util.logging for Hazelcast: " + e);
             }
         }
     }
