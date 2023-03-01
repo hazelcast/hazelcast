@@ -56,13 +56,13 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
     private final String collectionName;
     private final boolean stream;
     private final FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
-    private final String predicate;
+    private final Document predicate;
     private final List<String> projection;
     private final Long startAt;
     private transient ExpressionEvalContext evalContext;
     private final QueryDataType[] types;
 
-    SelectProcessorSupplier(MongoTable table, String predicate, List<String> projection, Long startAt, boolean stream,
+    SelectProcessorSupplier(MongoTable table, Document predicate, List<String> projection, Long startAt, boolean stream,
                             FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
         checkArgument(projection != null && !projection.isEmpty(), "projection cannot be empty");
 
@@ -78,12 +78,12 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
     }
 
 
-    SelectProcessorSupplier(MongoTable table, String predicate, List<String> projection, Long startAt,
+    SelectProcessorSupplier(MongoTable table, Document predicate, List<String> projection, Long startAt,
                             FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
         this(table, predicate, projection, startAt, true, eventTimePolicyProvider);
     }
 
-    SelectProcessorSupplier(MongoTable table, String predicate, List<String> projection) {
+    SelectProcessorSupplier(MongoTable table, Document predicate, List<String> projection) {
         this(table, predicate, projection, null, false, null);
     }
 
@@ -98,8 +98,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         ArrayList<Bson> aggregates = new ArrayList<>();
 
         if (this.predicate != null) {
-            Document filterDoc = Document.parse(this.predicate);
-            Bson filterWithParams = ParameterReplacer.replacePlaceholders(filterDoc, evalContext);
+            Bson filterWithParams = ParameterReplacer.replacePlaceholders(predicate, evalContext);
             aggregates.add(match(filterWithParams.toBsonDocument()));
         }
         Bson proj = include(this.projection);

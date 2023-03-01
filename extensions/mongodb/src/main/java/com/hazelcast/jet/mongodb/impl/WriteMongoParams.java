@@ -27,6 +27,7 @@ import com.mongodb.client.model.WriteModel;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
+import java.util.Optional;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkState;
@@ -200,6 +201,10 @@ public class WriteMongoParams<I> implements Serializable {
 
     public FunctionEx<I, WriteModel<I>> getWriteModelFn() {
         return writeModelFn;
+    }
+
+    public Optional<FunctionEx<I, WriteModel<I>>> getOptionalWriteModelFn() {
+        return Optional.ofNullable(writeModelFn);
     }
 
     @Nonnull

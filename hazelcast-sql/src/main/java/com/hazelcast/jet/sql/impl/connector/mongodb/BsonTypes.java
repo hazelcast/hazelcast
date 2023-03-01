@@ -127,9 +127,17 @@ final class BsonTypes {
 
     @SuppressWarnings("checkstyle:ReturnCount")
     static Object unwrap(Object value) {
-        if (value instanceof BsonDateTime) {
-            BsonDateTime v = (BsonDateTime) value;
-            return LocalDateTime.from(new Date(v.getValue()).toInstant());
+        if (value instanceof BsonBoolean) {
+            return ((BsonBoolean) value).getValue();
+        }
+        if (value instanceof BsonInt32) {
+            return ((BsonInt32) value).getValue();
+        }
+        if (value instanceof BsonInt64) {
+            return ((BsonInt64) value).getValue();
+        }
+        if (value instanceof BsonDouble) {
+            return ((BsonDouble) value).getValue();
         }
         if (value instanceof BsonString) {
             return value.toString();
@@ -142,17 +150,15 @@ final class BsonTypes {
             Decimal128 v = (Decimal128) value;
             return new BigDecimal(v.toString());
         }
-        if (value instanceof BsonDouble) {
-            return ((BsonDouble) value).getValue();
+        if (value instanceof BsonArray) {
+            return ((BsonArray) value).getValues();
         }
-        if (value instanceof BsonInt32) {
-            return ((BsonInt32) value).getValue();
+        if (value instanceof BsonDateTime) {
+            BsonDateTime v = (BsonDateTime) value;
+            return LocalDateTime.from(new Date(v.getValue()).toInstant());
         }
-        if (value instanceof BsonInt64) {
-            return ((BsonInt64) value).getValue();
-        }
-        if (value instanceof BsonBoolean) {
-            return ((BsonBoolean) value).getValue();
+        if (value instanceof BsonTimestamp) {
+            return timestampToLocalDateTime((BsonTimestamp) value);
         }
         if (value instanceof BsonJavaScript) {
             return ((BsonJavaScript) value).getCode();
@@ -162,12 +168,6 @@ final class BsonTypes {
         }
         if (value instanceof Code) {
             return ((Code) value).getCode();
-        }
-        if (value instanceof BsonArray) {
-            return ((BsonArray) value).getValues();
-        }
-        if (value instanceof BsonTimestamp) {
-            return timestampToLocalDateTime((BsonTimestamp) value);
         }
         return value;
     }

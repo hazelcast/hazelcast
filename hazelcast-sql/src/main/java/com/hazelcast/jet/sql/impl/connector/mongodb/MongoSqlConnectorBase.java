@@ -32,6 +32,7 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import org.apache.calcite.rex.RexNode;
 import org.bson.BsonDocument;
+import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
@@ -42,6 +43,7 @@ import java.util.Map;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.mongodb.impl.Mappers.bsonDocumentToDocument;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.stream.Collectors.toList;
@@ -124,7 +126,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
 
         RexToMongoVisitor visitor = new RexToMongoVisitor(table.externalNames());
 
-        TranslationResult<String> filter = translateFilter(predicate, visitor);
+        TranslationResult<Document> filter = translateFilter(predicate, visitor);
         TranslationResult<List<String>> projections = translateProjections(projection, context, visitor);
 
         // if not all filters are pushed down, then we cannot push down projection
@@ -168,7 +170,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         return sourceVertex;
     }
 
-    private static TranslationResult<String> translateFilter(HazelcastRexNode filterNode, RexToMongoVisitor visitor) {
+    private static TranslationResult<Document> translateFilter(HazelcastRexNode filterNode, RexToMongoVisitor visitor) {
         try {
             if (filterNode == null) {
                 return new TranslationResult<>(null, true);
@@ -177,7 +179,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             assert result instanceof Bson;
 
             BsonDocument expression = ((Bson) result).toBsonDocument(BsonDocument.class, defaultCodecRegistry());
-            return new TranslationResult<>(expression.toJson(), true);
+            return new TranslationResult<>(bsonDocumentToDocument(expression), true);
         } catch (Throwable t) {
             return new TranslationResult<>(null, false);
         }

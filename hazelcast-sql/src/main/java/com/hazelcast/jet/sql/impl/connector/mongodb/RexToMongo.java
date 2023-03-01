@@ -58,8 +58,9 @@ public final class RexToMongo {
                     // simple column, meaning it's boolean
                     assert call.getOperands().get(0).getType().getSqlTypeName().equals(SqlTypeName.BOOLEAN);
                     return Filters.ne((String) operands[0], true);
+                } else {
+                    return Filters.not((Bson) operands[0]);
                 }
-            return Filters.not((Bson) operands[0]);
 
             case EQUALS:
                 assert operands[0] instanceof String;
@@ -105,13 +106,13 @@ public final class RexToMongo {
     private static Bson[] convertOperands(Object[] operands) {
         Bson[] r = new Bson[operands.length];
         for (int i = 0; i < operands.length; i++) {
-            Object nth = operands[i];
-            if (nth instanceof String) {
-                r[i] = Filters.eq((String) nth, true);
-            } else if (nth instanceof Bson) {
-                r[i] = (Bson) nth;
+            Object ith = operands[i];
+            if (ith instanceof String) {
+                r[i] = Filters.eq((String) ith, true);
+            } else if (ith instanceof Bson) {
+                r[i] = (Bson) ith;
             } else {
-                throw new UnsupportedOperationException("Not supported type of operand: " + nth.getClass());
+                throw new UnsupportedOperationException("Not supported type of operand: " + ith.getClass());
             }
         }
         return r;

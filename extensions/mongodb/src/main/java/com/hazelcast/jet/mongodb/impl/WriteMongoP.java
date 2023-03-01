@@ -93,6 +93,14 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
 
     private final MongoDbConnection connection;
     private final Class<I> documentType;
+
+    /**
+     * Mapping function from input type to some intermediate type.
+     *
+     * Can be used to avoid additional mapping steps before using this processor, e.g. SQL connector
+     * passes JetSqlRow, which is then converted into {@linkplain org.bson.Document}, so that
+     * {@link #documentIdentityFn} and {@link #documentIdentityFieldName} are easier to reason about.
+     */
     private final FunctionEx<IN, I> intermediateMappingFn;
     private ILogger logger;
 
@@ -137,12 +145,7 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
         this.intermediateMappingFn = params.getIntermediateMappingFn();
         this.writeMode = params.getWriteMode();
 
-
-        FunctionEx<I, WriteModel<I>> writeFn = params.getWriteModelFn();
-        if (writeFn == null) {
-            writeFn = this::defaultWriteModelSupplier;
-        }
-        this.writeModelFn = writeFn;
+        this.writeModelFn = params.getOptionalWriteModelFn().orElse(this::defaultWriteModelSupplier);
     }
 
     @Override

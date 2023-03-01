@@ -23,6 +23,7 @@ import org.bson.BsonDocumentReader;
 import org.bson.BsonDocumentWriter;
 import org.bson.Document;
 import org.bson.codecs.DecoderContext;
+import org.bson.codecs.DocumentCodec;
 import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistry;
@@ -90,4 +91,13 @@ public final class Mappers {
         return document;
     }
 
+    /**
+     * Converts given {@link BsonDocument} to {@link Document}.
+     */
+    @Nonnull
+    public static Document bsonDocumentToDocument(@Nonnull BsonDocument bsonDocument) {
+        DocumentCodec codec = new DocumentCodec();
+        DecoderContext decoderContext = DecoderContext.builder().build();
+        return codec.decode(new BsonDocumentReader(bsonDocument), decoderContext);
+    }
 }
