@@ -24,7 +24,6 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
-import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_DATA_LINK;
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PUBLIC;
 import static org.apache.calcite.sql.SqlKind.ARGUMENT_ASSIGNMENT;
 import static org.apache.calcite.sql.SqlKind.AS;
@@ -66,7 +65,7 @@ public final class ValidationUtil {
      * <ul>
      *     <li>a simple name
      *     <li>a name in schema "public"
-     *     <li>a name in schema "hazelcast.public" or "hazelcast.datalink"
+     *     <li>a name in schema "hazelcast.public"
      * </ul>
      */
     @SuppressWarnings({"checkstyle:BooleanExpressionComplexity", "BooleanMethodIsAlwaysInverted"})
@@ -74,6 +73,7 @@ public final class ValidationUtil {
         return name.names.size() == 1
                 || name.names.size() == 2 && SCHEMA_NAME_PUBLIC.equals(name.names.get(0))
                 || name.names.size() == 3 && CATALOG.equals(name.names.get(0))
-                && (SCHEMA_NAME_PUBLIC.equals(name.names.get(1)) || SCHEMA_NAME_DATA_LINK.equals(name.names.get(1)));
+                && (SCHEMA_NAME_PUBLIC.equals(name.names.get(1)));
+        // || SCHEMA_NAME_DATA_LINK.equals(name.names.get(1)));
     }
 }

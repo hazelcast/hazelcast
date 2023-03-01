@@ -29,7 +29,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
@@ -149,10 +148,6 @@ public class DataLinksResolverTest {
 
     private static DataLink dataLink() {
         return new DataLink();
-    }
-
-    private static DataLink dataLink(String getName, String type) {
-        return new DataLink(getName, type, emptyMap());
     }
 }
 

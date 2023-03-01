@@ -13,19 +13,19 @@ import java.util.List;
 import java.util.function.Function;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
-import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_DATA_LINK;
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_INFORMATION_SCHEMA;
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PUBLIC;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
 public class DataLinksResolver implements TableResolver {
     // We contain separate schema, so separate resolver was implemented.
     private static final List<List<String>> SEARCH_PATHS = singletonList(
-            asList(CATALOG, SCHEMA_NAME_DATA_LINK)
+            asList(CATALOG, SCHEMA_NAME_PUBLIC)
     );
 
     private static final List<Function<List<DataLink>, Table>> ADDITIONAL_TABLE_PRODUCERS = singletonList(
-            dl -> new DataLinksTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_DATA_LINK, dl)
+            dl -> new DataLinksTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, dl)
     );
 
     private final DataLinkStorage dataLinkStorage;
