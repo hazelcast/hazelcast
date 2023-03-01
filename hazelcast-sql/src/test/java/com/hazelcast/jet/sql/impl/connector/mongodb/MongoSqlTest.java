@@ -24,6 +24,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -47,6 +48,7 @@ public abstract class MongoSqlTest extends SqlTestSupport {
     protected static MongoClient mongoClient;
     protected static MongoDatabase database;
     protected static String databaseName;
+    protected static String collectionName;
 
     @Rule
     public final TestName testName = new TestName();
@@ -67,6 +69,11 @@ public abstract class MongoSqlTest extends SqlTestSupport {
         }
     }
 
+    @Before
+    public void setup() {
+        collectionName = randomName();
+    }
+
     protected void execute(String sql, Object... arguments) {
         try (SqlResult ignored = sqlService.execute(sql, arguments)) {
             noop();
@@ -76,10 +83,6 @@ public abstract class MongoSqlTest extends SqlTestSupport {
     protected static String options() {
         return String.format("OPTIONS ( 'database' = '%s', 'connectionString' = '%s') ", databaseName,
                 mongoContainer.getConnectionString());
-    }
-
-    protected String methodName() {
-        return testName.getMethodName();
     }
 
 }

@@ -66,7 +66,6 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
     }
 
     public void readsFromMongo(boolean includeIdInMapping, boolean forceTwoSteps) {
-        final String collectionName = methodName();
         final String connectionString = mongoContainer.getConnectionString();
 
         AtomicBoolean projectAndFilterFound = new AtomicBoolean(false);
@@ -122,8 +121,6 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
 
     @Test
     public void readWithTypeCoertion() {
-        final String collectionName = methodName();
-
         MongoCollection<Document> collection = database.getCollection(collectionName);
         collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", "true"));
 
@@ -131,7 +128,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         collection.insertOne(new Document("firstName", "Han").append("lastName", "Solo").append("jedi", "false"));
         collection.insertOne(new Document("firstName", "Anakin").append("lastName", "Skywalker").append("jedi", "true"));
 
-        assertRowsAnyOrder("select firstName, lastName, jedi from " + methodName()
+        assertRowsAnyOrder("select firstName, lastName, jedi from " + collectionName
                         + " where lastName = ?",
                 singletonList("Skywalker"),
                 asList(
@@ -142,7 +139,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
     }
 
     @Test
-    public void readsWithJoins() {
+    public void readsWithJoinToOtherMongo() {
         final String connectionString = mongoContainer.getConnectionString();
 
         MongoCollection<Document> peopleName = database.getCollection("peopleName");
@@ -169,6 +166,36 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                 + "    'connectionString' = '" + connectionString + "', "
                 + "    'database' = '" + databaseName + "'"
                 + ")");
+
+        assertRowsAnyOrder("select pn.personId, pn.name, pr.profession " +
+                        "from peopleName pn " +
+                        "join peopleProfession pr on pn.personId = pr.personId ",
+                emptyList(),
+                asList(
+                        new Row(1, "Luke Skywalker", "Jedi"),
+                        new Row(2, "Han Solo", "Smuggler")
+                )
+        );
+    }
+
+    @Test
+    public void readsWithJoinsToIMap() {
+        final String connectionString = mongoContainer.getConnectionString();
+
+        MongoCollection<Document> peopleName = database.getCollection("peopleName2");
+        peopleName.insertOne(new Document("personId", 1).append("name", "Luke Skywalker"));
+        peopleName.insertOne(new Document("personId", 2).append("name", "Han Solo"));
+
+        IMap<Integer, String> peopleBirthPlanet = instance().getMap("peopleBirthPlanet");
+        peopleBirthPlanet.put(1, "Polis Massa");
+        peopleBirthPlanet.put(2, "Corellia");
+
+        execute("CREATE MAPPING peopleName external name \"peopleName2\" (personId INT, name VARCHAR) "
+                + "TYPE MongoDB "
+                + "OPTIONS ("
+                + "    'connectionString' = '" + connectionString + "', "
+                + "    'database' = '" +  databaseName + "'"
+                + ")");
         execute("CREATE MAPPING peopleBirthPlanet (__key INT, this VARCHAR) "
                 + "TYPE IMap "
                 + "OPTIONS ("
@@ -177,32 +204,29 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                 + "'valueJavaClass'='java.lang.String'"
                 + ")");
 
-        assertRowsAnyOrder("select pn.personId, pn.name, pr.profession, pl.this as birthPlanet " +
+        assertRowsAnyOrder("select pn.personId, pn.name, pl.this as birthPlanet " +
                         "from peopleName pn " +
-                        "join peopleProfession pr on pn.personId = pr.personId " +
                         "join peopleBirthPlanet pl on pl.__key = pn.personId",
                 emptyList(),
                 asList(
-                        new Row(1, "Luke Skywalker", "Jedi", "Polis Massa"),
-                        new Row(2, "Han Solo", "Smuggler", "Corellia")
+                        new Row(1, "Luke Skywalker", "Polis Massa"),
+                        new Row(2, "Han Solo", "Corellia")
                 )
         );
     }
 
     @Test
     public void insertsIntoMongo_parametrized_withId() {
-        testInsertsIntoMongo(true, "insert into " + methodName() + "(jedi, firstName, lastName) values (?, 'Han', ?)",
+        testInsertsIntoMongo(true, "insert into " + collectionName + "(jedi, firstName, lastName) values (?, 'Han', ?)",
                 false, "Solo");
     }
     @Test
     public void insertsIntoMongo_hardcoded_withoutId() {
-        testInsertsIntoMongo(false, "insert into " + methodName() + "(jedi, firstName, lastName) " +
+        testInsertsIntoMongo(false, "insert into " + collectionName + "(jedi, firstName, lastName) " +
                 "values (false, 'Han', 'Solo')");
     }
 
     public void testInsertsIntoMongo(boolean includeId, String sql, Object... args) {
-        final String collectionName = methodName();
-
         MongoCollection<Document> collection = database.getCollection(collectionName);
         collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", "true"));
 
@@ -221,14 +245,14 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
 
     @Test
     public void insertsIntoMongo_multiple() {
-        MongoCollection<Document> collection = database.getCollection(methodName());
+        MongoCollection<Document> collection = database.getCollection(collectionName);
         collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
 
         createMapping(true);
 
         collection.deleteMany(Filters.empty());
 
-        execute("insert into " + methodName() + "(firstName, lastName) " +
+        execute("insert into " + collectionName + "(firstName, lastName) " +
                 "select 'Person ' || v, cast(v as varchar) " +
                 "from table(generate_series(0,2))");
 
@@ -241,12 +265,12 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
 
     @Test
     public void insertsIntoMongo_duplicate() {
-        MongoCollection<Document> collection = database.getCollection(methodName());
+        MongoCollection<Document> collection = database.getCollection(collectionName);
         ObjectId insertedId =
                 collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi",
                         true)).getInsertedId().asObjectId().getValue();
         createMapping(true);
-        assertThatThrownBy(() -> execute("insert into " + methodName() + " (id, firstName, jedi) values (?, ?, ?)",
+        assertThatThrownBy(() -> execute("insert into " + collectionName + " (id, firstName, jedi) values (?, ?, ?)",
                 insertedId, "yolo", false))
                 .hasRootCauseInstanceOf(MongoBulkWriteException.class)
                 .hasMessageContaining("E11000 duplicate key error collection");
@@ -255,32 +279,30 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
     @Test
     public void updatesMongo_allHardcoded() {
         testUpdatesMongo(true,
-                "update " + methodName() + " set firstName = 'Han', lastName = 'Solo', jedi=false " +
+                "update " + collectionName + " set firstName = 'Han', lastName = 'Solo', jedi=false " +
                         "where jedi=true or firstName = 'Han'");
     }
     @Test
     public void updatesMongo_setParametrized() {
         testUpdatesMongo(true,
-                "update " + methodName() + " set firstName = 'Han', lastName = ?, jedi=false " +
+                "update " + collectionName + " set firstName = 'Han', lastName = ?, jedi=false " +
                         "where jedi=true or firstName = 'Han'", "Solo");
     }
 
     @Test
     public void updatesMongo_whereParametrized() {
         testUpdatesMongo(true,
-                "update " + methodName() + " set firstName = 'Han', lastName = 'Solo', jedi=false " +
+                "update " + collectionName + " set firstName = 'Han', lastName = 'Solo', jedi=false " +
                         "where jedi=true or firstName = ?", "Han");
     }
     @Test
     public void updatesMongo_allParametrized() {
         testUpdatesMongo(true,
-                "update " + methodName() + " set firstName = ?, lastName = ?, jedi=? " +
+                "update " + collectionName + " set firstName = ?, lastName = ?, jedi=? " +
                         "where firstName = ?", "Han", "Solo", false, "temp");
     }
 
     public void testUpdatesMongo(boolean includeIdInMapping, String sql, Object... args) {
-        final String collectionName = methodName();
-
         MongoCollection<Document> collection = database.getCollection(collectionName);
         collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
 
@@ -299,14 +321,13 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
 
     @Test
     public void updatesMongo_noFailOnNoUpdates() {
-        final String collectionName = methodName();
 
         MongoCollection<Document> collection = database.getCollection(collectionName);
         collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
 
         createMapping(true);
 
-        execute("update " + methodName() + " set lastName = 'Solo' where firstName = 'NOT_EXIST'");
+        execute("update " + collectionName + " set lastName = 'Solo' where firstName = 'NOT_EXIST'");
 
         ArrayList<Document> list = collection.find(Filters.eq("firstName", "temp"))
                                              .into(new ArrayList<>());
@@ -317,27 +338,25 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
 
     @Test
     public void sinkInto_allHardcoded_withId() {
-        testSinksIntoMongo(true, "sink into " + methodName() + " (firstName, lastName, jedi) values ('Leia', 'Organa', true)");
+        testSinksIntoMongo(true, "sink into " + collectionName + " (firstName, lastName, jedi) values ('Leia', 'Organa', true)");
     }
     @Test
     public void sinkInto_allHardcoded_withoutId() {
-        testSinksIntoMongo(false, "sink into " + methodName() + " (firstName, lastName, jedi) values ('Leia', 'Organa', true)");
+        testSinksIntoMongo(false, "sink into " + collectionName + " (firstName, lastName, jedi) values ('Leia', 'Organa', true)");
     }
 
     @Test
     public void sinkInto_oneParametrized_withId() {
-        testSinksIntoMongo(true, "sink into " + methodName() + " (firstName, lastName, jedi) values ('Leia', ?, true)",
+        testSinksIntoMongo(true, "sink into " + collectionName + " (firstName, lastName, jedi) values ('Leia', ?, true)",
                 "Organa");
     }
     @Test
     public void sinkInto_oneParametrized_withoutId() {
-        testSinksIntoMongo(false, "sink into " + methodName() + " (firstName, lastName, jedi) values ('Leia', ?, true)",
+        testSinksIntoMongo(false, "sink into " + collectionName + " (firstName, lastName, jedi) values ('Leia', ?, true)",
                 "Organa");
     }
 
     public void testSinksIntoMongo(boolean includeId, String sql, Object... args) {
-        final String collectionName = methodName();
-
         MongoCollection<Document> collection = database.getCollection(collectionName);
         collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
         collection.insertOne(new Document("firstName", "temp2").append("lastName", "temp2").append("jedi", true));
@@ -355,7 +374,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
     }
 
     private void createMapping(boolean includeIdInMapping) {
-        execute("CREATE MAPPING " + methodName()
+        execute("CREATE MAPPING " + collectionName
                 + " ("
                 + (includeIdInMapping ? " id OBJECT external name _id, " : "")
                 + " firstName VARCHAR, "
@@ -366,7 +385,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                 + "OPTIONS ("
                 + "    'connectionString' = '" + mongoContainer.getConnectionString() + "', "
                 + "    'database' = '" +  databaseName + "', "
-                + "    'collection' = '" + methodName() + "' "
+                + "    'collection' = '" + collectionName + "' "
                 + ")");
     }
 
