@@ -26,6 +26,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.Collections;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -52,6 +54,18 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         assertThat(dataLink).isNotNull();
         assertThat(dataLink.getConfig().getClassName()).isEqualTo(DummyDataLink.class.getName());
         assertThat(dataLink.getConfig().getProperties().get("b")).isEqualTo("c");
+    }
+
+    @Test
+    public void when_createDataLinkWithHelperMethod_then_success() {
+        String dlName = randomName();
+        createDataLink(
+                instance(),
+                dlName,
+                wrapDataLinkTypeName(DummyDataLink.class.getName()),
+                Collections.emptyMap());
+        DataLink dataLink = dataLinkService.getDataLink(dlName, DummyDataLink.class);
+        assertThat(dataLink).isNotNull();
     }
 
     @Test

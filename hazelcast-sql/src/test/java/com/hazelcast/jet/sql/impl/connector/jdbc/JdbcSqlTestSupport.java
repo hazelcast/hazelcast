@@ -162,6 +162,16 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         );
     }
 
+    protected static void createJdbcMappingUsingDataLink(String name, String dataLink) {
+        try (SqlResult result = instance().getSql().execute("CREATE OR REPLACE MAPPING " + name +
+                " DATA LINK " + dataLink + "\n"
+                + "OPTIONS ( "
+                + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
+                + ")"
+        )) {
+            assertThat(result.updateCount()).isEqualTo(0);
+        }
+    }
 
     protected static void execute(String sql, Object... arguments) {
         requireNonNull(dbConnectionUrl);

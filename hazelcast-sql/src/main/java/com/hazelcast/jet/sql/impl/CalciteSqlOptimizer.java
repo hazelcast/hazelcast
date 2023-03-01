@@ -139,6 +139,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import static com.hazelcast.internal.cluster.Versions.V5_3;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataLinkPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
@@ -352,13 +353,27 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         List<MappingField> mappingFields = sqlCreateMapping.columns()
                 .map(field -> new MappingField(field.name(), field.type(), field.externalName()))
                 .collect(toList());
-        Mapping mapping = new Mapping(
-                sqlCreateMapping.nameWithoutSchema(),
-                sqlCreateMapping.externalName(),
-                sqlCreateMapping.type(),
-                mappingFields,
-                sqlCreateMapping.options()
-        );
+
+        Mapping mapping;
+        if (nodeEngine.getVersion().asVersion().isLessThan(V5_3)) {
+            mapping = new Mapping(
+                    sqlCreateMapping.nameWithoutSchema(),
+                    sqlCreateMapping.externalName(),
+                    sqlCreateMapping.type(),
+                    mappingFields,
+                    sqlCreateMapping.options()
+            );
+        } else {
+            mapping = new Mapping(
+                    sqlCreateMapping.nameWithoutSchema(),
+                    sqlCreateMapping.externalName(),
+                    sqlCreateMapping.dataLink(),
+                    sqlCreateMapping.type(),
+                    sqlCreateMapping.objectType(),
+                    mappingFields,
+                    sqlCreateMapping.options()
+            );
+        }
 
         return new CreateMappingPlan(
                 planKey,

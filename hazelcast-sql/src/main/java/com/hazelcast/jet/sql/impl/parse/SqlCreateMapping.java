@@ -53,14 +53,18 @@ public class SqlCreateMapping extends SqlCreate {
     private final SqlIdentifier name;
     private final SqlIdentifier externalName;
     private final SqlNodeList columns;
+    private final SqlIdentifier dataLink;
     private final SqlIdentifier type;
+    private final SqlIdentifier objectType;
     private final SqlNodeList options;
 
     public SqlCreateMapping(
             SqlIdentifier name,
             SqlIdentifier externalName,
             SqlNodeList columns,
+            SqlIdentifier dataLink,
             SqlIdentifier type,
+            SqlIdentifier objectType,
             SqlNodeList options,
             boolean replace,
             boolean ifNotExists,
@@ -71,7 +75,9 @@ public class SqlCreateMapping extends SqlCreate {
         this.name = requireNonNull(name, "Name should not be null");
         this.externalName = externalName;
         this.columns = requireNonNull(columns, "Columns should not be null");
-        this.type = requireNonNull(type, "Type should not be null");
+        this.dataLink = dataLink;
+        this.type = type;
+        this.objectType = objectType;
         this.options = requireNonNull(options, "Options should not be null");
 
         Preconditions.checkTrue(
@@ -92,8 +98,16 @@ public class SqlCreateMapping extends SqlCreate {
         return columns.getList().stream().map(node -> (SqlMappingColumn) node);
     }
 
+    public String dataLink() {
+        return dataLink != null ? dataLink.toString() : null;
+    }
+
     public String type() {
-        return type.toString();
+        return type != null ? type.toString() : null;
+    }
+
+    public String objectType() {
+        return objectType != null ? objectType.toString() : null;
     }
 
     public Map<String, String> options() {
@@ -152,9 +166,22 @@ public class SqlCreateMapping extends SqlCreate {
             writer.endList(frame);
         }
 
-        writer.newlineAndIndent();
-        writer.keyword("TYPE");
-        type.unparse(writer, leftPrec, rightPrec);
+        if (dataLink != null) {
+            writer.newlineAndIndent();
+            writer.keyword("DATA LINK");
+            dataLink.unparse(writer, leftPrec, rightPrec);
+        } else {
+            assert type != null;
+            writer.newlineAndIndent();
+            writer.keyword("TYPE");
+            type.unparse(writer, leftPrec, rightPrec);
+        }
+
+        if (objectType != null) {
+            writer.newlineAndIndent();
+            writer.keyword("OBJECT TYPE");
+            objectType.unparse(writer, leftPrec, rightPrec);
+        }
 
         if (options.size() > 0) {
             writer.newlineAndIndent();
@@ -198,9 +225,22 @@ public class SqlCreateMapping extends SqlCreate {
             writer.endList(frame);
         }
 
-        writer.newlineAndIndent();
-        writer.keyword("TYPE");
-        writer.print(mapping.type());
+        if (mapping.dataLink() != null) {
+            writer.newlineAndIndent();
+            writer.keyword("DATA LINK");
+            writer.print(mapping.dataLink());
+        } else {
+            assert mapping.type() != null;
+            writer.newlineAndIndent();
+            writer.keyword("TYPE");
+            writer.print(mapping.type());
+        }
+
+        if (mapping.objectType() != null) {
+            writer.newlineAndIndent();
+            writer.keyword("OBJECT TYPE");
+            writer.print(mapping.objectType());
+        }
 
         Map<String, String> options = mapping.options();
         if (options.size() > 0) {

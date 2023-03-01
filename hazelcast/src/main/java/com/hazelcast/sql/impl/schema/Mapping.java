@@ -16,9 +16,11 @@
 
 package com.hazelcast.sql.impl.schema;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import java.io.IOException;
@@ -34,11 +36,13 @@ import java.util.Objects;
  * represent a mapping.
  */
 @SuppressWarnings("JavadocReference")
-public class Mapping implements IdentifiedDataSerializable {
+public class Mapping implements IdentifiedDataSerializable, Versioned {
 
     private String name;
     private String externalName;
+    private String dataLink;
     private String type;
+    private String objectType;
     private List<MappingField> mappingFields;
     private Map<String, String> options;
 
@@ -71,6 +75,14 @@ public class Mapping implements IdentifiedDataSerializable {
         return type;
     }
 
+    public String dataLink() {
+        return dataLink;
+    }
+
+    public String objectType() {
+        return objectType;
+    }
+
     public List<MappingField> fields() {
         return Collections.unmodifiableList(mappingFields);
     }
@@ -94,6 +106,10 @@ public class Mapping implements IdentifiedDataSerializable {
         out.writeString(name);
         out.writeString(externalName);
         out.writeString(type);
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_3)) {
+            out.writeString(dataLink);
+            out.writeString(objectType);
+        }
         out.writeObject(mappingFields);
         out.writeObject(options);
     }
@@ -103,6 +119,10 @@ public class Mapping implements IdentifiedDataSerializable {
         name = in.readString();
         externalName = in.readString();
         type = in.readString();
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_3)) {
+            dataLink = in.readString();
+            objectType = in.readString();
+        }
         mappingFields = in.readObject();
         options = in.readObject();
     }

@@ -16,9 +16,12 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import com.hazelcast.datalink.JdbcDataLink;
+import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.assertj.core.api.Condition;
@@ -29,6 +32,9 @@ import org.junit.Test;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
 import static java.util.Arrays.asList;
@@ -228,6 +234,28 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 "SELECT * FROM " + tableName,
                 asList(new Row(0, "name-0"), new Row(1, "name-1"))
         );
+    }
+
+    @Test
+    public void when_mappingIsDeclaredWithDataLink_then_itIsAvailable() {
+        // given
+        String dlName = randomName();
+        String name = randomName();
+        Map<String, String> options = new HashMap<>();
+        options.put("jdbcUrl", dbConnectionUrl);
+
+        createDataLink(instance(), dlName, wrapDataLinkTypeName(JdbcDataLink.class.getName()), options);
+        InternalDataLinkService dlService = getNodeEngineImpl(instance()).getDataLinkService();
+        assertThat(dlService.existsDataLink(dlName)).isTrue();
+
+        createJdbcMappingUsingDataLink(name, dlName);
+        SqlResult mappings = sqlService.execute("SHOW MAPPINGS");
+        Iterator<SqlRow> resultIt = mappings.iterator();
+        assertThat(resultIt.hasNext()).isTrue();
+
+        Object object = resultIt.next().getObject(0);
+        assertThat(resultIt.hasNext()).isFalse();
+        assertThat(object).isEqualTo(name);
     }
 
     @Test

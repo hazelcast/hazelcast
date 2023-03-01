@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
+import com.hazelcast.datalink.impl.DataLinkTestUtil.DummyDataLink;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.schema.model.Person;
 import com.hazelcast.sql.HazelcastSqlException;
@@ -31,6 +32,7 @@ import java.util.List;
 
 import static com.hazelcast.function.ConsumerEx.noop;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -73,6 +75,7 @@ public class SqlMappingTest extends SqlTestSupport {
             client().getSql().execute("SELECT * FROM map1").forEach(noop());
             fail();
         } catch (HazelcastSqlException e) {
+            System.err.println(e.getSuggestion());
             client().getSql().execute(e.getSuggestion());
             assertRowsAnyOrder("SELECT * FROM map1", singletonList(new Row(1, "value-1")));
         }
@@ -151,6 +154,29 @@ public class SqlMappingTest extends SqlTestSupport {
     public void when_badType_then_fail() {
         assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING m TYPE TooBad"))
                 .hasMessageContaining("Unknown connector type: TooBad");
+    }
+
+    @Test
+    public void when_dataLinkDoesntExist_then_fail() {
+        String dlName = randomName();
+        String mappingName = randomName();
+        assertThatThrownBy(() ->
+                instance().getSql().execute("CREATE OR REPLACE MAPPING " + mappingName +
+                        " DATA LINK " + dlName + "\nOPTIONS ()"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Data link " + dlName + " doesn't exists");
+    }
+
+    @Test
+    public void when_dataLinkUnknown_then_fail() {
+        String dlName = randomName();
+        String mappingName = randomName();
+        createDataLink(instance(), dlName, wrapDataLinkTypeName(DummyDataLink.class.getName()), emptyMap());
+        assertThatThrownBy(() ->
+                instance().getSql().execute("CREATE OR REPLACE MAPPING " + mappingName +
+                        " DATA LINK " + dlName + "\nOPTIONS ()"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Unknown data link");
     }
 
     @Test
