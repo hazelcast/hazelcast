@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.datalink;
+package com.hazelcast.datalink.impl;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.datalink.DataLink;
+import com.hazelcast.datalink.DataLinkService;
 import com.hazelcast.jet.core.Processor;
 
 import java.util.concurrent.atomic.AtomicInteger;

@@ -19,6 +19,7 @@ package com.hazelcast.datalink;
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.datalink.impl.ConnectionDelegate;
+import com.hazelcast.datalink.impl.ReferenceCounter;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.spi.annotation.Beta;
 import com.zaxxer.hikari.HikariConfig;

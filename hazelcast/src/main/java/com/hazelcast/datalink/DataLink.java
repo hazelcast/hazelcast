@@ -17,6 +17,7 @@
 package com.hazelcast.datalink;
 
 import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.datalink.impl.ReferenceCounter;
 import com.hazelcast.spi.annotation.Beta;
 
 import java.util.HashMap;
@@ -129,8 +130,6 @@ public interface DataLink extends AutoCloseable {
      * shared / pooled instance of the physical connection.
      * <p>
      * Called by {@link DataLinkService} when the DataLink is retrieved from it.
-     * <p>
-     * See the {@link ReferenceCounter} for details how to implement it.
      */
     default void retain() {
         // no-op by default
@@ -142,8 +141,6 @@ public interface DataLink extends AutoCloseable {
      * <p>
      * The user must call this method when the DataLink is
      * no longer required.
-     * <p>
-     * See the {@link ReferenceCounter} for details how to implement it.
      */
     @Override
     default void close() throws Exception {
