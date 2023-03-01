@@ -38,6 +38,7 @@ import org.bson.BsonDocument;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.bson.types.ObjectId;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -192,11 +193,20 @@ public class ReadMongoP<I> extends AbstractProcessor {
         int keyInteger = ((BroadcastKey<Integer>) key).key();
         boolean wm = keyInteger < 0;
         int keyAb = Math.abs(keyInteger);
-        if (!wm && keyAb % totalParallelism == processorIndex) {
-            reader.restore(value);
-        }
-        if (wm && keyAb % totalParallelism == processorIndex && reader.supportsWatermarks()) {
-            reader.restoreWatermark((Long) value);
+        boolean forThisProcessor = keyAb % totalParallelism == processorIndex;
+        if (forThisProcessor) {
+            if (!wm) {
+                Document currentRT = (Document) reader.snapshot();
+                ObjectId currentRTId = currentRT == null ? null : currentRT.getObjectId("_data");
+
+                ObjectId valueId = ((Document) value).getObjectId("_data");
+                if (currentRTId == null || valueId.getTimestamp() < currentRTId.getTimestamp()) {
+                    reader.restore(value);
+                    reader.connect(connection.client(), true);
+                }
+            } else if (reader.supportsWatermarks()) {
+                reader.restoreWatermark((Long) value);
+            }
         }
     }
 
