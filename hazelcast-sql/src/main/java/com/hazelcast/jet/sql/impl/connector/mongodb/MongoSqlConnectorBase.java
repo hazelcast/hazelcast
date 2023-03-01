@@ -45,7 +45,7 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.mongodb.impl.Mappers.bsonDocumentToDocument;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
-import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
+import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -109,7 +109,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         }
 
         if (isStream() && !containsId) {
-            fields.add(0, new MongoTableField("fullDocument._id", VARCHAR, "fullDocument._id", true));
+            fields.add(0, new MongoTableField("fullDocument._id", OBJECT, "fullDocument._id", true));
         }
         return new MongoTable(schemaName, mappingName, databaseName, collectionName, options, this,
                 fields, stats, isStream());

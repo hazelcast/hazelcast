@@ -109,11 +109,11 @@ class FieldResolver {
             case DATE_TIME:
                 return QueryDataType.DATE;
             case STRING:
-            case OBJECT_ID:
             case JAVASCRIPT:
             case JAVASCRIPT_WITH_SCOPE:
                 return VARCHAR;
             case DECIMAL128: return QueryDataType.DECIMAL;
+            case OBJECT_ID:
             case BINARY:
             case MIN_KEY:
             case ARRAY:

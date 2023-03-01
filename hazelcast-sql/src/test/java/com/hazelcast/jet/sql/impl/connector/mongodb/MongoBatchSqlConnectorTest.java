@@ -342,7 +342,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
     private void createMapping(boolean includeIdInMapping) {
         execute("CREATE MAPPING " + methodName()
                 + " ("
-                + (includeIdInMapping ? " id VARCHAR external name _id, " : "")
+                + (includeIdInMapping ? " id OBJECT external name _id, " : "")
                 + " firstName VARCHAR, "
                 + " lastName VARCHAR, "
                 + " jedi BOOLEAN "

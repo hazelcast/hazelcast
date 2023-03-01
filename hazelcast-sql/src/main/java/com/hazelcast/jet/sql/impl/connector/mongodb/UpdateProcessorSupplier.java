@@ -138,9 +138,6 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
         int index = 0;
         for (String pkField : pkFields)  {
             Object value = values[index++];
-            if (value instanceof String) {
-                value = new ObjectId((String) value);
-            }
             doc.append(pkField, value);
         }
 
