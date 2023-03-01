@@ -213,7 +213,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         Properties secondProps = new Properties();
         secondProps.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
         secondProps.setProperty(COLUMNS_PROPERTY, "id,name,age");
-        mapLoader = createMapLoader(secondProps, hz, false);
+        mapLoader = createUnitUnderTest(secondProps, hz, false);
         mapLoader.init(hz, secondProps, mapName);
 
         assertThatThrownBy(() -> mapLoader.load(0))
@@ -248,7 +248,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         Properties secondProps = new Properties();
         secondProps.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
         secondProps.setProperty(COLUMNS_PROPERTY, "id,name,age");
-        mapLoader = createMapLoader(secondProps, hz, false);
+        mapLoader = createUnitUnderTest(secondProps, hz, false);
         mapLoader.init(hz, secondProps, mapName);
 
         assertThatThrownBy(() -> mapLoader.load(0))
@@ -398,7 +398,6 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         assertThat(ids).isEmpty();
     }
 
-
     @Test
     public void givenMapStoreConfigWithOffloadDisabled_thenFail() {
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
@@ -434,8 +433,6 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         assertThat(record).isNotNull();
     }
 
-
-
     private <K> GenericMapLoader<K> createMapLoader() {
         return createMapLoader(hz);
     }
@@ -447,10 +444,10 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
     }
 
     private <K> GenericMapLoader<K> createMapLoader(Properties properties, HazelcastInstance instance) {
-        return createMapLoader(properties, instance, true);
+        return createUnitUnderTest(properties, instance, true);
     }
 
-    private <K> GenericMapLoader<K> createMapLoader(Properties properties, HazelcastInstance instance, boolean init) {
+    protected <K> GenericMapLoader<K> createUnitUnderTest(Properties properties, HazelcastInstance instance, boolean init) {
         MapConfig mapConfig = createMapConfigWithMapStore(mapName);
         instance.getConfig().addMapConfig(mapConfig);
 
@@ -462,7 +459,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         return mapLoader;
     }
 
-    private static MapConfig createMapConfigWithMapStore(String mapName) {
+    private MapConfig createMapConfigWithMapStore(String mapName) {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setClassName(GenericMapLoader.class.getName());
         MapConfig mapConfig = new MapConfig(mapName);
@@ -470,12 +467,12 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         return mapConfig;
     }
 
-    private void assertMappingCreated() {
+    protected void assertMappingCreated() {
         assertTrueEventually(() ->
                 assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList(new Row(MAPPING_PREFIX + mapName))), 60);
     }
 
-    private void assertMappingDestroyed() {
+    protected void assertMappingDestroyed() {
         assertTrueEventually(() -> assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList()), 60);
     }
 }

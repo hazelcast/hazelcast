@@ -331,7 +331,6 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         );
     }
 
-
     @Test
     public void givenTableNameProperty_whenCreateMapStore_thenUseTableName() throws Exception {
         String tableName = randomTableName();
@@ -388,10 +387,11 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
     }
 
     private <K> GenericMapStore<K> createMapStore(Properties properties, HazelcastInstance instance) {
-        return createMapStore(properties, instance, true);
+        return createUnitUnderTest(properties, instance, true);
     }
 
-    private <K> GenericMapStore<K> createMapStore(Properties properties, HazelcastInstance instance, boolean init) {
+    @Override
+    protected <K> GenericMapStore<K> createUnitUnderTest(Properties properties, HazelcastInstance instance, boolean init) {
         MapConfig mapConfig = createMapConfigWithMapStore(mapName);
         instance.getConfig().addMapConfig(mapConfig);
 
@@ -403,20 +403,11 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         return mapStore;
     }
 
-    private static MapConfig createMapConfigWithMapStore(String mapName) {
+    private MapConfig createMapConfigWithMapStore(String mapName) {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setClassName(GenericMapStore.class.getName());
         MapConfig mapConfig = new MapConfig(mapName);
         mapConfig.setMapStoreConfig(mapStoreConfig);
         return mapConfig;
-    }
-
-    private void assertMappingCreated() {
-        assertTrueEventually(() -> assertRowsAnyOrder(hz, "SHOW MAPPINGS",
-                newArrayList(new Row(MAPPING_PREFIX + mapName))), 60);
-    }
-
-    private void assertMappingDestroyed() {
-        assertTrueEventually(() -> assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList()), 60);
     }
 }
