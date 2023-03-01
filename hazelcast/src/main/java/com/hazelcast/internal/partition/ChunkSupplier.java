@@ -33,7 +33,7 @@ import java.util.function.Predicate;
 public interface ChunkSupplier extends Iterator<Operation> {
 
     /**
-     * @param isEndOfChunk boolean supplier to signal end of chunk.
+     * @param isEndOfChunk {@link Predicate} to test end of chunk.
      */
     default void signalEndOfChunkWith(Predicate<BufferObjectDataOutput> isEndOfChunk) {
 

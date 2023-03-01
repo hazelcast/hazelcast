@@ -77,7 +77,7 @@ public final class ChunkSerDeHelper {
 
     public void writeChunkedOperations(ObjectDataOutput out) throws IOException {
         assert out instanceof BufferObjectDataOutput;
-        
+
         BufferObjectDataOutput bufferedOut = (BufferObjectDataOutput) out;
         IsEndOfChunk isEndOfChunk = new IsEndOfChunk(maxTotalChunkedDataInBytes);
 
