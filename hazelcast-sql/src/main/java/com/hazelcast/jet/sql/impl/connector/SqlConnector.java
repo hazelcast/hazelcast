@@ -357,17 +357,19 @@ public interface SqlConnector {
      * Returns the supplier for the update processor that will update given
      * {@code table}.
      * <p>
-     * The processor works in 2 modes, depending on the value returned from
-     * {@link #dmlSupportsPredicates()}:<ol>
+     * The processor works in 2 modes, depending on the  `hasInput`
+     * argument:<ol>
      *
-     *     <li><b>With a predicate:</b> There will be no input to the processor.
-     *     The processor is supposed to update all rows matching the given
-     *     predicate. In this mode the `predicate` is always not-null.
+     *     <li><b>hasInput == false:</b> There will be no input to the
+     *     processor. The processor is supposed to update all rows matching the
+     *     given `predicate`. If the `predicate` is null, it's supposed to
+     *     delete all rows.
      *
-     *     <li><b>Without a predicate:</b> The processor is supposed to delete
-     *     all rows with primary keys it receives on the input. In this mode the
+     *     <li><b>hasInput == true:</b> The processor is supposed to delete all
+     *     rows with primary keys it receives on the input. In this mode the
      *     `predicate` is always null. The primary key fields are specified by
-     *     the {@link #getPrimaryKey(Table)} method.
+     *     the {@link #getPrimaryKey(Table)} method. If {@link
+     *     #dmlSupportsPredicates()} returned false, `hasInput` is always true.
      *
      * </ol>
      */
@@ -376,7 +378,8 @@ public interface SqlConnector {
             @Nonnull DagBuildContext context,
             @Nonnull List<String> fieldNames,
             @Nonnull List<HazelcastRexNode> expressions,
-            @Nullable HazelcastRexNode predicate
+            @Nullable HazelcastRexNode predicate,
+            boolean hasInput
     ) {
         throw new UnsupportedOperationException("UPDATE not supported for " + typeName());
     }
@@ -385,21 +388,27 @@ public interface SqlConnector {
      * Returns the supplier for the delete processor that will delete from the
      * given {@code table}.
      * <p>
-     * The processor works in 2 modes, depending on the value returned from
-     * {@link #dmlSupportsPredicates()}:<ol>
+     * The processor works in 2 modes, depending on the  `hasInput` argument:<ol>
      *
-     *     <li><b>With a predicate:</b> There will be no input to the processor.
-     *     The processor is supposed to update all rows matching the given
-     *     predicate. In this mode the `predicate` is always not-null.
+     *     <li><b>hasInput == false:</b> There will be no input to the
+     *     processor. The processor is supposed to update all rows matching the
+     *     given `predicate`. If the `predicate` is null, it's supposed to
+     *     update all rows.
      *
-     *     <li><b>Without a predicate:</b> The processor is supposed to delete
-     *     all rows with primary keys it receives on the input. In this mode the
+     *     <li><b>hasInput == true:</b> The processor is supposed to delete all
+     *     rows with primary keys it receives on the input. In this mode the
      *     `predicate` is always null. The primary key fields are specified by
-     *     the {@link #getPrimaryKey(Table)} method.
+     *     the {@link #getPrimaryKey(Table)} method. If {@link
+     *     #dmlSupportsPredicates()} returned false, `hasInput` is always true.
      *
+     * </ol>
      */
     @Nonnull
-    default Vertex deleteProcessor(@Nonnull DagBuildContext context, @Nullable HazelcastRexNode predicate) {
+    default Vertex deleteProcessor(
+            @Nonnull DagBuildContext context,
+            @Nullable HazelcastRexNode predicate,
+            boolean hasInput
+    ) {
         throw new UnsupportedOperationException("DELETE not supported for " + typeName());
     }
 
@@ -409,6 +418,19 @@ public interface SqlConnector {
      */
     default boolean dmlSupportsPredicates() {
         return true;
+    }
+
+    /**
+     * Returns whether the given `expression` is supported by the remote system.
+     * That is if it can be evaluated remotely. If it returns true, then this expression
+     * will be passed as a projection or predicate to the other vertex-generating methods.
+     * <p>
+     * The default implementation returns false.
+     *
+     * @return true, iff the given expression can be evaluated remotely
+     */
+    default boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
+        return false;
     }
 
     /**

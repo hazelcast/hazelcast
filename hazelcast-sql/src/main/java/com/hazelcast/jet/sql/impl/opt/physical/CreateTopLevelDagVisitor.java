@@ -186,9 +186,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         dagBuildContext.setTable(table);
         dagBuildContext.setRel(rel);
         SqlConnector connector = getJetSqlConnector(table);
-        assert connector.dmlSupportsPredicates() ^ rel.getPredicate() == null;
-        Vertex vertex = connector.updateProcessor(
-                dagBuildContext, rel.getUpdateColumnList(), wrap(rel.getSourceExpressionList()), wrap(rel.getPredicate()));
+        Vertex vertex = connector.updateProcessor(dagBuildContext, rel.getUpdateColumnList(), wrap(rel.getSourceExpressionList()),
+                wrap(rel.getPredicate()), rel.getInput() != null);
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }
@@ -203,8 +202,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         dagBuildContext.setTable(table);
         dagBuildContext.setRel(rel);
         SqlConnector connector = getJetSqlConnector(table);
-        assert connector.dmlSupportsPredicates() ^ rel.getPredicate() == null;
-        Vertex vertex = connector.deleteProcessor(dagBuildContext, wrap(rel.getPredicate()));
+        Vertex vertex = connector.deleteProcessor(dagBuildContext, wrap(rel.getPredicate()), rel.getInput() != null);
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }

@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.opt.common;
 
+import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
+import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
@@ -24,22 +26,29 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import org.apache.calcite.plan.RelOptPredicateList;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
+import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.RelRule.Config;
 import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.rules.TransformationRule;
+import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexProgram;
+import org.apache.calcite.rex.RexProgramBuilder;
 import org.apache.calcite.rex.RexSimplify;
+import org.apache.calcite.rex.RexUtil;
+import org.apache.calcite.util.Pair;
 import org.apache.calcite.util.Permutation;
 import org.immutables.value.Value;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.jet.sql.impl.connector.HazelcastRexNode.wrap;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
-import static java.util.Arrays.asList;
 import static org.apache.calcite.rex.RexUtil.EXECUTOR;
 
 /**
@@ -55,6 +64,19 @@ import static org.apache.calcite.rex.RexUtil.EXECUTOR;
  * <pre>
  * TableScan[table[filter=exp1 AND exp2]]
  * </pre>
+ *
+ * If the scan doesn't support the whole calc's predicate, only a part might be pushed down.
+ * <p>
+ * Before:
+ * <pre>
+ * Calc[filter=expSupported AND expUnsupported]
+ *     TableScan[table[filter=exp1]]
+ * </pre>
+ * After:
+ * <pre>
+ * Calc[filter=expUnsupported]
+ *     TableScan[table[filter=expSupported AND exp1]]
+ * </pre>
  */
 @Value.Enclosing
 public final class CalcIntoScanRule extends RelRule<Config> implements TransformationRule {
@@ -67,7 +89,8 @@ public final class CalcIntoScanRule extends RelRule<Config> implements Transform
                         .operand(Calc.class)
                         .trait(LOGICAL)
                         .inputs(b1 -> b1
-                                .operand(FullScan.class).anyInputs()))
+                                .operand(FullScan.class)
+                                .noInputs()))
                 .build();
 
         @Override
@@ -97,23 +120,41 @@ public final class CalcIntoScanRule extends RelRule<Config> implements Transform
         FullScan scan = call.rel(1);
 
         HazelcastTable table = OptUtils.extractHazelcastTable(scan);
-        RexProgram program = calc.getProgram();
-        assert scan.getConvention() == LOGICAL; // support it for physical rels also.
+        SqlConnector sqlConnector = getJetSqlConnector(table.getTarget());
+        RexProgram calcProgram = calc.getProgram();
+        assert scan.getConvention() == LOGICAL;
 
-        List<RexNode> newProjects = program.expandList(program.getProjectList());
-        HazelcastTable newTable = table.withProject(newProjects, program.getOutputRowType());
+        // Merge filters first. Filters are evaluated before the projection, if some filter isn't supported, we
+        // can't push the projection.
 
-        // merge filters
-        if (program.getCondition() != null) {
-            RexNode calcFilter = program.expandLocalRef(program.getCondition());
+        HazelcastTable newTable = table;
+        RexNode remainingFilter = null;
+        RexBuilder rexBuilder = call.builder().getRexBuilder();
+        RexSimplify rexSimplify = new RexSimplify(rexBuilder, RelOptPredicateList.EMPTY, EXECUTOR);
+        if (calcProgram.getCondition() != null) {
+            RexNode calcFilter = calcProgram.expandLocalRef(calcProgram.getCondition());
             RexNode scanFilter = table.getFilter();
 
-            RexSimplify rexSimplify = new RexSimplify(
-                    call.builder().getRexBuilder(),
-                    RelOptPredicateList.EMPTY,
-                    EXECUTOR);
-            RexNode simplifiedCondition = rexSimplify.simplifyFilterPredicates(asList(calcFilter, scanFilter));
+            List<RexNode> supportedCalcParts = new ArrayList<>();
+            List<RexNode> unsupportedCalcParts = new ArrayList<>();
+            for (RexNode expr : RelOptUtil.conjunctions(calcFilter)) {
+                (sqlConnector.supportsExpression(wrap(expr)) ? supportedCalcParts : unsupportedCalcParts).add(expr);
+            }
+
+            supportedCalcParts.add(scanFilter);
+            RexNode simplifiedCondition = rexSimplify.simplifyFilterPredicates(supportedCalcParts);
             newTable = newTable.withFilter(simplifiedCondition);
+            remainingFilter = RexUtil.composeConjunction(rexBuilder, unsupportedCalcParts, true);
+        }
+
+        List<RexNode> newProjects = calcProgram.expandList(calcProgram.getProjectList());
+        boolean projectsSupported = newProjects.stream()
+                .map(HazelcastRexNode::wrap)
+                .allMatch(sqlConnector::supportsExpression);
+
+        if (projectsSupported && remainingFilter == null) {
+            newTable = newTable.withProject(newProjects, calcProgram.getOutputRowType());
+            newProjects = null;
         }
 
         HazelcastRelOptTable convertedTable = OptUtils.createRelTable(
@@ -122,12 +163,24 @@ public final class CalcIntoScanRule extends RelRule<Config> implements Transform
                 scan.getCluster().getTypeFactory()
         );
 
-        call.transformTo(new FullScanLogicalRel(
+        FullScanLogicalRel newScan = new FullScanLogicalRel(
                 scan.getCluster(),
                 OptUtils.toLogicalConvention(scan.getTraitSet()),
                 convertedTable,
                 scan.lagExpression(),
-                OptUtils.getTargetField(program, scan.watermarkedColumnIndex())
-        ));
+                OptUtils.getTargetField(calcProgram, scan.watermarkedColumnIndex())
+        );
+
+        if (newProjects != null) {
+            assert remainingFilter == null;
+            RexProgramBuilder progBuilder = new RexProgramBuilder(convertedTable.getRowType(), rexBuilder);
+            for (Pair<RexNode, String> pair : Pair.zip(newProjects, calc.getRowType().getFieldNames())) {
+                progBuilder.addProject(pair.left, pair.right);
+            }
+            Calc newCalc = calc.copy(calc.getTraitSet(), newScan, progBuilder.getProgram());
+            call.transformTo(newCalc);
+        } else {
+            call.transformTo(newScan);
+        }
     }
 }

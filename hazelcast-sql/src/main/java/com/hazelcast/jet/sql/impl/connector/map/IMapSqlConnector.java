@@ -325,9 +325,11 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull DagBuildContext context,
             @Nonnull List<String> fieldNames,
             @Nonnull List<HazelcastRexNode> expressions,
-            @Nullable HazelcastRexNode predicate
+            @Nullable HazelcastRexNode predicate,
+            boolean hasInput
     ) {
         assert predicate == null;
+        assert hasInput;
         PartitionedMapTable table = (PartitionedMapTable) context.getTable();
 
         return context.getDag().newUniqueVertex(
@@ -341,8 +343,9 @@ public class IMapSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public Vertex deleteProcessor(@Nonnull DagBuildContext context, @Nullable HazelcastRexNode predicate) {
+    public Vertex deleteProcessor(@Nonnull DagBuildContext context, @Nullable HazelcastRexNode predicate, boolean hasInput) {
         assert predicate == null;
+        assert hasInput;
         PartitionedMapTable table = (PartitionedMapTable) context.getTable();
 
         return context.getDag().newUniqueVertex(
@@ -357,6 +360,11 @@ public class IMapSqlConnector implements SqlConnector {
     @Override
     public boolean dmlSupportsPredicates() {
         return false;
+    }
+
+    @Override
+    public boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
+        return true;
     }
 
     @Nonnull
