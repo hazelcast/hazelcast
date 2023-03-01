@@ -53,7 +53,6 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     private static final ILogger SUPPORT_LOGGER = Logger.getLogger(SimpleTestInClusterSupport.class);
 
     private static TestHazelcastFactory factory;
-    private static Config config;
     private static HazelcastInstance[] instances;
     private static HazelcastInstance client;
 
@@ -66,7 +65,6 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         if (config == null) {
             config = smallInstanceConfig();
         }
-        SimpleTestInClusterSupport.config = config;
         // create members
         for (int i = 0; i < memberCount; i++) {
             instances[i] = factory.newHazelcastInstance(config);
@@ -160,15 +158,6 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     @Nonnull
     protected static TestHazelcastFactory factory() {
         return factory;
-    }
-
-    /**
-     * Returns the config used to create member instances (even if null was
-     * passed).
-     */
-    @Nonnull
-    protected static Config jetConfig() {
-        return config;
     }
 
     /**

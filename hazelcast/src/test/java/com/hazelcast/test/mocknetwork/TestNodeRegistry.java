@@ -16,15 +16,19 @@
 
 package com.hazelcast.test.mocknetwork;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.DeviceConfig;
+import com.hazelcast.config.LocalDeviceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeState;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.internal.util.AddressUtil;
+import com.hazelcast.test.AssertTask;
 
+import java.io.File;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Collections;
@@ -37,6 +41,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.junit.Assert.assertEquals;
@@ -158,10 +164,31 @@ public final class TestNodeRegistry {
 
     void registerNode(Node node) {
         Address address = node.getThisAddress();
+
+        if (node.getConfig().getMapConfigs().values()
+                .stream()
+                .anyMatch(mapConfig -> mapConfig.getTieredStoreConfig().isEnabled())) {
+            // In current version multiple instances cannot use the same base dir
+            // for TStore. This may be supported in the future. See: HZ-2095.
+            Set<String> existingDirs = getAllHazelcastInstances().stream()
+                    .flatMap(i -> tstoreBaseDirs(i.getConfig()))
+                    .collect(Collectors.toSet());
+            verifyInvariant(tstoreBaseDirs(node.getConfig()).noneMatch(existingDirs::contains),
+                    "TStore base dir must be unique");
+        }
+
         Node currentNode = nodes.putIfAbsent(address, node);
         if (currentNode != null) {
             verifyInvariant(currentNode.equals(node), "This address is already in registry! " + address);
         }
+    }
+
+    private Stream<String> tstoreBaseDirs(Config config) {
+        return config.getDeviceConfigs().values().stream()
+                .filter(DeviceConfig::isLocal)
+                .map(LocalDeviceConfig.class::cast)
+                .map(LocalDeviceConfig::getBaseDir)
+                .map(File::getAbsolutePath);
     }
 
     Collection<Address> getAddresses() {
