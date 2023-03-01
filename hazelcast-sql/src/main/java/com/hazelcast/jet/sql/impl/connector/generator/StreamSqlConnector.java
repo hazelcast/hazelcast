@@ -105,4 +105,9 @@ public class StreamSqlConnector implements SqlConnector {
         ProcessorMetaSupplier pms = source.metaSupplierFn.apply(EventTimePolicy.noEventTime());
         return context.getDag().newUniqueVertex(table.toString(), pms);
     }
+
+    @Override
+    public boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
+        return true;
+    }
 }

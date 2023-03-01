@@ -107,6 +107,11 @@ final class InfoSchemaConnector implements SqlConnector {
         );
     }
 
+    @Override
+    public boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
+        return true;
+    }
+
     private static final class StaticSourceP extends AbstractProcessor {
 
         private final Expression<Boolean> predicate;
