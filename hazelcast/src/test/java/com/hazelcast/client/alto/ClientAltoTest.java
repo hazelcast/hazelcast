@@ -398,6 +398,8 @@ public class ClientAltoTest extends ClientTestSupport {
         assertClientConnectsAllAltoPortsEventually(connections, config.getAltoConfig().getEventloopCount());
 
         ClientConnection connection = connectionManager.getRandomConnection();
+        assertTrue(connection.isAlive());
+
         Channel[] altoChannels = connection.getAltoChannels();
         assertNotNull(altoChannels);
 

@@ -31,7 +31,9 @@ import com.hazelcast.internal.networking.ChannelCloseListener;
  * of the Alto channel, such as heartbeats.
  */
 public class AltoChannelCloseListener implements ChannelCloseListener {
+
     private final HazelcastClientInstanceImpl client;
+
     public AltoChannelCloseListener(HazelcastClientInstanceImpl client) {
         this.client = client;
     }

@@ -46,35 +46,35 @@ public final class HeartbeatManager {
     public static void start(HazelcastClientInstanceImpl client,
                              TaskScheduler taskScheduler,
                              ILogger logger,
-                             long heartbeatInterval,
-                             long heartbeatTimeout,
+                             long heartbeatIntervalMillis,
+                             long heartbeatTimeoutMillis,
                              Collection<ClientConnection> connectionsView) {
 
         HeartbeatChecker heartbeatChecker = new HeartbeatChecker(client,
                 logger,
-                heartbeatInterval,
-                heartbeatTimeout,
+                heartbeatIntervalMillis,
+                heartbeatTimeoutMillis,
                 connectionsView);
 
-        taskScheduler.scheduleWithRepetition(heartbeatChecker, heartbeatInterval, heartbeatInterval, MILLISECONDS);
+        taskScheduler.scheduleWithRepetition(heartbeatChecker, heartbeatIntervalMillis, heartbeatIntervalMillis, MILLISECONDS);
     }
 
     private static final class HeartbeatChecker implements Runnable {
 
         private final HazelcastClientInstanceImpl client;
         private final ILogger logger;
-        private final long heartbeatInterval;
-        private final long heartbeatTimeout;
+        private final long heartbeatIntervalMillis;
+        private final long heartbeatTimeoutMillis;
         private final Collection<ClientConnection> connectionsView;
 
         private HeartbeatChecker(HazelcastClientInstanceImpl client,
                                  ILogger logger,
-                                 long heartbeatInterval,
-                                 long heartbeatTimeout,
+                                 long heartbeatIntervalMillis,
+                                 long heartbeatTimeoutMillis,
                                  Collection<ClientConnection> connectionsView) {
             this.client = client;
-            this.heartbeatTimeout = heartbeatTimeout;
-            this.heartbeatInterval = heartbeatInterval;
+            this.heartbeatTimeoutMillis = heartbeatTimeoutMillis;
+            this.heartbeatIntervalMillis = heartbeatIntervalMillis;
             this.connectionsView = connectionsView;
             this.logger = logger;
         }
@@ -100,14 +100,14 @@ public final class HeartbeatManager {
                 return;
             }
 
-            if (now - connection.lastReadTimeMillis() > heartbeatTimeout) {
+            if (now - connection.lastReadTimeMillis() > heartbeatTimeoutMillis) {
                 logger.warning("Heartbeat failed over the connection: " + connection);
                 connection.close("Heartbeat timed out",
                         new TargetDisconnectedException("Heartbeat timed out to connection " + connection));
                 return;
             }
 
-            if (now - connection.lastWriteTimeMillis() > heartbeatInterval) {
+            if (now - connection.lastWriteTimeMillis() > heartbeatIntervalMillis) {
                 sendPing(connection);
             }
         }
@@ -122,7 +122,7 @@ public final class HeartbeatManager {
             //  auth changes. Right now, it is needed because we are
             //  not reading anything during the initial connection, hence
             //  it is returning -1, which fails the check immediately
-            if (lastReadTime > 0 && now - lastReadTime > heartbeatTimeout) {
+            if (lastReadTime > 0 && now - lastReadTime > heartbeatTimeoutMillis) {
                 logger.warning("Heartbeat failed over the Alto channel " + altoChannel + " for connection: " + connection);
                 connection.close("Heartbeat timed out",
                         new TargetDisconnectedException("Heartbeat timed out to the Alto channel "
@@ -130,7 +130,7 @@ public final class HeartbeatManager {
                 return;
             }
 
-            if (now - altoChannel.lastWriteTimeMillis() > heartbeatInterval) {
+            if (now - altoChannel.lastWriteTimeMillis() > heartbeatIntervalMillis) {
                 ConcurrentMap attributeMap = altoChannel.attributeMap();
                 ClientConnection adapter = (ClientConnection) attributeMap.get(AltoChannelClientConnectionAdapter.class);
                 sendPing(adapter);
