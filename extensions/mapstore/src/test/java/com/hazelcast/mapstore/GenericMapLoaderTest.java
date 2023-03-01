@@ -447,7 +447,8 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         return createUnitUnderTest(properties, instance, true);
     }
 
-    protected <K> GenericMapLoader<K> createUnitUnderTest(Properties properties, HazelcastInstance instance, boolean init) {
+    protected <K> GenericMapLoader<K> createUnitUnderTest(Properties properties, HazelcastInstance instance,
+                                                          boolean init) {
         MapConfig mapConfig = createMapConfigWithMapStore(mapName);
         instance.getConfig().addMapConfig(mapConfig);
 
