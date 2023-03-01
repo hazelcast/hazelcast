@@ -15,7 +15,6 @@
  */
 package com.hazelcast.jet.mongodb.impl;
 
-import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Field;
 import com.mongodb.client.model.Filters;
 import org.bson.BsonArray;
