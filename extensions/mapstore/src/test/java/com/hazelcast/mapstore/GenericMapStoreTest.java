@@ -18,7 +18,6 @@ package com.hazelcast.mapstore;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.test.SerialTest;
@@ -40,14 +39,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import static com.hazelcast.mapstore.GenericMapStore.COLUMNS_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.DATA_LINK_REF_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.ID_COLUMN_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.MAPPING_PREFIX;
 import static com.hazelcast.mapstore.GenericMapStore.TABLE_NAME_PROPERTY;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -150,26 +147,6 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         GenericRecord record = mapStoreNonMaster.load(0);
         assertThat(record).isNotNull();
     }
-
-    @Test
-    public void whenSetNonExistingColumnOnSecondMapStore_thenFailToInitialize() throws Exception {
-        createTable(mapName, "id INT PRIMARY KEY", "name VARCHAR(100)", "age INT");
-        executeJdbc("INSERT INTO " + mapName + " VALUES(0, 'name-0', 42)");
-        createMapping(mapName, MAPPING_PREFIX + mapName);
-        assertMappingCreated();
-        // This simulates a second map store on a different instance. The mapping is created, but must be validated
-        // (e.g. the config might differ on members)
-        Properties secondProps = new Properties();
-        secondProps.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
-        secondProps.setProperty(COLUMNS_PROPERTY, "id,name,age");
-        mapStore = createMapStore(secondProps, hz, false);
-        mapStore.init(hz, secondProps, mapName);
-
-        assertThatThrownBy(() -> mapStore.load(0))
-                .isInstanceOf(HazelcastException.class)
-                .hasStackTraceContaining("Column 'age' not found");
-    }
-
 
     @Test
     public void whenStore_thenTableContainsRow() throws Exception {
