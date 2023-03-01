@@ -28,7 +28,6 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOneModel;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.model.WriteModel;
-import org.bson.BsonType;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
@@ -57,7 +56,6 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     private final List<String> fieldNames;
     private final List<? extends Serializable> updates;
     private final List<String> pkFields;
-    private final BsonType pkType;
     private ExpressionEvalContext evalContext;
 
     UpdateProcessorSupplier(MongoTable table, List<String> fieldNames, List<? extends Serializable> updates) {
@@ -69,7 +67,6 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
         this.fieldNames = fieldNames;
         this.updates = updates;
         this.pkFields = Collections.singletonList("_id");
-        this.pkType = table.getField("_id").getBsonType();
     }
 
     @Override
@@ -141,7 +138,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
         int index = 0;
         for (String pkField : pkFields)  {
             Object value = values[index++];
-            if (value instanceof String && pkType == BsonType.OBJECT_ID) {
+            if (value instanceof String) {
                 value = new ObjectId((String) value);
             }
             doc.append(pkField, value);

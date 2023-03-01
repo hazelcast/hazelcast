@@ -24,7 +24,6 @@ import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import org.bson.BsonType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -46,7 +45,6 @@ class MongoTable extends JetTable {
     final boolean streaming;
     private final String[] externalNames;
     private final QueryDataType[] fieldTypes;
-    private final BsonType[] fieldBsonTypes;
 
     MongoTable(
             @Nonnull String schemaName,
@@ -71,9 +69,6 @@ class MongoTable extends JetTable {
         this.fieldTypes = getFields().stream()
                                 .map(TableField::getType)
                                 .toArray(QueryDataType[]::new);
-        this.fieldBsonTypes = getFields().stream()
-                                         .map(field -> ((MongoTableField) field).getBsonType())
-                                         .toArray(BsonType[]::new);
     }
 
     public MongoTableField getField(String name) {
@@ -99,10 +94,6 @@ class MongoTable extends JetTable {
 
     QueryDataType[] fieldTypes() {
         return fieldTypes;
-    }
-
-    BsonType[] fieldBsonTypes() {
-        return fieldBsonTypes;
     }
 
     SupplierEx<QueryTarget> queryTargetSupplier() {

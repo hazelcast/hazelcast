@@ -17,26 +17,19 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import org.bson.BsonType;
 
 import java.util.Objects;
 
 class MongoTableField extends TableField {
     final String externalName;
-    private final BsonType bsonType;
 
-    MongoTableField(String name, QueryDataType type, String externalName, boolean hidden, BsonType bsonType) {
+    MongoTableField(String name, QueryDataType type, String externalName, boolean hidden) {
         super(name, type, hidden);
         this.externalName = externalName;
-        this.bsonType = bsonType;
     }
 
     public String getExternalName() {
         return externalName;
-    }
-
-    public BsonType getBsonType() {
-        return bsonType;
     }
 
     @Override
