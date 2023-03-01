@@ -16,24 +16,24 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.config.FunctionArgument;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.partition.PartitioningStrategy;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Factory for {@link PartitioningStrategy} instances.
  */
 public final class PartitioningStrategyFactory {
-
-    private static final String ARGUMENTS_REGEX = "(.*)\\((.+)\\)";
     // not private for tests
     final ConcurrentHashMap<String, PartitioningStrategy> cache = new ConcurrentHashMap<>();
 
@@ -55,12 +55,17 @@ public final class PartitioningStrategyFactory {
      * then looks up its internal cache of partitioning strategies; if one has already been created for the given
      * {@code mapName}, it is returned, otherwise it is instantiated, cached and returned.
      *
-     * @param mapName Map for which this partitioning strategy is being created
-     * @param config  the partitioning strategy configuration
+     * @param mapName           Map for which this partitioning strategy is being created
+     * @param config            the partitioning strategy configuration
+     * @param strategyArguments
      * @return
      */
     @SuppressWarnings("checkstyle:NestedIfDepth")
-    public PartitioningStrategy getPartitioningStrategy(String mapName, PartitioningStrategyConfig config) {
+    public PartitioningStrategy getPartitioningStrategy(
+            String mapName,
+            PartitioningStrategyConfig config,
+            List<FunctionArgument> strategyArguments
+    ) {
         PartitioningStrategy strategy = null;
         if (config != null) {
             strategy = config.getPartitioningStrategy();
@@ -69,8 +74,11 @@ public final class PartitioningStrategyFactory {
                     strategy = cache.get(mapName);
                 } else if (config.getPartitioningStrategyClass() != null) {
                     try {
-                        if (classNameContainsArgs(config.getPartitioningStrategyClass())) {
-                            strategy = constructPartitioningStrategyWithArgs(config.getPartitioningStrategyClass());
+                        if (strategyArguments != null && !strategyArguments.isEmpty()) {
+                            strategy = constructPartitioningStrategyWithArgs(
+                                    config.getPartitioningStrategyClass(),
+                                    strategyArguments
+                            );
                         } else {
                             strategy = ClassLoaderUtil.newInstance(configClassLoader, config.getPartitioningStrategyClass());
                         }
@@ -93,47 +101,141 @@ public final class PartitioningStrategyFactory {
         cache.remove(mapName);
     }
 
-    private boolean classNameContainsArgs(String className) {
-        return className.matches(ARGUMENTS_REGEX);
-    }
-
     private PartitioningStrategy constructPartitioningStrategyWithArgs(
-            final String classNameWithArgs
+            final String className,
+            final List<FunctionArgument> arguments
     ) throws ClassNotFoundException {
-        final Matcher matcher = Pattern.compile(ARGUMENTS_REGEX).matcher(classNameWithArgs);
-        if (!matcher.matches()) {
-            throw new HazelcastException("Provided PartitionStrategy arguments are in invalid format: "
-                    + classNameWithArgs);
-        }
-
-        assert matcher.groupCount() == 2;
-        final String className = matcher.group(1);
-        final String argsString = matcher.group(2);
-
-        final String[] args = argsString.split(",");
-        for (int i = 0; i < args.length; i++) {
-            args[i] = args[i].trim();
-        }
-
         final Class<?> strategyClass = ClassLoaderUtil.loadClass(configClassLoader, className);
-
         if (!PartitioningStrategy.class.isAssignableFrom(strategyClass)) {
             throw new HazelcastException("Provided PartitionStrategy class "
                     + "does not implement PartitionStrategy interface: " + strategyClass.getName());
         }
 
-        final Constructor<?> constructor;
-        try {
-            constructor = strategyClass.getConstructor(String[].class);
-        } catch (NoSuchMethodException e) {
-            throw new HazelcastException("Could not find fitting constructor for specified PartitionStrategy: "
-                    + classNameWithArgs, e);
-        }
+        final List<Class<?>> argumentTypes = arguments.stream()
+                .map(functionArgument ->
+                        convertTypeNameToClass(functionArgument.getTypeName(), functionArgument.isArray())
+                ).collect(Collectors.toList());
+
+        final Constructor<?> constructor = findFittingConstructor(strategyClass, argumentTypes);
+
+        final Object[] converted = arguments.stream()
+                .map(arg -> {
+                    final Class<?> targetClass = convertTypeNameToClass(arg.getTypeName(), arg.isArray());
+                    if (arg.isArray()) {
+                        final Object value = convertArray(arg.getTypeName(), arg.getValues(), targetClass);
+                        return targetClass.cast(value);
+                    } else {
+                        if (arg.getValues().length == 0 || arg.getValues()[0] == null || arg.getValues()[0].isEmpty()) {
+                            return targetClass.cast(null);
+                        }
+                        final Object value = convertValue(arg.getTypeName(), arg.getValues()[0]);
+                        return targetClass.cast(value);
+                    }
+                })
+                .toArray();
 
         try {
-            return (PartitioningStrategy) constructor.newInstance(new Object[]{args});
+            return (PartitioningStrategy) constructor.newInstance(converted);
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new HazelcastException("Failed to instantiate PartitionStrategy with constructor " + constructor, e);
+        }
+    }
+
+    private Constructor<?> findFittingConstructor(final Class<?> strategyClass, final List<Class<?>> argumentTypes) {
+        Constructor<?> constructor = null;
+
+        for (final Constructor<?> current : strategyClass.getConstructors()) {
+            boolean fits = true;
+
+            // TODO: match by name/index?
+            for (int i = 0; i < current.getParameterTypes().length; i++) {
+                final Class<?> constructorArgType = current.getParameterTypes()[i];
+                if (constructorArgType.isAssignableFrom(argumentTypes.get(i))) {
+                    continue;
+                }
+
+                fits = false;
+                break;
+            }
+
+            if (fits) {
+                constructor = current;
+                break;
+            }
+        }
+        if (constructor == null) {
+            throw new HazelcastException("Could not find fitting constructor for specified PartitionStrategy: "
+                    + strategyClass.getName());
+        }
+
+        return constructor;
+    }
+
+    private Object convertArray(String typeName, String[] values, Class<?> targetClass) {
+        if (values.length == 0) {
+            return targetClass.cast(null);
+        }
+
+        final Class<?> componentType = targetClass.getComponentType();
+        final Object converted = Array.newInstance(componentType, values.length);
+        for (int i = 0; i < values.length; i++) {
+            final Object value = values[i].isEmpty() ? null : convertValue(typeName, values[i]);
+            Array.set(converted, i, componentType.cast(value));
+        }
+
+        return converted;
+    }
+
+    @SuppressWarnings("checkstyle:ReturnCount")
+    private Object convertValue(String typeName, String value) {
+        assert !value.isEmpty() : "empty argument values should not be converted";
+        switch (typeName) {
+            case "Byte":
+                return Byte.valueOf(value);
+            case "Short":
+                return Short.valueOf(value);
+            case "Integer":
+                return Integer.valueOf(value);
+            case "Long":
+                return Long.valueOf(value);
+            case "Float":
+                return Float.valueOf(value);
+            case "Double":
+                return Double.valueOf(value);
+            case "String":
+                return value;
+            case "Character":
+                return value.charAt(0);
+            case "Boolean":
+                return Boolean.valueOf(value);
+            default:
+                throw new HazelcastException("Unsupported PartitioningStrategy argument type: " + typeName);
+        }
+    }
+
+    @SuppressWarnings({"checkstyle:cyclomaticComplexity", "checkstyle:ReturnCount"})
+    private Class<?> convertTypeNameToClass(String typeName, boolean isArray) {
+        switch (typeName) {
+            case "Byte":
+                return isArray ? Byte[].class : Byte.class;
+            case "Short":
+                return isArray ? Short[].class : Short.class;
+            case "Integer":
+                return isArray ? Integer[].class : Integer.class;
+            case "Long":
+                return isArray ? Long[].class : Long.class;
+            case "Float":
+                return isArray ? Float[].class : Float.class;
+            case "Double":
+                return isArray ? Double[].class : Double.class;
+            case "String":
+                return isArray ? String[].class : String.class;
+            case "Character":
+                return isArray ? Character[].class : Character.class;
+            case "Boolean":
+                return isArray ? Boolean[].class : Boolean.class;
+            default:
+                throw new HazelcastException("Unsupported PartitioningStrategy argument type: " + typeName);
         }
     }
 }

@@ -233,7 +233,7 @@ abstract class MapProxySupport<K, V>
         this.mapServiceContext = service.getMapServiceContext();
         this.mapConfig = mapConfig;
         this.partitionStrategy = mapServiceContext.getPartitioningStrategy(mapConfig.getName(),
-                mapConfig.getPartitioningStrategyConfig());
+                mapConfig.getPartitioningStrategyConfig(), mapConfig.getPartitioningStrategyArguments());
         this.localMapStats = mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         this.partitionService = getNodeEngine().getPartitionService();
         this.lockSupport = new LockProxySupport(MapService.getObjectNamespace(name),

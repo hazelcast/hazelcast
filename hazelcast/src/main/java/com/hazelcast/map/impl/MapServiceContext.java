@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.config.FunctionArgument;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
@@ -45,6 +46,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -196,7 +198,11 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
 
     boolean removeMapContainer(MapContainer mapContainer);
 
-    PartitioningStrategy getPartitioningStrategy(String mapName, PartitioningStrategyConfig config);
+    PartitioningStrategy getPartitioningStrategy(
+            String mapName,
+            PartitioningStrategyConfig config,
+            List<FunctionArgument> strategyArgs
+    );
 
     void removePartitioningStrategyFromCache(String mapName);
 
