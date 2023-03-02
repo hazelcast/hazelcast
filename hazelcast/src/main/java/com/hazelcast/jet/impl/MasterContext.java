@@ -260,8 +260,8 @@ public class MasterContext {
         // Note that this is not a true optimistic locking.
         // However, there is only one instance of MasterContext for a given job in the cluster
         // so there is no risk of lost updates.
-        while (!coordinationService.jobRepository().writeJobExecutionRecord(jobRecord.getJobId(), jobExecutionRecord,
-                    canCreate)) {
+        while (!coordinationService.jobRepository().writeJobExecutionRecord(
+                    jobRecord.getJobId(), jobExecutionRecord, canCreate)) {
             logger.info("Repeating JobExecutionRecord update to be safe");
         }
     }
