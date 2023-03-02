@@ -30,7 +30,7 @@ public class SubmitJobParametersValidator {
     public void validateLocalJar(SubmitJobParameters parameterObject) throws IOException {
         Path jarPath = parameterObject.getJarPath();
         validateJarPathNotNull(jarPath);
-        validateFileSize(jarPath);
+        validateFileSizeIsNotZero(jarPath);
         validateFileExtension(jarPath);
         validateJobParameters(parameterObject.getJobParameters());
     }
@@ -56,7 +56,7 @@ public class SubmitJobParametersValidator {
         }
     }
 
-    void validateFileSize(Path jarPath) throws IOException {
+    void validateFileSizeIsNotZero(Path jarPath) throws IOException {
         // Check that the file exists and its size is not 0
         long jarSize = Files.size(jarPath);
         if (jarSize == 0) {
