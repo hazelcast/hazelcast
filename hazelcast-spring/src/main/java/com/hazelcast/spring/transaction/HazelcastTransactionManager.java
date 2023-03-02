@@ -123,15 +123,14 @@ public class HazelcastTransactionManager extends AbstractPlatformTransactionMana
 
     private TransactionContext getTransactionContext(TransactionDefinition definition) {
         TransactionContext transactionContext;
-        if (definition.getTimeout() == TransactionDefinition.TIMEOUT_DEFAULT && this.getDefaultTimeout() == TransactionDefinition.TIMEOUT_DEFAULT) {
-            transactionContext = hazelcastInstance.newTransactionContext();
-        }
-        else {
+        if (definition.getTimeout() == TransactionDefinition.TIMEOUT_DEFAULT
+            && this.getDefaultTimeout() == TransactionDefinition.TIMEOUT_DEFAULT) {
+                transactionContext = hazelcastInstance.newTransactionContext();
+        } else {
             TransactionOptions options = new TransactionOptions();
             if (definition.getTimeout() != TransactionDefinition.TIMEOUT_DEFAULT) {
                 options.setTimeout(definition.getTimeout(), TimeUnit.SECONDS);
-            }
-            else {
+            } else {
                 options.setTimeout(this.getDefaultTimeout(), TimeUnit.SECONDS);
             }
             transactionContext = hazelcastInstance.newTransactionContext(options);
