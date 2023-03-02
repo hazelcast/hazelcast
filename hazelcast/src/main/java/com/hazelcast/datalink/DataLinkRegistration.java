@@ -16,13 +16,13 @@
 
 package com.hazelcast.datalink;
 
-import com.hazelcast.spi.annotation.Beta;
-
 /**
- * Registers new type of {@link DataLink}.
+ * Registration for a datalink connector.
+ *
+ * TODO rename to `JetConnector`?
+ *
  * @since 5.3
  */
-@Beta
 public interface DataLinkRegistration {
 
     /**
@@ -36,4 +36,3 @@ public interface DataLinkRegistration {
      */
     Class<? extends DataLink> clazz();
 }
-

@@ -21,6 +21,7 @@ import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.datalink.DataLink;
+import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.datalink.impl.DataLinkTestUtil.DummyDataLink;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -71,14 +72,14 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
 
     @Test
     public void should_fail_when_non_existing_data_link() {
-        assertThatThrownBy(() -> dataLinkService.getDataLink("non-existing-data-link", DummyDataLink.class))
+        assertThatThrownBy(() -> dataLinkService.getAndRetainDataLink("non-existing-data-link", DummyDataLink.class))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessage("Data link 'non-existing-data-link' not found");
     }
 
     @Test
     public void should_return_data_link_from_config() {
-        DataLink dataLink = dataLinkService.getDataLink(TEST_CONFIG, DummyDataLink.class);
+        DataLink dataLink = dataLinkService.getAndRetainDataLink(TEST_CONFIG, DummyDataLink.class);
 
         assertThat(dataLink).isInstanceOf(DummyDataLink.class);
         assertThat(dataLink.getName()).isEqualTo(TEST_CONFIG);
@@ -94,7 +95,7 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
                         .setProperty("customProperty", "value")
         );
 
-        DataLink dataLink = dataLinkService.getDataLink(TEST_DYNAMIC_CONFIG, DummyDataLink.class);
+        DataLink dataLink = dataLinkService.getAndRetainDataLink(TEST_DYNAMIC_CONFIG, DummyDataLink.class);
 
         assertThat(dataLink).isInstanceOf(DummyDataLink.class);
         assertThat(dataLink.getName()).isEqualTo(TEST_DYNAMIC_CONFIG);
@@ -107,10 +108,12 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
         dataLinkService.createSqlDataLink(
                 TEST_VIA_SERVICE_CONFIG,
                 DummyDataLink.class.getName(),
-                createMap("customProperty", "value")
+                createMap("customProperty", "value"),
+                false
         );
 
-        DummyDataLink dataLinkViaService = dataLinkService.getDataLink(TEST_VIA_SERVICE_CONFIG, DummyDataLink.class);
+        DummyDataLink dataLinkViaService = dataLinkService.getAndRetainDataLink(TEST_VIA_SERVICE_CONFIG, DummyDataLink.class);
+        dataLinkViaService.release();
 
         instance.getConfig().addDataLinkConfig(
                 new DataLinkConfig(TEST_VIA_SERVICE_CONFIG)
@@ -122,7 +125,7 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
                 .describedAs("DataLink should have been closed when replaced by DataLink from dynamic config")
                 .isTrue();
 
-        DataLink dataLink = dataLinkService.getDataLink(TEST_VIA_SERVICE_CONFIG, DummyDataLink.class);
+        DataLink dataLink = dataLinkService.getAndRetainDataLink(TEST_VIA_SERVICE_CONFIG, DummyDataLink.class);
 
         assertThat(dataLink).isInstanceOf(DummyDataLink.class);
         assertThat(dataLink.getName()).isEqualTo(TEST_VIA_SERVICE_CONFIG);
@@ -135,17 +138,19 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
         dataLinkService.createSqlDataLink(
                 TEST_VIA_SERVICE_CONFIG,
                 DummyDataLink.class.getName(),
-                createMap("customProperty", "value")
+                createMap("customProperty", "value"),
+                false
         );
 
-        DummyDataLink oldDataLink = dataLinkService.getDataLink(TEST_VIA_SERVICE_CONFIG, DummyDataLink.class);
+        DummyDataLink oldDataLink = dataLinkService.getAndRetainDataLink(TEST_VIA_SERVICE_CONFIG, DummyDataLink.class);
 
-        dataLinkService.replaceSqlDataLink(
+        dataLinkService.createSqlDataLink(
                 TEST_VIA_SERVICE_CONFIG,
                 DummyDataLink.class.getName(),
-                createMap("customProperty", "new value")
+                createMap("customProperty", "new value"),
+                true
         );
-        DummyDataLink newDataLink = dataLinkService.getDataLink(TEST_VIA_SERVICE_CONFIG, DummyDataLink.class);
+        DummyDataLink newDataLink = dataLinkService.getAndRetainDataLink(TEST_VIA_SERVICE_CONFIG, DummyDataLink.class);
 
         assertThat(newDataLink).isNotSameAs(oldDataLink);
         assertThat(newDataLink.getConfig().getProperties())
@@ -157,15 +162,18 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
         dataLinkService.createSqlDataLink(
                 TEST_VIA_SERVICE_CONFIG,
                 DummyDataLink.class.getName(),
-                createMap("customProperty", "value")
+                createMap("customProperty", "value"),
+                false
         );
 
-        DummyDataLink dataLinkViaService = dataLinkService.getDataLink(TEST_VIA_SERVICE_CONFIG, DummyDataLink.class);
+        DummyDataLink dataLinkViaService = dataLinkService.getAndRetainDataLink(TEST_VIA_SERVICE_CONFIG, DummyDataLink.class);
+        dataLinkViaService.release();
 
-        dataLinkService.replaceSqlDataLink(
+        dataLinkService.createSqlDataLink(
                 TEST_VIA_SERVICE_CONFIG,
                 DummyDataLink.class.getName(),
-                createMap("customProperty", "value2")
+                createMap("customProperty", "value2"),
+                true
         );
 
         assertThat(dataLinkViaService.isClosed())
@@ -181,7 +189,7 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
                         .setProperty("customProperty", "value")
         );
 
-        DataLink dataLink = dataLinkService.getDataLink(TEST_VIA_SERVICE_CONFIG, DummyDataLink.class);
+        DataLink dataLink = dataLinkService.getAndRetainDataLink(TEST_VIA_SERVICE_CONFIG, DummyDataLink.class);
 
         assertThat(dataLink).isInstanceOf(DummyDataLink.class);
         assertThat(dataLink.getName()).isEqualTo(TEST_VIA_SERVICE_CONFIG);
@@ -194,10 +202,11 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
         dataLinkService.createSqlDataLink(
                 TEST_VIA_SERVICE_CONFIG,
                 DummyDataLink.class.getName(),
-                createMap("customProperty", "value")
+                createMap("customProperty", "value"),
+                false
         );
 
-        DataLink dataLink = dataLinkService.getDataLink(TEST_VIA_SERVICE_CONFIG, DummyDataLink.class);
+        DataLink dataLink = dataLinkService.getAndRetainDataLink(TEST_VIA_SERVICE_CONFIG, DummyDataLink.class);
 
         assertThat(dataLink).isInstanceOf(DummyDataLink.class);
         assertThat(dataLink.getName()).isEqualTo(TEST_VIA_SERVICE_CONFIG);
@@ -210,7 +219,8 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
         assertThatThrownBy(() -> dataLinkService.createSqlDataLink(
                 TEST_CONFIG, // same name as in static config
                 DummyDataLink.class.getName(),
-                createMap("customProperty", "value")
+                createMap("customProperty", "value"),
+                false
         )).isInstanceOf(HazelcastException.class)
           .hasMessage("Data link 'test-config' already exists");
     }
@@ -226,7 +236,8 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
         assertThatThrownBy(() -> dataLinkService.createSqlDataLink(
                 TEST_DYNAMIC_CONFIG, // same name as in config added above
                 DummyDataLink.class.getName(),
-                createMap("customProperty", "value")
+                createMap("customProperty", "value"),
+                false
         )).isInstanceOf(HazelcastException.class)
           .hasMessage("Data link 'test-dynamic-config' already exists");
     }
@@ -267,12 +278,13 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
         dataLinkService.createSqlDataLink(
                 TEST_VIA_SERVICE_CONFIG,
                 DummyDataLink.class.getName(),
-                createMap("customProperty", "value")
+                createMap("customProperty", "value"),
+                false
         );
 
         dataLinkService.removeDataLink(TEST_VIA_SERVICE_CONFIG);
 
-        assertThatThrownBy(() -> dataLinkService.getDataLink(TEST_VIA_SERVICE_CONFIG, DummyDataLink.class))
+        assertThatThrownBy(() -> dataLinkService.getAndRetainDataLink(TEST_VIA_SERVICE_CONFIG, DummyDataLink.class))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessage("Data link 'test-via-service-config' not found");
     }
@@ -282,10 +294,12 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
         dataLinkService.createSqlDataLink(
                 TEST_VIA_SERVICE_CONFIG,
                 DummyDataLink.class.getName(),
-                createMap("customProperty", "value")
+                createMap("customProperty", "value"),
+                false
         );
 
-        DummyDataLink dataLink = dataLinkService.getDataLink(TEST_VIA_SERVICE_CONFIG, DummyDataLink.class);
+        DummyDataLink dataLink = dataLinkService.getAndRetainDataLink(TEST_VIA_SERVICE_CONFIG, DummyDataLink.class);
+        dataLink.release();
 
         dataLinkService.removeDataLink(TEST_VIA_SERVICE_CONFIG);
 
@@ -300,19 +314,18 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void should_return_false_when_data_link_does_not_exist() {
-        boolean exists = dataLinkService.existsDataLink("does-not-exist");
-        assertThat(exists)
-                .describedAs("DataLink should not exist")
-                .isFalse();
+    public void should_throw_when_data_link_does_not_exist() {
+        assertThatThrownBy(() -> dataLinkService.getAndRetainDataLink("does-not-exist", JdbcDataLink.class))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("Data link 'does-not-exist' not found");
     }
 
     @Test
     public void should_return_true_when_config_data_link_exists() {
-        boolean exists = dataLinkService.existsDataLink(TEST_CONFIG);
-        assertThat(exists)
+        DataLink dataLink = dataLinkService.getAndRetainDataLink(TEST_CONFIG, DataLink.class);
+        assertThat(dataLink)
                 .describedAs("DataLink created via config should exist")
-                .isTrue();
+                .isNotNull();
     }
 
     @Test
@@ -320,13 +333,14 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
         dataLinkService.createSqlDataLink(
                 TEST_VIA_SERVICE_CONFIG,
                 DummyDataLink.class.getName(),
-                createMap("customProperty", "value")
+                createMap("customProperty", "value"),
+                false
         );
 
-        boolean exists = dataLinkService.existsDataLink(TEST_CONFIG);
-        assertThat(exists)
+        DataLink dataLink = dataLinkService.getAndRetainDataLink(TEST_CONFIG, DataLink.class);
+        assertThat(dataLink)
                 .describedAs("DataLink created via service should exist")
-                .isTrue();
+                .isNotNull();
     }
 
     @Test
@@ -334,15 +348,15 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
         dataLinkService.createSqlDataLink(
                 TEST_VIA_SERVICE_CONFIG,
                 DummyDataLink.class.getName(),
-                createMap("customProperty", "value")
+                createMap("customProperty", "value"),
+                false
         );
 
         dataLinkService.removeDataLink(TEST_VIA_SERVICE_CONFIG);
 
-        boolean exists = dataLinkService.existsDataLink(TEST_CONFIG);
-        assertThat(exists)
-                .describedAs("Removed DataLink should not exist")
-                .isTrue();
+        assertThatThrownBy(() -> dataLinkService.getAndRetainDataLink(TEST_VIA_SERVICE_CONFIG, DataLink.class))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("Data link '" + TEST_VIA_SERVICE_CONFIG + "' not found");
     }
 
     @Test
@@ -354,7 +368,7 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
 
     @Test
     public void given_data_link_when_shutdown_service_then_should_close_data_links() {
-        DummyDataLink dataLink = dataLinkService.getDataLink(TEST_CONFIG, DummyDataLink.class);
+        DummyDataLink dataLink = dataLinkService.getAndRetainDataLink(TEST_CONFIG, DummyDataLink.class);
 
         dataLinkService.shutdown();
 
@@ -365,7 +379,7 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
 
     @Test
     public void should_fail_when_non_existing_dataLink() {
-        assertThatThrownBy(() -> dataLinkService.getDataLink("non-existing-data-link", DummyDataLink.class))
+        assertThatThrownBy(() -> dataLinkService.getAndRetainDataLink("non-existing-data-link", DummyDataLink.class))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessage("Data link 'non-existing-data-link' not found");
     }
@@ -390,9 +404,7 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
 
     public static class MissingImplementsDataLink {
 
-        public MissingImplementsDataLink(DataLinkConfig config) {
+        public MissingImplementsDataLink(@SuppressWarnings("unused") DataLinkConfig config) {
         }
     }
 }
-
-

@@ -56,7 +56,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
+import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_NAME;
 import static com.hazelcast.sql.SqlRowMetadata.COLUMN_NOT_FOUND;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -182,7 +182,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
                             + (mappingColumns != null ? " ( " + mappingColumns + " ) " : "")
                             + "TYPE " + deriveMappingType() + " "
                             + "OPTIONS ("
-                            + "    '" + OPTION_DATA_LINK_REF + "' = '" + properties.dataLinkRef + "' "
+                            + "    '" + OPTION_DATA_LINK_NAME + "' = '" + properties.dataLinkRef + "' "
                             + ")"
             ).close();
 
@@ -233,7 +233,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
                         + " EXTERNAL NAME \"" + tableName + "\" "
                         + " TYPE " + deriveMappingType()
                         + " OPTIONS ("
-                        + "    '" + OPTION_DATA_LINK_REF + "' = '" + dataLinkRef + "' "
+                        + "    '" + OPTION_DATA_LINK_NAME + "' = '" + dataLinkRef + "' "
                         + ")"
         ).close();
     }

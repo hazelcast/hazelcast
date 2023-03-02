@@ -17,53 +17,30 @@
 package com.hazelcast.datalink.impl;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datalink.DataLink;
-import com.hazelcast.datalink.DataLinkService;
-import com.hazelcast.jet.core.Processor;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Reference counter to handle closing of shared / pooled instance
- * of physical connection in {@link DataLink}.
+ * A closeable reference counter to handle closing of a resource after all
+ * references are released. The initial refCount is 1. It is incremented by
+ * calling {@link #retain()} and decremented by calling {@link #release()},
+ * which must be paired. When the refCount gets to 0, the {@link #destroyAction}
+ * is ran, and it is not possible to call {@link #retain()} afterwards.
  * <p>
- * Each call to {@link #retain()} method must be matched by a call to
- * {@link #release()} method.
- * <p>
- * The typical implementation using this ReferenceCounter class will look
- * as follows:
- * <ul>
- * <li>a new DataLink is created with counter=1</li>
- * <li>when the {@link DataLinkService#getDataLink} is called the counter
- * is incremented (the service calls the {@link #retain()} method)</li>
- * <li>the caller must call `close()` on this data link after it's done
- * with it (e.g. when it retrieves the physical instance, or after the
- * processor has finished and {@link Processor#close()} is called).
- * The implementation of the DataLink should delegate the close method
- * to {@link #release()}</li>
- * <li>when using a pooled instance, {@link #retain()} must be called
- * when an instance is borrowed from the pool</li>
- * <li>when an instance is returned to the pool, {@link #release()} must
- * be called</li>
- * <li>the data link is closed when the member shuts down or when it
- * is removed, causing the reference count to reach zero, and destroys
- * the instance</li>
- * </ul>
- * <p>
- * We increase the counter both in DataLinkService and DataLink to avoid race condition when
- * <ul>
- * <li>a DataLink is retrieved from the service</li>
- * <li>the DataLink is removed and physical instance is closed</li>
- * <li>a closed instance is returned</li>
- * </ul>
+ * It is useful to delay closing of a resource provider itself until all
+ * resources it provided are closed too. The initial refCount of 1 is for the
+ * resource provider itself, other retain/release calls are for other resources.
+ * The resource then has a `close` method which releases the initial reference,
+ * but the destroy action is called only after all other resources are released
+ * too.
  */
 public class ReferenceCounter {
 
     private final AtomicInteger referenceCount = new AtomicInteger(1);
-    private final Runnable destroy;
+    private final Runnable destroyAction;
 
-    public ReferenceCounter(Runnable destroy) {
-        this.destroy = destroy;
+    public ReferenceCounter(Runnable destroyAction) {
+        this.destroyAction = destroyAction;
     }
 
     /**
@@ -72,13 +49,12 @@ public class ReferenceCounter {
      * @throws IllegalStateException when called after the reference count reached 0
      */
     public void retain() {
-        int oldCount = referenceCount.getAndIncrement();
-
-        if (oldCount <= 0) {
-            referenceCount.getAndDecrement();
-
-            throw new IllegalStateException("Resurrected a dead object");
-        }
+        referenceCount.updateAndGet(cnt -> {
+            if (cnt == 0) {
+                throw new IllegalStateException("Resurrected a dead object");
+            }
+            return cnt + 1;
+        });
     }
 
     /**
@@ -88,11 +64,14 @@ public class ReferenceCounter {
      */
     public boolean release() {
         long newCount = referenceCount.decrementAndGet();
+        if (newCount < 0) {
+            throw new IllegalStateException("release without retain");
+        }
         if (newCount == 0) {
             try {
-                destroy.run();
+                destroyAction.run();
             } catch (Exception e) {
-                throw new HazelcastException("Could not destroy reference counted object", e);
+                throw new HazelcastException("Could not destroy reference counted object: " + e, e);
             }
 
             return true;

@@ -23,7 +23,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * DataLink Resource is an object for which a mapping can be created.
  * <p>
- * For JDBC it is the list of tables and views, for Kafka the list
+ * For example, JDBC returns the list of tables and views, Kafka returns the list
  * of topics, and for a filesystem the list of files etc.
  */
 public class DataLinkResource {
@@ -40,7 +40,7 @@ public class DataLinkResource {
     }
 
     /**
-     * Type of the resource, e.g TABLE for JDBC connector
+     * Type of the resource, e.g. TABLE for JDBC connector
      */
     @Nonnull
     public String type() {
@@ -48,7 +48,9 @@ public class DataLinkResource {
     }
 
     /**
-     * Name of the resource, e.g. name of the Jdbc table, including any namespace prefix such as schema
+     * Name of the resource, e.g. name of the JDBC table, including any namespace prefix such as schema.
+     * <p>
+     * TODO Should we use String[]?
      */
     @Nonnull
     public String name() {
