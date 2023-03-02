@@ -625,8 +625,8 @@ public class JobRepository {
      * UpdateJobExecutionRecordEntryProcessor#process}. It will also be ignored
      * if the key doesn't exist in the IMap.
      *
-     * @return true if the update was executed (not ignored) or cannot be executed
-     *         because canCreate=false but there is no record in IMap to update.
+     * @return true if the record was written or ignored because canCreate=false
+     *         and there is no record in IMap to update.
      */
     boolean writeJobExecutionRecord(long jobId, JobExecutionRecord record, boolean canCreate) {
         record.updateTimestamp();
