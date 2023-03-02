@@ -26,7 +26,7 @@ import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.impl.submitjob.clientside.upload.SubmitJobParametersValidator;
+import com.hazelcast.jet.impl.submitjob.validator.SubmitJobParametersValidator;
 import com.hazelcast.jet.impl.submitjob.memberside.JobMetaDataParameterObject;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
