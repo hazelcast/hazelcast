@@ -294,7 +294,7 @@ Format of data in IMaps will not change.
 
 ### Performance
 
-Most important for performance is snapshot taking as it occurs regularly.
+Automatic snapshots have the greatest impact on performance as they occur regularly.
 Other processes are either manual or occur after error or topology changes
 so are rare with little impact for overall performance.
 
