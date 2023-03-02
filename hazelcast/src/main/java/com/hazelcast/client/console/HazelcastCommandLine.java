@@ -63,6 +63,7 @@ import picocli.CommandLine.ParseResult;
 import picocli.CommandLine.RunAll;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
@@ -172,14 +173,14 @@ public class HazelcastCommandLine implements Runnable {
                     paramLabel = "<arguments>",
                     description = "Arguments to pass to the supplied jar file"
             ) List<String> params
-    ) throws Exception {
+    ) throws IOException, ClassNotFoundException, InvocationTargetException, IllegalAccessException {
         if (params == null) {
             params = emptyList();
         }
         this.global.merge(global);
         configureLogging();
         if (!file.exists()) {
-            throw new Exception("File " + file + " could not be found.");
+            throw new FileNotFoundException("File " + file + " could not be found.");
         }
         printf("Submitting JAR '%s' with arguments %s", file, params);
         if (name != null) {
@@ -478,30 +479,30 @@ public class HazelcastCommandLine implements Runnable {
 
     @SuppressFBWarnings(value = "DLS_DEAD_LOCAL_STORE", justification = "Generates false positive")
     private ClientConfig getClientConfig(boolean retryClusterConnectForever) throws IOException {
-        ClientConfig config;
+        ClientConfig clientConfig;
         if (isYaml()) {
-            config = new YamlClientConfigBuilder(this.config).build();
+            clientConfig = new YamlClientConfigBuilder(this.config).build();
         } else if (isConfigFileNotNull()) {
-            config = new XmlClientConfigBuilder(this.config).build();
+            clientConfig = new XmlClientConfigBuilder(this.config).build();
         } else {
-            config = ClientConfig.load();
+            clientConfig = ClientConfig.load();
         }
 
         if (global.getTargets() != null) {
-            config.getNetworkConfig().setAddresses(global.getAddresses());
-            config.setClusterName(global.getClusterName());
+            clientConfig.getNetworkConfig().setAddresses(global.getAddresses());
+            clientConfig.setClusterName(global.getClusterName());
         }
 
         if (retryClusterConnectForever) {
             final double expBackoffMultiplier = 1.25;
             final long clusterConnectTimeoutMillis = Long.MAX_VALUE;
             final int maxBackOffMillis = (int) SECONDS.toMillis(15);
-            config.getConnectionStrategyConfig().getConnectionRetryConfig()
+            clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig()
                     .setClusterConnectTimeoutMillis(clusterConnectTimeoutMillis)
                     .setMultiplier(expBackoffMultiplier)
                     .setMaxBackoffMillis(maxBackOffMillis);
         }
-        return config;
+        return clientConfig;
     }
 
     private boolean isYaml() {
@@ -714,11 +715,11 @@ public class HazelcastCommandLine implements Runnable {
             }
             HazelcastCommandLine hzCmd = cmdLine.getCommand();
             if (hzCmd.global.isVerbose) {
-                ex.printStackTrace(err());
+                ex.printStackTrace(super.err());
             } else {
-                err().println("ERROR: " + peel(ex.getCause()).getMessage());
-                err().println();
-                err().println("To see the full stack trace, re-run with the -v/--verbosity option");
+                super.err().println("ERROR: " + peel(ex.getCause()).getMessage());
+                super.err().println();
+                super.err().println("To see the full stack trace, re-run with the -v/--verbosity option");
             }
             if (hasExitCode()) {
                 exit(exitCode());

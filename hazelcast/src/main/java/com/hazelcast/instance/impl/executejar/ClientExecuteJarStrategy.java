@@ -111,6 +111,8 @@ public class ClientExecuteJarStrategy {
         return mainMethod;
     }
 
+    // suppress Reduce the total number of break and continue statements in this loop to use at most one.
+    @SuppressWarnings("java:S135")
     // Method is call by synchronized executeJar() so, it is safe to access submittedJobs array in BootstrappedJetProxy
     private void awaitJobsStarted(ResettableConcurrentMemoizingSupplier<BootstrappedInstanceProxy> singleton) {
 

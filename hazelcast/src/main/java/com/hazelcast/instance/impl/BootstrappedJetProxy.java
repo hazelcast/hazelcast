@@ -150,6 +150,9 @@ public class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
         return jet.getReplicatedMap(name);
     }
 
+
+    // supress "@Deprecated" code should not be used
+    @SuppressWarnings("java:S1874")
     @Nonnull
     @Override
     public JetCacheManager getCacheManager() {
