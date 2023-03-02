@@ -76,6 +76,7 @@ public final class HazelcastBootstrap {
         SINGLETON.resetRemembered();
     }
 
+    // Execute jar file that exist on the client
     public static void executeJarOnClient(@Nonnull Supplier<HazelcastInstance> supplierOfInstance,
                                           @Nonnull String jarPath,
                                           @Nullable String snapshotName,
@@ -87,6 +88,7 @@ public final class HazelcastBootstrap {
         CLIENT_EXECUTE_JAR_STRATEGY.executeJar(SINGLETON, jarPath, snapshotName, jobName, mainClassName, args);
     }
 
+    // Execute jar file that exist on the member
     public static void executeJarOnMember(@Nonnull Supplier<HazelcastInstance> supplierOfInstance,
                                           @Nonnull String jarPath,
                                           @Nullable String snapshotName,

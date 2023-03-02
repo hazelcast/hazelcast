@@ -103,7 +103,7 @@ public class JobUploadStore {
         JobUploadStatus jobUploadStatus = jobMap.get(sessionId);
         if (jobUploadStatus == null) {
             String exceptionMessage = String.format(
-                    "Unknown session id : %s. " +
+                    "The session %s does not exist. " +
                     "Session has timed out due to upload inactivity? \n " +
                     "If the network is slow, uploading with smaller parts may help.\n" +
                     "Use a smaller value\n"  +
