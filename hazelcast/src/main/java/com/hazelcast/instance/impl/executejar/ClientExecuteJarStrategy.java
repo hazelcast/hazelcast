@@ -72,7 +72,7 @@ public class ClientExecuteJarStrategy {
 
                 ExecuteJarStrategyHelper.setupJetProxy(singleton.remembered(), jarPath, snapshotName, jobName);
 
-                // upcast args to Object so it's passed as a single array-typed argument
+                // upcast args to Object, so it's passed as a single array-typed argument
                 main.invoke(null, (Object) jobArgs);
             }
 
