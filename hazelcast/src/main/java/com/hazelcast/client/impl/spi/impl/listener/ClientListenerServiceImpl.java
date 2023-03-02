@@ -73,11 +73,10 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
     private final ILogger logger;
     private final ExecutorService registrationExecutor;
     private final StripedExecutor eventExecutor;
-    private final boolean isSmart;
+    private final boolean isUnisocket;
 
     public ClientListenerServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
-        this.isSmart = client.getClientConfig().getNetworkConfig().isSmartRouting();
         this.logger = client.getLoggingService().getLogger(ClientListenerService.class);
         String name = client.getName();
         HazelcastProperties properties = client.getProperties();
@@ -88,6 +87,7 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         ThreadFactory threadFactory = new SingleExecutorThreadFactory(classLoader, name + ".eventRegistration-");
         this.registrationExecutor = Executors.newSingleThreadExecutor(threadFactory);
         this.clientConnectionManager = client.getConnectionManager();
+        this.isUnisocket = clientConnectionManager.isUnisocketClient();
     }
 
     @Nonnull
@@ -305,7 +305,7 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
     }
 
     private boolean registersLocalOnly() {
-        return isSmart;
+        return !isUnisocket;
     }
 
     private Boolean deregisterListenerInternal(@Nullable UUID userRegistrationId) {

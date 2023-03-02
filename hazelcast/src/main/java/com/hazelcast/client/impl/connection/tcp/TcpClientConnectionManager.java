@@ -107,6 +107,10 @@ import static com.hazelcast.client.config.ConnectionRetryConfig.DEFAULT_CLUSTER_
 import static com.hazelcast.client.config.ConnectionRetryConfig.FAILOVER_CLIENT_DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS;
 import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.NOT_ALLOWED_IN_CLUSTER;
+import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.BOOLEAN_SIZE_IN_BYTES;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeUUID;
 import static com.hazelcast.client.properties.ClientProperty.HEARTBEAT_TIMEOUT;
 import static com.hazelcast.client.properties.ClientProperty.IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.client.properties.ClientProperty.IO_INPUT_THREAD_COUNT;
@@ -123,9 +127,10 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 /**
  * Implementation of {@link ClientConnectionManager}.
  */
+@SuppressWarnings({"checkstyle:MethodLength", "checkstyle:NPathComplexity"})
 public class TcpClientConnectionManager implements ClientConnectionManager, MembershipListener {
 
-    private static final int DEFAULT_SMART_CLIENT_THREAD_COUNT = 3;
+    private static final int DEFAULT_IO_THREAD_COUNT = 3;
     private static final int EXECUTOR_CORE_POOL_SIZE = 10;
     private static final int SMALL_MACHINE_PROCESSOR_COUNT = 8;
     private static final int SQL_CONNECTION_RANDOM_ATTEMPTS = 10;
@@ -156,7 +161,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     private final boolean asyncStart;
     private final ReconnectMode reconnectMode;
     private final LoadBalancer loadBalancer;
-    private final boolean isSmartRoutingEnabled;
+    private final boolean isUnisocketClient;
+    private final boolean isAltoAwareClient;
     private volatile Credentials currentCredentials;
 
     // following fields are updated inside synchronized(clientStateMutex)
@@ -211,10 +217,12 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         SWITCHING_CLUSTER
     }
 
+    @SuppressWarnings("ExecutableStatementCount")
     public TcpClientConnectionManager(HazelcastClientInstanceImpl client) {
         this.client = client;
+        ClientConfig config = client.getClientConfig();
         this.loadBalancer = client.getLoadBalancer();
-        this.labels = Collections.unmodifiableSet(client.getClientConfig().getLabels());
+        this.labels = Collections.unmodifiableSet(config.getLabels());
         this.logger = client.getLoggingService().getLogger(ClientConnectionManager.class);
         this.connectionType = client.getProperties().getBoolean(MC_CLIENT_MODE_PROP)
                 ? ConnectionType.MC_JAVA_CLIENT : ConnectionType.JAVA_CLIENT;
@@ -226,12 +234,21 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         this.failoverConfigProvided = client.getFailoverConfig() != null;
         this.executor = createExecutorService();
         this.clusterDiscoveryService = client.getClusterDiscoveryService();
-        this.waitStrategy = initializeWaitStrategy(client.getClientConfig());
+        this.waitStrategy = initializeWaitStrategy(config);
         this.shuffleMemberList = client.getProperties().getBoolean(SHUFFLE_MEMBER_LIST);
-        this.isSmartRoutingEnabled = client.getClientConfig().getNetworkConfig().isSmartRouting();
-        this.asyncStart = client.getClientConfig().getConnectionStrategyConfig().isAsyncStart();
-        this.reconnectMode = client.getClientConfig().getConnectionStrategyConfig().getReconnectMode();
+        this.isUnisocketClient = unisocketModeConfigured(config);
+        this.isAltoAwareClient = config.getAltoConfig().isEnabled();
+        this.asyncStart = config.getConnectionStrategyConfig().isAsyncStart();
+        this.reconnectMode = config.getConnectionStrategyConfig().getReconnectMode();
         this.connectionProcessListenerRunner = new ClientConnectionProcessListenerRunner(client);
+    }
+
+    private boolean unisocketModeConfigured(ClientConfig config) {
+        if (config.getAltoConfig().isEnabled()) {
+            return false;
+        }
+
+        return !config.getNetworkConfig().isSmartRouting();
     }
 
     private int initConnectionTimeoutMillis() {
@@ -270,8 +287,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
         int inputThreads;
         if (configuredInputThreads == -1) {
-            if (isSmartRoutingEnabled && RuntimeAvailableProcessors.get() > SMALL_MACHINE_PROCESSOR_COUNT) {
-                inputThreads = DEFAULT_SMART_CLIENT_THREAD_COUNT;
+            if (!isUnisocketClient && RuntimeAvailableProcessors.get() > SMALL_MACHINE_PROCESSOR_COUNT) {
+                inputThreads = DEFAULT_IO_THREAD_COUNT;
             } else {
                 inputThreads = 1;
             }
@@ -281,8 +298,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
         int outputThreads;
         if (configuredOutputThreads == -1) {
-            if (isSmartRoutingEnabled && RuntimeAvailableProcessors.get() > SMALL_MACHINE_PROCESSOR_COUNT) {
-                outputThreads = DEFAULT_SMART_CLIENT_THREAD_COUNT;
+            if (!isUnisocketClient && RuntimeAvailableProcessors.get() > SMALL_MACHINE_PROCESSOR_COUNT) {
+                outputThreads = DEFAULT_IO_THREAD_COUNT;
             } else {
                 outputThreads = 1;
             }
@@ -339,7 +356,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     }
 
     public void tryConnectToAllClusterMembers(boolean sync) {
-        if (!isSmartRoutingEnabled) {
+        if (isUnisocketClient) {
             return;
         }
 
@@ -477,17 +494,17 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             logger.info("Trying to connect to " + target);
             return getOrConnectFunction.apply(target);
         } catch (InvalidConfigurationException e) {
-            logger.warning("Exception during initial connection to " + target + ": " + e);
+            logger.warning("Exception during initial connection to " + target + ": " + e, e);
             throw rethrow(e);
         } catch (ClientNotAllowedInClusterException e) {
-            logger.warning("Exception during initial connection to " + target + ": " + e);
+            logger.warning("Exception during initial connection to " + target + ": " + e, e);
             throw e;
         } catch (TargetDisconnectedException e) {
             logger.warning("Exception during initial connection to " + target + ": " + e);
             connectionProcessListenerRunner.onRemoteClosedConnection(addressTranslator, target);
             return null;
         } catch (Exception e) {
-            logger.warning("Exception during initial connection to " + target + ": " + e);
+            logger.warning("Exception during initial connection to " + target + ": " + e, e);
             connectionProcessListenerRunner.onConnectionAttemptFailed(addressTranslator, target);
             return null;
         }
@@ -728,6 +745,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
     }
 
+
     @SuppressWarnings("unchecked")
     protected TcpClientConnection createSocketConnection(Address target) {
         CandidateClusterContext currentClusterContext = clusterDiscoveryService.current();
@@ -745,6 +763,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             channel.connect(inetSocketAddress, connectionTimeoutMillis);
 
             TcpClientConnection connection = new TcpClientConnection(client, connectionIdGen.incrementAndGet(), channel);
+            connection.setChannelInitializer(currentClusterContext.getChannelInitializer());
 
             socketChannel.configureBlocking(true);
             SocketInterceptor socketInterceptor = currentClusterContext.getSocketInterceptor();
@@ -843,6 +862,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         connectionProcessListenerRunner.addListener(listener);
     }
 
+    @Override
+    public boolean isUnisocketClient() {
+        return isUnisocketClient;
+    }
+
     public Credentials getCurrentCredentials() {
         return currentCredentials;
     }
@@ -855,8 +879,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
     @Override
     public ClientConnection getRandomConnection() {
-        // Try getting the connection from the load balancer, if smart routing is enabled
-        if (isSmartRoutingEnabled) {
+        // Try getting the connection from the load balancer, if the client is not unisocket
+        if (!isUnisocketClient) {
             Member member = loadBalancer.next();
 
             // Failed to get a member
@@ -877,7 +901,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
     @Override
     public ClientConnection getConnectionForSql() {
-        if (isSmartRoutingEnabled) {
+        if (!isUnisocketClient) {
             // There might be a race - the chosen member might be just connected or disconnected - try a
             // couple of times, the memberOfLargerSameVersionGroup returns a random connection,
             // we might be lucky...
@@ -924,18 +948,35 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
     }
 
+
     /**
      * The returned connection could be different than the one passed to this method if there is already an existing
      * connection to the given member.
      */
+    @SuppressWarnings("java:S1135")
     private TcpClientConnection onAuthenticated(TcpClientConnection connection,
                                                 ClientAuthenticationCodec.ResponseParameters response,
                                                 boolean switchingToNextCluster) {
+        List<Integer> tpcPorts = response.tpcPorts;
+
         synchronized (clientStateMutex) {
             checkAuthenticationResponse(connection, response);
             connection.setRemoteAddress(response.address);
             connection.setRemoteUuid(response.memberUuid);
             connection.setClusterUuid(response.clusterId);
+
+            if (!isAltoAwareClient || tpcPorts == null || tpcPorts.isEmpty()) {
+                logger.finest("TPC Client: disabled, no TPC ports detected");
+            } else {
+                logger.info("TPC Client: connecting to ports (" + tpcPorts.size() + "): " + tpcPorts
+                        + " for connection: " + connection);
+                try {
+                    connectToTpcPorts(connection, tpcPorts);
+                } catch (IOException e) {
+                    // TODO: Improved handling.
+                    logger.warning(e);
+                }
+            }
 
             TcpClientConnection existingConnection = activeConnections.get(response.memberUuid);
             if (existingConnection != null) {
@@ -1017,6 +1058,40 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             onConnectionClose(connection);
         }
         return connection;
+    }
+
+    private void connectToTpcPorts(TcpClientConnection connection, List<Integer> tpcPorts) throws IOException {
+        Channel[] tpcChannels = new Channel[tpcPorts.size()];
+        for (int k = 0; k < tpcChannels.length; k++) {
+            Address address = new Address(connection.getRemoteAddress().getHost(), tpcPorts.get(k));
+            logger.info("TPC Client: Connecting to:" + address);
+            SocketChannel tpcSocketChannel = SocketChannel.open();
+
+            Channel tpcChannel = networking.register(connection.getChannelInitializer(), tpcSocketChannel, true);
+            tpcChannel.attributeMap().put(Address.class, address);
+            tpcChannel.attributeMap().put(TcpClientConnection.class, connection);
+
+            InetSocketAddress tpcSocketChannelAddress = new InetSocketAddress(address.getHost(), address.getPort());
+
+            tpcChannel.connect(tpcSocketChannelAddress, connectionTimeoutMillis);
+
+            logger.info("TPC Client: Successfully connected to " + tpcSocketChannelAddress);
+
+            tpcChannel.start();
+
+            // first thing we need to send is the clientUuid so this new socket can be connected
+            // to the connection on the member.
+            ClientMessage clientUuidMessage = ClientMessage.createForEncode();
+            ClientMessage.Frame initialFrame = new ClientMessage.Frame(
+                    new byte[BOOLEAN_SIZE_IN_BYTES + 2 * LONG_SIZE_IN_BYTES], UNFRAGMENTED_MESSAGE);
+            encodeUUID(initialFrame.content, 0, clientUuid);
+            clientUuidMessage.add(initialFrame);
+            tpcChannel.write(clientUuidMessage);
+            tpcChannels[k] = tpcChannel;
+        }
+
+        logger.info("TPC Client: All channel connections made for connection: " + connection);
+        connection.setTpcChannels(tpcChannels);
     }
 
     /**

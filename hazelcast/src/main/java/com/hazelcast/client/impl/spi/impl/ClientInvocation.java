@@ -68,7 +68,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
     private final long startTimeMillis;
     private final long retryPauseMillis;
     private final Object objectName;
-    private final boolean isSmartRoutingEnabled;
+    private final boolean isUnisocketClient;
     /**
      * We achieve synchronization of different threads via this field
      * sentConnection starts as null.
@@ -108,7 +108,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
         this.callIdSequence = invocationService.getCallIdSequence();
         this.clientInvocationFuture = new ClientInvocationFuture(this, clientMessage, logger, callIdSequence);
         this.invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
-        this.isSmartRoutingEnabled = invocationService.isSmartRoutingEnabled();
+        this.isUnisocketClient = invocationService.isUnisocketClient();
     }
 
     /**
@@ -189,7 +189,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
             }
 
             boolean invoked;
-            if (isSmartRoutingEnabled) {
+            if (!isUnisocketClient) {
                 if (partitionId != -1) {
                     invoked = invocationService.invokeOnPartitionOwner(this, partitionId);
                 } else if (uuid != null) {
