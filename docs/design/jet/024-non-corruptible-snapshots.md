@@ -305,7 +305,7 @@ Jet already uses 1 sync backup for snapshot and other `IMap`s by default
 and operations wait for backup ack before completing.
 
 When the cluster is unstable, snapshot will take almost the same time
-but may fail instead silently being successful with risk of corruption.
+but may fail, instead of silently being successful with risk of corruption.
 
 Snapshot restore has to ensure that `JobExecutionRecord` is safe.
 This is piggybacked on `JobExecutionRecord` update already made when job starts/restarts.
