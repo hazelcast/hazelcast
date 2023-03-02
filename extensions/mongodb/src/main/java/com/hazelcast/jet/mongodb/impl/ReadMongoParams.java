@@ -40,7 +40,7 @@ public class ReadMongoParams<I> implements Serializable {
     String collectionName;
     FunctionEx<Document, I> mapItemFn;
 
-    BsonTimestamp startAtTimestamp;
+    Long startAtTimestamp;
     EventTimePolicy<? super I> eventTimePolicy;
     FunctionEx<ChangeStreamDocument<Document>, I> mapStreamFn;
 
@@ -104,11 +104,11 @@ public class ReadMongoParams<I> implements Serializable {
     }
 
     public BsonTimestamp getStartAtTimestamp() {
-        return startAtTimestamp;
+        return new BsonTimestamp(startAtTimestamp);
     }
 
     public ReadMongoParams<I> setStartAtTimestamp(BsonTimestamp startAtTimestamp) {
-        this.startAtTimestamp = startAtTimestamp;
+        this.startAtTimestamp = startAtTimestamp.getValue();
         return this;
     }
 

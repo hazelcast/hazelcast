@@ -97,7 +97,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
             EventTimeMapper<I> eventTimeMapper = new EventTimeMapper<>(params.eventTimePolicy);
             eventTimeMapper.addPartitions(1);
             this.reader = new StreamMongoReader(params.databaseName, params.collectionName, params.mapStreamFn,
-                    params.startAtTimestamp, params.aggregates, eventTimeMapper);
+                    params.getStartAtTimestamp(), params.aggregates, eventTimeMapper);
         } else {
             this.reader = new BatchMongoReader(params.databaseName, params.collectionName, params.mapItemFn,
                     params.aggregates);
