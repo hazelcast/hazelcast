@@ -68,9 +68,9 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
 
     /**
      * Name of target map for current snapshot being exported. The value is
-     * not-null while the job is exporting a state snapshot, terminal or not.
-     * The value is null when writing a normal snapshot or when no snapshot is
-     * in progress.
+     * not-null while the job is exporting a state snapshot regardless of
+     * whether it is terminal. The value is null when writing an automatic
+     * snapshot or when no snapshot is in progress.
      * <p>
      * This value is not needed after coordinator restart, so it's transient.
      * <p>
