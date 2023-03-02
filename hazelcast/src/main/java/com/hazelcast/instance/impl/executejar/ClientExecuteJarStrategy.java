@@ -142,12 +142,7 @@ public class ClientExecuteJarStrategy {
                 continue;
             }
             logJobs(startedJobs);
-            if (remainingCount == 1) {
-                LOGGER.info("A job is still starting...");
-            } else if (remainingCount > 1) {
-                String message = String.format("%,d jobs are still starting...%n", remainingCount);
-                LOGGER.info(message);
-            }
+            logRemainingCount(remainingCount);
             previousCount = remainingCount;
         }
     }
@@ -164,6 +159,15 @@ public class ClientExecuteJarStrategy {
                     toLocalDateTime(job.getSubmissionTime()),
                     job.getStatus(),
                     toLocalDateTime(System.currentTimeMillis()));
+            LOGGER.info(message);
+        }
+    }
+
+    private void logRemainingCount(int remainingCount) {
+        if (remainingCount == 1) {
+            LOGGER.info("A job is still starting...");
+        } else if (remainingCount > 1) {
+            String message = String.format("%,d jobs are still starting...%n", remainingCount);
             LOGGER.info(message);
         }
     }
