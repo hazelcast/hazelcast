@@ -79,7 +79,7 @@ public class CompletableFutureUsageCondition extends ArchCondition<JavaClass> {
     public void check(JavaClass item, ConditionEvents events) {
         for (JavaMethodCall methodCalled : item.getMethodCallsFromSelf()) {
             String calledMethodName = methodCalled.getTarget().getName();
-            if (isFromCompletableFuture(methodCalled)
+            if (isFromCompletionStage(methodCalled)
                     && isAsyncMethod(calledMethodName)
                     && isNotOverrideCompletableFutureMethod(methodCalled, item)) {
                 List<JavaType> parameterTypes = methodCalled.getTarget().getParameterTypes();
@@ -92,9 +92,9 @@ public class CompletableFutureUsageCondition extends ArchCondition<JavaClass> {
         }
     }
 
-    private boolean isFromCompletableFuture(JavaMethodCall methodCalled) {
+    private boolean isFromCompletionStage(JavaMethodCall methodCalled) {
         JavaClass calledClass = methodCalled.getTarget().getOwner();
-        return calledClass.isAssignableTo(CompletableFuture.class);
+        return calledClass.isAssignableTo(CompletionStage.class);
     }
 
     private boolean isNotOverrideCompletableFutureMethod(JavaMethodCall methodCalled, JavaClass item) {
