@@ -20,7 +20,6 @@ import com.hazelcast.internal.util.Sha256Util;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -142,7 +141,6 @@ public class JobUploadStoreTest {
         jobUploadStore.removeBadSession(sessionID);
     }
 
-    @NotNull
     private String getSha256Hex(byte[] jarData) throws NoSuchAlgorithmException {
         MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
         // Two times because we are sending two times
