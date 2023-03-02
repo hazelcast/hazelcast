@@ -45,7 +45,6 @@ import com.hazelcast.test.PacketFiltersUtil;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.Repeat;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -238,7 +237,7 @@ public class IndeterminateSnapshotTest {
                     .hasSizeGreaterThan(1);
         }
 
-        @NotNull
+        @Nonnull
         protected Job createJob(int numItems) {
             DAG dag = new DAG();
             Vertex source = dag.newVertex("source", throttle(() -> new SnapshotInstrumentationP(numItems), 1)).localParallelism(LOCAL_PARALLELISM);
@@ -582,7 +581,7 @@ public class IndeterminateSnapshotTest {
             assertRestoredFromSnapshot(allowedSnapshotsCount - 1);
         }
 
-        @NotNull
+        @Nonnull
         @Override
         protected Job createJob(int numItems) {
             Job job = super.createJob(numItems);
