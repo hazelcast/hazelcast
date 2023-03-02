@@ -140,7 +140,6 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
             .setMaxSizePolicy(DEFAULT_MAX_SIZE_POLICY)
             .setSize(DEFAULT_MAX_SIZE);
     private TieredStoreConfig tieredStoreConfig = new TieredStoreConfig();
-    private List<FunctionArgument> partitionStrategyArguments;
 
     public MapConfig() {
     }
@@ -809,23 +808,6 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         return this;
     }
 
-    /**
-     * Get partitioning strategy arguments, for internal use only. Used to instantiate partitioning strategy from a
-     * class name using a constructor with arguments.
-     *
-     * @return list of partitioning strategy constructor arguments
-     */
-    public List<FunctionArgument> getPartitioningStrategyArguments() {
-        if (this.partitionStrategyArguments == null) {
-            this.partitionStrategyArguments = new ArrayList<>();
-        }
-        return partitionStrategyArguments;
-    }
-
-    public MapConfig setPartitioningStrategyArguments(final List<FunctionArgument> partitionStrategyArguments) {
-        throw new UnsupportedOperationException("Partitioning strategy argument arguments can not be set at runtime");
-    }
-
     @Override
     @SuppressWarnings("checkstyle:methodlength")
     public final boolean equals(Object o) {
@@ -918,9 +900,6 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         if (!tieredStoreConfig.equals(that.tieredStoreConfig)) {
             return false;
         }
-        if (!getPartitioningStrategyArguments().equals(that.getPartitioningStrategyArguments())) {
-            return false;
-        }
 
         return hotRestartConfig.equals(that.hotRestartConfig);
     }
@@ -955,7 +934,6 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         result = 31 * result + hotRestartConfig.hashCode();
         result = 31 * result + dataPersistenceConfig.hashCode();
         result = 31 * result + tieredStoreConfig.hashCode();
-        result = 31 * result + getPartitioningStrategyArguments().hashCode();
         return result;
     }
 
@@ -988,7 +966,6 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", entryStatsEnabled=" + perEntryStatsEnabled
                 + ", tieredStoreConfig=" + tieredStoreConfig
-                + ", partitionStrategyArguments=" + partitionStrategyArguments
                 + '}';
     }
 
@@ -1032,7 +1009,6 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         out.writeBoolean(perEntryStatsEnabled);
         out.writeObject(dataPersistenceConfig);
         out.writeObject(tieredStoreConfig);
-        writeNullableList(partitionStrategyArguments, out);
     }
 
     @Override
@@ -1065,6 +1041,5 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         perEntryStatsEnabled = in.readBoolean();
         setDataPersistenceConfig(in.readObject());
         setTieredStoreConfig(in.readObject());
-        partitionStrategyArguments = readNullableList(in);
     }
 }

@@ -1570,12 +1570,6 @@
           },
           "partition-strategy": {
             "type": "string"
-          },
-          "partition-strategy-arguments": {
-            "type": "string",
-            "items": {
-              "$ref": "#/definitions/FunctionArgument"
-            }
           }
         }
       }
@@ -4995,45 +4989,6 @@
           }
         }
       }
-    },
-    "FunctionArgument": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "data-type": {
-          "enum": [
-            "Byte",
-            "Short",
-            "Integer",
-            "Long",
-            "Float",
-            "Double",
-            "String",
-            "Character",
-            "Boolean"
-          ],
-          "default": "String"
-        },
-        "value": {
-          "type": "string"
-        },
-        "values": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "required": [
-        "name"
-      ],
-      "anyOf": [
-        {"required" : ["value"]},
-        {"required" : ["values"]}
-      ]
     }
   }
 }

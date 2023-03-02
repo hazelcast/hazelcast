@@ -704,9 +704,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public abstract void testDataLinkConfigs();
 
-    @Test
-    public abstract void testMapPartitionStrategyArguments();
-
     protected abstract Config buildAuditlogConfig();
 
     /**

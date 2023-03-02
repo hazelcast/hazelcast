@@ -288,7 +288,6 @@
             <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0"/>
             <xs:element name="partition-lost-listeners" type="partition-lost-listeners" minOccurs="0"/>
             <xs:element name="partition-strategy" type="xs:string" minOccurs="0"/>
-            <xs:element name="partition-strategy-arguments" type="function-arguments" minOccurs="0"/>
             <xs:element name="split-brain-protection-ref" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
@@ -6054,59 +6053,4 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
-
-    <xs:complexType name="function-arguments">
-        <xs:sequence>
-            <xs:element name="arg" type="function-argument" minOccurs="0" maxOccurs="unbounded">
-                <xs:annotation>
-                    <xs:documentation>Function argument with value and type</xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="array" type="array-function-argument" minOccurs="0" maxOccurs="unbounded">
-                <xs:annotation>
-                    <xs:documentation>
-                        Array argument with arg elements.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:sequence>
-    </xs:complexType>
-    <xs:complexType name="function-argument">
-        <xs:simpleContent>
-            <xs:annotation>
-                <xs:documentation>
-                    String value of the argument without quotes. E.g:
-                    - 1
-                    - 3.14
-                    - test string with spaces
-                    - a
-                    Value will be converted to specified type during configuration load.
-                </xs:documentation>
-            </xs:annotation>
-            <xs:extension base="xs:string">
-                <xs:attribute name="data-type" type="java-type" default="String"/>
-                <xs:attribute name="name" type="non-space-string"/>
-            </xs:extension>
-        </xs:simpleContent>
-    </xs:complexType>
-    <xs:complexType name="array-function-argument">
-        <xs:sequence>
-            <xs:element name="arg" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
-        </xs:sequence>
-        <xs:attribute name="name" type="non-space-string"/>
-        <xs:attribute name="data-type" type="java-type" default="String"/>
-    </xs:complexType>
-    <xs:simpleType name="java-type">
-        <xs:restriction base="non-space-string">
-            <xs:enumeration value="Byte"/>
-            <xs:enumeration value="Short"/>
-            <xs:enumeration value="Integer"/>
-            <xs:enumeration value="Long"/>
-            <xs:enumeration value="Float"/>
-            <xs:enumeration value="Double"/>
-            <xs:enumeration value="String"/>
-            <xs:enumeration value="Character"/>
-            <xs:enumeration value="Boolean"/>
-        </xs:restriction>
-    </xs:simpleType>
 </xs:schema>

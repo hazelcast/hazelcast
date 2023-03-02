@@ -4545,51 +4545,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    @Test
-    public void testMapPartitionStrategyArguments() {
-        String mapName = "testMapPartitionStrategyArguments";
-        String xml = HAZELCAST_START_TAG
-                + "  <map name=\"" + mapName + "\">\n"
-                + "     <partition-strategy>test.class</partition-strategy>"
-                + "     <partition-strategy-arguments>"
-                + "         <arg name=\"intArg\" data-type=\"Integer\">1</arg>"
-                + "         <arg name=\"boolArg\" data-type=\"Boolean\">false</arg>"
-                + "         <arg name=\"doubleArg\" data-type=\"Double\">1.0</arg>"
-                + "         <array name=\"arrayArg\" data-type=\"String\">"
-                + "             <arg>ele1</arg>"
-                + "             <arg>ele2</arg>"
-                + "         </array>"
-                + "     </partition-strategy-arguments>"
-                + "  </map>\n"
-                + HAZELCAST_END_TAG;
-
-        final Config config = buildConfig(xml);
-        final List<FunctionArgument> arguments = config.getMapConfig(mapName).getPartitioningStrategyArguments();
-
-        assertThat(arguments).hasSize(4);
-
-        assertEquals("intArg", arguments.get(0).getFieldName());
-        assertEquals("Integer", arguments.get(0).getTypeName());
-        assertFalse(arguments.get(0).isArray());
-        assertArrayEquals(new String[] {"1"}, arguments.get(0).getValues());
-
-        assertEquals("boolArg", arguments.get(1).getFieldName());
-        assertEquals("Boolean", arguments.get(1).getTypeName());
-        assertFalse(arguments.get(1).isArray());
-        assertArrayEquals(new String[] {"false"}, arguments.get(1).getValues());
-
-        assertEquals("doubleArg", arguments.get(2).getFieldName());
-        assertEquals("Double", arguments.get(2).getTypeName());
-        assertFalse(arguments.get(2).isArray());
-        assertArrayEquals(new String[] {"1.0"}, arguments.get(2).getValues());
-
-        assertEquals("arrayArg", arguments.get(3).getFieldName());
-        assertEquals("String", arguments.get(3).getTypeName());
-        assertTrue(arguments.get(3).isArray());
-        assertArrayEquals(new String[] {"ele1", "ele2"}, arguments.get(3).getValues());
-    }
-
-    @Override
     protected Config buildMapWildcardConfig() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"map*\">\n"

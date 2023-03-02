@@ -44,7 +44,6 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
-import com.hazelcast.config.FunctionArgument;
 import com.hazelcast.config.HotRestartClusterDataRecoveryPolicy;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
@@ -1953,8 +1952,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 mapQueryCacheHandler(node, mapConfig);
             } else if (matches("tiered-store", nodeName)) {
                 mapConfig.setTieredStoreConfig(createTieredStoreConfig(node));
-            } else if (matches("partition-strategy-arguments", nodeName)) {
-                handlePartitionStrategyArguments(node, mapConfig);
             }
         }
         config.addMapConfig(mapConfig);
@@ -3454,31 +3451,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    protected void handlePartitionStrategyArguments(Node node, MapConfig mapConfig) {
-        for (final Node argElement : childElements(node)) {
-            final String name = getTextContent(argElement.getAttributes().getNamedItem("name")).trim();
-            final String typeName = getTextContent(argElement.getAttributes().getNamedItem("data-type")).trim();
-            final boolean isArray = isArrayFunctionArg(argElement);
-            final String[] values = getFunctionArgValue(argElement, isArray);
-
-            mapConfig.getPartitioningStrategyArguments().add(new FunctionArgument(name, typeName, isArray, values));
-        }
-    }
-
-    protected boolean isArrayFunctionArg(Node node) {
-        return node.getNodeName().equals("array");
-    }
-
-    protected String[] getFunctionArgValue(Node node, boolean isArray) {
-        if (!isArray) {
-            return new String[]{getTextContent(node)};
-        }
-        final List<String> elements = new ArrayList<>();
-        for (final Node childElement : childElements(node)) {
-            elements.add(getTextContent(childElement).trim());
-        }
-        return elements.toArray(new String[0]);
-    }
 
     protected void fillClusterLoginConfig(AbstractClusterLoginConfig<?> config, Node node) {
         for (Node child : childElements(node)) {
