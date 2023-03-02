@@ -226,8 +226,8 @@ public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
         private Boolean valueBoolean;
         private Boolean[] arrayBoolean;
 
-        @SuppressWarnings("checkstyle:parameterNumber")
-        SampleStrategyWithArgs(
+        @SuppressWarnings({"checkstyle:parameterNumber", "checkstyle:RedundantModifier"})
+        public SampleStrategyWithArgs(
                 final Byte valueByte,
                 final Byte[] arrayByte,
                 final Short valueShort,
@@ -250,8 +250,8 @@ public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
             throw new HazelcastException("Wrong constructor!");
         }
 
-        @SuppressWarnings("checkstyle:parameterNumber")
-        SampleStrategyWithArgs(
+        @SuppressWarnings({"checkstyle:parameterNumber", "checkstyle:RedundantModifier"})
+        public SampleStrategyWithArgs(
                 final Byte valueByte,
                 final Byte[] arrayByte,
                 final Short valueShort,
