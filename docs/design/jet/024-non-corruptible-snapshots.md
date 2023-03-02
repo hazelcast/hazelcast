@@ -24,7 +24,7 @@ Snapshot should be safe in case of single node misbehavior or failure.
 ## Current snapshotting algorithm
 
 Jet uses [2-phase snapshot algorithm](https://hazelcast.com/blog/transactional-connectors-in-hazelcast-jet/)
-which from the point of view of snapshot data consistency can be summarized as follows.
+which can be summarised as follows from the point of view of snapshot data consistency.
 
 ### Snapshot taking procedure
 
