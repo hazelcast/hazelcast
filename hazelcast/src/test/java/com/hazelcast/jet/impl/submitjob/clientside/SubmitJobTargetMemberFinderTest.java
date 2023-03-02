@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl;
+package com.hazelcast.jet.impl.submitjob.clientside;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.jobupload;
+package com.hazelcast.jet.impl.submitjob.memberside;
 
 import com.hazelcast.internal.util.Sha256Util;
 import com.hazelcast.jet.JetException;

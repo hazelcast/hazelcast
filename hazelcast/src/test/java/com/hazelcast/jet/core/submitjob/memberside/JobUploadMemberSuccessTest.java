@@ -14,26 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.core;
+package com.hazelcast.jet.core.submitjob.memberside;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastBootstrap;
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.test.SerialTest;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.io.IOException;
 import java.nio.file.Path;
 
-import static com.hazelcast.jet.core.JobUploadClientFailureTest.getJarPath;
+import static com.hazelcast.jet.core.submitjob.clientside.upload.JobUploadClientFailureTest.getJarPath;
+import static com.hazelcast.jet.core.submitjob.clientside.upload.JobUploadClientSuccessTest.assertJobIsRunning;
+
 
 @Category({SerialTest.class})
-public class JobUploadMemberFailureTest extends JetTestSupport {
+public class JobUploadMemberSuccessTest extends JetTestSupport {
 
     @After
     public void resetSingleton() {
@@ -42,25 +45,9 @@ public class JobUploadMemberFailureTest extends JetTestSupport {
     }
 
     @Test
-    public void test_jarUpload_whenResourceUploadIsNotEnabled() {
-        // Create with default configuration
-        HazelcastInstance hazelcastInstance = createHazelcastInstance();
-        JetService jetService = hazelcastInstance.getJet();
-
+    public void test_jarUpload_whenResourceUploadIsEnabled() throws IOException {
         Path path = getJarPath();
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                .setJarPath(path);
 
-        assertThrows(JetException.class, () ->
-                jetService.submitJobFromJar(submitJobParameters)
-        );
-
-        assertEqualsEventually(() -> jetService.getJobs().size(), 0);
-    }
-
-    @Test
-    public void test_jarUploadBy_withWrongMainClassname() {
-        // Create with special configuration
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
@@ -68,11 +55,31 @@ public class JobUploadMemberFailureTest extends JetTestSupport {
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
         JetService jetService = hazelcastInstance.getJet();
 
+        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+                .setJarPath(path);
+
+        jetService.submitJobFromJar(submitJobParameters);
+
+        assertJobIsRunning(jetService);
+    }
+
+    @Test
+    public void test_jarUpload_withMainClassname() throws IOException {
         Path path = getJarPath();
+
+        Config config = smallInstanceConfig();
+        JetConfig jetConfig = config.getJetConfig();
+        jetConfig.setResourceUploadEnabled(true);
+
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        JetService jetService = hazelcastInstance.getJet();
+
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
                 .setJarPath(path)
-                .setMainClass("org.example.Main1");
+                .setMainClass("org.example.Main");
 
-        assertThrows(JetException.class, () -> jetService.submitJobFromJar(submitJobParameters));
+        jetService.submitJobFromJar(submitJobParameters);
+
+        assertJobIsRunning(jetService);
     }
 }

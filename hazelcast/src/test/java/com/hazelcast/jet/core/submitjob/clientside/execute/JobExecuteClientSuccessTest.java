@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.core;
+package com.hazelcast.jet.core.submitjob.clientside.execute;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
@@ -26,6 +26,8 @@ import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
@@ -38,9 +40,9 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static com.hazelcast.jet.core.JobUploadClientFailureTest.containsName;
-import static com.hazelcast.jet.core.JobUploadClientFailureTest.getJarPath;
-import static com.hazelcast.jet.core.JobUploadClientFailureTest.jarDoesNotExist;
+import static com.hazelcast.jet.core.submitjob.clientside.upload.JobUploadClientFailureTest.containsName;
+import static com.hazelcast.jet.core.submitjob.clientside.upload.JobUploadClientFailureTest.getJarPath;
+import static com.hazelcast.jet.core.submitjob.clientside.upload.JobUploadClientFailureTest.jarDoesNotExist;
 import static java.util.Collections.emptyList;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;

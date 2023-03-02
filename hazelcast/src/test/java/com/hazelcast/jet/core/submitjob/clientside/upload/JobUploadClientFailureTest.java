@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.core;
+package com.hazelcast.jet.core.submitjob.clientside.upload;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.properties.ClientProperty;
@@ -28,8 +28,9 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
-import com.hazelcast.jet.impl.JobUploadCall;
+import com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadCall;
 import com.hazelcast.jet.test.SerialTest;
 import org.junit.After;
 import org.junit.Test;
@@ -361,11 +362,11 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         return Files.copy(jarPath, newPath, StandardCopyOption.REPLACE_EXISTING);
     }
 
-    static boolean jarDoesNotExist() throws IOException {
+    public static boolean jarDoesNotExist() throws IOException {
         return fileDoesNotExist(SIMPLE_JAR);
     }
 
-    static Path getNoManifestJarPath() {
+    public static Path getNoManifestJarPath() {
         return getPath(NO_MANIFEST_SIMPLE_JAR);
     }
 
@@ -409,7 +410,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         }
     }
 
-    static boolean containsName(List<Job> list, String name) {
+    public static boolean containsName(List<Job> list, String name) {
         return list.stream().anyMatch(job -> Objects.equals(job.getName(), name));
     }
 }

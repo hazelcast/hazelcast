@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl;
+package com.hazelcast.jet.impl.submitjob.clientside.execute;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.jet.impl.submitjob.clientside.SubmitJobTargetMemberFinder;
 
 import java.nio.file.Path;
 import java.util.UUID;
@@ -43,11 +44,10 @@ public class JobExecuteCall {
         this.memberUuid = submitJobTargetMemberFinder.getRandomMemberId(client);
     }
 
-    UUID getSessionId() {
+    public UUID getSessionId() {
         return sessionId;
     }
 
-    // This method is public for testing purposes.
     public UUID getMemberUuid() {
         return memberUuid;
     }
@@ -56,7 +56,7 @@ public class JobExecuteCall {
         return jarPath;
     }
 
-    String getSha256HexOfJar() {
+    public String getSha256HexOfJar() {
         return sha256HexOfJar;
     }
 

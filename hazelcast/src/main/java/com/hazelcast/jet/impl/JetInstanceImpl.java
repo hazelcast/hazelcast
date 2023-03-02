@@ -26,7 +26,8 @@ import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.impl.jobupload.JobMetaDataParameterObject;
+import com.hazelcast.jet.impl.submitjob.clientside.upload.UploadParametersValidator;
+import com.hazelcast.jet.impl.submitjob.memberside.JobMetaDataParameterObject;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.logging.ILogger;
@@ -74,8 +75,8 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
     @Override
     public void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
         try {
-            SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
-            validator.validateParameterObject(submitJobParameters);
+            UploadParametersValidator validator = new UploadParametersValidator();
+            validator.validate(submitJobParameters);
 
             JobMetaDataParameterObject parameterObject = new JobMetaDataParameterObject();
 

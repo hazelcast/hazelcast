@@ -35,6 +35,10 @@ import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
+import com.hazelcast.jet.impl.submitjob.clientside.execute.ExecuteParametersValidator;
+import com.hazelcast.jet.impl.submitjob.clientside.execute.JobExecuteCall;
+import com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadCall;
+import com.hazelcast.jet.impl.submitjob.clientside.upload.UploadParametersValidator;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 
@@ -151,8 +155,8 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
     public void executeJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
         try {
-            SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
-            validator.validateParameterObject(submitJobParameters);
+            ExecuteParametersValidator validator = new ExecuteParametersValidator();
+            validator.validate(submitJobParameters);
 
             Path jarPath = submitJobParameters.getJarPath();
             JobExecuteCall jobExecuteCall = initializeJobExecuteCall(submitJobParameters.getJarPath());
@@ -169,8 +173,8 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     public void uploadJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
         try {
             // Validate the provided parameters
-            SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
-            validator.validateParameterObject(submitJobParameters);
+            UploadParametersValidator validator = new UploadParametersValidator();
+            validator.validate(submitJobParameters);
 
 
             Path jarPath = submitJobParameters.getJarPath();

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.core;
+package com.hazelcast.jet.core.submitjob.clientside.execute;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.properties.ClientProperty;
@@ -28,8 +28,9 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
-import com.hazelcast.jet.impl.JobExecuteCall;
+import com.hazelcast.jet.impl.submitjob.clientside.execute.JobExecuteCall;
 import com.hazelcast.jet.test.SerialTest;
 import org.junit.After;
 import org.junit.Test;
@@ -38,16 +39,14 @@ import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.UUID;
 
-import static com.hazelcast.jet.core.JobUploadClientFailureTest.containsName;
-import static com.hazelcast.jet.core.JobUploadClientFailureTest.getJarPath;
-import static com.hazelcast.jet.core.JobUploadClientFailureTest.getNoManifestJarPath;
+import static com.hazelcast.jet.core.submitjob.clientside.upload.JobUploadClientFailureTest.containsName;
+import static com.hazelcast.jet.core.submitjob.clientside.upload.JobUploadClientFailureTest.getJarPath;
+import static com.hazelcast.jet.core.submitjob.clientside.upload.JobUploadClientFailureTest.getNoManifestJarPath;
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -75,22 +74,6 @@ public class JobExecuteClientFailureTest extends JetTestSupport {
         assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
                 .isInstanceOf(JetException.class)
                 .hasMessageContaining("jarPath can not be null");
-    }
-
-    @Test
-    public void testJarDoesNotExist() {
-        createHazelcastInstance();
-        HazelcastInstance client = createHazelcastClient();
-        JetService jetService = client.getJet();
-
-        String jarPath = "thisdoesnotexist.jar";
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                .setJarPath(Paths.get(jarPath))
-                .setJarAlreadyPresent(true);
-
-        assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
-                .isInstanceOf(NoSuchFileException.class)
-                .hasMessageContaining(jarPath);
     }
 
     @Test
