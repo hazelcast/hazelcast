@@ -31,6 +31,9 @@ public class SubmitJobParameters {
      */
     private Path jarPath;
 
+    /**
+     * Set to true if the jar is already present on the member. The jar will be executed directly
+     */
     private boolean jarAlreadyPresent;
 
     /**

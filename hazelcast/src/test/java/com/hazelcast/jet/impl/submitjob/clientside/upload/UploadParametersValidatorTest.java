@@ -59,7 +59,8 @@ public class UploadParametersValidatorTest {
 
         Path jarPath2 = Paths.get("foo");
         assertThatThrownBy(() -> validator.validateFileExtension(jarPath2))
-                .isInstanceOf(JetException.class);
+                .isInstanceOf(JetException.class)
+                .hasMessageContaining("File name extension should be .jar");
     }
 
     @Test
