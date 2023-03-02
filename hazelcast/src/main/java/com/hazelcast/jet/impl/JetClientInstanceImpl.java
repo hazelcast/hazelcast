@@ -185,8 +185,8 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                 submitJobParameters.getMainClass(),
                 submitJobParameters.getJobParameters());
 
-        invokeRequestNoRetryOnRandom(jobUploadCall.getMemberUuid(), jobMetaDataRequest
-        );
+        invokeRequestAndDecodeResponseNoRetryOnRandom(jobUploadCall.getMemberUuid(), jobMetaDataRequest,
+                JetUploadJobMetaDataCodec::decodeResponse);
     }
 
     private void sendJobMultipart(JobUploadCall jobUploadCall, Path jarPath)
@@ -216,8 +216,8 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                 logFine(getLogger(), "Submitting Job Part for jarPath: %s PartNumber %d",
                         jarPath, currentPartNumber);
 
-                invokeRequestNoRetryOnRandom(jobUploadCall.getMemberUuid(), jobMultipartRequest
-                );
+                invokeRequestAndDecodeResponseNoRetryOnRandom(jobUploadCall.getMemberUuid(), jobMultipartRequest,
+                        JetUploadJobMultipartCodec::decodeResponse);
             }
         }
     }
@@ -240,10 +240,11 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     }
 
     // Do not retry on random member if invocation fails
-    private void invokeRequestNoRetryOnRandom(UUID uuid, ClientMessage request) {
+    private void invokeRequestAndDecodeResponseNoRetryOnRandom(UUID uuid, ClientMessage request,
+                                                                Function<ClientMessage, Object> decoder) {
         ClientInvocation invocation = new ClientInvocation(client, request, null, uuid);
         invocation.disallowRetryOnRandom();
-        invoke(invocation);
+        invoke(decoder, invocation);
     }
 
 
@@ -251,22 +252,14 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     private <S> S invokeRequestAndDecodeResponse(UUID uuid, ClientMessage request,
                                                  Function<ClientMessage, Object> decoder) {
         ClientInvocation invocation = new ClientInvocation(client, request, null, uuid);
-        return invokeAndDecode(decoder, invocation);
+        return invoke(decoder, invocation);
     }
 
-    private <S> S invokeAndDecode(Function<ClientMessage, Object> decoder, ClientInvocation invocation) {
+    private <S> S invoke(Function<ClientMessage, Object> decoder, ClientInvocation invocation) {
         try {
             ClientMessage response = invocation.invoke().get();
             return serializationService.toObject(decoder.apply(response));
-        } catch (Exception t) {
-            throw rethrow(t);
-        }
-    }
-
-    private void invoke(ClientInvocation invocation) {
-        try {
-            invocation.invoke().get();
-        } catch (Exception t) {
+        } catch (Throwable t) {
             throw rethrow(t);
         }
     }
