@@ -292,7 +292,7 @@ public interface Job {
      * end up getting immediately restarted. Call {@link #getStatus()} to find
      * out and possibly try to cancel again. Should this restart happen,
      * created snapshot cannot be regarded as exported terminal snapshot. It
-     * shall be not overwritten nor deleted until there is a new snapshot
+     * shall be neither overwritten nor deleted until there is a new snapshot
      * created, either automatic or via cancelAndExportSnapshot method,
      * otherwise data can be lost. If cancelAndExportSnapshot is used again,
      * ensure that there was a regular snapshot made or use different snapshot
