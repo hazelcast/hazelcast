@@ -373,7 +373,7 @@ class MasterSnapshotContext {
                 // - ongoingSnapshotId is safe in IMap, because it was written at the beginning
                 // - snapshotId was not updated
                 // - we can roll back transactions now (2nd phase) if needed, we would do it anyway after restart
-                // So regardless if JobExecutionRecord in IMap turns out be new or old,
+                // So regardless of whether JobExecutionRecord in IMap turns out to be new or old,
                 // the state will be consistent.
                 //
                 // There is no need to restart job/skip phase2 in case of exported _non-terminal_ snapshot,
