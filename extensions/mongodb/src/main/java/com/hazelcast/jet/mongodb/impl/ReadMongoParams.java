@@ -20,6 +20,7 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
+import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -39,7 +40,7 @@ public class ReadMongoParams<I> implements Serializable {
     String collectionName;
     FunctionEx<Document, I> mapItemFn;
 
-    Long startAtTimestamp;
+    BsonTimestamp startAtTimestamp;
     EventTimePolicy<? super I> eventTimePolicy;
     FunctionEx<ChangeStreamDocument<Document>, I> mapStreamFn;
 
@@ -102,11 +103,11 @@ public class ReadMongoParams<I> implements Serializable {
         return this;
     }
 
-    public Long getStartAtTimestamp() {
+    public BsonTimestamp getStartAtTimestamp() {
         return startAtTimestamp;
     }
 
-    public ReadMongoParams<I> setStartAtTimestamp(Long startAtTimestamp) {
+    public ReadMongoParams<I> setStartAtTimestamp(BsonTimestamp startAtTimestamp) {
         this.startAtTimestamp = startAtTimestamp;
         return this;
     }
