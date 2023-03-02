@@ -38,7 +38,7 @@ import static javax.net.ssl.SSLEngineResult.HandshakeStatus.FINISHED;
 /**
  * A {@link AsyncSocket} that is Nio based (so uses a selector) and provides
  * TLS.
- *
+ * <p>
  * https://docs.oracle.com/javase/10/security/sample-code-illustrating-use-sslengine.htm#JSSEC-GUID-EDE915F0-427B-48C7-918F-23C44384B862
  * <p>
  * https://github.com/alkarn/sslengine.example/blob/master/src/main/java/alkarn/github/io/sslengine/example/NioSslServer.java
@@ -53,6 +53,7 @@ public class NioTlsAsyncSocket extends AsyncSocket {
     private final NioReactor reactor;
     private final Thread eventloopThread;
     private final SelectionKey key;
+    private final IOVector ioVector = new IOVector();
     private final boolean regularSchedule;
     private final boolean writeThrough;
     private final AsyncSocketReader reader;
@@ -290,12 +291,20 @@ public class NioTlsAsyncSocket extends AsyncSocket {
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
                 localTaskQueue.add(handler);
-                result = writeQueue.offer(buf);
+                if (ioVector.offer(buf)) {
+                    result = true;
+                } else {
+                    result = writeQueue.offer(buf);
+                }
             } else {
                 result = writeQueue.offer(buf);
             }
         } else if (currentFlushThread == eventloopThread) {
-            result = writeQueue.offer(buf);
+            if (ioVector.offer(buf)) {
+                result = true;
+            } else {
+                result = writeQueue.offer(buf);
+            }
         } else {
             result = writeQueue.offer(buf);
             flush();
@@ -319,7 +328,6 @@ public class NioTlsAsyncSocket extends AsyncSocket {
         private final ByteBuffer appBuffer;
         private final ByteBuffer emptyBuffer = ByteBuffer.allocate(0);
         private boolean handshakeInProgress = true;
-        private IOBuffer current;
 
         private TLsHandler(NioAsyncSocketBuilder builder) throws SocketException {
             this.directBuffers = builder.directBuffers;
@@ -504,34 +512,28 @@ public class NioTlsAsyncSocket extends AsyncSocket {
                 return;
             }
 
-            if (current == null) {
-                current = writeQueue.poll();
-            }
+            ioVector.populate(writeQueue);
 
-            //todo: use wrapMore variable
-            boolean bufferOverflow = false;
-            while (current != null && !bufferOverflow) {
-                // todo: what happens when the src byteBuffer is a lot larger than the sendBuffer?
-                // I guess it will partly encrypted.
+            ByteBuffer[] srcs = ioVector.array();
 
-                // todo: instead of passing individual buffers, an array should be passed.
-                // This reduces the overhead of encryption
-                SSLEngineResult wrapResult = sslEngine.wrap(current.byteBuffer(), sendBuffer);
-                //System.out.println(TLSNioAsyncSocket.this + " handleWrite: wrapResult " + wrapResult.toString().replace("\n", " "));
+            boolean wrapMore = true;
+            do {
+                // Litter is being created due to the implementation wrapping the sendBuffer into a singleton array
+                // See the handleRead methods for a similar situation and how to deal with it.
+                SSLEngineResult wrapResult = sslEngine.wrap(srcs, 0, ioVector.length(), sendBuffer);
+                ioVector.compact(wrapResult.bytesConsumed());
                 switch (wrapResult.getStatus()) {
                     case OK:
-                        if (!current.byteBuffer().hasRemaining()) {
-                            current.release();
-                            current = writeQueue.poll();
+                        if (ioVector.isEmpty()) {
+                            wrapMore = false;
                         }
                         break;
                     case CLOSED:
-                        current.release();
                         throw new EOFException("Remote socket closed!");
                     case BUFFER_OVERFLOW:
                         // there is not enough space in the sendBuffer, so lets submit what is there
                         // todo: what if the capacity of the buffer isn't sufficient?
-                        bufferOverflow = true;
+                        wrapMore = false;
                         break;
                     case BUFFER_UNDERFLOW:
                         // can this happen?
@@ -539,18 +541,21 @@ public class NioTlsAsyncSocket extends AsyncSocket {
                     default:
                         throw new IllegalStateException("Unknown wrapResult:" + wrapResult);
                 }
-            }
+            } while (wrapMore);
 
             // The sendbuffer has received some data, so lets put it into reading mode
             // So it can be written to the socket
             sendBuffer.flip();
             long written = socketChannel.write(sendBuffer);
-            //System.out.println(TLSNioAsyncSocket.this + " bytes written:" + written);
             metrics.incBytesWritten(written);
-            // and set the sendBuffer back to writing mode for more rounds of wrapping.
+
+            boolean sendBufferDrained = !sendBuffer.hasRemaining();
+
+            //System.out.println(TLSNioAsyncSocket.this + " bytes written:" + written);
+            // Set the sendBuffer back to writing mode for more rounds of wrapping.
             compactOrClear(sendBuffer);
 
-            if (current == null && !bufferOverflow) {
+            if (ioVector.isEmpty() && sendBufferDrained) {
                 // everything got written
 
                 // clear the OP_WRITE flag if it was set
