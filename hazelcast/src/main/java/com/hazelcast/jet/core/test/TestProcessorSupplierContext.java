@@ -26,8 +26,6 @@ import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
 import java.io.File;
-import java.security.AccessControlException;
-import java.security.Permission;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -157,9 +155,5 @@ public class TestProcessorSupplierContext
     @Override
     protected String loggerName() {
         return vertexName() + "#PS";
-    }
-
-    @Override
-    public void checkPermission(Permission permission) throws AccessControlException {
     }
 }
