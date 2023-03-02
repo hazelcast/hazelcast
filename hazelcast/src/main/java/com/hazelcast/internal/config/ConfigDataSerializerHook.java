@@ -54,6 +54,7 @@ import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.PNCounterConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PredicateConfig;
@@ -165,8 +166,9 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int DISK_TIER_CONFIG = 66;
     public static final int BTREE_INDEX_CONFIG = 67;
     public static final int DATA_LINK_CONFIG = 68;
+    public static final int PARTITION_ATTRIBUTE_CONFIG = 69;
 
-    private static final int LEN = DATA_LINK_CONFIG + 1;
+    private static final int LEN = PARTITION_ATTRIBUTE_CONFIG + 1;
 
     @Override
     public int getFactoryId() {
@@ -245,6 +247,7 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[DISK_TIER_CONFIG] = arg -> new DiskTierConfig();
         constructors[BTREE_INDEX_CONFIG] = arg -> new BTreeIndexConfig();
         constructors[DATA_LINK_CONFIG] = arg -> new DataLinkConfig();
+        constructors[PARTITION_ATTRIBUTE_CONFIG] = arg -> new PartitioningAttributeConfig();
 
         return new ArrayDataSerializableFactory(constructors);
     }

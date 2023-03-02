@@ -4545,6 +4545,25 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
+    public void testPartitioningAttributeConfigs() {
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"test\">"
+                + "     <partition-attributes>"
+                + "         <attribute>attr1</attribute>"
+                + "         <attribute>attr2</attribute>"
+                + "     </partition-attributes>"
+                + "</map>"
+                + HAZELCAST_END_TAG;
+
+        final MapConfig mapConfig = buildConfig(xml).getMapConfig("test");
+        assertThat(mapConfig.getPartitioningAttributeConfigs()).containsExactly(
+                new PartitioningAttributeConfig("attr1"),
+                new PartitioningAttributeConfig("attr2")
+        );
+    }
+
+    @Override
     protected Config buildMapWildcardConfig() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"map*\">\n"

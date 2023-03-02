@@ -140,6 +140,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
             .setMaxSizePolicy(DEFAULT_MAX_SIZE_POLICY)
             .setSize(DEFAULT_MAX_SIZE);
     private TieredStoreConfig tieredStoreConfig = new TieredStoreConfig();
+    private List<PartitioningAttributeConfig> partitioningAttributeConfigs;
 
     public MapConfig() {
     }
@@ -178,6 +179,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         this.merkleTreeConfig = new MerkleTreeConfig(config.merkleTreeConfig);
         this.eventJournalConfig = new EventJournalConfig(config.eventJournalConfig);
         this.tieredStoreConfig = new TieredStoreConfig(config.tieredStoreConfig);
+        this.partitioningAttributeConfigs = new ArrayList<>(config.partitioningAttributeConfigs);
     }
 
     /**
@@ -808,6 +810,19 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         return this;
     }
 
+    public List<PartitioningAttributeConfig> getPartitioningAttributeConfigs() {
+        if (partitioningAttributeConfigs == null) {
+            partitioningAttributeConfigs = new ArrayList<>();
+        }
+
+        return partitioningAttributeConfigs;
+    }
+
+    public MapConfig setPartitioningAttributeConfigs(final List<PartitioningAttributeConfig> partitioningAttributeConfigs) {
+        this.partitioningAttributeConfigs = partitioningAttributeConfigs;
+        return this;
+    }
+
     @Override
     @SuppressWarnings("checkstyle:methodlength")
     public final boolean equals(Object o) {
@@ -900,6 +915,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         if (!tieredStoreConfig.equals(that.tieredStoreConfig)) {
             return false;
         }
+        if (!getPartitioningAttributeConfigs().equals(that.getPartitioningAttributeConfigs())) {
+            return false;
+        }
 
         return hotRestartConfig.equals(that.hotRestartConfig);
     }
@@ -934,6 +952,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         result = 31 * result + hotRestartConfig.hashCode();
         result = 31 * result + dataPersistenceConfig.hashCode();
         result = 31 * result + tieredStoreConfig.hashCode();
+        result = 31 * result + getPartitioningAttributeConfigs().hashCode();
         return result;
     }
 
@@ -966,6 +985,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", entryStatsEnabled=" + perEntryStatsEnabled
                 + ", tieredStoreConfig=" + tieredStoreConfig
+                + ", partitioningAttributeConfigs=" + partitioningAttributeConfigs
                 + '}';
     }
 
@@ -1009,6 +1029,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         out.writeBoolean(perEntryStatsEnabled);
         out.writeObject(dataPersistenceConfig);
         out.writeObject(tieredStoreConfig);
+        writeNullableList(partitioningAttributeConfigs, out);
     }
 
     @Override
@@ -1041,5 +1062,6 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         perEntryStatsEnabled = in.readBoolean();
         setDataPersistenceConfig(in.readObject());
         setTieredStoreConfig(in.readObject());
+        partitioningAttributeConfigs = readNullableList(in);
     }
 }

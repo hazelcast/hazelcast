@@ -4569,6 +4569,24 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
+    public void testPartitioningAttributeConfigs() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    test:\n"
+                + "      partition-attributes:\n"
+                + "        - attr1\n"
+                + "        - attr2\n";
+
+        final MapConfig mapConfig = buildConfig(yaml).getMapConfig("test");
+        assertThat(mapConfig.getPartitioningAttributeConfigs()).containsExactly(
+                new PartitioningAttributeConfig("attr1"),
+                new PartitioningAttributeConfig("attr2")
+        );
+    }
+
+    @Override
     public void testMapExpiryConfig() {
         String yaml = ""
                 + "hazelcast:\n"
