@@ -27,31 +27,31 @@ import java.nio.file.Paths;
 import static com.hazelcast.jet.core.submitjob.clientside.upload.JobUploadClientFailureTest.getJarPath;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class UploadParametersValidatorTest {
+public class SubmitJobParametersValidatorTest {
 
     @Test
     public void nullJarPath() {
-        UploadParametersValidator validator = new UploadParametersValidator();
+        SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
 
         SubmitJobParameters parameterObject = SubmitJobParameters.forJobUpload();
-        assertThatThrownBy(() -> validator.validate(parameterObject))
+        assertThatThrownBy(() -> validator.validateLocalJar(parameterObject))
                 .isInstanceOf(JetException.class)
                 .hasMessageContaining("jarPath can not be null");
     }
 
     @Test
     public void noSuchFileException() {
-        UploadParametersValidator validator = new UploadParametersValidator();
+        SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
 
         SubmitJobParameters parameterObject = SubmitJobParameters.forJobUpload();
         parameterObject.setJarPath(Paths.get("nosuchfile.jar"));
-        assertThatThrownBy(() -> validator.validate(parameterObject))
+        assertThatThrownBy(() -> validator.validateLocalJar(parameterObject))
                 .isInstanceOf(NoSuchFileException.class);
     }
 
     @Test
     public void invalidFileExtension() {
-        UploadParametersValidator validator = new UploadParametersValidator();
+        SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
 
         Path jarPath1 = Paths.get("/mnt/foo");
         assertThatThrownBy(() -> validator.validateFileExtension(jarPath1))
@@ -65,12 +65,12 @@ public class UploadParametersValidatorTest {
 
     @Test
     public void nullJobParameters() {
-        UploadParametersValidator validator = new UploadParametersValidator();
+        SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
 
         SubmitJobParameters parameterObject = SubmitJobParameters.forJobUpload();
         parameterObject.setJarPath(getJarPath());
         parameterObject.setJobParameters(null);
-        assertThatThrownBy(() -> validator.validate(parameterObject))
+        assertThatThrownBy(() -> validator.validateLocalJar(parameterObject))
                 .isInstanceOf(JetException.class)
                 .hasMessageContaining("jobParameters can not be null");
     }

@@ -22,39 +22,41 @@ import com.hazelcast.jet.SubmitJobParameters;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 
-public class UploadParametersValidator {
+public class SubmitJobParametersValidator {
 
-    public void validate(SubmitJobParameters parameterObject) throws IOException {
-        validateJar(parameterObject);
-        validateJobParameters(parameterObject);
-    }
-
-    protected void validateJar(SubmitJobParameters parameterObject) throws IOException {
-        Path jarPath = validateJarPathNotNull(parameterObject);
+    public void validateLocalJar(SubmitJobParameters parameterObject) throws IOException {
+        Path jarPath = parameterObject.getJarPath();
+        validateJarPathNotNull(jarPath);
         validateFileSize(jarPath);
         validateFileExtension(jarPath);
+        validateJobParameters(parameterObject.getJobParameters());
     }
 
-    protected Path validateJarPathNotNull(SubmitJobParameters parameterObject) {
+    public void validateRemoteJar(SubmitJobParameters parameterObject) {
         Path jarPath = parameterObject.getJarPath();
+        validateJarPathNotNull(jarPath);
+        validateFileExtension(jarPath);
+        validateJobParameters(parameterObject.getJobParameters());
+    }
 
+    void validateJarPathNotNull(Path jarPath) {
         // Check that parameter is not null, because it is used to access the file
         if (Objects.isNull(jarPath)) {
             throw new JetException("jarPath can not be null");
         }
-        return jarPath;
     }
 
-    protected void validateFileExtension(Path jarPath) {
+    void validateFileExtension(Path jarPath) {
         String fileName = jarPath.getFileName().toString();
         if (!fileName.endsWith(".jar")) {
             throw new JetException("File name extension should be .jar");
         }
     }
 
-    protected void validateFileSize(Path jarPath) throws IOException {
+    void validateFileSize(Path jarPath) throws IOException {
         // Check that the file exists and its size is not 0
         long jarSize = Files.size(jarPath);
         if (jarSize == 0) {
@@ -62,9 +64,9 @@ public class UploadParametersValidator {
         }
     }
 
-    protected void validateJobParameters(SubmitJobParameters parameterObject) {
+    void validateJobParameters(List<String> jobParameters) {
         // Check that parameter is not null, because it is used by the JetUploadJobMetaDataCodec
-        if (Objects.isNull(parameterObject.getJobParameters())) {
+        if (Objects.isNull(jobParameters)) {
             throw new JetException("jobParameters can not be null");
         }
     }

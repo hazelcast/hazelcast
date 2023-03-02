@@ -35,10 +35,9 @@ import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
-import com.hazelcast.jet.impl.submitjob.clientside.execute.ExecuteParametersValidator;
 import com.hazelcast.jet.impl.submitjob.clientside.execute.JobExecuteCall;
 import com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadCall;
-import com.hazelcast.jet.impl.submitjob.clientside.upload.UploadParametersValidator;
+import com.hazelcast.jet.impl.submitjob.clientside.upload.SubmitJobParametersValidator;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 
@@ -153,10 +152,10 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         }
     }
 
-    public void executeJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
+    private void executeJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
         try {
-            ExecuteParametersValidator validator = new ExecuteParametersValidator();
-            validator.validate(submitJobParameters);
+            SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
+            validator.validateRemoteJar(submitJobParameters);
 
             Path jarPath = submitJobParameters.getJarPath();
             JobExecuteCall jobExecuteCall = initializeJobExecuteCall(submitJobParameters.getJarPath());
@@ -165,21 +164,19 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
             logFine(getLogger(), "Submitting JobMetaData for jarPath: %s", jarPath);
             sendJobMetaDataForExecute(jobExecuteCall, submitJobParameters);
 
-        } catch (IOException exception) {
+        } catch (Exception exception) {
             sneakyThrow(exception);
         }
     }
 
-    public void uploadJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
+    private void uploadJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
         try {
             // Validate the provided parameters
-            UploadParametersValidator validator = new UploadParametersValidator();
-            validator.validate(submitJobParameters);
-
+            SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
+            validator.validateLocalJar(submitJobParameters);
 
             Path jarPath = submitJobParameters.getJarPath();
             JobUploadCall jobUploadCall = initializeJobUploadCall(submitJobParameters.getJarPath());
-
 
             // Send job meta data
             logFine(getLogger(), "Submitting JobMetaData for jarPath: %s", jarPath);
