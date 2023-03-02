@@ -109,7 +109,7 @@ public class JobExecuteClientFailureTest extends JetTestSupport {
         HazelcastInstance client = createHazelcastClient();
         JetService jetService = client.getJet();
 
-        SubmitJobParameters submitJobParameters =SubmitJobParameters.forDirectJobExecution()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
                 .setJarPath(getJarPath());
 
         assertThrows(JetException.class, () ->

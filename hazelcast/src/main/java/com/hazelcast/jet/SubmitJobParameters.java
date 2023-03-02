@@ -24,7 +24,7 @@ import java.util.List;
 /**
  * The parameter object for {{@link JetService#submitJobFromJar(SubmitJobParameters)}}
  */
-public class SubmitJobParameters {
+public final class SubmitJobParameters {
 
     /**
      * Path of the jar
@@ -56,6 +56,9 @@ public class SubmitJobParameters {
      */
     private List<String> jobParameters = Collections.emptyList();
 
+    private SubmitJobParameters() {
+    }
+
     /**
      * Create a new instance to upload and execute a local jar
      */
@@ -68,9 +71,6 @@ public class SubmitJobParameters {
      */
     public static SubmitJobParameters forDirectJobExecution() {
         return new SubmitJobParameters().setJarAlreadyPresent(true);
-    }
-
-    private SubmitJobParameters() {
     }
 
     public Path getJarPath() {
