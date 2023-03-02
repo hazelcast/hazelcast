@@ -56,6 +56,23 @@ public class SubmitJobParameters {
      */
     private List<String> jobParameters = Collections.emptyList();
 
+    /**
+     * Create a new instance to upload and execute a local jar
+     */
+    public static SubmitJobParameters forJobUpload() {
+        return new SubmitJobParameters();
+    }
+
+    /**
+     * Create a new instance to execute a jar on the member
+     */
+    public static SubmitJobParameters forDirectJobExecution() {
+        return new SubmitJobParameters().setJarAlreadyPresent(true);
+    }
+
+    private SubmitJobParameters() {
+    }
+
     public Path getJarPath() {
         return jarPath;
     }
@@ -69,7 +86,7 @@ public class SubmitJobParameters {
         return jarAlreadyPresent;
     }
 
-    public SubmitJobParameters setJarAlreadyPresent(boolean jarAlreadyPresent) {
+    private SubmitJobParameters setJarAlreadyPresent(boolean jarAlreadyPresent) {
         this.jarAlreadyPresent = jarAlreadyPresent;
         return this;
     }

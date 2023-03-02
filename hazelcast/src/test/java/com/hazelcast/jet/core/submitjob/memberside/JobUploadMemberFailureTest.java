@@ -49,7 +49,7 @@ public class JobUploadMemberFailureTest extends JetTestSupport {
         JetService jetService = hazelcastInstance.getJet();
 
         Path path = getJarPath();
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
                 .setJarPath(path);
 
         assertThrows(JetException.class, () ->
@@ -70,7 +70,7 @@ public class JobUploadMemberFailureTest extends JetTestSupport {
         JetService jetService = hazelcastInstance.getJet();
 
         Path path = getJarPath();
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
                 .setJarPath(path)
                 .setMainClass("org.example.Main1");
 

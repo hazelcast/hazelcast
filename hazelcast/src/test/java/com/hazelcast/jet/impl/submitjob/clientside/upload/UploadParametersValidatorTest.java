@@ -33,7 +33,7 @@ public class UploadParametersValidatorTest {
     public void nullJarPath() {
         UploadParametersValidator validator = new UploadParametersValidator();
 
-        SubmitJobParameters parameterObject = new SubmitJobParameters();
+        SubmitJobParameters parameterObject = SubmitJobParameters.forJobUpload();
         assertThatThrownBy(() -> validator.validate(parameterObject))
                 .isInstanceOf(JetException.class)
                 .hasMessageContaining("jarPath can not be null");
@@ -43,7 +43,7 @@ public class UploadParametersValidatorTest {
     public void noSuchFileException() {
         UploadParametersValidator validator = new UploadParametersValidator();
 
-        SubmitJobParameters parameterObject = new SubmitJobParameters();
+        SubmitJobParameters parameterObject = SubmitJobParameters.forJobUpload();
         parameterObject.setJarPath(Paths.get("nosuchfile.jar"));
         assertThatThrownBy(() -> validator.validate(parameterObject))
                 .isInstanceOf(NoSuchFileException.class);
@@ -67,7 +67,7 @@ public class UploadParametersValidatorTest {
     public void nullJobParameters() {
         UploadParametersValidator validator = new UploadParametersValidator();
 
-        SubmitJobParameters parameterObject = new SubmitJobParameters();
+        SubmitJobParameters parameterObject = SubmitJobParameters.forJobUpload();
         parameterObject.setJarPath(getJarPath());
         parameterObject.setJobParameters(null);
         assertThatThrownBy(() -> validator.validate(parameterObject))

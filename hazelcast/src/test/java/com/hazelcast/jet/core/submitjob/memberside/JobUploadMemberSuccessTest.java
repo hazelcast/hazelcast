@@ -55,7 +55,7 @@ public class JobUploadMemberSuccessTest extends JetTestSupport {
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
         JetService jetService = hazelcastInstance.getJet();
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
                 .setJarPath(path);
 
         jetService.submitJobFromJar(submitJobParameters);
@@ -74,7 +74,7 @@ public class JobUploadMemberSuccessTest extends JetTestSupport {
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
         JetService jetService = hazelcastInstance.getJet();
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
                 .setJarPath(path)
                 .setMainClass("org.example.Main");
 

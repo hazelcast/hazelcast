@@ -68,8 +68,7 @@ public class JobExecuteClientFailureTest extends JetTestSupport {
         HazelcastInstance client = createHazelcastClient();
         JetService jetService = client.getJet();
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                .setJarAlreadyPresent(true);
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution();
 
         assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
                 .isInstanceOf(JetException.class)
@@ -82,10 +81,9 @@ public class JobExecuteClientFailureTest extends JetTestSupport {
         HazelcastInstance client = createHazelcastClient();
         JetService jetService = client.getJet();
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
                 .setJarPath(getJarPath())
-                .setJobParameters(null)
-                .setJarAlreadyPresent(true);
+                .setJobParameters(null);
 
         assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
                 .isInstanceOf(JetException.class)
@@ -97,9 +95,8 @@ public class JobExecuteClientFailureTest extends JetTestSupport {
         HazelcastInstance client = createCluster();
         JetService jetService = client.getJet();
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                .setJarPath(getNoManifestJarPath())
-                .setJarAlreadyPresent(true);
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
+                .setJarPath(getNoManifestJarPath());
 
         assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
                 .isInstanceOf(JetException.class)
@@ -112,9 +109,8 @@ public class JobExecuteClientFailureTest extends JetTestSupport {
         HazelcastInstance client = createHazelcastClient();
         JetService jetService = client.getJet();
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                .setJarPath(getJarPath())
-                .setJarAlreadyPresent(true);
+        SubmitJobParameters submitJobParameters =SubmitJobParameters.forDirectJobExecution()
+                .setJarPath(getJarPath());
 
         assertThrows(JetException.class, () ->
                 jetService.submitJobFromJar(submitJobParameters)
@@ -128,10 +124,9 @@ public class JobExecuteClientFailureTest extends JetTestSupport {
         HazelcastInstance client = createCluster();
         JetService jetService = client.getJet();
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
                 .setJarPath(getJarPath())
-                .setMainClass("org.example.Main1")
-                .setJarAlreadyPresent(true);
+                .setMainClass("org.example.Main1");
 
         assertThrows(JetException.class, () -> jetService.submitJobFromJar(submitJobParameters));
     }
@@ -142,10 +137,9 @@ public class JobExecuteClientFailureTest extends JetTestSupport {
         HazelcastInstance client = createCluster();
         JetService jetService = client.getJet();
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
                 .setJarPath(getJarPath())
-                .setMainClass("org.example.Main1")
-                .setJarAlreadyPresent(true);
+                .setMainClass("org.example.Main1");
 
         assertThrows(JetException.class, () -> jetService.submitJobFromJar(submitJobParameters));
 
@@ -164,19 +158,17 @@ public class JobExecuteClientFailureTest extends JetTestSupport {
         JetService jetService = client.getJet();
 
         String job1 = "job1";
-        SubmitJobParameters submitJobParameters1 = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters1 = SubmitJobParameters.forDirectJobExecution()
                 .setJarPath(getJarPath())
-                .setJobName(job1)
-                .setJarAlreadyPresent(true);
+                .setJobName(job1);
 
         jetService.submitJobFromJar(submitJobParameters1);
 
 
         String job2 = "job1";
-        SubmitJobParameters submitJobParameters2 = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters2 = SubmitJobParameters.forDirectJobExecution()
                 .setJarPath(getJarPath())
-                .setJobName(job2)
-                .setJarAlreadyPresent(true);
+                .setJobName(job2);
 
         assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters2))
                 .isInstanceOf(JetException.class)
@@ -218,9 +210,8 @@ public class JobExecuteClientFailureTest extends JetTestSupport {
             return jobExecuteCall;
         }).when(spyJetService).initializeJobExecuteCall(jarPath);
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                .setJarPath(getJarPath())
-                .setJarAlreadyPresent(true);
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
+                .setJarPath(getJarPath());
 
         // Should throw OperationTimeoutException because target instance was shut down
         assertThrows(OperationTimeoutException.class, () -> spyJetService.submitJobFromJar(submitJobParameters));

@@ -23,8 +23,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class SubmitJobParametersTest {
 
     @Test
-    public void testSetJobParameters() {
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters();
+    public void testForUpload() {
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload();
         assertThat(submitJobParameters.getJobParameters()).isNotNull();
+    }
+
+    @Test
+    public void testForExecution() {
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution();
+        assertThat(submitJobParameters.getJobParameters()).isNotNull();
+        assertThat(submitJobParameters.isJarAlreadyPresent()).isTrue();
     }
 }

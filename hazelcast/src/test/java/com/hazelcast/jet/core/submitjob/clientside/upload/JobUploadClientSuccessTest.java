@@ -46,7 +46,7 @@ import java.util.concurrent.Executors;
 
 import static com.hazelcast.jet.core.submitjob.clientside.upload.JobUploadClientFailureTest.containsName;
 import static com.hazelcast.jet.core.submitjob.clientside.upload.JobUploadClientFailureTest.getJarPath;
-import static com.hazelcast.jet.core.submitjob.clientside.upload.JobUploadClientFailureTest.jarDoesNotExist;
+import static com.hazelcast.jet.core.submitjob.clientside.upload.JobUploadClientFailureTest.jarDoesNotExistInTempDirectory;
 import static java.util.Collections.emptyList;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -73,7 +73,7 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
 
         JetService jetService = getClientJetService();
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload()
                 .setJarPath(getJarPath());
 
         jetService.submitJobFromJar(submitJobParameters);
@@ -88,7 +88,7 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
 
         // Pass the job argument that will be used as job name
         String jobName = "myjetjob";
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload()
                 .setJarPath(getJarPath())
                 .setJobParameters(Collections.singletonList(jobName));
 
@@ -123,7 +123,7 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
         HazelcastInstance client = createHazelcastClient(clientConfig);
         JetService jetService = client.getJet();
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload()
                 .setJarPath(getJarPath());
 
         jetService.submitJobFromJar(submitJobParameters);
@@ -139,7 +139,7 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
         JetService jetService = getClientJetService();
         List<String> jobParameters = emptyList();
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload()
                 .setJarPath(getJarPath())
                 .setMainClass("org.example.Main")
                 .setJobParameters(jobParameters);
@@ -160,7 +160,7 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
 
         JetService jetService = client.getJet();
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload()
                 .setJarPath(getJarPath());
 
         jetService.submitJobFromJar(submitJobParameters);
@@ -182,7 +182,7 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
                 HazelcastInstance client = createHazelcastClient();
                 JetService jetService = client.getJet();
 
-                SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+                SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload()
                         .setJarPath(getJarPath());
 
                 jetService.submitJobFromJar(submitJobParameters);
@@ -203,14 +203,14 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
         JetService jetService = client.getJet();
 
         String job1 = "job1";
-        SubmitJobParameters submitJobParameters1 = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters1 = SubmitJobParameters.forJobUpload()
                 .setJarPath(getJarPath())
                 .setJobName(job1);
 
         jetService.submitJobFromJar(submitJobParameters1);
 
         String job2 = "job2";
-        SubmitJobParameters submitJobParameters2 = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters2 = SubmitJobParameters.forJobUpload()
                 .setJarPath(getJarPath())
                 .setJobName(job2);
         jetService.submitJobFromJar(submitJobParameters2);
@@ -253,6 +253,6 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
         assertJobStatusEventually(job, JobStatus.RUNNING);
 
         // Assert job jar does is deleted
-        jarDoesNotExist();
+        jarDoesNotExistInTempDirectory();
     }
 }

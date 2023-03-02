@@ -77,7 +77,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         HazelcastInstance client = createHazelcastClient();
         JetService jetService = client.getJet();
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters();
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload();
 
         assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
                 .isInstanceOf(JetException.class)
@@ -91,7 +91,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         JetService jetService = client.getJet();
 
         String jarPath = "thisdoesnotexist.jar";
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload()
                 .setJarPath(Paths.get(jarPath));
 
         assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
@@ -105,7 +105,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         HazelcastInstance client = createHazelcastClient();
         JetService jetService = client.getJet();
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload()
                 .setJarPath(getJarPath())
                 .setJobParameters(null);
 
@@ -119,7 +119,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         HazelcastInstance client = createCluster();
         JetService jetService = client.getJet();
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload()
                 .setJarPath(getNoManifestJarPath());
 
         assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
@@ -147,7 +147,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         }).when(spyJetService).initializeJobUploadCall(jarPath);
 
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload()
                 .setJarPath(jarPath);
 
         assertThatThrownBy(() -> spyJetService.submitJobFromJar(submitJobParameters))
@@ -161,7 +161,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         HazelcastInstance client = createHazelcastClient();
         JetService jetService = client.getJet();
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload()
                 .setJarPath(getJarPath());
 
         assertThrows(JetException.class, () ->
@@ -176,7 +176,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         HazelcastInstance client = createCluster();
         JetService jetService = client.getJet();
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload()
                 .setJarPath(getJarPath())
                 .setMainClass("org.example.Main1");
 
@@ -198,7 +198,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
             // Copy as new jar to make it unique
             newPath = copyJar(newSimpleJob);
 
-            SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+            SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload()
                     .setJarPath(newPath)
                     .setMainClass("org.example.Main1");
 
@@ -231,7 +231,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         }).when(spyJetService).initializeJobUploadCall(jarPath);
 
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload()
                 .setJarPath(getJarPath());
 
         assertThrows(JetException.class, () -> spyJetService.submitJobFromJar(submitJobParameters));
@@ -247,7 +247,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         JetService jetService = client.getJet();
 
         String job1 = "job1";
-        SubmitJobParameters submitJobParameters1 = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters1 = SubmitJobParameters.forJobUpload()
                 .setJarPath(getJarPath())
                 .setJobName(job1);
 
@@ -255,7 +255,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
 
 
         String job2 = "job1";
-        SubmitJobParameters submitJobParameters2 = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters2 = SubmitJobParameters.forJobUpload()
                 .setJarPath(getJarPath())
                 .setJobName(job2);
 
@@ -299,7 +299,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
             return jobUploadCall;
         }).when(spyJetService).initializeJobUploadCall(jarPath);
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload()
                 .setJarPath(getJarPath());
 
         // Should throw OperationTimeoutException because target instance was shut down
@@ -362,7 +362,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         return Files.copy(jarPath, newPath, StandardCopyOption.REPLACE_EXISTING);
     }
 
-    public static boolean jarDoesNotExist() throws IOException {
+    public static boolean jarDoesNotExistInTempDirectory() throws IOException {
         return fileDoesNotExist(SIMPLE_JAR);
     }
 

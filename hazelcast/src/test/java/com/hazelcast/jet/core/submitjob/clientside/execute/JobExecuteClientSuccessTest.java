@@ -34,7 +34,8 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -42,7 +43,6 @@ import java.util.concurrent.Executors;
 
 import static com.hazelcast.jet.core.submitjob.clientside.upload.JobUploadClientFailureTest.containsName;
 import static com.hazelcast.jet.core.submitjob.clientside.upload.JobUploadClientFailureTest.getJarPath;
-import static com.hazelcast.jet.core.submitjob.clientside.upload.JobUploadClientFailureTest.jarDoesNotExist;
 import static java.util.Collections.emptyList;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -57,35 +57,35 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
     }
 
     @Test
-    public void test_jarExecute_whenResourceUploadIsEnabled() throws IOException {
+    public void test_jarExecute_whenResourceUploadIsEnabled() {
         createCluster();
 
         JetService jetService = getClientJetService();
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                .setJarPath(getJarPath())
-                .setJarAlreadyPresent(true);
+        Path jarPath = getJarPath();
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
+                .setJarPath(jarPath);
 
         jetService.submitJobFromJar(submitJobParameters);
 
-        assertJobIsRunning(jetService);
+        assertJobIsRunning(jetService, jarPath);
     }
 
     @Test
-    public void test_jarExecute_withJobParameters() throws IOException {
+    public void test_jarExecute_withJobParameters() {
         createCluster();
         JetService jetService = getClientJetService();
 
         // Pass the job argument that will be used as job name
         String jobName = "myjetjob";
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                .setJarPath(getJarPath())
-                .setJobParameters(Collections.singletonList(jobName))
-                .setJarAlreadyPresent(true);
+        Path jarPath = getJarPath();
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
+                .setJarPath(jarPath)
+                .setJobParameters(Collections.singletonList(jobName));
 
         jetService.submitJobFromJar(submitJobParameters);
 
-        assertJobIsRunning(jetService);
+        assertJobIsRunning(jetService, jarPath);
 
         assertEqualsEventually(() -> {
             Job job = jetService.getJobs().get(0);
@@ -94,7 +94,7 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
     }
 
     @Test
-    public void test_jarExecuteByNonSmartClient_whenResourceUploadIsEnabled() throws IOException {
+    public void test_jarExecuteByNonSmartClient_whenResourceUploadIsEnabled() {
         HazelcastInstance[] hazelcastInstances = createCluster(2);
 
         // Get address of the member that is not Job Coordinator
@@ -114,32 +114,32 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
         HazelcastInstance client = createHazelcastClient(clientConfig);
         JetService jetService = client.getJet();
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                .setJarPath(getJarPath())
-                .setJarAlreadyPresent(true);
+        Path jarPath = getJarPath();
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
+                .setJarPath(jarPath);
 
         jetService.submitJobFromJar(submitJobParameters);
 
-        assertJobIsRunning(jetService);
+        assertJobIsRunning(jetService, jarPath);
     }
 
     @Test
-    public void test_jarExecute_withMainClassname() throws IOException {
+    public void test_jarExecute_withMainClassname() {
         createCluster();
 
         // Create client and submit job
         JetService jetService = getClientJetService();
         List<String> jobParameters = emptyList();
 
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                .setJarPath(getJarPath())
+        Path jarPath = getJarPath();
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
+                .setJarPath(jarPath)
                 .setMainClass("org.example.Main")
-                .setJobParameters(jobParameters)
-                .setJarAlreadyPresent(true);
+                .setJobParameters(jobParameters);
 
         jetService.submitJobFromJar(submitJobParameters);
 
-        assertJobIsRunning(jetService);
+        assertJobIsRunning(jetService, jarPath);
     }
 
 
@@ -157,9 +157,8 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
                 HazelcastInstance client = createHazelcastClient();
                 JetService jetService = client.getJet();
 
-                SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                        .setJarPath(getJarPath())
-                        .setJarAlreadyPresent(true);
+                SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
+                        .setJarPath(getJarPath());
 
                 jetService.submitJobFromJar(submitJobParameters);
                 client.shutdown();
@@ -179,18 +178,16 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
         JetService jetService = client.getJet();
 
         String job1 = "job1";
-        SubmitJobParameters submitJobParameters1 = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters1 = SubmitJobParameters.forDirectJobExecution()
                 .setJarPath(getJarPath())
-                .setJobName(job1)
-                .setJarAlreadyPresent(true);
+                .setJobName(job1);
 
         jetService.submitJobFromJar(submitJobParameters1);
 
         String job2 = "job2";
-        SubmitJobParameters submitJobParameters2 = new SubmitJobParameters()
+        SubmitJobParameters submitJobParameters2 = SubmitJobParameters.forDirectJobExecution()
                 .setJarPath(getJarPath())
-                .setJobName(job2)
-                .setJarAlreadyPresent(true);
+                .setJobName(job2);
         jetService.submitJobFromJar(submitJobParameters2);
 
         assertTrueEventually(() -> {
@@ -222,7 +219,7 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
         return client.getJet();
     }
 
-    static void assertJobIsRunning(JetService jetService) throws IOException {
+    static void assertJobIsRunning(JetService jetService, Path jarPath) {
         // Assert job size
         assertEqualsEventually(() -> jetService.getJobs().size(), 1);
 
@@ -231,6 +228,6 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
         assertJobStatusEventually(job, JobStatus.RUNNING);
 
         // Assert job jar does is deleted
-        jarDoesNotExist();
+        assertTrue(Files.exists(jarPath));
     }
 }
