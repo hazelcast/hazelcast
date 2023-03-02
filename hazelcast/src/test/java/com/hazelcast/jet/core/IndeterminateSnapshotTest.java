@@ -700,7 +700,7 @@ public class IndeterminateSnapshotTest {
      * of trying to terminate appropriate node on given time they inject
      * erroneous IMap operation responses. This is much simpler and allows to
      * test more scenarios. However, tests terminating nodes are also useful as
-     * more resembling reality.
+     * they resemble reality more.
      */
     @Category({QuickTest.class, ParallelJVMTest.class})
     @RunWith(HazelcastParametrizedRunner.class)
