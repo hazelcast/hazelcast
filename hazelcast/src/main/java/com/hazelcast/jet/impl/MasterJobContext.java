@@ -350,7 +350,7 @@ public class MasterJobContext {
             mc.setJobStatus(STARTING);
 
             // ensure JobExecutionRecord exists
-            // we do it in a safe way here, so this does not have to repeated when there is snapshot to restore
+            // we do it in a safe way here, so this does not have to be repeated when there is snapshot to restore
             try {
                 mc.writeJobExecutionRecordSafe(true);
             } catch (IndeterminateOperationStateException e) {
