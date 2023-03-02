@@ -55,6 +55,7 @@ import java.util.function.Function;
 
 import static com.hazelcast.client.properties.ClientProperty.INVOCATION_RETRY_PAUSE_MILLIS;
 import static com.hazelcast.client.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
@@ -296,8 +297,8 @@ public class SqlClientService implements SqlService {
 
         ClientInvocationFuture future = invokeAsync(requestMessage, connection);
 
-        future.whenComplete(withTryCatch(logger,
-                (message, error) -> handleFetchResponse(connection, res, message, error)));
+        future.whenCompleteAsync(withTryCatch(logger,
+                (message, error) -> handleFetchResponse(connection, res, message, error)), CALLER_RUNS);
     }
 
     private void handleFetchResponse(Connection connection, SqlClientResult res, ClientMessage message, Throwable error) {

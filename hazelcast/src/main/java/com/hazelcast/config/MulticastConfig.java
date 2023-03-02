@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
@@ -314,7 +315,7 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
         result = 31 * result + multicastTimeoutSeconds;
         result = 31 * result + multicastTimeToLive;
         result = 31 * result + trustedInterfaces.hashCode();
-        result = 31 * result + (loopbackModeEnabled ? 1 : 0);
+        result = 31 * result + Objects.hashCode(loopbackModeEnabled);
         return result;
     }
 

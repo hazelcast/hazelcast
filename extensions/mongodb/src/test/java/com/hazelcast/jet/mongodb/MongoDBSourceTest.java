@@ -195,6 +195,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         });
         job.cancel();
     }
+
     @Test
     public void testStreamOneCollection() {
         IList<Object> list = instance().getList(testName.getMethodName());

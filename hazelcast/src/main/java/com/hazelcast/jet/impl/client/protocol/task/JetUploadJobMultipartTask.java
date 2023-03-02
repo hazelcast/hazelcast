@@ -20,8 +20,10 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetUploadJobMultipartCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.operation.UploadJobMultiPartOperation;
 import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nullable;
@@ -47,6 +49,15 @@ public class JetUploadJobMultipartTask extends
     @Override
     protected Operation prepareOperation() {
         return new UploadJobMultiPartOperation(this.parameters);
+    }
+
+    @Override
+    protected InvocationBuilder getInvocationBuilder(Operation op) {
+        // Most Jet Tasks forward the task to Job Coordinator. In Job Upload case we don't want to forward but process
+        // the task on the current member.
+        // When the job upload is complete the job definition will be sent to Job Coordinator
+        return nodeEngine.getOperationService().createInvocationBuilder(JetServiceBackend.SERVICE_NAME,
+                op, nodeEngine.getThisAddress());
     }
 
     @Override

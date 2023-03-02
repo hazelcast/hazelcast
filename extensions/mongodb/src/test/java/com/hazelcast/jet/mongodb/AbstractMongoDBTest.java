@@ -33,7 +33,6 @@ import org.bson.Document;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.TestName;
 import org.testcontainers.containers.MongoDBContainer;
@@ -63,7 +62,6 @@ public abstract class AbstractMongoDBTest extends SimpleTestInClusterSupport {
     private static final Map<String, String> TEST_NAME_TO_DEFAULT_DB_NAME = new ConcurrentHashMap<>();
     private static final AtomicInteger COUNTER = new AtomicInteger();
 
-    @ClassRule
     public static MongoDBContainer mongoContainer = new MongoDBContainer("mongo:" + TEST_MONGO_VERSION);
 
     @Rule
@@ -77,6 +75,7 @@ public abstract class AbstractMongoDBTest extends SimpleTestInClusterSupport {
         config.getJetConfig().setEnabled(true);
         initialize(2, config);
 
+        mongoContainer.start();
         mongo = MongoClients.create(mongoContainer.getConnectionString());
 
         // workaround to obtain a timestamp before starting the test
@@ -109,6 +108,7 @@ public abstract class AbstractMongoDBTest extends SimpleTestInClusterSupport {
     @AfterClass
     public static void tearDown() {
         mongo.close();
+        mongoContainer.stop();
     }
 
     MongoCollection<Document> collection() {
