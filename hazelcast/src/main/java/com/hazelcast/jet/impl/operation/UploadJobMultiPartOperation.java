@@ -19,19 +19,17 @@ package com.hazelcast.jet.impl.operation;
 import com.hazelcast.client.impl.protocol.codec.JetUploadJobMultipartCodec;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.jet.impl.jobupload.JobMetaDataParameterObject;
 import com.hazelcast.jet.impl.jobupload.JobMultiPartParameterObject;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 
-import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
-
 import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
 import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
+import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
 
 /**
  * Resumes the execution of a suspended job.
@@ -65,12 +63,7 @@ public class UploadJobMultiPartOperation extends Operation implements Identified
     public void run() {
         // Delegate to JetServiceBackend
         JetServiceBackend jetServiceBackend = getJetServiceBackend();
-        JobMetaDataParameterObject partsComplete = jetServiceBackend.storeJobMultiPart(jobMultiPartParameterObject);
-        // If JetServiceBackend returns that parts are complete
-        if (partsComplete != null) {
-            // Execute the jar
-            jetServiceBackend.executeJar(partsComplete);
-        }
+        jetServiceBackend.storeJobMultiPart(jobMultiPartParameterObject);
         response = true;
     }
 

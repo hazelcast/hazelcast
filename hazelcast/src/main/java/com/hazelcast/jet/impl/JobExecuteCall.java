@@ -47,7 +47,8 @@ public class JobExecuteCall {
         return sessionId;
     }
 
-    UUID getMemberUuid() {
+    // This method is public for testing purposes.
+    public UUID getMemberUuid() {
         return memberUuid;
     }
 

@@ -26,6 +26,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.UUID;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeList;
@@ -38,6 +40,7 @@ import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
  */
 public class UploadJobMetaDataOperation extends Operation implements IdentifiedDataSerializable {
 
+    private static final UUID EMPTY_UUID = new UUID(0, 0);
     boolean response;
     JobMetaDataParameterObject jobMetaDataParameterObject;
 
@@ -63,9 +66,30 @@ public class UploadJobMetaDataOperation extends Operation implements IdentifiedD
 
     @Override
     public void run() {
+        if (jobMetaDataParameterObject.getSessionId().equals(EMPTY_UUID)) {
+            executeJobMetaData();
+        } else {
+            storeJobMetaDataForUpload();
+        }
+        response = true;
+    }
+
+    private void executeJobMetaData() {
+        // The jar should not be deleted, because we are directly executing it
+        jobMetaDataParameterObject.setDeleteJarAfterExecution(false);
+        //File name is the jar path
+        jobMetaDataParameterObject.setJarPath(Paths.get(jobMetaDataParameterObject.getFileName()));
+
+        JetServiceBackend jetServiceBackend = getJetServiceBackend();
+        jetServiceBackend.executeJobMetaData(jobMetaDataParameterObject);
+    }
+
+    private void storeJobMetaDataForUpload() {
+        // The jar should be deleted, because we are uploading it
+        jobMetaDataParameterObject.setDeleteJarAfterExecution(true);
+
         JetServiceBackend jetServiceBackend = getJetServiceBackend();
         jetServiceBackend.storeJobMetaData(jobMetaDataParameterObject);
-        response = true;
     }
 
     protected JetServiceBackend getJetServiceBackend() {

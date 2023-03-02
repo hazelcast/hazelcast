@@ -406,9 +406,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     public void storeJobMetaData(JobMetaDataParameterObject jobMetaDataParameterObject) {
         checkResourceUploadEnabled();
         try {
-            // The jar should be deleted
-            jobMetaDataParameterObject.setDeleteJarAfterExecution(true);
-
             // Delegate processing to store
             jobUploadStore.processJobMetaData(jobMetaDataParameterObject);
         } catch (Exception exception) {
@@ -419,17 +416,25 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         }
     }
 
+    public void executeJobMetaData(JobMetaDataParameterObject jobMetaDataParameterObject) {
+        checkResourceUploadEnabled();
+        executeJar(jobMetaDataParameterObject);
+    }
+
     /**
      * Store a part of job jar that is uploaded
      *
      * @param jobMultiPartParameterObject contains all the metadata about the upload operation
-     * @return the parameter object if upload is complete, null if upload is incomplete and more parts are expected,
      */
-    public JobMetaDataParameterObject storeJobMultiPart(JobMultiPartParameterObject jobMultiPartParameterObject) {
+    public void storeJobMultiPart(JobMultiPartParameterObject jobMultiPartParameterObject) {
         JobMetaDataParameterObject result = null;
         try {
-            // Delegate processing to store
-            result = jobUploadStore.processJobMultipart(jobMultiPartParameterObject);
+            JobMetaDataParameterObject partsComplete = jobUploadStore.processJobMultipart(jobMultiPartParameterObject);
+            // If parts are complete
+            if (partsComplete != null) {
+                // Execute the jar
+                executeJar(partsComplete);
+            }
         } catch (Exception exception) {
             // Upon exception, remove from the store
             JobUploadStatus jobUploadStatus = jobUploadStore.removeBadSession(jobMultiPartParameterObject.getSessionId());
@@ -446,7 +451,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
                 wrapWithJetException(exception);
             }
         }
-        return result;
     }
 
     private void throwJetExceptionFromJobMetaData(JobMetaDataParameterObject jobMetaDataParameterObject, Exception exception) {
