@@ -19,6 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.partition.IPartitionService;
@@ -831,8 +832,12 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public PartitioningStrategy getPartitioningStrategy(String mapName, PartitioningStrategyConfig config) {
-        return partitioningStrategyFactory.getPartitioningStrategy(mapName, config);
+    public PartitioningStrategy getPartitioningStrategy(
+            String mapName,
+            PartitioningStrategyConfig config,
+            final List<PartitioningAttributeConfig> partitioningAttributeConfigs
+    ) {
+        return partitioningStrategyFactory.getPartitioningStrategy(mapName, config, partitioningAttributeConfigs);
     }
 
     @Override

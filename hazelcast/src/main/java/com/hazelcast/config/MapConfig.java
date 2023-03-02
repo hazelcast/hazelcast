@@ -179,7 +179,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         this.merkleTreeConfig = new MerkleTreeConfig(config.merkleTreeConfig);
         this.eventJournalConfig = new EventJournalConfig(config.eventJournalConfig);
         this.tieredStoreConfig = new TieredStoreConfig(config.tieredStoreConfig);
-        this.partitioningAttributeConfigs = new ArrayList<>(config.partitioningAttributeConfigs);
+        this.partitioningAttributeConfigs = new ArrayList<>(config.getPartitioningAttributeConfigs());
     }
 
     /**

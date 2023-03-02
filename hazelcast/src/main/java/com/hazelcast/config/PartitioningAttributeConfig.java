@@ -33,6 +33,14 @@ public class PartitioningAttributeConfig implements IdentifiedDataSerializable {
         this.attributeName = attributeName;
     }
 
+    public String getAttributeName() {
+        return attributeName;
+    }
+
+    public void setAttributeName(final String attributeName) {
+        this.attributeName = attributeName;
+    }
+
     @Override
     public void writeData(final ObjectDataOutput out) throws IOException {
         out.writeString(attributeName);

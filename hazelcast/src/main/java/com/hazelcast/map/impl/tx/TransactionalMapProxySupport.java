@@ -90,7 +90,7 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
         MapConfig mapConfig = nodeEngine.getConfig().findMapConfig(name);
         this.operationProvider = mapServiceContext.getMapOperationProvider(name);
         this.partitionStrategy = mapServiceContext.getPartitioningStrategy(name,
-                mapConfig.getPartitioningStrategyConfig());
+                mapConfig.getPartitioningStrategyConfig(), mapConfig.getPartitioningAttributeConfigs());
         this.partitionService = nodeEngine.getPartitionService();
         this.operationService = nodeEngine.getOperationService();
         this.ss = ((InternalSerializationService) nodeEngine.getSerializationService());
