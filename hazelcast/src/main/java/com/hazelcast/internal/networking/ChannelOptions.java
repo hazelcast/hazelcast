@@ -16,6 +16,10 @@
 
 package com.hazelcast.internal.networking;
 
+import java.net.SocketOption;
+
+import static com.hazelcast.internal.tpc.util.ReflectionUtil.findStaticFieldValue;
+
 /**
  * Contains the configuration of a {@link Channel}.
  *
@@ -24,6 +28,13 @@ package com.hazelcast.internal.networking;
  * configuration.
  */
 public interface ChannelOptions {
+
+    SocketOption<Integer> JDK_NET_TCP_KEEPCOUNT
+            = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPCOUNT");
+    SocketOption<Integer> JDK_NET_TCP_KEEPIDLE
+                    = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPIDLE");
+    SocketOption<Integer> JDK_NET_TCP_KEEPINTERVAL
+                            = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPINTERVAL");
 
     /**
      * Sets an option value.

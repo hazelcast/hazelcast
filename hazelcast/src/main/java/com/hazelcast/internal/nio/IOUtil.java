@@ -45,9 +45,11 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketOption;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.ServerSocketChannel;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -71,7 +73,13 @@ import static com.hazelcast.internal.networking.ChannelOption.SO_KEEPALIVE;
 import static com.hazelcast.internal.networking.ChannelOption.SO_LINGER;
 import static com.hazelcast.internal.networking.ChannelOption.SO_RCVBUF;
 import static com.hazelcast.internal.networking.ChannelOption.SO_SNDBUF;
+import static com.hazelcast.internal.networking.ChannelOption.TCP_KEEPCOUNT;
+import static com.hazelcast.internal.networking.ChannelOption.TCP_KEEPIDLE;
+import static com.hazelcast.internal.networking.ChannelOption.TCP_KEEPINTERVAL;
 import static com.hazelcast.internal.networking.ChannelOption.TCP_NODELAY;
+import static com.hazelcast.internal.networking.ChannelOptions.JDK_NET_TCP_KEEPCOUNT;
+import static com.hazelcast.internal.networking.ChannelOptions.JDK_NET_TCP_KEEPIDLE;
+import static com.hazelcast.internal.networking.ChannelOptions.JDK_NET_TCP_KEEPINTERVAL;
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -886,7 +894,28 @@ public final class IOUtil {
                 .setOption(SO_KEEPALIVE, config.isSocketKeepAlive())
                 .setOption(SO_SNDBUF, config.getSocketSendBufferSizeKb() * KILO_BYTE)
                 .setOption(SO_RCVBUF, config.getSocketRcvBufferSizeKb() * KILO_BYTE)
-                .setOption(SO_LINGER, config.getSocketLingerSeconds());
+                .setOption(SO_LINGER, config.getSocketLingerSeconds())
+                .setOption(TCP_KEEPCOUNT, config.getSocketKeepCount())
+                .setOption(TCP_KEEPINTERVAL, config.getSocketKeepIntervalSeconds())
+                .setOption(TCP_KEEPIDLE, config.getSocketKeepIdleSeconds());
+    }
+
+    public static void setKeepAliveOptionsIfNotDefault(ServerSocketChannel serverSocketChannel, EndpointConfig endpointConfig)
+            throws IOException {
+        setOptionIfNotDefault(serverSocketChannel, JDK_NET_TCP_KEEPCOUNT,
+                endpointConfig.getSocketKeepCount(), EndpointConfig.DEFAULT_SOCKET_KEEP_COUNT);
+        setOptionIfNotDefault(serverSocketChannel, JDK_NET_TCP_KEEPIDLE,
+                endpointConfig.getSocketKeepIdleSeconds(), EndpointConfig.DEFAULT_SOCKET_KEEP_IDLE_SECONDS);
+        setOptionIfNotDefault(serverSocketChannel, JDK_NET_TCP_KEEPINTERVAL,
+                endpointConfig.getSocketKeepIdleSeconds(), EndpointConfig.DEFAULT_SOCKET_KEEP_IDLE_SECONDS);
+    }
+
+    private static <T> void setOptionIfNotDefault(ServerSocketChannel serverSocketChannel,
+                                                  SocketOption<T> socketOption,
+                                                  T value, T defaultValue) throws IOException {
+        if (socketOption != null && !defaultValue.equals(value)) {
+            serverSocketChannel.setOption(socketOption, value);
+        }
     }
 
     private static final class ClassLoaderAwareObjectInputStream extends ObjectInputStream {

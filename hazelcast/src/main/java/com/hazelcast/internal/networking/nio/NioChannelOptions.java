@@ -20,10 +20,14 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelOption;
 import com.hazelcast.internal.networking.ChannelOptions;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketOption;
+import java.nio.channels.SocketChannel;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -35,6 +39,9 @@ import static com.hazelcast.internal.networking.ChannelOption.SO_RCVBUF;
 import static com.hazelcast.internal.networking.ChannelOption.SO_REUSEADDR;
 import static com.hazelcast.internal.networking.ChannelOption.SO_SNDBUF;
 import static com.hazelcast.internal.networking.ChannelOption.SO_TIMEOUT;
+import static com.hazelcast.internal.networking.ChannelOption.TCP_KEEPCOUNT;
+import static com.hazelcast.internal.networking.ChannelOption.TCP_KEEPIDLE;
+import static com.hazelcast.internal.networking.ChannelOption.TCP_KEEPINTERVAL;
 import static com.hazelcast.internal.networking.ChannelOption.TCP_NODELAY;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.logging.Level.WARNING;
@@ -42,18 +49,27 @@ import static java.util.logging.Level.WARNING;
 /**
  * Contains the configuration for a {@link Channel}.
  */
-final class NioChannelOptions implements ChannelOptions {
+public final class NioChannelOptions implements ChannelOptions {
 
+    private static final AtomicBoolean TCP_KEEPCOUNT_WARNING = new AtomicBoolean();
+    private static final AtomicBoolean TCP_KEEPIDLE_WARNING = new AtomicBoolean();
+    private static final AtomicBoolean TCP_KEEPINTERVAL_WARNING = new AtomicBoolean();
     private static final AtomicBoolean SEND_BUFFER_WARNING = new AtomicBoolean();
     private static final AtomicBoolean RECEIVE_BUFFER_WARNING = new AtomicBoolean();
-    private final Map<String, Object> values = new ConcurrentHashMap<String, Object>();
-    private final Socket socket;
 
-    NioChannelOptions(Socket socket) {
+    private final Map<String, Object> values = new ConcurrentHashMap<>();
+    private final SocketChannel socketChannel;
+    private final Socket socket;
+    private final ILogger logger;
+
+    NioChannelOptions(SocketChannel socketChannel, ILogger logger) {
         setOption(DIRECT_BUF, false);
-        this.socket = socket;
+        this.socketChannel = socketChannel;
+        this.socket = socketChannel.socket();
+        this.logger = logger;
     }
 
+    @SuppressWarnings("checkstyle:returncount")
     @Override
     public <T> T getOption(ChannelOption<T> option) {
         try {
@@ -71,14 +87,28 @@ final class NioChannelOptions implements ChannelOptions {
                 return (T) (Integer) socket.getSoTimeout();
             } else if (option.equals(SO_LINGER)) {
                 return (T) (Integer) socket.getSoLinger();
+            } else if (option.equals(TCP_KEEPCOUNT)) {
+                return (T) checkAndGetIntegerOption(JDK_NET_TCP_KEEPCOUNT);
+            }  else if (option.equals(TCP_KEEPIDLE)) {
+                return (T) checkAndGetIntegerOption(JDK_NET_TCP_KEEPIDLE);
+            }  else if (option.equals(TCP_KEEPINTERVAL)) {
+                return (T) checkAndGetIntegerOption(JDK_NET_TCP_KEEPINTERVAL);
             } else {
                 return (T) values.get(option.name());
             }
-        } catch (SocketException e) {
+        } catch (IOException e) {
             throw new HazelcastException("Failed to getOption [" + option.name() + "]", e);
         }
     }
 
+    private Integer checkAndGetIntegerOption(SocketOption<Integer> socketOption) throws IOException {
+        if (socketOption == null) {
+            return 0;
+        }
+        return socketChannel.getOption(socketOption);
+    }
+
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodlength"})
     @Override
     public <T> NioChannelOptions setOption(ChannelOption<T> option, T value) {
         checkNotNull(option, "option can't be null");
@@ -106,10 +136,49 @@ final class NioChannelOptions implements ChannelOptions {
                 if (soLinger >= 0) {
                     socket.setSoLinger(true, soLinger);
                 }
+            } else if (option.equals(TCP_KEEPCOUNT)) {
+              if (JDK_NET_TCP_KEEPCOUNT == null) {
+                  if (TCP_KEEPCOUNT_WARNING.compareAndSet(false, true)) {
+                      logger.warning("Ignoring TCP_KEEPCOUNT. "
+                              + "Please upgrade to the latest Java 8 release or Java 11+ to allow setting keep-alive count. "
+                              + "Alternatively, on Linux, configure tcp_keepalive_probes in the kernel "
+                              + "(affecting default keep-alive configuration for all sockets): "
+                              + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
+                              + "If this isn't dealt with, idle connections could be closed prematurely.");
+                  }
+              } else {
+                  socketChannel.setOption(JDK_NET_TCP_KEEPCOUNT, (Integer) value);
+              }
+            } else if (option.equals(TCP_KEEPIDLE)) {
+              if (JDK_NET_TCP_KEEPIDLE == null) {
+                  if (TCP_KEEPIDLE_WARNING.compareAndSet(false, true)) {
+                      logger.warning("Ignoring TCP_KEEPIDLE. "
+                              + "Please upgrade to the latest Java 8 release or Java 11+ to allow setting keep-alive idle time."
+                              + "Alternatively, on Linux, configure tcp_keepalive_time in the kernel "
+                              + "(affecting default keep-alive configuration for all sockets): "
+                              + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
+                              + "If this isn't dealt with, idle connections could be closed prematurely.");
+                  }
+              } else {
+                  socketChannel.setOption(JDK_NET_TCP_KEEPIDLE, (Integer) value);
+              }
+            } else if (option.equals(TCP_KEEPINTERVAL)) {
+              if (JDK_NET_TCP_KEEPINTERVAL == null) {
+                  if (TCP_KEEPINTERVAL_WARNING.compareAndSet(false, true)) {
+                      logger.warning("Ignoring TCP_KEEPINTERVAL. "
+                              + "Please upgrade to the latest Java 8 release or Java 11+ to allow setting keep-alive interval."
+                              + "Alternatively, on Linux, configure tcp_keepalive_intvl in the kernel "
+                              + "(affecting default keep-alive configuration for all sockets): "
+                              + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
+                              + "If this isn't dealt with, idle connections could be closed prematurely.");
+                  }
+              } else {
+                  socketChannel.setOption(JDK_NET_TCP_KEEPINTERVAL, (Integer) value);
+              }
             } else {
                 values.put(option.name(), value);
             }
-        } catch (SocketException e) {
+        } catch (IOException e) {
             throw new HazelcastException("Failed to setOption [" + option.name() + "] with value [" + value + "]", e);
         }
 

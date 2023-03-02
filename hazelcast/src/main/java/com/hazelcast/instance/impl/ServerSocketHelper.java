@@ -19,8 +19,8 @@ package com.hazelcast.instance.impl;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -127,6 +127,7 @@ final class ServerSocketHelper {
             serverSocket = serverSocketChannel.socket();
             serverSocket.setReuseAddress(reuseAddress);
             serverSocket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
+            IOUtil.setKeepAliveOptionsIfNotDefault(serverSocketChannel, endpointConfig);
 
             if (endpointConfig != null) {
                 serverSocket.setReceiveBufferSize(endpointConfig.getSocketRcvBufferSizeKb() * KILO_BYTE);
@@ -144,6 +145,4 @@ final class ServerSocketHelper {
             throw e;
         }
     }
-
-
 }
