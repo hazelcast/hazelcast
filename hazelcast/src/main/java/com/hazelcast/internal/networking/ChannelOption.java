@@ -66,8 +66,19 @@ public final class ChannelOption<T> {
      */
     public static final ChannelOption<Boolean> DIRECT_BUF = new ChannelOption<>("DIRECT_BUF");
 
+    /**
+     * See {@code jdk.net.ExtendedSocketOptions#TCP_KEEPIDLE}
+     */
     public static final ChannelOption<Integer> TCP_KEEPIDLE = new ChannelOption<>("TCP_KEEPIDLE");
+
+    /**
+     * See {@code jdk.net.ExtendedSocketOptions#TCP_KEEPCOUNT}
+     */
     public static final ChannelOption<Integer> TCP_KEEPCOUNT = new ChannelOption<>("TCP_KEEPCOUNT");
+
+    /**
+     * See {@code jdk.net.ExtendedSocketOptions#TCP_KEEPINTERVAL}
+     */
     public static final ChannelOption<Integer> TCP_KEEPINTERVAL = new ChannelOption<>("TCP_KEEPINTERVAL");
 
     private final String name;
