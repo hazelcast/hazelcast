@@ -127,9 +127,9 @@ final class ServerSocketHelper {
             serverSocket = serverSocketChannel.socket();
             serverSocket.setReuseAddress(reuseAddress);
             serverSocket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
-            IOUtil.setKeepAliveOptionsIfNotDefault(serverSocketChannel, endpointConfig);
 
             if (endpointConfig != null) {
+                IOUtil.setKeepAliveOptionsIfNotDefault(serverSocketChannel, endpointConfig);
                 serverSocket.setReceiveBufferSize(endpointConfig.getSocketRcvBufferSizeKb() * KILO_BYTE);
             }
 

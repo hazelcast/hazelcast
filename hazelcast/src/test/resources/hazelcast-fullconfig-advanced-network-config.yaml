@@ -150,6 +150,9 @@ hazelcast:
         send-buffer-size-kb: 25
         receive-buffer-size-kb: 33
         linger-seconds: 99
+        keep-count: 5
+        keep-idle-seconds: 120
+        keep-interval-seconds: 20
       port:
         port-count: 100
         auto-increment: true

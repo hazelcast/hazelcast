@@ -156,6 +156,9 @@
                 <send-buffer-size-kb>25</send-buffer-size-kb>
                 <receive-buffer-size-kb>33</receive-buffer-size-kb>
                 <linger-seconds>99</linger-seconds>
+                <keep-count>5</keep-count>
+                <keep-idle-seconds>120</keep-idle-seconds>
+                <keep-interval-seconds>20</keep-interval-seconds>
             </socket-options>
             <port auto-increment="true" port-count="100">5701</port>
             <public-address>dummy</public-address>
