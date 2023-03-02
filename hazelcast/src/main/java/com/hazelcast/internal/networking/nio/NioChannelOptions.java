@@ -43,6 +43,7 @@ import static com.hazelcast.internal.networking.ChannelOption.TCP_KEEPCOUNT;
 import static com.hazelcast.internal.networking.ChannelOption.TCP_KEEPIDLE;
 import static com.hazelcast.internal.networking.ChannelOption.TCP_KEEPINTERVAL;
 import static com.hazelcast.internal.networking.ChannelOption.TCP_NODELAY;
+import static com.hazelcast.internal.tpc.util.ReflectionUtil.findStaticFieldValue;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.logging.Level.WARNING;
 
@@ -51,6 +52,12 @@ import static java.util.logging.Level.WARNING;
  */
 public final class NioChannelOptions implements ChannelOptions {
 
+    public static final SocketOption<Integer> JDK_NET_TCP_KEEPCOUNT
+            = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPCOUNT");
+    public static final SocketOption<Integer> JDK_NET_TCP_KEEPIDLE
+                    = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPIDLE");
+    public static final SocketOption<Integer> JDK_NET_TCP_KEEPINTERVAL
+                            = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPINTERVAL");
     private static final AtomicBoolean TCP_KEEPCOUNT_WARNING = new AtomicBoolean();
     private static final AtomicBoolean TCP_KEEPIDLE_WARNING = new AtomicBoolean();
     private static final AtomicBoolean TCP_KEEPINTERVAL_WARNING = new AtomicBoolean();
