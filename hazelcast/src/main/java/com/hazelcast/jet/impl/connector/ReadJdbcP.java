@@ -92,6 +92,9 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
         checkSerializable(resultSetFn, "resultSetFn");
         checkSerializable(mapOutputFn, "mapOutputFn");
 
+        // We don't know the JDBC URL yet, so only the 'jdbc:' prefix is used as permission name.
+        // Additional permission check with URL retrieved from the JDBC connection metadata
+        // is performed in #init(Context) method.
         return ProcessorMetaSupplier.preferLocalParallelismOne(ConnectorPermission.jdbc(null, ACTION_READ),
                 SecuredFunctions.readJdbcProcessorFn(null, newDataSourceFn, resultSetFn, mapOutputFn));
     }

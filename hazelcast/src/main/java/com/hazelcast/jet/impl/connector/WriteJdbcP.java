@@ -129,6 +129,11 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
         checkSerializable(bindFn, "bindFn");
         checkPositive(batchLimit, "batchLimit");
 
+        // In some cases we don't know the JDBC URL yet (jdbcUrl is null),
+        // so only the 'jdbc:' prefix is used as ConnectorPermission name.
+        // Additional permission check with the correct URL retrieved from
+        // the JDBC connection metadata is performed in the
+        // #connectAndPrepareStatement() instance method.
         return ProcessorMetaSupplier.preferLocalParallelismOne(
                 ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE),
                 new ProcessorSupplier() {
