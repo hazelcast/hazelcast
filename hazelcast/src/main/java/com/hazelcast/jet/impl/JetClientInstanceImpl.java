@@ -142,6 +142,31 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
     @Override
     public void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
+        if (submitJobParameters.isJarAlreadyPresent()) {
+            executeJobFromJar(submitJobParameters);
+        } else {
+            uploadJobFromJar(submitJobParameters);
+        }
+    }
+
+    public void executeJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
+        try {
+            SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
+            validator.validateParameterObject(submitJobParameters);
+
+            Path jarPath = submitJobParameters.getJarPath();
+            JobExecuteCall jobExecuteCall = initializeJobExecuteCall(submitJobParameters.getJarPath());
+
+            // Send job meta data
+            logFine(getLogger(), "Submitting JobMetaData for jarPath: %s", jarPath);
+            sendJobMetaDataForExecute(jobExecuteCall, submitJobParameters);
+
+        } catch (IOException exception) {
+            sneakyThrow(exception);
+        }
+    }
+
+    public void uploadJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
         try {
             // Validate the provided parameters
             SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
@@ -154,7 +179,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
             // Send job meta data
             logFine(getLogger(), "Submitting JobMetaData for jarPath: %s", jarPath);
-            sendJobMetaData(jobUploadCall, submitJobParameters);
+            sendJobMetaDataForUpload(jobUploadCall, submitJobParameters);
 
             // Send job parts
             sendJobMultipart(jobUploadCall, jarPath);
@@ -174,8 +199,16 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         return jobUploadCall;
     }
 
-    private void sendJobMetaData(JobUploadCall jobUploadCall,
-                                    SubmitJobParameters submitJobParameters) {
+    public JobExecuteCall initializeJobExecuteCall(Path jarPath) {
+
+        JobExecuteCall jobExecuteCall = new JobExecuteCall();
+        jobExecuteCall.initializeJobExecuteCall(client, jarPath);
+
+        return jobExecuteCall;
+    }
+
+    private void sendJobMetaDataForUpload(JobUploadCall jobUploadCall,
+                                          SubmitJobParameters submitJobParameters) {
         ClientMessage jobMetaDataRequest = JetUploadJobMetaDataCodec.encodeRequest(
                 jobUploadCall.getSessionId(),
                 jobUploadCall.getFileNameWithoutExtension(),
@@ -186,6 +219,21 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                 submitJobParameters.getJobParameters());
 
         invokeRequestAndDecodeResponseNoRetryOnRandom(jobUploadCall.getMemberUuid(), jobMetaDataRequest,
+                JetUploadJobMetaDataCodec::decodeResponse);
+    }
+
+    private void sendJobMetaDataForExecute(JobExecuteCall jobExecuteCall, SubmitJobParameters submitJobParameters) {
+
+        ClientMessage jobMetaDataRequest = JetUploadJobMetaDataCodec.encodeRequest(
+                jobExecuteCall.getSessionId(),
+                jobExecuteCall.getJarPath(),
+                jobExecuteCall.getSha256HexOfJar(),
+                submitJobParameters.getSnapshotName(),
+                submitJobParameters.getJobName(),
+                submitJobParameters.getMainClass(),
+                submitJobParameters.getJobParameters());
+
+        invokeRequestAndDecodeResponseNoRetryOnRandom(jobExecuteCall.getMemberUuid(), jobMetaDataRequest,
                 JetUploadJobMetaDataCodec::decodeResponse);
     }
 

@@ -31,6 +31,10 @@ public class SubmitJobParameters {
      */
     private Path jarPath;
 
+    private boolean jarAlreadyPresent;
+
+    private boolean deleteJarAfterExecution = true;
+
     /**
      * Snapshot name to be used for the job
      */
@@ -58,6 +62,22 @@ public class SubmitJobParameters {
     public SubmitJobParameters setJarPath(@Nonnull Path jarPath) {
         this.jarPath = jarPath;
         return this;
+    }
+
+    public boolean isJarAlreadyPresent() {
+        return jarAlreadyPresent;
+    }
+
+    public void setJarAlreadyPresent(boolean jarAlreadyPresent) {
+        this.jarAlreadyPresent = jarAlreadyPresent;
+    }
+
+    public boolean isDeleteJarAfterExecution() {
+        return deleteJarAfterExecution;
+    }
+
+    public void setDeleteJarAfterExecution(boolean deleteJarAfterExecution) {
+        this.deleteJarAfterExecution = deleteJarAfterExecution;
     }
 
     public String getSnapshotName() {
