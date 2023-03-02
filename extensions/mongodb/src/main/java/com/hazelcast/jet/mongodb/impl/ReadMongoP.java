@@ -97,7 +97,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
             EventTimeMapper<I> eventTimeMapper = new EventTimeMapper<>(params.eventTimePolicy);
             eventTimeMapper.addPartitions(1);
             this.reader = new StreamMongoReader(params.databaseName, params.collectionName, params.mapStreamFn,
-                    params.startAtTimestamp, params.aggregates, eventTimeMapper);
+                    params.getStartAtTimestamp(), params.aggregates, eventTimeMapper);
         } else {
             this.reader = new BatchMongoReader(params.databaseName, params.collectionName, params.mapItemFn,
                     params.aggregates);
@@ -372,7 +372,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
     private final class StreamMongoReader extends MongoChunkedReader {
         private final FunctionEx<ChangeStreamDocument<Document>, I> mapFn;
-        private final Long startTimestamp;
+        private final BsonTimestamp startTimestamp;
         private final List<Bson> aggregates;
         private final EventTimeMapper<I> eventTimeMapper;
         private MongoCursor<ChangeStreamDocument<Document>> cursor;
@@ -382,7 +382,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
                 String databaseName,
                 String collectionName,
                 FunctionEx<ChangeStreamDocument<Document>, I> mapFn,
-                Long startTimestamp,
+                BsonTimestamp startTimestamp,
                 List<Bson> aggregates,
                 EventTimeMapper<I> eventTimeMapper
         ) {
@@ -411,7 +411,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
             if (resumeToken != null) {
                 changeStream.resumeAfter(resumeToken);
             } else if (startTimestamp != null) {
-                changeStream.startAtOperationTime(new BsonTimestamp(startTimestamp));
+                changeStream.startAtOperationTime(startTimestamp);
             }
             cursor = changeStream.batchSize(BATCH_SIZE).fullDocument(UPDATE_LOOKUP).iterator();
         }
