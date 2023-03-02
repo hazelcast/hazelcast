@@ -28,7 +28,7 @@ import java.util.Map;
  * {@link DataLink}s defined in the configuration are created at startup.
  * {@link DataLink}s added to the configuration dynamically are created via
  * {@link #createConfigDataLink(DataLinkConfig)}.
- * {@link DataLink}s created via SQL are added via {@link #createSqlDataLink(String, String, Map, boolean)},
+ * {@link DataLink}s created via SQL are added via {@link #replaceSqlDataLink(String, String, Map)},
  * these can be removed via {@link #removeDataLink(String)}.
  * <p>
  * When a new config is added via {@link #createConfigDataLink(DataLinkConfig)}
@@ -53,10 +53,8 @@ public interface InternalDataLinkService extends DataLinkService {
      * @param name    name of the DataLink
      * @param type    type of the DataLink
      * @param options options configuring the DataLink
-     * @param replace if true, an existing data link with the same name is removed first.
-     *                If false, if a DataLink with the same name exists, and error is thrown.
      */
-    void createSqlDataLink(String name, String type, Map<String, String> options, boolean replace);
+    void replaceSqlDataLink(String name, String type, Map<String, String> options);
 
     /**
      * Returns if a DataLink with given name exists or not
@@ -64,14 +62,14 @@ public interface InternalDataLinkService extends DataLinkService {
      * @param name name of the DataLink
      * @return true if a DataLink exists, false otherwise
      */
-    boolean existsDataLink(String name);
+    boolean existsConfigDataLink(String name);
 
     /**
      * Removes a DataLink.
      *
      * @param name name of the DataLink
      * @throws IllegalArgumentException if the DataLink was created through config,
-     *                                  not via {@link #createSqlDataLink(String, String, Map, boolean)}
+     *                                  not via {@link #replaceSqlDataLink(String, String, Map)}
      */
     void removeDataLink(String name);
 
