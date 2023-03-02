@@ -414,7 +414,7 @@ class MasterSnapshotContext {
                     logger.warning(mc.jobIdString() + " snapshot " + snapshotId + " phase 1 failed on some " +
                             "member(s), one of the failures: " + mergedResult.getError());
                     try {
-                        // Clear data of failed snapshot (automatic or export) to decrease memory usage.
+                        // Clear data of failed snapshot (automatic or exported) to decrease memory usage.
                         // This can be done regardless of skipPhase2 because failed snapshot
                         // can never be used for restore.
                         snapshotMap.clear();
