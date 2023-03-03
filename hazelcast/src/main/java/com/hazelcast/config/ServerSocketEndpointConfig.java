@@ -291,6 +291,24 @@ public class ServerSocketEndpointConfig
     }
 
     @Override
+    public ServerSocketEndpointConfig setSocketKeepIdleSeconds(int socketKeepIdleSeconds) {
+        super.setSocketKeepIdleSeconds(socketKeepIdleSeconds);
+        return this;
+    }
+
+    @Override
+    public ServerSocketEndpointConfig setSocketKeepIntervalSeconds(int socketKeepIntervalSeconds) {
+        super.setSocketKeepIntervalSeconds(socketKeepIntervalSeconds);
+        return this;
+    }
+
+    @Override
+    public ServerSocketEndpointConfig setSocketKeepCount(int socketKeepCount) {
+        super.setSocketKeepCount(socketKeepCount);
+        return this;
+    }
+
+    @Override
     public String toString() {
         return "EndpointConfig{"
                 + "protocolType=" + protocolType

@@ -256,6 +256,24 @@ public class RestServerEndpointConfig
     }
 
     @Override
+    public RestServerEndpointConfig setSocketKeepIdleSeconds(int socketKeepIdleSeconds) {
+        super.setSocketKeepIdleSeconds(socketKeepIdleSeconds);
+        return this;
+    }
+
+    @Override
+    public RestServerEndpointConfig setSocketKeepIntervalSeconds(int socketKeepIntervalSeconds) {
+        super.setSocketKeepIntervalSeconds(socketKeepIntervalSeconds);
+        return this;
+    }
+
+    @Override
+    public RestServerEndpointConfig setSocketKeepCount(int socketKeepCount) {
+        super.setSocketKeepCount(socketKeepCount);
+        return this;
+    }
+
+    @Override
     public String toString() {
         return "RestServerEndpointConfig{enabledGroups=" + getEnabledGroups() + "}";
     }
