@@ -7970,6 +7970,7 @@ public class MemberCompatibilityNullTest_2_6 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         JetUploadJobMetaDataCodec.RequestParameters parameters = JetUploadJobMetaDataCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aUUID, parameters.sessionId));
+        assertTrue(isEqual(aBoolean, parameters.directJobExecution));
         assertTrue(isEqual(aString, parameters.fileName));
         assertTrue(isEqual(aString, parameters.sha256Hex));
         assertTrue(isEqual(null, parameters.snapshotName));
@@ -7981,7 +7982,7 @@ public class MemberCompatibilityNullTest_2_6 {
     @Test
     public void test_JetUploadJobMetaDataCodec_encodeResponse() {
         int fileClientMessageIndex = 902;
-        ClientMessage encoded = JetUploadJobMetaDataCodec.encodeResponse(aBoolean);
+        ClientMessage encoded = JetUploadJobMetaDataCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -8002,7 +8003,7 @@ public class MemberCompatibilityNullTest_2_6 {
     @Test
     public void test_JetUploadJobMultipartCodec_encodeResponse() {
         int fileClientMessageIndex = 904;
-        ClientMessage encoded = JetUploadJobMultipartCodec.encodeResponse(aBoolean);
+        ClientMessage encoded = JetUploadJobMultipartCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

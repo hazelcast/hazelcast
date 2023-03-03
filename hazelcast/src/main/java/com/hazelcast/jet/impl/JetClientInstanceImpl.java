@@ -220,8 +220,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                 submitJobParameters.getMainClass(),
                 submitJobParameters.getJobParameters());
 
-        invokeRequestAndDecodeResponseNoRetryOnRandom(jobUploadCall.getMemberUuid(), jobMetaDataRequest,
-                JetUploadJobMetaDataCodec::decodeResponse);
+        invokeRequestNoRetryOnRandom(jobUploadCall.getMemberUuid(), jobMetaDataRequest);
     }
 
     private void sendJobMetaDataForExecute(JobExecuteCall jobExecuteCall, SubmitJobParameters submitJobParameters) {
@@ -236,8 +235,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                 submitJobParameters.getMainClass(),
                 submitJobParameters.getJobParameters());
 
-        invokeRequestAndDecodeResponseNoRetryOnRandom(jobExecuteCall.getMemberUuid(), jobMetaDataRequest,
-                JetUploadJobMetaDataCodec::decodeResponse);
+        invokeRequestNoRetryOnRandom(jobExecuteCall.getMemberUuid(), jobMetaDataRequest);
     }
 
     private void sendJobMultipart(JobUploadCall jobUploadCall, Path jarPath)
@@ -267,13 +265,10 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                 logFine(getLogger(), "Submitting Job Part for jarPath: %s PartNumber %d",
                         jarPath, currentPartNumber);
 
-                invokeRequestAndDecodeResponseNoRetryOnRandom(jobUploadCall.getMemberUuid(), jobMultipartRequest,
-                        JetUploadJobMultipartCodec::decodeResponse);
+                invokeRequestNoRetryOnRandom(jobUploadCall.getMemberUuid(), jobMultipartRequest);
             }
         }
     }
-
-
 
     @Override
     public ILogger getLogger() {
@@ -291,11 +286,10 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     }
 
     // Do not retry on random member if invocation fails
-    private void invokeRequestAndDecodeResponseNoRetryOnRandom(UUID uuid, ClientMessage request,
-                                                                Function<ClientMessage, Object> decoder) {
+    private void invokeRequestNoRetryOnRandom(UUID uuid, ClientMessage request) {
         ClientInvocation invocation = new ClientInvocation(client, request, null, uuid);
         invocation.disallowRetryOnRandom();
-        invoke(decoder, invocation);
+        invoke(invocation);
     }
 
 
@@ -310,8 +304,16 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         try {
             ClientMessage response = invocation.invoke().get();
             return serializationService.toObject(decoder.apply(response));
-        } catch (Throwable t) {
-            throw rethrow(t);
+        } catch (Exception exception) {
+            throw rethrow(exception);
+        }
+    }
+
+    private void invoke(ClientInvocation invocation) {
+        try {
+            invocation.invoke().get();
+        } catch (Exception exception) {
+            throw rethrow(exception);
         }
     }
 }

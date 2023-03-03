@@ -37,7 +37,7 @@ public class JetUploadJobMetaDataTask extends
     protected JetUploadJobMetaDataTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection,
                 JetUploadJobMetaDataCodec::decodeRequest,
-                JetUploadJobMetaDataCodec::encodeResponse);
+                encoder -> JetUploadJobMetaDataCodec.encodeResponse());
     }
 
     @Override

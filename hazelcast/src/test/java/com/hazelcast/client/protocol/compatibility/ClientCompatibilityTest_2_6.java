@@ -43,6 +43,8 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -7074,8 +7076,7 @@ public class ClientCompatibilityTest_2_6 {
     @Test
     public void test_JetUploadJobMetaDataCodec_encodeRequest() {
         int fileClientMessageIndex = 901;
-        ClientMessage encoded = JetUploadJobMetaDataCodec.encodeRequest(aUUID, aBoolean, aString, aString, aString,
-                aString, aString, aListOfStrings);
+        ClientMessage encoded = JetUploadJobMetaDataCodec.encodeRequest(aUUID, aBoolean, aString, aString, aString, aString, aString, aListOfStrings);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -7083,8 +7084,6 @@ public class ClientCompatibilityTest_2_6 {
     @Test
     public void test_JetUploadJobMetaDataCodec_decodeResponse() {
         int fileClientMessageIndex = 902;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aBoolean, JetUploadJobMetaDataCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -7098,8 +7097,6 @@ public class ClientCompatibilityTest_2_6 {
     @Test
     public void test_JetUploadJobMultipartCodec_decodeResponse() {
         int fileClientMessageIndex = 904;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aBoolean, JetUploadJobMultipartCodec.decodeResponse(fromFile)));
     }
 
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {

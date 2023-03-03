@@ -36,8 +36,6 @@ import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
  */
 public class UploadJobMultiPartOperation extends Operation implements IdentifiedDataSerializable {
 
-    boolean response;
-
     JobMultiPartParameterObject jobMultiPartParameterObject;
 
     public UploadJobMultiPartOperation() {
@@ -55,16 +53,10 @@ public class UploadJobMultiPartOperation extends Operation implements Identified
     }
 
     @Override
-    public Object getResponse() {
-        return response;
-    }
-
-    @Override
     public void run() {
         // Delegate to JetServiceBackend
         JetServiceBackend jetServiceBackend = getJetServiceBackend();
         jetServiceBackend.storeJobMultiPart(jobMultiPartParameterObject);
-        response = true;
     }
 
     protected JetServiceBackend getJetServiceBackend() {
