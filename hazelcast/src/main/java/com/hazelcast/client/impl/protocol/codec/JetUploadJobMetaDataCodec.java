@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("7cb4408c45db11415a6c89e50cc6be82")
+@Generated("ca42388d3bcb950781fd33e68c7baba2")
 public final class JetUploadJobMetaDataCodec {
     //hex: 0xFE1100
     public static final int REQUEST_MESSAGE_TYPE = 16650496;
@@ -43,8 +43,7 @@ public final class JetUploadJobMetaDataCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 16650497;
     private static final int REQUEST_SESSION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_DIRECT_JOB_EXECUTION_FIELD_OFFSET = REQUEST_SESSION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    private static final int REQUEST_DELETE_JAR_AFTER_JOB_EXECUTION_FIELD_OFFSET = REQUEST_DIRECT_JOB_EXECUTION_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_DELETE_JAR_AFTER_JOB_EXECUTION_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_DIRECT_JOB_EXECUTION_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
@@ -63,11 +62,6 @@ public final class JetUploadJobMetaDataCodec {
          * Flag that indicates that jar should be executed, not uploaded
          */
         public boolean directJobExecution;
-
-        /**
-         * Flag that indicates that jar should be deleted after execution
-         */
-        public boolean deleteJarAfterJobExecution;
 
         /**
          * Name of the jar file without extension
@@ -100,7 +94,7 @@ public final class JetUploadJobMetaDataCodec {
         public java.util.List<java.lang.String> jobParameters;
     }
 
-    public static ClientMessage encodeRequest(java.util.UUID sessionId, boolean directJobExecution, boolean deleteJarAfterJobExecution, java.lang.String fileName, java.lang.String sha256Hex, @Nullable java.lang.String snapshotName, @Nullable java.lang.String jobName, @Nullable java.lang.String mainClass, java.util.Collection<java.lang.String> jobParameters) {
+    public static ClientMessage encodeRequest(java.util.UUID sessionId, boolean directJobExecution, java.lang.String fileName, java.lang.String sha256Hex, @Nullable java.lang.String snapshotName, @Nullable java.lang.String jobName, @Nullable java.lang.String mainClass, java.util.Collection<java.lang.String> jobParameters) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Jet.UploadJobMetaData");
@@ -109,7 +103,6 @@ public final class JetUploadJobMetaDataCodec {
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_SESSION_ID_FIELD_OFFSET, sessionId);
         encodeBoolean(initialFrame.content, REQUEST_DIRECT_JOB_EXECUTION_FIELD_OFFSET, directJobExecution);
-        encodeBoolean(initialFrame.content, REQUEST_DELETE_JAR_AFTER_JOB_EXECUTION_FIELD_OFFSET, deleteJarAfterJobExecution);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, fileName);
         StringCodec.encode(clientMessage, sha256Hex);
@@ -126,7 +119,6 @@ public final class JetUploadJobMetaDataCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         request.sessionId = decodeUUID(initialFrame.content, REQUEST_SESSION_ID_FIELD_OFFSET);
         request.directJobExecution = decodeBoolean(initialFrame.content, REQUEST_DIRECT_JOB_EXECUTION_FIELD_OFFSET);
-        request.deleteJarAfterJobExecution = decodeBoolean(initialFrame.content, REQUEST_DELETE_JAR_AFTER_JOB_EXECUTION_FIELD_OFFSET);
         request.fileName = StringCodec.decode(iterator);
         request.sha256Hex = StringCodec.decode(iterator);
         request.snapshotName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
