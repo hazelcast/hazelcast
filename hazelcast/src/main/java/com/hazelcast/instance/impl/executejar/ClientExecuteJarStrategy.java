@@ -58,65 +58,53 @@ public class ClientExecuteJarStrategy {
                                         @Nullable String mainClassName,
                                         @Nonnull List<String> args
     ) throws IOException, InvocationTargetException, IllegalAccessException, ClassNotFoundException {
+        BootstrappedInstanceProxy instanceProxy = singleton.remembered();
+        boolean exit = false;
         try {
-            mainClassName = findMainClassNameForJar(mainClassName, jarPath);
+            mainClassName = ExecuteJarStrategyHelper.findMainClassNameForJar(mainClassName, jarPath);
 
             URL jarUrl = new File(jarPath).toURI().toURL();
             try (URLClassLoader classLoader = URLClassLoader.newInstance(
                     new URL[]{jarUrl},
                     ClientExecuteJarStrategy.class.getClassLoader())) {
 
-                Method main = findMainMethodForJar(classLoader, mainClassName);
+                Method main = ExecuteJarStrategyHelper.findMainMethodForJar(classLoader, mainClassName);
+
+                LOGGER.info("Found mainClassName :" + mainClassName + " and main method");
 
                 String[] jobArgs = args.toArray(new String[0]);
 
-                ExecuteJarStrategyHelper.setupJetProxy(singleton.remembered(), jarPath, snapshotName, jobName);
+                ExecuteJarStrategyHelper.setupJetProxy(instanceProxy, jarPath, snapshotName, jobName);
 
                 // upcast args to Object, so it's passed as a single array-typed argument
                 main.invoke(null, (Object) jobArgs);
             }
 
             // Wait for the job to start
-            awaitJobsStarted(singleton);
+            awaitJobsStarted(instanceProxy);
 
+        } catch (JetException exception) {
+            LOGGER.severe("Exception caught while executing the jar :" , exception);
+            exit = true;
         } finally {
-            BootstrappedInstanceProxy instanceProxy = singleton.remembered();
             try {
                 instanceProxy.shutdown();
             } catch (Exception exception) {
                 LOGGER.severe("Shutdown failed with:", exception);
             }
             singleton.resetRemembered();
+            if (exit) {
+                System.exit(1);
+            }
         }
-    }
-
-    String findMainClassNameForJar(String mainClass, String jarPath)
-            throws IOException {
-        String mainClasName = null;
-        try {
-            mainClasName = ExecuteJarStrategyHelper.findMainClassNameForJar(mainClass, jarPath);
-        } catch (JetException exception) {
-            logAndExit(exception);
-        }
-        return mainClasName;
-    }
-
-    Method findMainMethodForJar(ClassLoader classLoader, String mainClassName) throws ClassNotFoundException {
-        Method mainMethod = null;
-        try {
-            mainMethod = ExecuteJarStrategyHelper.findMainMethodForJar(classLoader, mainClassName);
-        } catch (JetException exception) {
-            logAndExit(exception);
-        }
-        return mainMethod;
     }
 
     // suppress Reduce the total number of break and continue statements in this loop to use at most one.
     @SuppressWarnings("java:S135")
     // Method is call by synchronized executeJar() so, it is safe to access submittedJobs array in BootstrappedJetProxy
-    private void awaitJobsStarted(ResettableConcurrentMemoizingSupplier<BootstrappedInstanceProxy> singleton) {
+    private void awaitJobsStarted(BootstrappedInstanceProxy instanceProxy) {
 
-        List<Job> submittedJobs = singleton.remembered().getJet().submittedJobs();
+        List<Job> submittedJobs = instanceProxy.getJet().submittedJobs();
         int submittedCount = submittedJobs.size();
         if (submittedCount == 0) {
             LOGGER.info("The JAR didn't submit any jobs.");
@@ -170,11 +158,5 @@ public class ClientExecuteJarStrategy {
             String message = String.format("%,d jobs are still starting...%n", remainingCount);
             LOGGER.info(message);
         }
-    }
-
-    private void logAndExit(JetException exception) {
-        String errorMessage = exception.getMessage();
-        LOGGER.severe(errorMessage);
-        System.exit(1);
     }
 }
