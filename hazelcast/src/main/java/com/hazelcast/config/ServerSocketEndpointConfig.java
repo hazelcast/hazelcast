@@ -31,6 +31,7 @@ import java.util.Objects;
  *
  * @since 3.12
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class ServerSocketEndpointConfig
         extends EndpointConfig {
 
