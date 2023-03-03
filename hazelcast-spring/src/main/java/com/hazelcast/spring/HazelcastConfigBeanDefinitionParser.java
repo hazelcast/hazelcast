@@ -926,28 +926,25 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     endpointConfigBuilder.addPropertyValue("socketKeepAlive",
                             getBooleanValue(textContent));
                 } else if ("connect-timeout-seconds".equals(nodeName)) {
-                    endpointConfigBuilder.addPropertyValue("socketConnectTimeoutSeconds",
-                            getIntegerValue("socketConnectTimeoutSeconds", textContent));
+                    addIntegerPropertyValue(endpointConfigBuilder, "socketConnectTimeoutSeconds", textContent);
                 } else if ("send-buffer-size-kb".equals(nodeName)) {
-                    endpointConfigBuilder.addPropertyValue("socketSendBufferSizeKb",
-                            getIntegerValue("socketSendBufferSizeKb", textContent));
+                    addIntegerPropertyValue(endpointConfigBuilder, "socketSendBufferSizeKb", textContent);
                 } else if ("receive-buffer-size-kb".equals(nodeName)) {
-                    endpointConfigBuilder.addPropertyValue("socketRcvBufferSizeKb",
-                            getIntegerValue("socketRcvBufferSizeKb", textContent));
+                    addIntegerPropertyValue(endpointConfigBuilder, "socketRcvBufferSizeKb", textContent);
                 } else if ("linger-seconds".equals(nodeName)) {
-                    endpointConfigBuilder.addPropertyValue("socketLingerSeconds",
-                            getIntegerValue("socketLingerSeconds", textContent));
+                    addIntegerPropertyValue(endpointConfigBuilder, "socketLingerSeconds", textContent);
                 } else if ("keep-idle-seconds".equals(nodeName)) {
-                    endpointConfigBuilder.addPropertyValue("socketKeepIdleSeconds",
-                            getIntegerValue("socketKeepIdleSeconds", textContent));
+                    addIntegerPropertyValue(endpointConfigBuilder, "socketKeepIdleSeconds", textContent);
                 } else if ("keep-interval-seconds".equals(nodeName)) {
-                    endpointConfigBuilder.addPropertyValue("socketKeepIntervalSeconds",
-                            getIntegerValue("socketKeepIntervalSeconds", textContent));
+                    addIntegerPropertyValue(endpointConfigBuilder, "socketKeepIntervalSeconds", textContent);
                 } else if ("keep-count".equals(nodeName)) {
-                    endpointConfigBuilder.addPropertyValue("socketKeepCount",
-                            getIntegerValue("socketKeepCount", textContent));
+                    addIntegerPropertyValue(endpointConfigBuilder, "socketKeepCount", textContent);
                 }
             }
+        }
+
+        private void addIntegerPropertyValue(BeanDefinitionBuilder bdb, String parameterName, String textContent) {
+            bdb.addPropertyValue(parameterName, getIntegerValue(parameterName, textContent));
         }
 
         public void handleProperties(Node node) {
