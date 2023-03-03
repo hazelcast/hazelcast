@@ -90,6 +90,14 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
     }
 
     @Override
+    public AsyncSocketBuilder setTlsExecutor(Executor tlsExecutor) {
+        verifyNotBuild();
+
+        this.tlsExecutor = checkNotNull(tlsExecutor, "tlsExecutor");
+        return this;
+    }
+
+    @Override
     public <T> NioAsyncSocketBuilder set(Option<T> option, T value) {
         verifyNotBuild();
 

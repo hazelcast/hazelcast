@@ -19,6 +19,8 @@ package com.hazelcast.internal.tpcengine.net;
 import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.Reactor;
 
+import java.util.concurrent.Executor;
+
 /**
  * A {@link AsyncSocket} builder. Can only be used once.
  * <p/>
@@ -65,7 +67,26 @@ public interface AsyncSocketBuilder {
      */
     <T> boolean setIfSupported(Option<T> option, T value);
 
+    /**
+     * Sets the SSLEngineFactory for enabled SSL/TLS.
+     *
+     * @param sslEngineFactory the SSLEngineFactory
+     * @return this
+     * @throws NullPointerException         when sslEngineFactory is null.
+     * @throws IllegalStateException        when build already has been called
+     */
     AsyncSocketBuilder setSSLEngineFactory(SSLEngineFactory sslEngineFactory);
+
+    /**
+     * Sets the tls executor for offloading SSL/TLS handshake tasks because we do not want
+     * to block the eventloop thread in the reactor.
+     *
+     * @param tlsExecutor the executor
+     * @return this
+     * @throws NullPointerException         when tlsExecutor is null.
+     * @throws IllegalStateException        when build already has been called
+     */
+    AsyncSocketBuilder setTlsExecutor(Executor tlsExecutor);
 
     /**
      * Sets the AsyncSocketReader.
