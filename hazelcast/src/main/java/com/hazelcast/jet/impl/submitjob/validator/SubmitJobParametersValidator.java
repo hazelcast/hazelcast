@@ -28,7 +28,6 @@ import java.util.Objects;
 public class SubmitJobParametersValidator {
 
     public void validateForJobUpload(SubmitJobParameters parameterObject) throws IOException {
-
         if (parameterObject.isDirectJobExecution()) {
             throw new JetException("SubmitJobParameters is configured for direct job execution");
         }
@@ -41,7 +40,6 @@ public class SubmitJobParametersValidator {
     }
 
     public void validateForDirectJobExecution(SubmitJobParameters parameterObject) {
-
         if (!parameterObject.isDirectJobExecution()) {
             throw new JetException("SubmitJobParameters is configured for job upload");
         }

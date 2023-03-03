@@ -29,6 +29,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.UUID;
 
+/**
+ * Holds calculated parameters required for job upload
+ */
 public class JobUploadCall {
 
     private UUID sessionId;
@@ -61,7 +64,6 @@ public class JobUploadCall {
 
     public void initializeJobUploadCall(HazelcastClientInstanceImpl client, Path jarPath)
             throws IOException, NoSuchAlgorithmException {
-
         // Create new session id
         this.sessionId = UuidUtil.newSecureUUID();
 

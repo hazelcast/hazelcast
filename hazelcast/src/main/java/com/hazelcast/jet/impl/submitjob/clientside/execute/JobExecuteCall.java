@@ -23,6 +23,9 @@ import com.hazelcast.jet.impl.submitjob.clientside.SubmitJobTargetMemberFinder;
 import java.nio.file.Path;
 import java.util.UUID;
 
+/**
+ * Holds calculated parameters required for direct job execution
+ */
 public class JobExecuteCall {
 
     private UUID sessionId;
