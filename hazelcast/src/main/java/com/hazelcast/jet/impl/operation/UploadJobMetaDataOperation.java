@@ -27,7 +27,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.UUID;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeList;
@@ -40,7 +39,6 @@ import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
  */
 public class UploadJobMetaDataOperation extends Operation implements IdentifiedDataSerializable {
 
-    private static final UUID EMPTY_UUID = new UUID(0, 0);
     boolean response;
     JobMetaDataParameterObject jobMetaDataParameterObject;
 
@@ -51,6 +49,7 @@ public class UploadJobMetaDataOperation extends Operation implements IdentifiedD
         // Save the parameters received from client
         jobMetaDataParameterObject = new JobMetaDataParameterObject();
         jobMetaDataParameterObject.setSessionId(parameters.sessionId);
+        jobMetaDataParameterObject.setDirectJobExecution(parameters.directJobExecution);
         jobMetaDataParameterObject.setSha256Hex(parameters.sha256Hex);
         jobMetaDataParameterObject.setFileName(parameters.fileName);
         jobMetaDataParameterObject.setSnapshotName(parameters.snapshotName);
@@ -66,7 +65,7 @@ public class UploadJobMetaDataOperation extends Operation implements IdentifiedD
 
     @Override
     public void run() {
-        if (jobMetaDataParameterObject.getSessionId().equals(EMPTY_UUID)) {
+        if (jobMetaDataParameterObject.isDirectJobExecution()) {
             executeJobMetaData();
         } else {
             storeJobMetaDataForUpload();

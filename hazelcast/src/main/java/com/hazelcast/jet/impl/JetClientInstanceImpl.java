@@ -145,7 +145,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
     @Override
     public void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
-        if (submitJobParameters.isJarAlreadyPresent()) {
+        if (submitJobParameters.isDirectJobExecution()) {
             executeJobFromJar(submitJobParameters);
         } else {
             uploadJobFromJar(submitJobParameters);
@@ -212,6 +212,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                                           SubmitJobParameters submitJobParameters) {
         ClientMessage jobMetaDataRequest = JetUploadJobMetaDataCodec.encodeRequest(
                 jobUploadCall.getSessionId(),
+                submitJobParameters.isDirectJobExecution(),
                 jobUploadCall.getFileNameWithoutExtension(),
                 jobUploadCall.getSha256HexOfJar(),
                 submitJobParameters.getSnapshotName(),
@@ -227,6 +228,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
         ClientMessage jobMetaDataRequest = JetUploadJobMetaDataCodec.encodeRequest(
                 jobExecuteCall.getSessionId(),
+                submitJobParameters.isDirectJobExecution(),
                 jobExecuteCall.getJarPath(),
                 jobExecuteCall.getSha256HexOfJar(),
                 submitJobParameters.getSnapshotName(),

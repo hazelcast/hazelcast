@@ -43,8 +43,6 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -7076,7 +7074,8 @@ public class ClientCompatibilityNullTest_2_6 {
     @Test
     public void test_JetUploadJobMetaDataCodec_encodeRequest() {
         int fileClientMessageIndex = 901;
-        ClientMessage encoded = JetUploadJobMetaDataCodec.encodeRequest(aUUID, aString, aString, null, null, null, aListOfStrings);
+        ClientMessage encoded = JetUploadJobMetaDataCodec.encodeRequest(aUUID, aBoolean, aString, aString,
+                null, null, null, aListOfStrings);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

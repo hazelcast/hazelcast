@@ -34,11 +34,16 @@ public class JobMetaDataParameterObject {
 
     private UUID sessionId;
 
+    private boolean directJobExecution;
+
+    private boolean deleteJarAfterExecution;
+
     private String sha256Hex;
 
     private String fileName;
 
     private String snapshotName;
+
     private String jobName;
 
     private String mainClass;
@@ -47,15 +52,30 @@ public class JobMetaDataParameterObject {
 
     private Path jarPath;
 
-    // Indicates if the jar should be deleted after the job execution
-    private boolean deleteJarAfterExecution;
-
     public UUID getSessionId() {
         return sessionId;
     }
 
     public void setSessionId(UUID sessionId) {
         this.sessionId = sessionId;
+    }
+
+    public boolean isDirectJobExecution() {
+        return directJobExecution;
+    }
+
+    public void setDirectJobExecution(boolean directJobExecution) {
+        this.directJobExecution = directJobExecution;
+    }
+
+    public void setDeleteJarAfterExecution(boolean deleteJarAfterExecution) {
+        this.deleteJarAfterExecution = deleteJarAfterExecution;
+    }
+
+    public void afterExecution() {
+        if (deleteJarAfterExecution) {
+            deleteJar();
+        }
     }
 
     public String getSha256Hex() {
@@ -112,16 +132,6 @@ public class JobMetaDataParameterObject {
 
     public void setJarPath(Path jarPath) {
         this.jarPath = jarPath;
-    }
-
-    public void setDeleteJarAfterExecution(boolean deleteJarAfterExecution) {
-        this.deleteJarAfterExecution = deleteJarAfterExecution;
-    }
-
-    public void afterExecution() {
-        if (deleteJarAfterExecution) {
-            deleteJar();
-        }
     }
 
     private void deleteJar() {

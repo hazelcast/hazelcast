@@ -30,13 +30,9 @@ public class JobExecuteCall {
 
     private String jarPath;
 
-    private String sha256HexOfJar = "";
-
 
     public void initializeJobExecuteCall(HazelcastClientInstanceImpl client, Path jarPath) {
-
-        // Create a special session id
-        this.sessionId = new UUID(0, 0);
+        this.sessionId = UUID.randomUUID();
         this.jarPath = jarPath.toString();
 
         // Find the destination member
@@ -57,7 +53,6 @@ public class JobExecuteCall {
     }
 
     public String getSha256HexOfJar() {
-        return sha256HexOfJar;
+        return "";
     }
-
 }

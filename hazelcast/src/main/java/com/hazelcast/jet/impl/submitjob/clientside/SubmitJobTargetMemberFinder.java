@@ -24,6 +24,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.UUID;
 
+/**
+ * Used by client side to find a target cluster member
+ */
 public class SubmitJobTargetMemberFinder {
 
     /**

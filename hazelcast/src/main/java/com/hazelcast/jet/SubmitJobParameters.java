@@ -34,7 +34,7 @@ public final class SubmitJobParameters {
     /**
      * Set to true if the jar is already present on the member. The jar will be executed directly
      */
-    private boolean jarAlreadyPresent;
+    private boolean directJobExecution;
 
     /**
      * Snapshot name to be used for the job
@@ -70,7 +70,7 @@ public final class SubmitJobParameters {
      * Create a new instance to execute a jar on the member
      */
     public static SubmitJobParameters forDirectJobExecution() {
-        return new SubmitJobParameters().setJarAlreadyPresent(true);
+        return new SubmitJobParameters().setDirectJobExecution(true);
     }
 
     public Path getJarPath() {
@@ -82,12 +82,12 @@ public final class SubmitJobParameters {
         return this;
     }
 
-    public boolean isJarAlreadyPresent() {
-        return jarAlreadyPresent;
+    public boolean isDirectJobExecution() {
+        return directJobExecution;
     }
 
-    private SubmitJobParameters setJarAlreadyPresent(boolean jarAlreadyPresent) {
-        this.jarAlreadyPresent = jarAlreadyPresent;
+    private SubmitJobParameters setDirectJobExecution(boolean directJobExecution) {
+        this.directJobExecution = directJobExecution;
         return this;
     }
 

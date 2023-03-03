@@ -32,6 +32,6 @@ public class SubmitJobParametersTest {
     public void testForExecution() {
         SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution();
         assertThat(submitJobParameters.getJobParameters()).isNotNull();
-        assertThat(submitJobParameters.isJarAlreadyPresent()).isTrue();
+        assertThat(submitJobParameters.isDirectJobExecution()).isTrue();
     }
 }
