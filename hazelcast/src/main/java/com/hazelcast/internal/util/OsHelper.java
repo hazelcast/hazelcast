@@ -24,7 +24,7 @@ public final class OsHelper {
     /**
      * OS name in lower case.
      */
-    public static final String OS = StringUtil.lowerCaseInternal(System.getProperty("os.name"));
+    public static final String OS = System.getProperty("os.name").toLowerCase();
 
     private OsHelper() {
     }

@@ -116,6 +116,8 @@ import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
+import com.hazelcast.config.alto.AltoConfig;
+import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -385,6 +387,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleIntegrityChecker(node);
                     } else if ("data-link".equals(nodeName)) {
                         handleDataLink(node);
+                    } else if ("alto".equals(nodeName)) {
+                        handleAlto(node);
                     }
                 }
             }
@@ -761,9 +765,30 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleRestApi(child, networkConfigBuilder);
                 } else if ("memcache-protocol".equals(nodeName)) {
                     handleMemcacheProtocol(child, networkConfigBuilder);
+                } else if ("alto-socket".equals(nodeName)) {
+                    handleAltoSocketConfig(child, networkConfigBuilder);
                 }
             }
             configBuilder.addPropertyValue("networkConfig", beanDefinition);
+        }
+
+        private void handleAltoSocketConfig(Node node, BeanDefinitionBuilder beanDefinitionBuilder) {
+            BeanDefinitionBuilder altoSocketConfigBuilder = createBeanBuilder(AltoSocketConfig.class);
+            AbstractBeanDefinition beanDefinition = altoSocketConfigBuilder.getBeanDefinition();
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("port-range".equals(nodeName)) {
+                    altoSocketConfigBuilder.addPropertyValue("portRange", getTextContent(child));
+                } else if ("receive-buffer-size-kb".equals(nodeName)) {
+                    altoSocketConfigBuilder.addPropertyValue("receiveBufferSizeKB",
+                            getIntegerValue("receive-buffer-size-kb", getTextContent(child)));
+                } else if ("send-buffer-size-kb".equals(nodeName)) {
+                    altoSocketConfigBuilder.addPropertyValue("sendBufferSizeKB",
+                            getIntegerValue("send-buffer-size-kb", getTextContent(child)));
+                }
+            }
+
+            beanDefinitionBuilder.addPropertyValue("altoSocketConfig", beanDefinition);
         }
 
         void handleAdvancedNetwork(Node node) {
@@ -828,6 +853,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 handleSocketInterceptorConfig(node, endpointConfigBuilder);
             } else if ("socket-options".equals(nodeName)) {
                 handleEndpointSocketOptions(node, endpointConfigBuilder);
+            } else if ("alto-socket".equals(nodeName)) {
+                handleAltoSocketConfig(node, endpointConfigBuilder);
             }
         }
 
@@ -2332,6 +2359,19 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             dataLinkConfigMap.put(getAttribute(node, "name"), builder.getBeanDefinition());
+        }
+
+        private void handleAlto(Node node) {
+            BeanDefinitionBuilder builder = createBeanBuilder(AltoConfig.class);
+            builder.addPropertyValue("enabled", getAttribute(node, "enabled"));
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("eventloop-count".equals(nodeName)) {
+                    builder.addPropertyValue("eventloopCount",
+                            getIntegerValue("eventloop-count", getTextContent(child)));
+                }
+            }
+            configBuilder.addPropertyValue("altoConfig", builder.getBeanDefinition());
         }
     }
 }

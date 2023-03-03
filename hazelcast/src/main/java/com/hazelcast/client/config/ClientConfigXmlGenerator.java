@@ -138,6 +138,8 @@ public final class ClientConfigXmlGenerator {
         metrics(gen, clientConfig.getMetricsConfig());
         instanceTrackingConfig(gen, clientConfig.getInstanceTrackingConfig());
         sql(gen, clientConfig.getSqlConfig());
+        // Alto
+        alto(gen, clientConfig.getAltoConfig());
 
         //close HazelcastClient
         gen.close();
@@ -660,4 +662,7 @@ public final class ClientConfigXmlGenerator {
            .close();
     }
 
+    private static void alto(XmlGenerator gen, ClientAltoConfig altoConfig) {
+        gen.open("alto", "enabled", altoConfig.isEnabled()).close();
+    }
 }

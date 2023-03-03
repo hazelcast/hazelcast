@@ -16,13 +16,18 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.annotation.PrivateApi;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
+
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Endpoint configuration that defines communication/networking properties common to both incoming/outgoing connections
@@ -71,6 +76,7 @@ public class EndpointConfig implements NamedConfig {
     private int socketSendBufferSizeKb = DEFAULT_SOCKET_SEND_BUFFER_SIZE_KB;
     private int socketRcvBufferSizeKb = DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE_KB;
     private int socketLingerSeconds = DEFAULT_SOCKET_LINGER_SECONDS;
+    private AltoSocketConfig altoSocketConfig = new AltoSocketConfig();
 
     public ProtocolType getProtocolType() {
         return protocolType;
@@ -272,6 +278,35 @@ public class EndpointConfig implements NamedConfig {
         return this;
     }
 
+    /**
+     * Gets the Alto socket config. Can't return null.
+     *
+     * @return the Alto socket config
+     * @see com.hazelcast.config.alto.AltoConfig
+     * @since 5.3
+     */
+    @Beta
+    @Nonnull
+    public AltoSocketConfig getAltoSocketConfig() {
+        return altoSocketConfig;
+    }
+
+    /**
+     * Sets the Alto socket config. Can't return null.
+     *
+     * @param altoSocketConfig Alto socket config to set
+     * @return this endpoint config
+     * @throws NullPointerException if altoSocketConfig is null
+     * @see com.hazelcast.config.alto.AltoConfig
+     * @since 5.3
+     */
+    @Beta
+    @Nonnull
+    public EndpointConfig setAltoSocketConfig(@Nonnull AltoSocketConfig altoSocketConfig) {
+        this.altoSocketConfig = checkNotNull(altoSocketConfig);
+        return this;
+    }
+
     @PrivateApi
     public EndpointConfig setProtocolType(ProtocolType protocolType) {
         this.protocolType = protocolType;
@@ -297,13 +332,15 @@ public class EndpointConfig implements NamedConfig {
                 && Objects.equals(sslConfig, that.sslConfig)
                 && Objects.equals(symmetricEncryptionConfig, that.symmetricEncryptionConfig)
                 && Objects.equals(outboundPortDefinitions, that.outboundPortDefinitions)
-                && Objects.equals(outboundPorts, that.outboundPorts);
+                && Objects.equals(outboundPorts, that.outboundPorts)
+                && Objects.equals(altoSocketConfig, that.altoSocketConfig);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(name, protocolType, interfaces, socketInterceptorConfig, sslConfig, symmetricEncryptionConfig,
                 outboundPortDefinitions, outboundPorts, socketBufferDirect, socketTcpNoDelay, socketKeepAlive,
-                socketConnectTimeoutSeconds, socketSendBufferSizeKb, socketRcvBufferSizeKb, socketLingerSeconds);
+                socketConnectTimeoutSeconds, socketSendBufferSizeKb, socketRcvBufferSizeKb, socketLingerSeconds,
+                altoSocketConfig);
     }
 }

@@ -161,6 +161,11 @@
             <public-address>dummy</public-address>
             <!-- If the address should be reused. See NetworkConfig.setReuseAddress for more information. -->
             <reuse-address>true</reuse-address>
+            <alto-socket>
+                <port-range>14000-16000</port-range>
+                <receive-buffer-size-kb>256</receive-buffer-size-kb>
+                <send-buffer-size-kb>256</send-buffer-size-kb>
+            </alto-socket>
         </member-server-socket-endpoint-config>
         <!-- server socket listening for connections from hazelcast clients -->
         <client-server-socket-endpoint-config>
@@ -185,6 +190,11 @@
             <port auto-increment="true" port-count="100">9999</port>
             <public-address>10.10.0.10</public-address>
             <reuse-address>true</reuse-address>
+            <alto-socket>
+                <port-range>14000-16000</port-range>
+                <receive-buffer-size-kb>256</receive-buffer-size-kb>
+                <send-buffer-size-kb>256</send-buffer-size-kb>
+            </alto-socket>
         </client-server-socket-endpoint-config>
         <!-- create a server socket for REST API -->
         <rest-server-socket-endpoint-config name="internal-server-socket">
@@ -200,6 +210,11 @@
                 <endpoint-group name="CLUSTER_WRITE" enabled="false"/>
                 <endpoint-group name="HEALTH_CHECK" enabled="true"/>
             </endpoint-groups>
+            <alto-socket>
+                <port-range>14000-16000</port-range>
+                <receive-buffer-size-kb>256</receive-buffer-size-kb>
+                <send-buffer-size-kb>256</send-buffer-size-kb>
+            </alto-socket>
         </rest-server-socket-endpoint-config>
         <!-- specify SSL config to be used for outgoing connections -->
         <wan-endpoint-config name="endpoint-tokyo">
@@ -209,6 +224,11 @@
                     <property name="foo">bar</property>
                 </properties>
             </ssl>
+            <alto-socket>
+                <port-range>14000-16000</port-range>
+                <receive-buffer-size-kb>256</receive-buffer-size-kb>
+                <send-buffer-size-kb>256</send-buffer-size-kb>
+            </alto-socket>
         </wan-endpoint-config>
         <wan-endpoint-config name="endpoint-london">
             <symmetric-encryption enabled="true">
@@ -223,9 +243,19 @@
                 <interface>192.168.8.101</interface>
                 <interface>10.20.10.100</interface>
             </interfaces>
+            <alto-socket>
+                <port-range>14000-16000</port-range>
+                <receive-buffer-size-kb>256</receive-buffer-size-kb>
+                <send-buffer-size-kb>256</send-buffer-size-kb>
+            </alto-socket>
         </wan-server-socket-endpoint-config>
         <memcache-server-socket-endpoint-config name="memcache">
             <port auto-increment="false" port-count="10">6000</port>
+            <alto-socket>
+                <port-range>14000-16000</port-range>
+                <receive-buffer-size-kb>256</receive-buffer-size-kb>
+                <send-buffer-size-kb>256</send-buffer-size-kb>
+            </alto-socket>
         </memcache-server-socket-endpoint-config>
     </advanced-network>
 
