@@ -55,23 +55,28 @@ public class MemberExecuteJarStrategy {
                 new URL[]{jarUrl},
                 MemberExecuteJarStrategy.class.getClassLoader())) {
 
-            Method main = ExecuteJarStrategyHelper.findMainMethodForJar(classLoader, mainClassName);
+            Method mainMethod = ExecuteJarStrategyHelper.findMainMethodForJar(classLoader, mainClassName);
 
             LOGGER.info("Found mainClassName :" + mainClassName + " and main method");
 
             String[] jobArgs = args.toArray(new String[0]);
 
-            // synchronize until the main method is invoked
-            synchronized (this) {
-                BootstrappedJetProxy bootstrappedJetProxy =
-                        ExecuteJarStrategyHelper.setupJetProxy(instanceProxy, jarPath, snapshotName, jobName);
-
-                // Clear jobs. We don't need them
-                bootstrappedJetProxy.clearSubmittedJobs();
-
-                // upcast args to Object, so it's passed as a single array-typed argument
-                main.invoke(null, (Object) jobArgs);
-            }
+            invokeMain(instanceProxy, jarPath, snapshotName, jobName, mainMethod, jobArgs);
         }
+    }
+
+    // synchronized until main method finishes
+    synchronized void invokeMain(BootstrappedInstanceProxy instanceProxy, String jarPath, String snapshotName,
+                                 String jobName, Method main, String[] jobArgs)
+            throws IllegalAccessException, InvocationTargetException {
+
+        BootstrappedJetProxy bootstrappedJetProxy =
+                ExecuteJarStrategyHelper.setupJetProxy(instanceProxy, jarPath, snapshotName, jobName);
+
+        // Clear jobs. We don't need them
+        bootstrappedJetProxy.clearSubmittedJobs();
+
+        // upcast args to Object, so it's passed as a single array-typed argument
+        main.invoke(null, (Object) jobArgs);
     }
 }

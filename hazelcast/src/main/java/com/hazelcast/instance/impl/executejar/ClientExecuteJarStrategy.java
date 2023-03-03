@@ -72,7 +72,7 @@ public class ClientExecuteJarStrategy {
                     new URL[]{jarUrl},
                     ClientExecuteJarStrategy.class.getClassLoader())) {
 
-                Method main = ExecuteJarStrategyHelper.findMainMethodForJar(classLoader, mainClassName);
+                Method mainMethod = ExecuteJarStrategyHelper.findMainMethodForJar(classLoader, mainClassName);
 
                 LOGGER.info("Found mainClassName :" + mainClassName + " and main method");
 
@@ -81,7 +81,7 @@ public class ClientExecuteJarStrategy {
                 ExecuteJarStrategyHelper.setupJetProxy(instanceProxy, jarPath, snapshotName, jobName);
 
                 // upcast args to Object, so it's passed as a single array-typed argument
-                main.invoke(null, (Object) jobArgs);
+                mainMethod.invoke(null, (Object) jobArgs);
             }
 
             // Wait for the job to start
