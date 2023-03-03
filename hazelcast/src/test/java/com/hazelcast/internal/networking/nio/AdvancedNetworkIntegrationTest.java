@@ -153,7 +153,8 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
     }
 
     @Test
-    public void testSocketOptions() throws Throwable {
+    @Category(QuickTest.class)
+    public void testKeepAliveSocketOptions() throws Throwable {
         assumeKeepAlivePerSocketOptionsSupported();
         Config config = createCompleteMultiSocketConfig();
         config.getAdvancedNetworkConfig().getEndpointConfigs().get(EndpointQualifier.MEMBER)
@@ -187,6 +188,7 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
     }
 
     @Test
+    @Category(QuickTest.class)
     public void testKeepAliveSocketOptions_whenNotSupported() throws Throwable {
         assumeKeepAlivePerSocketOptionsNotSupported();
         // ensure that even though options are configured and setting them fails, no exceptions are thrown
