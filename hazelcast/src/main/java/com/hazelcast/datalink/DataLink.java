@@ -32,7 +32,7 @@ import java.util.Map;
  * might be an instance of {@link java.sql.Connection}, or of a driver or client to a
  * 3rd party system etc.
  * <p>
- * Every connection obtained from a datalink must be closed. Otherwise, the data
+ * Every connection obtained from a DataLink must be closed. Otherwise, the data
  * link cannot be closed and the connection will leak.
  * <p>
  * DataLink is supposed to be used in Jet jobs or SQL mappings where the
@@ -125,10 +125,10 @@ public interface DataLink {
     /**
      * Prevents the data link from being closed. It is useful when the processor
      * wants to avoid the data link from being closed while it is obtaining
-     * connections from it. Multiple threads can retain the same datalink
+     * connections from it. Multiple threads can retain the same DataLink
      * concurrently.
      * <p>
-     * Note that the datalink also isn't closed until all shared connections
+     * Note that the DataLink also isn't closed until all shared connections
      * obtained from it are returned. This feature, together with the lock
      * allows the processor to avoid concurrent close while it is using the
      * connection.

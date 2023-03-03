@@ -16,6 +16,8 @@
 
 package com.hazelcast.datalink;
 
+import com.hazelcast.spi.annotation.Beta;
+
 import javax.annotation.Nonnull;
 
 import static java.util.Objects.requireNonNull;
@@ -26,6 +28,7 @@ import static java.util.Objects.requireNonNull;
  * For example, JDBC returns the list of tables and views, Kafka returns the list
  * of topics, and for a filesystem the list of files etc.
  */
+@Beta
 public class DataLinkResource {
 
     private final String type;

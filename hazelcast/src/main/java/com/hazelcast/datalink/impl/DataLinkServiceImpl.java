@@ -85,7 +85,7 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
                         if (current.source == CONFIG) {
                             throw new HazelcastException("Cannot replace a data link created from configuration");
                         }
-                        // close the old datalink
+                        // close the old DataLink
                         try {
                             current.instance.release();
                         } catch (Throwable e) {

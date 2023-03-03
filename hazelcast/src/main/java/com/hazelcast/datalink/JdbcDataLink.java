@@ -133,8 +133,8 @@ public class JdbcDataLink extends DataLinkBase {
     }
 
     private Connection singleUseConnection() {
-        // We don't call retain() for single-use connections. They are independent of the datalink,
-        // so closing the datalink doesn't affect an active single-use connection.
+        // We don't call retain() for single-use connections. They are independent of the DataLink,
+        // so closing the DataLink doesn't affect an active single-use connection.
         return singleUseConnectionSup.get();
     }
 

@@ -38,15 +38,16 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 public interface DataLinkService {
 
     /**
-     * Returns {@link DataLink} with the given name and lock it. The caller is
-     * responsible for calling `unlock` after it is done with the datalink.
+     * Returns {@link DataLink} with the given name and `retain` it (calls
+     * {@link DataLink#retain()}). The caller is responsible for calling
+     * {@link DataLink#release()} after it is done with the DataLink.
      * <p>
      * Type is checked against the provided `clazz` argument.
      *
      * @param name  name of the DataLink
      * @param clazz expected type of the DataLink
      *
-     * @throws HazelcastException if the requested datalink doesn't exist, or has
+     * @throws HazelcastException if the requested DataLink doesn't exist, or has
      *     a different type than `clazz`
      */
     <T extends DataLink> T getAndRetainDataLink(String name, Class<T> clazz);

@@ -54,7 +54,7 @@ public interface InternalDataLinkService extends DataLinkService {
      * @param type    type of the DataLink
      * @param options options configuring the DataLink
      * @param replace if true, an existing data link with the same name is removed first.
-     *                If false, if a datalink with the same name exists, and error is thrown.
+     *                If false, if a DataLink with the same name exists, and error is thrown.
      */
     void createSqlDataLink(String name, String type, Map<String, String> options, boolean replace);
 
