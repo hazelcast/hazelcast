@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.mapstore.validators;
+package com.hazelcast.mapstore;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.sql.SqlRowMetadata;
@@ -26,7 +26,7 @@ import static com.hazelcast.sql.SqlRowMetadata.COLUMN_NOT_FOUND;
 /**
  * Validates if database and GenericMapStoreProperties columns match
  */
-public final class ExistingMappingValidator {
+final class ExistingMappingValidator {
 
     private ExistingMappingValidator() {
     }

@@ -30,7 +30,6 @@ final class FromSqlRowConverter {
     private FromSqlRowConverter() {
     }
 
-
     // Convert SqlRow to GenericRecord
     @Nonnull
     public static GenericRecord toGenericRecord(SqlRow sqlRow, GenericMapStoreProperties properties) {

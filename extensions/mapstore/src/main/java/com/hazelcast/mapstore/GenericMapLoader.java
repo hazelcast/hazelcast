@@ -49,9 +49,9 @@ import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.mapstore.ExistingMappingValidator.validateColumn;
+import static com.hazelcast.mapstore.ExistingMappingValidator.validateColumnsExist;
 import static com.hazelcast.mapstore.FromSqlRowConverter.toGenericRecord;
-import static com.hazelcast.mapstore.validators.ExistingMappingValidator.validateColumn;
-import static com.hazelcast.mapstore.validators.ExistingMappingValidator.validateColumnsExist;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -303,6 +303,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
         awaitSuccessfulInit();
 
         String sql = queries.loadAllKeys();
+        //noinspection resource
         SqlResult keysResult = sqlService.execute(sql);
 
         // The contract for loadAllKeys says that if iterator implements Closable

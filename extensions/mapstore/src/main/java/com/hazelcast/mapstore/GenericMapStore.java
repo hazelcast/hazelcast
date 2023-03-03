@@ -20,14 +20,13 @@ import com.hazelcast.datalink.JdbcDataLinkFactory;
 import com.hazelcast.map.MapLoaderLifecycleSupport;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
-import com.hazelcast.sql.SqlResult;
 
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.hazelcast.mapstore.ToJDBCParametersConverter.convert;
+import static com.hazelcast.mapstore.JdbcParameters.convert;
 
 /**
  * GenericMapStore is an implementation of {@link MapStore} built
@@ -68,12 +67,10 @@ public class GenericMapStore<K> extends GenericMapLoader<K>
     public void store(K key, GenericRecord record) {
         awaitSuccessfulInit();
 
-        JDBCParameters jdbcParameters = convert(key, record, columnMetadataList,
-                genericMapStoreProperties.idColumn);
+        JdbcParameters jdbcParameters = convert(key, record, columnMetadataList, genericMapStoreProperties.idColumn);
 
-
-        try (SqlResult ignored = sqlService.execute(queries.storeSink(), jdbcParameters.getParams())) {
-            // empty try-with-resources
+        try {
+            sqlService.execute(queries.storeSink(), jdbcParameters.getParams()).close();
         } catch (Exception e) {
 
             if (isIntegrityConstraintViolation(e)) {
@@ -116,17 +113,6 @@ public class GenericMapStore<K> extends GenericMapLoader<K>
         sqlService.execute(queries.deleteAll(keys.size()), keys.toArray()).close();
     }
 
-    static SQLException findSQLException(Throwable throwable) {
-        Throwable rootCause = throwable;
-        while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
-            rootCause = rootCause.getCause();
-            if (rootCause instanceof SQLException) {
-                return (SQLException) rootCause;
-            }
-        }
-        return null;
-    }
-
     // SQLException returns SQL state in five-digit number.
     // These five-digit numbers tell about the status of the SQL statements.
     // The SQLSTATE values consists of two fields.
@@ -145,4 +131,14 @@ public class GenericMapStore<K> extends GenericMapLoader<K>
         return result;
     }
 
+    static SQLException findSQLException(Throwable throwable) {
+        Throwable rootCause = throwable;
+        while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
+            rootCause = rootCause.getCause();
+            if (rootCause instanceof SQLException) {
+                return (SQLException) rootCause;
+            }
+        }
+        return null;
+    }
 }

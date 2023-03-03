@@ -38,7 +38,7 @@ import static com.hazelcast.mapstore.GenericMapLoader.TYPE_NAME_PROPERTY;
 /**
  * Holds the properties for GenericMapStore and GenericMapLoader
  */
-public class GenericMapStoreProperties {
+class GenericMapStoreProperties {
 
     final String dataLinkRef;
     final String tableName;
