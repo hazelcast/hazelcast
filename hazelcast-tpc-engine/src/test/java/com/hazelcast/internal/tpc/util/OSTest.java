@@ -42,10 +42,9 @@ public class OSTest {
     @Test
     public void test_linuxMajorVersion0() {
 
-        if (OS.isLinux() ) {
+        if (OS.isLinux()) {
             assertEquals(5, OS.linuxMajorVersion0("5.16.12-200.fc35.x86_64"));
-        }
-        else {
+        } else {
             assertEquals(-1, OS.linuxMajorVersion0("5.16.12-200.fc35.x86_64"));
         }
     }
@@ -53,10 +52,9 @@ public class OSTest {
     @Test
     public void test_linuxMinorVersion0() {
 
-        if (OS.isLinux() ) {
+        if (OS.isLinux()) {
             assertEquals(16, OS.linuxMinorVersion0("5.16.12-200.fc35.x86_64"));
-        }
-        else {
+        } else {
             assertEquals(-1, OS.linuxMajorVersion0("5.16.12-200.fc35.x86_64"));
         }
     }
