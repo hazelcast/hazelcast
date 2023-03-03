@@ -17,16 +17,23 @@
 package com.hazelcast.jet.kafka.connect;
 
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.kafka.connect.impl.ConnectorWrapper;
-import com.hazelcast.jet.kafka.connect.impl.KafkaConnectSource;
-import com.hazelcast.jet.pipeline.SourceBuilder;
+import com.hazelcast.jet.kafka.connect.impl.ReadKafkaConnectP;
+import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.spi.annotation.Beta;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.net.URL;
+import java.util.Collection;
 import java.util.Properties;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
 
@@ -72,13 +79,33 @@ public final class KafkaConnectSources {
         //fail fast, required by lazy-initialized KafkaConnectSource
         checkRequiredProperty(properties, "connector.class");
 
-        return SourceBuilder.timestampedStream(name, ctx ->
-                        new KafkaConnectSource(new ConnectorWrapper(properties)))
-                .fillBufferFn(KafkaConnectSource::fillBuffer)
-                .createSnapshotFn(KafkaConnectSource::createSnapshot)
-                .restoreSnapshotFn(KafkaConnectSource::restoreSnapshot)
-                .destroyFn(KafkaConnectSource::destroy)
-                .build();
+        int tasksMax = Integer.parseInt(properties.getProperty("tasks.max", "1"));
+
+        return Sources.streamFromProcessorWithWatermarks(name, true,
+                eventTimePolicy -> ProcessorMetaSupplier.preferLocalParallelismOnSingleMember(
+                        new ProcessorSupplier() {
+                            private ConnectorWrapper connectorWrapper;
+
+                            @Override
+                            public void init(@Nonnull Context context) {
+                                this.connectorWrapper = new ConnectorWrapper(properties);
+                            }
+
+                            @Override
+                            public void close(@Nullable Throwable error) {
+                                connectorWrapper.stop();
+                            }
+
+                            @Nonnull
+                            @Override
+                            public Collection<? extends Processor> get(int count) {
+                                return IntStream.range(0, count)
+                                        .mapToObj(i -> new ReadKafkaConnectP(connectorWrapper, eventTimePolicy))
+                                        .collect(Collectors.toList());
+                            }
+
+                        }, tasksMax)
+        );
     }
 
 }

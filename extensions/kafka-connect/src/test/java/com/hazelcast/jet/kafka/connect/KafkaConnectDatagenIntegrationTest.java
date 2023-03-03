@@ -87,5 +87,44 @@ public class KafkaConnectDatagenIntegrationTest extends JetTestSupport {
         }
     }
 
+    @Test
+    public void testScalingWithDatagenConnector() throws Exception {
+        int localParallelism = 3;
+        Properties randomProperties = new Properties();
+        randomProperties.setProperty("name", "datagen-connector");
+        randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
+        randomProperties.setProperty("tasks.max", Integer.toString(localParallelism));
+        randomProperties.setProperty("max.interval", "1");
+        randomProperties.setProperty("kafka.topic", "users");
+        randomProperties.setProperty("quickstart", "users");
+
+        Pipeline pipeline = Pipeline.create();
+        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties))
+                .withoutTimestamps()
+                .setLocalParallelism(localParallelism)
+                .map(record -> Values.convertToString(record.valueSchema(), record.value()) + ", task.id: "
+                        + record.headers().lastWithName("task.id").value());
+        streamStage.writeTo(Sinks.logger());
+        streamStage
+                .writeTo(AssertionSinks.assertCollectedEventually(60,
+                        list -> assertEquals(localParallelism * ITEM_COUNT, list.size())));
+
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setResourceUploadEnabled(true);
+        Job job = createHazelcastInstances(config, 3)[0].getJet().newJob(pipeline, jobConfig);
+
+        try {
+            job.join();
+            fail("Job should have completed with an AssertionCompletedException, but completed normally");
+        } catch (CompletionException e) {
+            String errorMsg = e.getCause().getMessage();
+            assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
+                    + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
+        }
+    }
+
 
 }

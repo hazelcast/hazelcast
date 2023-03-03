@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.serialization.SerializableByConvention;
+import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetService;
@@ -48,6 +49,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
@@ -467,7 +470,25 @@ public interface ProcessorMetaSupplier extends Serializable {
             @Nonnull ProcessorSupplier supplier,
             @Nonnull Address memberAddress
     ) {
-        return new SpecificMemberPms(supplier, memberAddress);
+        return new SpecificMemberPms(supplier, memberAddress, 1);
+    }
+
+
+    /**
+     * Wraps the provided {@code ProcessorSupplier} into a meta-supplier that
+     * will only use the given {@code ProcessorSupplier} on a random node with the
+     * given localParallelism.
+     *
+     * @param supplier                  the supplier that will be wrapped
+     * @param preferredLocalParallelism the value to return from {@link #preferredLocalParallelism()}
+     * @return the wrapped {@code ProcessorMetaSupplier}
+     */
+    @Nonnull
+    static ProcessorMetaSupplier preferLocalParallelismOnSingleMember(
+            @Nonnull ProcessorSupplier supplier,
+            int preferredLocalParallelism
+    ) {
+        return new ParallelismOnRandomMemberPms(supplier, preferredLocalParallelism);
     }
 
     /**
@@ -484,7 +505,7 @@ public interface ProcessorMetaSupplier extends Serializable {
         SpecificMemberPms() {
         }
 
-        private SpecificMemberPms(ProcessorSupplier supplier, Address memberAddress) {
+        private SpecificMemberPms(ProcessorSupplier supplier, Address memberAddress, int localParallelism) {
             this.supplier = supplier;
             this.memberAddress = memberAddress;
         }
@@ -535,11 +556,64 @@ public interface ProcessorMetaSupplier extends Serializable {
         }
     }
 
+    class ParallelismOnRandomMemberPms implements ProcessorMetaSupplier, IdentifiedDataSerializable {
+
+        private ProcessorSupplier supplier;
+        private int preferredLocalParallelism;
+
+        ParallelismOnRandomMemberPms() {
+        }
+
+        private ParallelismOnRandomMemberPms(ProcessorSupplier supplier, int preferredLocalParallelism) {
+            this.supplier = supplier;
+            this.preferredLocalParallelism = preferredLocalParallelism;
+        }
+
+        @Override
+        public void init(@Nonnull Context context) throws Exception {
+            PermissionsUtil.checkPermission(supplier, context);
+        }
+
+        @Nonnull
+        @Override
+        public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            Address memberAddress = addresses.get(RandomPicker.getInt(addresses.size()));
+            return addr -> addr.equals(memberAddress) ? supplier : new ExpectNothingProcessorSupplier();
+        }
+
+        @Override
+        public int preferredLocalParallelism() {
+            return preferredLocalParallelism;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(supplier);
+            out.writeInt(preferredLocalParallelism);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            supplier = in.readObject();
+            preferredLocalParallelism = in.readInt();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetDataSerializerHook.PARALLELISM_ON_SINGLE_MEMBER_PROCESSOR_META_SUPPLIER;
+        }
+    }
+
     class ExpectNothingProcessorSupplier implements ProcessorSupplier, IdentifiedDataSerializable {
-        @Override @Nonnull
+        @Override
+        @Nonnull
         public Collection<? extends Processor> get(int count) {
-            assert count == 1;
-            return singletonList(new ExpectNothingP());
+            return IntStream.range(0, count).mapToObj(i -> new ExpectNothingP()).collect(Collectors.toList());
         }
 
         @Override

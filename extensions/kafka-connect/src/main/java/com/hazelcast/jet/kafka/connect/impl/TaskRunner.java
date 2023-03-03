@@ -23,40 +23,47 @@ import org.apache.kafka.connect.source.SourceTask;
 import org.apache.kafka.connect.source.SourceTaskContext;
 import org.apache.kafka.connect.storage.OffsetStorageReader;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 class TaskRunner {
     private static final ILogger LOGGER = Logger.getLogger(TaskRunner.class);
+    private final String name;
     private final ReentrantLock taskLifecycleLock = new ReentrantLock();
     private final Map<Map<String, ?>, Map<String, ?>> partitionsToOffset;
     private final SourceTaskFactory sourceTaskFactory;
     private volatile boolean running;
     private volatile boolean reconfigurationNeeded;
     private SourceTask task;
-    private Map<String, String> newTaskConfig;
+    private Map<String, String> taskConfig;
 
-    TaskRunner(Map<Map<String, ?>, Map<String, ?>> partitionsToOffset, SourceTaskFactory sourceTaskFactory) {
+    TaskRunner(String name, Map<Map<String, ?>, Map<String, ?>> partitionsToOffset, SourceTaskFactory sourceTaskFactory) {
+        this.name = name;
         this.partitionsToOffset = partitionsToOffset;
         this.sourceTaskFactory = sourceTaskFactory;
     }
 
     List<SourceRecord> poll() {
         restartTaskIfNeeded();
-        return doPoll();
+        if (running) {
+            return doPoll();
+        } else {
+            return Collections.emptyList();
+        }
     }
 
     void stop() {
-        LOGGER.info("Stopping task if running");
         try {
             taskLifecycleLock.lock();
             if (running) {
-                LOGGER.fine("Stopping task");
+                LOGGER.fine("Stopping task '" + name + "'");
                 task.stop();
-                LOGGER.fine("Task stopped");
+                LOGGER.fine("Task '" + name + "' stopped");
             }
         } finally {
             running = false;
@@ -79,7 +86,7 @@ class TaskRunner {
             try {
                 stop();
             } catch (Exception ex) {
-                LOGGER.warning("Stopping task failed but proceeding with re-start", ex);
+                LOGGER.warning("Stopping task '" + name + "' failed but proceeding with re-start", ex);
             }
         }
         start();
@@ -88,28 +95,30 @@ class TaskRunner {
     void updateTaskConfig(Map<String, String> taskConfig) {
         try {
             taskLifecycleLock.lock();
-            this.newTaskConfig = taskConfig;
+            if (!Objects.equals(this.taskConfig, taskConfig)) {
+                LOGGER.info("Updating task '" + name + "' configuration");
+                this.taskConfig = taskConfig;
+                reconfigurationNeeded = true;
+            }
         } finally {
             taskLifecycleLock.unlock();
         }
-        reconfigurationNeeded = true;
     }
 
     private void start() {
-        LOGGER.info("Starting task if the previous not running");
         try {
             taskLifecycleLock.lock();
             if (!running) {
-                if (newTaskConfig != null) {
+                if (taskConfig != null) {
                     SourceTask taskLocal = sourceTaskFactory.create();
-                    LOGGER.info("Initializing task: " + task);
-                    taskLocal.initialize(new JetSourceTaskContext(newTaskConfig, partitionsToOffset));
-                    LOGGER.info("Starting task: " + taskLocal + " with task config: " + newTaskConfig);
-                    taskLocal.start(newTaskConfig);
+                    LOGGER.info("Initializing task '" + name + "'");
+                    taskLocal.initialize(new JetSourceTaskContext(taskConfig, partitionsToOffset));
+                    LOGGER.info("Starting task '" + name + "'");
+                    taskLocal.start(taskConfig);
                     this.task = taskLocal;
                     running = true;
                 } else {
-                    LOGGER.info("No task config");
+                    LOGGER.fine("No task config for task '" + name + "'");
                 }
             }
         } finally {
@@ -142,6 +151,12 @@ class TaskRunner {
         partitionsToOffset.put(record.sourcePartition(), record.sourceOffset());
     }
 
+    @Override
+    public String toString() {
+        return "TaskRunner{" +
+                "name='" + name + '\'' +
+                '}';
+    }
 
     @FunctionalInterface
     interface SourceTaskFactory {

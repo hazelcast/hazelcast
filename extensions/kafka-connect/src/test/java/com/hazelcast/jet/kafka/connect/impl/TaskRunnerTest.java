@@ -37,7 +37,7 @@ public class TaskRunnerTest {
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
     private final DummySourceConnector connector = new DummySourceConnector();
     private final HashMap<Map<String, ?>, Map<String, ?>> partitionsToOffset = new HashMap<>();
-    private final TaskRunner taskRunner = new TaskRunner(partitionsToOffset, DummyTask::new);
+    private final TaskRunner taskRunner = new TaskRunner("some-task-name", partitionsToOffset, DummyTask::new);
 
     @Test
     public void should_poll_data() {

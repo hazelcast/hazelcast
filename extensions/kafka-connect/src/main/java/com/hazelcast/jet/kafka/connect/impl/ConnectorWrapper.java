@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.impl.protocol.util.PropertiesUtil.toMap;
 import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
@@ -40,6 +41,7 @@ public class ConnectorWrapper {
     private final SourceConnector connector;
     private final int tasksMax;
     private final List<TaskRunner> taskRunners = new CopyOnWriteArrayList<>();
+    private final AtomicInteger taskIdGenerator = new AtomicInteger();
 
     /**
      * Key represents the partition which the record originated from. Value
@@ -49,12 +51,16 @@ public class ConnectorWrapper {
      * See {@link SourceRecord} for more information regarding the format.
      */
     private final Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new ConcurrentHashMap<>();
+    private final String name;
 
     public ConnectorWrapper(Properties properties) {
         String connectorClazz = checkRequiredProperty(properties, "connector.class");
+        this.name = checkRequiredProperty(properties, "name");
         tasksMax = Integer.parseInt(properties.getProperty("tasks.max", "1"));
         this.connector = newConnectorInstance(connectorClazz);
+        LOGGER.fine("Initializing connector '" + name + "'");
         this.connector.initialize(new JetConnectorContext());
+        LOGGER.fine("Starting connector '" + name + "'");
         this.connector.start(toMap(properties));
     }
 
@@ -71,11 +77,15 @@ public class ConnectorWrapper {
     }
 
     public void stop() {
+        LOGGER.fine("Stopping connector '" + name + "'");
         connector.stop();
+        LOGGER.fine("Connector '" + name + "' stopped");
+
     }
 
     public TaskRunner createTaskRunner() {
-        TaskRunner taskRunner = new TaskRunner(partitionsToOffset, this::createSourceTask);
+        TaskRunner taskRunner = new TaskRunner(name + "-task-" + taskIdGenerator.getAndIncrement(),
+                partitionsToOffset, this::createSourceTask);
         taskRunners.add(taskRunner);
         requestTaskReconfiguration();
         return taskRunner;
@@ -109,10 +119,7 @@ public class ConnectorWrapper {
     }
 
     private void requestTaskReconfiguration() {
-        if (tasksMax > taskRunners.size()) {
-            LOGGER.warning("tasks.max (" + tasksMax + ") is larger than size of the task runners ("
-                    + taskRunners.size() + ")");
-        }
+        LOGGER.fine("Updating tasks configuration");
         List<Map<String, String>> taskConfigs = connector.taskConfigs(Math.min(tasksMax, taskRunners.size()));
 
         for (int i = 0; i < taskRunners.size(); i++) {
@@ -121,4 +128,10 @@ public class ConnectorWrapper {
         }
     }
 
+    @Override
+    public String toString() {
+        return "ConnectorWrapper{" +
+                "name='" + name + '\'' +
+                '}';
+    }
 }
