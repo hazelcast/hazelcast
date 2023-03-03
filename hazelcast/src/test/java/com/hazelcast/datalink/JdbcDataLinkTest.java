@@ -194,7 +194,7 @@ public class JdbcDataLinkTest {
 
         List<DataLinkResource> dataLinkResources = jdbcDataLink.listResources();
         assertThat(dataLinkResources).contains(
-                new DataLinkResource("BASE TABLE", "PUBLIC.MY_TABLE")
+                new DataLinkResource("TABLE", "PUBLIC.MY_TABLE")
         );
     }
 
@@ -207,7 +207,7 @@ public class JdbcDataLinkTest {
 
         List<DataLinkResource> dataLinkResources = jdbcDataLink.listResources();
         assertThat(dataLinkResources).contains(
-                new DataLinkResource("BASE TABLE", "MY_SCHEMA.MY_TABLE")
+                new DataLinkResource("TABLE", "MY_SCHEMA.MY_TABLE")
         );
     }
 
@@ -220,7 +220,7 @@ public class JdbcDataLinkTest {
 
         List<DataLinkResource> dataLinkResources = jdbcDataLink.listResources();
         assertThat(dataLinkResources).contains(
-                new DataLinkResource("VIEW", "PUBLIC.MY_TABLE_VIEW")
+                new DataLinkResource("TABLE", "PUBLIC.MY_TABLE_VIEW")
         );
     }
 

@@ -95,13 +95,12 @@ public class JdbcDataLink extends DataLinkBase {
     public List<DataLinkResource> listResources() {
         try (Connection connection = getConnection()) {
             DatabaseMetaData metaData = connection.getMetaData();
-            String[] types = {"TABLE", "VIEW"};
             //Retrieving the columns in the database
-            ResultSet tables = metaData.getTables(null, null, "%", types);
+            ResultSet tables = metaData.getTables(null, null, "%", null);
             List<DataLinkResource> result = new ArrayList<>();
             while (tables.next()) {
                 result.add(new DataLinkResource(
-                        tables.getString("TABLE_TYPE"),
+                        "TABLE",
                         // TODO quoting? Using String[]?
                         tables.getString("TABLE_SCHEM") + "." + tables.getString("TABLE_NAME")
                 ));

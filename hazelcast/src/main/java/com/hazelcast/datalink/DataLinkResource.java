@@ -27,6 +27,8 @@ import static java.util.Objects.requireNonNull;
  * <p>
  * For example, JDBC returns the list of tables and views, Kafka returns the list
  * of topics, and for a filesystem the list of files etc.
+ *
+ * @since 5.3
  */
 @Beta
 public class DataLinkResource {
