@@ -61,23 +61,23 @@ public class UploadJobMetaDataOperation extends Operation implements IdentifiedD
     @Override
     public void run() {
         if (jobMetaDataParameterObject.isDirectJobExecution()) {
-            executeJobMetaData();
+            runDirectJobExecution();
         } else {
-            storeJobMetaDataForUpload();
+            runUpload();
         }
     }
 
-    private void executeJobMetaData() {
+    private void runDirectJobExecution() {
         // The jar should not be deleted, because we are directly executing it
         jobMetaDataParameterObject.setDeleteJarAfterExecution(false);
-        //File name is the jar path
+        // JarPath is not the temp directory. It is the given file name
         jobMetaDataParameterObject.setJarPath(Paths.get(jobMetaDataParameterObject.getFileName()));
 
         JetServiceBackend jetServiceBackend = getJetServiceBackend();
-        jetServiceBackend.executeJobMetaData(jobMetaDataParameterObject);
+        jetServiceBackend.executeJar(jobMetaDataParameterObject);
     }
 
-    private void storeJobMetaDataForUpload() {
+    private void runUpload() {
         // The jar should be deleted, because we are uploading it
         jobMetaDataParameterObject.setDeleteJarAfterExecution(true);
 

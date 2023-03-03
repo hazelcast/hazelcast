@@ -227,7 +227,7 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
         Job job = jetService.getJobs().get(0);
         assertJobStatusEventually(job, JobStatus.RUNNING);
 
-        // Assert job jar does is deleted
+        // Assert job jar is not deleted
         assertTrue(Files.exists(jarPath));
     }
 }

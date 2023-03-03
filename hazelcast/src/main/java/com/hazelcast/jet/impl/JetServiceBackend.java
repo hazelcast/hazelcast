@@ -416,11 +416,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         }
     }
 
-    public void executeJobMetaData(JobMetaDataParameterObject jobMetaDataParameterObject) {
-        checkResourceUploadEnabled();
-        executeJar(jobMetaDataParameterObject);
-    }
-
     /**
      * Store a part of job jar that is uploaded
      *
@@ -479,7 +474,9 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         }
     }
 
-    // Run the given jar as Jet job. Triggered by both client and member side job uploads
+    /**
+     * Run the given jar as Jet job. Triggered by both client and member side
+     */
     public void executeJar(JobMetaDataParameterObject jobMetaDataParameterObject) {
 
         if (logger.isInfoEnabled()) {

@@ -26,10 +26,10 @@ import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.impl.submitjob.validator.SubmitJobParametersValidator;
-import com.hazelcast.jet.impl.submitjob.memberside.JobMetaDataParameterObject;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
+import com.hazelcast.jet.impl.submitjob.memberside.JobMetaDataParameterObject;
+import com.hazelcast.jet.impl.submitjob.validator.SubmitJobParametersValidator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -71,7 +71,10 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
         return config;
     }
 
-    // Called by member to run a job on itself
+    /**
+     * Called by member to run a job on itself
+     * @param submitJobParameters
+     */
     @Override
     public void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
         try {
