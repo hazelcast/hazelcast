@@ -6,6 +6,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.SocketAddress;
@@ -13,18 +14,19 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.util.Properties;
 
+// This class needs to be removed and the right EE implementation should be used
+// It is here purely for testing.
 public class DefaultSSLEngineFactory implements SSLEngineFactory {
-    private static String keyStoreFile = "testkeys";
-    private static String trustStoreFile = "testkeys";
-    private static String passwd = "passphrase";
-
     private SSLContext sslContext;
 
     public DefaultSSLEngineFactory() {
         try {
-            KeyManager[] keyManagers = createKeyManagers("/home/pveentjer/server.jks", "storepass", "keypass");
+            String keyManagerFile = DefaultSSLEngineFactory.class.getResource("/server.jks").getFile();
+            String trustManagerFile = DefaultSSLEngineFactory.class.getResource("/trustedCerts.jks").getFile();
 
-            TrustManager[] trustManagers = createTrustManagers("/home/pveentjer/trustedCerts.jks", "storepass");
+            KeyManager[] keyManagers = createKeyManagers(keyManagerFile, "storepass", "keypass");
+
+            TrustManager[] trustManagers = createTrustManagers(trustManagerFile, "storepass");
 
             sslContext = SSLContext.getInstance("TLS");
             sslContext.init(keyManagers, trustManagers, new SecureRandom());
