@@ -71,6 +71,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
@@ -104,7 +105,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * @see #loadAll(boolean)
      * @see #loadAllFromStore(List, boolean)
      */
-    protected final Collection<Future> loadingFutures = new ConcurrentLinkedQueue<>();
+    protected final Collection<Future<?>> loadingFutures = new ConcurrentLinkedQueue<>();
 
     /**
      * A reference to the Json Metadata store. It is initialized lazily only if the
@@ -1292,7 +1293,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
 
         if (FutureUtil.allDone(loadingFutures)) {
-            List<Future> doneFutures = null;
+            List<Future<?>> doneFutures = null;
             try {
                 doneFutures = FutureUtil.getAllDone(loadingFutures);
                 // check all finished loading futures for exceptions
@@ -1321,7 +1322,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     // only used for testing purposes
-    public Collection<Future> getLoadingFutures() {
+    public Collection<Future<?>> getLoadingFutures() {
         return loadingFutures;
     }
 
@@ -1336,7 +1337,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                     logger.finest("Triggering load " + getStateMessage());
                 }
                 loadedOnCreate = true;
-                loadingFutures.add(keyLoader.startInitialLoad(mapStoreContext, partitionId));
+                addLoadingFuture(keyLoader.startInitialLoad(mapStoreContext, partitionId));
             } else {
                 if (logger.isFinestEnabled()) {
                     logger.finest("Promoting to loaded on migration " + getStateMessage());
@@ -1344,6 +1345,17 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 keyLoader.promoteToLoadedOnMigration();
             }
         }
+    }
+
+    private void addLoadingFuture(Future<?> e) {
+        if (e instanceof CompletableFuture) {
+            ((CompletableFuture<?>) e).whenComplete((result, throwable) -> {
+                if (throwable != null) {
+                    logger.warning("Loading completed exceptionally", throwable);
+                }
+            });
+        }
+        loadingFutures.add(e);
     }
 
     @Override
@@ -1359,15 +1371,15 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         logger.info("Starting to load all keys for map " + name + " on partitionId=" + partitionId);
         Future<?> loadingKeysFuture = keyLoader.startLoading(mapStoreContext, replaceExistingValues);
-        loadingFutures.add(loadingKeysFuture);
+        addLoadingFuture(loadingKeysFuture);
     }
 
     @Override
     public void loadAllFromStore(List<Data> keys,
                                  boolean replaceExistingValues) {
         if (!keys.isEmpty()) {
-            Future f = recordStoreLoader.loadValues(keys, replaceExistingValues);
-            loadingFutures.add(f);
+            Future<?> f = recordStoreLoader.loadValues(keys, replaceExistingValues);
+            addLoadingFuture(f);
         }
 
         // We should not track key loading here. IT's not key loading but values loading.
