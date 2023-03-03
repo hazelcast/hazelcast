@@ -178,7 +178,6 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
         return ProcessorMetaSupplier.preferLocalParallelismOne(
                 ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE),
                 new ProcessorSupplier() {
-
                     private transient JdbcDataLink dataLink;
                     private transient CommonDataSource dataSource;
 
@@ -195,8 +194,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                         }
                     }
 
-                    @Nonnull
-                    @Override
+                    @Nonnull @Override
                     public Collection<? extends Processor> get(int count) {
                         return IntStream.range(0, count)
                                 .mapToObj(i -> new WriteJdbcP<>(updateQuery, dataSource, bindFn,
