@@ -78,8 +78,8 @@ public interface AsyncSocketBuilder {
     AsyncSocketBuilder setSSLEngineFactory(SSLEngineFactory sslEngineFactory);
 
     /**
-     * Sets the tls executor for offloading SSL/TLS handshake tasks because we do not want
-     * to block the eventloop thread in the reactor.
+     * Sets the tls executor for offloading SSL/TLS handshake tasks. We do not want
+     * to block the eventloop thread in the reactor so these tasks need to be offloaded.
      *
      * @param tlsExecutor the executor
      * @return this
