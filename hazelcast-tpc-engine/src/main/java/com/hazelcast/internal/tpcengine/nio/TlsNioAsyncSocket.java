@@ -5,6 +5,7 @@ import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
+import com.hazelcast.internal.tpcengine.util.ExceptionUtil;
 import org.jctools.queues.MpmcArrayQueue;
 
 import javax.net.ssl.SSLEngine;
@@ -22,6 +23,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.compactOrClear;
@@ -43,7 +45,7 @@ import static javax.net.ssl.SSLEngineResult.HandshakeStatus.FINISHED;
  * <p>
  * https://github.com/alkarn/sslengine.example/blob/master/src/main/java/alkarn/github/io/sslengine/example/NioSslServer.java
  */
-public class NioTlsAsyncSocket extends AsyncSocket {
+public class TlsNioAsyncSocket extends AsyncSocket {
 
     private final NioAsyncSocketOptions options;
     private final AtomicReference<Thread> flushThread = new AtomicReference<>();
@@ -58,14 +60,14 @@ public class NioTlsAsyncSocket extends AsyncSocket {
     private final boolean writeThrough;
     private final AsyncSocketReader reader;
     private final CircularQueue localTaskQueue;
-
+    private final Executor tlsExecutor;
     // only accessed from eventloop thread
     private boolean started;
     // only accessed from eventloop thread
     private boolean connecting;
     private CompletableFuture<Void> connectFuture;
 
-    NioTlsAsyncSocket(NioAsyncSocketBuilder builder) {
+    TlsNioAsyncSocket(NioAsyncSocketBuilder builder) {
         super(builder.clientSide);
 
         assert Thread.currentThread() == builder.reactor.eventloopThread();
@@ -86,6 +88,7 @@ public class NioTlsAsyncSocket extends AsyncSocket {
             this.handler = new TLsHandler(builder);
             this.key = socketChannel.register(reactor.selector, 0, handler);
             this.reader = builder.reader;
+            this.tlsExecutor = builder.tlsExecutor;
             // There is no need for the socket to be scheduled on startup because the
             // Handshake is already executing. Only when the handshake is done, the
             // flushthread will be unset.
@@ -378,9 +381,9 @@ public class NioTlsAsyncSocket extends AsyncSocket {
             if (cause instanceof EOFException) {
                 // The stacktrace of an EOFException isn't important. It just means that the
                 // Exception is closed by the remote side.
-                NioTlsAsyncSocket.this.close(reason != null ? reason : cause.getMessage(), null);
+                TlsNioAsyncSocket.this.close(reason != null ? reason : cause.getMessage(), null);
             } else {
-                NioTlsAsyncSocket.this.close(reason, cause);
+                TlsNioAsyncSocket.this.close(reason, cause);
             }
         }
 
@@ -408,8 +411,15 @@ public class NioTlsAsyncSocket extends AsyncSocket {
         private void handleRead() throws IOException {
             metrics.incReadEvents();
 
-            if (handshakeInProgress && !completeHandshake()) {
-                return;
+            if (handshakeInProgress) {
+                if (!completeHandshake()) {
+                    return;
+                }
+
+                // Till so far we were scheduled, but now the handshake is complete
+                // we need to unschedule the socket so that futures writes to the
+                // socket are scheduled.
+                resetFlushed();
             }
 
             int read = socketChannel.read(receiveBuffer);
@@ -499,7 +509,7 @@ public class NioTlsAsyncSocket extends AsyncSocket {
             compactOrClear(appBuffer);
         }
 
-        public void handleWrite() throws IOException {
+        private void handleWrite() throws IOException {
             // typically this method is called with the flushThread being set.
             // but in case of cancellation of the key, this method is also
             // called without the flushThread being set.
@@ -574,18 +584,14 @@ public class NioTlsAsyncSocket extends AsyncSocket {
         private boolean completeHandshake() throws IOException {
             while (true) {
                 SSLEngineResult.HandshakeStatus handshakeStatus = sslEngine.getHandshakeStatus();
-                //System.out.println(NioTlsAsyncSocket.this + " handshakeStatus " + handshakeStatus);
+                //System.out.println(TlsNioAsyncSocket.this + " handshakeStatus " + handshakeStatus);
 
                 switch (handshakeStatus) {
                     case NEED_TASK:
-                        // todo: this is blocking, no good.
-                        Runnable runnable = sslEngine.getDelegatedTask();
-                        while (runnable != null) {
-                            //System.out.println(TLSNioAsyncSocket.this + " handshakeStatus processing " + runnable);
-                            runnable.run();
-                            runnable = sslEngine.getDelegatedTask();
-                        }
-                        break;
+                        //.run();;
+                        tlsExecutor.execute(new RunHandshakeTasks());
+                        //System.out.println(flushThread.get());
+                        return false;
                     case NEED_WRAP:
                         SSLEngineResult wrapResult = sslEngine.wrap(emptyBuffer, sendBuffer);
                         //System.out.println(TLSNioAsyncSocket.this + " handshake wrapResult " + wrapResult);
@@ -609,8 +615,7 @@ public class NioTlsAsyncSocket extends AsyncSocket {
                                 if (wrapResult.getHandshakeStatus() == FINISHED) {
                                     handshakeInProgress = false;
                                     sslSession = sslEngine.getSession();
-                                    //System.out.println(TLSNioAsyncSocket.this + " handshake complete!!");
-                                    resetFlushed();
+                                    //System.out.println(TlsNioAsyncSocket.this + " handshake complete!!");
                                     return true;
                                 }
 
@@ -642,10 +647,9 @@ public class NioTlsAsyncSocket extends AsyncSocket {
                                 throw new RuntimeException("Closed");
                             case OK:
                                 if (unwrapResult.getHandshakeStatus() == FINISHED) {
-                                    //System.out.println(NioTlsAsyncSocket.this + "handshake complete!!");
+                                    //System.out.println(TlsNioAsyncSocket.this + "handshake complete!!");
                                     handshakeInProgress = false;
                                     sslSession = sslEngine.getSession();
-                                    resetFlushed();
                                     return true;
                                 }
 
@@ -688,7 +692,7 @@ public class NioTlsAsyncSocket extends AsyncSocket {
             remoteAddress = socketChannel.getRemoteAddress();
             localAddress = socketChannel.getLocalAddress();
             if (logger.isInfoEnabled()) {
-                logger.info("Connection established " + NioTlsAsyncSocket.this);
+                logger.info("Connection established " + TlsNioAsyncSocket.this);
             }
 
             key.interestOps(key.interestOps() | OP_READ);
@@ -697,6 +701,28 @@ public class NioTlsAsyncSocket extends AsyncSocket {
 
             // we immediately need to schedule the handler so that the TLS handshake can start
             localTaskQueue.add(this);
+        }
+    }
+
+    private class RunHandshakeTasks implements Runnable {
+
+        @Override
+        public void run() {
+            try {
+                SSLEngine sslEngine = handler.sslEngine;
+                Runnable runnable = sslEngine.getDelegatedTask();
+                while (runnable != null) {
+                    runnable.run();
+                    runnable = sslEngine.getDelegatedTask();
+                }
+            } catch (Throwable e) {
+                close("Failed to execute SSL/TLS handshake task", e);
+                throw ExceptionUtil.sneakyThrow(e);
+            } finally {
+                if (!reactor.offer(handler)){
+                    close("Failed to reschedule the TlsHandler after running the SSL/TLS handshake tasks.", null);
+                }
+            }
         }
     }
 }

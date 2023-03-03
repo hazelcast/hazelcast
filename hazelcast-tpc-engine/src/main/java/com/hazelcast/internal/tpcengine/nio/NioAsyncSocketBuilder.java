@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
@@ -35,6 +37,9 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
  * A {@link AsyncSocketBuilder} specific to the {@link NioAsyncSocket}.
  */
 public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
+
+    static final Executor DEFAULT_TLS_EXECUTOR = Executors.newSingleThreadExecutor();
+
     static final int DEFAULT_WRITE_QUEUE_CAPACITY = 2 << 16;
 
     final NioReactor reactor;
@@ -49,6 +54,7 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
     NioAsyncSocketOptions options;
     SSLEngineFactory sslEngineFactory;
     private boolean build;
+    Executor tlsExecutor = DEFAULT_TLS_EXECUTOR;
 
     NioAsyncSocketBuilder(NioReactor reactor, NioAcceptRequest acceptRequest) {
         try {
@@ -147,14 +153,14 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
         if (Thread.currentThread() == reactor.eventloopThread()) {
             return sslEngineFactory == null
                     ? new NioAsyncSocket(this)
-                    : new NioTlsAsyncSocket(this);
+                    : new TlsNioAsyncSocket(this);
         } else {
             CompletableFuture<AsyncSocket> future = new CompletableFuture<>();
             reactor.execute(() -> {
                 try {
                     AsyncSocket asyncSocket = sslEngineFactory == null
                             ? new NioAsyncSocket(NioAsyncSocketBuilder.this)
-                            : new NioTlsAsyncSocket(NioAsyncSocketBuilder.this);
+                            : new TlsNioAsyncSocket(NioAsyncSocketBuilder.this);
 
                     future.complete(asyncSocket);
                 } catch (Throwable e) {
