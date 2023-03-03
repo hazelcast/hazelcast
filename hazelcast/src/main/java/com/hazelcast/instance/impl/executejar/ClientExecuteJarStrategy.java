@@ -50,9 +50,13 @@ public class ClientExecuteJarStrategy {
     private static final EnumSet<JobStatus> STARTUP_STATUSES = EnumSet.of(NOT_RUNNING, STARTING);
 
     /**
-     * This method is not synchronized, it is used by command line to execute a jar.
-     * The jar can submit one or more jobs.
-     * The startup of the jobs are awaited for some period of time before the method returns
+     * This method is not synchronized, because it is used by a single client to execute a jar.
+     * <p>
+     * It is suggested that the jar start a single job. Because all the specified parameters are applied to each job
+     * For example if the job name is specified then the jar can not submit multiple jobs, since job names should be
+     * unique across the cluster
+     * <p>
+     * The startup of the jobs are awaited for some period of time before this method returns
      * After the execution of the jar, the HZ client is closed
      */
     public void executeJar(@Nonnull ResettableConcurrentMemoizingSupplier<BootstrappedInstanceProxy> singleton,
