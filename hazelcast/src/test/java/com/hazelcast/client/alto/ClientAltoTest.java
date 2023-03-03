@@ -29,6 +29,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.partition.PartitionService;
@@ -178,7 +179,7 @@ public class ClientAltoTest extends ClientTestSupport {
     }
 
     @Test
-    public void testConnectionCloses_whenAltoChannelsClose() throws IOException {
+    public void testConnectionCloses_whenAltoChannelsClose() {
         Config config = getMemberConfig();
         Hazelcast.newHazelcastInstance(config);
 
@@ -202,7 +203,19 @@ public class ClientAltoTest extends ClientTestSupport {
         TcpClientConnection connection = (TcpClientConnection) connections.iterator().next();
         Channel[] channels = connection.getAltoChannels();
 
-        channels[0].close();
+        // Write an unexpected frame to cause problem in the pipeline
+        // and close the channel
+        channels[0].write(new OutboundFrame() {
+            @Override
+            public boolean isUrgent() {
+                return false;
+            }
+
+            @Override
+            public int getFrameLength() {
+                return 0;
+            }
+        });
 
         assertOpenEventually(disconnected);
 

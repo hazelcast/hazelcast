@@ -788,8 +788,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             bindSocketToPort(socket);
             Channel channel = networking.register(channelInitializer, socketChannel, true);
 
-            channel.addCloseListener(new AltoChannelCloseListener(connection));
-
             ConcurrentMap attributeMap = channel.attributeMap();
             attributeMap.put(Address.class, address);
             attributeMap.put(TcpClientConnection.class, connection);

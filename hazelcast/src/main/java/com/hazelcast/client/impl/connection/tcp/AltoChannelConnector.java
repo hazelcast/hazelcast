@@ -176,6 +176,9 @@ public final class AltoChannelConnector {
 
             failed = true;
             closeAllChannels();
+            logger.warning("Alto channel establishments for the " + connection + " have failed. "
+                    + "The client will not be using the Alto channels to route partition specific invocations, "
+                    + "and fallback to the smart routing mode for this connection.");
         }
     }
 
@@ -190,7 +193,7 @@ public final class AltoChannelConnector {
 
         try {
             channel.close();
-        } catch (IOException e) {
+        } catch (Exception e) {
             logger.warning("Exception while closing Alto channel " + e.getMessage());
         }
     }

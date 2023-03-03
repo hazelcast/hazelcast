@@ -237,7 +237,7 @@ public class TcpClientConnection implements ClientConnection {
             for (Channel altoChannel : altoChannels) {
                 try {
                     altoChannel.close();
-                } catch (IOException e) {
+                } catch (Exception e) {
                     logger.warning("Exception while closing Alto channel " + e.getMessage());
                 }
             }
