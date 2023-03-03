@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.DagBuildContext;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -68,18 +69,18 @@ public class DagBuildContextImpl implements DagBuildContext {
     @Nullable
     @SuppressWarnings("unchecked")
     @Override
-    public Expression<Boolean> convertFilter(@Nullable RexNode node) {
+    public Expression<Boolean> convertFilter(@Nullable HazelcastRexNode node) {
         if (node == null) {
             return null;
         }
-        return (Expression<Boolean>) node.accept(createVisitor());
+        return (Expression<Boolean>) node.unwrap(RexNode.class).accept(createVisitor());
     }
 
     @Nonnull
     @Override
-    public List<Expression<?>> convertProjection(@Nonnull List<RexNode> nodes) {
+    public List<Expression<?>> convertProjection(@Nonnull List<HazelcastRexNode> nodes) {
         RexVisitor<Expression<?>> visitor = createVisitor();
-        return Util.toList(nodes, node -> node.accept(visitor));
+        return Util.toList(nodes, node -> node.unwrap(RexNode.class).accept(visitor));
     }
 
     @Nonnull

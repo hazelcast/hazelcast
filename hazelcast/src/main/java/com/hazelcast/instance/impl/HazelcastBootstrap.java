@@ -37,8 +37,8 @@ import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
-import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.JetCacheManager;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Observable;
@@ -73,11 +73,11 @@ import com.hazelcast.transaction.TransactionalTask;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -88,7 +88,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
-import java.util.jar.JarFile;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -100,8 +99,6 @@ import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.hazelcast.spi.properties.ClusterProperty.LOGGING_TYPE;
-import static java.lang.reflect.Modifier.isPublic;
-import static java.lang.reflect.Modifier.isStatic;
 
 /**
  * This class shouldn't be directly used, instead see {@link Hazelcast#bootstrappedInstance()}
@@ -133,46 +130,38 @@ public final class HazelcastBootstrap {
     }
 
     public static synchronized void executeJar(@Nonnull Supplier<HazelcastInstance> supplierOfInstance,
-                                               @Nonnull String jar, @Nullable String snapshotName,
-                                               @Nullable String jobName, @Nullable String mainClass, @Nonnull List<String> args,
+                                               @Nonnull String jarPath,
+                                               @Nullable String snapshotName,
+                                               @Nullable String jobName,
+                                               @Nullable String mainClassName,
+                                               @Nonnull List<String> args,
                                                boolean calledByMember
     ) throws Exception {
 
         // Method is synchronized, so it is safe to do null check
         if (supplier == null) {
             supplier = new ConcurrentMemoizingSupplier<>(() ->
-                    new BootstrappedInstanceProxy(supplierOfInstance.get(), jar, snapshotName, jobName));
+                    BootstrappedInstanceProxy.createWithJetProxy(supplierOfInstance.get(), jarPath, snapshotName, jobName));
         }
 
-        resetJetParametersIfNecessary(jar, snapshotName, jobName, calledByMember);
+        if (calledByMember) {
+            resetJetParametersForMember(jarPath, snapshotName, jobName);
+        }
 
+        try {
+            mainClassName = findMainClassNameForJar(mainClassName, jarPath, calledByMember);
 
-        try (JarFile jarFile = new JarFile(jar)) {
-            checkHazelcastCodebasePresence(jarFile);
-            if (StringUtil.isNullOrEmpty(mainClass)) {
-                if (jarFile.getManifest() == null) {
-                    String message = "No manifest file in " + jar + ". You can use the -c option to provide the main class.";
-                    error(message, calledByMember);
-                }
-                mainClass = jarFile.getManifest().getMainAttributes().getValue("Main-Class");
-                if (mainClass == null) {
-                    String message = "No Main-Class found in manifest. You can use the -c option to provide the main class.";
-                    error(message, calledByMember);
-                }
+            URL jarUrl = new File(jarPath).toURI().toURL();
+            try (URLClassLoader classLoader = URLClassLoader.newInstance(
+                    new URL[]{jarUrl},
+                    HazelcastBootstrap.class.getClassLoader())) {
+
+                Method main = findMainMethodForJar(classLoader, mainClassName, calledByMember);
+
+                String[] jobArgs = args.toArray(new String[0]);
+                // upcast args to Object so it's passed as a single array-typed argument
+                main.invoke(null, (Object) jobArgs);
             }
-
-            URL jarUrl = new URL("file:///" + jar);
-            URLClassLoader classLoader = AccessController.doPrivileged(
-                    (PrivilegedAction<URLClassLoader>) () ->
-                            new URLClassLoader(new URL[]{jarUrl}, HazelcastBootstrap.class.getClassLoader())
-            );
-
-            Class<?> clazz = loadMainClass(classLoader, mainClass);
-
-            Method main = getMainMethod(clazz, calledByMember);
-            String[] jobArgs = args.toArray(new String[0]);
-            // upcast args to Object so it's passed as a single array-typed argument
-            main.invoke(null, (Object) jobArgs);
 
             // Wait for the job to start only if called by the client side
             if (!calledByMember) {
@@ -180,16 +169,14 @@ public final class HazelcastBootstrap {
             }
 
         } finally {
-            // HazelcastInstance should be closed if called by client side
-            // HazelcastInstance should not be closed if called by member side
+            // HazelcastInstance should be closed only if called by the client side
             if (!calledByMember) {
                 HazelcastInstance remembered = HazelcastBootstrap.supplier.remembered();
                 if (remembered != null) {
                     try {
                         remembered.shutdown();
-                    } catch (Throwable t) {
-                        System.err.println("Shutdown failed with:");
-                        t.printStackTrace();
+                    } catch (Exception exception) {
+                        LOGGER.severe("Shutdown failed with:", exception);
                     }
                 }
                 resetSupplier();
@@ -197,45 +184,47 @@ public final class HazelcastBootstrap {
         }
     }
 
-    // Returns true if the main method is both public and static
-    static boolean isPublicAndStatic(Method mainMethod) {
-        int modifiers = mainMethod.getModifiers();
-        return isPublic(modifiers) && isStatic(modifiers);
-    }
+    static String findMainClassNameForJar(String mainClass, String jarPath, boolean calledByMember)
+            throws IOException {
+        MainClassNameFinder mainClassNameFinder = new MainClassNameFinder();
+        mainClassNameFinder.findMainClass(mainClass, jarPath);
 
-    static Method getMainMethod(Class<?> clazz, boolean calledByMember) throws NoSuchMethodException {
-        // If main method does not exist, throws NoSuchMethodException
-        Method main = clazz.getDeclaredMethod("main", String[].class);
-
-        if (!isPublicAndStatic(main)) {
-            String message = "Class " + clazz.getName()
-                             + " has a main(String[] args) method which is not public static";
-            error(message, calledByMember);
+        if (mainClassNameFinder.hasError()) {
+            String errorMessage = mainClassNameFinder.getErrorMessage();
+            // Client side immediately exits, server side throws JetException
+            error(errorMessage, calledByMember);
         }
-        return main;
+        return mainClassNameFinder.getMainClassName();
     }
 
-    private static void resetJetParametersIfNecessary(String jar, String snapshotName, String jobName, boolean calledByMember) {
-        if (calledByMember) {
-            // BootstrappedInstanceProxy has a HazelcastInstance and BootstrappedJetProxy member fields
-            // and BootstrappedJetProxy has a Jet instance and jarName,snapshotName,jobName parameters
-            // Change cached jarName,snapshotName,jobName properties
-            BootstrappedInstanceProxy bootstrappedInstanceProxy = supplier.get();
-            BootstrappedJetProxy bootstrappedJetProxy = bootstrappedInstanceProxy.getJet();
-            bootstrappedJetProxy.setJarName(jar);
-            bootstrappedJetProxy.setSnapshotName(snapshotName);
-            bootstrappedJetProxy.setJobName(jobName);
+    static Method findMainMethodForJar(ClassLoader classLoader, String mainClassName, boolean calledByMember)
+            throws ClassNotFoundException {
+        MainMethodFinder mainMethodFinder = new MainMethodFinder();
+        MainMethodFinder.Result result = mainMethodFinder.findMainMethod(classLoader, mainClassName);
+
+        // Check if there is an error
+
+        if (result.hasError()) {
+            // Client side immediately exits, server side throws JetException
+            String errorMessage = result.getErrorMessage();
+            error(errorMessage, calledByMember);
         }
+        return result.getMainMethod();
     }
 
-    private static void checkHazelcastCodebasePresence(JarFile jarFile) {
-        List<String> classFiles = JarScanner.findClassFiles(jarFile, HazelcastBootstrap.class.getSimpleName());
-        if (!classFiles.isEmpty()) {
-            System.err.format("WARNING: Hazelcast code detected in the jar: %s. "
-                              + "Hazelcast dependency should be set with the 'provided' scope or equivalent.%n",
-                    String.join(", ", classFiles));
-        }
+    private static void resetJetParametersForMember(String jar, String snapshotName, String jobName) {
+        // BootstrappedInstanceProxy is a singleton that owns a HazelcastInstance and BootstrappedJetProxy
+        // Change the state of the singleton
+        BootstrappedInstanceProxy bootstrappedInstanceProxy = supplier.get();
+
+        BootstrappedJetProxy bootstrappedJetProxy = bootstrappedInstanceProxy.getJet();
+        // Clear all previously submitted jobs to avoid memory leak
+        bootstrappedJetProxy.clearSubmittedJobs();
+        bootstrappedJetProxy.setJarName(jar);
+        bootstrappedJetProxy.setSnapshotName(snapshotName);
+        bootstrappedJetProxy.setJobName(jobName);
     }
+
 
     // Method is call by synchronized executeJar() so, it is safe to access submittedJobs array in BootstrappedJetProxy
     private static void awaitJobsStarted() {
@@ -288,19 +277,12 @@ public final class HazelcastBootstrap {
         }
     }
 
-    private static Class<?> loadMainClass(ClassLoader classLoader, String mainClass) throws ClassNotFoundException {
-        try {
-            return classLoader.loadClass(mainClass);
-        } catch (ClassNotFoundException e) {
-            System.err.println("Cannot find or load main class: " + mainClass);
-            throw e;
-        }
-    }
-
     private static void error(String msg, boolean calledByMember) {
-        System.err.println(msg);
         if (!calledByMember) {
+            System.err.println(msg);
             System.exit(1);
+        } else {
+            throw new JetException(msg);
         }
     }
 
@@ -311,7 +293,8 @@ public final class HazelcastBootstrap {
     @Nonnull
     public static synchronized HazelcastInstance getInstance() {
         if (supplier == null) {
-            supplier = new ConcurrentMemoizingSupplier<>(() -> new BootstrappedInstanceProxy(createStandaloneInstance()));
+            supplier = new ConcurrentMemoizingSupplier<>(() ->
+                    BootstrappedInstanceProxy.createWithoutJetProxy(createStandaloneInstance()));
         }
         return supplier.get();
     }
@@ -385,6 +368,19 @@ public final class HazelcastBootstrap {
         ) {
             this.instance = instance;
             this.jetProxy = new BootstrappedJetProxy(instance.getJet(), jar, snapshotName, jobName);
+        }
+
+        static BootstrappedInstanceProxy createWithoutJetProxy(@Nonnull HazelcastInstance instance) {
+            return new BootstrappedInstanceProxy(instance);
+        }
+
+        static BootstrappedInstanceProxy createWithJetProxy(
+                @Nonnull HazelcastInstance instance,
+                @Nullable String jar,
+                @Nullable String snapshotName,
+                @Nullable String jobName
+        ) {
+            return new BootstrappedInstanceProxy(instance, jar, snapshotName, jobName);
         }
 
         @Nonnull
@@ -619,7 +615,7 @@ public final class HazelcastBootstrap {
         private String jar;
         private String snapshotName;
         private String jobName;
-        private final Collection<Job> submittedJobs = new CopyOnWriteArrayList<>();
+        private final CopyOnWriteArrayList<Job> submittedJobs = new CopyOnWriteArrayList<>();
 
         BootstrappedJetProxy(
                 @Nonnull JetService jet,
@@ -661,19 +657,19 @@ public final class HazelcastBootstrap {
         @Nonnull
         @Override
         public Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-            return remember(jet.newJob(pipeline, updateJobConfig(config)));
+            return addToSubmittedJobs(jet.newJob(pipeline, updateJobConfig(config)));
         }
 
         @Nonnull
         @Override
         public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
-            return remember(jet.newJob(dag, updateJobConfig(config)));
+            return addToSubmittedJobs(jet.newJob(dag, updateJobConfig(config)));
         }
 
         @Nonnull
         @Override
         public Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-            return remember(jet.newJobIfAbsent(pipeline, updateJobConfig(config)));
+            return addToSubmittedJobs(jet.newJobIfAbsent(pipeline, updateJobConfig(config)));
         }
 
         @Override
@@ -684,14 +680,18 @@ public final class HazelcastBootstrap {
         @Nonnull
         @Override
         public Job newJobIfAbsent(@Nonnull DAG dag, @Nonnull JobConfig config) {
-            return remember(jet.newJobIfAbsent(dag, updateJobConfig(config)));
+            return addToSubmittedJobs(jet.newJobIfAbsent(dag, updateJobConfig(config)));
+        }
+
+        void clearSubmittedJobs() {
+            submittedJobs.clear();
         }
 
         List<Job> submittedJobs() {
             return new ArrayList<>(submittedJobs);
         }
 
-        private Job remember(@Nonnull Job job) {
+        private Job addToSubmittedJobs(@Nonnull Job job) {
             submittedJobs.add(job);
             return job;
         }

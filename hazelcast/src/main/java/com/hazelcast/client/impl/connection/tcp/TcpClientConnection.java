@@ -26,8 +26,10 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.logging.ILogger;
 
 import java.io.EOFException;
@@ -48,12 +50,14 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_ME
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_CONNECTION_EVENT_HANDLER_COUNT;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.StringUtil.timeToStringFriendly;
 
 /**
  * Client implementation of {@link Connection}.
  * ClientConnection is a connection between a Hazelcast Client and a Hazelcast Member.
  */
+@SuppressWarnings("checkstyle:MethodCount")
 public class TcpClientConnection implements ClientConnection {
 
     @Probe(name = CLIENT_METRIC_CONNECTION_CONNECTIONID, level = DEBUG)
@@ -79,6 +83,8 @@ public class TcpClientConnection implements ClientConnection {
     private String connectedServerVersion;
     private volatile UUID remoteUuid;
     private volatile UUID clusterUuid;
+    private volatile Channel[] tpcChannels;
+    private volatile ChannelInitializer channelInitializer;
 
     public TcpClientConnection(HazelcastClientInstanceImpl client, int connectionId, Channel channel) {
         this.client = client;
@@ -103,6 +109,18 @@ public class TcpClientConnection implements ClientConnection {
         this.logger = client.getLoggingService().getLogger(TcpClientConnection.class);
     }
 
+    public ChannelInitializer getChannelInitializer() {
+        return channelInitializer;
+    }
+
+    public void setChannelInitializer(ChannelInitializer channelInitializer) {
+        this.channelInitializer = channelInitializer;
+    }
+
+    public void setTpcChannels(Channel[] tpcChannels) {
+        this.tpcChannels = checkNotNull(tpcChannels);
+    }
+
     @Override
     public ConcurrentMap attributeMap() {
         return attributeMap;
@@ -110,8 +128,17 @@ public class TcpClientConnection implements ClientConnection {
 
     @Override
     public boolean write(OutboundFrame frame) {
-        if (channel.write(frame)) {
-            return true;
+        ClientMessage clientMessage = (ClientMessage) frame;
+        int partitionId = clientMessage.getPartitionId();
+        if (tpcChannels == null || partitionId < 0) {
+            if (channel.write(frame)) {
+                return true;
+            }
+        } else {
+            int tpcChannelIndex = HashUtil.hashToIndex(partitionId, tpcChannels.length);
+            if (tpcChannels[tpcChannelIndex].write(frame)) {
+                return true;
+            }
         }
 
         if (logger.isFinestEnabled()) {
@@ -218,8 +245,16 @@ public class TcpClientConnection implements ClientConnection {
         }
     }
 
+    @SuppressWarnings("java:S1135")
     protected void innerClose() throws IOException {
+        // todo: closing needs to be improved because we can end up with some channels not closed.
         channel.close();
+
+        if (tpcChannels != null) {
+            for (Channel tpcChannel : tpcChannels) {
+                tpcChannel.close();
+            }
+        }
     }
 
     @Override

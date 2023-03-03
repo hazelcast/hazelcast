@@ -55,4 +55,9 @@ public final class HazelcastRandFunction extends HazelcastFunction {
 
         return TypedOperandChecker.BIGINT.check(binding, throwOnFailure, 0);
     }
+
+    @Override
+    public boolean isDeterministic() {
+        return false;
+    }
 }

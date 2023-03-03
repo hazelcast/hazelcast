@@ -47,6 +47,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.cloneExceptionWithFixedAsyncStackTrace;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.util.Objects.requireNonNull;
@@ -1003,9 +1004,9 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         }
         // both futures are done
         if (otherFuture.isCompletedExceptionally()) {
-            otherFuture.whenComplete((v, t) -> {
+            otherFuture.whenCompleteAsync((v, t) -> {
                 future.completeExceptionally(t);
-            });
+            }, CALLER_RUNS);
             return;
         }
         U otherValue = otherFuture.join();
@@ -1051,9 +1052,9 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         }
         // both futures are done
         if (otherFuture.isCompletedExceptionally()) {
-            otherFuture.whenComplete((v, t) -> {
+            otherFuture.whenCompleteAsync((v, t) -> {
                 future.completeExceptionally(t);
-            });
+            }, CALLER_RUNS);
             return;
         }
         U otherValue = otherFuture.join();
@@ -1098,9 +1099,9 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         }
         // both futures are done
         if (otherFuture.isCompletedExceptionally()) {
-            otherFuture.whenComplete((v, t) -> {
+            otherFuture.whenCompleteAsync((v, t) -> {
                 future.completeExceptionally(t);
-            });
+            }, CALLER_RUNS);
             return;
         }
         runAfter0(future, action, executor);

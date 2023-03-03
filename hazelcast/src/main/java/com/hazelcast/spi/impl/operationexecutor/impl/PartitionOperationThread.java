@@ -29,9 +29,9 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION
  * An {@link OperationThread} that executes Operations for a particular partition,
  * e.g. a map.get operation.
  */
-public final class PartitionOperationThread extends OperationThread {
+public class PartitionOperationThread extends OperationThread {
 
-    private final OperationRunner[] partitionOperationRunners;
+    OperationRunner[] partitionOperationRunners;
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
     public PartitionOperationThread(String name,

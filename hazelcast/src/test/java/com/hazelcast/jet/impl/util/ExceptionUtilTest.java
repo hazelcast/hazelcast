@@ -81,7 +81,7 @@ public class ExceptionUtilTest extends JetTestSupport {
         RuntimeException exc = new RuntimeException("myException");
         try {
             DAG dag = new DAG();
-            dag.newVertex("source", () -> new MockP().setCompleteError(exc)).localParallelism(1);
+            dag.newVertex("source", () -> new MockP().setCompleteError(() -> exc)).localParallelism(1);
             client.getJet().newJob(dag).join();
         } catch (Exception caught) {
             assertContains(caught.toString(), exc.toString());
@@ -97,7 +97,7 @@ public class ExceptionUtilTest extends JetTestSupport {
         RuntimeException exc = new RuntimeException("myException");
         try {
             DAG dag = new DAG();
-            dag.newVertex("source", () -> new MockP().setCompleteError(exc)).localParallelism(1);
+            dag.newVertex("source", () -> new MockP().setCompleteError(() -> exc)).localParallelism(1);
             client.getJet().newJob(dag).join();
         } catch (Exception caught) {
             assertThat(caught.toString(), containsString(exc.toString()));
