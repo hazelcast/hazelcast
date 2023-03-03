@@ -101,7 +101,7 @@ public class JdbcDataLink extends DataLinkBase {
             List<DataLinkResource> result = new ArrayList<>();
             while (tables.next()) {
                 result.add(new DataLinkResource(
-                        "TABLE",
+                        tables.getString("TABLE_TYPE"),
                         // TODO quoting? Using String[]?
                         tables.getString("TABLE_SCHEM") + "." + tables.getString("TABLE_NAME")
                 ));
