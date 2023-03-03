@@ -27,7 +27,12 @@ import java.util.Objects;
 
 public class SubmitJobParametersValidator {
 
-    public void validateLocalJar(SubmitJobParameters parameterObject) throws IOException {
+    public void validateForJobUpload(SubmitJobParameters parameterObject) throws IOException {
+
+        if (parameterObject.isDirectJobExecution()) {
+            throw new JetException("SubmitJobParameters is configured for direct job execution");
+        }
+
         Path jarPath = parameterObject.getJarPath();
         validateJarPathNotNull(jarPath);
         validateFileSizeIsNotZero(jarPath);
@@ -35,7 +40,12 @@ public class SubmitJobParametersValidator {
         validateJobParameters(parameterObject.getJobParameters());
     }
 
-    public void validateRemoteJar(SubmitJobParameters parameterObject) {
+    public void validateForDirectJobExecution(SubmitJobParameters parameterObject) {
+
+        if (!parameterObject.isDirectJobExecution()) {
+            throw new JetException("SubmitJobParameters is configured for job upload");
+        }
+
         Path jarPath = parameterObject.getJarPath();
         validateJarPathNotNull(jarPath);
         validateFileExtension(jarPath);

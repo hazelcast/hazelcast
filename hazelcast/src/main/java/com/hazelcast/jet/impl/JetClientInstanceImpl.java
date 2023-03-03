@@ -155,7 +155,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     private void executeJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
         try {
             SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
-            validator.validateRemoteJar(submitJobParameters);
+            validator.validateForDirectJobExecution(submitJobParameters);
 
             Path jarPath = submitJobParameters.getJarPath();
             JobExecuteCall jobExecuteCall = initializeJobExecuteCall(submitJobParameters.getJarPath());
@@ -173,7 +173,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         try {
             // Validate the provided parameters
             SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
-            validator.validateLocalJar(submitJobParameters);
+            validator.validateForJobUpload(submitJobParameters);
 
             Path jarPath = submitJobParameters.getJarPath();
             JobUploadCall jobUploadCall = initializeJobUploadCall(submitJobParameters.getJarPath());

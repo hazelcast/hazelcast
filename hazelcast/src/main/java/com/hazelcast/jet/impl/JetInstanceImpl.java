@@ -76,7 +76,7 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
     public void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
         try {
             SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
-            validator.validateLocalJar(submitJobParameters);
+            validator.validateForDirectJobExecution(submitJobParameters);
 
             JobMetaDataParameterObject parameterObject = new JobMetaDataParameterObject();
 
