@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.submitjob.clientside.execute;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.impl.submitjob.clientside.SubmitJobTargetMemberFinder;
 
 import java.nio.file.Path;
@@ -32,7 +33,7 @@ public class JobExecuteCall {
 
 
     public void initializeJobExecuteCall(HazelcastClientInstanceImpl client, Path jarPath) {
-        this.sessionId = UUID.randomUUID();
+        this.sessionId = UuidUtil.newSecureUUID();
         this.jarPath = jarPath.toString();
 
         // Find the destination member
