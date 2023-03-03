@@ -706,4 +706,22 @@
             <hz:resubmission-mode>RETRY_SELECTS</hz:resubmission-mode>
         </hz:sql>
     </hz:client>
+
+    <hz:client id="client25-with-alto">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+        </hz:network>
+
+        <hz:alto enabled="true"/>
+    </hz:client>
 </beans>

@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.parse;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.OptimizerContext;
 import com.hazelcast.jet.sql.impl.TestTableResolver;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastUdtObjectToJsonFunction;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlErrorCode;
@@ -161,6 +162,8 @@ public class ParserOperationsTest extends SqlTestSupport {
     @Test
     public void testHiddenFunctions() {
         checkFailure("SELECT JSON_PARSE('[1,2,3]')", "Function 'JSON_PARSE' does not exist");
+        String fname = HazelcastUdtObjectToJsonFunction.INSTANCE.getName();
+        checkFailure("SELECT " + fname + "(null)", "Function '" + fname + "' does not exist");
     }
 
     private void checkSuccess(String sql) {
