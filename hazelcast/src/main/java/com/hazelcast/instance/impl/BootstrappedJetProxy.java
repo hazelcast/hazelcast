@@ -212,12 +212,24 @@ public class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
         return jet.getJobsInt(onlyName, onlyJobId);
     }
 
+    public String getJar() {
+        return jar;
+    }
+
     public void setJarName(String jar) {
         this.jar = jar;
     }
 
+    public String getSnapshotName() {
+        return snapshotName;
+    }
+
     public void setSnapshotName(String snapshotName) {
         this.snapshotName = snapshotName;
+    }
+
+    public String getJobName() {
+        return jobName;
     }
 
     public void setJobName(String jobName) {
