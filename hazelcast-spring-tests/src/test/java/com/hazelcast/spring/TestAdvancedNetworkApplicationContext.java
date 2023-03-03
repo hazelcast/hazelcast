@@ -99,6 +99,9 @@ public class TestAdvancedNetworkApplicationContext {
                 memberEndpointConfig.getSocketInterceptorConfig().getClassName());
         assertTrue(memberEndpointConfig.isSocketBufferDirect());
         assertTrue(memberEndpointConfig.isSocketKeepAlive());
+        assertEquals(2, memberEndpointConfig.getSocketKeepCount());
+        assertEquals(120, memberEndpointConfig.getSocketKeepIdleSeconds());
+        assertEquals(5, memberEndpointConfig.getSocketKeepIntervalSeconds());
         assertFalse(memberEndpointConfig.isSocketTcpNoDelay());
         assertEquals(expectedAltoSocketConfig, memberEndpointConfig.getAltoSocketConfig());
 

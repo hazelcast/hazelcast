@@ -29,6 +29,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExp
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DiskTierConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -38,7 +39,6 @@ import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
@@ -937,6 +937,15 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("linger-seconds".equals(nodeName)) {
                     endpointConfigBuilder.addPropertyValue("socketLingerSeconds",
                             getIntegerValue("socketLingerSeconds", textContent));
+                } else if ("keep-idle-seconds".equals(nodeName)) {
+                    endpointConfigBuilder.addPropertyValue("socketKeepIdleSeconds",
+                            getIntegerValue("socketKeepIdleSeconds", textContent));
+                } else if ("keep-interval-seconds".equals(nodeName)) {
+                    endpointConfigBuilder.addPropertyValue("socketKeepIntervalSeconds",
+                            getIntegerValue("socketKeepIntervalSeconds", textContent));
+                } else if ("keep-count".equals(nodeName)) {
+                    endpointConfigBuilder.addPropertyValue("socketKeepCount",
+                            getIntegerValue("socketKeepCount", textContent));
                 }
             }
         }

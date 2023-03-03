@@ -195,6 +195,9 @@
                         <hz:linger-seconds>9</hz:linger-seconds>
                         <hz:receive-buffer-size-kb>96</hz:receive-buffer-size-kb>
                         <hz:send-buffer-size-kb>196</hz:send-buffer-size-kb>
+                        <hz:keep-count>2</hz:keep-count>
+                        <hz:keep-idle-seconds>120</hz:keep-idle-seconds>
+                        <hz:keep-interval-seconds>5</hz:keep-interval-seconds>
                     </hz:socket-options>
                     <hz:alto-socket>
                         <hz:port-range>14000-16000</hz:port-range>
