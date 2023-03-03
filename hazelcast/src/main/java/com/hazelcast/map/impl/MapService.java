@@ -215,6 +215,11 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
     }
 
     @Override
+    public void onWanConfigChange() {
+        wanSupportingService.onWanConfigChange();
+    }
+
+    @Override
     public void onPartitionLost(IPartitionLostEvent partitionLostEvent) {
         partitionAwareService.onPartitionLost(partitionLostEvent);
     }
