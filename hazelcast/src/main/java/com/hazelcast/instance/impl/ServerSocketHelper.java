@@ -129,7 +129,7 @@ final class ServerSocketHelper {
             serverSocket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
 
             if (endpointConfig != null) {
-                IOUtil.setKeepAliveOptionsIfNotDefault(serverSocketChannel, endpointConfig);
+                IOUtil.setKeepAliveOptionsIfNotDefault(serverSocketChannel, endpointConfig, logger);
                 serverSocket.setReceiveBufferSize(endpointConfig.getSocketRcvBufferSizeKb() * KILO_BYTE);
             }
 

@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelOption;
 import com.hazelcast.internal.networking.ChannelOptions;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -43,7 +44,6 @@ import static com.hazelcast.internal.networking.ChannelOption.TCP_KEEPCOUNT;
 import static com.hazelcast.internal.networking.ChannelOption.TCP_KEEPIDLE;
 import static com.hazelcast.internal.networking.ChannelOption.TCP_KEEPINTERVAL;
 import static com.hazelcast.internal.networking.ChannelOption.TCP_NODELAY;
-import static com.hazelcast.internal.tpc.util.ReflectionUtil.findStaticFieldValue;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.logging.Level.WARNING;
 
@@ -52,15 +52,6 @@ import static java.util.logging.Level.WARNING;
  */
 public final class NioChannelOptions implements ChannelOptions {
 
-    public static final SocketOption<Integer> JDK_NET_TCP_KEEPCOUNT
-            = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPCOUNT");
-    public static final SocketOption<Integer> JDK_NET_TCP_KEEPIDLE
-                    = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPIDLE");
-    public static final SocketOption<Integer> JDK_NET_TCP_KEEPINTERVAL
-                            = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPINTERVAL");
-    private static final AtomicBoolean TCP_KEEPCOUNT_WARNING = new AtomicBoolean();
-    private static final AtomicBoolean TCP_KEEPIDLE_WARNING = new AtomicBoolean();
-    private static final AtomicBoolean TCP_KEEPINTERVAL_WARNING = new AtomicBoolean();
     private static final AtomicBoolean SEND_BUFFER_WARNING = new AtomicBoolean();
     private static final AtomicBoolean RECEIVE_BUFFER_WARNING = new AtomicBoolean();
 
@@ -95,11 +86,11 @@ public final class NioChannelOptions implements ChannelOptions {
             } else if (option.equals(SO_LINGER)) {
                 return (T) (Integer) socket.getSoLinger();
             } else if (option.equals(TCP_KEEPCOUNT)) {
-                return (T) checkAndGetIntegerOption(JDK_NET_TCP_KEEPCOUNT);
+                return (T) checkAndGetIntegerOption(IOUtil.JDK_NET_TCP_KEEPCOUNT);
             }  else if (option.equals(TCP_KEEPIDLE)) {
-                return (T) checkAndGetIntegerOption(JDK_NET_TCP_KEEPIDLE);
+                return (T) checkAndGetIntegerOption(IOUtil.JDK_NET_TCP_KEEPIDLE);
             }  else if (option.equals(TCP_KEEPINTERVAL)) {
-                return (T) checkAndGetIntegerOption(JDK_NET_TCP_KEEPINTERVAL);
+                return (T) checkAndGetIntegerOption(IOUtil.JDK_NET_TCP_KEEPINTERVAL);
             } else {
                 return (T) values.get(option.name());
             }
@@ -144,44 +135,11 @@ public final class NioChannelOptions implements ChannelOptions {
                     socket.setSoLinger(true, soLinger);
                 }
             } else if (option.equals(TCP_KEEPCOUNT)) {
-              if (JDK_NET_TCP_KEEPCOUNT == null) {
-                  if (TCP_KEEPCOUNT_WARNING.compareAndSet(false, true)) {
-                      logger.warning("Ignoring TCP_KEEPCOUNT. "
-                              + "Please upgrade to the latest Java 8 release or Java 11+ to allow setting keep-alive count. "
-                              + "Alternatively, on Linux, configure tcp_keepalive_probes in the kernel "
-                              + "(affecting default keep-alive configuration for all sockets): "
-                              + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
-                              + "If this isn't dealt with, idle connections could be closed prematurely.");
-                  }
-              } else {
-                  socketChannel.setOption(JDK_NET_TCP_KEEPCOUNT, (Integer) value);
-              }
+                IOUtil.setKeepCount(socketChannel, (Integer) value, logger);
             } else if (option.equals(TCP_KEEPIDLE)) {
-              if (JDK_NET_TCP_KEEPIDLE == null) {
-                  if (TCP_KEEPIDLE_WARNING.compareAndSet(false, true)) {
-                      logger.warning("Ignoring TCP_KEEPIDLE. "
-                              + "Please upgrade to the latest Java 8 release or Java 11+ to allow setting keep-alive idle time."
-                              + "Alternatively, on Linux, configure tcp_keepalive_time in the kernel "
-                              + "(affecting default keep-alive configuration for all sockets): "
-                              + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
-                              + "If this isn't dealt with, idle connections could be closed prematurely.");
-                  }
-              } else {
-                  socketChannel.setOption(JDK_NET_TCP_KEEPIDLE, (Integer) value);
-              }
+                IOUtil.setKeepIdle(socketChannel, (Integer) value, logger);
             } else if (option.equals(TCP_KEEPINTERVAL)) {
-              if (JDK_NET_TCP_KEEPINTERVAL == null) {
-                  if (TCP_KEEPINTERVAL_WARNING.compareAndSet(false, true)) {
-                      logger.warning("Ignoring TCP_KEEPINTERVAL. "
-                              + "Please upgrade to the latest Java 8 release or Java 11+ to allow setting keep-alive interval."
-                              + "Alternatively, on Linux, configure tcp_keepalive_intvl in the kernel "
-                              + "(affecting default keep-alive configuration for all sockets): "
-                              + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
-                              + "If this isn't dealt with, idle connections could be closed prematurely.");
-                  }
-              } else {
-                  socketChannel.setOption(JDK_NET_TCP_KEEPINTERVAL, (Integer) value);
-              }
+                IOUtil.setKeepInterval(socketChannel, (Integer) value, logger);
             } else {
                 values.put(option.name(), value);
             }

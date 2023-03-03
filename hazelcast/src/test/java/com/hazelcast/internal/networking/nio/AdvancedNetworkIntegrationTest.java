@@ -26,11 +26,17 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.nio.Protocols;
+import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
+import com.hazelcast.internal.server.tcp.TcpServer;
+import com.hazelcast.internal.server.tcp.TcpServerConnection;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,7 +45,9 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.channels.ServerSocketChannel;
 import java.util.Objects;
 import java.util.Set;
 
@@ -142,6 +150,57 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
                 assertEquals(6, member.getAddressMap().size());
             }
         }
+    }
+
+    @Test
+    public void testSocketOptions() throws Throwable {
+        assumeKeepAlivePerSocketOptionsSupported();
+        Config config = createCompleteMultiSocketConfig();
+        config.getAdvancedNetworkConfig().getEndpointConfigs().get(EndpointQualifier.MEMBER)
+                .setSocketKeepAlive(true)
+                .setSocketKeepIdleSeconds(5)
+                .setSocketKeepCount(2)
+                .setSocketKeepIntervalSeconds(1);
+
+        HazelcastInstance hz = newHazelcastInstance(config);
+        newHazelcastInstance(config);
+
+        assertClusterSizeEventually(2, hz);
+
+        TcpServer tcpServer = (TcpServer) Accessors.getNode(hz).getServer();
+        ServerSocketRegistry registry = tcpServer.getRegistry();
+        for (ServerSocketRegistry.Pair pair : registry) {
+            if (EndpointQualifier.MEMBER.equals(pair.getQualifier())) {
+                assertEquals(2, (int) pair.getChannel().getOption(IOUtil.JDK_NET_TCP_KEEPCOUNT));
+                assertEquals(1, (int) pair.getChannel().getOption(IOUtil.JDK_NET_TCP_KEEPINTERVAL));
+                assertEquals(5, (int) pair.getChannel().getOption(IOUtil.JDK_NET_TCP_KEEPIDLE));
+            }
+        }
+
+        for (ServerConnection c : tcpServer.getConnectionManager(EndpointQualifier.MEMBER).getConnections()) {
+            TcpServerConnection cxn = (TcpServerConnection) c;
+            AbstractChannel ch = (AbstractChannel) cxn.getChannel();
+            assertEquals(2, (int) ch.socketChannel().getOption(IOUtil.JDK_NET_TCP_KEEPCOUNT));
+            assertEquals(1, (int) ch.socketChannel().getOption(IOUtil.JDK_NET_TCP_KEEPINTERVAL));
+            assertEquals(5, (int) ch.socketChannel().getOption(IOUtil.JDK_NET_TCP_KEEPIDLE));
+        }
+    }
+
+    @Test
+    public void testKeepAliveSocketOptions_whenNotSupported() throws Throwable {
+        assumeKeepAlivePerSocketOptionsNotSupported();
+        // ensure that even though options are configured and setting them fails, no exceptions are thrown
+        Config config = createCompleteMultiSocketConfig();
+        config.getAdvancedNetworkConfig().getEndpointConfigs().get(EndpointQualifier.MEMBER)
+                .setSocketKeepAlive(true)
+                .setSocketKeepIdleSeconds(5)
+                .setSocketKeepCount(2)
+                .setSocketKeepIntervalSeconds(1);
+
+        HazelcastInstance hz = newHazelcastInstance(config);
+        newHazelcastInstance(config);
+
+        assertClusterSizeEventually(2, hz);
     }
 
     @Test(expected = AssertionError.class)
@@ -281,5 +340,27 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
         other.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "1");
 
         return Tuple2.tuple2(config, other);
+    }
+
+    private void assumeKeepAlivePerSocketOptionsNotSupported() throws Throwable {
+        Assume.assumeFalse(socketSupportsKeepAliveOptions());
+    }
+
+    private void assumeKeepAlivePerSocketOptionsSupported() throws Throwable {
+        Assume.assumeTrue(socketSupportsKeepAliveOptions());
+    }
+
+    private boolean socketSupportsKeepAliveOptions() throws Throwable {
+        try (ServerSocketChannel serverSocketChannel = buildServerSocket()) {
+            return IOUtil.supportsKeepAliveOptions(serverSocketChannel);
+        }
+    }
+
+    private static ServerSocketChannel buildServerSocket() throws IOException {
+        InetSocketAddress socketAddress = new InetSocketAddress("127.0.0.1", 0);
+        ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+        ServerSocket server = serverSocketChannel.socket();
+        server.bind(socketAddress);
+        return serverSocketChannel;
     }
 }
