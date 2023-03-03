@@ -57,7 +57,7 @@ import java.util.concurrent.ConcurrentMap;
 
 // A special HazelcastInstance that has a BootstrappedJetProxy
 @SuppressWarnings({"checkstyle:methodcount"})
-public class BootstrappedInstanceProxy implements HazelcastInstance {
+public final class BootstrappedInstanceProxy implements HazelcastInstance {
     private HazelcastInstance instance;
     private BootstrappedJetProxy jetProxy;
 

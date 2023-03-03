@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+@SuppressWarnings({"checkstyle:methodcount"})
 public class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
     private final AbstractJetInstance<M> jet;
     private String jar;
