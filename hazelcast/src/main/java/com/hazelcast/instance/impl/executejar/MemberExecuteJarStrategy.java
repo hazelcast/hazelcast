@@ -36,8 +36,12 @@ public class MemberExecuteJarStrategy {
     private static final ILogger LOGGER = Logger.getLogger(MemberExecuteJarStrategy.class.getName());
 
     /**
-     * This method has a synchronized block. it is used by a member to execute a jar.
-     * The jar can submit one or more jobs.
+     * This method is used by a member to execute a jar in a multithreaded environment
+     * <p>
+     * It is suggested that the jar start a single job. Because all the specified parameters are applied to each job
+     * For example if the job name is specified then the jar can not submit multiple jobs, since job names should be
+     * unique across the cluster
+     * <p>
      * The startup of the jobs are not awaited
      */
     public void executeJar(@Nonnull BootstrappedInstanceProxy instanceProxy,
