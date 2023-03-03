@@ -588,11 +588,12 @@ public class TlsNioAsyncSocket extends AsyncSocket {
 
                 switch (handshakeStatus) {
                     case NEED_TASK:
-                        //.run();;
+                        // the handshake tasks are offloaded to the tlsExecutor to prevent
+                        // stalling the reactor. On completion, the handler will be rescheduled.
                         tlsExecutor.execute(new RunHandshakeTasks());
-                        //System.out.println(flushThread.get());
                         return false;
                     case NEED_WRAP:
+                        // The SSLEngine has some data it wants to send to the other side.
                         SSLEngineResult wrapResult = sslEngine.wrap(emptyBuffer, sendBuffer);
                         //System.out.println(TLSNioAsyncSocket.this + " handshake wrapResult " + wrapResult);
                         switch (wrapResult.getStatus()) {
@@ -601,7 +602,7 @@ public class TlsNioAsyncSocket extends AsyncSocket {
                             case BUFFER_OVERFLOW:
                                 throw new RuntimeException("Buffer overflow");
                             case CLOSED:
-                                throw new EOFException("Remote socket closed!");
+                                throw new EOFException("Socket closed!");
                             case OK:
                                 sendBuffer.flip();
                                 long written = socketChannel.write(sendBuffer);
@@ -644,7 +645,7 @@ public class TlsNioAsyncSocket extends AsyncSocket {
                             case BUFFER_OVERFLOW:
                                 throw new RuntimeException("Buffer overflow");
                             case CLOSED:
-                                throw new RuntimeException("Closed");
+                                throw new EOFException("Socket closed");
                             case OK:
                                 if (unwrapResult.getHandshakeStatus() == FINISHED) {
                                     //System.out.println(TlsNioAsyncSocket.this + "handshake complete!!");
@@ -699,7 +700,7 @@ public class TlsNioAsyncSocket extends AsyncSocket {
             connectFuture.complete(null);
             connectFuture = null;
 
-            // we immediately need to schedule the handler so that the TLS handshake can start
+            // we need to schedule the handler so that the TLS handshake can start
             localTaskQueue.add(this);
         }
     }
@@ -709,14 +710,13 @@ public class TlsNioAsyncSocket extends AsyncSocket {
         @Override
         public void run() {
             try {
-                SSLEngine sslEngine = handler.sslEngine;
-                Runnable runnable = sslEngine.getDelegatedTask();
+                Runnable runnable = handler.sslEngine.getDelegatedTask();
                 while (runnable != null) {
                     runnable.run();
-                    runnable = sslEngine.getDelegatedTask();
+                    runnable = handler.sslEngine.getDelegatedTask();
                 }
             } catch (Throwable e) {
-                close("Failed to execute SSL/TLS handshake task", e);
+                close("Failed to execute SSL/TLS handshake task.", e);
                 throw ExceptionUtil.sneakyThrow(e);
             } finally {
                 if (!reactor.offer(handler)){
