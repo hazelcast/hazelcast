@@ -80,6 +80,7 @@ import static com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType.POOLED
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.LOADED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
@@ -1349,11 +1350,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     private void addLoadingFuture(Future<?> e) {
         if (e instanceof CompletableFuture) {
-            ((CompletableFuture<?>) e).whenComplete((result, throwable) -> {
+            ((CompletableFuture<?>) e).whenCompleteAsync((result, throwable) -> {
                 if (throwable != null) {
                     logger.warning("Loading completed exceptionally", throwable);
                 }
-            });
+            }, CALLER_RUNS);
         }
         loadingFutures.add(e);
     }
