@@ -202,7 +202,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
     }
 
     private String deriveMappingType() {
-        if (genericMapStoreProperties != null) {
+        if (genericMapStoreProperties.mappingType != null) {
             return genericMapStoreProperties.mappingType;
         } else {
             return nodeEngine().getDataLinkService().typeForDataLink(genericMapStoreProperties.dataLinkRef);

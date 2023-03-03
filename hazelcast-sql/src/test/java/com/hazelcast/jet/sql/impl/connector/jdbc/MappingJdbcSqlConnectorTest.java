@@ -77,7 +77,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("dataLinkRef must be set");
+                .hasMessageContaining("data-link-name must be set");
     }
 
     @Test
