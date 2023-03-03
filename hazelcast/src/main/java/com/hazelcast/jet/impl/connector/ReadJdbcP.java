@@ -108,7 +108,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
 
         return ProcessorMetaSupplier.forceTotalParallelismOne(
                 SecuredFunctions.readJdbcProcessorFn(connectionURL,
-                                (context) -> DriverManager.getConnection(connectionURL),
+                        context -> DriverManager.getConnection(connectionURL),
                         (connection, parallelism, index) -> {
                             PreparedStatement statement = connection.prepareStatement(query);
                             try {

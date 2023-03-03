@@ -282,7 +282,7 @@ public final class SecuredFunctions {
     ) {
         return new ProcessorSupplier() {
 
-            private Context context;
+            private transient Context context;
 
             @Override
             public void init(@Nonnull ProcessorSupplier.Context context) {
@@ -311,7 +311,7 @@ public final class SecuredFunctions {
     ) {
         return new ProcessorSupplier() {
 
-            private JdbcDataLink dataLink;
+            private transient JdbcDataLink dataLink;
 
             @Override
             public void init(@Nonnull ProcessorSupplier.Context context) {

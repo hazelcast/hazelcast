@@ -88,8 +88,9 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
                         // close the old DataLink
                         try {
                             current.instance.release();
-                        } catch (Throwable e) {
-                            logger.severe("Error when closing data link '" + config.getName() + "', ignoring it: " + e, e);
+                        } catch (Exception e) {
+                            logger.severe("Error when closing data link '" + config.getName()
+                                    + "', ignoring it: " + e, e);
                         }
                     }
                     return pair(createDataLinkInstance(config), source);

@@ -54,7 +54,7 @@ public abstract class DataLinkBase implements DataLink {
     public final void release() {
         try {
             refCounter.release();
-        } catch (Throwable e) {
+        } catch (Exception e) {
             // Any DataLink user might be calling the release method. There can be 3rd party
             // errors here from closing the resources, we want to shield the user from those.
             // We don't have a logger here, for that we'd need to have NodeEngine reference, but
