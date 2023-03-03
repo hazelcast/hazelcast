@@ -18,7 +18,6 @@ package com.hazelcast.instance.impl.executejar;
 
 import com.hazelcast.instance.impl.BootstrappedInstanceProxy;
 import com.hazelcast.instance.impl.BootstrappedJetProxy;
-import com.hazelcast.jet.impl.util.ResettableConcurrentMemoizingSupplier;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -36,7 +35,12 @@ public class MemberExecuteJarStrategy {
 
     private static final ILogger LOGGER = Logger.getLogger(MemberExecuteJarStrategy.class.getName());
 
-    public void executeJar(@Nonnull ResettableConcurrentMemoizingSupplier<BootstrappedInstanceProxy> singleton,
+    /**
+     * This method has a synchronized block. it is used by a member to execute a jar.
+     * The jar can submit one or more jobs.
+     * The startup of the jobs are not awaited
+     */
+    public void executeJar(@Nonnull BootstrappedInstanceProxy instanceProxy,
                            @Nonnull String jarPath,
                            @Nullable String snapshotName,
                            @Nullable String jobName,
@@ -60,7 +64,7 @@ public class MemberExecuteJarStrategy {
             // synchronize until the main method is invoked
             synchronized (this) {
                 BootstrappedJetProxy bootstrappedJetProxy =
-                        ExecuteJarStrategyHelper.setupJetProxy(singleton.remembered(), jarPath, snapshotName, jobName);
+                        ExecuteJarStrategyHelper.setupJetProxy(instanceProxy, jarPath, snapshotName, jobName);
 
                 // Clear jobs. We don't need them
                 bootstrappedJetProxy.clearSubmittedJobs();

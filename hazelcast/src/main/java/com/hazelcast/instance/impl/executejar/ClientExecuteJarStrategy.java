@@ -35,6 +35,7 @@ import java.net.URLClassLoader;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
@@ -49,14 +50,17 @@ public class ClientExecuteJarStrategy {
     private static final EnumSet<JobStatus> STARTUP_STATUSES = EnumSet.of(NOT_RUNNING, STARTING);
 
     /**
-     * This method needs to be fully synchronized because it shuts down the remembered object
+     * This method is not synchronized, it is used by command line to execute a jar.
+     * The jar can submit one or more jobs.
+     * The startup of the jobs are awaited for some period of time before the method returns
+     * After the execution of the jar, the HZ client is closed
      */
-    public synchronized void executeJar(@Nonnull ResettableConcurrentMemoizingSupplier<BootstrappedInstanceProxy> singleton,
-                                        @Nonnull String jarPath,
-                                        @Nullable String snapshotName,
-                                        @Nullable String jobName,
-                                        @Nullable String mainClassName,
-                                        @Nonnull List<String> args
+    public void executeJar(@Nonnull ResettableConcurrentMemoizingSupplier<BootstrappedInstanceProxy> singleton,
+                           @Nonnull String jarPath,
+                           @Nullable String snapshotName,
+                           @Nullable String jobName,
+                           @Nullable String mainClassName,
+                           @Nonnull List<String> args
     ) throws IOException, InvocationTargetException, IllegalAccessException, ClassNotFoundException {
         BootstrappedInstanceProxy instanceProxy = singleton.remembered();
         boolean exit = false;
@@ -81,10 +85,10 @@ public class ClientExecuteJarStrategy {
             }
 
             // Wait for the job to start
-            awaitJobsStarted(instanceProxy);
+            awaitJobsStartedByJar(instanceProxy);
 
         } catch (JetException exception) {
-            LOGGER.severe("Exception caught while executing the jar :" , exception);
+            LOGGER.severe("Exception caught while executing the jar :", exception);
             exit = true;
         } finally {
             try {
@@ -100,49 +104,59 @@ public class ClientExecuteJarStrategy {
     }
 
     // suppress Reduce the total number of break and continue statements in this loop to use at most one.
-    @SuppressWarnings("java:S135")
-    // Method is call by synchronized executeJar() so, it is safe to access submittedJobs array in BootstrappedJetProxy
-    private void awaitJobsStarted(BootstrappedInstanceProxy instanceProxy) {
+    private void awaitJobsStartedByJar(BootstrappedInstanceProxy instanceProxy) {
 
-        List<Job> submittedJobs = instanceProxy.getJet().submittedJobs();
-        int submittedCount = submittedJobs.size();
-        if (submittedCount == 0) {
+        CopyOnWriteArrayList<Job> submittedJobs = instanceProxy.getJet().submittedJobs();
+        if (submittedJobs.isEmpty()) {
             LOGGER.info("The JAR didn't submit any jobs.");
             return;
         }
-        int previousCount = -1;
+
+        int previousStartingJobCount = -1;
         while (true) {
+            // Sleep and wait for the jobs to start
             uncheckRun(() -> Thread.sleep(JOB_START_CHECK_INTERVAL_MILLIS));
+
             List<Job> startedJobs = submittedJobs.stream()
                     .filter(job -> !STARTUP_STATUSES.contains(job.getStatus()))
                     .collect(Collectors.toList());
 
-            submittedJobs = submittedJobs.stream()
+            List<Job> startingJobs = submittedJobs.stream()
                     .filter(job -> !startedJobs.contains(job))
                     .collect(Collectors.toList());
 
-            int remainingCount = submittedJobs.size();
+            int startingJobCount = startingJobs.size();
 
-            if (submittedJobs.isEmpty() && remainingCount == previousCount) {
+            // No starting jobs. startingJobCount was the same in the previous run
+            if (startingJobs.isEmpty() && noChangeInStartingJobCount(previousStartingJobCount, startingJobCount)) {
                 break;
             }
-            if (remainingCount == previousCount) {
-                continue;
+
+            // If starting job count has changed, log jobs
+            if (changeInStartingJobCount(previousStartingJobCount, startingJobCount)) {
+                logJobs(startingJobs);
+                logRemainingCount(startingJobCount);
             }
-            logJobs(startedJobs);
-            logRemainingCount(remainingCount);
-            previousCount = remainingCount;
+            previousStartingJobCount = startingJobCount;
         }
     }
 
-    private void logJobs(List<Job> startedJobs) {
-        for (Job job : startedJobs) {
+    private boolean noChangeInStartingJobCount(int previousStartingJobCount, int startingJobCount) {
+        return startingJobCount == previousStartingJobCount;
+    }
+
+    private boolean changeInStartingJobCount(int previousStartingJobCount, int startingJobCount) {
+        return startingJobCount != previousStartingJobCount;
+    }
+
+    private void logJobs(List<Job> startingJobs) {
+        for (Job job : startingJobs) {
             // The change of job statuses after the check above
             // won't be a problem here. Because they cannot revert
             // back to startup statuses.
             String nameOrId = Objects.toString(job.getName(), job.getIdString());
 
-            String message = String.format("Job '%s ' submitted at %s changed status to %s at %s.",
+            String message = String.format("Job '%s' submitted at %s changed status to %s at %s.",
                     nameOrId,
                     toLocalDateTime(job.getSubmissionTime()),
                     job.getStatus(),
@@ -151,11 +165,11 @@ public class ClientExecuteJarStrategy {
         }
     }
 
-    private void logRemainingCount(int remainingCount) {
-        if (remainingCount == 1) {
+    private void logRemainingCount(int startingJobCount) {
+        if (startingJobCount == 1) {
             LOGGER.info("A job is still starting...");
-        } else if (remainingCount > 1) {
-            String message = String.format("%,d jobs are still starting...%n", remainingCount);
+        } else if (startingJobCount > 1) {
+            String message = String.format("%,d jobs are still starting...%n", startingJobCount);
             LOGGER.info(message);
         }
     }

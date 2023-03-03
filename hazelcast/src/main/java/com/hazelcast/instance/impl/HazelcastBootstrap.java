@@ -76,6 +76,9 @@ public final class HazelcastBootstrap {
         SINGLETON.resetRemembered();
     }
 
+    /**
+     * Execute jar file that exist on the client
+     */
     // Execute jar file that exist on the client
     public static void executeJarOnClient(@Nonnull Supplier<HazelcastInstance> supplierOfInstance,
                                           @Nonnull String jarPath,
@@ -84,11 +87,15 @@ public final class HazelcastBootstrap {
                                           @Nullable String mainClassName,
                                           @Nonnull List<String> args)
             throws IOException, ClassNotFoundException, InvocationTargetException, IllegalAccessException {
+        // Set the singleton, so that it can be accessed within the jar
         SINGLETON.get(() -> BootstrappedInstanceProxy.createWithJetProxy(supplierOfInstance.get()));
+
         CLIENT_EXECUTE_JAR_STRATEGY.executeJar(SINGLETON, jarPath, snapshotName, jobName, mainClassName, args);
     }
 
-    // Execute jar file that exist on the member
+    /**
+     * Execute jar file that exist on the member
+     */
     public static void executeJarOnMember(@Nonnull Supplier<HazelcastInstance> supplierOfInstance,
                                           @Nonnull String jarPath,
                                           @Nullable String snapshotName,
@@ -96,8 +103,11 @@ public final class HazelcastBootstrap {
                                           @Nullable String mainClassName,
                                           @Nonnull List<String> args)
             throws IOException, ClassNotFoundException, InvocationTargetException, IllegalAccessException {
-        SINGLETON.get(() -> BootstrappedInstanceProxy.createWithJetProxy(supplierOfInstance.get()));
-        MEMBER_EXECUTE_JAR_STRATEGY.executeJar(SINGLETON, jarPath, snapshotName, jobName, mainClassName, args);
+        // Set the singleton, so that it can be accessed within the jar
+        BootstrappedInstanceProxy bootstrappedInstanceProxy = SINGLETON
+                .get(() -> BootstrappedInstanceProxy.createWithJetProxy(supplierOfInstance.get()));
+
+        MEMBER_EXECUTE_JAR_STRATEGY.executeJar(bootstrappedInstanceProxy, jarPath, snapshotName, jobName, mainClassName, args);
     }
 
 

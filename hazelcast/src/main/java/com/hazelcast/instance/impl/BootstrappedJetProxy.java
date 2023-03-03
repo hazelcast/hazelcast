@@ -36,7 +36,6 @@ import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -110,8 +109,9 @@ public class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
         submittedJobs.clear();
     }
 
-    public List<Job> submittedJobs() {
-        return new ArrayList<>(submittedJobs);
+    @Nonnull
+    public CopyOnWriteArrayList<Job> submittedJobs() {
+        return submittedJobs;
     }
 
     private Job addToSubmittedJobs(@Nonnull Job job) {
