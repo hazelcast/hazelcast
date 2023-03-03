@@ -19,7 +19,10 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
+
+import java.sql.SQLException;
 
 import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
 
@@ -439,6 +442,25 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         execute("UPDATE " + tableName + " SET \"full-name\" = 'updated' WHERE id = 0");
         assertJdbcRowsAnyOrder(tableName,
                 new Row(0, "updated")
+        );
+    }
+
+    @Test
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/23476")
+    public void updateTableNonDefaultSchema() throws SQLException {
+        String schemaName = randomName();
+        executeJdbc("CREATE SCHEMA " + schemaName);
+        String fullyQualifiedTable = schemaName + "." + tableName;
+
+        createTable(fullyQualifiedTable);
+        insertItems(fullyQualifiedTable, 2);
+        createMapping(fullyQualifiedTable);
+
+        execute("UPDATE \"" + fullyQualifiedTable + "\" SET name = 'updated'");
+
+        assertJdbcRowsAnyOrder(fullyQualifiedTable,
+                new Row(0, "updated"),
+                new Row(1, "updated")
         );
     }
 }

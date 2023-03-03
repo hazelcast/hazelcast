@@ -19,7 +19,10 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
+
+import java.sql.SQLException;
 
 import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
 
@@ -186,6 +189,22 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         execute("DELETE FROM " + tableName + " WHERE \"person-id\" = 0");
         assertJdbcRowsAnyOrder(tableName);
+    }
+
+    @Test
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/23476")
+    public void deleteFromTableNonDefaultSchema() throws SQLException {
+        String schemaName = randomName();
+        executeJdbc("CREATE SCHEMA " + schemaName);
+        String fullyQualifiedTable = schemaName + "." + tableName;
+
+        createTable(fullyQualifiedTable);
+        insertItems(fullyQualifiedTable, 2);
+        createMapping(fullyQualifiedTable);
+
+        execute("DELETE FROM \"" + fullyQualifiedTable + "\"");
+
+        assertJdbcRowsAnyOrder(fullyQualifiedTable);
     }
 
 }

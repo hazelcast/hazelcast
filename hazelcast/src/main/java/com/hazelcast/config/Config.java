@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
+import com.hazelcast.config.alto.AltoConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.HazelcastInstance;
@@ -221,6 +222,9 @@ public class Config {
 
     // @since 5.2
     private final Map<String, DataLinkConfig> dataLinkConfigs = new ConcurrentHashMap<>();
+
+    // @since 5.3
+    private AltoConfig altoConfig = new AltoConfig();
 
     public Config() {
     }
@@ -3219,6 +3223,32 @@ public class Config {
     }
 
     /**
+     * Gets the Alto config. Can't return null.
+     *
+     * @return the Alto configuration
+     * @since 5.3
+     */
+    @Beta
+    @Nonnull
+    public AltoConfig getAltoConfig() {
+        return altoConfig;
+    }
+
+    /**
+     * Sets the Alto config. Can't return null.
+     *
+     * @param altoConfig Alto configuration to be set
+     * @return this config
+     * @throws NullPointerException if altoConfig is null
+     * @since 5.3
+     */
+    @Beta
+    public @Nonnull Config setAltoConfig(@Nonnull AltoConfig altoConfig) {
+        this.altoConfig = checkNotNull(altoConfig);
+        return this;
+    }
+
+    /**
      * Returns the configuration for the user services managed by this
      * hazelcast instance.
      *
@@ -3282,6 +3312,7 @@ public class Config {
                 + ", deviceConfigs=" + deviceConfigs
                 + ", integrityCheckerConfig=" + integrityCheckerConfig
                 + ", dataLinkConfigs=" + dataLinkConfigs
+                + ", altoConfig=" + altoConfig
                 + '}';
     }
 }

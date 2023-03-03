@@ -1,0 +1,11 @@
+{
+  "instance": {
+    "hazelcast": {
+      "alto": {
+        "enabled": true,
+        "eventloop-count": 12
+      }
+    }
+  },
+  "error": null
+}

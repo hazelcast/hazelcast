@@ -107,4 +107,18 @@ public final class UuidUtil {
         }
         return new UUID(mostSigBits, leastSigBits);
     }
+
+    /**
+     * Checks if given value is UUID of any type.
+     * @param value string to check
+     * @return if the value is an UUID
+     */
+    public static boolean isUUID(String value) {
+        try {
+            UUID.fromString(value);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
 }

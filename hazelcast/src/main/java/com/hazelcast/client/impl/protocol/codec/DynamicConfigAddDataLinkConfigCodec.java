@@ -35,10 +35,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  * Adds a data link configuration.
- * If an data link configuration with the given {@code name} already exists, then
+ * If a data link configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("4b1d80b89f74ae0253cb2a9799809067")
+@Generated("1e7005adb3f59f14f481996e94b1b8a6")
 public final class DynamicConfigAddDataLinkConfigCodec {
     //hex: 0x1B1100
     public static final int REQUEST_MESSAGE_TYPE = 1773824;
