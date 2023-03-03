@@ -24,7 +24,6 @@ import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
