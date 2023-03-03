@@ -14,9 +14,26 @@
  * limitations under the License.
  */
 
+package com.hazelcast.datalink;
+
+import com.hazelcast.spi.annotation.Beta;
+
 /**
- * <p>This package contains implementation of handling data links.<br>
+ * Registration for a {@link DataLink}.
  *
  * @since 5.3
  */
-package com.hazelcast.datalink.impl;
+@Beta
+public interface DataLinkRegistration {
+
+    /**
+     * Mapping Type of registered data link.
+     */
+    String type();
+
+    /**
+     *
+     * @return class name of registered data link.
+     */
+    Class<? extends DataLink> clazz();
+}

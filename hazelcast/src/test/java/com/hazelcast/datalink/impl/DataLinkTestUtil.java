@@ -14,65 +14,89 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.connector;
+package com.hazelcast.datalink.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataLinkConfig;
-import com.hazelcast.datalink.DataLinkFactory;
-import com.hazelcast.datalink.JdbcDataLinkFactory;
+import com.hazelcast.datalink.DataLink;
+import com.hazelcast.datalink.DataLinkBase;
+import com.hazelcast.datalink.DataLinkRegistration;
+import com.hazelcast.datalink.DataLinkResource;
+import com.hazelcast.datalink.JdbcDataLink;
 
+import javax.annotation.Nonnull;
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 
-final class DataLinkTestUtil {
+public final class DataLinkTestUtil {
+
     private DataLinkTestUtil() {
     }
 
-
-    static void configureJdbcDataLink(String name, String jdbcUrl, Config config) {
+    public static void configureJdbcDataLink(String name, String jdbcUrl, Config config) {
         Properties properties = new Properties();
         properties.put("jdbcUrl", jdbcUrl);
         DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName(name)
-                .setClassName(JdbcDataLinkFactory.class.getName())
+                .setClassName(JdbcDataLink.class.getName())
                 .setProperties(properties);
         config.getDataLinkConfigs().put(name, dataLinkConfig);
     }
 
-
-    static void configureJdbcDataLink(String name, String jdbcUrl, String username, String password, Config config) {
+    public static void configureJdbcDataLink(String name, String jdbcUrl, String username, String password, Config config) {
         Properties properties = new Properties();
         properties.put("jdbcUrl", jdbcUrl);
         properties.put("username", username);
         properties.put("password", password);
         DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName(name)
-                .setClassName(JdbcDataLinkFactory.class.getName())
+                .setClassName(JdbcDataLink.class.getName())
                 .setProperties(properties);
         config.getDataLinkConfigs().put(name, dataLinkConfig);
     }
 
-    static void configureDummyDataLink(String name, Config config) {
+    public static void configureDummyDataLink(String name, Config config) {
         DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName(name)
-                .setClassName(DummyDataLinkFactory.class.getName());
+                .setClassName(DummyDataLink.class.getName());
         config.getDataLinkConfigs().put(name, dataLinkConfig);
     }
 
-    private static class DummyDataLinkFactory implements DataLinkFactory<Object> {
+    public static class DummyDataLink extends DataLinkBase {
 
+        private boolean closed;
+
+        public DummyDataLink(DataLinkConfig config) {
+            super(config);
+        }
+
+        @Nonnull
         @Override
-        public boolean testConnection() {
-            return true;
+        public List<DataLinkResource> listResources() {
+            return Collections.emptyList();
         }
 
         @Override
-        public Object getDataLink() {
-            return new Object();
+        public void destroy() {
+            closed = true;
+        }
+
+        public boolean isClosed() {
+            return closed;
+        }
+    }
+
+    public static class DummyDataLinkRegistration implements DataLinkRegistration {
+
+        @Override
+        public String type() {
+            return "DUMMY";
         }
 
         @Override
-        public void init(DataLinkConfig config) {
-
+        public Class<? extends DataLink> clazz() {
+            return DummyDataLink.class;
         }
     }
 }

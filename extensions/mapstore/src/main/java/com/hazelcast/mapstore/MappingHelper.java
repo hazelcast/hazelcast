@@ -23,7 +23,7 @@ import com.hazelcast.sql.SqlService;
 
 import java.util.List;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
+import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_NAME;
 
 final class MappingHelper {
 
@@ -39,7 +39,7 @@ final class MappingHelper {
                 + " EXTERNAL NAME \"" + tableName + "\" "
                 + " TYPE " + mappingType
                 + " OPTIONS ("
-                + "    '" + OPTION_DATA_LINK_REF + "' = '" + dataLinkRef + "' "
+                + "    '" + OPTION_DATA_LINK_NAME + "' = '" + dataLinkRef + "' "
                 + ")"
         ).close();
     }
@@ -52,7 +52,7 @@ final class MappingHelper {
                 + (mappingColumns != null ? " ( " + mappingColumns + " ) " : "")
                 + "TYPE " + mappingType + " "
                 + "OPTIONS ("
-                + "    '" + OPTION_DATA_LINK_REF + "' = '" + dataLinkRef + "' "
+                + "    '" + OPTION_DATA_LINK_NAME + "' = '" + dataLinkRef + "' "
                 + ")"
         ).close();
     }

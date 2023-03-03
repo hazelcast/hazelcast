@@ -16,11 +16,6 @@
 
 package com.hazelcast.mapstore;
 
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datalink.DataLinkFactory;
-import com.hazelcast.datalink.JdbcDataLinkFactory;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -82,20 +77,4 @@ class GenericMapStoreProperties {
         return allColumns;
     }
 
-    String getMappingType(NodeEngineImpl nodeEngine) {
-        if (mappingType != null) {
-            return mappingType;
-        } else {
-            DataLinkFactory<?> factory = nodeEngine
-                    .getDataLinkService()
-                    .getDataLinkFactory(dataLinkRef);
-
-            if (factory instanceof JdbcDataLinkFactory) {
-                return "JDBC";
-            } else {
-                throw new HazelcastException("Unknown DataLinkFactory class " + factory.getClass()
-                                             + ". Set the mapping type using '" + MAPPING_TYPE_PROPERTY + "' property");
-            }
-        }
-    }
 }

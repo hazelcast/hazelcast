@@ -20,7 +20,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.JdbcDataLinkFactory;
+import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
@@ -63,11 +63,11 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <p>
  * Usage:
  * <p>
- * First define data link, e.g. for JDBC use {@link JdbcDataLinkFactory}:
+ * First define data link, e.g. for JDBC use {@link JdbcDataLink}:
  * <pre>{@code Config config = new Config();
  * config.addDataLinkConfig(
  *   new DataLinkConfig("mysql-ref")
- *     .setClassName(JdbcDataLinkFactory.class.getName())
+ *     .setClassName(JdbcDataLink.class.getName())
  *     .setProperty("jdbcUrl", dbConnectionUrl)
  * );}</pre>
  * <p>
@@ -175,9 +175,13 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
                 logger.fine("Discovered following mapping columns: " + mappingColumns);
             }
 
-            String mappingType = genericMapStoreProperties.getMappingType(nodeEngine());
-            mappingHelper.createMappingWithColumns(mappingName, genericMapStoreProperties.tableName, mappingColumns,
-                    mappingType, genericMapStoreProperties.dataLinkRef);
+            mappingHelper.createMappingWithColumns(
+                    mappingName,
+                    genericMapStoreProperties.tableName,
+                    mappingColumns,
+                    deriveMappingType(),
+                    genericMapStoreProperties.dataLinkRef
+            );
 
             if (!genericMapStoreProperties.hasColumns()) {
                 columnMetadataList = mappingHelper.loadColumnMetadataFromMapping(mappingName);
@@ -197,12 +201,21 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
         }
     }
 
+    private String deriveMappingType() {
+        if (genericMapStoreProperties.mappingType != null) {
+            return genericMapStoreProperties.mappingType;
+        } else {
+            return nodeEngine().getDataLinkService().typeForDataLink(genericMapStoreProperties.dataLinkRef);
+        }
+    }
+
+
     private String resolveMappingColumns() {
         // Create a temporary mapping
         String tempMapping = "temp_mapping_" + UuidUtil.newUnsecureUuidString();
         mappingHelper.createMapping(tempMapping,
                 genericMapStoreProperties.tableName,
-                genericMapStoreProperties.getMappingType(nodeEngine()),
+                deriveMappingType(),
                 genericMapStoreProperties.dataLinkRef);
 
         SqlRowMetadata rowMetadata = mappingHelper.loadRowMetadataFromMapping(tempMapping);

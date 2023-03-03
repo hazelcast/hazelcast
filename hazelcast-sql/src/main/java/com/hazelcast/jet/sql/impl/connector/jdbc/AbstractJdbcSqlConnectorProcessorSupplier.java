@@ -16,11 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.datalink.DataLinkFactory;
-import com.hazelcast.datalink.DataLinkService;
-import com.hazelcast.datalink.impl.CloseableDataSource;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.impl.connector.DataSourceFromConnectionSupplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -30,31 +28,27 @@ import static java.util.Objects.requireNonNull;
 
 abstract class AbstractJdbcSqlConnectorProcessorSupplier implements ProcessorSupplier {
 
-    protected String dataLinkRef;
+    protected String dataLinkName;
 
+    protected transient JdbcDataLink dataLink;
     protected transient DataSource dataSource;
 
     AbstractJdbcSqlConnectorProcessorSupplier() {
     }
 
-    AbstractJdbcSqlConnectorProcessorSupplier(String dataLinkRef) {
-        this.dataLinkRef = requireNonNull(dataLinkRef, "dataLinkRef must not be null");
+    AbstractJdbcSqlConnectorProcessorSupplier(String dataLinkName) {
+        this.dataLinkName = requireNonNull(dataLinkName, "dataLinkName must not be null");
     }
 
     public void init(@Nonnull Context context) throws Exception {
-        DataLinkService dataLinkService = ((HazelcastInstanceImpl) context.hazelcastInstance())
-                .node.getNodeEngine().getDataLinkService();
-
-        DataLinkFactory<DataSource> factory = dataLinkService
-                .getDataLinkFactory(dataLinkRef);
-
-        dataSource = factory.getDataLink();
+        dataLink = context.dataLinkService().getAndRetainDataLink(dataLinkName, JdbcDataLink.class);
+        dataSource = new DataSourceFromConnectionSupplier(dataLink::getConnection);
     }
 
     @Override
     public void close(@Nullable Throwable error) throws Exception {
-        if (dataSource instanceof CloseableDataSource) {
-            ((CloseableDataSource) dataSource).close();
+        if (dataLink != null) {
+            dataLink.release();
         }
     }
 }

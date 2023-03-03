@@ -5002,7 +5002,7 @@
           },
           "class-name": {
             "type": "string",
-            "description": "The name of the class implementing DataLinkFactory."
+            "description": "The name of the class implementing DataLink."
           },
           "shared": {
             "type": "boolean",
