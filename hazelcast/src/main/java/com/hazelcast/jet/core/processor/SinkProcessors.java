@@ -417,23 +417,7 @@ public final class SinkProcessors {
         checkNotNull(dataLinkRef, "dataLinkRef");
         checkNotNull(bindFn, "bindFn");
         checkPositive(batchLimit, "batchLimit");
-        return WriteJdbcP.metaSupplier(null, updateQuery, dataSourceSupplier(dataLinkRef.getName()),
-                bindFn, exactlyOnce, batchLimit);
-    }
-
-    private static FunctionEx<ProcessorMetaSupplier.Context, DataSource> dataSourceSupplier(String dataLinkName) {
-        return context -> {
-            JdbcDataLink dataLink = getDataLink(context, dataLinkName);
-            try {
-                return new DataSourceFromConnectionSupplier(dataLink::getConnection);
-            } finally {
-                dataLink.release();
-            }
-        };
-    }
-
-    private static JdbcDataLink getDataLink(ProcessorMetaSupplier.Context context, String name) {
-        return context.dataLinkService().getAndRetainDataLink(name, JdbcDataLink.class);
+        return WriteJdbcP.metaSupplier(null, updateQuery, dataLinkRef.getName(), bindFn, exactlyOnce, batchLimit);
     }
 
     /**

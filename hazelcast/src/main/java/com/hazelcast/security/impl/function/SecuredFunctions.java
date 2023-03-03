@@ -18,6 +18,7 @@ package com.hazelcast.security.impl.function;
 
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
@@ -47,6 +48,7 @@ import com.hazelcast.security.permission.ReplicatedMapPermission;
 import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
@@ -298,6 +300,42 @@ public final class SecuredFunctions {
             @Override
             public List<Permission> permissions() {
                 return singletonList(ConnectorPermission.jdbc(connectionUrl, ACTION_READ));
+            }
+        };
+    }
+
+    public static <T> ProcessorSupplier readJdbcProcessorFn(
+            String dataLinkName,
+            ToResultSetFunction resultSetFn,
+            FunctionEx<? super ResultSet, ? extends T> mapOutputFn
+    ) {
+        return new ProcessorSupplier() {
+
+            private JdbcDataLink dataLink;
+
+            @Override
+            public void init(@Nonnull ProcessorSupplier.Context context) {
+                dataLink = context.dataLinkService().getAndRetainDataLink(dataLinkName, JdbcDataLink.class);
+            }
+
+            @Nonnull
+            @Override
+            public Collection<? extends Processor> get(int count) {
+                return IntStream.range(0, count)
+                        .mapToObj(i -> new ReadJdbcP<T>(() -> dataLink.getConnection(), resultSetFn, mapOutputFn))
+                        .collect(Collectors.toList());
+            }
+
+            @Override
+            public void close(@Nullable Throwable error) {
+                if (dataLink != null) {
+                    dataLink.release();
+                }
+            }
+
+            @Override
+            public List<Permission> permissions() {
+                return singletonList(ConnectorPermission.jdbc(null, ACTION_READ));
             }
         };
     }

@@ -452,19 +452,7 @@ public final class SourceProcessors {
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return ReadJdbcP.supplier(context -> {
-                    JdbcDataLink dataLink = context.dataLinkService()
-                            .getAndRetainDataLink(dataLinkRef.getName(), JdbcDataLink.class);
-
-                    try {
-                        return dataLink.getConnection();
-                    } finally {
-                        dataLink.release();
-                    }
-                },
-                resultSetFn,
-                mapOutputFn
-        );
+        return ReadJdbcP.supplier(dataLinkRef, resultSetFn, mapOutputFn);
     }
 
     /**
