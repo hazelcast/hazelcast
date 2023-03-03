@@ -61,6 +61,10 @@
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]util[\\/]collection[\\/]Long2LongHashMapTest"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]util[\\/]graph[\\/]BronKerboschCliqueFinder"/>
 
+    <!-- TPC -->
+    <suppress checks="IllegalImport" files="com[\\/]hazelcast[\\/]internal[\\/]tpc[\\/]util[\\/]ProgressIndicator"/>
+    <suppress checks="IllegalImport" files="com[\\/]hazelcast[\\/]internal[\\/]tpc[\\/]util[\\/]UnsafeLocator"/>
+
     <!-- Exclude internal, implementation and template packages from JavaDoc checks -->
     <suppress checks="Javadoc(Package|Method|Type|Variable)" files="com[\\/]hazelcast[\\/]internal[\\/]"/>
     <suppress checks="Javadoc(Package|Method|Type|Variable)" files="[\\/]impl[\\/]"/>
