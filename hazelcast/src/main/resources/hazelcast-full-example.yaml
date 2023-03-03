@@ -3285,7 +3285,7 @@ hazelcast:
         send-buffer-size-kb: 25
         receive-buffer-size-kb: 33
         linger-seconds: 99
-        keep-idle-seconds: 100
+        keep-idle-seconds: 600
         keep-count: 10
         keep-interval-seconds: 15
       port:
