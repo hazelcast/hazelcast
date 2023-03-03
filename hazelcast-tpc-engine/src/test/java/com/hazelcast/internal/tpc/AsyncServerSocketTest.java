@@ -24,7 +24,9 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.internal.tpc.TpcTestSupport.assertCompletesEventually;
 import static com.hazelcast.internal.tpc.TpcTestSupport.terminateAll;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -150,6 +152,37 @@ public abstract class AsyncServerSocketTest {
 
         socket.close();
     }
+
+    @Test
+    public void test_connect() {
+        Reactor reactor = newReactor();
+        AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
+                .setAcceptConsumer(acceptRequest -> {
+                    AsyncSocket socket = reactor.newAsyncSocketBuilder(acceptRequest)
+                            .setReadHandler(new DevNullReadHandler())
+                            .build();
+                    socket.start();
+                })
+                .build();
+
+        SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
+        serverSocket.bind(serverAddress);
+        serverSocket.start();
+
+        int clients = 5;
+        for (int k = 0; k < clients; k++) {
+            AsyncSocket clientSocket = reactor.newAsyncSocketBuilder()
+                    .setReadHandler(new DevNullReadHandler())
+                    .build();
+            clientSocket.start();
+
+            CompletableFuture<Void> connect = clientSocket.connect(serverAddress);
+            assertCompletesEventually(connect);
+        }
+
+        assertEquals(clients, serverSocket.getAccepted());
+    }
+
 
 //    @Test
 //    public void test_accept_whenConsumerNull() {
