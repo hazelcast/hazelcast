@@ -16,19 +16,20 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.internal.tpc.logging.TpcLogger;
+import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
+import com.hazelcast.internal.tpc.util.CloseUtil;
+import com.hazelcast.internal.tpc.util.JVM;
+import com.hazelcast.internal.tpc.util.OS;
 import net.openhft.affinity.Affinity;
 
 import java.io.File;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.BitSet;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
-import static com.hazelcast.internal.nio.IOUtil.copy;
-import static com.hazelcast.internal.nio.IOUtil.getFileFromResourcesAsStream;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
+import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
 
 /**
  * Affinity helper class that uses a Hazelcast developed affinity
@@ -45,9 +46,10 @@ import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
  * to {@code true}, there is no attempt made for using the Hazelcast
  * library and the OpenHFT library is used instead in every case.
  */
+@SuppressWarnings("java:S1181")
 public final class ThreadAffinityHelper {
     private static final String AFFINITY_LIB_DISABLED = "hazelcast.affinity.lib.disabled";
-    private static final ILogger LOGGER = Logger.getLogger(ThreadAffinityHelper.class);
+    private static final TpcLogger LOGGER = TpcLoggerLocator.getLogger(ThreadAffinityHelper.class);
     private static final boolean USE_HZ_LIB;
 
     private ThreadAffinityHelper() {
@@ -62,11 +64,11 @@ public final class ThreadAffinityHelper {
         try {
             boolean jnaAvailable = Affinity.isJNAAvailable();
             if (!jnaAvailable) {
-                Logger.getLogger(ThreadAffinityHelper.class).warning("JNA is not available");
+                LOGGER.warning("JNA is not available");
             }
             return jnaAvailable;
         } catch (NoClassDefFoundError e) {
-            Logger.getLogger(ThreadAffinityHelper.class).warning("The OpenHFT Affinity jar isn't available: " + e.getMessage());
+            LOGGER.warning("The OpenHFT Affinity jar isn't available: " + e.getMessage());
             return false;
         }
     }
@@ -100,26 +102,34 @@ public final class ThreadAffinityHelper {
 
     private static native void setAffinity0(BitSet cpuMask);
 
+    @SuppressWarnings({"java:S5443", "java:S112"})
     private static String extractBundledLib() {
         InputStream src = null;
         try {
-            src = getFileFromResourcesAsStream("lib/linux-x86_64/libaffinity_helper.so");
+            src = CloseUtil.class.getClassLoader().getResourceAsStream("lib/linux-x86_64/libaffinity_helper.so");
             File dest = File.createTempFile("hazelcast-libaffinity-helper-", ".so");
-
-            copy(src, dest);
-
+            Files.copy(src, dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
             return dest.getAbsolutePath();
-        } catch (Throwable t) {
-            throw rethrow(t);
+
+        } catch (Error | RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         } finally {
-            closeResource(src);
+            closeQuietly(src);
         }
     }
 
     static {
         boolean hzAffinityLibLoaded = false;
-        boolean libDisabled = equalsIgnoreCase("true", System.getProperty(AFFINITY_LIB_DISABLED));
-        if (!libDisabled && OsHelper.isLinux() && !JVMUtil.is32bitJVM()) {
+
+        boolean libDisabled = false;
+        String libDisabledString = System.getProperty(AFFINITY_LIB_DISABLED);
+        if (libDisabledString != null) {
+            libDisabled = libDisabledString.equalsIgnoreCase("true");
+        }
+
+        if (!libDisabled && OS.isLinux() && !JVM.is32bit()) {
             try {
                 System.load(extractBundledLib());
                 hzAffinityLibLoaded = true;

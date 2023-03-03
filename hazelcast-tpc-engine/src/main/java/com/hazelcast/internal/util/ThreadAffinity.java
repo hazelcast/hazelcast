@@ -33,6 +33,7 @@ import static com.hazelcast.internal.util.ThreadAffinityHelper.isAffinityAvailab
  *
  * This class is threadsafe.
  */
+@SuppressWarnings("java:S112")
 public class ThreadAffinity {
     public static final ThreadAffinity DISABLED = new ThreadAffinity(null);
 
