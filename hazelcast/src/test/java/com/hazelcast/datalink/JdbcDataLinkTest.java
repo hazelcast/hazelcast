@@ -67,7 +67,7 @@ public class JdbcDataLinkTest {
     public void tearDown() throws Exception {
         close(connection1);
         close(connection2);
-        jdbcDataLink.close();
+        jdbcDataLink.release();
         assertEventuallyNoHikariThreads(TEST_CONFIG_NAME);
     }
 
@@ -157,7 +157,7 @@ public class JdbcDataLinkTest {
         Connection connection = jdbcDataLink.getConnection();
 
         connection.close();
-        jdbcDataLink.close();
+        jdbcDataLink.release();
 
         assertThat(pool.isClosed())
                 .describedAs("Connection pool should have been closed")
@@ -174,7 +174,7 @@ public class JdbcDataLinkTest {
         HikariDataSource pool = jdbcDataLink.pooledDataSource();
 
         try (Connection connection = jdbcDataLink.getConnection()) {
-            jdbcDataLink.close();
+            jdbcDataLink.release();
 
             assertThat(pool.isClosed())
                     .describedAs("Connection pool should be still open")
@@ -194,7 +194,7 @@ public class JdbcDataLinkTest {
 
         List<DataLinkResource> dataLinkResources = jdbcDataLink.listResources();
         assertThat(dataLinkResources).contains(
-                new DataLinkResource("BASE TABLE", "PUBLIC.MY_TABLE")
+                new DataLinkResource("TABLE", "PUBLIC.MY_TABLE")
         );
     }
 
@@ -207,7 +207,7 @@ public class JdbcDataLinkTest {
 
         List<DataLinkResource> dataLinkResources = jdbcDataLink.listResources();
         assertThat(dataLinkResources).contains(
-                new DataLinkResource("BASE TABLE", "MY_SCHEMA.MY_TABLE")
+                new DataLinkResource("TABLE", "MY_SCHEMA.MY_TABLE")
         );
     }
 
@@ -220,7 +220,7 @@ public class JdbcDataLinkTest {
 
         List<DataLinkResource> dataLinkResources = jdbcDataLink.listResources();
         assertThat(dataLinkResources).contains(
-                new DataLinkResource("VIEW", "PUBLIC.MY_TABLE_VIEW")
+                new DataLinkResource("TABLE", "PUBLIC.MY_TABLE_VIEW")
         );
     }
 

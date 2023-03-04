@@ -17,7 +17,6 @@
 package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BinaryOperatorEx;
@@ -27,7 +26,6 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.impl.connector.DataSourceFromConnectionSupplier;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
@@ -46,7 +44,6 @@ import javax.jms.Connection;
 import javax.jms.Message;
 import javax.jms.Session;
 import javax.sql.CommonDataSource;
-import javax.sql.DataSource;
 import java.io.BufferedWriter;
 import java.nio.charset.Charset;
 import java.sql.PreparedStatement;
@@ -417,20 +414,7 @@ public final class SinkProcessors {
         checkNotNull(dataLinkRef, "dataLinkRef");
         checkNotNull(bindFn, "bindFn");
         checkPositive(batchLimit, "batchLimit");
-        return WriteJdbcP.metaSupplier(null, updateQuery, dataSourceSupplier(dataLinkRef.getName()),
-                bindFn, exactlyOnce, batchLimit);
-    }
-
-    private static FunctionEx<ProcessorMetaSupplier.Context, DataSource> dataSourceSupplier(String dataLinkName) {
-        return context -> {
-            try (JdbcDataLink dataLink = getDataLink(context, dataLinkName)) {
-                return new DataSourceFromConnectionSupplier(dataLink::getConnection);
-            }
-        };
-    }
-
-    private static JdbcDataLink getDataLink(ProcessorMetaSupplier.Context context, String name) {
-        return context.dataLinkService().getDataLink(name, JdbcDataLink.class);
+        return WriteJdbcP.metaSupplier(null, updateQuery, dataLinkRef.getName(), bindFn, exactlyOnce, batchLimit);
     }
 
     /**

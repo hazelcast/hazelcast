@@ -32,6 +32,8 @@ import org.bson.conversions.Bson;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 /**
  * Contains factory methods for MongoDB sources.
  * <p>
@@ -224,7 +226,7 @@ public final class MongoDBSources {
         if (filter != null) {
             builder.filter(filter);
         }
-        builder.startAtOperationTime(new BsonTimestamp(System.currentTimeMillis()));
+        builder.startAtOperationTime(new BsonTimestamp((int) MILLISECONDS.toSeconds(System.currentTimeMillis()), 0));
         return builder.build();
     }
 }

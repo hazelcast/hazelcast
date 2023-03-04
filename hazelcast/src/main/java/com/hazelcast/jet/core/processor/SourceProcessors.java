@@ -18,7 +18,6 @@ package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.ConsumerEx;
@@ -452,15 +451,7 @@ public final class SourceProcessors {
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return ReadJdbcP.supplier(context -> {
-                    try (JdbcDataLink dataLink = context.dataLinkService()
-                                                        .getDataLink(dataLinkRef.getName(), JdbcDataLink.class)) {
-                        return dataLink.getConnection();
-                    }
-                },
-                resultSetFn,
-                mapOutputFn
-        );
+        return ReadJdbcP.supplier(dataLinkRef, resultSetFn, mapOutputFn);
     }
 
     /**

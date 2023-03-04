@@ -19,7 +19,8 @@ package com.hazelcast.datalink;
 import com.hazelcast.spi.annotation.Beta;
 
 /**
- * Registers new type of {@link DataLink}.
+ * Registration for a {@link DataLink}.
+ *
  * @since 5.3
  */
 @Beta
@@ -36,4 +37,3 @@ public interface DataLinkRegistration {
      */
     Class<? extends DataLink> clazz();
 }
-

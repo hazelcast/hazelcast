@@ -46,4 +46,12 @@ public interface WanSupportingService {
      *                        appropriate member
      */
     void onSyncBatch(Collection<InternalWanEvent> batch, WanAcknowledgeType acknowledgeType);
+
+    /**
+     * Updates the related state when wan configuration is updated. For
+     * example if a wan configuration is added and if there is an existing
+     * maps referring to newly added wan configuration, some fields must be
+     * updated in {@link com.hazelcast.map.impl.MapContainer}.
+     */
+    void onWanConfigChange();
 }

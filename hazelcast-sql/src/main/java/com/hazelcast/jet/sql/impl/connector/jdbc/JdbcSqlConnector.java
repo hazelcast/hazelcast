@@ -60,7 +60,7 @@ public class JdbcSqlConnector implements SqlConnector {
 
     public static final String TYPE_NAME = "JDBC";
 
-    public static final String OPTION_DATA_LINK_REF = "dataLinkRef";
+    public static final String OPTION_DATA_LINK_NAME = "data-link-name";
     public static final String OPTION_JDBC_BATCH_LIMIT = "jdbc.batch-limit";
 
     public static final String JDBC_BATCH_LIMIT_DEFAULT_VALUE = "100";
@@ -131,20 +131,18 @@ public class JdbcSqlConnector implements SqlConnector {
             String externalTableName
     ) {
         String dataLinkRef = requireNonNull(
-                options.get(OPTION_DATA_LINK_REF),
-                OPTION_DATA_LINK_REF + " must be set"
+                options.get(OPTION_DATA_LINK_NAME),
+                OPTION_DATA_LINK_NAME + " must be set"
         );
-        try (JdbcDataLink dataLink = getDataLink(nodeEngine, dataLinkRef);
-             Connection connection = dataLink.getConnection()) {
-
+        JdbcDataLink dataLink = getAndRetainDataLink(nodeEngine, dataLinkRef);
+        try (Connection connection = dataLink.getConnection()) {
             DatabaseMetaData databaseMetaData = connection.getMetaData();
-
             Set<String> pkColumns = readPrimaryKeyColumns(externalTableName, databaseMetaData);
-
             return readColumns(externalTableName, databaseMetaData, pkColumns);
-
         } catch (Exception e) {
             throw new HazelcastException("Could not execute readDbFields for table " + externalTableName, e);
+        } finally {
+            dataLink.release();
         }
     }
 
@@ -181,10 +179,10 @@ public class JdbcSqlConnector implements SqlConnector {
         return fields;
     }
 
-    private static JdbcDataLink getDataLink(NodeEngine nodeEngine, String dataLinkRef) {
+    private static JdbcDataLink getAndRetainDataLink(NodeEngine nodeEngine, String dataLinkName) {
         return nodeEngine
                 .getDataLinkService()
-                .getDataLink(dataLinkRef, JdbcDataLink.class);
+                .getAndRetainDataLink(dataLinkName, JdbcDataLink.class);
     }
 
     private void validateType(MappingField field, DbField dbField) {
@@ -218,8 +216,8 @@ public class JdbcSqlConnector implements SqlConnector {
             ));
         }
 
-        String dataLinkRef = options.get(OPTION_DATA_LINK_REF);
-        SqlDialect dialect = resolveDialect(nodeEngine, dataLinkRef);
+        String dataLinkName = options.get(OPTION_DATA_LINK_NAME);
+        SqlDialect dialect = resolveDialect(nodeEngine, dataLinkName);
 
         return new JdbcTable(
                 this,
@@ -229,21 +227,23 @@ public class JdbcSqlConnector implements SqlConnector {
                 mappingName,
                 new ConstantTableStatistics(0),
                 externalName,
-                dataLinkRef,
+                dataLinkName,
                 parseInt(options.getOrDefault(OPTION_JDBC_BATCH_LIMIT, JDBC_BATCH_LIMIT_DEFAULT_VALUE)),
                 nodeEngine.getSerializationService()
         );
     }
 
     private SqlDialect resolveDialect(NodeEngine nodeEngine, String dataLinkRef) {
-        try (JdbcDataLink dataLink = getDataLink(nodeEngine, dataLinkRef);
-             Connection connection = dataLink.getConnection()) {
+        JdbcDataLink dataLink = getAndRetainDataLink(nodeEngine, dataLinkRef);
+        try (Connection connection = dataLink.getConnection()) {
             DatabaseMetaData databaseMetaData = connection.getMetaData();
             SqlDialect dialect = SqlDialectFactoryImpl.INSTANCE.create(databaseMetaData);
             SupportedDatabases.logOnceIfDatabaseNotSupported(databaseMetaData);
             return dialect;
         } catch (Exception e) {
             throw new HazelcastException("Could not determine dialect for dataLinkRef: " + dataLinkRef, e);
+        } finally {
+            dataLink.release();
         }
     }
 
@@ -267,7 +267,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 "Select(" + table.getExternalName() + ")",
                 ProcessorMetaSupplier.forceTotalParallelismOne(
                         new SelectProcessorSupplier(
-                                table.getDataLinkRef(),
+                                table.getDataLinkName(),
                                 builder.query(),
                                 builder.parameterPositions()
                         ))
@@ -283,7 +283,7 @@ public class JdbcSqlConnector implements SqlConnector {
         return new VertexWithInputConfig(context.getDag().newUniqueVertex(
                 "Insert(" + table.getExternalName() + ")",
                 new InsertProcessorSupplier(
-                        table.getDataLinkRef(),
+                        table.getDataLinkName(),
                         builder.query(),
                         table.getBatchLimit()
                 )
@@ -317,7 +317,7 @@ public class JdbcSqlConnector implements SqlConnector {
         return context.getDag().newUniqueVertex(
                 "Update(" + table.getExternalName() + ")",
                 new UpdateProcessorSupplier(
-                        table.getDataLinkRef(),
+                        table.getDataLinkName(),
                         builder.query(),
                         builder.parameterPositions(),
                         table.getBatchLimit()
@@ -339,7 +339,7 @@ public class JdbcSqlConnector implements SqlConnector {
         return context.getDag().newUniqueVertex(
                 "Delete(" + table.getExternalName() + ")",
                 new DeleteProcessorSupplier(
-                        table.getDataLinkRef(),
+                        table.getDataLinkName(),
                         builder.query(),
                         table.getBatchLimit()
                 )
@@ -360,7 +360,7 @@ public class JdbcSqlConnector implements SqlConnector {
             return context.getDag().newUniqueVertex(
                     "sinkProcessor(" + jdbcTable.getExternalName() + ")",
                     new UpsertProcessorSupplier(
-                            jdbcTable.getDataLinkRef(),
+                            jdbcTable.getDataLinkName(),
                             upsertStatement,
                             jdbcTable.getBatchLimit()
                     )

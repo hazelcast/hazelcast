@@ -24,6 +24,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.ToResultSetFunction;
+import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
 
@@ -107,7 +108,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
 
         return ProcessorMetaSupplier.forceTotalParallelismOne(
                 SecuredFunctions.readJdbcProcessorFn(connectionURL,
-                                (context) -> DriverManager.getConnection(connectionURL),
+                        context -> DriverManager.getConnection(connectionURL),
                         (connection, parallelism, index) -> {
                             PreparedStatement statement = connection.prepareStatement(query);
                             try {
@@ -120,6 +121,15 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
                 newUnsecureUuidString(),
                 ConnectorPermission.jdbc(connectionURL, ACTION_READ)
         );
+    }
+
+    public static <T> ProcessorMetaSupplier supplier(
+            DataLinkRef dataLinkRef,
+            ToResultSetFunction resultSetFn,
+            FunctionEx<? super ResultSet, ? extends T> mapOutputFn) {
+
+        return ProcessorMetaSupplier.preferLocalParallelismOne(ConnectorPermission.jdbc(null, ACTION_READ),
+                SecuredFunctions.readJdbcProcessorFn(dataLinkRef.getName(), resultSetFn, mapOutputFn));
     }
 
     @Override

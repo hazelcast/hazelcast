@@ -57,10 +57,10 @@ public class SelectProcessorSupplier
     public SelectProcessorSupplier() {
     }
 
-    public SelectProcessorSupplier(@Nonnull String dataLinkRef,
+    public SelectProcessorSupplier(@Nonnull String dataLinkName,
                                    @Nonnull String query,
                                    @Nonnull int[] parameterPositions) {
-        super(dataLinkRef);
+        super(dataLinkName);
         this.query = requireNonNull(query, "query must not be null");
         this.parameterPositions = requireNonNull(parameterPositions, "parameterPositions must not be null");
     }
@@ -122,19 +122,19 @@ public class SelectProcessorSupplier
     @Nullable
     @Override
     public List<Permission> permissions() {
-        return singletonList(ConnectorPermission.jdbc(dataLinkRef, ACTION_READ));
+        return singletonList(ConnectorPermission.jdbc(dataLinkName, ACTION_READ));
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeString(dataLinkRef);
+        out.writeString(dataLinkName);
         out.writeString(query);
         out.writeIntArray(parameterPositions);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        dataLinkRef = in.readString();
+        dataLinkName = in.readString();
         query = in.readString();
         parameterPositions = in.readIntArray();
     }
