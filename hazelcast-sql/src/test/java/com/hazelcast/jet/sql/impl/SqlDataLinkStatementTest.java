@@ -48,7 +48,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         instance().getSql().execute("CREATE DATA LINK " + dlName
                 + " TYPE \"" + DummyDataLink.class.getName() + "\" "
                 + " OPTIONS ('b' = 'c')");
-        DataLink dataLink = dataLinkService.getDataLink(dlName, DummyDataLink.class);
+        DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
         assertThat(dataLink).isNotNull();
         assertThat(dataLink.getConfig().getClassName()).isEqualTo(DummyDataLink.class.getName());
         assertThat(dataLink.getConfig().getProperties().get("b")).isEqualTo("c");
@@ -71,7 +71,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         instance().getSql().execute("CREATE DATA LINK " + dlName
                 + " TYPE \"" + DummyDataLink.class.getName() + "\" "
                 + " OPTIONS ('b' = 'c')");
-        DataLink dataLink = dataLinkService.getDataLink(dlName, DummyDataLink.class);
+        DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
         assertThat(dataLink).isNotNull();
 
         assertThatThrownBy(() ->
@@ -114,7 +114,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         instance().getSql().execute("CREATE DATA LINK " + dlName
                 + " TYPE \"" + DummyDataLink.class.getName() + "\" "
                 + " OPTIONS ('b' = 'c')");
-        DataLink dataLink = dataLinkService.getDataLink(dlName, DummyDataLink.class);
+        DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
         assertThat(dataLink).isNotNull();
     }
 
@@ -144,12 +144,12 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         instance().getSql().execute("DROP DATA LINK IF EXISTS " + dlName2);
 
         assertThatThrownBy(() ->
-                dataLinkService.getDataLink(dlName1, DummyDataLink.class))
+                dataLinkService.getAndRetainDataLink(dlName1, DummyDataLink.class))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessageContaining("Data link '" + dlName1 + "' not found");
 
         assertThatThrownBy(() ->
-                dataLinkService.getDataLink(dlName2, DummyDataLink.class))
+                dataLinkService.getAndRetainDataLink(dlName2, DummyDataLink.class))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessageContaining("Data link '" + dlName2 + "' not found");
     }

@@ -158,7 +158,7 @@ public class PlanExecutor {
             throw new HazelcastException("Data link '" + plan.name() + "' already exists");
         }
 
-        dlService.createSqlDataLink(plan.name(), plan.type(), plan.options());
+        dlService.createSqlDataLink(plan.name(), plan.type(), plan.options(), plan.isReplace());
         dataLinksCatalog.createDataLink(
                 new DataLink(plan.name(), plan.type(), plan.options()),
                 plan.isReplace(),
