@@ -200,7 +200,8 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
             long[] topicOffsets = offsets.get(topicPartition.topic());
             assert topicOffsets != null && topicOffsets.length > partition;
             topicOffsets[partition] = initialOffset;
-            getLogger().info("Seeking to specified initial offset: " + initialOffset + " of topic-partition: " + topicPartition);
+            getLogger().info("Seeking to specified initial offset: " + initialOffset
+                    + " of topic-partition: " + topicPartition);
             consumer.seek(topicPartition, initialOffset);
         }
     }
