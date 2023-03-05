@@ -57,8 +57,6 @@ public final class KafkaSources {
     }
 
     /**
-     * TODO: update this javadoc
-     *
      * Returns a source that consumes one or more Apache Kafka topics and emits
      * items from them as {@code Map.Entry} instances.
      * <p>
@@ -101,6 +99,13 @@ public final class KafkaSources {
      *     descriptions of these properties.
      * </ol>
      *
+     * Additionally, {@linkplain TopicsConfig topicConfig} parameter can be used to
+     * specify exact initial offsets for given partitions that will be used later by
+     * the source consumer as a starting offsets when reading records from those partitions.
+     * Note that initial offsets provided in {@code topicConfig} will always have a priority.
+     * That means even if {@code group.id} property was specified, {@code topicConfig} offsets
+     * will have a precedence over offsets associated with given consumer group.
+     * <p>
      * If you add Kafka partitions at run-time, consumption from them will
      * start after a delay, based on the {@code metadata.max.age.ms} Kafka
      * property. Note, however, that events from them can be dropped as late if
