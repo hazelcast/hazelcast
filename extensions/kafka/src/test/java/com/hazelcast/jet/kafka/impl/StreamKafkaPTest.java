@@ -170,8 +170,8 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     @Test
     public void when_partitionsInitialOffsetsProvided_thenRecordsReadFromAppropriatePosition() {
         for (int i = 0; i < 100; i++) {
-            kafkaTestSupport.produce(topic1Name, i,  String.valueOf(i));
-            kafkaTestSupport.produce(topic2Name, i,  String.valueOf(i));
+            kafkaTestSupport.produce(topic1Name, i, String.valueOf(i));
+            kafkaTestSupport.produce(topic2Name, i, String.valueOf(i));
         }
         sleepAtLeastSeconds(3);
 
@@ -539,17 +539,26 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
             long idleTimeoutMillis
     ) {
         assert numTopics == 1 || numTopics == 2;
+        List<String> topics = numTopics == 1
+                ? singletonList(topic1Name)
+                : asList(topic1Name, topic2Name);
+        TopicsConfig topicsConfig = new TopicsConfig().addTopics(topics);
+        return createProcessor(properties, topicsConfig, projectionFn, idleTimeoutMillis);
+    }
+
+    private <T> StreamKafkaP<Integer, String, T> createProcessor(
+            Properties properties,
+            TopicsConfig topicsConfig,
+            @Nonnull FunctionEx<ConsumerRecord<Integer, String>, T> projectionFn,
+            long idleTimeoutMillis
+    ) {
         ToLongFunctionEx<T> timestampFn = e ->
                 e instanceof Entry
                         ? (int) ((Entry) e).getKey()
                         : System.currentTimeMillis();
         EventTimePolicy<T> eventTimePolicy = eventTimePolicy(
                 timestampFn, limitingLag(LAG), 1, 0, idleTimeoutMillis);
-        List<String> topics = numTopics == 1 ?
-                singletonList(topic1Name)
-                :
-                asList(topic1Name, topic2Name);
-        return new StreamKafkaP<>(properties, topics, projectionFn, eventTimePolicy);
+        return new StreamKafkaP<>(properties, topicsConfig, projectionFn, eventTimePolicy);
     }
 
     @Test
@@ -571,6 +580,53 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
             Future<RecordMetadata> future = kafkaTestSupport.produce(topic1Name, i, Integer.toString(i));
             RecordMetadata recordMetadata = future.get();
             System.out.println("Entry " + i + " produced to partition " + recordMetadata.partition());
+            somethingInPartition1 |= recordMetadata.partition() == 1;
+        }
+        assertTrue("nothing was produced to partition-1", somethingInPartition1);
+        Set<Object> receivedEvents = new HashSet<>();
+        for (int i = 1; i < 11; i++) {
+            try {
+                receivedEvents.add(consumeEventually(processor, outbox));
+            } catch (AssertionError e) {
+                throw new AssertionError("Unable to receive 10 items, events so far: " + receivedEvents);
+            }
+        }
+        assertEquals(range(1, 11).mapToObj(i -> entry(i, Integer.toString(i))).collect(toSet()), receivedEvents);
+    }
+
+    @Test
+    public void when_partitionAddedWhilePartitionsInitialOffsetsProvided_then_consumedFromBeginning() throws Exception {
+        Properties properties = properties();
+        properties.setProperty("metadata.max.age.ms", "100");
+        TopicsConfig topicsConfig = new TopicsConfig()
+                .addTopic(topic2Name)
+                .addTopicConfig(new TopicConfig(topic1Name)
+                        .addPartitionInitialOffset(0, 1L)
+                        .addPartitionInitialOffset(1, 1L)
+                        .addPartitionInitialOffset(2, 1L)
+                        .addPartitionInitialOffset(3, 1L)
+                        // specify initial offset for non-existing partitions as well
+                        .addPartitionInitialOffset(4, 1L)
+                        .addPartitionInitialOffset(5, 1L)
+                );
+
+        StreamKafkaP<Integer, String, Entry<Integer, String>> processor = createProcessor(
+                properties, topicsConfig, r -> entry(r.key(), r.value()), 10_000);
+        TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
+        processor.init(outbox, new TestProcessorContext());
+
+        kafkaTestSupport.produce(topic1Name, 0, "0"); // first record will be skipped due to topics config
+        kafkaTestSupport.produce(topic1Name, 1, "1");
+        assertEquals(entry(1, "1"), consumeEventually(processor, outbox));
+
+        kafkaTestSupport.setPartitionCount(topic1Name, INITIAL_PARTITION_COUNT + 2);
+        kafkaTestSupport.resetProducer(); // this allows production to the added partition
+
+        boolean somethingInPartition1 = false;
+        for (int i = 1; i < 11; i++) {
+            Future<RecordMetadata> future = kafkaTestSupport.produce(topic1Name, i, Integer.toString(i));
+            RecordMetadata recordMetadata = future.get();
+            System.out.println("## Entry " + i + " produced to partition " + recordMetadata.partition());
             somethingInPartition1 |= recordMetadata.partition() == 1;
         }
         assertTrue("nothing was produced to partition-1", somethingInPartition1);
