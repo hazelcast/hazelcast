@@ -16,6 +16,13 @@ if [ -z "$JAVA" ]; then
     exit 1
 fi
 
+# Bash on Windows may produce paths such as /c/path/to/lib and Java wants c:\path\to\lib
+# and, in this case, the cygpath command *should* be available - and then we will use it
+CYGPATH=""
+if [ "$(command -v cygpath)" != "" ]; then
+  CYGPATH=cygpath
+fi
+
 #### you can enable following variables by uncommenting them
 
 #### minimum heap size
@@ -51,8 +58,29 @@ if [ "$JAVA_VERSION" -ge "9" ]; then
     fi
 fi
 
+# ensure CLASSPATH_DEFAULT is unix style + trimmed
+if [ -n "${CLASSPATH_DEFAULT}" ]; then
+  if [ -n "${CYGPATH}" ]; then
+    CLASSPATH_DEFAULT=$(cygpath -u -p "$CLASSPATH_DEFAULT")
+  fi
+  CLASSPATH_DEFAULT="${CLASSPATH_DEFAULT##:}"
+  CLASSPATH_DEFAULT="${CLASSPATH_DEFAULT%%:}"
+fi
+
+# ensure CLASSPATH is unix style + trimmed
 if [ -n "${CLASSPATH}" ]; then
-  export CLASSPATH="${CLASSPATH_DEFAULT}:${CLASSPATH}"
+  if [ -n "${CYGPATH}" ]; then
+    CLASSPATH=$(cygpath -u -p "$CLASSPATH")
+  fi
+  CLASSPATH="${CLASSPATH##:}"
+  CLASSPATH="${CLASSPATH%%:}"
+fi
+
+# combine CLASSPATH and CLASSPATH_DEFAULT
+if [ -n "${CLASSPATH}" ]; then
+  if [ -n "${CLASSPATH_DEFAULT}" ]; then
+    export CLASSPATH="${CLASSPATH_DEFAULT}:${CLASSPATH}"
+  fi
 else
   export CLASSPATH="${CLASSPATH_DEFAULT}"
 fi
@@ -81,3 +109,12 @@ function readJvmOptionsFile {
     # Evaluate variables in the options, allowing to use e.g. HAZELCAST_HOME variable
     JVM_OPTIONS=$(eval echo $JVM_OPTIONS)
 }
+
+# trim CLASSPATH
+CLASSPATH="${CLASSPATH##:}"
+CLASSPATH="${CLASSPATH%%:}"
+
+# ensure CLASSPATH is windows style on Windows
+if [ -n "${CYGPATH}" ]; then
+  CLASSPATH=$(cygpath -w -p "$CLASSPATH")
+fi

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -171,6 +171,7 @@ public class PortableGenericRecordBuilder implements GenericRecordBuilder {
     @Nonnull
     @Override
     public GenericRecordBuilder setGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord value) {
+        checkPortableGenericRecord(value);
         return set(fieldName, value, FieldType.PORTABLE);
     }
 
@@ -207,7 +208,19 @@ public class PortableGenericRecordBuilder implements GenericRecordBuilder {
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
+        if (value != null) {
+            for (GenericRecord genericRecord : value) {
+                checkPortableGenericRecord(genericRecord);
+            }
+        }
         return set(fieldName, value, FieldType.PORTABLE_ARRAY);
+    }
+
+    private static void checkPortableGenericRecord(GenericRecord genericRecord) {
+        if (genericRecord != null && !(genericRecord instanceof PortableGenericRecord)) {
+            throw new HazelcastSerializationException("You can only use Portable GenericRecords in a Portable"
+                    + " GenericRecordBuilder");
+        }
     }
 
     @Nonnull

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,15 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.LockAwareOperation;
+import com.hazelcast.map.impl.operation.steps.TxnUnlockOpSteps;
+import com.hazelcast.map.impl.operation.steps.engine.State;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -61,6 +64,18 @@ public class TxnUnlockOperation extends LockAwareOperation
     @Override
     protected void runInternal() {
         recordStore.unlock(dataKey, ownerUuid, threadId, getCallId());
+    }
+
+    @Override
+    public State createState() {
+        return super.createState()
+                .setVersion(version)
+                .setOwnerUuid(ownerUuid);
+    }
+
+    @Override
+    public Step getStartingStep() {
+        return TxnUnlockOpSteps.UNLOCK;
     }
 
     @Override

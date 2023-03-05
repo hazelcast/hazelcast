@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,8 +46,8 @@ public class NearCacheConfigAccessorTest extends HazelcastTestSupport {
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
         NearCacheConfig copy = NearCacheConfigAccessor.copyWithInitializedDefaultMaxSizeForOnHeapMaps(nearCacheConfig);
 
-        assertEquals(copy.getEvictionConfig().getSize(), MapConfig.DEFAULT_MAX_SIZE);
-        assertEquals(nearCacheConfig.getEvictionConfig().getSize(), EvictionConfig.DEFAULT_MAX_ENTRY_COUNT);
+        assertEquals(MapConfig.DEFAULT_MAX_SIZE, copy.getEvictionConfig().getSize());
+        assertEquals(EvictionConfig.DEFAULT_MAX_ENTRY_COUNT, nearCacheConfig.getEvictionConfig().getSize());
     }
 
     @Test

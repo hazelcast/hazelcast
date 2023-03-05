@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import example.serialization.EmployeeDTO;
@@ -36,11 +35,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
+import java.util.Random;
 
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.assertSchemasAvailable;
+import static com.hazelcast.test.SplitBrainTestSupport.blockCommunicationBetween;
+import static com.hazelcast.test.SplitBrainTestSupport.unblockCommunicationBetween;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -49,27 +51,30 @@ public class CompactFormatSplitBrainTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
-    private HazelcastInstance instance1;
-    private HazelcastInstance instance2;
-    private HazelcastInstance instance3;
-    private HazelcastInstance instance4;
-    private HazelcastInstance instance5;
-
-    private List<HazelcastInstance> splitA;
-    private List<HazelcastInstance> splitB;
-
+    private Brain largerBrain;
+    private Brain smallerBrain;
+    private List<HazelcastInstance> allInstances;
 
     @Before
     public void setUp() {
         Config config = getMemberConfig();
-        instance1 = factory.newHazelcastInstance(config);
-        instance2 = factory.newHazelcastInstance(config);
-        instance3 = factory.newHazelcastInstance(config);
-        instance4 = factory.newHazelcastInstance(config);
-        instance5 = factory.newHazelcastInstance(config);
 
-        splitA = Arrays.asList(instance1, instance2, instance3);
-        splitB = Arrays.asList(instance4, instance5);
+        largerBrain = new Brain(Arrays.asList(
+                factory.newHazelcastInstance(config),
+                factory.newHazelcastInstance(config),
+                factory.newHazelcastInstance(config)
+        ));
+
+        smallerBrain = new Brain(Arrays.asList(
+                factory.newHazelcastInstance(config),
+                factory.newHazelcastInstance(config)
+        ));
+
+        allInstances = new ArrayList<>();
+        allInstances.addAll(largerBrain.instances);
+        allInstances.addAll(smallerBrain.instances);
+
+        assertClusterSizeEventually(allInstances.size(), allInstances);
     }
 
     @After
@@ -81,108 +86,137 @@ public class CompactFormatSplitBrainTest extends HazelcastTestSupport {
     public void testSplitBrainHealing_whenSmallerClusterHasNoSchemas() {
         splitCluster();
 
-        // The data is only available in the larger cluster
-        fillEmployeeMapUsing(instance1);
-        fillNodeMapUsing(instance1);
+        // Schemas of the Employee and the Node classes are only available in the larger brain
+        fillEmployeeMapUsing(largerBrain.getRandomInstance());
+        fillNodeMapUsing(largerBrain.getRandomInstance());
 
         mergeCluster();
 
-        assertEmployeeMapSizeUsing(instance5);
-        assertNodeMapSizeUsing(instance5);
+        assertEmployeeMapSizeUsing(smallerBrain.getRandomInstance());
+        assertNodeMapSizeUsing(smallerBrain.getRandomInstance());
 
         assertSchemasAvailableInEveryMember();
 
-        assertQueryForEmployeeMapUsing(instance5);
-        assertQueryForNodeMapUsing(instance5);
+        assertQueryForEmployeeMapUsing(smallerBrain.getRandomInstance());
+        assertQueryForNodeMapUsing(smallerBrain.getRandomInstance());
     }
 
     @Test
     public void testSplitBrainHealing_whenLargeClusterHasNoSchemas() {
         splitCluster();
 
-        // The data is only available in the smaller cluster
-        fillEmployeeMapUsing(instance5);
-        fillNodeMapUsing(instance5);
+        // Schemas of the Employee and the Node classes are only available in the smaller brain
+        fillEmployeeMapUsing(smallerBrain.getRandomInstance());
+        fillNodeMapUsing(smallerBrain.getRandomInstance());
 
         mergeCluster();
 
-        assertEmployeeMapSizeUsing(instance1);
-        assertNodeMapSizeUsing(instance1);
+        assertEmployeeMapSizeUsing(largerBrain.getRandomInstance());
+        assertNodeMapSizeUsing(largerBrain.getRandomInstance());
 
         assertSchemasAvailableInEveryMember();
 
-        assertQueryForEmployeeMapUsing(instance1);
-        assertQueryForNodeMapUsing(instance1);
+        assertQueryForEmployeeMapUsing(largerBrain.getRandomInstance());
+        assertQueryForNodeMapUsing(largerBrain.getRandomInstance());
     }
 
     @Test
     public void testSplitBrainHealing_whenBothClusterHaveSameSchemas() {
         splitCluster();
 
-        // The data is available in both clusters
-        fillEmployeeMapUsing(instance1);
-        fillEmployeeMapUsing(instance5);
+        // Schemas of the Employee and the Node classes are only available in both of the brains
+        fillEmployeeMapUsing(largerBrain.getRandomInstance());
+        fillEmployeeMapUsing(smallerBrain.getRandomInstance());
 
-        fillNodeMapUsing(instance1);
-        fillNodeMapUsing(instance5);
+        fillNodeMapUsing(largerBrain.getRandomInstance());
+        fillNodeMapUsing(smallerBrain.getRandomInstance());
 
         mergeCluster();
 
-        assertEmployeeMapSizeUsing(instance1);
-        assertNodeMapSizeUsing(instance5);
+        assertEmployeeMapSizeUsing(largerBrain.getRandomInstance());
+        assertNodeMapSizeUsing(smallerBrain.getRandomInstance());
 
         assertSchemasAvailableInEveryMember();
 
-        assertQueryForEmployeeMapUsing(instance5);
-        assertQueryForNodeMapUsing(instance1);
+        assertQueryForEmployeeMapUsing(smallerBrain.getRandomInstance());
+        assertQueryForNodeMapUsing(largerBrain.getRandomInstance());
     }
 
     @Test
     public void testSplitBrainHealing_whenBothClusterHaveDifferentSchemas() {
         splitCluster();
 
-        // The data is only available in the large cluster
-        fillEmployeeMapUsing(instance1);
+        // The schema of the Employee class is only available in the larger brain
+        fillEmployeeMapUsing(largerBrain.getRandomInstance());
 
-        // Tha data is only available in the smaller cluster
-        fillNodeMapUsing(instance5);
+        // The schema of the Node class is only available in the smaller brain
+        fillNodeMapUsing(smallerBrain.getRandomInstance());
 
         mergeCluster();
 
-        assertEmployeeMapSizeUsing(instance5);
-        assertNodeMapSizeUsing(instance1);
+        assertEmployeeMapSizeUsing(smallerBrain.getRandomInstance());
+        assertNodeMapSizeUsing(largerBrain.getRandomInstance());
 
         assertSchemasAvailableInEveryMember();
 
-        assertQueryForEmployeeMapUsing(instance5);
-        assertQueryForNodeMapUsing(instance1);
+        assertQueryForEmployeeMapUsing(smallerBrain.getRandomInstance());
+        assertQueryForNodeMapUsing(largerBrain.getRandomInstance());
+    }
+
+    private static class Brain {
+        private final List<HazelcastInstance> instances;
+        private final Random random = new Random();
+
+        private Brain(List<HazelcastInstance> instances) {
+            this.instances = instances;
+        }
+
+        public HazelcastInstance getRandomInstance() {
+            return instances.get(random.nextInt(instances.size()));
+        }
+
+        public void splitFrom(Brain other) {
+            List<HazelcastInstance> otherBrainInstances = other.instances;
+            for (HazelcastInstance instance : instances) {
+                for (HazelcastInstance otherBrainInstance : otherBrainInstances) {
+                    blockCommunicationBetween(instance, otherBrainInstance);
+                }
+            }
+
+            for (HazelcastInstance instance : instances) {
+                for (HazelcastInstance otherBrainInstance : otherBrainInstances) {
+                    closeConnectionBetween(instance, otherBrainInstance);
+                }
+            }
+        }
+
+        public void mergeWith(Brain other) {
+            for (HazelcastInstance instance : instances) {
+                for (HazelcastInstance otherBrainInstance : other.instances) {
+                    unblockCommunicationBetween(instance, otherBrainInstance);
+                }
+            }
+        }
     }
 
     private void splitCluster() {
-        for (HazelcastInstance splitAInstance : splitA) {
-            for (HazelcastInstance splitBInstance : splitB) {
-                SplitBrainTestSupport.blockCommunicationBetween(splitAInstance, splitBInstance);
-                closeConnectionBetween(splitAInstance, splitBInstance);
-            }
-        }
+        largerBrain.splitFrom(smallerBrain);
 
-        // make sure that cluster is split as [1 , 2, 3] , [4, 5]
-        assertClusterSizeEventually(3, instance1, instance2, instance3);
-        assertClusterSizeEventually(2, instance4, instance5);
+        // make sure that cluster is split
+        assertClusterSizeEventually(largerBrain.instances.size(), largerBrain.instances);
+        assertClusterSizeEventually(smallerBrain.instances.size(), smallerBrain.instances);
+        waitAllForSafeState(allInstances);
     }
 
     private void mergeCluster() {
-        for (HazelcastInstance splitAInstance : splitA) {
-            for (HazelcastInstance splitBInstance : splitB) {
-                SplitBrainTestSupport.unblockCommunicationBetween(splitAInstance, splitBInstance);
-            }
-        }
+        largerBrain.mergeWith(smallerBrain);
 
-        assertClusterSizeEventually(5, instance1, instance2, instance3, instance4, instance5);
+        assertClusterSizeEventually(allInstances.size(), allInstances);
+        waitAllForSafeState(allInstances);
     }
 
     private Config getMemberConfig() {
-        Config config = smallInstanceConfig();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
         config.getMapConfig("employeeMap")
                 .getMergePolicyConfig()
                 .setPolicy(PutIfAbsentMergePolicy.class.getName());
@@ -195,14 +229,7 @@ public class CompactFormatSplitBrainTest extends HazelcastTestSupport {
     }
 
     private void assertSchemasAvailableInEveryMember() {
-        Collection<HazelcastInstance> instances = Arrays.asList(
-                instance1,
-                instance2,
-                instance3,
-                instance4,
-                instance5
-        );
-        assertSchemasAvailable(instances, EmployeeDTO.class, NodeDTO.class);
+        assertSchemasAvailable(allInstances, EmployeeDTO.class, NodeDTO.class);
     }
 
     private void fillEmployeeMapUsing(HazelcastInstance instance) {

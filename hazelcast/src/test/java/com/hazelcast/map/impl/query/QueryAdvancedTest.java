@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -348,7 +348,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         assertEquals(2, entries.size());
         for (Map.Entry<String, Employee> entry : entries) {
             Employee employee = entry.getValue();
-            assertEquals(employee.getAge(), 23);
+            assertEquals(23, employee.getAge());
             assertTrue(employee.isActive());
         }
     }
@@ -375,7 +375,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         assertEquals(2, entries.size());
         for (Map.Entry<String, Employee> entry : entries) {
             Employee employee = entry.getValue();
-            assertEquals(employee.getAge(), 23);
+            assertEquals(23, employee.getAge());
             assertTrue(employee.isActive());
         }
     }
@@ -404,7 +404,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         assertEquals(2, entries.size());
         for (Map.Entry<String, Employee> entry : entries) {
             Employee employee = entry.getValue();
-            assertEquals(employee.getAge(), 23);
+            assertEquals(23, employee.getAge());
             assertTrue(employee.isActive());
         }
     }

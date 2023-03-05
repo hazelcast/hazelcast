@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
 import com.hazelcast.memory.Capacity;
-import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
@@ -3368,7 +3367,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("my-device", localDeviceConfig.getName());
         assertEquals(new File(baseDir).getAbsolutePath(), localDeviceConfig.getBaseDir().getAbsolutePath());
         assertEquals(blockSize, localDeviceConfig.getBlockSize());
-        assertEquals(new MemorySize(100, MemoryUnit.GIGABYTES), localDeviceConfig.getCapacity());
+        assertEquals(new Capacity(100, MemoryUnit.GIGABYTES), localDeviceConfig.getCapacity());
         assertEquals(readIOThreadCount, localDeviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount, localDeviceConfig.getWriteIOThreadCount());
 
@@ -3395,7 +3394,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(blockSize * device0Multiplier, localDeviceConfig.getBlockSize());
         assertEquals(readIOThreadCount * device0Multiplier, localDeviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount * device0Multiplier, localDeviceConfig.getWriteIOThreadCount());
-        assertEquals(new MemorySize(1234567890, MemoryUnit.MEGABYTES), localDeviceConfig.getCapacity());
+        assertEquals(new Capacity(1234567890, MemoryUnit.MEGABYTES), localDeviceConfig.getCapacity());
 
         localDeviceConfig = config.getDeviceConfig("device1");
         assertEquals(blockSize * device1Multiplier, localDeviceConfig.getBlockSize());
@@ -4514,35 +4513,35 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testExternalDataStoreConfigs() {
+    public void testDataLinkConfigs() {
         String xml = HAZELCAST_START_TAG
-                + "    <external-data-store name=\"mysql-database\">\n"
-                + "        <class-name>com.hazelcast.datastore.JdbcDataStore</class-name>\n"
+                + "    <data-link name=\"mysql-database\">\n"
+                + "        <class-name>com.hazelcast.datalink.JdbcDataLink</class-name>\n"
                 + "        <properties>\n"
                 + "            <property name=\"jdbcUrl\">jdbc:mysql://dummy:3306</property>\n"
                 + "            <property name=\"some.property\">dummy-value</property>\n"
                 + "        </properties>\n"
                 + "      <shared>true</shared>\n"
-                + "    </external-data-store>"
-                + "    <external-data-store name=\"other-database\">\n"
-                + "        <class-name>com.hazelcast.datastore.OtherDataStore</class-name>\n"
-                + "    </external-data-store>"
+                + "    </data-link>"
+                + "    <data-link name=\"other-database\">\n"
+                + "        <class-name>com.hazelcast.datalink.OtherDataLink</class-name>\n"
+                + "    </data-link>"
                 + HAZELCAST_END_TAG;
 
-        Map<String, ExternalDataStoreConfig> externalDataStoreConfigs = buildConfig(xml).getExternalDataStoreConfigs();
+        Map<String, DataLinkConfig> dataLinkConfigs = buildConfig(xml).getDataLinkConfigs();
 
-        assertThat(externalDataStoreConfigs).hasSize(2);
-        assertThat(externalDataStoreConfigs).containsKey("mysql-database");
-        ExternalDataStoreConfig mysqlDataStoreConfig = externalDataStoreConfigs.get("mysql-database");
-        assertThat(mysqlDataStoreConfig.getClassName()).isEqualTo("com.hazelcast.datastore.JdbcDataStore");
-        assertThat(mysqlDataStoreConfig.getName()).isEqualTo("mysql-database");
-        assertThat(mysqlDataStoreConfig.isShared()).isTrue();
-        assertThat(mysqlDataStoreConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
-        assertThat(mysqlDataStoreConfig.getProperty("some.property")).isEqualTo("dummy-value");
+        assertThat(dataLinkConfigs).hasSize(2);
+        assertThat(dataLinkConfigs).containsKey("mysql-database");
+        DataLinkConfig mysqlDataLinkConfig = dataLinkConfigs.get("mysql-database");
+        assertThat(mysqlDataLinkConfig.getClassName()).isEqualTo("com.hazelcast.datalink.JdbcDataLink");
+        assertThat(mysqlDataLinkConfig.getName()).isEqualTo("mysql-database");
+        assertThat(mysqlDataLinkConfig.isShared()).isTrue();
+        assertThat(mysqlDataLinkConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
+        assertThat(mysqlDataLinkConfig.getProperty("some.property")).isEqualTo("dummy-value");
 
-        assertThat(externalDataStoreConfigs).containsKey("other-database");
-        ExternalDataStoreConfig otherDataStoreConfig = externalDataStoreConfigs.get("other-database");
-        assertThat(otherDataStoreConfig.getClassName()).isEqualTo("com.hazelcast.datastore.OtherDataStore");
+        assertThat(dataLinkConfigs).containsKey("other-database");
+        DataLinkConfig otherDataLinkConfig = dataLinkConfigs.get("other-database");
+        assertThat(otherDataLinkConfig.getClassName()).isEqualTo("com.hazelcast.datalink.OtherDataLink");
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -229,6 +229,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
                 if (cl == null) {
                     cl = nodeEngine.getConfigClassLoader();
                 }
+                startTime.set(System.currentTimeMillis());
                 executionFuture = taskletExecService
                         .beginExecute(tasklets, cancellationFuture, cl)
                         .whenComplete(withTryCatch(logger, (r, t) -> setCompletionTime()))
@@ -241,7 +242,6 @@ public class ExecutionContext implements DynamicMetricsProvider {
                             }
                             return res;
                         });
-                startTime.set(System.currentTimeMillis());
             }
             return executionFuture;
         }

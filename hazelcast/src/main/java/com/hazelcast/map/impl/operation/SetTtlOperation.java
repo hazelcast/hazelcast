@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,11 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.operation.steps.PutOpSteps;
+import com.hazelcast.map.impl.operation.steps.engine.State;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.StaticParams;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
@@ -43,6 +47,13 @@ public class SetTtlOperation extends LockAwareOperation
     }
 
     @Override
+    protected void innerBeforeRun() throws Exception {
+        super.innerBeforeRun();
+
+        recordStore.checkIfLoaded();
+    }
+
+    @Override
     public void onWaitExpire() {
         sendResponse(null);
     }
@@ -50,6 +61,24 @@ public class SetTtlOperation extends LockAwareOperation
     @Override
     protected void runInternal() {
         response = recordStore.setTtl(dataKey, ttl);
+    }
+
+    @Override
+    public State createState() {
+        return super.createState()
+                .setTtl(ttl)
+                .setStaticPutParams(StaticParams.SET_TTL_PARAMS);
+    }
+
+    @Override
+    public void applyState(State state) {
+        super.applyState(state);
+        response = state.getOldValue() != null;
+    }
+
+    @Override
+    public Step getStartingStep() {
+        return PutOpSteps.READ;
     }
 
     @Override

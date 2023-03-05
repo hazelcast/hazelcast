@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.wan.WanEventCounters;
 import com.hazelcast.wan.WanEventType;
@@ -37,7 +36,7 @@ import java.util.Set;
 /**
  * WAN replication object for map update operations.
  */
-public class WanMapAddOrUpdateEvent implements InternalWanEvent<EntryView<Object, Object>>, IdentifiedDataSerializable {
+public class WanMapAddOrUpdateEvent implements InternalWanEvent<EntryView<Object, Object>> {
     private String mapName;
     /**
      * The policy how to merge the entry on the receiving cluster

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,7 +143,7 @@ public class ItemCounterTest extends HazelcastTestSupport {
         long newValue = Long.MAX_VALUE;
 
         long count = counter.getAndSet(object, newValue);
-        assertEquals(count, 0);
+        assertEquals(0, count);
 
         count = counter.get(object);
         assertEquals(newValue, count);
@@ -159,7 +159,7 @@ public class ItemCounterTest extends HazelcastTestSupport {
         counter.set(object, initialValue);
 
         long count = counter.getAndSet(object, newValue);
-        assertEquals(count, initialValue);
+        assertEquals(initialValue, count);
 
         count = counter.get(object);
         assertEquals(newValue, count);

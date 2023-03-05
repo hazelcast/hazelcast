@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -165,7 +165,7 @@ public class MemberAddressProviderTest {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
 
         final InetSocketAddress inetSocketAddress = (InetSocketAddress) instance.getLocalEndpoint().getSocketAddress();
-        assertEquals(inetSocketAddress.getPort(), 9999);
+        assertEquals(9999, inetSocketAddress.getPort());
 
         final Member localMember = instance.getCluster().getLocalMember();
         assertEquals("1.2.3.4", localMember.getAddress().getHost());
@@ -195,7 +195,7 @@ public class MemberAddressProviderTest {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
 
         final InetSocketAddress inetSocketAddress = (InetSocketAddress) instance.getLocalEndpoint().getSocketAddress();
-        assertEquals(inetSocketAddress.getPort(), 9999);
+        assertEquals(9999, inetSocketAddress.getPort());
 
         final Member localMember = instance.getCluster().getLocalMember();
         assertEquals("1.2.3.4", localMember.getAddress().getHost());

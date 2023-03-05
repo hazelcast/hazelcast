@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.command.UpdateRaftGroupMembersCmd;
+import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 import com.hazelcast.cp.internal.raftop.metadata.GetActiveCPMembersOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetMembershipChangeScheduleOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetRaftGroupOp;
@@ -815,6 +816,57 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         });
     }
 
+    // test for https://github.com/hazelcast/hazelcast/issues/21438
+    @Test
+    public void when_snapshotIsTakenWhileRemovingCPLeader_newMemberInstalledSnapshot_shouldBeImmutable() throws Exception {
+        int nodeCount = 3;
+        int commitIndexAdvanceCountToSnapshot = 50;
+        Config config = createConfig(nodeCount, nodeCount);
+        config.getCPSubsystemConfig().getRaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(commitIndexAdvanceCountToSnapshot);
+
+        HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
+        for (int i = 0; i < nodeCount; i++) {
+            instances[i] = factory.newHazelcastInstance(config);
+        }
+
+        assertClusterSizeEventually(nodeCount, instances);
+        waitUntilCPDiscoveryCompleted(instances);
+
+        HazelcastInstance leaderInstance = getLeaderInstance(instances, getMetadataGroupId(instances[0]));
+
+        // `commitIndexAdvanceCountToSnapshot - 5` is selected on purpose to partially include removal of CP member in snapshot.
+        // Specifically, RemoveCPMemberOp will be in snapshot but CompleteRaftGroupMembershipChangesOp will not.
+        for (int i = 0; i < commitIndexAdvanceCountToSnapshot - 5; i++) {
+            getRaftInvocationManager(leaderInstance).invoke(getMetadataGroupId(instances[0]), new GetActiveCPMembersOp()).get();
+        }
+
+        // This will add 3 entries, RemoveCPMemberOp, ChangeRaftGroupMembersCmd and CompleteRaftGroupMembershipChangesOp.
+        // RemoveCPMemberOp will be in snapshot but CompleteRaftGroupMembershipChangesOp will not be included.
+        leaderInstance.shutdown();
+
+        HazelcastInstance newInstance = factory.newHazelcastInstance(config);
+        newInstance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember().toCompletableFuture().join();
+
+        List<CPMember> cpMembers = new ArrayList<>(newInstance.getCPSubsystem().getCPSubsystemManagementService().getCPMembers().toCompletableFuture().join());
+
+        // Waiting for newInstance to apply the snapshot and update its active group members
+        assertTrueEventually(() -> {
+            RaftService service = getRaftService(newInstance);
+            List<CPMemberInfo> activeMembers = new ArrayList<>(service.getMetadataGroupManager().getActiveMembers());
+            assertEquals(cpMembers, activeMembers);
+        });
+
+        // Getting SnapshotEntry from newInstance and leader instances RaftLog
+        RaftNodeImpl newInstanceRaftNode = getRaftNode(newInstance, getMetadataGroupId(newInstance));
+        SnapshotEntry newInstanceSnapshotEntry = (SnapshotEntry) getSnapshotEntry(newInstanceRaftNode);
+        RaftNodeImpl leaderRaftNode = getRaftNode(getInstance(newInstanceRaftNode.getLeader()), getMetadataGroupId(newInstance));
+        SnapshotEntry leaderSnapshotEntry = (SnapshotEntry) getSnapshotEntry(leaderRaftNode);
+
+        // Verifying that the newInstance's SnapshotEntry hasn't mutated after group members' state update,
+        // and equals to the initial leader's SnapshotEntry.
+        // The 'toString' method is used here to compare states so as not to add 'equals' methods to a bunch of classes.
+        assertEquals(leaderSnapshotEntry.toString(true), newInstanceSnapshotEntry.toString(true));
+    }
 
     @Test
     public void when_newCPMemberIsAddedToTheMetadataGroupAfterRestart_newMemberCommitsMetadataGroupLogEntries() throws ExecutionException, InterruptedException {
@@ -945,6 +997,8 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         assertTrue(newMetadataGroupId.getSeed() > initialMetadataGroupId.getSeed());
         assertEquals(newMetadataGroupId.getSeed(), getRaftService(newInstance1).getMetadataGroupId().getSeed());
         assertEquals(newMetadataGroupId.getSeed(), getRaftService(newInstance2).getMetadataGroupId().getSeed());
+
+        waitUntilCPDiscoveryCompleted(instances[0], newInstance1, newInstance2);
 
         for (int i = 0; i < commitIndexAdvanceCountToSnapshot; i++) {
             getRaftInvocationManager(instances[0]).invoke(getMetadataGroupId(instances[0]), new GetActiveCPMembersOp()).get();

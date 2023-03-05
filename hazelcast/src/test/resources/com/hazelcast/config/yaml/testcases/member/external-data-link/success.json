@@ -1,0 +1,16 @@
+{
+  "instance": {
+    "hazelcast": {
+      "data-link": {
+        "mysql-database": {
+          "class-name": "com.hazelcast.datalink.JdbcDataLinkFactory",
+          "properties": {
+            "jdbcUrl": "jdbc:mysql://dummy:3306"
+          },
+          "shared": false
+        }
+      }
+    }
+  },
+  "error": null
+}

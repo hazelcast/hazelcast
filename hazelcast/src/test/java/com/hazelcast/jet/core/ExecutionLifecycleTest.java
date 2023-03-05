@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
@@ -36,6 +37,7 @@ import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobResult;
+import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
@@ -53,10 +55,8 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
@@ -117,9 +117,6 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
     @Parameter
     public boolean useLightJob;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     private int parallelism;
 
@@ -445,7 +442,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         NoOutputSourceP.executionStarted.await();
         cancelAndJoin(job);
         assertTrueEventually(() -> {
-            assertJobFailed(job, new CancellationException());
+            assertJobFailed(job, new CancellationByUserException());
             assertPsClosedWithError();
             assertPmsClosedWithError();
         });
@@ -488,8 +485,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         CompletableFuture<Void> future = executionContext.beginExecution(jetServiceBackend.getTaskletExecutionService());
 
         // Then
-        expectedException.expect(CancellationException.class);
-        future.join();
+        assertThatThrownBy(future::join)
+                .isInstanceOf(CancellationException.class);
     }
 
     @Test
@@ -529,23 +526,23 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         NoOutputSourceP.proceedLatch.countDown();
 
-        expectedException.expect(CancellationException.class);
-        job.join();
+        assertThatThrownBy(job::join)
+                .isInstanceOf(CancellationException.class);
 
         assertEquals("PS.close not called after execution finished", MEMBER_COUNT, MockPS.closeCount.get());
     }
 
     @Test
-    public void when_deserializationOnMembersFails_then_jobSubmissionFails__member() throws Throwable {
+    public void when_deserializationOnMembersFails_then_jobSubmissionFails__member() {
         when_deserializationOnMembersFails_then_jobSubmissionFails(instance());
     }
 
     @Test
-    public void when_deserializationOnMembersFails_then_jobSubmissionFails__client() throws Throwable {
+    public void when_deserializationOnMembersFails_then_jobSubmissionFails__client() {
         when_deserializationOnMembersFails_then_jobSubmissionFails(client());
     }
 
-    private void when_deserializationOnMembersFails_then_jobSubmissionFails(HazelcastInstance instance) throws Throwable {
+    private void when_deserializationOnMembersFails_then_jobSubmissionFails(HazelcastInstance instance) {
         // Given
         DAG dag = new DAG();
         // this is designed to fail when member deserializes the execution plan while executing
@@ -555,10 +552,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         // Then
         // we can't assert the exception class. Sometimes the HazelcastSerializationException is wrapped
         // in JetException and sometimes it's not, depending on whether the job managed to write JobResult or not.
-        expectedException.expectMessage("java.lang.ClassNotFoundException: fake.Class");
-
-        // When
-        executeAndPeel(newJob(instance, dag, null));
+        assertThatThrownBy(() -> executeAndPeel(newJob(instance, dag, null)))
+                .hasMessageContaining("java.lang.ClassNotFoundException: fake.Class");
     }
 
     @Test
@@ -882,6 +877,40 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         TestProcessors.assertNoErrorsInProcessors();
     }
 
+    @Test
+    public void when_processorThrowsNonSerializable_thenItsWrapped() {
+        // Given
+        SupplierEx<ProcessorSupplier> supplier = PSThrowingNonSerializable::new;
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPMS(supplier)));
+
+        // When
+        try {
+            Job job = newJob(dag);
+            job.join();
+            fail("Job execution should have failed");
+        } catch (Throwable e) {
+            assertContains(e.getMessage(), "boom!");
+        }
+    }
+
+    public static class PSThrowingNonSerializable implements ProcessorSupplier {
+
+        public static class NonSerializableException extends RuntimeException {
+            @SuppressWarnings("unused")
+            private final Object nonSerializableField = new Object();
+
+            public NonSerializableException(String message) {
+                super(message);
+            }
+        }
+
+        @Nonnull @Override
+        public List<Processor> get(int count) {
+            throw new JetException(new NonSerializableException("boom!"));
+        }
+    }
+
+
     public static class NotSerializable_DataSerializable_ProcessorSupplier implements ProcessorSupplier, DataSerializable {
         @Nonnull @Override
         public Collection<? extends Processor> get(int count) {
@@ -948,6 +977,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertOneOfExceptionsInCauses(MockPMS.receivedCloseError.get(),
                 MOCK_ERROR,
                 new CancellationException(),
+                new CancellationByUserException(),
                 new JobTerminateRequestedException(CANCEL_FORCEFUL));
     }
 
@@ -1002,10 +1032,13 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             JobResult jobResult = getJobResult(job);
             assertTrue(jobResult.isSuccessful());
             assertNull(jobResult.getFailureText());
+            assertFalse(jobResult.isUserCancelled());
         }
     }
 
     private void assertJobFailed(Job job, Throwable expected) {
+        boolean isCancelled = expected instanceof CancellationByUserException;
+
         assertTrue(job.getFuture().isDone());
         try {
             job.join();
@@ -1013,13 +1046,21 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         } catch (Throwable caught) {
             assertExceptionInCauses(expected, caught);
         }
+
+        assertThat(job.isUserCancelled())
+                .as("job.isUserCancelled")
+                .isEqualTo(isCancelled);
+
         if (!job.isLightJob()) {
-            Job normalJob = job;
-            JobResult jobResult = getJobResult(normalJob);
+            JobResult jobResult = getJobResult(job);
             assertFalse("jobResult.isSuccessful", jobResult.isSuccessful());
             assertNotNull(jobResult.getFailureText());
             assertContains(jobResult.getFailureText(), expected.toString());
-            assertEquals("jobStatus", JobStatus.FAILED, normalJob.getStatus());
+            assertEquals("jobStatus", JobStatus.FAILED, job.getStatus());
+
+            assertThat(jobResult.isUserCancelled())
+                    .as("jobResult.isUserCancelled")
+                    .isEqualTo(isCancelled);
         }
     }
 

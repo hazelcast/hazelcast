@@ -455,14 +455,14 @@
                 "pointerToViolation": "#/hazelcast/map/my-map/indexes/1/btree-index",
                 "causingExceptions": [
                   {
-                    "schemaLocation": "#/definitions/MemorySize",
+                    "schemaLocation": "#/definitions/Capacity",
                     "pointerToViolation": "#/hazelcast/map/my-map/indexes/1/btree-index/memory-tier/capacity",
                     "causingExceptions": [],
                     "keyword": "type",
                     "message": "expected type: JSONObject, found: Null"
                   },
                   {
-                    "schemaLocation": "#/definitions/MemorySize/properties/unit",
+                    "schemaLocation": "#/definitions/Capacity/properties/unit",
                     "pointerToViolation": "#/hazelcast/map/my-map/indexes/1/btree-index/page-size/unit",
                     "causingExceptions": [],
                     "keyword": "enum",

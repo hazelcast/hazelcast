@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -40,17 +41,24 @@ public class CompactSchemaReplicationSlowTest extends CompactSchemaReplicationTe
 
     @Test
     public void testSchemaReplication_whenAMemberThrowsRetryableExceptionAllTheTime_duringPreparationPhase() {
+        MemberSchemaService stubbedSchemaService = spy(new MemberSchemaService());
         doThrow(new RetryableHazelcastException())
-                .when(getSchemaService(instance1))
+                .when(stubbedSchemaService)
                 .onSchemaPreparationRequest(SCHEMA);
 
-        assertThrows(HazelcastSerializationException.class, () -> fillMapUsing(instance2));
+        // First member will always throw retryable exception
+        // in the preparation phase, others will work fine.
+        int stubbedMemberIndex = 0;
+        setupInstances(index -> index == stubbedMemberIndex ? stubbedSchemaService : spy(new MemberSchemaService()));
+        HazelcastInstance stubbed = instances[stubbedMemberIndex];
+
+        assertThrows(HazelcastSerializationException.class, () -> fillMapUsing(instances[1]));
 
         for (HazelcastInstance instance : instances) {
             MemberSchemaService service = getSchemaService(instance);
 
-            if (instance == instance1) {
-                // For instance1, it must fail all the time
+            if (instance == stubbed) {
+                // For stubbed member, it must fail all the time
                 verify(service, atLeast(SchemaReplicator.MAX_RETRIES_FOR_REQUESTS)).onSchemaPreparationRequest(SCHEMA);
             }
 
@@ -61,22 +69,30 @@ public class CompactSchemaReplicationSlowTest extends CompactSchemaReplicationTe
 
     @Test
     public void testSchemaReplication_whenAMemberThrowsRetryableExceptionAllTheTime_duringAcknowledgmentPhase() {
+        MemberSchemaService stubbedSchemaService = spy(new MemberSchemaService());
         doThrow(new RetryableHazelcastException())
-                .when(getSchemaService(instance4))
+                .when(stubbedSchemaService)
                 .onSchemaAckRequest(SCHEMA.getSchemaId());
 
-        assertThrows(HazelcastSerializationException.class, () -> fillMapUsing(instance1));
+        // Fourth member will always throw retryable exception
+        // in the acknowledgment phase, others will work fine.
+        int stubbedMemberIndex = 3;
+        setupInstances(index -> index == stubbedMemberIndex ? stubbedSchemaService : spy(new MemberSchemaService()));
+        HazelcastInstance stubbed = instances[stubbedMemberIndex];
+
+        HazelcastInstance initiator = instances[0];
+        assertThrows(HazelcastSerializationException.class, () -> fillMapUsing(initiator));
 
         for (HazelcastInstance instance : instances) {
             MemberSchemaService service = getSchemaService(instance);
 
-            // Everyone should call, apart from the initiator
-            if (instance != instance1) {
+            // Everyone should call onSchemaPreparationRequest, apart from the initiator
+            if (instance != initiator) {
                 verify(service, atLeastOnce()).onSchemaPreparationRequest(SCHEMA);
             }
 
-            if (instance == instance4) {
-                // For instance4, it must fail all the time
+            if (instance == stubbed) {
+                // For stubbed member, it must fail all the time
                 verify(service, atLeast(SchemaReplicator.MAX_RETRIES_FOR_REQUESTS)).onSchemaAckRequest(SCHEMA.getSchemaId());
             }
         }
@@ -85,8 +101,6 @@ public class CompactSchemaReplicationSlowTest extends CompactSchemaReplicationTe
     @Override
     public Config getConfig() {
         Config config = super.getConfig();
-        // Jet prints too many logs during the test
-        config.getJetConfig().setEnabled(false);
         config.getProperties().setProperty(INVOCATION_RETRY_PAUSE.getName(), "100");
         return config;
     }

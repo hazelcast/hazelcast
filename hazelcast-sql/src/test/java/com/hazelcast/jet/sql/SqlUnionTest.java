@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -221,20 +221,20 @@ public class SqlUnionTest extends SqlTestSupport {
     @Test
     public void watermarkedStreamUnionAllTest() {
         String name = createTable(
-                row(timestampTz(10L), 1),
-                row(timestampTz(12L), 2),
-                row(timestampTz(14L), 3),
+                row(timestampTz(100L), 1),
+                row(timestampTz(120L), 2),
+                row(timestampTz(140L), 3),
                 row(timestampTz(0L), 4)
         );
 
         String sql = "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECOND))";
 
-        expected.add(new Row(timestampTz(10L), 1));
-        expected.add(new Row(timestampTz(10L), 1));
-        expected.add(new Row(timestampTz(12L), 2));
-        expected.add(new Row(timestampTz(12L), 2));
-        expected.add(new Row(timestampTz(14L), 3));
-        expected.add(new Row(timestampTz(14L), 3));
+        expected.add(new Row(timestampTz(100L), 1));
+        expected.add(new Row(timestampTz(100L), 1));
+        expected.add(new Row(timestampTz(120L), 2));
+        expected.add(new Row(timestampTz(120L), 2));
+        expected.add(new Row(timestampTz(140L), 3));
+        expected.add(new Row(timestampTz(140L), 3));
 
         SqlResult result = instance().getSql().execute(sql + " UNION ALL " + sql);
         ResultIterator<SqlRow> iterator = (ResultIterator<SqlRow>) result.iterator();

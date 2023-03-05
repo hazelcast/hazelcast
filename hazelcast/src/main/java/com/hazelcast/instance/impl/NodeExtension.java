@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -175,6 +175,13 @@ public interface NodeExtension {
      * Returns true if the instance has started
      */
     boolean isStartCompleted();
+
+    /**
+     * Check whether this instance is ready to start accepting requests. Use this
+     * method as a readiness probe.
+     * @return {@code true} when this instance is ready to accept requests, {@code false} otherwise.
+     */
+    boolean isReady();
 
     /**
      * Called before <tt>Node.shutdown()</tt>

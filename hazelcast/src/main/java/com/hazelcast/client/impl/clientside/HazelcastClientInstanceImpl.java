@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -895,6 +895,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clientStatisticsService.collectAndSendStatsNow();
     }
 
+    /**
+     * Returns {@code true} if we need to check the urgent invocations, by
+     * examining the local registry of the schema service.
+     */
+    public boolean shouldCheckUrgentInvocations() {
+        return schemaService.hasAnySchemas();
+    }
 
     public void waitForInitialMembershipEvents() {
         clusterService.waitInitialMemberListFetched();

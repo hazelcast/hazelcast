@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -579,6 +579,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
     }
 
+    @Override
+    public boolean clientInitializedOnCluster() {
+        return clientState == ClientState.INITIALIZED_ON_CLUSTER;
+    }
+
     Collection<Address> getPossibleMemberAddresses(AddressProvider addressProvider) {
         Collection<Address> addresses = new LinkedHashSet<>();
         try {
@@ -1130,7 +1135,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             if (credentials instanceof TokenCredentials) {
                 secretBytes = ((TokenCredentials) credentials).getToken();
             } else {
-                secretBytes = ss.toData(credentials).toByteArray();
+                secretBytes = ss.toDataWithSchema(credentials).toByteArray();
             }
             return ClientAuthenticationCustomCodec.encodeRequest(clusterName, secretBytes, clientUuid, connectionType,
                     serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(), labels);

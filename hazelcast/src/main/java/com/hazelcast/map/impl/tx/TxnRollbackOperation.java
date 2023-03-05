@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,16 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
+import com.hazelcast.map.impl.operation.steps.TxnRollbackOpSteps;
+import com.hazelcast.map.impl.operation.steps.engine.State;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -61,6 +64,18 @@ public class TxnRollbackOperation
             throw new TransactionException("Lock is not owned by the transaction! Owner: "
                     + recordStore.getLockOwnerInfo(getKey()));
         }
+    }
+
+    @Override
+    public State createState() {
+        return super.createState()
+                .setTxnId(transactionId)
+                .setOwnerUuid(ownerUuid);
+    }
+
+    @Override
+    public Step getStartingStep() {
+        return TxnRollbackOpSteps.ROLLBACK;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,18 +54,9 @@ public abstract class AbstractParameterizedHazelcastClassRunner extends BlockJUn
     }
 
     @Override
-    protected String getName() {
-        if (isParameterized) {
-            return fName;
-        } else {
-            return super.getName();
-        }
-    }
-
-    @Override
     protected String testName(FrameworkMethod method) {
         if (isParameterized) {
-            return method.getName() + getName();
+            return method.getName() + fName;
         } else {
             return method.getName();
         }

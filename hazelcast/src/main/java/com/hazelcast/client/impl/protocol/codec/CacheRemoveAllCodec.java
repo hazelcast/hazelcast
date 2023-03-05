@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * a write-through cache, the CacheWriter.If the cache is empty, the CacheWriter is not called.
  * This is potentially an expensive operation as listeners are invoked. Use  #clear() to avoid this.
  */
-@Generated("70431103c2bbac5c48f7efb8bebc7540")
+@Generated("a52acb83f2f7adc919760e71ff140d56")
 public final class CacheRemoveAllCodec {
     //hex: 0x130400
     public static final int REQUEST_MESSAGE_TYPE = 1246208;

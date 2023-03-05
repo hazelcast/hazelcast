@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,13 @@ import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
+import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nonnull;
@@ -256,8 +256,11 @@ public interface SqlConnector {
      * }</pre>
      * Then the projection will be {@code {1}} and the predicate will be {@code
      * {2}=10}.
+     * <p>
+     * If the implementation cannot generate watermarks, it should throw, if the
+     * {@code eventTimePolicyProvider} is not null. Streaming sources should
+     * support it, batch sources don't have to.
      *
-     * @param table                   the table object
      * @param predicate               SQL expression to filter the rows
      * @param projection              the list of field names to return
      * @param eventTimePolicyProvider {@link EventTimePolicy}
@@ -265,30 +268,12 @@ public interface SqlConnector {
      */
     @Nonnull
     default Vertex fullScanReader(
-            @Nonnull DAG dag,
-            @Nonnull Table table,
-            @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projection,
+            @Nonnull DagBuildContext context,
+            @Nullable RexNode predicate,
+            @Nonnull List<RexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         throw new UnsupportedOperationException("Full scan not supported for " + typeName());
-    }
-
-    /**
-     * Variant of {@link #fullScanReader(DAG, Table, Expression, List, FunctionEx)} that provides
-     * {@link HazelcastTable}. It is useful to get filter and projection as RexNode instead of Expression.
-     *
-     * You should override only one of the {@code fullScanReader} methods.
-     */
-    default Vertex fullScanReader(
-            @Nonnull DAG dag,
-            @Nonnull Table table,
-            @Nonnull HazelcastTable hzTable,
-            @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projection,
-            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
-    ) {
-        return fullScanReader(dag, table, predicate, projection, eventTimePolicyProvider);
     }
 
     /**
@@ -327,7 +312,6 @@ public interface SqlConnector {
      *         null}s and returned
      * </ul>
      *
-     * @param table      the table object
      * @param predicate  SQL expression to filter the rows
      * @param projection the list of fields to return
      * @param joinInfo   {@link JetJoinInfo}
@@ -335,10 +319,9 @@ public interface SqlConnector {
      */
     @Nonnull
     default VertexWithInputConfig nestedLoopReader(
-            @Nonnull DAG dag,
-            @Nonnull Table table,
-            @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projection,
+            @Nonnull DagBuildContext context,
+            @Nullable RexNode predicate,
+            @Nonnull List<RexNode> projection,
             @Nonnull JetJoinInfo joinInfo
     ) {
         throw new UnsupportedOperationException("Nested-loop join not supported for " + typeName());
@@ -347,7 +330,7 @@ public interface SqlConnector {
     default boolean isNestedLoopReaderSupported() {
         try {
             // nestedLoopReader() is supported, if the class overrides the default method in this class
-            Method m = getClass().getMethod("nestedLoopReader", DAG.class, Table.class, Expression.class, List.class,
+            Method m = getClass().getMethod("nestedLoopReader", DagBuildContext.class, RexNode.class, List.class,
                     JetJoinInfo.class);
             return m.getDeclaringClass() != SqlConnector.class;
         } catch (NoSuchMethodException e) {
@@ -359,7 +342,7 @@ public interface SqlConnector {
      * Returns the supplier for the insert processor.
      */
     @Nonnull
-    default VertexWithInputConfig insertProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+    default VertexWithInputConfig insertProcessor(@Nonnull DagBuildContext context) {
         throw new UnsupportedOperationException("INSERT INTO not supported for " + typeName());
     }
 
@@ -367,7 +350,7 @@ public interface SqlConnector {
      * Returns the supplier for the sink processor.
      */
     @Nonnull
-    default Vertex sinkProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+    default Vertex sinkProcessor(@Nonnull DagBuildContext context) {
         throw new UnsupportedOperationException("SINK INTO not supported for " + typeName());
     }
 
@@ -378,21 +361,11 @@ public interface SqlConnector {
      */
     @Nonnull
     default Vertex updateProcessor(
-            @Nonnull DAG dag,
-            @Nonnull Table table,
-            @Nonnull Map<String, Expression<?>> updatesByFieldNames
+            @Nonnull DagBuildContext context,
+            @Nonnull List<String> fieldNames,
+            @Nonnull List<RexNode> expressions
     ) {
         throw new UnsupportedOperationException("UPDATE not supported for " + typeName());
-    }
-
-    @Nonnull
-    default Vertex updateProcessor(
-            @Nonnull DAG dag,
-            @Nonnull Table table,
-            @Nonnull Map<String, RexNode> updates,
-            @Nonnull Map<String, Expression<?>> updatesByFieldNames
-    ) {
-        return updateProcessor(dag, table, updatesByFieldNames);
     }
 
     /**
@@ -401,7 +374,7 @@ public interface SqlConnector {
      * returned by {@link #getPrimaryKey(Table)}.
      */
     @Nonnull
-    default Vertex deleteProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+    default Vertex deleteProcessor(@Nonnull DagBuildContext context) {
         throw new UnsupportedOperationException("DELETE not supported for " + typeName());
     }
 
@@ -418,6 +391,44 @@ public interface SqlConnector {
     @Nonnull
     default List<String> getPrimaryKey(Table table) {
         throw new UnsupportedOperationException("PRIMARY KEY not supported by connector: " + typeName());
+    }
+
+    interface DagBuildContext {
+        /**
+         * Returns the {@link DAG} that's being created.
+         */
+        @Nonnull
+        DAG getDag();
+
+        /**
+         * Returns the context table. It is:<ul>
+         *     <li>for scans, it's the scanned table
+         *     <li>for DML, it's the target table
+         *     <li>for nested loop reader, it's the table read in the inner loop (the right join input)
+         * </ul>
+         *
+         * @throws IllegalStateException if the table doesn't apply in the current context
+         */
+        @Nonnull
+        Table getTable();
+
+        /**
+         * Converts a boolean RexNode. When evaluating a {@link RexInputRef},
+         * this context is assumed:<ul>
+         *     <li>If a table is set (see {@link #getTable()}), then it's assumed that it's that table's fields
+         *     <li>If it's a single-input rel, then it's then input
+         *     <li>Otherwise the conversion of an input ref will fail.
+         * </ul>
+         */
+        @Nullable
+        Expression<Boolean> convertFilter(@Nullable RexNode node);
+
+        /**
+         * Converts a list of RexNodes. See also {@link #convertFilter(RexNode)}
+         * for information about {@link RexInputRef} conversion.
+         */
+        @Nonnull
+        List<Expression<?>> convertProjection(@Nonnull List<RexNode> nodes);
     }
 
     /**

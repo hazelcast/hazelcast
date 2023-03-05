@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,19 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.services.ServiceNamespace;
 
 import java.util.Arrays;
 
+import static com.hazelcast.internal.partition.IPartition.MAX_BACKUP_COUNT;
+import static com.hazelcast.internal.partition.impl.PartitionReplicaManager.REQUIRES_SYNC;
 import static java.lang.System.arraycopy;
 
 // read and updated only by partition threads
 final class PartitionReplicaFragmentVersions {
     private final int partitionId;
     private final ServiceNamespace namespace;
-    private final long[] versions = new long[InternalPartition.MAX_BACKUP_COUNT];
+    private final long[] versions = new long[MAX_BACKUP_COUNT];
     /**
      * Shows whether partition has missing backups somewhere between the last applied backup
      * and the last incremental backup received.
@@ -39,9 +40,21 @@ final class PartitionReplicaFragmentVersions {
         this.namespace = namespace;
     }
 
+    /**
+     * Increments partition replica versions on partition owner
+     * when backup operation is prepared and sent to replica.
+     *
+     * If a replica is designated as requiring sync,
+     * do not increment because a sync has not occurred yet.
+     * It will be reset to 0 when
+     * {@link PartitionReplicaManager#getPartitionReplicaVersionsForSync}
+     * is executed.
+     */
     long[] incrementAndGet(int backupCount) {
         for (int i = 0; i < backupCount; i++) {
-            versions[i]++;
+            if (versions[i] != REQUIRES_SYNC) {
+                versions[i]++;
+            }
         }
         return versions;
     }
@@ -60,12 +73,13 @@ final class PartitionReplicaFragmentVersions {
         int index = replicaIndex - 1;
         long currentVersion = versions[index];
         long newVersion = newVersions[index];
-        return currentVersion > newVersion;
+        return currentVersion > newVersion || currentVersion == REQUIRES_SYNC;
     }
 
     /**
-     * Updates replica version if it is newer than current version. Otherwise has no effect.
+     * Updates replica version if it is newer than current version. Otherwise, has no effect.
      * Marks versions as dirty if version increase is not incremental.
+     * Executed on backup replica owner.
      *
      * @param newVersions new replica versions
      * @param replicaIndex replica index
@@ -75,6 +89,13 @@ final class PartitionReplicaFragmentVersions {
         int index = replicaIndex - 1;
         long currentVersion = versions[index];
         long nextVersion = newVersions[index];
+
+        if (currentVersion == REQUIRES_SYNC) {
+            // the replica is marked explicitly for partition sync,
+            // so maintain it as is and mark versions as dirty.
+            dirty = true;
+            return true;
+        }
 
         if (currentVersion < nextVersion) {
             setVersions(newVersions, replicaIndex);
@@ -97,6 +118,10 @@ final class PartitionReplicaFragmentVersions {
 
     boolean isDirty() {
         return dirty;
+    }
+
+    void markAsSyncRequired(int replicaIndex) {
+        versions[replicaIndex - 1] = REQUIRES_SYNC;
     }
 
     void clear() {

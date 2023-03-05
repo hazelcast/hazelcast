@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.JoinConfig;
+import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nio.Packet;
@@ -26,7 +29,6 @@ import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.spi.impl.operationservice.impl.DummyOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
@@ -62,11 +64,22 @@ public class OverloadedConnectionsPluginTest extends AbstractDiagnosticsPluginTe
                 .setProperty(OverloadedConnectionsPlugin.PERIOD_SECONDS.getName(), "1")
                 .setProperty(OverloadedConnectionsPlugin.SAMPLES.getName(), "10")
                 .setProperty(OverloadedConnectionsPlugin.THRESHOLD.getName(), "2")
-                .setProperty(ClusterProperty.IO_OUTPUT_THREAD_COUNT.getName(), "1");
+                .setProperty(ClusterProperty.IO_OUTPUT_THREAD_COUNT.getName(), "1")
+                .setProperty(ClusterProperty.SOCKET_BIND_ANY.getName(), "false");
+
+        NetworkConfig networkConfig = config.getNetworkConfig();
+        networkConfig.getInterfaces().setEnabled(true).addInterface("127.0.0.1");
+        JoinConfig joinConfig = networkConfig.getJoin();
+        joinConfig.getMulticastConfig().setEnabled(false);
+        TcpIpConfig tcpIpConfig = joinConfig.getTcpIpConfig().setEnabled(true);
+        tcpIpConfig.addMember("127.0.0.1:5701");
+        tcpIpConfig.addMember("127.0.0.1:5702");
 
         local = Hazelcast.newHazelcastInstance(config);
         serializationService = getSerializationService(local);
         HazelcastInstance remote = Hazelcast.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(2, local, remote);
 
         plugin = new OverloadedConnectionsPlugin(getNodeEngineImpl(local));
         plugin.onStart();
@@ -83,23 +96,17 @@ public class OverloadedConnectionsPluginTest extends AbstractDiagnosticsPluginTe
 
     @Test
     public void test() {
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                IMap<String, String> map = local.getMap("foo");
-                while (!stop) {
-                    map.getAsync(remoteKey);
-                }
+        spawn(() -> {
+            IMap<String, String> map = local.getMap(getClass().getName());
+            while (!stop) {
+                map.getAsync(remoteKey);
             }
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                plugin.run(logWriter);
+        assertTrueEventually(() -> {
+            plugin.run(logWriter);
 
-                assertContains(GetOperation.class.getSimpleName() + " sampleCount=");
-            }
+            assertContains(GetOperation.class.getSimpleName() + " sampleCount=");
         });
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes from this list all of its elements that are contained in the specified collection (optional operation).
  */
-@Generated("bdfaa4327e601dc204a5799880d0d14c")
+@Generated("8a451f22157256fd3b8ddcb6f9f59c9b")
 public final class ListCompareAndRemoveAllCodec {
     //hex: 0x050700
     public static final int REQUEST_MESSAGE_TYPE = 329472;
@@ -65,6 +65,7 @@ public final class ListCompareAndRemoveAllCodec {
 
     public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.internal.serialization.Data> values) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
+        clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("List.CompareAndRemoveAll");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -328,8 +328,8 @@ public final class ClientConfigXmlGenerator {
     private static void nativeMemory(XmlGenerator gen, NativeMemoryConfig nativeMemory) {
         gen.open("native-memory", "enabled", nativeMemory.isEnabled(),
                 "allocator-type", nativeMemory.getAllocatorType())
-                .node("size", null, "value", nativeMemory.getSize().getValue(),
-                        "unit", nativeMemory.getSize().getUnit())
+                .node("capacity", null, "value", nativeMemory.getCapacity().getValue(),
+                        "unit", nativeMemory.getCapacity().getUnit())
                 .node("min-block-size", nativeMemory.getMinBlockSize())
                 .node("page-size", nativeMemory.getPageSize())
                 .node("metadata-space-percentage", nativeMemory.getMetadataSpacePercentage());

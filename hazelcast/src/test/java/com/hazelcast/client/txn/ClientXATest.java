@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,7 @@
 package com.hazelcast.client.txn;
 
 import com.atomikos.icatch.jta.UserTransactionManager;
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.collection.IQueue;
@@ -48,6 +47,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertClusterSize;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.HazelcastTestSupport.sleepAtLeastSeconds;
@@ -61,6 +61,7 @@ import static org.junit.Assert.fail;
 @Category(SlowTest.class)
 public class ClientXATest {
 
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     static final Random random = new Random(System.currentTimeMillis());
     static final ILogger logger = Logger.getLogger(ClientXATest.class);
 
@@ -90,22 +91,20 @@ public class ClientXATest {
         cleanAtomikosLogs();
         tm = new UserTransactionManager();
         tm.setTransactionTimeout(60);
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+        hazelcastFactory.terminateAll();
     }
 
     @After
     public void cleanup() {
         tm.close();
         cleanAtomikosLogs();
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+        hazelcastFactory.terminateAll();
     }
 
     @Test
     public void testRollbackOnTimeout() throws Exception {
-        Hazelcast.newHazelcastInstance();
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
         String name = randomString();
         IQueue<Object> queue = client.getQueue(name);
@@ -131,8 +130,8 @@ public class ClientXATest {
 
     @Test
     public void testWhenLockedOutOfTransaction() throws Exception {
-        Hazelcast.newHazelcastInstance();
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         IMap<Object, Object> map = client.getMap("map");
         map.put("key", "value");
         HazelcastXAResource xaResource = client.getXAResource();
@@ -150,8 +149,8 @@ public class ClientXATest {
 
     @Test
     public void testRollback() throws Exception {
-        Hazelcast.newHazelcastInstance();
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         HazelcastXAResource xaResource = client.getXAResource();
 
         tm.begin();
@@ -174,9 +173,11 @@ public class ClientXATest {
 
     @Test
     public void testRecovery() throws Exception {
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
-        Hazelcast.newHazelcastInstance();
-        Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance instance3 = hazelcastFactory.newHazelcastInstance();
+
+        assertClusterSize(3, instance, instance2, instance3);
 
         HazelcastXAResource xaResource = instance.getXAResource();
         Xid myXid = new SerializableXID(42, "globalTransactionId".getBytes(), "branchQualifier".getBytes());
@@ -187,7 +188,7 @@ public class ClientXATest {
         xaResource.prepare(myXid);
         instance.shutdown();
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         HazelcastXAResource clientXaResource = client.getXAResource();
         Xid[] recovered = clientXaResource.recover(0);
         for (Xid xid : recovered) {
@@ -198,11 +199,11 @@ public class ClientXATest {
 
     @Test
     public void testIsSame() throws Exception {
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         XAResource resource1 = instance1.getXAResource();
         XAResource resource2 = instance2.getXAResource();
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         XAResource clientResource = client.getXAResource();
         assertTrue(clientResource.isSameRM(resource1));
         assertTrue(clientResource.isSameRM(resource2));
@@ -210,8 +211,8 @@ public class ClientXATest {
 
     @Test
     public void testParallel() throws Exception {
-        Hazelcast.newHazelcastInstance();
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        hazelcastFactory.newHazelcastInstance();
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         // this is needed due to a racy bug in atomikos
         txn(client);
         int size = 100;
@@ -239,8 +240,8 @@ public class ClientXATest {
 
     @Test
     public void testSequential() throws Exception {
-        Hazelcast.newHazelcastInstance();
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         int count = 100;
         for (int i = 0; i < count; i++) {
             txn(client);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.test;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import org.junit.runners.model.Statement;
 
 import java.util.Collection;
@@ -26,6 +27,7 @@ import java.util.Set;
 
 import static com.hazelcast.cache.jsr.JsrTestUtil.clearCachingProviderRegistry;
 import static com.hazelcast.cache.jsr.JsrTestUtil.getCachingProviderRegistrySize;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 
 class AfterClassesStatement extends Statement {
     private final Statement originalStatement;
@@ -42,13 +44,15 @@ class AfterClassesStatement extends Statement {
         Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
         if (!instances.isEmpty()) {
             String message = "Instances haven't been shut down: " + instances;
-            Hazelcast.shutdownAll();
+            HazelcastInstanceFactory.terminateAll();
+            assertTrueEventually(HazelcastTestSupport::assertNoRunningInstances, 30);
             throw new IllegalStateException(message);
         }
         Collection<HazelcastInstance> clientInstances = HazelcastClient.getAllHazelcastClients();
         if (!clientInstances.isEmpty()) {
             String message = "Client instances haven't been shut down: " + clientInstances;
             HazelcastClient.shutdownAll();
+            assertTrueEventually(HazelcastTestSupport::assertNoRunningClientInstances, 30);
             throw new IllegalStateException(message);
         }
 

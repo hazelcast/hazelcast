@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -385,7 +385,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         eventCount.set(0);
         eventsLatch = new CountDownLatch(1);
         for (int i = 0; i < EVENT_COUNT; i++) {
-            events.add(randomString());
+            events.add(i + randomString());
         }
 
         for (String event : events) {
@@ -430,8 +430,8 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     protected abstract void produceEvent(String event);
 
     void onEvent(String event) {
-        events.remove(event);
         eventCount.incrementAndGet();
+        events.remove(event);
         if (events.isEmpty()) {
             eventsLatch.countDown();
         }

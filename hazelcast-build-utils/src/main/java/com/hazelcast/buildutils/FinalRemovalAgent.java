@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ public final class FinalRemovalAgent {
                 .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
                 .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
                 .type(nameStartsWith("com.hazelcast"))
-                .transform((builder, typeDescription, classLoader, module) -> {
+                .transform((builder, typeDescription, classLoader, module, domain) -> {
                     builder = manifestMethodAsPlain(builder, typeDescription);
                     int actualModifiers = typeDescription.getActualModifiers(false);
                     // unset final modifier

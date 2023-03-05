@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes the given key value pair from the multimap.
  */
-@Generated("c69615d85edbf4b6f507cca203c17e53")
+@Generated("19c901dc82dd63eaae21a541848568c2")
 public final class MultiMapRemoveCodec {
     //hex: 0x020300
     public static final int REQUEST_MESSAGE_TYPE = 131840;
@@ -70,6 +70,7 @@ public final class MultiMapRemoveCodec {
 
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data key, long threadId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
+        clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("MultiMap.Remove");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

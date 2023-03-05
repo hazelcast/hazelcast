@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If the key is already locked by another thread and/or member, then this operation will wait the timeout
  * amount for acquiring the lock.
  */
-@Generated("e5daf6ed41e0d9de63c081776b778b69")
+@Generated("5dead867e986f0248265e2e40baedf01")
 public final class MapTryRemoveCodec {
     //hex: 0x010B00
     public static final int REQUEST_MESSAGE_TYPE = 68352;
@@ -79,6 +79,7 @@ public final class MapTryRemoveCodec {
 
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data key, long threadId, long timeout) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
+        clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Map.TryRemove");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

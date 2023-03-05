@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a multimap configuration with the given {@code name} already exists, then
  * the new multimap config is ignored and the existing one is preserved.
  */
-@Generated("8d0077d622debd2a065b41eff501962b")
+@Generated("66bc58102eb38e2f406c9ab5348dac61")
 public final class DynamicConfigAddMultiMapConfigCodec {
     //hex: 0x1B0100
     public static final int REQUEST_MESSAGE_TYPE = 1769728;
@@ -115,6 +115,7 @@ public final class DynamicConfigAddMultiMapConfigCodec {
 
     public static ClientMessage encodeRequest(java.lang.String name, java.lang.String collectionType, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, boolean binary, int backupCount, int asyncBackupCount, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, java.lang.String mergePolicy, int mergeBatchSize) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
+        clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("DynamicConfig.AddMultiMapConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

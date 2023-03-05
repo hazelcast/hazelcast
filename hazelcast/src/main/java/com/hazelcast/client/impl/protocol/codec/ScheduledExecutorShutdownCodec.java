@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Initiates an orderly shutdown in which previously submitted tasks are executed, but no new tasks will be accepted.
  * Invocation has no additional effect if already shut down.
  */
-@Generated("6284a8d955b77b99ef80d2c64f7c806f")
+@Generated("32f05f5f3f216a20b3f7947e589603c8")
 public final class ScheduledExecutorShutdownCodec {
     //hex: 0x1A0100
     public static final int REQUEST_MESSAGE_TYPE = 1704192;

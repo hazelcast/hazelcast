@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,7 +93,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         String[] emptyArray = new String[2];
         final Predicate predicate = Predicates.newPredicateBuilder().getEntryObject().get("name").in(emptyArray);
         final Collection<Value> values = map.values(predicate);
-        assertEquals(values.size(), 0);
+        assertEquals(0, values.size());
     }
 
     @Test
@@ -569,7 +569,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         assertEquals(3, entries.size());
         for (Map.Entry entry : entries) {
             Employee employee = (Employee) entry.getValue();
-            assertEquals(employee.getAge(), 23);
+            assertEquals(23, employee.getAge());
             assertTrue(employee.isActive());
         }
         map.remove("2");
@@ -577,7 +577,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         assertEquals(2, entries.size());
         for (Map.Entry entry : entries) {
             Employee employee = (Employee) entry.getValue();
-            assertEquals(employee.getAge(), 23);
+            assertEquals(23, employee.getAge());
             assertTrue(employee.isActive());
         }
         entries = map.entrySet(Predicates.sql("age!=33"));
@@ -614,7 +614,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         entries = map.entrySet(predicate);
         for (Map.Entry entry : entries) {
             Employee employee = (Employee) entry.getValue();
-            assertEquals(employee.getAge(), 23);
+            assertEquals(23, employee.getAge());
             assertTrue(employee.isActive());
         }
         map.remove("2");
@@ -622,7 +622,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         assertEquals(2, entries.size());
         for (Map.Entry entry : entries) {
             Employee employee = (Employee) entry.getValue();
-            assertEquals(employee.getAge(), 23);
+            assertEquals(23, employee.getAge());
             assertTrue(employee.isActive());
         }
         entries = map.entrySet(Predicates.sql(" (age >= " + 30 + ") AND (age <= " + 40 + ")"));
@@ -810,15 +810,15 @@ public class QueryBasicTest extends HazelcastTestSupport {
             }
         }
 
-        assertEquals(withIndex.size(), 9);
-        assertEquals(withoutIndex.size(), 9);
+        assertEquals(9, withIndex.size());
+        assertEquals(9, withoutIndex.size());
 
         Predicate<Integer, Employee> predicate = Predicates.like("name", "name1%");
         Collection<Employee> namesByIndex = withIndex.values(predicate);
         Collection<Employee> namesMapLookup = withoutIndex.values(predicate);
 
-        assertEquals(namesMapLookup.size(), 3);
-        assertEquals(namesByIndex.size(), 3);
+        assertEquals(3, namesMapLookup.size());
+        assertEquals(3, namesByIndex.size());
         assertEquals(namesMapLookup, namesByIndex);
     }
 

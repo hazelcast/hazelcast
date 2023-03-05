@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,9 +114,7 @@ public final class ConfigUtils {
                 nameSetter.accept(defConfig, "default");
                 configs.put("default", defConfig);
             }
-            Constructor copyConstructor = clazz.getDeclaredConstructor(clazz);
-            copyConstructor.setAccessible(true);
-            config = (T) copyConstructor.newInstance(defConfig);
+            config = cloneClass(clazz, defConfig);
             nameSetter.accept(config, name);
             configs.put(name, config);
             return config;
@@ -126,6 +124,14 @@ public final class ConfigUtils {
             assert false;
             return null;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T cloneClass(Class<?> clazz, T defConfig) throws NoSuchMethodException, InstantiationException,
+            IllegalAccessException, InvocationTargetException {
+        Constructor<?> copyConstructor = clazz.getDeclaredConstructor(clazz);
+        copyConstructor.setAccessible(true);
+        return (T) copyConstructor.newInstance(defConfig);
     }
 
     /**

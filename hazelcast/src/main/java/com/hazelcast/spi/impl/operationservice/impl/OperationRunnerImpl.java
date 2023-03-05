@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.metrics.ExcludedMetricTargets;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -46,6 +47,7 @@ import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableException;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -228,6 +230,18 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
     }
 
     /**
+     * Like {@link #metWithPreconditions} but without timeout checks.
+     * <p>
+     * Includes checks related to node and cluster health
+     * before execution of an operation.
+     */
+    public void ensureNodeAndClusterHealth(Operation op) {
+        checkNodeState(op);
+        ensureNoPartitionProblems(op);
+        ensureNoSplitBrain(op);
+    }
+
+    /**
      * Runs the provided operation.
      *
      * @param op         the operation to execute
@@ -331,6 +345,11 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
         if (nodeEngine.getClusterService().getClusterState() == ClusterState.PASSIVE) {
             throw new IllegalStateException("Cluster is in " + ClusterState.PASSIVE + " state! Operation: " + op);
         }
+
+        InternalHotRestartService hotRestartService = node.getNodeExtension().getInternalHotRestartService();
+        if (hotRestartService.isEnabled() && !hotRestartService.isStartCompleted()) {
+            throw new RetryableHazelcastException("Recovery from persistence is still in progress. Operation: " + op);
+        }
     }
 
     /**
@@ -347,7 +366,7 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
         splitBrainProtectionService.ensureNoSplitBrain(op);
     }
 
-    private boolean timeout(Operation op) {
+    public boolean timeout(Operation op) {
         if (!operationService.isCallTimedOut(op)) {
             return false;
         }
@@ -405,7 +424,7 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
         return (op instanceof ReadonlyOperation && staleReadOnMigrationEnabled) || isMigrationOperation(op);
     }
 
-    private void handleOperationError(Operation operation, Throwable e) {
+    public void handleOperationError(Operation operation, Throwable e) {
         if (e instanceof OutOfMemoryError) {
             OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
         }

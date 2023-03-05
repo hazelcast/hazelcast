@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,13 +68,13 @@ public class ConcurrentArrayRingbufferTest {
 
     @Test
     public void when_sequenceTooHigh_then_fail() {
-        exception.expect(IllegalArgumentException.class);
+        exception.expect(ConcurrentArrayRingbuffer.SequenceOutOfBoundsException.class);
         rb.get(0);
     }
 
     @Test
     public void when_sequenceTooLow_then_fail() {
-        exception.expect(IllegalArgumentException.class);
+        exception.expect(ConcurrentArrayRingbuffer.SequenceOutOfBoundsException.class);
         rb.get(-1);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("e9233cd923d656b6d40e5110d71d4110")
+@Generated("128f1518d536f47000102f1932be5f9f")
 public final class JetExportSnapshotCodec {
     //hex: 0xFE0A00
     public static final int REQUEST_MESSAGE_TYPE = 16648704;

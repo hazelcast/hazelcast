@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -42,19 +43,24 @@ import static org.mockito.Mockito.verify;
 public class CompactSchemaReplicationTest extends CompactSchemaReplicationTestBase {
     @Test
     public void testSchemaReplication() {
-        fillMapUsing(instance1);
+        // We won't stub any of the schema services.
+        // We will just assert call counts.
+        setupInstances(index -> spy(new MemberSchemaService()));
+
+        HazelcastInstance initiator = instances[0];
+        fillMapUsing(initiator);
 
         for (HazelcastInstance instance : instances) {
             MemberSchemaService service = getSchemaService(instance);
             SchemaReplicator replicator = service.getReplicator();
 
             // Everyone should call onSchemaPreparationRequest, apart from the initiator
-            if (instance != instance1) {
+            if (instance != initiator) {
                 verify(service, atLeastOnce()).onSchemaPreparationRequest(SCHEMA);
             }
 
             // Everyone should call onSchemaAckRequest, apart from the initiator
-            if (instance != instance1) {
+            if (instance != initiator) {
                 verify(service, atLeastOnce()).onSchemaAckRequest(SCHEMA.getSchemaId());
             }
 
@@ -65,11 +71,16 @@ public class CompactSchemaReplicationTest extends CompactSchemaReplicationTestBa
 
     @Test
     public void testSchemaReplication_whenAMemberThrows_duringPreparationPhase() {
+        MemberSchemaService stubbedSchemaService = spy(new MemberSchemaService());
         doThrow(new RuntimeException())
-                .when(getSchemaService(instance1))
+                .when(stubbedSchemaService)
                 .onSchemaPreparationRequest(any(Schema.class));
 
-        assertThrows(HazelcastSerializationException.class, () -> fillMapUsing(instance2));
+        // First member will always throw non-retryable exception
+        // in the preparation phase, others will work fine.
+        setupInstances(index -> index == 0 ? stubbedSchemaService : spy(new MemberSchemaService()));
+
+        assertThrows(HazelcastSerializationException.class, () -> fillMapUsing(instances[1]));
 
         for (HazelcastInstance instance : instances) {
             MemberSchemaService service = getSchemaService(instance);
@@ -84,27 +95,35 @@ public class CompactSchemaReplicationTest extends CompactSchemaReplicationTestBa
 
     @Test
     public void testSchemaReplication_whenAMemberThrowsRetryableExceptionForSomeTime_duringPreparationPhase() {
+        MemberSchemaService stubbedSchemaService = spy(new MemberSchemaService());
         doThrow(new RetryableHazelcastException()) // Throw once
                 .doCallRealMethod() // Then succeed
-                .when(getSchemaService(instance3))
+                .when(stubbedSchemaService)
                 .onSchemaPreparationRequest(SCHEMA);
 
-        fillMapUsing(instance4);
+        // Third member will throw retryable exception and then continue working
+        // in the preparation phase, others will work fine.
+        int stubbedMemberIndex = 2;
+        setupInstances(index -> index == stubbedMemberIndex ? stubbedSchemaService : spy(new MemberSchemaService()));
+        HazelcastInstance stubbed = instances[stubbedMemberIndex];
+
+        HazelcastInstance initiator = instances[3];
+        fillMapUsing(initiator);
 
         for (HazelcastInstance instance : instances) {
             MemberSchemaService service = getSchemaService(instance);
             SchemaReplicator replicator = service.getReplicator();
 
             // Everyone should call onSchemaPreparationRequest, apart from the initiator
-            if (instance == instance3) {
-                // For instance3, it must at least fail + succeed
+            if (instance == stubbed) {
+                // For stubbed member, it must at least fail + succeed
                 verify(service, atLeast(2)).onSchemaPreparationRequest(SCHEMA);
-            } else if (instance != instance4) {
+            } else if (instance != initiator) {
                 verify(service, atLeastOnce()).onSchemaPreparationRequest(SCHEMA);
             }
 
             // Everyone should call onSchemaAckRequest it, apart from the initiator
-            if (instance != instance4) {
+            if (instance != initiator) {
                 verify(service, atLeastOnce()).onSchemaAckRequest(SCHEMA.getSchemaId());
             }
 
@@ -115,17 +134,23 @@ public class CompactSchemaReplicationTest extends CompactSchemaReplicationTestBa
 
     @Test
     public void testSchemaReplication_whenAMemberThrows_duringAcknowledgmentPhase() {
+        MemberSchemaService stubbedSchemaService = spy(new MemberSchemaService());
         doThrow(new RuntimeException())
-                .when(getSchemaService(instance4))
+                .when(stubbedSchemaService)
                 .onSchemaAckRequest(anyLong());
 
-        assertThrows(HazelcastSerializationException.class, () -> fillMapUsing(instance1));
+        // Fourth member will always throw non-retryable exception
+        // in the acknowledgment phase, others will work fine.
+        setupInstances(index -> index == 3 ? stubbedSchemaService : spy(new MemberSchemaService()));
+
+        HazelcastInstance initiator = instances[0];
+        assertThrows(HazelcastSerializationException.class, () -> fillMapUsing(initiator));
 
         for (HazelcastInstance instance : instances) {
             MemberSchemaService service = getSchemaService(instance);
 
             // Everyone should call onSchemaPreparationRequest, apart from the initiator
-            if (instance != instance1) {
+            if (instance != initiator) {
                 verify(service, atLeastOnce()).onSchemaPreparationRequest(SCHEMA);
             }
 
@@ -136,27 +161,35 @@ public class CompactSchemaReplicationTest extends CompactSchemaReplicationTestBa
 
     @Test
     public void testSchemaReplication_whenAMemberThrowsRetryableExceptionForSomeTime_duringAcknowledgmentPhase() {
+        MemberSchemaService stubbedSchemaService = spy(new MemberSchemaService());
         doThrow(new RetryableHazelcastException()) // Throw once
                 .doCallRealMethod() // Then succeed
-                .when(getSchemaService(instance2))
+                .when(stubbedSchemaService)
                 .onSchemaAckRequest(SCHEMA.getSchemaId());
 
-        fillMapUsing(instance3);
+        // Third member will throw retryable exception and then continue working
+        // in the preparation phase, others will work fine.
+        int stubbedMemberIndex = 1;
+        setupInstances(index -> index == stubbedMemberIndex ? stubbedSchemaService : spy(new MemberSchemaService()));
+        HazelcastInstance stubbed = instances[stubbedMemberIndex];
+
+        HazelcastInstance initiator = instances[2];
+        fillMapUsing(initiator);
 
         for (HazelcastInstance instance : instances) {
             MemberSchemaService service = getSchemaService(instance);
             SchemaReplicator replicator = service.getReplicator();
 
             // Everyone should call onSchemaPreparationRequest, apart from the initiator
-            if (instance != instance3) {
+            if (instance != initiator) {
                 verify(service, atLeastOnce()).onSchemaPreparationRequest(SCHEMA);
             }
 
             // Everyone should call onSchemaAckRequest, apart from the initiator
-            if (instance == instance2) {
-                // For instance2, it must at least fail + succeed
+            if (instance == stubbed) {
+                // For stubbed member, it must at least fail + succeed
                 verify(service, atLeast(2)).onSchemaAckRequest(SCHEMA.getSchemaId());
-            } else if (instance != instance3) {
+            } else if (instance != initiator) {
                 verify(service, atLeastOnce()).onSchemaAckRequest(SCHEMA.getSchemaId());
             }
 

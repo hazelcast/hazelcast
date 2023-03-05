@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,7 +132,11 @@ public class Cost implements RelOptCost {
 
     @Override
     public RelOptCost minus(RelOptCost other) {
-        throw new UnsupportedOperationException("Should not be called.");
+        Cost other0 = (Cost) other;
+        return new Cost(
+                rows - other0.getRowsInternal(),
+                cpu - other0.getCpuInternal(),
+                network - other0.getNetworkInternal());
     }
 
     @Override

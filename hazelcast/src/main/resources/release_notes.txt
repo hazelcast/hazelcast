@@ -1,96 +1,123 @@
-This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.12 release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
+This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast Platform 5.2.0 release. The numbers in the square brackets refer to the issues and pull requests in Hazelcast's GitHub repository.
+
+## New Features
+
+* SQL stream-to-stream join: You can now correlate multiple streams of data with each other using the relational join operation.
+* Generic MapStore (BETA): You no longer need to write Java code to get data from an external data store, such as a relational database, into Hazelcast by implementing the
+`MapStore` or `MapLoader` interfaces.
+* JDBC connector (BETA): You can now use SQL to connect to and query any database that supports the JDBC interface.
+* User Defined Types (Experimental): You can now query nested objects within Java, compact, and portable mappings using the User Defined Types (UDTs).
+* CP Subsystem Leadership Priority: To ensure the availability of the CP subsystem, you can now transfer CP member leadership to another member:
+There are cases when some CP members should not act as a leader. For example, a member with high load would not be a good leader, or, in a WAN deployment, members in a primary datacenter may be preferred in order to minimize the latency between the clients and leader. You can transfer the leadership using the `cp-member-priority` configuration element. See Configuring Leadership Priority.
 
 
-==== 3.12 ====
+## Breaking Changes
 
-1. Breaking Changes
+* Introduced a check to control the versions of Hazelcast Platform members and Hazelcast CLI are matched. Previously, it was possible to submit a job using a different version of CLI from the member version. Generally, it would work when there were no change in the serialized form of pipeline. Now, Hazelcast fails earlier in this case. [#22224]
+* Removed the `BETA` annotations from the compact serialization and `GenericRecord` related classes, i.e., they are stable. Now, compact serialization is enabled by default; the `enabled` attribute within the `compact-serialization` configuration block does not exist anymore. [#21997]
 
-* Support for JDK 6 and 7 has been dropped. The minimum Java version that Hazelcast supports now is Java 8. See the Supports JVMs section.
+## Enhancements
 
-2. New Features
+### Performance
 
-Hazelcast IMDG Enterprise New Features:
+* MapStore Offloading: Added the `offload` element to map store configuration. It is used to offload map store and loader operations for each map in the cluster. This way, a map store operation does not block the next operations by blocking a partition thread indefinitely. Partition threads are one of the most important shared resources in a cluster; this offloading enables faster completion of the operations in these threads. See Offloading MapStore and MapLoader Operations. [#21651]
 
-* **Blue-Green and Disaster Recovery for Java Clients:** Introduced the support for Hazelcast Java clients to switch between alternative clusters. See the Blue Green Deployment and Disaster Recovery section.
 
-Hazelcast IMDG Open Source New Features:
+### SQL Engine
 
-* **CP Subsystem:** Implementing the https://raft.github.io/[Raft consensus algorithm], Hazelcast introduces its CP subsystem which runs within a Hazelcast cluster and offers linearizable implementations of Hazelcast's concurrency APIs. See the CP Subsystem chapter.
-* **Querying JSON Strings:**  You can now query JSON strings stored inside your Hazelcast clusters. See the Querying JSON Strings section.
-* **Pipelining:** Introduced pipelining mechanism using which you can send multiple requests in parallel to Hazelcast members or clients, and read the responses in a single step. See the Pipelining section.
-* **Support for Multiple Endpoints When Configuring Member’s Networking:** Added the ability to configure the Hazelcast members with separate server sockets for different protocols. See the Advanced Network Configuration section.
-* **YAML Configuration Support:** Added the support for configuring Hazelcast in YAML. See the Configuring Declaratively with YAML section.
+* Multiple performance enhancements in the SQL engine.
 
-3. Enhancements
+### Distribution
 
-Hazelcast IMDG Enterprise Enhancements:
+* Removed `hazelcast-hibernate53` dependency from the main Hazelcast Platform distribution as it is not needed anymore. [#22282]
+* Minor versions of Hazelcast Platform are now released as X.Y.0, instead of the previous X.Y versioning scheme. [#22218]
 
-* **Sharing Hot Restart `base-dir` among Multiple Members:** The base directory for the Hot Restart feature (`base-dir`) is now used as a shared directory between multiple members, and each member uses a unique sub-directory
-inside this base directory. This allows using the same configuration on all the members. Previously, each member had to use a separate directory which complicated the deployments on cloud-like environments. During the restart, a member tries to lock an already existing Hot Restart directory inside the base directory. If it cannot acquire any, then it creates a fresh new directory. See the Configuring Hot Restart section.
-* **Lower Latencies and Higher Throughput in WAN Replication:** Improved the design of the WAN replication mechanism to allow configuring it for lower latencies and higher throughput. See the Tuning WAN Replication For Lower Latencies and Higher Throughput section.
-* **Add/Remove WAN Publishers in a Running Cluster:** Introduced the ability to dynamically add or remove WAN publishers (target clusters). See the Dynamically Adding WAN Publishers section.
-* **Automatic Removal of Stale Hot Restart Data:** Introduced an option that allows the stale Hot Restart data to be removed automatically. See the description of the `auto-remove-stale-data` configuration element in the Configuring Hot Restart section.
-* **Client Permission Handling When a New Member Joins:** Introduced a declarative configuration attribute `on-join-operation` for the client permission in the Security configuration (its programmatic configuration equivalent is the `setOnJoinPermissionOperation()` method). This attribute allows to choose whether a new member joining to a cluster will apply the client permissions stored in its own configuration, or will use the ones defined in the cluster. See the Handling Permissions When a New Member Joins section.
-* **Automatic Cluster Version Change after a Rolling Upgrade:** Introduced the ability to automatically upgrade the cluster version after a rolling upgrade. See the Upgrading Cluster Version section.
-* **FIPS 140-2 Validation:** Hazelcast now can be configured to use a FIPS 140-2 validated module. See the FIPS 140-2 section.
+### Serialization
 
-Hazelcast IMDG Open Source Enhancements:
+* Added support of `List`, `ArrayList`, `Set`, `HashSet`, `Map`, and `HashMap` for the zero-config serializers. [#21980]
+* Added a check to the array of `Compact` and `GenericRecord` object fields, that does not allow different item types and schemas in such fields. [#21958]
+* Moved the `GenericRecord` and `GenericRecordBuilder` interfaces to the new `serialization.genericrecord` package. [#21955]
+* In case there is a field type that is not supported by the reflective serializer, now Hazelcast fails with an exception; all JDK classes are now excluded from the zero-config serialization, meaning, they cannot be used as types, field types, or array component types in the reflective serializers. [#21918]
+* Hazelcast now does not provide methods to read a default value in case of a missing field in the data. Instead, the following method has been introduced in `CompactReader` to check the existence of a field with its name and kind.+
 
-* **Client Instance Names and Labels:** You can now retrieve the names of client instances on the member side. Moreover, client labels have been introduced so that you can group your clients and/or perform special operations for specific clients. See the Defining Client Labels section.
-* **Composite Indexes:** Introduced the ability to recognize the queries that use all the indexed properties and treat them as a composite, e.g., `foo = 1 and bar = 2 and foobar = 3`. See the Composite Indexes section.
-* **REST Endpoint Groups:** With this enhancement you can enable or disable the REST API completely, Memcache protocol and REST endpoint groups. See the Using the REST Endpoint Groups section.
+    FieldKind getFieldKind(String fieldName);
 
-The following are the other improvements performed to solve the enhancement issues opened by the Hazelcast customers/team.
+    You can use this method for fields that have changed or have a potential to change in the future. [#21876]
+* Moved the `type-name` and `class` configuration elements into the `compact-serialization` block. Removed the `registered-classes` element. [#21861]
+* Renamed the `cloneWithBuilder()` method as `newBuilderWithClone()` in the `GenericRecord` class. [#21730]
+* Added support for `char` fields in the compact serialization format. With this, `char`, `char[]`, `Character`, and `Character[]` fields are now supported in the reflective compact serializers. [#21054]
 
-* Improved the YAML configuration so that you can configure multiple WAN member sockets. [#14800] 
-* Members now fail fast when the `max-idle-seconds` element for the entries in a map is set to 1 second. See the note in the Configuring Map Eviction section for this element. [#14697]
-* Removed group password from the Hazelcast’s default XML configuration file. Also improved the non-empty password `INFO` message. It's now only logged if security is disabled, password is not empty and password is not the Hazelcast default one. [#14603]
-* Improved the code comments for the `HazelcastInstance` interface. [#14439]
-* Improved the Javadoc of `HazelcastClient` so that the code comments now use "unisocket client" instead of "dumb client". [#14213]
-* Added the ability to perform an LDAP `subtree` search for groups in Hazelcast Management Center’s LDAP authenticator. [#14118]
-* Added the ability to set the `EvictionConfig.comparatorClassName()` in the client’s declarative configuration, too. [#14093]
-* Introduced the `/ready` endpoint to the REST API to allow checking a member if it is ready to be used after it joins to the cluster. [#14089]
-* Improved the syncing of XSD files. [#14070]
-* The `IMap.removeAll()` method now supports `PartitionPredicate`. [#12238]
-* Improved the diagnostics tool so that it automatically creates the configured directory for the diagnostic outputs. [#11946]
+### Configuration
 
-4. Fixes
+* REST API is now enabled by default when you use Hazelcast Platform with Docker or by downloading the distribution packages (ZIP or TAR). [#22249]
+* Member discoveries in cloud environments (AWS, GCP, Azure, Kubernetes, Eureka) in Spring XML can be configured now using property placeholders. [#21995]
+* Added configuration elements for external data stores used by map stores, and JDBC sinks and sources. See Configuring Connections to External Data Stores. [#21716]
+* Introduced a way to configure AWS Asynchronous Client's executor service used by Jet engine's Kinesis sources and sinks (thread pool size, threads names pattern).
+For this purpose, `AwsConfig` is extended with an additional `executorServiceSupplier` field that allows to specify what executor service to be used. [#21075]
 
-* Fixed an issue where the state of member list on the clients were broken after a hot restart in the cluster. [#14839]
-* Fixed an issue where the outbound pipeline was not waking up properly after merging the write-through changes. [#14830]
-* Fixed an issue where a Hazelcast Java client was not able to connect to the cluster (which has the `advanced-network` configuration) after a split-brain syndrome is healed. [#14768]
-* Fixed an issue where the `like` and `ilike` predicates didn’t catch any entity with the `text` field containing the '\n' character. [#14751]
-* Fixed an issue where ``NullPointerException``s was thrown recursively when a client is connected to an unreachable member during a split-brain. [#14722]
-* Fixed an issue where Hazelcast running on RHEL (OpenJDK8) shows `unknown gc` in the logs, instead of `major gc` and `minor gc`. [#14701]
-* Fixed an issue where the IP client selector was not working for the local clients. [#14654]
-* Fixed the wording of a misleading error in the first attempt to connect to a wrongly configured cluster. The error message has been changed to “Unable to connect to any cluster”.  https://github.com/hazelcast/hazelcast/issues/14574[[#14574]]
-* Fixed an issue where a connection configured using `AdvancedNetworkConfig` was not denied correctly for some inappropriate endpoints. [#14532]
-* Fixed the REST service which was not working when the REST endpoint is configured for   `AdvancedNetworkConfig`. [#14516]
-* Fixed an issue where the `setAsync()` method was throwing `NullPointerException`. [#14445]
-* Fixed an issue where the collection attributes indexed with `[any]` were causing incorrect SQL query results, if the first data inserted to the map has no value for the attribute or the collection is empty. [#14358]
-* Fixed an issue where `mapEvictionPolicy` couldn’t be specified in the JSON configuration file. [#14092]
-* Fixed an issue where the rolling upgrade was failing when all members change their IP addresses. [#14088]
-* Fixed an issue where the resources were not wholly cleared when destroying `DurableExecutorService` causing some resources to be left in the heap. [#14087]
-* Fixed an issue where the REST API was not handling the HTTP requests without headers correctly: when a client sends an HTTP request without headers to the Hazelcast REST API, the `HttpCommand` class was wrongly expecting an additional new line. [#14353]
-* Fixed an issue where `QueryCache` was not returning the copies of the found objects. [#14333]
-* Fixed an issue where the MultiMap's `RemoveOperation` was iterating through the backing collection, which caused performance degradation (when using the `SET` collection type). [#14145]
-* Fixed an issue where the user code deployment feature was throwing `NullPointerException` while loading multiple nested classes and using entry processors. [#14105]
-* Fixed an issue where the newly joining members could not form a cluster when the existing members are killed. [#14051]
-* Fixed an issue where the `IMap.get()` method was not resetting the idle time counter when `read-backup-data` is enabled. [#14026]
-* Fixed an issue where the `addIndex()` method was performing a full copy of entries when a new member joins the cluster, which is not needed. [#13964]
-* Fixed an issue where the initialization failure of `discoveryService` was causing some threads to remain open and the JVM could not be terminated because of these threads. [#13821]
-* Fixed the discrepancy between the XSD on the website and the one in the download package. [#13011]
-* `PagingPredicate` with comparator was failing to serialize when sending from the client or member when the cluster size is more than 1. This has been fixed by making the `PagingPredicateQuery` comparator serializable. [#12208]
-* Fixed an issue where `TcpIpConnectionManager` was putting the connections in a map under the remote endpoint bind address but not under the address to which Hazelcast connects. [#11256]
+### WAN Replication
 
-5. Removed/Deprecated Features
+* Improved the way how acknowledgements are handled for WAN synchronization, such that they are now sent asynchronously. This makes the WAN synchronization progress much more reliable and WAN synchronization more resilient by doing retries if something goes wrong in any phase. [#21415]
 
-* `ILock` interface and implementation of `ILock` has been deprecated, and `FencedLock` has been introduced.
-* The original implementations of `IAtomicLong`, `IAtomicReference`, `ISemaphore` and `ICountDownLatch` have been deprecated. Instead, the implementations provided by the CP Subsystem have been introduced.
-* The following system properties are deprecated:
-  ** `hazelcast.rest.enabled`
-  ** `hazelcast.mc.url.change.enabled`
-  ** `hazelcast.memcache.enabled`
-  ** `hazelcast.http.healthcheck.enabled`
+### Other Enhancements
 
+* You can now provide comma-separated lists to give multiple labels for the Kubernetes Discovery Plugin configurations `service-label-name`, `service-label-value`, `pod-label-name`, and `pod-label-value`. [#22277]
+* Added a new method which allows to update a map entry's value without changing its previously set expiration time.
+See https://docs.hazelcast.org/docs/5.2.0/javadoc/com/hazelcast/map/ExtendedMapEntry.html#setValueWithoutChangingExpiryTime-V-. [#22199]
+* Added support of configuring the maximum message size for Python runner, when using the Jet engine with Python. [#22106]
+* Fixed an issue where a client was infinitely trying to reconnect to the cluster with CP persistence enabled. [#21769]
+* Improved the change data capture API:
+  ** Introduced two new methods, `newValue() `and `oldValue()`, to compare values before and after an update of a record.
+  ** Methods that are used to extract metadata are no longer doing on the fly parsing of the payload, meaning there won't be any `ParsingException` and you don't have to deal with those possible exceptions.
+  ** Expose the Debezium source method, which takes a class instance instead of `String` with class name, to make the code more strongly-typed.
+  [#21536]
+* You can now specify multiple partitions while using predicate queries. This can only be done using https://docs.hazelcast.org/docs/5.2.0/javadoc/com/hazelcast/query/Predicates.html#multiPartitionPredicate-java.util.Set-com.hazelcast.query.Predicate-. [#21319]
+* To decrease the load on the Management Center for large clusters, the level of network related metrics has been changed to `DEBUG`. When you need these metrics, you can use the `hazelcast.metrics.debug.enabled`] property. [#21232]
+* While building Hazelcast from the source, you can now use the boolean `hazelcast.disable.docker.tests` property to ignore the tests that require Docker to run (by setting it to `false`). [#21087]
+* Improved connection handling. [#21631]
+* Added support of dynamic update of IP addresses of cluster members. For this, a new REST endpoint (`hazelcast/rest/config/tcp-ip/member-list`) is introduced for getting and updating the member list at runtime.
+This improves the split-brain recovery under even certain corner cases and ensures that the cluster recovery from split-brain in every cluster setup can be initially formed. [#20552]
+* Added support of nested fields for Hazelcast's Java classes. [#19954] 
+
+## Fixes
+
+* Fixed an issue where map persistence was not working when configured programmatically. See https://github.com/vbekiaris/hazelcast/commit/e7828b8d3551bbfcb92bdc3cc5924edcdc530856.
+* Fixed an issue where the WAN synchronization for all maps when using the REST API was done for all the WAN replications instead of the replication specified in the REST call. [#22252]
+* Fixed an issue where the `IS NULL` condition was being ignored when there is another condition for the same column. [#22238]
+* Fixed an issue where the `IMap.get()` call was blocked when `NoNodeAvailableException` is thrown from the MapStore. [#22168]
+* Fixed an issue where `ClearBackupOperation` in maps was being reported as a slow operation on the members which was causing the entire cluster to be frozen. [#22082]
+* Fixed an issue where the cluster merge was not happening properly when the master member does not know the addresses of the other members and if the other members start before the master one. [#22021]
+* Fixed an issue where the failover client statistics was not calculated properly. [#21807]
+* Fixed an issue where an internal periodic task (with an interval of 1 second) was trying to connect a client to all cluster members, even if there is no connection to the cluster yet:
+  ** A client connects to the cluster (where smart routing is enabled by default)
+  ** Connection is lost due to a failure
+  ** When the cluster is up, the client retries to connect for the configured wait time between retries
+  ** During these reconnection attempts, the internal periodic task was outputting logs of connection failure for each second until the client connects to the cluster.
+  [#21705]
+* SQL storage now is able to replicate data to the newly joined members in the cluster. [#21632]
+* Fixed an issue where `NullPointerException` was thrown around the `CREATE JOB` statement which is using Kafka Sink connector when Kafka has no records yet. Now, it produces an appropriate log message. [#21460]
+* Fixed an issue where a cluster could not be formed when security is enabled, various client permissions are set, and multiple members are started simultaneously. [#21440]
+* Fixed an issue where data persistence and tiered storage configurations could not be added dynamically. [#21432]
+* Fixed a data loss issue which was occurring with graceful shutdown with when a member (with zero backup) restarts on the same address. [#21428]
+* Fixed an issue where a map remains empty after a put operation when the `max-idle-seconds` configuration has the value of `Integer.MAX_VALUE`. [#21409]
+* Fixed an issue where the connections were dropping in an active-active WAN replication setup using advanced network configurations. [#21219]
+* Fixed an issue where a cluster was unresponsive when you perform a health check to see the members are in the safe state; cluster members were hanging in the `REPLICA_NOT_SYNC` state during such health checks. [#21145]
+* Fixed an issue where the statistics like puts and removals were not increasing when these operations are executed through Transactional interface. [#21086]
+* Fixed an issue where a set time-to-live (TTL) duration for an entry was ignoring the split seconds. For example, when you set TTL as 1 seconds and put an entry at 01:01:5.99 AM , then the entry was already
+expired when you want to get this entry at 01:01:6.01 AM (should have been expired at 01:01:6.99 AM). [#21018] 
+* Fixed a data race in `SingleProtocolEncoder`; while one method of this interface is called from the input thread, another one is called from the output thread which was causing the race. [#20991]
+* Fixed an issue where the automatic module name in `hazelcast-5.x.jar` could not be detected using Gradle. The reason was `/META-INF/MANIFEST.MF` not being the first or second entry in the JAR file; now this manifest file is the second entry. [#20969]
+* Fixed an issue where the list of members in the cluster was reset to an empty list when the UUID of a cluster changes after its restart: this was causing startup failures since Hazelcast could not manage the events due to the empty member list after a restart. [#20818]
+* Fixed an issue where `JSON_QUERY` with expression filter in SQL was not producing a result when the data source contains internal array(s). [#20761]
+* Fixed the mapping issue of Hazelcast map fields in SQL; when the value object contains a public getter of `java.util.Map`, the `CREATE MAPPING` statement was failing. [#20256]
+* Fixed an issue where the cluster was not merging properly if the master member does not know other members' addresses and when the other members start before the master member. [#18661]
+
+## Contributors
+
+We would like to thank the contributors from our open source community
+who worked on this release:
+
+* [Christoph Dreis](https://github.com/dreis2211)
+* [Andrzej Nestoruk](https://github.com/anestoruk)
+* [Callum Galbreath](https://github.com/software-is-art)
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import static com.hazelcast.internal.util.QuickMath.divideByAndRoundToInt;
  * MemoryUnit represents memory size at a given unit of
  * granularity and provides utility methods to convert across units.
  *
- * @see MemorySize
+ * @see Capacity
  * @since 3.4
  */
 public enum MemoryUnit {

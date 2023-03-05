@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,10 @@ import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.config.Config.DEFAULT_CLUSTER_NAME;
@@ -166,7 +166,7 @@ public class TestAwareInstanceFactory {
 
     protected List<HazelcastInstance> getOrInitInstances(Map<String, List<HazelcastInstance>> map) {
         String methodName = getTestMethodName();
-        List<HazelcastInstance> list = map.computeIfAbsent(methodName, k -> new ArrayList<>());
+        List<HazelcastInstance> list = map.computeIfAbsent(methodName, k -> new CopyOnWriteArrayList<>());
         return list;
     }
 

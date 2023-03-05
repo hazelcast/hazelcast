@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -194,6 +194,18 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     @Override
     public long getHits() {
         return hits;
+    }
+
+    // TODO: Not implemented for replicated map
+    @Override
+    public long getEvictionCount() {
+        return 0;
+    }
+
+    // TODO: Not implemented for replicated map
+    @Override
+    public long getExpirationCount() {
+        return 0;
     }
 
     public void setHits(long hits) {

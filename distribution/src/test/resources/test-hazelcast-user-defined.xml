@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2020 Hazelcast Inc.
+  ~ Copyright 2023 Hazelcast Inc.
   ~
   ~ Licensed under the Hazelcast Community License (the "License"); you may not use
   ~ this file except in compliance with the License. You may obtain a copy of the
@@ -16,14 +16,14 @@
 
 <!--
     The default Hazelcast configuration. This is used when no hazelcast.xml is present.
-    Please see the schema for how to configure Hazelcast at https://hazelcast.com/schema/config/hazelcast-config-5.2.xsd
+    Please see the schema for how to configure Hazelcast at https://hazelcast.com/schema/config/hazelcast-config-5.3.xsd
     or the documentation at https://hazelcast.org/documentation/
 -->
 <!--suppress XmlDefaultAttributeValue -->
 <hazelcast xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xmlns="http://www.hazelcast.com/schema/config"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-5.2.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-5.3.xsd">
 
     <cluster-name>hz-xml-configured-cluster</cluster-name>
 </hazelcast>

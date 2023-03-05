@@ -74,6 +74,8 @@ Provide functional design details that are pertinent to this specific design spe
 - What parts of the design do you expect to resolve through the design process before this gets merged?
 - What parts of the design do you expect to resolve through the implementation of this feature before stabilization?
 - What related issues do you consider out of scope for this document that could be addressed in the future independently of the solution that comes out of this change?
+- How does this functionality impact/augment our Viridian Cloud offering? 
+- What changes, if any, are needed in Viridian to explose this functionality? 
 
 Use the ⚠️ or ❓icon to indicate an outstanding issue or question, and use the ✅ or ℹ️ icon to indicate a resolved issue or question.
 
@@ -90,6 +92,7 @@ Consider the following writing prompts:
 - Are there new error messages introduced? Can you provide examples?
 - Are there new deprecation warnings? Can you provide examples?
 - How are clusters affected that were created before this change? Are there migrations to consider?
+- How can this be leveraged in Viridian Cloud? 
 
 #### Client Related Changes
 Please identify if any client code change is required. If so, please provide a list of client code changes.
@@ -109,7 +112,9 @@ Some of these prompts may not be relevant to your design document; in which case
 - Questions about the change:
   - What components in Hazelcast need to change? How do they change? This section outlines the implementation strategy: for each component affected, outline how it is changed.
   - Are there new abstractions introduced by the change? New concepts? If yes, provide definitions and examples.
-  - How does this work in a on-prem deployment? How about on AWS and Kubernetes?
+  - How does this work in a on-prem deployment? 
+  - How about on AWS and Kubernetes, platform operator?
+  - How does this work in Cloud Viridan clusters? 
   - How does the change behave in mixed-version deployments? During a version upgrade? Which migrations are needed?
   - What are the possible interactions with other features or sub-systems inside Hazelcast? How does the behavior of other code change implicitly as a result of the changes outlined in the design document? (Provide examples if relevant.)
   - Is there other ongoing or recent work that is related? (Cross-reference the relevant design documents.)
@@ -151,7 +156,7 @@ Some of these prompts may not be relevant to your design document; in which case
     - Which principles did you apply to ensure the user experience (UX) is consistent with other related features? (Cross-reference other features that have related UX, for comparison.)
     - Which other engineers or teams have you polled for input on the proposed UX changes? Which engineers or team may have relevant experience to provide feedback on UX?
   - Is usage of the new feature observable in telemetry? If so, mention where in the code telemetry counters or metrics would be added.
-  - What might be the valuable metrics that could be shown for this feature in Management Center?
+  - What might be the valuable metrics that could be shown for this feature in Management Center and/or Viridan Control Plane?
   - Should this feature be configured, enabled/disabled or managed from the Management Center? How do you think your change affects Management Center?
   - Does the feature require or allow runtime changes to the member configuration (XML/YAML/programmatic)?
   - Are usage statistics for this feature reported in Phone Home? If not, why?

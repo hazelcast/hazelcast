@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Submits the task to member specified by the address.
  */
-@Generated("6a5bec320fd9f84394a98953a223f80e")
+@Generated("85f4daf9b570725f0b6235d22f3872bc")
 public final class ExecutorServiceSubmitToMemberCodec {
     //hex: 0x080600
     public static final int REQUEST_MESSAGE_TYPE = 525824;
@@ -76,6 +76,7 @@ public final class ExecutorServiceSubmitToMemberCodec {
 
     public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID uuid, com.hazelcast.internal.serialization.Data callable, java.util.UUID memberUUID) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
+        clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("ExecutorService.SubmitToMember");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

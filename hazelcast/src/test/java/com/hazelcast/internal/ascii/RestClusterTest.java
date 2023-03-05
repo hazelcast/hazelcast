@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -336,13 +336,13 @@ public class RestClusterTest {
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
         ConnectionResponse response = communicator.headRequestToClusterHealthURI();
         assertEquals(HttpURLConnection.HTTP_OK, response.responseCode);
-        assertEquals(response.responseHeaders.get("Hazelcast-NodeState").size(), 1);
+        assertEquals(1, response.responseHeaders.get("Hazelcast-NodeState").size());
         assertContains(response.responseHeaders.get("Hazelcast-NodeState"), "ACTIVE");
-        assertEquals(response.responseHeaders.get("Hazelcast-ClusterState").size(), 1);
+        assertEquals(1, response.responseHeaders.get("Hazelcast-ClusterState").size());
         assertContains(response.responseHeaders.get("Hazelcast-ClusterState"), "ACTIVE");
-        assertEquals(response.responseHeaders.get("Hazelcast-ClusterSize").size(), 1);
+        assertEquals(1, response.responseHeaders.get("Hazelcast-ClusterSize").size());
         assertContains(response.responseHeaders.get("Hazelcast-ClusterSize"), "2");
-        assertEquals(response.responseHeaders.get("Hazelcast-MigrationQueueSize").size(), 1);
+        assertEquals(1, response.responseHeaders.get("Hazelcast-MigrationQueueSize").size());
         assertContains(response.responseHeaders.get("Hazelcast-MigrationQueueSize"), "0");
     }
 

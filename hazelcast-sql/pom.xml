@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2021 Hazelcast Inc.
+  ~ Copyright 2023 Hazelcast Inc.
   ~
   ~ Licensed under the Hazelcast Community License (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>5.2.0-SNAPSHOT</version>
+        <version>5.3.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -38,10 +38,9 @@
 
         <checkstyle.headerLocation>${project.parent.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
 
-        <calcite.version>1.31.0</calcite.version>
+        <calcite.version>1.32.0</calcite.version>
         <confluent.version>6.2.2</confluent.version>
-        <jaxb.version>2.3.1</jaxb.version>
-        <immutables.version>2.9.1</immutables.version>
+        <immutables.version>2.9.3</immutables.version>
     </properties>
 
     <build>
@@ -113,7 +112,7 @@
                     <dependency>
                         <groupId>org.freemarker</groupId>
                         <artifactId>freemarker</artifactId>
-                        <version>2.3.31</version>
+                        <version>2.3.32</version>
                     </dependency>
                 </dependencies>
                 <executions>
@@ -231,8 +230,9 @@
                                     <include>com.google.guava:guava</include>
                                     <include>com.google.guava:listenablefuture</include>
                                     <include>com.google.guava:failureaccess</include>
-                                    <include>com.esri.geometry:esri-geometry-api</include>
+                                    <include>org.locationtech.jts:jts-core</include>
                                     <include>org.slf4j:slf4j-api</include>
+                                    <include>com.fasterxml.jackson.core:jackson-databind</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -279,8 +279,8 @@
                                     <shadedPattern>${relocation.root}.com.google</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>com.esri.core.geometry</pattern>
-                                    <shadedPattern>${relocation.root}.com.esri.core.geometry</shadedPattern>
+                                    <pattern>org.locationtech.jts</pattern>
+                                    <shadedPattern>${relocation.root}.org.locationtech.jts</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.slf4</pattern>
@@ -357,7 +357,7 @@
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>com.fasterxml.jackson.core:jackson-core</artifact>
+                                    <artifact>com.fasterxml.jackson.core:*</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
@@ -395,7 +395,7 @@
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>com.esri.geometry:esri-geometry-api</artifact>
+                                    <artifact>org.locationtech.jts:jts-core</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
@@ -532,6 +532,15 @@
                     <groupId>org.jetbrains.kotlin</groupId>
                     <artifactId>kotlin-stdlib-jdk8</artifactId>
                 </exclusion>
+                <!-- Unused geospatial libraries (only jts-core is required) -->
+                <exclusion>
+                    <groupId>org.locationtech.jts.io</groupId>
+                    <artifactId>jts-io-common</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.locationtech.proj4j</groupId>
+                    <artifactId>proj4j</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -579,14 +588,12 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <version>${jackson.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
-            <scope>provided</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.avro</groupId>
@@ -689,6 +696,10 @@
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-log4j12</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.apache.yetus</groupId>
+                    <artifactId>audience-annotations</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -709,6 +720,12 @@
             <artifactId>kafka_${scala.version}</artifactId>
             <version>${kafka.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.yetus</groupId>
+                    <artifactId>audience-annotations</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>

@@ -1103,7 +1103,7 @@
           "additionalProperties": false,
           "properties": {
             "page-size": {
-              "$ref": "#/definitions/MemorySize",
+              "$ref": "#/definitions/Capacity",
               "description": "Page size of the index B+ Tree. Default value is 16 kB.",
               "default": {
                 "value": 16,
@@ -1117,7 +1117,7 @@
               "additionalProperties": false,
               "properties": {
                 "capacity": {
-                  "$ref": "#/definitions/MemorySize",
+                  "$ref": "#/definitions/Capacity",
                   "description": "Memory tier capacity, i.e., how much main memory should this tier consume at most. The default is 256 megabytes."
                 }
               },
@@ -1543,7 +1543,7 @@
                 "additionalProperties": false,
                 "properties": {
                   "capacity": {
-                    "$ref": "#/definitions/MemorySize",
+                    "$ref": "#/definitions/Capacity",
                     "description": "Memory tier capacity, i.e., how much main memory should this tier consume at most. The default is 256 megabytes."
                   }
                 }
@@ -2991,7 +2991,7 @@
         "migration"
       ]
     },
-    "MemorySize": {
+    "Capacity": {
       "type": "object",
       "properties": {
         "unit": {
@@ -3029,7 +3029,11 @@
           "description": "Type of the memory allocator. The default value is POOLED. Available values are as follows: \\n- STANDARD: Allocates/frees the memory using default OS memory manager, \\n- POOLED: Manages memory blocks in thread local pools"
         },
         "size": {
-          "$ref": "#/definitions/MemorySize"
+          "$ref": "#/definitions/Capacity",
+          "description": "Deprecated, use 'capacity' instead."
+        },
+        "capacity": {
+          "$ref": "#/definitions/Capacity"
         },
         "min-block-size": {
           "type": "integer",
@@ -3801,7 +3805,7 @@
             "description": "Device base directory that will be used for tiered-store."
           },
           "capacity": {
-            "$ref": "#/definitions/MemorySize",
+            "$ref": "#/definitions/Capacity",
             "description": "Device capacity, i.e., what is the soft upper bound capacity of the device. The default is 256 gigabytes."
           },
           "block-size": {

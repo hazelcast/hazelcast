@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.kafka.impl.KafkaTestSupport.KAFKA_MAX_BLOCK_MS;
 import static java.util.Collections.singletonMap;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static org.junit.Assert.assertEquals;
@@ -69,7 +70,7 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
 
     private static KafkaTestSupport kafkaTestSupport;
 
-    private String sourceIMapName = randomMapName();
+    private final String sourceIMapName = randomMapName();
     private Properties properties;
     private String topic;
     private IMap<Integer, String> sourceIMap;
@@ -87,6 +88,7 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
         properties.setProperty("bootstrap.servers", kafkaTestSupport.getBrokerConnectionString());
         properties.setProperty("key.serializer", IntegerSerializer.class.getName());
         properties.setProperty("value.serializer", StringSerializer.class.getName());
+        properties.setProperty("max.block.ms", String.valueOf(KAFKA_MAX_BLOCK_MS));
 
         topic = randomName();
         kafkaTestSupport.createTopic(topic, PARTITION_COUNT);

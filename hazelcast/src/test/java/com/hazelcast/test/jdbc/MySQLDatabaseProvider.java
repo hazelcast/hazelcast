@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,14 @@ import org.testcontainers.jdbc.ContainerDatabaseDriver;
 
 public class MySQLDatabaseProvider implements TestDatabaseProvider {
 
+    private static final int LOGIN_TIMEOUT = 120;
+
     private String jdbcUrl;
 
     @Override
     public String createDatabase(String dbName) {
         jdbcUrl = "jdbc:tc:mysql:8.0.29:///" + dbName + "?TC_DAEMON=true&sessionVariables=sql_mode=ANSI";
+        waitForDb(jdbcUrl, LOGIN_TIMEOUT);
         return jdbcUrl;
     }
 

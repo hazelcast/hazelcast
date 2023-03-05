@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.internal.util;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -29,13 +30,16 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Properties;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkHasNext;
 import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.internal.util.Preconditions.checkNotInstanceOf;
+import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -366,5 +370,28 @@ public class PreconditionsTest {
     public void test_hasNextReturnsIterator_whenNonEmptyIteratorGiven() throws Exception {
         Iterator<Integer> iterator = Arrays.asList(1, 2).iterator();
         assertEquals(iterator, checkHasNext(iterator, ""));
+    }
+
+    @Test
+    public void test_checkRequiredProperty_whenNoProperty() {
+        Properties properties = new Properties();
+        properties.setProperty("other-key", "other-value");
+        Assertions.assertThatThrownBy(() -> checkRequiredProperty(properties, "some-key"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Property 'some-key' is required");
+    }
+
+    @Test
+    public void test_checkRequiredProperty_whenProperty() {
+        Properties properties = new Properties();
+        properties.setProperty("some-key", "some-value");
+
+        assertThat(checkRequiredProperty(properties, "some-key")).isEqualTo("some-value");
+    }
+    @Test
+    public void test_checkRequiredProperty_when_null() {
+        Assertions.assertThatThrownBy(() -> checkRequiredProperty(null, "some-key"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Properties are required");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,10 @@ public interface Expression<T> extends DataSerializable, Serializable {
      *      * @return the result produced by the evaluation
      */
     default Object evalTop(Row row, ExpressionEvalContext context) {
-        return eval(row, context);
+        // If we are evaluating the expression as top, don't use lazy deserialization because
+        // compact and portable generic records need to be in deserialized form when returned to
+        // the user.
+        return eval(row, context, false);
     }
 
     /**
@@ -49,6 +52,19 @@ public interface Expression<T> extends DataSerializable, Serializable {
      * @return the result produced by the evaluation
      */
     T eval(Row row, ExpressionEvalContext context);
+
+    /**
+     * Evaluates this expression. By default, this method ignores useLazyDeserialization parameter,
+     * i.e, expression that uses the default implementation won't use lazy deserialization.
+     *
+     * @param row the row to evaluate this expression on
+     * @param context the expression evaluation context
+     * @param useLazyDeserialization whether to use lazy deserialization
+     * @return the result produced by the evaluation
+     */
+    default T eval(Row row, ExpressionEvalContext context, boolean useLazyDeserialization) {
+        return eval(row, context);
+    }
 
     /**
      * @return the return query data type of this expression.

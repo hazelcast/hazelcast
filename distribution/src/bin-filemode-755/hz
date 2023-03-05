@@ -22,7 +22,6 @@ function findScriptDir() {
 }
 
 findScriptDir
-
 . "$SCRIPT_DIR"/common.sh
 
 if [ -z "$LOGGING_CONFIG" ]; then

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -525,6 +525,8 @@ public class RaftSessionService extends AbstractCPMigrationAwareService
                 context.collect(desc.copy().withTag("endpoint", session.endpoint().toString()).withMetric("endpoint"), 0);
                 context.collect(desc.copy().withTag("endpointType", session.endpointType().toString())
                         .withMetric("endpointType"), 0);
+                context.collect(desc.copy().withTag("endpointName", session.endpointName())
+                        .withMetric("endpointName"), 0);
 
                 context.collect(desc.copy().withMetric("version"), session.version());
                 context.collect(desc.copy().withUnit(ProbeUnit.MS).withMetric("creationTime"), session.creationTime());

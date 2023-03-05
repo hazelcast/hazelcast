@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.client.impl.protocol.codec.JetGetJobMetricsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSubmissionTimeCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSuspensionCauseCodec;
+import com.hazelcast.client.impl.protocol.codec.JetIsJobUserCancelledCodec;
 import com.hazelcast.client.impl.protocol.codec.JetJoinSubmittedJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetResumeJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
@@ -79,13 +80,23 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
 
     @Nonnull
     @Override
-    public JobStatus getStatus0() {
+    protected JobStatus getStatus0() {
         assert !isLightJob();
         return callAndRetryIfTargetNotFound(()  -> {
             ClientMessage request = JetGetJobStatusCodec.encodeRequest(getId());
             ClientMessage response = invocation(request, masterId()).invoke().get();
             int jobStatusIndex = JetGetJobStatusCodec.decodeResponse(response);
             return JobStatus.values()[jobStatusIndex];
+        });
+    }
+
+    @Override
+    protected boolean isUserCancelled0() {
+        assert !isLightJob();
+        return callAndRetryIfTargetNotFound(()  -> {
+            ClientMessage request = JetIsJobUserCancelledCodec.encodeRequest(getId());
+            ClientMessage response = invocation(request, masterId()).invoke().get();
+            return JetIsJobUserCancelledCodec.decodeResponse(response);
         });
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.wan.WanEventCounters;
 import com.hazelcast.wan.WanEventType;
 import com.hazelcast.wan.impl.InternalWanEvent;
@@ -35,7 +34,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
 
-public class WanMapRemoveEvent implements InternalWanEvent<Object>, IdentifiedDataSerializable, SerializationServiceAware {
+public class WanMapRemoveEvent implements InternalWanEvent<Object>, SerializationServiceAware {
     private SerializationService serializationService;
     private String mapName;
     private Data dataKey;

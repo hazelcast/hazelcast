@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -276,7 +276,7 @@ public class PartitionReplicaSyncRequest extends AbstractPartitionOperation
         InternalPartitionServiceImpl partitionService = getService();
         PartitionReplicaVersionManager versionManager = partitionService.getPartitionReplicaVersionManager();
 
-        long[] versions = versionManager.getPartitionReplicaVersions(partitionId, ns);
+        long[] versions = versionManager.getPartitionReplicaVersionsForSync(partitionId, ns);
         PartitionReplicaSyncResponse syncResponse = new PartitionReplicaSyncResponse(operations,
                 chunkSuppliers, ns, versions,
                 isChunkedMigrationEnabled(),

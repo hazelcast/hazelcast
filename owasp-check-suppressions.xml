@@ -16,13 +16,6 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-      False positive. The hazelcast:hazelcast component vulnerabilities are related to Hazelcast IMDG version and not the integration - hazelcast-hibernate.
-      ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.hazelcast/hazelcast-hibernate.*$</packageUrl>
-        <cpe>cpe:/a:hazelcast:hazelcast</cpe>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
       False positive. The hazelcast:hazelcast component vulnerabilities are related to Hazelcast IMDG version and not the integration - hazelcast-wm.
       ]]></notes>
         <packageUrl regex="true">^pkg:maven/com\.hazelcast/hazelcast-wm@.*$</packageUrl>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -268,6 +268,20 @@ final class KubernetesConfig {
             throw new InvalidConfigurationException(
                     String.format("Properties '%s' and '%s' cannot be defined at the same time",
                             SERVICE_LABEL_NAME.key(), POD_LABEL_NAME.key()));
+        }
+        if (!StringUtil.isNullOrEmptyAfterTrim(serviceLabelName) && !StringUtil.isNullOrEmptyAfterTrim(serviceLabelValue)
+                && (serviceLabelName.chars().filter(ch -> ch == ',').count()
+                != serviceLabelValue.chars().filter(ch -> ch == ',').count())) {
+            throw new InvalidConfigurationException(
+                    String.format("Properties '%s' and '%s' must have the same number of comma separated elements",
+                            SERVICE_LABEL_NAME.key(), SERVICE_LABEL_VALUE.key()));
+        }
+        if (!StringUtil.isNullOrEmptyAfterTrim(podLabelName) && !StringUtil.isNullOrEmptyAfterTrim(podLabelValue)
+                && (podLabelName.chars().filter(ch -> ch == ',').count()
+                != podLabelValue.chars().filter(ch -> ch == ',').count())) {
+            throw new InvalidConfigurationException(
+                    String.format("Properties '%s' and '%s' must have the same number of comma separated elements",
+                            POD_LABEL_NAME.key(), POD_LABEL_VALUE.key()));
         }
         if (serviceDnsTimeout < 0) {
             throw new InvalidConfigurationException(

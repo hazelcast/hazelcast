@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,17 @@ public interface Step<S> {
      * com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread}
      * otherwise {@code false}
      */
-    default boolean isOffloadStep() {
+    default boolean isOffloadStep(S state) {
         return false;
     }
+
+    /**
+     * Used when this step is an
+     * offload-step, otherwise not used.
+     *
+     * @param state the state object
+     * @return name of the executor to run
+     * this step(valid if this step is an offload-step)
+     */
+    String getExecutorName(S state);
 }

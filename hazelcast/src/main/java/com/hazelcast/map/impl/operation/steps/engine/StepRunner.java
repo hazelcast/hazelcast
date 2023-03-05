@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,23 @@
 
 package com.hazelcast.map.impl.operation.steps.engine;
 
-import com.hazelcast.internal.util.executor.ManagedExecutorService;
+import com.hazelcast.core.Offloadable;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.properties.HazelcastProperty;
 
 import javax.annotation.Nullable;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
-import static com.hazelcast.spi.impl.executionservice.ExecutionService.MAP_STORE_OFFLOADABLE_EXECUTOR;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.lang.Thread.currentThread;
 
 /**
  * <lu>
@@ -60,38 +58,35 @@ public class StepRunner extends Offload
     public static final ThreadLocal<Boolean> CURRENTLY_EXECUTING_ON_PARTITION_THREAD
             = ThreadLocal.withInitial(() -> false);
 
-    private static final long DEFAULT_MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS
-            = TimeUnit.MILLISECONDS.toNanos(5);
-    private static final String PROP_MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS
-            = "hazelcast.internal.map.mapstore.max.successive.offloaded.operation.run.nanos";
-    private static final HazelcastProperty MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS
-            = new HazelcastProperty(PROP_MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS,
-            DEFAULT_MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS, NANOSECONDS);
-
     private final int partitionId;
     private final long maxRunNanos;
     private final Set<MapOperation> offloadedOperations;
     private final OperationExecutor operationExecutor;
-    private final ManagedExecutorService executor;
+    private final ExecutionService executionService;
 
     private volatile StepSupplier stepSupplier;
+
+    // Acts as a local variable.
+    private String currentExecutorName;
 
     public StepRunner(MapOperation mapOperation) {
         super(mapOperation);
         this.offloadedOperations = getOffloadedOperations(mapOperation);
         this.partitionId = mapOperation.getPartitionId();
         NodeEngine nodeEngine = mapOperation.getNodeEngine();
-        this.operationExecutor = ((OperationServiceImpl) nodeEngine.getOperationService()).getOperationExecutor();
-        this.executor = nodeEngine.getExecutionService().getExecutor(MAP_STORE_OFFLOADABLE_EXECUTOR);
-        this.maxRunNanos = nodeEngine.getProperties().getNanos(MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS);
+        this.operationExecutor = ((OperationServiceImpl) nodeEngine
+                .getOperationService()).getOperationExecutor();
+        this.executionService = nodeEngine.getExecutionService();
+        this.maxRunNanos = mapOperation.getMapContainer()
+                .getMapServiceContext().getMaxSuccessiveOffloadedOpRunNanos();
     }
 
     @Override
     public void start() throws Exception {
-        Operation op = offloadedOperation();
-        addOpToOffloadedOps(((MapOperation) op));
+        Operation thisOp = offloadedOperation();
+        addOpToOffloadedOps(((MapOperation) thisOp));
 
-        if (isCurrentOffloadedOpCountOne()) {
+        if (isHeadOp()) {
             run();
         }
     }
@@ -104,20 +99,28 @@ public class StepRunner extends Offload
         return CURRENTLY_EXECUTING_ON_PARTITION_THREAD.get();
     }
 
-    private void addOpToOffloadedOps(MapOperation op) {
-        op.setOperationResponseHandler(new OffloadedStepResponseHandler(op.getOperationResponseHandler()));
-        offloadedOperations.add(op);
-        op.getRecordStore().incMapStoreOffloadedOperationsCount();
+    private boolean addOpToOffloadedOps(MapOperation op) {
+        if (offloadedOperations.add(op)) {
+            op.getRecordStore().incMapStoreOffloadedOperationsCount();
+            return true;
+        }
+
+        return false;
     }
 
-    private boolean isCurrentOffloadedOpCountOne() {
+    private void setSteppedOpResponseHandler() {
+        MapOperation op = stepSupplier.getOperation();
+        OperationResponseHandler current = op.getOperationResponseHandler();
+
+        if (current instanceof SteppedOpResponseHandler) {
+            return;
+        }
+
+        op.setOperationResponseHandler(new SteppedOpResponseHandler(current));
+    }
+
+    private boolean isHeadOp() {
         return offloadedOperations.size() == 1;
-    }
-
-    @Override
-    public void run() {
-        boolean runningOnPartitionThread = isRunningOnPartitionThread();
-        run0(runningOnPartitionThread);
     }
 
     /**
@@ -126,54 +129,74 @@ public class StepRunner extends Offload
      * For fair usage of partition thread, it
      * has a {@link #maxRunNanos} upper limit.
      */
-    @SuppressWarnings("checkstyle:innerassignment")
-    private void run0(boolean runningOnPartitionThread) {
-        long start = System.nanoTime();
+    @Override
+    @SuppressWarnings({"checkstyle:innerassignment",
+            "checkstyle:CyclomaticComplexity"})
+    public void run() {
+        final boolean runningOnPartitionThread = isRunningOnPartitionThread();
+        final long start = System.nanoTime();
+
         Runnable step;
         do {
-            // set stepSupplier if it is not set yet
-            // or get next step from step supplier
-            if (stepSupplier == null || (step = stepSupplier.get()) == null) {
-                // set stepSupplier only on partition threads
-                if (runningOnPartitionThread) {
-                    stepSupplier = getNextStepSupplierOrNull();
-                    if (stepSupplier == null) {
+            try {
+                // set stepSupplier if it is not set yet
+                // or get next step from step supplier
+                if (stepSupplier == null || (step = stepSupplier.get()) == null) {
+                    // set stepSupplier only on partition threads
+                    if (runningOnPartitionThread) {
+                        stepSupplier = getNextStepSupplierOrNull();
+                        if (stepSupplier == null) {
+                            return;
+                        }
+                        continue;
+                    } else {
+                        // if we are not on partition threads, submit
+                        // this runnable to operation executor.
+                        operationExecutor.execute(this);
                         return;
                     }
-                    continue;
-                } else {
-                    // if we are not on partition threads, submit
-                    // this runnable to operation executor.
-                    operationExecutor.execute(this);
-                    return;
                 }
-            }
 
-            // Try to run this step in this thread, otherwise
-            // offload the step to relevant executor(it
-            // is operation or general-purpose executor)
-            if (!runDirect(step)) {
-                offloadRun(step, this);
-                return;
-            }
+                // If an already offloaded operation is retried on
+                // member left, response handler is re-set by retry
+                // mechanism. But this new response handler is not the
+                // same response handler expected by offload mechanism.
+                // As a consequence of this, offloaded operation cannot
+                // be removed from offload-queue. To prevent this issue
+                // we set response handler before running a step.
+                if (runningOnPartitionThread) {
+                    setSteppedOpResponseHandler();
+                }
 
-            // if there are many offloadedOperations belonging for
-            // a specific map, this step-runner tries to run all in
-            // one go. Let's assume all steps are partition-runnable,
-            // and can run on partition thread, in this case, to
-            // prevent unfair usage of partition thread, we put
-            // an upper time-limit with maxRunNanos, so a map
-            // cannot make a partition thread busy indefinitely
-            // and other operations can have a chance to run.
-            if (maxRunNanos > 0 && runningOnPartitionThread
-                    && System.nanoTime() - start >= maxRunNanos) {
-                step = stepSupplier.get();
-                if (step != null) {
+                // Try to run this step in this thread, otherwise
+                // offload the step to relevant executor(it
+                // is operation or general-purpose executor)
+                if (!runDirect(step)) {
                     offloadRun(step, this);
                     return;
                 }
+
+                // Independent of the number of queued offloadedOperations,
+                // this step-runner tries to run all queued operation in
+                // one go. This may cause biased usage of partition thread
+                // for the favour of operating map. To prevent this, one
+                // can put max execution time-limit with `maxRunNanos`
+                // setting, so partition operations of other maps don't
+                // wait longer but if there is a few maps, this setting
+                // can cause increased latencies as a side effect.
+                // Default value of `maxRunNanos` is zero.
+                if (maxRunNanos > 0 && runningOnPartitionThread
+                        && System.nanoTime() - start >= maxRunNanos) {
+                    step = stepSupplier.get();
+                    if (step != null) {
+                        offloadRun(step, this);
+                        return;
+                    }
+                }
+            } catch (Throwable throwable) {
+                stepSupplier.handleOperationError(throwable);
             }
-        } while (true);
+        } while (!currentThread().isInterrupted());
     }
 
     /**
@@ -201,11 +224,15 @@ public class StepRunner extends Offload
                 return true;
             }
         } else {
-            if (!isRunningOnPartitionThread()) {
+            // currentExecutorName can be null, if first step is offload step.
+            if (!isRunningOnPartitionThread()
+                    && (currentExecutorName == null
+                    || ((Offloadable) step).getExecutorName().equals(currentExecutorName))) {
                 step.run();
                 return true;
             }
         }
+
         return false;
     }
 
@@ -214,7 +241,10 @@ public class StepRunner extends Offload
         if (step instanceof PartitionSpecificRunnable) {
             operationExecutor.execute(offload);
         } else {
-            executor.execute(offload);
+            Offloadable offloadableStep = (Offloadable) step;
+            currentExecutorName = offloadableStep.getExecutorName();
+            executionService.getExecutor(currentExecutorName)
+                    .execute(offload);
         }
     }
 
@@ -228,15 +258,18 @@ public class StepRunner extends Offload
     }
 
     /**
-     * After response is sent for an offloaded operation,
-     * this callback removes offloaded operation from
-     * the {@link #offloadedOperations} registry.
+     * Response handler of an operation which
+     * is modeled as a chain of {@link Step}
+     * <p>
+     * This callback removes the stepped operation
+     * from {@link #offloadedOperations} registry then
+     * calls delegate operation response handler.
      */
-    private class OffloadedStepResponseHandler implements OperationResponseHandler {
+    private class SteppedOpResponseHandler implements OperationResponseHandler {
 
         private OperationResponseHandler delegate;
 
-        OffloadedStepResponseHandler(OperationResponseHandler delegate) {
+        SteppedOpResponseHandler(OperationResponseHandler delegate) {
             this.delegate = delegate;
         }
 

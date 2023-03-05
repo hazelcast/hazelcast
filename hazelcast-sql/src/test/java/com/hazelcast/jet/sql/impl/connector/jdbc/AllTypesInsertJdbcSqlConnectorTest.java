@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collection;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_EXTERNAL_DATASTORE_REF;
+import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
 import static java.util.Arrays.asList;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -103,7 +103,7 @@ public class AllTypesInsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 + ") "
                 + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
+                + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
                 + ")"
         );
 

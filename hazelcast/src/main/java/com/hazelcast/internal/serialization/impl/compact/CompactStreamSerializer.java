@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -133,11 +133,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     }
 
     private void putToSchemaService(boolean includeSchemaOnBinary, Schema schema) {
-        if (includeSchemaOnBinary) {
-            //if we will include the schema on binary, the schema will be delivered anyway.
-            //No need to put it to cluster. Putting it local only in order not to ask from remote on read.
-            schemaService.putLocal(schema);
-        } else {
+        if (!includeSchemaOnBinary) {
             schemaService.put(schema);
         }
     }
@@ -213,7 +209,6 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
                 throw new HazelcastSerializationException("Invalid schema id found. Expected " + schemaId
                         + ", actual " + incomingSchemaId + " for schema " + schema);
             }
-            schemaService.putLocal(schema);
             return schema;
         }
         throw new HazelcastSerializationException("The schema can not be found with id " + schemaId);

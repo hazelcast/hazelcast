@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds an interceptor for this map. Added interceptor will intercept operations
  * and execute user defined methods and will cancel operations if user defined method throw exception.
  */
-@Generated("99c57e2be94c3d7223f8f93ab9595be8")
+@Generated("23e66a25719f617447024a1eea77065f")
 public final class MapAddInterceptorCodec {
     //hex: 0x011400
     public static final int REQUEST_MESSAGE_TYPE = 70656;
@@ -65,6 +65,7 @@ public final class MapAddInterceptorCodec {
 
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data interceptor) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
+        clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Map.AddInterceptor");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

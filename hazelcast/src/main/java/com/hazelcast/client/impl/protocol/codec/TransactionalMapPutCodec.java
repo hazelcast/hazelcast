@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the key, the old value is replaced by the specified value. The object to be put will be accessible only in the
  * current transaction context till transaction is committed.
  */
-@Generated("a2c8e2143459ff6b2fbc3c86e8590c3a")
+@Generated("50d5145c00df884fabc19ab0e1a33385")
 public final class TransactionalMapPutCodec {
     //hex: 0x0E0600
     public static final int REQUEST_MESSAGE_TYPE = 919040;
@@ -89,6 +89,7 @@ public final class TransactionalMapPutCodec {
 
     public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID txnId, long threadId, com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data value, long ttl) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
+        clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("TransactionalMap.Put");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

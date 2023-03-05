@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,17 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.internal.util.JavaVersion.FutureJavaVersion;
+import com.hazelcast.internal.util.JavaVersion.UnknownVersion;
+
 /**
- * Interface used by {@link JavaVersion} and
- * {@link JavaVersion.FutureJavaVersion}. This interface is needed only
- * to do version comparison safely on runtime environments with versions
- * not listed in {@link JavaVersion}.
+ * Interface used by {@link JavaVersion}, {@link UnknownVersion} and {@link
+ * FutureJavaVersion}. This interface is needed only to do version comparison
+ * safely on runtime environments with versions not listed in {@link JavaVersion}.
  */
 public interface JavaMajorVersion {
     /**
-     * Returns the major version.
-     *
-     * @return the major version
+     * Returns the major version or null if the version is unknown.
      */
-    int getMajorVersion();
+    Integer getMajorVersion();
 }

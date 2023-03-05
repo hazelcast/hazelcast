@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,8 +64,14 @@ public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSe
 
 
     @Override
-    public T eval(final Row row, final ExpressionEvalContext context) {
-        Object res = ref.eval(row, context);
+    public T eval(Row row, ExpressionEvalContext context) {
+        return eval(row, context, false);
+    }
+
+    @Override
+    public T eval(final Row row, final ExpressionEvalContext context, boolean useLazyDeserialization) {
+        // Use lazy deserialization for nested queries. Only the last access should be eager.
+        Object res = ref.eval(row, context, true);
         if (res == null) {
             return null;
         }
@@ -79,13 +85,15 @@ public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSe
                 return (T) type.convert(extractPortableField(
                         (PortableGenericRecord) res,
                         name,
-                        context.getSerializationService()
+                        context.getSerializationService(),
+                        useLazyDeserialization
                 ));
             } else if (res instanceof CompactGenericRecord) {
                 return (T) type.convert(extractCompactField(
                         (CompactGenericRecord) res,
                         name,
-                        context.getSerializationService()
+                        context.getSerializationService(),
+                        useLazyDeserialization
                 ));
             } else {
                 return (T) type.convert(ReflectionUtils.getFieldValue(name, res));
@@ -95,19 +103,21 @@ public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSe
         }
     }
 
-    private Object extractPortableField(PortableGenericRecord portable, String name, InternalSerializationService ss) {
+    private Object extractPortableField(PortableGenericRecord portable, String name, InternalSerializationService ss,
+                                        boolean useLazyDeserialization) {
         final PortableGetter getter = new PortableGetter(ss);
         try {
-            return getter.getValue(portable, name);
+            return getter.getValue(portable, name, useLazyDeserialization);
         } catch (Exception e) {
             return null;
         }
     }
 
-    private Object extractCompactField(CompactGenericRecord compact, String name, InternalSerializationService ss) {
+    private Object extractCompactField(CompactGenericRecord compact, String name, InternalSerializationService ss,
+                                      boolean useLazyDeserialization) {
         final CompactGetter getter = new CompactGetter(ss);
         try {
-            return getter.getValue(compact, name);
+            return getter.getValue(compact, name, useLazyDeserialization);
         } catch (Exception e) {
             return null;
         }

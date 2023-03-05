@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -175,7 +175,7 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
         ));
 
         assertThat(OptUtils.isUnbounded(optPhysicalRel)).isTrue();
-        PhysicalRel finalOptRel = CalciteSqlOptimizer.uniquifyScans(optPhysicalRel);
+        PhysicalRel finalOptRel = CalciteSqlOptimizer.postOptimizationRewrites(optPhysicalRel);
 
         WatermarkKeysAssigner keysAssigner = new WatermarkKeysAssigner(finalOptRel);
         keysAssigner.assignWatermarkKeys();
@@ -233,7 +233,7 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
         ));
 
         assertThat(OptUtils.isUnbounded(optPhysicalRel)).isTrue();
-        PhysicalRel finalOptRel = CalciteSqlOptimizer.uniquifyScans(optPhysicalRel);
+        PhysicalRel finalOptRel = CalciteSqlOptimizer.postOptimizationRewrites(optPhysicalRel);
 
         WatermarkKeysAssigner keysAssigner = new WatermarkKeysAssigner(finalOptRel);
         keysAssigner.assignWatermarkKeys();

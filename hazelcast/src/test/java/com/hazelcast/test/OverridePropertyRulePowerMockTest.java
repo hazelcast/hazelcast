@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,25 +18,22 @@ package com.hazelcast.test;
 
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 /**
- * Tests the {@link OverridePropertyRule} with multiple instances and the {@link PowerMockRunner}.
+ * Tests the {@link OverridePropertyRule} with multiple instances.
  */
-@RunWith(PowerMockRunner.class)
 @PrepareForTest(OverridePropertyRulePowerMockTest.TestClass.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class OverridePropertyRulePowerMockTest {
@@ -46,8 +43,8 @@ public class OverridePropertyRulePowerMockTest {
     @Rule
     public OverridePropertyRule overridePreferIpv4Rule = set("java.net.preferIPv4Stack", "true");
 
-    @Before
-    public void setUp() {
+    @BeforeClass
+    public static void setUp() {
         mockStatic(OtherClass.class);
     }
 

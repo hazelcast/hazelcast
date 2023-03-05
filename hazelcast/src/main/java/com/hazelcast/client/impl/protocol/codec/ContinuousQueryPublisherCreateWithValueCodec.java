@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates a publisher that includes value for the cache events it sends.
  */
-@Generated("8f222e2256827f433e14c422e0a13df6")
+@Generated("0f143ced8a4d5cc9fcad2082a65c2e7d")
 public final class ContinuousQueryPublisherCreateWithValueCodec {
     //hex: 0x160100
     public static final int REQUEST_MESSAGE_TYPE = 1442048;
@@ -100,6 +100,7 @@ public final class ContinuousQueryPublisherCreateWithValueCodec {
 
     public static ClientMessage encodeRequest(java.lang.String mapName, java.lang.String cacheName, com.hazelcast.internal.serialization.Data predicate, int batchSize, int bufferSize, long delaySeconds, boolean populate, boolean coalesce) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
+        clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("ContinuousQuery.PublisherCreateWithValue");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

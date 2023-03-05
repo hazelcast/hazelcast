@@ -91,7 +91,7 @@
             "message": "required key [enabled] not found"
           },
           {
-            "schemaLocation": "#/definitions/MemorySize/properties/value",
+            "schemaLocation": "#/definitions/Capacity/properties/value",
             "pointerToViolation": "#/hazelcast/map/my-map-2/tiered-store/memory-tier/capacity/value",
             "causingExceptions": [],
             "keyword": "minimum",

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -160,11 +160,15 @@ public class ElasticCatClient implements Closeable {
         // TODO IndexShardState.STARTED but this is deeply inside elastic, should we mirror the enum?
         if ("STARTED".equals(object.get("state").asString())) {
             String id = object.get("id").asString();
+            JsonValue docsValue = object.get("docs");
+            int docsCount = docsValue != null
+                    && !docsValue.equals(Json.NULL)
+                    ? Integer.parseInt(docsValue.asString()) : 0;
             Shard shard = new Shard(
                     object.get("index").asString(),
                     Integer.parseInt(object.get("shard").asString()),
                     Prirep.valueOf(object.get("prirep").asString()),
-                    object.get("docs") != null ? Integer.parseInt(object.get("docs").asString()) : 0,
+                    docsCount,
                     object.get("state").asString(),
                     object.get("ip").asString(),
                     idToAddress.get(id),

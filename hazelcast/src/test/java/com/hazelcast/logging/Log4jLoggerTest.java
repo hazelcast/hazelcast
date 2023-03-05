@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -39,7 +40,7 @@ import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -52,6 +53,7 @@ public class Log4jLoggerTest extends AbstractLoggerTest {
     public void setUp() {
         mockLogger = mock(org.apache.log4j.Logger.class);
         hazelcastLogger = new Log4jLogger(mockLogger);
+        Mockito.verify(mockLogger).getLevel();
     }
 
     @Test
@@ -115,7 +117,7 @@ public class Log4jLoggerTest extends AbstractLoggerTest {
 
         hazelcastLogger.log(LOG_EVENT);
 
-        verifyNoInteractions(mockLogger);
+        verifyNoMoreInteractions(mockLogger);
         trackingAppender.assertNumberOfLoggedEvents(1);
     }
 
@@ -127,7 +129,7 @@ public class Log4jLoggerTest extends AbstractLoggerTest {
 
         hazelcastLogger.log(LOG_EVENT_OFF);
 
-        verifyNoInteractions(mockLogger);
+        verifyNoMoreInteractions(mockLogger);
         trackingAppender.assertNoLoggedEvents();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.aws;
 
-import com.hazelcast.aws.AwsMetadataApi.EcsMetadata;
 import com.hazelcast.config.InvalidConfigurationException;
 import org.junit.Test;
 
@@ -47,23 +46,6 @@ public class AwsClientConfiguratorTest {
     }
 
     @Test
-    public void resolveRegionEcsConfig() {
-        // given
-        String region = "us-east-1";
-        AwsConfig awsConfig = AwsConfig.builder().build();
-        AwsMetadataApi awsMetadataApi = mock(AwsMetadataApi.class);
-        Environment environment = mock(Environment.class);
-        given(environment.getAwsRegionOnEcs()).willReturn(region);
-        given(environment.isRunningOnEcs()).willReturn(true);
-
-        // when
-        String result = resolveRegion(awsConfig, awsMetadataApi, environment);
-
-        // then
-        assertEquals(region, result);
-    }
-
-    @Test
     public void resolveRegionEc2Metadata() {
         // given
         AwsConfig awsConfig = AwsConfig.builder().build();
@@ -74,6 +56,21 @@ public class AwsClientConfiguratorTest {
         // when
         String result = resolveRegion(awsConfig, awsMetadataApi, environment);
 
+        // then
+        assertEquals("us-east-1", result);
+    }
+
+    @Test
+    public void resolveRegionEcsMetadata() {
+        // given
+        AwsConfig awsConfig = AwsConfig.builder().build();
+        AwsMetadataApi awsMetadataApi = mock(AwsMetadataApi.class);
+        Environment environment = mock(Environment.class);
+        given(environment.isRunningOnEcs()).willReturn(true);
+        given(awsMetadataApi.availabilityZoneEcs()).willReturn("us-east-1a");
+
+        // when
+        String result = resolveRegion(awsConfig, awsMetadataApi, environment);
         // then
         assertEquals("us-east-1", result);
     }
@@ -134,7 +131,7 @@ public class AwsClientConfiguratorTest {
         String cluster = "service-name";
         AwsConfig config = AwsConfig.builder().build();
         AwsMetadataApi metadataApi = mock(AwsMetadataApi.class);
-        given(metadataApi.metadataEcs()).willReturn(new EcsMetadata(null, cluster));
+        given(metadataApi.clusterEcs()).willReturn(cluster);
         Environment environment = mock(Environment.class);
         given(environment.isRunningOnEcs()).willReturn(true);
 

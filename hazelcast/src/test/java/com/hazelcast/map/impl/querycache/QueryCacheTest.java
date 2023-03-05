@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -56,6 +58,9 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
     @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Integer> SQL_PREDICATE = Predicates.sql("this > 20");
 
+    private static final Predicate<Integer, Employee> PAGING_PREDICATE = Predicates.pagingPredicate(1);
+    private static final Predicate<Integer, Employee> PREDICATE_INCLUDING_PAGING_PREDICATE
+            = Predicates.partitionPredicate(2, PAGING_PREDICATE);
     @Test
     @SuppressWarnings("ConstantConditions")
     public void testQueryCache_whenIncludeValue_enabled() {
@@ -102,18 +107,23 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
         for (int i = 0; i < 30; i++) {
             map.put(i, i);
         }
+        final Set<Object> keys = Collections.newSetFromMap(new ConcurrentHashMap<>());
         final AtomicInteger countAddEvent = new AtomicInteger();
         final AtomicInteger countRemoveEvent = new AtomicInteger();
 
         final QueryCache<Integer, Integer> queryCache = map.getQueryCache(cacheName, new EntryAdapter() {
             @Override
             public void entryAdded(EntryEvent event) {
-                countAddEvent.incrementAndGet();
+                if (keys.add(event.getKey())) {
+                    countAddEvent.incrementAndGet();
+                }
             }
 
             @Override
             public void entryRemoved(EntryEvent event) {
-                countRemoveEvent.incrementAndGet();
+                if (keys.remove(event.getKey())) {
+                    countRemoveEvent.incrementAndGet();
+                }
             }
         }, SQL_PREDICATE, true);
 
@@ -233,6 +243,34 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
         assertQueryCacheSizeEventually(50, queryCache);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void addEntryListenerThrowsWithPagingPredicate() {
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
+        queryCache.addEntryListener(new NoopMapListener(), PAGING_PREDICATE, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void addEntryListenerOnKeyThrowsWithPagingPredicate() {
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
+        queryCache.addEntryListener(new NoopMapListener(), PAGING_PREDICATE, 1, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void addEntryListenerThrowsWithPredicateIncludingAPagingPredicate() {
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
+        queryCache.addEntryListener(new NoopMapListener(), PREDICATE_INCLUDING_PAGING_PREDICATE, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void addEntryListenerOnKeyThrowsWithPredicateIncludingAPagingPredicate() {
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
+        queryCache.addEntryListener(new NoopMapListener(), PREDICATE_INCLUDING_PAGING_PREDICATE, 1, true);
+    }
+
     public static class EvenNumberEmployeeValueExtractor implements ValueExtractor<Employee, Integer> {
         @Override
         public void extract(Employee target, Integer argument, ValueCollector collector) {
@@ -296,5 +334,12 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
 
     private static void assertQueryCacheSizeEventually(final int expected, final QueryCache cache) {
         assertTrueEventually(() -> assertEquals(expected, cache.size()));
+    }
+
+    private class NoopMapListener implements EntryAddedListener<Integer, Employee> {
+        @Override
+        public void entryAdded(EntryEvent<Integer, Employee> event) {
+            // noop
+        }
     }
 }

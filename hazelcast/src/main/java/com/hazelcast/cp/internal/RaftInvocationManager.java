@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -163,7 +163,11 @@ public class RaftInvocationManager {
                         .collect(Collectors.toList());
     }
 
-    private void invokeCreateRaftGroup(String groupName, int groupSize, long groupIndex, List<RaftEndpoint> members,
+    /**
+     * This method needs to be public to allow to create CP groups in
+     * integration tests deterministically
+     */
+    public void invokeCreateRaftGroup(String groupName, int groupSize, long groupIndex, List<RaftEndpoint> members,
                                        InternalCompletableFuture<RaftGroupId> resultFuture) {
         InternalCompletableFuture<CPGroupSummary> f =
                 invoke(raftService.getMetadataGroupId(), new CreateRaftGroupOp(groupName, members, groupIndex));

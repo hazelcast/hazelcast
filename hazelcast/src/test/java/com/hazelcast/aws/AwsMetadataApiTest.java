@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.aws;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.hazelcast.aws.AwsMetadataApi.EcsMetadata;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -27,6 +26,7 @@ import java.util.Optional;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.exactly;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.put;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.moreThan;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
@@ -42,6 +42,7 @@ public class AwsMetadataApiTest {
 
     private final String GROUP_NAME_URL = "/placement/group-name/";
     private final String PARTITION_NO_URL = "/placement/partition-number/";
+    private final String METADATA_TOKEN_URL = "/latest/api/token";
     private final int RETRY_COUNT = 3;
 
     private AwsMetadataApi awsMetadataApi;
@@ -53,7 +54,10 @@ public class AwsMetadataApiTest {
     public void setUp() {
         AwsConfig awsConfig = AwsConfig.builder().setConnectionRetries(RETRY_COUNT).build();
         String endpoint = String.format("http://localhost:%s", wireMockRule.port());
-        awsMetadataApi = new AwsMetadataApi(endpoint, endpoint, endpoint, awsConfig);
+        stubFor(put(urlEqualTo(METADATA_TOKEN_URL))
+            .willReturn(aResponse().withStatus(200).withBody("defaulttoken")));
+        String tokenEndpoint = endpoint.concat(METADATA_TOKEN_URL);
+        awsMetadataApi = new AwsMetadataApi(endpoint, endpoint, endpoint, tokenEndpoint, awsConfig);
     }
 
     @Test
@@ -68,6 +72,25 @@ public class AwsMetadataApiTest {
 
         // then
         assertEquals(availabilityZone, result);
+    }
+
+    @Test
+    public void availabilityZoneEcs() {
+        // given
+        //language=JSON
+        String response = "{\n"
+                + "  \"Cluster\" : \"hz-cluster\",\n"
+                + "  \"AvailabilityZone\": \"ca-central-1a\"\n"
+                + "}";
+
+        stubFor(get(urlEqualTo("/task"))
+                .willReturn(aResponse().withStatus(200).withBody(response)));
+
+        // when
+        String result = awsMetadataApi.availabilityZoneEcs();
+
+        // then
+        assertEquals("ca-central-1a", result);
     }
 
     @Test
@@ -133,6 +156,26 @@ public class AwsMetadataApiTest {
         verify(moreThan(RETRY_COUNT), getRequestedFor(urlEqualTo(GROUP_NAME_URL)));
     }
 
+
+    @Test
+    public void clusterEcs() {
+        // given
+        //language=JSON
+        String response = "{\n"
+                + "  \"Cluster\" : \"hz-cluster\",\n"
+                + "  \"AvailabilityZone\": \"ca-central-1a\"\n"
+                + "}";
+
+        stubFor(get(urlEqualTo("/task"))
+                .willReturn(aResponse().withStatus(200).withBody(response)));
+
+        // when
+        String result = awsMetadataApi.clusterEcs();
+
+        // then
+        assertEquals("hz-cluster", result);
+    }
+
     @Test
     public void defaultIamRoleEc2() {
         // given
@@ -193,38 +236,6 @@ public class AwsMetadataApiTest {
     }
 
     @Test
-    public void metadataEcs() {
-        // given
-        //language=JSON
-        String response = "{\n"
-            + "  \"Name\": \"container-name\",\n"
-            + "  \"Labels\": {\n"
-            + "    \"com.amazonaws.ecs.cluster\": \"arn:aws:ecs:eu-central-1:665466731577:cluster/default\",\n"
-            + "    \"com.amazonaws.ecs.container-name\": \"container-name\",\n"
-            + "    \"com.amazonaws.ecs.task-arn\": \"arn:aws:ecs:eu-central-1:665466731577:task/default/0dcf990c3ef3436c84e0c7430d14a3d4\",\n"
-            + "    \"com.amazonaws.ecs.task-definition-family\": \"family-name\"\n"
-            + "  },\n"
-            + "  \"Networks\": [\n"
-            + "    {\n"
-            + "      \"NetworkMode\": \"awsvpc\",\n"
-            + "      \"IPv4Addresses\": [\n"
-            + "        \"10.0.1.174\"\n"
-            + "      ]\n"
-            + "    }\n"
-            + "  ]\n"
-            + "}";
-        stubFor(get("/").willReturn(aResponse().withStatus(200).withBody(response)));
-
-        // when
-        EcsMetadata result = awsMetadataApi.metadataEcs();
-
-        // then
-        assertEquals("arn:aws:ecs:eu-central-1:665466731577:task/default/0dcf990c3ef3436c84e0c7430d14a3d4",
-            result.getTaskArn());
-        assertEquals("arn:aws:ecs:eu-central-1:665466731577:cluster/default", result.getClusterArn());
-    }
-
-    @Test
     public void awsError() {
         // given
         int errorCode = 401;
@@ -239,5 +250,19 @@ public class AwsMetadataApiTest {
         assertTrue(exception.getMessage().contains(Integer.toString(errorCode)));
         assertTrue(exception.getMessage().contains(errorMessage));
         verify(moreThan(RETRY_COUNT), getRequestedFor(urlMatching("/.*")));
+    }
+
+    @Test
+    public void retrieveToken() {
+        // given
+        String token = "retrievetoken";
+        stubFor(put(urlEqualTo(METADATA_TOKEN_URL))
+            .willReturn(aResponse().withStatus(200).withBody(token)));
+
+        // when
+        String result = awsMetadataApi.retrieveToken();
+
+        // then
+        assertEquals(token, result);
     }
 }

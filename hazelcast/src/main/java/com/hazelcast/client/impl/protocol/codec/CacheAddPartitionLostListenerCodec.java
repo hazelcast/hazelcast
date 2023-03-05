@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * registrations, so if you register the listener twice, it will get events twice.Listeners registered from
  * HazelcastClient may miss some of the cache partition lost events due to design limitations.
  */
-@Generated("1d0571671fcb0ae542537e366a95a564")
+@Generated("c2b96a03232e9d5d010bcea21abf1c8c")
 public final class CacheAddPartitionLostListenerCodec {
     //hex: 0x131900
     public static final int REQUEST_MESSAGE_TYPE = 1251584;

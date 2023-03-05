@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,13 @@
 package com.hazelcast.config.replacer;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
@@ -49,7 +47,6 @@ import static org.junit.Assume.assumeNotNull;
  * Unit tests for {@link EncryptionReplacer}.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class EncryptionReplacerTest extends AbstractPbeReplacerTest {
 
     private static final ILogger LOGGER = Logger.getLogger(EncryptionReplacerTest.class);

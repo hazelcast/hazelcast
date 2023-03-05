@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -214,6 +214,11 @@ public final class CompactTestUtil {
         return new ArrayOfFixedSizeFieldsDTO(new byte[]{1, 2, 3}, new boolean[]{true, false},
                 new short[]{1231, 1232}, new int[]{123123123, 123123123}, new long[]{123123123123L, 123123123123L},
                 new float[]{12312.123f, 12312.123f}, new double[]{1111.1111111123123, 1111.1111111123123});
+    }
+
+    @Nonnull
+    static ArrayOfFixedSizeFieldsDTO createArrayOfFixedSizeFieldsDTOAsNullValues() {
+        return new ArrayOfFixedSizeFieldsDTO(null, null, null, null, null, null, null);
     }
 
     public static SerializationService createSerializationService() {
