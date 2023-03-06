@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2023 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -23,6 +23,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,16 +55,29 @@ public class MongoDbDataLink implements DataLink {
         this.mongoClient = new CloseableMongoClient(MongoClients.create(connectionString), refCounter::release);
     }
 
+    /**
+     * Returns an instance of {@link MongoClient}.
+     *
+     * {@linkplain MongoClient#close()} won't take an effect if there will be still some usages of given client.
+     */
     public MongoClient getClient() {
         refCounter.retain();
         return mongoClient;
     }
 
+    /**
+     * Returns name of this data link.
+     */
+    @Nonnull
     @Override
     public String getName() {
         return config.getName();
     }
 
+    /**
+     * Lists all MongoDB collections in all databases.
+     */
+    @Nonnull
     @Override
     public List<DataLinkResource> listResources() {
         List<DataLinkResource> resources = new ArrayList<>();
@@ -76,6 +90,10 @@ public class MongoDbDataLink implements DataLink {
         return resources;
     }
 
+    /**
+     * Returns configuration of this data link.
+     */
+    @Nonnull
     @Override
     public DataLinkConfig getConfig() {
         return config;
@@ -87,11 +105,16 @@ public class MongoDbDataLink implements DataLink {
     }
 
     @Override
-    public void close() {
+    public void release() {
         refCounter.release();
+
     }
 
-    private void destroy() {
+    /**
+     * Closes underlying client.
+     */
+    @Override
+    public void destroy() {
         if (mongoClient != null) {
             ((CloseableMongoClient) mongoClient).unwrap().close();
             mongoClient = null;

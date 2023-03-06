@@ -13,20 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/**
+ * Contains classes related to Mongo DB Data Link.
+ */
 package com.hazelcast.jet.mongodb.datalink;
-
-import com.hazelcast.datalink.DataLink;
-import com.hazelcast.datalink.DataLinkRegistration;
-
-public class MongoDataLinkRegistration implements DataLinkRegistration {
-    @Override
-    public String type() {
-        return "MongoDB";
-    }
-
-    @Override
-    public Class<? extends DataLink> clazz() {
-        return MongoDbDataLink.class;
-    }
-
-}
