@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -28,9 +29,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.FileNotFoundException;
+
 import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
 import static com.hazelcast.jet.impl.JetServiceBackend.initializeSqlCatalog;
 import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -42,6 +46,26 @@ public class JetServiceBackendTest extends JetTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         MapConfig mapConfig = instance.getConfig().getMapConfig(JetServiceBackend.SQL_CATALOG_MAP_NAME);
         assertEquals(initializeSqlCatalog(new MapConfig()), mapConfig);
+    }
+
+    @Test
+    public void wrapFileNotFoundException() {
+        String message = "file not found";
+        FileNotFoundException fileNotFound = new FileNotFoundException(message);
+        assertThatThrownBy(() -> JetServiceBackend.wrapWithJetException(fileNotFound))
+                .isInstanceOf(JetException.class)
+                .hasRootCauseInstanceOf(FileNotFoundException.class)
+                .hasMessageContaining(message);
+    }
+
+    @Test
+    public void wrapJetException() {
+        String message = "jet exception";
+        JetException jetException = new JetException(message);
+        assertThatThrownBy(() -> JetServiceBackend.wrapWithJetException(jetException))
+                .isInstanceOf(JetException.class)
+                .hasNoCause()
+                .hasMessageContaining(message);
     }
 
     @Test
