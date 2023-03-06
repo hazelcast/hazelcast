@@ -71,6 +71,9 @@ class NioEventloop extends Eventloop {
                     keyCount = selector0.selectNow();
                 }
                 wakeupNeeded0.set(false);
+                // we need to update the clock because we could have been blocked for quite
+                // some time and clock could be very much out of sync.
+                nanoClock0.update();
             }
 
             if (keyCount > 0) {

@@ -21,26 +21,48 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.tpc.TpcTestSupport.assertEqualsEventually;
+import static com.hazelcast.internal.tpc.TpcTestSupport.assertTrueEventually;
 import static com.hazelcast.internal.tpc.TpcTestSupport.terminate;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.Assert.assertEquals;
 
 public abstract class EventloopTest {
 
     private Reactor reactor;
 
-    public abstract Reactor newReactor();
+    public abstract ReactorBuilder newReactorBuilder();
 
     @Before
     public void before() {
-        reactor = newReactor();
+        ReactorBuilder reactorBuilder = newReactorBuilder();
+        reactor = reactorBuilder.build();
         reactor.start();
     }
 
     @After
     public void after() {
         terminate(reactor);
+    }
+
+    @Test
+    public void test() {
+        Task task = new Task();
+
+        reactor.offer(() -> reactor.eventloop.schedule(task, 1, SECONDS));
+
+        assertTrueEventually(() -> assertEquals(1, task.count.get()));
+    }
+
+    private final class Task implements Runnable {
+        private final AtomicLong count = new AtomicLong();
+
+        @Override
+        public void run() {
+            count.incrementAndGet();
+        }
     }
 
     @Test
