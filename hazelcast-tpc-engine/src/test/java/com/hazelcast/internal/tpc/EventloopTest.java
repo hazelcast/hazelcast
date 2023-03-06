@@ -38,8 +38,7 @@ public abstract class EventloopTest {
     @Before
     public void before() {
         ReactorBuilder reactorBuilder = newReactorBuilder();
-        reactor = reactorBuilder.build();
-        reactor.start();
+        reactor = reactorBuilder.build().start();
     }
 
     @After
@@ -48,7 +47,7 @@ public abstract class EventloopTest {
     }
 
     @Test
-    public void test() {
+    public void test_schedule() {
         Task task = new Task();
 
         reactor.offer(() -> reactor.eventloop.schedule(task, 1, SECONDS));
@@ -56,7 +55,7 @@ public abstract class EventloopTest {
         assertTrueEventually(() -> assertEquals(1, task.count.get()));
     }
 
-    private final class Task implements Runnable {
+    private static final class Task implements Runnable {
         private final AtomicLong count = new AtomicLong();
 
         @Override
