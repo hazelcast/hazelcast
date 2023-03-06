@@ -30,14 +30,14 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 
-import static com.hazelcast.jet.mongodb.datalink.MongoDbDataLink.mongoDataLinkConf;
+import static com.hazelcast.jet.mongodb.datalink.MongoDataLink.mongoDataLinkConf;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MongoDbDataLinkTest extends AbstractMongoDBTest {
-    private MongoDbDataLink dataLink;
+public class MongoDataLinkTest extends AbstractMongoDBTest {
+    private MongoDataLink dataLink;
     private String connectionString;
 
     @Before
@@ -53,7 +53,7 @@ public class MongoDbDataLinkTest extends AbstractMongoDBTest {
 
     @Test
     public void should_return_same_link() {
-        dataLink = new MongoDbDataLink(mongoDataLinkConf("mongo", connectionString));
+        dataLink = new MongoDataLink(mongoDataLinkConf("mongo", connectionString));
 
         MongoClient client1 = dataLink.getClient();
         MongoClient client2 = dataLink.getClient();
@@ -65,7 +65,7 @@ public class MongoDbDataLinkTest extends AbstractMongoDBTest {
 
     @Test
     public void should_close_client_when_all_released() {
-        dataLink = new MongoDbDataLink(mongoDataLinkConf("mongo", connectionString));
+        dataLink = new MongoDataLink(mongoDataLinkConf("mongo", connectionString));
 
         MongoClient client1 = dataLink.getClient();
         MongoClient client2 = dataLink.getClient();
@@ -82,7 +82,7 @@ public class MongoDbDataLinkTest extends AbstractMongoDBTest {
 
     @Test
     public void should_return_collections_when_listResources() {
-        dataLink = new MongoDbDataLink(mongoDataLinkConf("mongo", connectionString));
+        dataLink = new MongoDataLink(mongoDataLinkConf("mongo", connectionString));
 
         MongoClient client1 = dataLink.getClient();
         MongoDatabase db1 = client1.getDatabase("test");

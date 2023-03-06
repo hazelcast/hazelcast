@@ -38,7 +38,7 @@ import static com.hazelcast.internal.util.Preconditions.checkState;
  *
  * @since 5.3
  */
-public class MongoDbDataLink implements DataLink {
+public class MongoDataLink implements DataLink {
     /**
      * Name of a property which holds connection string to the mongodb instance.
      */
@@ -50,7 +50,7 @@ public class MongoDbDataLink implements DataLink {
     /**
      * Creates a new data link based on given config.
      */
-    public MongoDbDataLink(DataLinkConfig config) {
+    public MongoDataLink(DataLinkConfig config) {
         this.config = config;
         this.refCounter = new ReferenceCounter(this::destroy);
 
@@ -128,7 +128,7 @@ public class MongoDbDataLink implements DataLink {
     }
 
     /**
-     * Helper method to create new {@link MongoDbDataLink} with given name and connection string.
+     * Helper method to create new {@link MongoDataLink} with given name and connection string.
      */
     @Nonnull
     public static DataLinkConfig mongoDataLinkConf(String name, String connectionString) {
@@ -136,7 +136,7 @@ public class MongoDbDataLink implements DataLink {
         dataLinkConfig.setName(name);
         dataLinkConfig.setShared(true);
         dataLinkConfig.setProperty(CONNECTION_STRING_PROPERTY, connectionString);
-        dataLinkConfig.setClassName(MongoDbDataLink.class.getName());
+        dataLinkConfig.setClassName(MongoDataLink.class.getName());
         return dataLinkConfig;
     }
 

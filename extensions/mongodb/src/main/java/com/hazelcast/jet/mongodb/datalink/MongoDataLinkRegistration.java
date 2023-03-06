@@ -19,7 +19,7 @@ import com.hazelcast.datalink.DataLink;
 import com.hazelcast.datalink.DataLinkRegistration;
 
 /**
- * Registers {@link MongoDbDataLink}.
+ * Registers {@link MongoDataLink}.
  *
  * @since 5.3
  */
@@ -34,11 +34,11 @@ public class MongoDataLinkRegistration implements DataLinkRegistration {
     }
 
     /**
-     * Returns class of {@link MongoDbDataLink}.
+     * Returns class of {@link MongoDataLink}.
      */
     @Override
     public Class<? extends DataLink> clazz() {
-        return MongoDbDataLink.class;
+        return MongoDataLink.class;
     }
 
 }
