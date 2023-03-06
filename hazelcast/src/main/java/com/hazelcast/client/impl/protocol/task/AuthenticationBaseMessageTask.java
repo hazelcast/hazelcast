@@ -224,7 +224,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
     protected abstract ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid,
                                                 byte serializationVersion,
                                                 int partitionCount, UUID clusterId, boolean failoverSupported,
-                                                boolean isAuthenticated, List<Integer> tpcPorts);
+                                                boolean isAuthenticated, List<Integer> altoPorts);
 
     protected abstract String getClientType();
 
