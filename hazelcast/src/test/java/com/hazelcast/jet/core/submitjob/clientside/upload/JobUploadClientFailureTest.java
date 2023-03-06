@@ -317,7 +317,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
 
     private JetClientInstanceImpl getClientJetService() {
         HazelcastInstance client = createHazelcastClient();
-        return (JetClientInstanceImpl)client.getJet();
+        return (JetClientInstanceImpl) client.getJet();
     }
 
     // this jar is only as below

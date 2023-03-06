@@ -194,7 +194,7 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
     @Test
     public void test_multipleJarUploads_whenResourceUploadIsEnabled() {
         createCluster();
-        JetClientInstanceImpl jetService =  getClientJetService();
+        JetClientInstanceImpl jetService = getClientJetService();
 
         String job1 = "job1";
         SubmitJobParameters submitJobParameters1 = SubmitJobParameters.forJobUpload()
@@ -235,7 +235,7 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
 
     private JetClientInstanceImpl getClientJetService() {
         HazelcastInstance client = createHazelcastClient();
-        return (JetClientInstanceImpl)client.getJet();
+        return (JetClientInstanceImpl) client.getJet();
     }
 
     public static void assertJobIsRunning(JetService jetService) throws IOException {

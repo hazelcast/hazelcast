@@ -213,7 +213,7 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
 
     private JetClientInstanceImpl getClientJetService() {
         HazelcastInstance client = createHazelcastClient();
-        return (JetClientInstanceImpl)client.getJet();
+        return (JetClientInstanceImpl) client.getJet();
     }
 
     static void assertJobIsRunning(JetService jetService, Path jarPath) {

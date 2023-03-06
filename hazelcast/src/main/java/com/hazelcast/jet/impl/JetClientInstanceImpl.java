@@ -146,7 +146,8 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     }
 
     /**
-     * For the client side, the jar is uploaded to a random cluster member and then this member runs the main method to start the job.
+     * For the client side, the jar is uploaded to a random cluster member and then this member runs the main method to
+     * start the job.
      * The jar should have a main method that submits a Pipeline with {@link #newJob(Pipeline)} or
      * {@link #newLightJob(Pipeline)} methods
      * <p>
