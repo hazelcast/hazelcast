@@ -25,11 +25,6 @@ import static org.junit.Assert.assertTrue;
 public class OSTest {
 
     @Test
-    public void test_pageSize() {
-        assertEquals(UnsafeLocator.UNSAFE.pageSize(), OS.pageSize());
-    }
-
-    @Test
     public void test_isLinux0() {
         assertTrue(OS.isLinux0("Linux"));
         assertTrue(OS.isLinux0("LINUX"));
@@ -40,22 +35,27 @@ public class OSTest {
     }
 
     @Test
-    public void test_linuxMajorVersion0() {
-
-        if (OS.isLinux()) {
-            assertEquals(5, OS.linuxMajorVersion0("5.16.12-200.fc35.x86_64"));
-        } else {
-            assertEquals(-1, OS.linuxMajorVersion0("5.16.12-200.fc35.x86_64"));
-        }
+    public void test_linuxMajorVersion0_whenIsLinux() {
+        assertEquals(5, OS.linuxMajorVersion0("5.16.12-200.fc35.x86_64", true));
     }
 
     @Test
-    public void test_linuxMinorVersion0() {
+    public void test_linuxMajorVersion0_whenNotIsLinux() {
+        assertEquals(-1, OS.linuxMajorVersion0("5.16.12-200.fc35.x86_64", false));
+    }
 
-        if (OS.isLinux()) {
-            assertEquals(16, OS.linuxMinorVersion0("5.16.12-200.fc35.x86_64"));
-        } else {
-            assertEquals(-1, OS.linuxMajorVersion0("5.16.12-200.fc35.x86_64"));
-        }
+    @Test
+    public void test_linuxMinorVersion0_whenisLinux() {
+        assertEquals(16, OS.linuxMinorVersion0("5.16.12-200.fc35.x86_64", true));
+    }
+
+    @Test
+    public void test_linuxMinorVersion0_whenNotIsLinux() {
+        assertEquals(-1, OS.linuxMinorVersion0("5.16.12-200.fc35.x86_64", false));
+    }
+
+    @Test
+    public void test_pageSize() {
+        assertEquals(UnsafeLocator.UNSAFE.pageSize(), OS.pageSize());
     }
 }
