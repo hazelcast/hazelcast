@@ -20,6 +20,8 @@ import com.hazelcast.datalink.DataLinkRegistration;
 
 /**
  * Registers {@link MongoDbDataLink} in streaming version.
+ *
+ * @since 5.3
  */
 public class MongoStreamDataLinkRegistration implements DataLinkRegistration {
 

@@ -20,6 +20,8 @@ import com.hazelcast.datalink.DataLinkRegistration;
 
 /**
  * Registers {@link MongoDbDataLink}.
+ *
+ * @since 5.3
  */
 public class MongoDataLinkRegistration implements DataLinkRegistration {
 

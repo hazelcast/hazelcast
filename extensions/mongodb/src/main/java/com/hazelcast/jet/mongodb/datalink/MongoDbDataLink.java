@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkState;
 
 /**
  * Creates a MongoDB DataLink.
@@ -63,8 +64,10 @@ public class MongoDbDataLink implements DataLink {
      *
      * {@linkplain MongoClient#close()} won't take an effect if there will be still some usages of given client.
      */
+    @Nonnull
     public MongoClient getClient() {
         refCounter.retain();
+        checkState(mongoClient != null, "Mongo client should not be closed at this point");
         return mongoClient;
     }
 
@@ -127,6 +130,7 @@ public class MongoDbDataLink implements DataLink {
     /**
      * Helper method to create new {@link MongoDbDataLink} with given name and connection string.
      */
+    @Nonnull
     public static DataLinkConfig mongoDataLinkConf(String name, String connectionString) {
         DataLinkConfig dataLinkConfig = new DataLinkConfig();
         dataLinkConfig.setName(name);
