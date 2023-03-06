@@ -47,7 +47,7 @@ public class MongoDbDataLinkTest extends AbstractMongoDBTest {
 
     @After
     public void cleanup() {
-        dataLink.close();
+        dataLink.destroy();
         dataLink = null;
     }
 
@@ -74,7 +74,7 @@ public class MongoDbDataLinkTest extends AbstractMongoDBTest {
         assertNotClosed(client2);
         client2.close();
 
-        dataLink.close();
+        dataLink.release();
 
         assertClosed(client1);
         assertClosed(client2);

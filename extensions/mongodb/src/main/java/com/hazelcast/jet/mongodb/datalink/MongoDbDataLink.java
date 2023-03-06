@@ -18,7 +18,7 @@ package com.hazelcast.jet.mongodb.datalink;
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.datalink.DataLink;
 import com.hazelcast.datalink.DataLinkResource;
-import com.hazelcast.datalink.ReferenceCounter;
+import com.hazelcast.datalink.impl.ReferenceCounter;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
