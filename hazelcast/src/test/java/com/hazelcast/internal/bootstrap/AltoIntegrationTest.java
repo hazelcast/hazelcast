@@ -20,42 +20,68 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.After;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.bootstrap.AltoServerBootstrap.ALTO_ENABLED;
 import static com.hazelcast.internal.bootstrap.AltoServerBootstrap.ALTO_EVENTLOOP_COUNT;
+import static org.junit.Assert.assertEquals;
 
-/**
- * Demo application for TPC. Will be removed in the final release.
- */
-@SuppressWarnings("all")
-public class ClientMain {
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(NightlyTest.class)
+public class AltoIntegrationTest extends HazelcastTestSupport {
+    private static final int COUNT = 100_000;
+    private static final int PRINT_PROGRESS_TIMES = 100;
 
-    public static void main(String[] args) {
+    private final ILogger logger = Logger.getLogger(getClass());
+
+    private HazelcastInstance server;
+    private HazelcastInstance client;
+
+    @After
+    public void tearDown() throws Exception {
+        if (client != null) {
+            client.shutdown();
+        }
+
+        if (server != null) {
+            server.shutdown();
+        }
+    }
+
+    @Test
+    public void testMap() {
         System.setProperty(ALTO_ENABLED.getName(), "true");
         System.setProperty(ALTO_EVENTLOOP_COUNT.getName(), "" + Runtime.getRuntime().availableProcessors());
-        HazelcastInstance server = Hazelcast.newHazelcastInstance();
+        server = Hazelcast.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getAltoConfig().setEnabled(true);
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-        System.out.println("Client created");
+        client = HazelcastClient.newHazelcastClient(clientConfig);
+        logger.info(">> Client created");
         IMap<Integer, Integer> map = client.getMap("foo");
 
-        long count = 4_000_000;
         long startTime = System.currentTimeMillis();
 
-        for (int k = 0; k < count; k++) {
-            if (k % 100000 == 0) {
-                System.out.println("At:" + k);
+        for (int k = 0; k < COUNT; k++) {
+            if (k % (COUNT / PRINT_PROGRESS_TIMES) == 0) {
+                logger.info(">> At:" + k);
             }
             map.put(k, k);
         }
 
         long duration = System.currentTimeMillis() - startTime;
-        double throughput = count * 1000f / duration;
-        System.out.println("Throughput:" + throughput + " op/s");
-        client.shutdown();
-        server.shutdown();
+        double throughput = COUNT * 1000f / duration;
+        logger.info(">> Throughput:" + throughput + " op/s");
+
+        assertEquals(COUNT, map.size());
     }
 }
