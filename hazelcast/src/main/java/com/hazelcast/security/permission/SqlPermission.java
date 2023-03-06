@@ -29,7 +29,7 @@ public class SqlPermission extends InstancePermission {
     private static final int CREATE_LINK = VIEW_LINK << 1;
     private static final int DROP_LINK = CREATE_LINK << 1;
     private static final int ALL = CREATE_MAPPING | DROP_MAPPING | CREATE_INDEX | CREATE_VIEW | DROP_VIEW
-            | CREATE_TYPE | DROP_TYPE | CREATE_LINK | DROP_LINK;
+            | CREATE_TYPE | DROP_TYPE | VIEW_LINK | CREATE_LINK | DROP_LINK;
 
     public SqlPermission(String name, String... actions) {
         super(name, actions);

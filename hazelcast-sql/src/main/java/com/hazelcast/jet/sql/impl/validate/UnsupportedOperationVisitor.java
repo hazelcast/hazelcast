@@ -508,6 +508,8 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                 && !(call instanceof SqlAlterJob)
                 && !(call instanceof SqlCreateSnapshot)
                 && !(call instanceof SqlDropSnapshot)
+                && !(call instanceof SqlCreateDataLink)
+                && !(call instanceof SqlDropDataLink)
         ) {
             throw unsupported(call, "OTHER DDL class (" + call.getClass().getSimpleName() + ")");
         }

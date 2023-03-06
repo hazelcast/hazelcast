@@ -258,7 +258,11 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new SqlPermission(name, ACTION_VIEW_LINK, ACTION_CREATE_LINK));
+            if (isReplace()) {
+                context.checkPermission(new SqlPermission(name, ACTION_VIEW_LINK, ACTION_CREATE_LINK, ACTION_DROP_LINK));
+            } else {
+                context.checkPermission(new SqlPermission(name, ACTION_CREATE_LINK));
+            }
         }
 
         @Override

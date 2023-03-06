@@ -24,7 +24,6 @@ import com.hazelcast.sql.impl.schema.datalink.DataLink;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 
@@ -35,7 +34,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
 public class DataLinksResolver implements TableResolver {
-    // We contain separate schema, so separate resolver was implemented.
+    // It will be in the separate schema, so separate resolver is implemented.
     private static final List<List<String>> SEARCH_PATHS = singletonList(
             asList(CATALOG, SCHEMA_NAME_PUBLIC)
     );
@@ -64,11 +63,6 @@ public class DataLinksResolver implements TableResolver {
         if (dataLinkStorage.removeDataLink(name) == null && !ifExists) {
             throw QueryException.error("Data link does not exist: " + name);
         }
-    }
-
-    @Nonnull
-    public Collection<String> getDataLinkNames() {
-        return dataLinkStorage.dataLinkNames();
     }
 
     @Nonnull

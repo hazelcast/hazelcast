@@ -21,11 +21,11 @@ import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastSpecialOper
 import org.apache.calcite.sql.SqlKind;
 
 /**
- * Hazelcast implementation of EXPLAIN operator.
+ * Hazelcast implementation of CREATE DATA LINK operator.
  */
 public class HazelcastCreateDataLinkOperator extends HazelcastSpecialOperator {
     public HazelcastCreateDataLinkOperator() {
-        super("CREATE DATA LINK", SqlKind.OTHER_FUNCTION);
+        super("CREATE DATA LINK", SqlKind.OTHER_DDL);
     }
 
     @Override

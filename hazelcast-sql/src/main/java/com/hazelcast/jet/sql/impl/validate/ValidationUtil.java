@@ -74,6 +74,5 @@ public final class ValidationUtil {
                 || name.names.size() == 2 && SCHEMA_NAME_PUBLIC.equals(name.names.get(0))
                 || name.names.size() == 3 && CATALOG.equals(name.names.get(0))
                 && (SCHEMA_NAME_PUBLIC.equals(name.names.get(1)));
-        // || SCHEMA_NAME_DATA_LINK.equals(name.names.get(1)));
     }
 }
