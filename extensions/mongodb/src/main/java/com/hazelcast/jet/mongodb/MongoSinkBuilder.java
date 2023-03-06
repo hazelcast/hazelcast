@@ -46,7 +46,7 @@ import static com.mongodb.WriteConcern.MAJORITY;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
- * See {@link MongoDBSinks#builder}
+ * See {@link MongoSinks#builder}
  *
  * @since 5.3
  *
@@ -54,7 +54,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
  */
 @Beta
 @SuppressWarnings("UnusedReturnValue")
-public final class MongoDBSinkBuilder<T> {
+public final class MongoSinkBuilder<T> {
 
     @SuppressWarnings("checkstyle:MagicNumber")
     private static final TransactionOptions DEFAULT_TRANSACTION_OPTION = TransactionOptions
@@ -77,9 +77,9 @@ public final class MongoDBSinkBuilder<T> {
     private int preferredLocalParallelism = 2;
 
     /**
-     * See {@link MongoDBSinks#builder}
+     * See {@link MongoSinks#builder}
      */
-    MongoDBSinkBuilder(
+    MongoSinkBuilder(
             @Nonnull String name,
             @Nonnull Class<T> documentClass,
             @Nonnull SupplierEx<MongoClient> clientSupplier
@@ -104,7 +104,7 @@ public final class MongoDBSinkBuilder<T> {
      * @param selectCollectionNameFn selects collection name for each item individually
      */
     @Nonnull
-    public MongoDBSinkBuilder<T> into(
+    public MongoSinkBuilder<T> into(
             @Nonnull FunctionEx<T, String> selectDatabaseNameFn,
             @Nonnull FunctionEx<T, String> selectCollectionNameFn
     ) {
@@ -118,7 +118,7 @@ public final class MongoDBSinkBuilder<T> {
      * @param collectionName collection name to which objects will be inserted/updated.
      */
     @Nonnull
-    public MongoDBSinkBuilder<T> into(@Nonnull String databaseName, @Nonnull String collectionName) {
+    public MongoSinkBuilder<T> into(@Nonnull String databaseName, @Nonnull String collectionName) {
         params.setDatabaseName(databaseName);
         params.setCollectionName(collectionName);
         return this;
@@ -128,7 +128,7 @@ public final class MongoDBSinkBuilder<T> {
      * See {@link SinkBuilder#preferredLocalParallelism(int)}.
      */
     @Nonnull
-    public MongoDBSinkBuilder<T> preferredLocalParallelism(int preferredLocalParallelism) {
+    public MongoSinkBuilder<T> preferredLocalParallelism(int preferredLocalParallelism) {
         this.preferredLocalParallelism = Vertex.checkLocalParallelism(preferredLocalParallelism);
         return this;
     }
@@ -138,7 +138,7 @@ public final class MongoDBSinkBuilder<T> {
      * By default {@linkplain ReplaceOptions#upsert(boolean) upsert} is only enabled.
      */
     @Nonnull
-    public MongoDBSinkBuilder<T> withCustomReplaceOptions(@Nonnull ConsumerEx<ReplaceOptions> adjustConsumer) {
+    public MongoSinkBuilder<T> withCustomReplaceOptions(@Nonnull ConsumerEx<ReplaceOptions> adjustConsumer) {
         params.setReplaceOptionAdjuster(checkNonNullAndSerializable(adjustConsumer, "adjustConsumer"));
         return this;
     }
@@ -149,7 +149,7 @@ public final class MongoDBSinkBuilder<T> {
      * @param documentIdentityFn function that extracts ID from given item; will be compared against {@code fieldName}
      */
     @Nonnull
-    public MongoDBSinkBuilder<T> identifyDocumentBy(
+    public MongoSinkBuilder<T> identifyDocumentBy(
             @Nonnull String fieldName,
             @Nonnull FunctionEx<T, Object> documentIdentityFn) {
         checkNotNull(fieldName, "fieldName cannot be null");
@@ -170,7 +170,7 @@ public final class MongoDBSinkBuilder<T> {
      * Default value is {@linkplain #DEFAULT_COMMIT_RETRY_STRATEGY}.
      */
     @Nonnull
-    public MongoDBSinkBuilder<T> commitRetryStrategy(@Nonnull RetryStrategy commitRetryStrategy) {
+    public MongoSinkBuilder<T> commitRetryStrategy(@Nonnull RetryStrategy commitRetryStrategy) {
         params.setCommitRetryStrategy(commitRetryStrategy);
         return this;
     }
@@ -185,7 +185,7 @@ public final class MongoDBSinkBuilder<T> {
      * Default value is {@linkplain #DEFAULT_TRANSACTION_OPTION}.
      */
     @Nonnull
-    public MongoDBSinkBuilder<T> transactionOptions(@Nonnull SupplierEx<TransactionOptions> transactionOptionsSup) {
+    public MongoSinkBuilder<T> transactionOptions(@Nonnull SupplierEx<TransactionOptions> transactionOptionsSup) {
         params.setTransactionOptions(transactionOptionsSup);
         return this;
     }

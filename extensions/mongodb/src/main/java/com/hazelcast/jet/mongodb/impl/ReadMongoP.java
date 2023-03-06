@@ -86,7 +86,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
     private boolean snapshotInProgress;
     private final MongoChunkedReader reader;
-    private final MongoDbConnection connection;
+    private final MongoConnection connection;
 
     private Traverser<?> traverser;
     private Traverser<Entry<BroadcastKey<Integer>, Object>> snapshotTraverser;
@@ -101,7 +101,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
             this.reader = new BatchMongoReader(params.databaseName, params.collectionName, params.mapItemFn,
                     params.aggregates);
         }
-        this.connection = new MongoDbConnection(params.clientSupplier, client -> reader.connect(client,
+        this.connection = new MongoConnection(params.clientSupplier, client -> reader.connect(client,
                 snapshotsEnabled));
     }
 
