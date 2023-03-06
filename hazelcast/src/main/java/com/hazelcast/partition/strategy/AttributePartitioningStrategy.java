@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.getters.JsonGetter;
 
@@ -39,6 +40,11 @@ public class AttributePartitioningStrategy implements PartitioningStrategy {
 
     @Override
     public Object getPartitionKey(final Object key) {
+        if (key instanceof PartitionAware) {
+            // PA does not currently support attribute extraction, fall back to default partition calculation
+            return null;
+        }
+
         final Object[] values = new Object[attributes.length];
         if (key instanceof InternalGenericRecord) {
             if (!extractFromGenericRecord((InternalGenericRecord) key, values)) {
@@ -53,7 +59,7 @@ public class AttributePartitioningStrategy implements PartitioningStrategy {
                 return null;
             }
         } else {
-            // revert to default strategy for Portable and Compact POJOs
+            // fall back to default partition calculation for Portable and Compact POJOs
             return null;
         }
 
@@ -73,12 +79,12 @@ public class AttributePartitioningStrategy implements PartitioningStrategy {
     }
 
     private boolean extractFromJson(final Object key, final Object[] values) {
-        final Object[] extractedValues = JsonGetter.INSTANCE.getValues(key, attributes);
-        for (int i = 0; i < extractedValues.length; i++) {
-            final Object value = extractedValues[i];
+        for (int i = 0; i < attributes.length; i++) {
+            final Object value = JsonGetter.INSTANCE.getValue(key, attributes[i]);
             if (value == null) {
                 return false;
             }
+            values[i] = value;
         }
         return true;
     }

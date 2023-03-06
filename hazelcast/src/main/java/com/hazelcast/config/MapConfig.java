@@ -810,6 +810,12 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         return this;
     }
 
+    /**
+     * Get Partition Attribute configs used for creation of
+     * {@link com.hazelcast.partition.strategy.AttributePartitioningStrategy}
+     *
+     * @return list of partitioning attribute configs
+     */
     public List<PartitioningAttributeConfig> getPartitioningAttributeConfigs() {
         if (partitioningAttributeConfigs == null) {
             partitioningAttributeConfigs = new ArrayList<>();

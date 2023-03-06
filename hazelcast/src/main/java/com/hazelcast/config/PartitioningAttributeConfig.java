@@ -24,6 +24,11 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.Objects;
 
+
+/**
+ * Contains the configuration for attributes used to create
+ * {@link com.hazelcast.partition.strategy.AttributePartitioningStrategy}
+ */
 public class PartitioningAttributeConfig implements IdentifiedDataSerializable {
     private String attributeName;
 

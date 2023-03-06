@@ -31,8 +31,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * Factory for {@link PartitioningStrategy} instances.
  */
 public final class PartitioningStrategyFactory {
-
-    private static final String ARGUMENTS_REGEX = "(.*)\\((.+)\\)";
     // not private for tests
     final ConcurrentHashMap<String, PartitioningStrategy> cache = new ConcurrentHashMap<>();
 
