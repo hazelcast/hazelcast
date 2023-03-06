@@ -100,10 +100,11 @@ public final class SelectorOptimizer {
             logger.finest("Optimized Selector: " + selector.getClass().getName());
             return set;
         } catch (Throwable t) {
-            //System.out.println("Failed to optimize Selector: " + selector.getClass().getName());
-            // we don't want to print at warning level because it could very well be that the target JVM doesn't
-            // support this optimization. That is why we print on finest
-            logger.finest("Failed to optimize Selector: " + selector.getClass().getName(), t);
+            if (logger.isFinestEnabled()) {
+                // we don't want to print at warning level because it could very well be that the target JVM doesn't
+                // support this optimization. That is why we print on finest
+                logger.finest("Failed to optimize Selector: " + selector.getClass().getName(), t);
+            }
             return null;
         }
     }
