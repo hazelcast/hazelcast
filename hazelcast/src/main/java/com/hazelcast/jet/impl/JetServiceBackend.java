@@ -422,7 +422,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
      * @param jobMultiPartParameterObject contains all the metadata about the upload operation
      */
     public void storeJobMultiPart(JobMultiPartParameterObject jobMultiPartParameterObject) {
-        JobMetaDataParameterObject result = null;
         try {
             JobMetaDataParameterObject partsComplete = jobUploadStore.processJobMultipart(jobMultiPartParameterObject);
             // If parts are complete
