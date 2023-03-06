@@ -102,7 +102,7 @@ public class AltoServerBootstrap {
         } else {
             enabled0 = config.getAltoConfig().isEnabled();
         }
-        logger.info("TPC: " + (enabled0 ? "enabled" : "disabled"));
+        logger.info("Alto: " + (enabled0 ? "enabled" : "disabled"));
         return enabled0;
     }
 
