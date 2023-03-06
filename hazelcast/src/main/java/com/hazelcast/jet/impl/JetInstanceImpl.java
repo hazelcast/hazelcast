@@ -74,10 +74,13 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
     @Override
     public void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
         try {
+            SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
+            validator.validateParameterObject(submitJobParameters);
+
             JobMetaDataParameterObject parameterObject = new JobMetaDataParameterObject();
 
             // The jar should not be deleted
-            parameterObject.setDeleteJarAfterExecution(true);
+            parameterObject.setDeleteJarAfterExecution(false);
 
             parameterObject.setSnapshotName(submitJobParameters.getSnapshotName());
             parameterObject.setJobName(submitJobParameters.getJobName());

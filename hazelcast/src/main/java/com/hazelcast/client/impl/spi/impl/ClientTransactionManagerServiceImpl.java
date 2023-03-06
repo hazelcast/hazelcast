@@ -110,14 +110,12 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
         ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
         long startTimeMillis = System.currentTimeMillis();
         long invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
-        ClientConfig clientConfig = client.getClientConfig();
-        boolean smartRouting = clientConfig.getNetworkConfig().isSmartRouting();
 
         while (client.getLifecycleService().isRunning()) {
             try {
                 ClientConnection connection = client.getConnectionManager().getRandomConnection();
                 if (connection == null) {
-                    throw throwException(smartRouting);
+                    throw throwException();
                 }
                 return connection;
             } catch (Exception e) {
@@ -144,14 +142,14 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
         return new OperationTimeoutException(msg, e);
     }
 
-    private RuntimeException throwException(boolean smartRouting) {
+    private RuntimeException throwException() {
         ClientConfig clientConfig = client.getClientConfig();
         ClientConnectionStrategyConfig connectionStrategyConfig = clientConfig.getConnectionStrategyConfig();
         ClientConnectionStrategyConfig.ReconnectMode reconnectMode = connectionStrategyConfig.getReconnectMode();
         if (reconnectMode.equals(ClientConnectionStrategyConfig.ReconnectMode.ASYNC)) {
             throw new HazelcastClientOfflineException();
         }
-        if (smartRouting) {
+        if (!client.getConnectionManager().isUnisocketClient()) {
             Set<Member> members = client.getCluster().getMembers();
             String msg;
             if (members.isEmpty()) {

@@ -42,9 +42,9 @@ public abstract class KubernetesApiProviderTest {
     public void extractNodes() {
         //given
         JsonObject endpointsJson = Json.parse(getEndpointsResponseWithServices()).asObject();
-        ArrayList<EndpointAddress> privateAddresses = new ArrayList<>();
-        privateAddresses.add(new EndpointAddress("192.168.0.25", 5701, "hazelcast-0"));
-        privateAddresses.add(new EndpointAddress("172.17.0.5", 5701, "hazelcast-1"));
+        ArrayList<String> privateAddresses = new ArrayList<>();
+        privateAddresses.add("192.168.0.25");
+        privateAddresses.add("172.17.0.5");
         //when
         Map<EndpointAddress, String> nodes = provider.extractNodes(endpointsJson, privateAddresses);
         //then
@@ -91,9 +91,9 @@ public abstract class KubernetesApiProviderTest {
     public void extractServices() {
         //given
         JsonObject endpointsJson = Json.parse(getEndpointsResponseWithServices()).asObject();
-        ArrayList<EndpointAddress> privateAddresses = new ArrayList<>();
-        privateAddresses.add(new EndpointAddress("192.168.0.25", 5701, "hazelcast-0"));
-        privateAddresses.add(new EndpointAddress("172.17.0.5", 5701, "hazelcast-1"));
+        ArrayList<String> privateAddresses = new ArrayList<>();
+        privateAddresses.add("192.168.0.25");
+        privateAddresses.add("172.17.0.5");
         //when
         Map<EndpointAddress, String> services = provider.extractServices(endpointsJson, privateAddresses);
         //then

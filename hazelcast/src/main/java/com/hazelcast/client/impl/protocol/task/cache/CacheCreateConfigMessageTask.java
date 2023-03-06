@@ -33,6 +33,7 @@ import java.security.Permission;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 
 /**
  * Creates the given CacheConfig on all members of the cluster.
@@ -58,7 +59,7 @@ public class CacheCreateConfigMessageTask
 
         InternalCompletableFuture future =
                 cacheService.createCacheConfigOnAllMembersAsync(PreJoinCacheConfig.of(cacheConfig));
-        future.whenCompleteAsync(this);
+        future.whenCompleteAsync(this, CALLER_RUNS);
     }
 
     @Override

@@ -63,6 +63,11 @@ class WanMapSupportingService implements WanSupportingService {
         throw new UnsupportedOperationException("WAN Synchronization requires Hazelcast Enterprise Edition");
     }
 
+    @Override
+    public void onWanConfigChange() {
+        // no-op
+    }
+
     private void handleRemove(WanMapRemoveEvent replicationRemove) {
         String mapName = replicationRemove.getObjectName();
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);

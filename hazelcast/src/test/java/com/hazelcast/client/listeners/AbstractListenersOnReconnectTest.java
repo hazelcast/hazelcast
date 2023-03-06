@@ -19,6 +19,7 @@ package com.hazelcast.client.listeners;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.spi.impl.listener.ClientConnectionRegistration;
 import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.client.test.ClientTestSupport;
@@ -31,7 +32,6 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
@@ -358,12 +358,12 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
 
         assertTrueEventually(() -> {
             int size = smartRouting ? clusterSize : 1;
-            Map<Connection, ClientConnectionRegistration> registrations = getClientEventRegistrations(client,
+            Map<ClientConnection, ClientConnectionRegistration> registrations = getClientEventRegistrations(client,
                     registrationId);
             assertEquals(size, registrations.size());
             if (smartRouting) {
                 Collection<Member> members = clientInstanceImpl.getClientClusterService().getMemberList();
-                for (Connection registeredSubscriber : registrations.keySet()) {
+                for (ClientConnection registeredSubscriber : registrations.keySet()) {
                     boolean contains = false;
                     for (Member member : members) {
                         contains |= registeredSubscriber.getRemoteAddress().equals(member.getAddress());
@@ -372,9 +372,9 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
                             contains);
                 }
             } else {
-                Iterator<Connection> expectedIterator = registrations.keySet().iterator();
+                Iterator<ClientConnection> expectedIterator = registrations.keySet().iterator();
                 assertTrue(expectedIterator.hasNext());
-                Iterator<Connection> iterator = clientInstanceImpl.getConnectionManager().getActiveConnections().iterator();
+                Iterator<ClientConnection> iterator = clientInstanceImpl.getConnectionManager().getActiveConnections().iterator();
                 assertTrue(iterator.hasNext());
                 assertEquals(iterator.next(), expectedIterator.next());
             }
@@ -409,7 +409,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         instances[randNode].getLifecycleService().terminate();
     }
 
-    private Map<Connection, ClientConnectionRegistration> getClientEventRegistrations(HazelcastInstance client, UUID id) {
+    private Map<ClientConnection, ClientConnectionRegistration> getClientEventRegistrations(HazelcastInstance client, UUID id) {
         HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
         ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) clientImpl.getListenerService();
         return listenerService.getActiveRegistrations(id);
