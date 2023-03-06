@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.core.submitjob.clientside.upload;
+package com.hazelcast.jet.impl.submitjob.clientside.upload;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.properties.ClientProperty;
@@ -25,11 +25,10 @@ import com.hazelcast.instance.impl.HazelcastBootstrap;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobAlreadyExistsException;
-import com.hazelcast.jet.SubmitJobParameters;
+import com.hazelcast.jet.impl.SubmitJobParameters;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
-import com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadCall;
 import com.hazelcast.jet.test.SerialTest;
 import org.junit.After;
 import org.junit.Test;

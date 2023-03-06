@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet;
+package com.hazelcast.jet.impl;
 
 import javax.annotation.Nonnull;
 import java.nio.file.Path;
@@ -22,7 +22,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * The parameter object for {{@link JetService#submitJobFromJar(SubmitJobParameters)}}
+ * The parameter object for {{@link JetClientInstanceImpl#submitJobFromJar(SubmitJobParameters)}}
  */
 public final class SubmitJobParameters {
 
@@ -70,7 +70,7 @@ public final class SubmitJobParameters {
      * Create a new instance to execute a jar on the member
      */
     public static SubmitJobParameters forDirectJobExecution() {
-        return new SubmitJobParameters().setDirectJobExecution(true);
+        return new SubmitJobParameters().setDirectJobExecution();
     }
 
     public Path getJarPath() {
@@ -86,8 +86,8 @@ public final class SubmitJobParameters {
         return directJobExecution;
     }
 
-    private SubmitJobParameters setDirectJobExecution(boolean directJobExecution) {
-        this.directJobExecution = directJobExecution;
+    private SubmitJobParameters setDirectJobExecution() {
+        this.directJobExecution = true;
         return this;
     }
 

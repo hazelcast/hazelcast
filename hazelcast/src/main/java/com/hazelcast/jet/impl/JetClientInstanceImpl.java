@@ -32,7 +32,6 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.Sha256Util;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.impl.SubmitJobParameters;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

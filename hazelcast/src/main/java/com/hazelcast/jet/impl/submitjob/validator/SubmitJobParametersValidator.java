@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.submitjob.validator;
 
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.SubmitJobParameters;
+import com.hazelcast.jet.impl.SubmitJobParameters;
 
 import java.io.IOException;
 import java.nio.file.Files;

@@ -17,14 +17,14 @@
 package com.hazelcast.jet.impl.submitjob.validator;
 
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.SubmitJobParameters;
+import com.hazelcast.jet.impl.SubmitJobParameters;
 import org.junit.Test;
 
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static com.hazelcast.jet.core.submitjob.clientside.upload.JobUploadClientFailureTest.getJarPath;
+import static com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadClientFailureTest.getJarPath;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SubmitJobParametersValidatorForUploadTest {
