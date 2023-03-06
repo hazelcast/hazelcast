@@ -57,7 +57,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
-import static com.hazelcast.jet.mongodb.AbstractMongoDBTest.TEST_MONGO_VERSION;
+import static com.hazelcast.jet.mongodb.AbstractMongoTest.TEST_MONGO_VERSION;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static eu.rekawek.toxiproxy.model.ToxicDirection.DOWNSTREAM;
@@ -67,8 +67,8 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({NightlyTest.class})
-public class MongoDBSinkResilienceTest extends SimpleTestInClusterSupport {
-    private static final ILogger logger = Logger.getLogger(MongoDBSinkResilienceTest.class);
+public class MongoSinkResilienceTest extends SimpleTestInClusterSupport {
+    private static final ILogger logger = Logger.getLogger(MongoSinkResilienceTest.class);
 
     @Rule
     public Network network = Network.newNetwork();
@@ -127,10 +127,10 @@ public class MongoDBSinkResilienceTest extends SimpleTestInClusterSupport {
                         .append("key", doc.getKey())
                         .append("other", "" + doc.getValue())
                 ).setLocalParallelism(2)
-                .writeTo(MongoDBSinks.builder("mongoSink", Document.class, () -> mongoClient(connectionString))
-                                     .into(databaseName, collectionName)
-                                     .preferredLocalParallelism(2)
-                                     .build());
+                .writeTo(MongoSinks.builder("mongoSink", Document.class, () -> mongoClient(connectionString))
+                                   .into(databaseName, collectionName)
+                                   .preferredLocalParallelism(2)
+                                   .build());
 
         Job job = invokeJob(hz, pipeline);
         AtomicInteger totalCount = new AtomicInteger(0);
@@ -195,10 +195,10 @@ public class MongoDBSinkResilienceTest extends SimpleTestInClusterSupport {
                         .append("key", doc.getKey())
                         .append("value", doc.getValue())
                 ).setLocalParallelism(2)
-                .writeTo(MongoDBSinks.builder("mongoSink", Document.class, () -> mongoClient(connectionViaToxi))
-                                     .into(databaseName, collectionName)
-                                     .preferredLocalParallelism(2)
-                                     .build());
+                .writeTo(MongoSinks.builder("mongoSink", Document.class, () -> mongoClient(connectionViaToxi))
+                                   .into(databaseName, collectionName)
+                                   .preferredLocalParallelism(2)
+                                   .build());
 
         Job job = invokeJob(hz, pipeline);
         final AtomicBoolean continueCounting = new AtomicBoolean(true);

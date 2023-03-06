@@ -51,8 +51,8 @@ import java.util.Objects;
 import java.util.concurrent.CompletionException;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
-import static com.hazelcast.jet.mongodb.MongoDBSinks.builder;
-import static com.hazelcast.jet.mongodb.MongoDBSinks.mongodb;
+import static com.hazelcast.jet.mongodb.MongoSinks.builder;
+import static com.hazelcast.jet.mongodb.MongoSinks.mongodb;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.pipeline.Sources.mapJournal;
 import static com.hazelcast.jet.pipeline.test.TestSources.items;
@@ -64,7 +64,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Category({QuickTest.class})
-public class MongoDBSinkTest extends AbstractMongoDBTest {
+public class MongoSinkTest extends AbstractMongoTest {
 
     private static final long COUNT = 4;
     private static final long HALF = COUNT / 2;
@@ -271,7 +271,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
     public void test_whenServerNotAvailable() {
         String defaultDatabase = defaultDatabase();
         String collectionName = testName.getMethodName();
-        Sink<Document> sink = MongoDBSinks
+        Sink<Document> sink = MongoSinks
                 .builder(SINK_NAME, Document.class, () -> mongoClient("non-existing-server", 0))
                 .into(defaultDatabase, collectionName)
                 .identifyDocumentBy("_id", (doc) -> doc.get("_id"))

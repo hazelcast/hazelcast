@@ -41,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class})
-public class MongoDBSourcesWindowedTest extends AbstractMongoDBTest {
+public class MongoSourcesWindowedTest extends AbstractMongoTest {
 
     @BeforeClass
     public static void beforeClass() {
@@ -50,10 +50,10 @@ public class MongoDBSourcesWindowedTest extends AbstractMongoDBTest {
 
     @Test
     public void testWindows() {
-        StreamSource<? extends Document> streamSource = MongoDBSources.stream("src", mongoContainer.getConnectionString(),
+        StreamSource<? extends Document> streamSource = MongoSources.stream("src", mongoContainer.getConnectionString(),
                 defaultDatabase(), testName.getMethodName(),
                 null, null)
-                .setPartitionIdleTimeout(1000);
+                                                                    .setPartitionIdleTimeout(1000);
 
         IList<WindowResult<Long>> result = instance().getList("result");
 
