@@ -61,7 +61,7 @@ import static com.hazelcast.internal.tpc.AsyncSocketOptions.TCP_NODELAY;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 @SuppressWarnings("checkstyle:MagicNumber, checkstyle:")
-public class TpcServerBootstrap {
+public class AltoServerBootstrap {
     /**
      * If set, overrides {@link AltoConfig#isEnabled()}
      */
@@ -86,9 +86,9 @@ public class TpcServerBootstrap {
     private final Config config;
     private volatile List<Integer> clientPorts;
 
-    public TpcServerBootstrap(NodeEngineImpl nodeEngine) {
+    public AltoServerBootstrap(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.logger = nodeEngine.getLogger(TpcServerBootstrap.class);
+        this.logger = nodeEngine.getLogger(AltoServerBootstrap.class);
         this.config = nodeEngine.getConfig();
         this.enabled = loadAltoEnabled();
         this.thisAddress = nodeEngine.getThisAddress();
@@ -178,7 +178,7 @@ public class TpcServerBootstrap {
             partitionThread.getQueue().setReactor(reactor);
         }
 
-        logger.info("Starting TpcServerBootstrap");
+        logger.info("Starting AltoServerBootstrap");
         tpcEngine.start();
         openServerSockets();
         clientPorts = serverSockets.stream().map(AsyncServerSocket::getLocalPort).collect(Collectors.toList());

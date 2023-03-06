@@ -17,30 +17,30 @@
 package com.hazelcast.config.alto;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.bootstrap.TpcServerBootstrap;
+import com.hazelcast.internal.bootstrap.AltoServerBootstrap;
 
 import java.util.List;
 
 import static com.hazelcast.test.Accessors.getNode;
 
 public class AltoConfigAccessors {
-    public static TpcServerBootstrap getTpcServerBootstrap(HazelcastInstance hz) {
-        return getNode(hz).getNodeEngine().getTpcServerBootstrap();
+    public static AltoServerBootstrap getAltoServerBootstrap(HazelcastInstance hz) {
+        return getNode(hz).getNodeEngine().getAltoServerBootstrap();
     }
 
     public static int getEventloopCount(HazelcastInstance hz) {
-        return getTpcServerBootstrap(hz).getTpcEngine().reactorCount();
+        return getAltoServerBootstrap(hz).getTpcEngine().reactorCount();
     }
 
     public static boolean isTpcEnabled(HazelcastInstance hz) {
-        return getTpcServerBootstrap(hz).isEnabled();
+        return getAltoServerBootstrap(hz).isEnabled();
     }
 
     public static AltoSocketConfig getClientSocketConfig(HazelcastInstance hz) {
-        return getTpcServerBootstrap(hz).getClientSocketConfig();
+        return getAltoServerBootstrap(hz).getClientSocketConfig();
     }
 
     public static List<Integer> getClientPorts(HazelcastInstance hz) {
-        return getTpcServerBootstrap(hz).getClientPorts();
+        return getAltoServerBootstrap(hz).getClientPorts();
     }
 }
