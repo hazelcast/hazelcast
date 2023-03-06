@@ -1392,16 +1392,6 @@ public class JobConfig implements IdentifiedDataSerializable {
         return this;
     }
 
-    /**
-     * Applies the specified changes to this configuration.
-     * <p>
-     * It's not a public API, can be removed in the future.
-     */
-    @PrivateApi
-    public JobConfig apply(DeltaJobConfig deltaConfig) {
-        return deltaConfig.applyTo(this);
-    }
-
     @Override
     public int getFactoryId() {
         return JetConfigDataSerializerHook.FACTORY_ID;

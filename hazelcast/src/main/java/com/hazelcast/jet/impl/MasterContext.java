@@ -163,7 +163,7 @@ public class MasterContext {
             if (jobStatus != SUSPENDED && jobStatus != SUSPENDED_EXPORTING_SNAPSHOT) {
                 throw new IllegalStateException("Job not suspended");
             }
-            jobConfig().apply(deltaConfig);
+            deltaConfig.applyTo(jobConfig());
             jobRepository.updateJobRecord(jobRecord);
             return jobConfig();
         } finally {
