@@ -16,6 +16,10 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.datalink.DataLinkBase;
+import com.hazelcast.datalink.DataLinkResource;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.TestProcessors;
@@ -31,11 +35,14 @@ import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -48,12 +55,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ShowStatementTest extends SqlTestSupport {
-
+    private static final String DATA_LINK_NAME = "test-data-link";
     private final SqlService sqlService = instance().getSql();
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(2, null);
+        final Config config = smallInstanceConfig();
+        config.getDataLinkConfigs().put(DATA_LINK_NAME, new DataLinkConfig()
+                .setName(DATA_LINK_NAME)
+                .setClassName(DataLinkWithResources.class.getName()));
+        initialize(2, config);
     }
 
     @Test
@@ -160,9 +171,37 @@ public class ShowStatementTest extends SqlTestSupport {
                 .hasMessage("SHOW JOBS does not support dynamic parameters");
     }
 
+    @Test
+    public void test_showResources() {
+        assertRowsOrdered("SHOW RESOURCES FOR \"" + DATA_LINK_NAME + "\"", rows(2,
+                "testName1", "testType1",
+                "testName2", "testType2"
+        ));
+    }
+
     private void createJobInJava(String jobName) {
         DAG dag = new DAG();
         dag.newVertex("v", () -> new TestProcessors.MockP().streaming());
         instance().getJet().newJob(dag, new JobConfig().setName(jobName));
+    }
+
+    public static class DataLinkWithResources extends DataLinkBase {
+        public DataLinkWithResources(DataLinkConfig config) {
+            super(config);
+        }
+
+        @NotNull
+        @Override
+        public Collection<DataLinkResource> listResources() {
+            return Arrays.asList(
+                    new DataLinkResource("testType1", "testName1"),
+                    new DataLinkResource("testType2", "testName2")
+            );
+        }
+
+        @Override
+        public void destroy() {
+
+        }
     }
 }

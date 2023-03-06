@@ -64,6 +64,7 @@ data: {
       "SUSPEND"
       "VIEWS"
       "TYPES"
+      "RESOURCES"
     ]
 
     # List of keywords from "keywords" section that are not reserved.
@@ -403,6 +404,7 @@ data: {
       "SUSPEND"
       "VIEWS"
       "TYPES"
+      "RESOURCES"
     ]
 
     # List of non-reserved keywords to add;

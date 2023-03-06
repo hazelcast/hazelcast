@@ -17,12 +17,14 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.util.ImmutableNullableList;
 
 import javax.annotation.Nonnull;
 import java.util.Collections;
@@ -34,16 +36,29 @@ public class SqlShowStatement extends SqlCall {
     public static final SqlSpecialOperator SHOW_VIEWS = new SqlSpecialOperator("SHOW VIEWS", SqlKind.OTHER);
     public static final SqlSpecialOperator SHOW_JOBS = new SqlSpecialOperator("SHOW JOBS", SqlKind.OTHER);
     public static final SqlSpecialOperator SHOW_TYPES = new SqlSpecialOperator("SHOW TYPES", SqlKind.OTHER);
+    public static final SqlSpecialOperator SHOW_RESOURCES = new SqlSpecialOperator("SHOW RESOURCES FOR", SqlKind.OTHER);
 
     private final ShowStatementTarget target;
+    private final SqlIdentifier dataLinkName;
 
     public SqlShowStatement(SqlParserPos pos, ShowStatementTarget target) {
         super(pos);
         this.target = target;
+        this.dataLinkName = null;
+    }
+
+    public SqlShowStatement(SqlParserPos pos, ShowStatementTarget target, SqlIdentifier dataLinkName) {
+        super(pos);
+        this.target = target;
+        this.dataLinkName = dataLinkName;
     }
 
     public ShowStatementTarget getTarget() {
         return target;
+    }
+
+    public String getDataLinkName() {
+        return dataLinkName != null ? dataLinkName.names.get(dataLinkName.names.size() - 1) : null;
     }
 
     @Nonnull
@@ -55,12 +70,19 @@ public class SqlShowStatement extends SqlCall {
     @Nonnull
     @Override
     public List<SqlNode> getOperandList() {
-        return Collections.emptyList();
+        if (dataLinkName != null) {
+            return ImmutableNullableList.of(dataLinkName);
+        } else {
+            return Collections.emptyList();
+        }
     }
 
     @Override
     public void unparse(SqlWriter writer, int leftPrec, int rightPrec) {
         writer.keyword(target.operator.getName());
+        if (target.operator.equals(SHOW_RESOURCES) && dataLinkName != null) {
+            dataLinkName.unparse(writer, leftPrec, rightPrec);
+        }
     }
 
     /**
@@ -70,7 +92,8 @@ public class SqlShowStatement extends SqlCall {
         MAPPINGS(SHOW_MAPPINGS),
         VIEWS(SHOW_VIEWS),
         JOBS(SHOW_JOBS),
-        TYPES(SHOW_TYPES);
+        TYPES(SHOW_TYPES),
+        RESOURCES(SHOW_RESOURCES);
 
         private final SqlSpecialOperator operator;
 
