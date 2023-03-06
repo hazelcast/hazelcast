@@ -246,7 +246,6 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     }
 
     private void sendJobMetaDataForExecute(JobExecuteCall jobExecuteCall, SubmitJobParameters submitJobParameters) {
-
         ClientMessage jobMetaDataRequest = JetUploadJobMetaDataCodec.encodeRequest(
                 jobExecuteCall.getSessionId(),
                 submitJobParameters.isDirectJobExecution(),

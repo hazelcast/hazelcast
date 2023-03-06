@@ -478,7 +478,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
      * Run the given jar as Jet job. Triggered by both client and member side
      */
     public void executeJar(JobMetaDataParameterObject jobMetaDataParameterObject) {
-
         if (logger.isInfoEnabled()) {
             String message = String.format("Try executing jar file %s for session %s", jobMetaDataParameterObject.getJarPath(),
                     jobMetaDataParameterObject.getSessionId());
