@@ -523,7 +523,7 @@ CREATE [OR REPLACE] DATA LINK [IF NOT EXISTS] <name>
 TYPE <connector name>
 OPTIONS ( … );
 
-DROP DATA LINK <name> [IF EXISTS];
+DROP DATA LINK [IF EXISTS] <name>;
 ```
 
 Alter is not supported. Replacing or dropping a data link created in config will
