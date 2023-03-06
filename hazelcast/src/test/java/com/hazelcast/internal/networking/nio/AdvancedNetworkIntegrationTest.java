@@ -62,7 +62,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
 public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkIntegrationTest {
 
     @Rule
@@ -137,6 +136,7 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
     }
 
     @Test
+    @Category(SlowTest.class)
     public void testMembersReportAllAddresses() {
         Config config = createCompleteMultiSocketConfig();
         for (int i = 0; i < 3; i++) {
@@ -206,11 +206,13 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
     }
 
     @Test(expected = AssertionError.class)
+    @Category(QuickTest.class)
     public void testLocalPortAssertionWorks() {
         assertLocalPortsOpen(MEMBER_PORT);
     }
 
     @Test
+    @Category(SlowTest.class)
     public void testConnectionToWrongPort() {
         Tuple2<Config, Config> cfgTuple = prepareConfigs();
 
@@ -231,6 +233,7 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
     }
 
     @Test
+    @Category(SlowTest.class)
     public void testConnectionToWrongPortWithRequiredMember() {
         Tuple2<Config, Config> cfgTuple = prepareConfigs();
 
@@ -251,6 +254,7 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
     }
 
     @Test
+    @Category(SlowTest.class)
     public void doNotShutdownIfSomeMembersCanBeConnected() {
         Tuple2<Config, Config> cfgTuple = prepareConfigs();
 
@@ -269,6 +273,7 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
     }
 
     @Test
+    @Category(SlowTest.class)
     public void doShutdownIfSomeMembersCanBeConnectedWithRequiredMember() {
         Tuple2<Config, Config> cfgTuple = prepareConfigs();
 
