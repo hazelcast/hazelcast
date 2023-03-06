@@ -50,7 +50,7 @@ public final class NioChannel extends AbstractChannel {
         super(socketChannel, clientMode);
         this.channelInitializer = channelInitializer;
         this.closeListenerExecutor = closeListenerExecutor;
-        this.config = new NioChannelOptions(socketChannel.socket());
+        this.config = new NioChannelOptions(socketChannel, logger);
     }
 
     @Override

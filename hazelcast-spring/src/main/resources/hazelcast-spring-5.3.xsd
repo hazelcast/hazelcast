@@ -5228,6 +5228,9 @@
             <xs:element name="send-buffer-size-kb" type="parameterized-positive-integer" minOccurs="0"/>
             <xs:element name="receive-buffer-size-kb" type="parameterized-positive-integer" minOccurs="0"/>
             <xs:element name="linger-seconds" type="parameterized-non-negative-integer" minOccurs="0"/>
+            <xs:element name="keep-idle-seconds" type="parameterized-unsigned-int" minOccurs="0" default="7200"/>
+            <xs:element name="keep-interval-seconds" type="parameterized-unsigned-int" minOccurs="0" default="75"/>
+            <xs:element name="keep-count" type="parameterized-unsigned-int" minOccurs="0" default="8"/>
         </xs:all>
     </xs:complexType>
 

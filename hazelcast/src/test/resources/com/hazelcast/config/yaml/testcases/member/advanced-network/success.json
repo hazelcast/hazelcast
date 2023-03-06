@@ -122,7 +122,10 @@
             "connect-timeout-seconds": 64,
             "send-buffer-size-kb": 25,
             "receive-buffer-size-kb": 33,
-            "linger-seconds": 99
+            "linger-seconds": 99,
+            "keep-count": 4,
+            "keep-idle-seconds": 120,
+            "keep-interval-seconds": 15
           },
           "port": {
             "port-count": 100,
