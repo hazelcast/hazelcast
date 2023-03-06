@@ -175,16 +175,14 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
     private void executeJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
         try {
-            SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
-            validator.validateForDirectJobExecution(submitJobParameters);
+            SubmitJobParametersValidator.validateForDirectJobExecution(submitJobParameters);
 
             Path jarPath = submitJobParameters.getJarPath();
             JobExecuteCall jobExecuteCall = initializeJobExecuteCall(submitJobParameters.getJarPath());
 
-            // Send job meta data
+            // Send only job metadata
             logFine(getLogger(), "Submitting JobMetaData for jarPath: %s", jarPath);
             sendJobMetaDataForExecute(jobExecuteCall, submitJobParameters);
-
         } catch (Exception exception) {
             sneakyThrow(exception);
         }
@@ -192,20 +190,17 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
     private void uploadJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
         try {
-            // Validate the provided parameters
-            SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
-            validator.validateForJobUpload(submitJobParameters);
+            SubmitJobParametersValidator.validateForJobUpload(submitJobParameters);
 
             Path jarPath = submitJobParameters.getJarPath();
             JobUploadCall jobUploadCall = initializeJobUploadCall(submitJobParameters.getJarPath());
 
-            // Send job meta data
+            // First send job metadata
             logFine(getLogger(), "Submitting JobMetaData for jarPath: %s", jarPath);
             sendJobMetaDataForUpload(jobUploadCall, submitJobParameters);
 
-            // Send job parts
+            // Then send job parts
             sendJobMultipart(jobUploadCall, jarPath);
-
         } catch (IOException | NoSuchAlgorithmException exception) {
             sneakyThrow(exception);
         }

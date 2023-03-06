@@ -26,10 +26,8 @@ public class SubmitJobParametersValidatorForDirectExecutionTest {
 
     @Test
     public void failForJobUpload() {
-        SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
-
         SubmitJobParameters parameterObject = SubmitJobParameters.forJobUpload();
-        assertThatThrownBy(() -> validator.validateForDirectJobExecution(parameterObject))
+        assertThatThrownBy(() -> SubmitJobParametersValidator.validateForDirectJobExecution(parameterObject))
                 .isInstanceOf(JetException.class)
                 .hasMessageContaining("SubmitJobParameters is configured for job upload");
     }

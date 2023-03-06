@@ -31,56 +31,47 @@ public class SubmitJobParametersValidatorForUploadTest {
 
     @Test
     public void failForDirectJobExecution() {
-        SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
-
         SubmitJobParameters parameterObject = SubmitJobParameters.forDirectJobExecution();
-        assertThatThrownBy(() -> validator.validateForJobUpload(parameterObject))
+        assertThatThrownBy(() -> SubmitJobParametersValidator.validateForJobUpload(parameterObject))
                 .isInstanceOf(JetException.class)
                 .hasMessageContaining("SubmitJobParameters is configured for direct job execution");
     }
 
     @Test
     public void nullJarPath() {
-        SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
-
         SubmitJobParameters parameterObject = SubmitJobParameters.forJobUpload();
-        assertThatThrownBy(() -> validator.validateForJobUpload(parameterObject))
+        assertThatThrownBy(() -> SubmitJobParametersValidator.validateForJobUpload(parameterObject))
                 .isInstanceOf(JetException.class)
                 .hasMessageContaining("jarPath can not be null");
     }
 
     @Test
     public void noSuchFileException() {
-        SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
-
         SubmitJobParameters parameterObject = SubmitJobParameters.forJobUpload();
         parameterObject.setJarPath(Paths.get("nosuchfile.jar"));
-        assertThatThrownBy(() -> validator.validateForJobUpload(parameterObject))
+        assertThatThrownBy(() -> SubmitJobParametersValidator.validateForJobUpload(parameterObject))
                 .isInstanceOf(NoSuchFileException.class);
     }
 
     @Test
     public void invalidFileExtension() {
-        SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
-
         Path jarPath1 = Paths.get("/mnt/foo");
-        assertThatThrownBy(() -> validator.validateFileExtension(jarPath1))
-                .isInstanceOf(JetException.class);
+        assertThatThrownBy(() -> SubmitJobParametersValidator.validateFileExtension(jarPath1))
+                .isInstanceOf(JetException.class)
+                .hasMessageContaining("File name extension should be .jar");
 
         Path jarPath2 = Paths.get("foo");
-        assertThatThrownBy(() -> validator.validateFileExtension(jarPath2))
+        assertThatThrownBy(() -> SubmitJobParametersValidator.validateFileExtension(jarPath2))
                 .isInstanceOf(JetException.class)
                 .hasMessageContaining("File name extension should be .jar");
     }
 
     @Test
     public void nullJobParameters() {
-        SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
-
         SubmitJobParameters parameterObject = SubmitJobParameters.forJobUpload();
         parameterObject.setJarPath(getJarPath());
         parameterObject.setJobParameters(null);
-        assertThatThrownBy(() -> validator.validateForJobUpload(parameterObject))
+        assertThatThrownBy(() -> SubmitJobParametersValidator.validateForJobUpload(parameterObject))
                 .isInstanceOf(JetException.class)
                 .hasMessageContaining("jobParameters can not be null");
     }
