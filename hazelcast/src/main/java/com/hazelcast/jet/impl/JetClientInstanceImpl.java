@@ -30,6 +30,7 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.Sha256Util;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.config.JetConfig;
@@ -39,6 +40,7 @@ import com.hazelcast.jet.impl.submitjob.clientside.execute.JobExecuteCall;
 import com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadCall;
 import com.hazelcast.jet.impl.submitjob.validator.SubmitJobParametersValidator;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
@@ -143,7 +145,26 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         return new ClientJobProxy(client, jobId, isLightJob, jobDefinition, config);
     }
 
-    @Override
+    /**
+     * For the client side, the jar is uploaded to a random cluster member and then this member runs the main method to start the job.
+     * The jar should have a main method that submits a Pipeline with {@link #newJob(Pipeline)} or
+     * {@link #newLightJob(Pipeline)} methods
+     * <p>
+     * The upload operation is performed in parts to avoid OOM exceptions on the client and member.
+     * For Java clients the part size is controlled by {@link com.hazelcast.client.properties.ClientProperty#JOB_UPLOAD_PART_SIZE}
+     * property
+     * <p>
+     * Limitations for the client side jobs:
+     * <ul>
+     *     <li>The job can only access resources on the member or cluster. This is different from the jobs submitted from
+     *     the hz-cli tool. A job submitted from hz-cli tool creates a local HazelcastInstance on the client JVM and
+     *     connects to cluster. Therefore, the job can access local resources. This is not the case for the jar
+     *     uploaded to a member.
+     *     </li>
+     * </ul>
+     *
+     * @throws JetException on error
+     */
     public void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
         if (submitJobParameters.isDirectJobExecution()) {
             executeJobFromJar(submitJobParameters);

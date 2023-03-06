@@ -28,6 +28,7 @@ import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
@@ -59,8 +60,7 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
     @Test
     public void test_jarExecute_whenResourceUploadIsEnabled() {
         createCluster();
-
-        JetService jetService = getClientJetService();
+        JetClientInstanceImpl jetService = getClientJetService();
 
         Path jarPath = getJarPath();
         SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
@@ -74,7 +74,7 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
     @Test
     public void test_jarExecute_withJobParameters() {
         createCluster();
-        JetService jetService = getClientJetService();
+        JetClientInstanceImpl jetService = getClientJetService();
 
         // Pass the job argument that will be used as job name
         String jobName = "myjetjob";
@@ -95,7 +95,7 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
 
     @Test
     public void test_jarExecuteByNonSmartClient_whenResourceUploadIsEnabled() {
-        HazelcastInstance[] hazelcastInstances = createCluster(2);
+        HazelcastInstance[] hazelcastInstances = createMultiNodeCluster();
 
         // Get address of the member that is not Job Coordinator
         HazelcastInstance targetInstance = hazelcastInstances[1];
@@ -112,7 +112,7 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
 
         // Create client and submit job
         HazelcastInstance client = createHazelcastClient(clientConfig);
-        JetService jetService = client.getJet();
+        JetClientInstanceImpl jetService = (JetClientInstanceImpl) client.getJet();
 
         Path jarPath = getJarPath();
         SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
@@ -126,9 +126,8 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
     @Test
     public void test_jarExecute_withMainClassname() {
         createCluster();
-
         // Create client and submit job
-        JetService jetService = getClientJetService();
+        JetClientInstanceImpl jetService = getClientJetService();
         List<String> jobParameters = emptyList();
 
         Path jarPath = getJarPath();
@@ -155,7 +154,7 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
         for (int index = 0; index < jobLimit; index++) {
             executorService.submit(() -> {
                 HazelcastInstance client = createHazelcastClient();
-                JetService jetService = client.getJet();
+                JetClientInstanceImpl jetService = (JetClientInstanceImpl) client.getJet();
 
                 SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
                         .setJarPath(getJarPath());
@@ -173,9 +172,7 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
     @Test
     public void test_multipleJarExecutes_whenResourceUploadIsEnabled() {
         createCluster();
-
-        HazelcastInstance client = createHazelcastClient();
-        JetService jetService = client.getJet();
+        JetClientInstanceImpl jetService = getClientJetService();
 
         String job1 = "job1";
         SubmitJobParameters submitJobParameters1 = SubmitJobParameters.forDirectJobExecution()
@@ -206,17 +203,17 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
         createHazelcastInstance(config);
     }
 
-    private HazelcastInstance[] createCluster(int nodeCount) {
+    private HazelcastInstance[] createMultiNodeCluster() {
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
 
-        return createHazelcastInstances(config, nodeCount);
+        return createHazelcastInstances(config, 2);
     }
 
-    private JetService getClientJetService() {
+    private JetClientInstanceImpl getClientJetService() {
         HazelcastInstance client = createHazelcastClient();
-        return client.getJet();
+        return (JetClientInstanceImpl)client.getJet();
     }
 
     static void assertJobIsRunning(JetService jetService, Path jarPath) {

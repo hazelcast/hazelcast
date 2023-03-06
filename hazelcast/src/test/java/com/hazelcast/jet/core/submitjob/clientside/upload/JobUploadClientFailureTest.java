@@ -23,7 +23,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.impl.HazelcastBootstrap;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.SubmitJobParameters;
@@ -73,9 +72,8 @@ public class JobUploadClientFailureTest extends JetTestSupport {
 
     @Test
     public void testNullJarPath() {
-        createHazelcastInstance();
-        HazelcastInstance client = createHazelcastClient();
-        JetService jetService = client.getJet();
+        createCluster();
+        JetClientInstanceImpl jetService = getClientJetService();
 
         SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload();
 
@@ -86,9 +84,8 @@ public class JobUploadClientFailureTest extends JetTestSupport {
 
     @Test
     public void testJarDoesNotExist() {
-        createHazelcastInstance();
-        HazelcastInstance client = createHazelcastClient();
-        JetService jetService = client.getJet();
+        createCluster();
+        JetClientInstanceImpl jetService = getClientJetService();
 
         String jarPath = "thisdoesnotexist.jar";
         SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload()
@@ -101,9 +98,8 @@ public class JobUploadClientFailureTest extends JetTestSupport {
 
     @Test
     public void testNullJobParameters() {
-        createHazelcastInstance();
-        HazelcastInstance client = createHazelcastClient();
-        JetService jetService = client.getJet();
+        createCluster();
+        JetClientInstanceImpl jetService = getClientJetService();
 
         SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload()
                 .setJarPath(getJarPath())
@@ -116,8 +112,8 @@ public class JobUploadClientFailureTest extends JetTestSupport {
 
     @Test
     public void testNullMainClass() {
-        HazelcastInstance client = createCluster();
-        JetService jetService = client.getJet();
+        createCluster();
+        JetClientInstanceImpl jetService = getClientJetService();
 
         SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload()
                 .setJarPath(getNoManifestJarPath());
@@ -129,9 +125,9 @@ public class JobUploadClientFailureTest extends JetTestSupport {
 
     @Test
     public void testTooLongFileName() throws IOException, NoSuchAlgorithmException {
-        HazelcastInstance client = createCluster();
-        JetService jetService = client.getJet();
-        JetClientInstanceImpl spyJetService = (JetClientInstanceImpl) Mockito.spy(jetService);
+        createCluster();
+        JetClientInstanceImpl jetService = getClientJetService();
+        JetClientInstanceImpl spyJetService = Mockito.spy(jetService);
 
         Path jarPath = getJarPath();
 
@@ -158,8 +154,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
     @Test
     public void test_jarUpload_whenResourceUploadIsNotEnabled() {
         createHazelcastInstance();
-        HazelcastInstance client = createHazelcastClient();
-        JetService jetService = client.getJet();
+        JetClientInstanceImpl jetService = getClientJetService();
 
         SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload()
                 .setJarPath(getJarPath());
@@ -173,8 +168,8 @@ public class JobUploadClientFailureTest extends JetTestSupport {
 
     @Test
     public void test_jarUpload_withWrongMainClassname() {
-        HazelcastInstance client = createCluster();
-        JetService jetService = client.getJet();
+        createCluster();
+        JetClientInstanceImpl jetService = getClientJetService();
 
         SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload()
                 .setJarPath(getJarPath())
@@ -192,8 +187,8 @@ public class JobUploadClientFailureTest extends JetTestSupport {
             String newSimpleJob = "newsimplejob.jar";
             deleteLeftOverFilesIfAny(newSimpleJob);
 
-            HazelcastInstance client = createCluster();
-            JetService jetService = client.getJet();
+            createCluster();
+            JetClientInstanceImpl jetService = getClientJetService();
 
             // Copy as new jar to make it unique
             newPath = copyJar(newSimpleJob);
@@ -217,10 +212,10 @@ public class JobUploadClientFailureTest extends JetTestSupport {
 
     @Test
     public void test_jarUpload_withIncorrectChecksum() throws IOException, NoSuchAlgorithmException {
-        HazelcastInstance client = createCluster();
+        createCluster();
 
         // Mock the JetClientInstanceImpl to return an incorrect checksum
-        JetClientInstanceImpl jetService = (JetClientInstanceImpl) client.getJet();
+        JetClientInstanceImpl jetService = getClientJetService();
         JetClientInstanceImpl spyJetService = Mockito.spy(jetService);
 
         Path jarPath = getJarPath();
@@ -242,9 +237,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
     @Test
     public void test_jobAlreadyExists() {
         createCluster();
-
-        HazelcastInstance client = createHazelcastClient();
-        JetService jetService = client.getJet();
+        JetClientInstanceImpl jetService = getClientJetService();
 
         String job1 = "job1";
         SubmitJobParameters submitJobParameters1 = SubmitJobParameters.forJobUpload()
@@ -272,7 +265,7 @@ public class JobUploadClientFailureTest extends JetTestSupport {
 
     @Test
     public void test_jarUpload_whenMemberShutsDown() throws IOException, NoSuchAlgorithmException {
-        HazelcastInstance[] cluster = createCluster(2);
+        HazelcastInstance[] cluster = createMultiNodeCluster();
 
         // Speed up the test by waiting less on invocation timeout
         ClientConfig clientConfig = new ClientConfig();
@@ -306,21 +299,25 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         assertThrows(OperationTimeoutException.class, () -> spyJetService.submitJobFromJar(submitJobParameters));
     }
 
-    private HazelcastInstance createCluster() {
+    private void createCluster() {
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
 
         createHazelcastInstance(config);
-        return createHazelcastClient();
     }
 
-    private HazelcastInstance[] createCluster(int nodeCount) {
+    private HazelcastInstance[] createMultiNodeCluster() {
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
 
-        return createHazelcastInstances(config, nodeCount);
+        return createHazelcastInstances(config, 2);
+    }
+
+    private JetClientInstanceImpl getClientJetService() {
+        HazelcastInstance client = createHazelcastClient();
+        return (JetClientInstanceImpl)client.getJet();
     }
 
     // this jar is only as below
