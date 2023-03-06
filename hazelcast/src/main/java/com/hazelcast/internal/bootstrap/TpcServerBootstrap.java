@@ -22,6 +22,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ServerSocketEndpointConfig;
+import com.hazelcast.config.alto.AltoConfig;
 import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
@@ -61,10 +62,17 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 @SuppressWarnings("checkstyle:MagicNumber, checkstyle:")
 public class TpcServerBootstrap {
+    /**
+     * If set, overrides {@link AltoConfig#isEnabled()}
+     */
     public static final HazelcastProperty ALTO_ENABLED = new HazelcastProperty(
             "hazelcast.internal.alto.enabled");
+    /**
+     * If set, overrides {@link AltoConfig#getEventloopCount()}
+     */
     public static final HazelcastProperty ALTO_EVENTLOOP_COUNT = new HazelcastProperty(
             "hazelcast.internal.alto.eventloop.count");
+
     private static final int TERMINATE_TIMEOUT_SECONDS = 5;
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
