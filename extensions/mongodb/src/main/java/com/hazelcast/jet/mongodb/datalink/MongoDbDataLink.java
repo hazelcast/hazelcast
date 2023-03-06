@@ -46,6 +46,9 @@ public class MongoDbDataLink implements DataLink {
     protected final ReferenceCounter refCounter;
     private MongoClient mongoClient;
 
+    /**
+     * Creates a new data link based on given config.
+     */
     public MongoDbDataLink(DataLinkConfig config) {
         this.config = config;
         this.refCounter = new ReferenceCounter(this::destroy);
@@ -121,6 +124,9 @@ public class MongoDbDataLink implements DataLink {
         }
     }
 
+    /**
+     * Helper method to create new {@link MongoDbDataLink} with given name and connection string.
+     */
     public static DataLinkConfig mongoDataLinkConf(String name, String connectionString) {
         DataLinkConfig dataLinkConfig = new DataLinkConfig();
         dataLinkConfig.setName(name);

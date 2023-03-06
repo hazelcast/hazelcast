@@ -19,16 +19,16 @@ import com.hazelcast.datalink.DataLink;
 import com.hazelcast.datalink.DataLinkRegistration;
 
 /**
- * Registers {@link MongoDbDataLink}.
+ * Registers {@link MongoDbDataLink} in streaming version.
  */
-public class MongoDataLinkRegistration implements DataLinkRegistration {
+public class MongoStreamDataLinkRegistration implements DataLinkRegistration {
 
     /**
-     * Returns "MongoDB" - will be used to determine Data link class based when it's this mapping type.
+     * Returns "MongoDBStream" - will be used to determine Data link class based when it's this mapping type.
      */
     @Override
     public String type() {
-        return "MongoDB";
+        return "MongoDBStream";
     }
 
     /**
