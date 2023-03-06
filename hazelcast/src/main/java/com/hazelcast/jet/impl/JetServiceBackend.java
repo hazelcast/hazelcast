@@ -458,11 +458,13 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     }
 
     // If exception is not JetException e.g. IOException, FileSystemException etc., wrap it with JetException
-    static void wrapWithJetException(Exception exception) {
+    private void wrapWithJetException(Exception exception) {
         // Exception is not JetException
         if (!(exception instanceof JetException)) {
+            // Get the root cause and wrap it with JetException
             ExceptionUtil.rethrow(exception);
         } else {
+            // Just throw the JetException as is
             sneakyThrow(exception);
         }
     }

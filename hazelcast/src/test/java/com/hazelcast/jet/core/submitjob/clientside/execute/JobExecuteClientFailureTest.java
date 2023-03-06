@@ -210,13 +210,12 @@ public class JobExecuteClientFailureTest extends JetTestSupport {
         assertThrows(OperationTimeoutException.class, () -> spyJetService.submitJobFromJar(submitJobParameters));
     }
 
-    private HazelcastInstance createCluster() {
+    private void createCluster() {
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
 
         createHazelcastInstance(config);
-        return createHazelcastClient();
     }
 
     private HazelcastInstance[] createMultiNodeCluster() {
