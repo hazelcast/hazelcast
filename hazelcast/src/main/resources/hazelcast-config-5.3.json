@@ -150,6 +150,9 @@
         },
         "data-link": {
           "$ref": "#/definitions/DataLinkConfig"
+        },
+        "alto": {
+          "$ref": "#/definitions/AltoConfig"
         }
       }
     },
@@ -233,6 +236,9 @@
         },
         "sql": {
           "$ref": "#/definitions/ClientSql"
+        },
+        "alto": {
+          "$ref": "#/definitions/ClientAlto"
         }
       }
     },
@@ -762,6 +768,9 @@
         },
         "socket-interceptor": {
           "$ref": "#/definitions/SocketInterceptor"
+        },
+        "alto-socket": {
+          "$ref": "#/definitions/AltoSocketConfig"
         }
       }
     },
@@ -832,7 +841,8 @@
                   "ssl",
                   "socket-interceptor",
                   "symmetric-encryption",
-                  "socket-options"
+                  "socket-options",
+                  "alto-socket"
                 ]
               }
             }
@@ -3980,6 +3990,9 @@
         },
         "socket-options": {
           "$ref": "#/definitions/SocketOptions"
+        },
+        "alto-socket": {
+          "$ref": "#/definitions/AltoSocketConfig"
         }
       }
     },
@@ -4293,6 +4306,18 @@
           "description": "The configuration when to retry query that fails with reasons CONNECTION_PROBLEM, PARTITION_DISTRIBUTION, TOPOLOGY_CHANGE."
         }
       }
+    },
+    "ClientAlto": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enables or disables the Alto-aware mode."
+        }
+      },
+      "required": ["enabled"],
+      "description": "Configures the client for Alto, which is the next generation Hazelcast that uses thread-per-core model. Alto-aware clients will maintain connections to all cores of all cluster members. The client will route partition-specific invocations to the correct core of the correct member in the best effort basis. This configuration is introduced as BETA, and it might be subject to changes, or it can be removed in future releases without a prior notice."
     },
     "OutboundPortDefinition": {
       "anyOf": [
@@ -4977,7 +5002,7 @@
           },
           "class-name": {
             "type": "string",
-            "description": "The name of the class implementing DataLinkFactory."
+            "description": "The name of the class implementing DataLink."
           },
           "shared": {
             "type": "boolean",
@@ -4989,6 +5014,41 @@
           }
         }
       }
+    },
+    "AltoConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enabled Hazelcast Alto. Disabled by default."
+        },
+        "eventloop-count": {
+          "type": "integer",
+          "description": "Configures the number of eventloops. It's equal to available processor count by default."
+        }
+      },
+      "required": [
+        "enabled"
+      ],
+      "description": "Hazelcast Alto is the next generation of Hazelcast built with thread per core architecture. It's still being developed and everything is subject to change. Alto is disabled by default."
+    },
+    "AltoSocketConfig": {
+      "type": "object",
+      "properties": {
+        "port-range": {
+          "type": "string",
+          "description": "Configures the port range available for Alto sockets."
+        },
+        "receive-buffer-size-kb": {
+          "type": "integer",
+          "description": "Configures SO_RCVBUF socket option for Alto sockets."
+        },
+        "send-buffer-size-kb": {
+          "type": "integer",
+          "description": "Configures SO_SNDBUF socket option for Alto sockets."
+        }
+      },
+      "description": "Socket configuration for Alto. In Alto, each eventloop has its own socket."
     }
   }
 }

@@ -52,7 +52,7 @@ public final class SelectorOptimizer {
      * @return the created Selector.
      * @throws NullPointerException if logger is null.
      */
-    static Selector newSelector(ILogger logger) {
+    public static Selector newSelector(ILogger logger) {
         checkNotNull(logger, "logger");
 
         Selector selector;
@@ -76,6 +76,7 @@ public final class SelectorOptimizer {
      * @return an FastSelectionKeySet if the optimization was a success, null otherwise.
      * @throws NullPointerException if selector or logger is null.
      */
+    @SuppressWarnings("java:S1181")
     static SelectionKeysSet optimize(Selector selector, ILogger logger) {
         checkNotNull(selector, "selector");
         checkNotNull(logger, "logger");

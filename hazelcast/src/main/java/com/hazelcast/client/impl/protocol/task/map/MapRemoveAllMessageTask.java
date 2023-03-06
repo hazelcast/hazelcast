@@ -32,6 +32,7 @@ import java.security.Permission;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
@@ -65,7 +66,7 @@ public class MapRemoveAllMessageTask extends AbstractMapAllPartitionsMessageTask
             } else {
                 handleProcessingFailure(throwable);
             }
-        });
+        }, CALLER_RUNS);
     }
 
     @Override

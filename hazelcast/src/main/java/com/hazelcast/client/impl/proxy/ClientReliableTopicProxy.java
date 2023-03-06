@@ -49,6 +49,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -292,7 +293,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
             } else {
                 returnFuture.complete(null);
             }
-        });
+        }, CALLER_RUNS);
     }
 
     private void addAsyncOrFail(@Nonnull Collection<? extends E> payload, InternalCompletableFuture<Void> returnFuture,
@@ -306,7 +307,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
             } else {
                 returnFuture.complete(null);
             }
-        });
+        }, CALLER_RUNS);
     }
 
     private InternalCompletableFuture<Void> addAsync(List<ReliableTopicMessage> messages, OverflowPolicy overflowPolicy) {
@@ -317,7 +318,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
             } else {
                 returnFuture.complete(null);
             }
-        });
+        }, CALLER_RUNS);
         return returnFuture;
     }
 

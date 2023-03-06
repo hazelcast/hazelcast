@@ -1346,7 +1346,7 @@ public final class Sources {
      *      properties.put("password", password);
      *      DataLinkConfig dataLinkConfig = new DataLinkConfig()
      *              .setName("my-jdbc-data-link")
-     *              .setClassName(JdbcDataLinkFactory.class.getName())
+     *              .setClassName(JdbcDataLink.class.getName())
      *              .setProperties(properties);
      *      config.getDataLinkConfigs().put(name, dataLinkConfig);
      * }</pre>
@@ -1369,7 +1369,7 @@ public final class Sources {
      * See also {@link Sources#jdbc(SupplierEx, ToResultSetFunction, FunctionEx)}.
      *</p>
      *
-     * @since 5.2
+     * @since 5.3
      */
     @Beta
     public static <T> BatchSource<T> jdbc(
