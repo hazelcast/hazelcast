@@ -34,7 +34,13 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 @SuppressWarnings("checkstyle:JavadocVariable")
 @Beta
 public class AltoSocketConfig {
+    /**
+     * @see java.net.SocketOptions#SO_RCVBUF
+     */
     public static final int DEFAULT_RECEIVE_BUFFER_SIZE_KB = 128;
+    /**
+     * @see java.net.SocketOptions#SO_SNDBUF
+     */
     public static final int DEFAULT_SEND_BUFFER_SIZE_KB = 128;
 
     private String portRange = "11000-21000";
