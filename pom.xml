@@ -52,7 +52,7 @@
         <hazelcast.serverMainClass>com.hazelcast.core.server.HazelcastMemberStarter</hazelcast.serverMainClass>
         <hazelcast.previous.version>5.2.0</hazelcast.previous.version>
 
-        <maven.compiler.plugin.version>3.10.1</maven.compiler.plugin.version>
+        <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
         <maven.jar.plugin.version>3.3.0</maven.jar.plugin.version>
         <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
         <maven.javadoc.plugin.version>3.5.0</maven.javadoc.plugin.version>
@@ -94,7 +94,7 @@
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.1</avro.version>
         <aws.sdk.version>1.12.414</aws.sdk.version>
-        <classgraph.version>4.8.154</classgraph.version>
+        <classgraph.version>4.8.155</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
         <grpc.version>1.48.0</grpc.version>
         <guava.version>31.1-jre</guava.version>
@@ -1584,7 +1584,7 @@
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-bom</artifactId>
-                <version>9.4.50.v20221201</version>
+                <version>9.4.51.v20230217</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -1850,7 +1850,7 @@
             <dependency>
                 <groupId>com.github.luben</groupId>
                 <artifactId>zstd-jni</artifactId>
-                <version>1.5.4-1</version>
+                <version>1.5.4-2</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>

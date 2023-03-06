@@ -172,6 +172,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static com.hazelcast.config.EndpointConfig.DEFAULT_SOCKET_KEEP_COUNT;
+import static com.hazelcast.config.EndpointConfig.DEFAULT_SOCKET_KEEP_IDLE_SECONDS;
+import static com.hazelcast.config.EndpointConfig.DEFAULT_SOCKET_KEEP_INTERVAL_SECONDS;
 import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_CONNECT_TIMEOUT_SECONDS;
 import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_LINGER_SECONDS;
 import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE_KB;
@@ -1184,6 +1187,15 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("linger-seconds", nodeName)) {
                 endpointConfig.setSocketLingerSeconds(getIntegerValue("linger-seconds",
                         getTextContent(child), DEFAULT_SOCKET_LINGER_SECONDS));
+            } else if (matches("keep-idle-seconds", nodeName)) {
+                endpointConfig.setSocketKeepIdleSeconds(getIntegerValue("keep-idle-seconds",
+                        getTextContent(child), DEFAULT_SOCKET_KEEP_IDLE_SECONDS));
+            } else if (matches("keep-interval-seconds", nodeName)) {
+                endpointConfig.setSocketKeepIntervalSeconds(getIntegerValue("keep-interval-seconds",
+                        getTextContent(child), DEFAULT_SOCKET_KEEP_INTERVAL_SECONDS));
+            } else if (matches("keep-count", nodeName)) {
+                endpointConfig.setSocketKeepCount(getIntegerValue("keep-count",
+                        getTextContent(child), DEFAULT_SOCKET_KEEP_COUNT));
             }
         }
     }

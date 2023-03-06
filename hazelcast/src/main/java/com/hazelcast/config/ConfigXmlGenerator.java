@@ -665,6 +665,9 @@ public class ConfigXmlGenerator {
         gen.node("send-buffer-size-kb", endpointConfig.getSocketSendBufferSizeKb());
         gen.node("receive-buffer-size-kb", endpointConfig.getSocketRcvBufferSizeKb());
         gen.node("linger-seconds", endpointConfig.getSocketLingerSeconds());
+        gen.node("keep-idle-seconds", endpointConfig.getSocketKeepIdleSeconds());
+        gen.node("keep-interval-seconds", endpointConfig.getSocketKeepIntervalSeconds());
+        gen.node("keep-count", endpointConfig.getSocketKeepCount());
         gen.close();
 
         if (endpointConfig instanceof ServerSocketEndpointConfig) {

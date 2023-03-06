@@ -4983,6 +4983,9 @@
             <xs:element name="send-buffer-size-kb" type="xs:positiveInteger" minOccurs="0"/>
             <xs:element name="receive-buffer-size-kb" type="xs:positiveInteger" minOccurs="0"/>
             <xs:element name="linger-seconds" type="xs:nonNegativeInteger" minOccurs="0"/>
+            <xs:element name="keep-idle-seconds" type="xs:nonNegativeInteger" minOccurs="0" default="7200"/>
+            <xs:element name="keep-interval-seconds" type="xs:nonNegativeInteger" minOccurs="0" default="75"/>
+            <xs:element name="keep-count" type="xs:nonNegativeInteger" minOccurs="0" default="8"/>
         </xs:all>
     </xs:complexType>
     <xs:complexType name="rest-server-socket-endpoint-config">
@@ -6048,7 +6051,7 @@
             <xs:element name="class-name" type="xs:string">
                 <xs:annotation>
                     <xs:documentation>
-                        The name of the class implementing DataLinkFactory.
+                        The name of the class implementing DataLink.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

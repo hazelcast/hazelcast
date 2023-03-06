@@ -1368,6 +1368,9 @@ public class ConfigCompatibilityChecker {
                     && (c1.getSocketLingerSeconds() == c2.getSocketLingerSeconds())
                     && (c1.getSocketRcvBufferSizeKb() == c2.getSocketRcvBufferSizeKb())
                     && (c1.getSocketSendBufferSizeKb() == c2.getSocketSendBufferSizeKb())
+                    && (c1.getSocketKeepIntervalSeconds() == c2.getSocketKeepIntervalSeconds())
+                    && (c1.getSocketKeepIdleSeconds() == c2.getSocketKeepIdleSeconds())
+                    && (c1.getSocketKeepCount() == c2.getSocketKeepCount())
                     && nullSafeEqual(c1.getAltoSocketConfig(), c2.getAltoSocketConfig());
 
             if (c1 instanceof ServerSocketEndpointConfig) {

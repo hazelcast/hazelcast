@@ -22,18 +22,40 @@ import com.hazelcast.sql.SqlColumnMetadata;
 
 import java.util.List;
 
-final class GenericRecordUtils {
+class JdbcParameters {
+    private int idPos;
 
-    private GenericRecordUtils() {
+    private Object[] params;
+
+    void setIdPos(int idPos) {
+        this.idPos = idPos;
     }
 
-    // Get JDBC parameter values for columns from GenericRecord except for the primary key column
-    static <K> JDBCParameters toJDBCParameters(K key,
-                                               GenericRecord genericRecord,
-                                               List<SqlColumnMetadata> columnMetadataList,
-                                               String idColumn) {
+    Object[] getParams() {
+        return params;
+    }
 
-        JDBCParameters jdbcParameters = new JDBCParameters();
+    void setParams(Object[] params) {
+        this.params = params;
+    }
+
+    void shiftIdParameterToEnd() {
+        Object id = params[idPos];
+        for (int i = idPos; i < params.length - 1; i++) {
+            params[i] = params[i + 1];
+        }
+        params[params.length - 1] = id;
+    }
+
+    // Convert key and GenericRecord to JDBC parameter values
+    static <K> JdbcParameters convert(
+            K key,
+            GenericRecord genericRecord,
+            List<SqlColumnMetadata> columnMetadataList,
+            String idColumn
+    ) {
+
+        JdbcParameters jdbcParameters = new JdbcParameters();
 
         int idPos = -1;
         Object[] params = new Object[columnMetadataList.size()];
@@ -116,4 +138,5 @@ final class GenericRecordUtils {
 
         return jdbcParameters;
     }
+
 }

@@ -38,7 +38,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  *
  * @since 3.12
  */
-@SuppressWarnings("checkstyle:methodcount")
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:linelength"})
 public class EndpointConfig implements NamedConfig {
 
     /**
@@ -61,6 +61,21 @@ public class EndpointConfig implements NamedConfig {
      */
     public static final int DEFAULT_SOCKET_LINGER_SECONDS = 0;
 
+    /**
+     * See {@code jdk.net.ExtendedSocketOptions#TCP_KEEPIDLE}
+     */
+    public static final int DEFAULT_SOCKET_KEEP_IDLE_SECONDS = 7200;
+
+    /**
+     * See {@code jdk.net.ExtendedSocketOptions#TCP_KEEPINTERVAL}
+     */
+    public static final int DEFAULT_SOCKET_KEEP_INTERVAL_SECONDS = 75;
+
+    /**
+     * See {@code jdk.net.ExtendedSocketOptions#TCP_KEEPINTERVAL}
+     */
+    public static final int DEFAULT_SOCKET_KEEP_COUNT = 8;
+
     protected String name;
     protected ProtocolType protocolType;
     protected InterfacesConfig interfaces = new InterfacesConfig();
@@ -76,6 +91,9 @@ public class EndpointConfig implements NamedConfig {
     private int socketSendBufferSizeKb = DEFAULT_SOCKET_SEND_BUFFER_SIZE_KB;
     private int socketRcvBufferSizeKb = DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE_KB;
     private int socketLingerSeconds = DEFAULT_SOCKET_LINGER_SECONDS;
+    private int socketKeepIdleSeconds = DEFAULT_SOCKET_KEEP_IDLE_SECONDS;
+    private int socketKeepIntervalSeconds = DEFAULT_SOCKET_KEEP_INTERVAL_SECONDS;
+    private int socketKeepCount = DEFAULT_SOCKET_KEEP_COUNT;
     private AltoSocketConfig altoSocketConfig = new AltoSocketConfig();
 
     public ProtocolType getProtocolType() {
@@ -313,6 +331,99 @@ public class EndpointConfig implements NamedConfig {
         return this;
     }
 
+    /**
+     * Keep-Alive idle time: the number of seconds of idle time before keep-alive initiates a probe.
+     * This option is only applicable when {@link #setSocketKeepAlive(boolean) keep alive is true}.
+     * Requires a recent JDK 8, JDK 11 or greater version that includes the required
+     * <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.
+     *
+     * @return the configured value of Keep-Alive idle time.
+     * @since 5.3.0
+     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPIDLE>
+     *     jdk.net.ExtendedSocketOptions#TCP_KEEPIDLE</a>
+     */
+    public int getSocketKeepIdleSeconds() {
+        return socketKeepIdleSeconds;
+    }
+
+    /**
+     * Set the number of seconds a connection needs to be idle before TCP begins sending out keep-alive probes.
+     * This option is only applicable when {@link #setSocketKeepAlive(boolean) keep alive is true}.
+     * Requires a recent JDK 8, JDK 11 or greater version that includes the required
+     * <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.
+     *
+     * @since 5.3.0
+     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPIDLE>
+     *      jdk.net.ExtendedSocketOptions#TCP_KEEPIDLE</a>
+     */
+    public EndpointConfig setSocketKeepIdleSeconds(int socketKeepIdleSeconds) {
+        this.socketKeepIdleSeconds = socketKeepIdleSeconds;
+        return this;
+    }
+
+    /**
+     * Keep-Alive interval: the number of seconds between keep-alive probes.
+     * This option is only applicable when {@link #setSocketKeepAlive(boolean) keep alive is true}.
+     * Requires a recent JDK 8, JDK 11 or greater version that includes the required
+     * <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.
+     *
+     * @return the configured value of Keep-Alive interval time.
+     * @since 5.3.0
+     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPINTERVAL>
+     *     jdk.net.ExtendedSocketOptions#TCP_KEEPINTERVAL</a>
+     */
+    public int getSocketKeepIntervalSeconds() {
+        return socketKeepIntervalSeconds;
+    }
+
+    /**
+     * Set the number of seconds between keep-alive probes. Notice that this is the number of seconds between probes
+     * after the initial {@link #setSocketKeepIdleSeconds(int) keep-alive idle time} has passed.
+     * This option is only applicable when {@link #setSocketKeepAlive(boolean) keep alive is true}.
+     * Requires a recent JDK 8, JDK 11 or greater version that includes the required
+     * <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.
+     *
+     * @since 5.3.0
+     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPINTERVAL>
+     *     jdk.net.ExtendedSocketOptions#TCP_KEEPINTERVAL</a>
+     */
+    public EndpointConfig setSocketKeepIntervalSeconds(int socketKeepIntervalSeconds) {
+        this.socketKeepIntervalSeconds = socketKeepIntervalSeconds;
+        return this;
+    }
+
+    /**
+     * Keep-Alive count: the maximum number of TCP keep-alive probes to send before giving up and closing the connection if no
+     * response is obtained from the other side.
+     * This option is only applicable when {@link #setSocketKeepAlive(boolean) keep alive is true}.
+     * Requires a recent JDK 8, JDK 11 or greater version that includes the required
+     * <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.
+     *
+     * @return the configured value of Keep-Alive probe count.
+     * @since 5.3.0
+     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPCOUNT>
+     *     jdk.net.ExtendedSocketOptions#TCP_KEEPCOUNT</a>
+     */
+    public int getSocketKeepCount() {
+        return socketKeepCount;
+    }
+
+    /**
+     * Set the maximum number of TCP keep-alive probes to send before giving up and closing the connection if no
+     * response is obtained from the other side.
+     * This option is only applicable when {@link #setSocketKeepAlive(boolean) keep alive is true}.
+     * Requires a recent JDK 8, JDK 11 or greater version that includes the required
+     * <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.
+     *
+     * @since 5.3.0
+     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPCOUNT>
+     *     jdk.net.ExtendedSocketOptions#TCP_KEEPCOUNT</a>
+     */
+    public EndpointConfig setSocketKeepCount(int socketKeepCount) {
+        this.socketKeepCount = socketKeepCount;
+        return this;
+    }
+
     @Override
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     public boolean equals(Object o) {
@@ -326,6 +437,8 @@ public class EndpointConfig implements NamedConfig {
         return socketBufferDirect == that.socketBufferDirect && socketTcpNoDelay == that.socketTcpNoDelay
                 && socketKeepAlive == that.socketKeepAlive && socketConnectTimeoutSeconds == that.socketConnectTimeoutSeconds
                 && socketSendBufferSizeKb == that.socketSendBufferSizeKb && socketRcvBufferSizeKb == that.socketRcvBufferSizeKb
+                && socketKeepCount == that.socketKeepCount && socketKeepIdleSeconds == that.socketKeepIdleSeconds
+                && socketKeepIntervalSeconds == that.socketKeepIntervalSeconds
                 && socketLingerSeconds == that.socketLingerSeconds && Objects.equals(name, that.name)
                 && protocolType == that.protocolType && Objects.equals(interfaces, that.interfaces)
                 && Objects.equals(socketInterceptorConfig, that.socketInterceptorConfig)
@@ -341,6 +454,6 @@ public class EndpointConfig implements NamedConfig {
         return Objects.hash(name, protocolType, interfaces, socketInterceptorConfig, sslConfig, symmetricEncryptionConfig,
                 outboundPortDefinitions, outboundPorts, socketBufferDirect, socketTcpNoDelay, socketKeepAlive,
                 socketConnectTimeoutSeconds, socketSendBufferSizeKb, socketRcvBufferSizeKb, socketLingerSeconds,
-                altoSocketConfig);
+                altoSocketConfig, socketKeepCount, socketKeepIdleSeconds, socketKeepIntervalSeconds);
     }
 }

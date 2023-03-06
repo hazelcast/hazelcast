@@ -1089,7 +1089,7 @@
     </sql>
 
     <data-link name="mysql-database">
-        <class-name>com.hazelcast.datalink.JdbcDataLinkFactory</class-name>
+        <class-name>com.hazelcast.datalink.JdbcDataLink</class-name>
         <properties>
             <property name="jdbcUrl">jdbc:mysql://dummy:3306</property>
         </properties>
