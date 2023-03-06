@@ -265,7 +265,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     @Override
     protected SqlSelect createSourceSelectForUpdate(SqlUpdate update) {
-         use only PK columns
         SqlNodeList selectList = new SqlNodeList(SqlParserPos.ZERO);
         Table table = extractTable((SqlIdentifier) update.getTargetTable());
         if (table != null) {
