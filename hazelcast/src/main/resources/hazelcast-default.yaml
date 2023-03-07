@@ -331,7 +331,7 @@ hazelcast:
         # Whether disk-tier is enabled, and the name of the device to be used for the disk-tier
         # of the tiered-store instance of this map.
         disk-tier:
-          enabled: true
+          enabled: false
           device-name: "default-tiered-store-device"
 
 
