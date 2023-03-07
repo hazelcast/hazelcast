@@ -22,9 +22,9 @@ import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
 
 /**
- * Configuration options for the {@link TpcEngine}.
+ * The builder for the the {@link TpcEngine}.
  */
-public class Configuration {
+public class TpcEngineBuilder {
 
     public static final String NAME_REACTOR_COUNT = "hazelcast.tpc.reactor.count";
 
@@ -36,19 +36,32 @@ public class Configuration {
      * Sets the ReactorBuilder.
      *
      * @param reactorBuilder the reactorBuilder.
+     * @return this
      * @throws NullPointerException if reactorBuilder is null.
      */
-    public void setReactorBuilder(ReactorBuilder reactorBuilder) {
+    public TpcEngineBuilder setReactorBuilder(ReactorBuilder reactorBuilder) {
         this.reactorBuilder = checkNotNull(reactorBuilder, "reactorBuilder");
+        return this;
     }
 
     /**
      * Sets the number of reactors.
      *
      * @param reactorCount the number of reactors.
+     * @return this
      * @throws IllegalArgumentException if reactorCount smaller than 1.
      */
-    public void setReactorCount(int reactorCount) {
+    public TpcEngineBuilder setReactorCount(int reactorCount) {
         this.reactorCount = checkPositive(reactorCount, "reactorCount");
+        return this;
+    }
+
+    /**
+     * Builds a single TpcEngine instance.
+     *
+     * @return the created instance.
+     */
+    public TpcEngine build() {
+        return new TpcEngine(this);
     }
 }
