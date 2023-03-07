@@ -21,13 +21,11 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.apache.kafka.connect.connector.ConnectorContext;
 import org.apache.kafka.connect.source.SourceConnector;
-import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -43,14 +41,6 @@ public class ConnectorWrapper {
     private final List<TaskRunner> taskRunners = new CopyOnWriteArrayList<>();
     private final AtomicInteger taskIdGenerator = new AtomicInteger();
 
-    /**
-     * Key represents the partition which the record originated from. Value
-     * represents the offset within that partition. Kafka Connect represents
-     * the partition and offset as arbitrary values so that is why it is
-     * stored as map.
-     * See {@link SourceRecord} for more information regarding the format.
-     */
-    private final Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new ConcurrentHashMap<>();
     private final String name;
 
     public ConnectorWrapper(Properties properties) {
@@ -84,8 +74,8 @@ public class ConnectorWrapper {
     }
 
     public TaskRunner createTaskRunner() {
-        TaskRunner taskRunner = new TaskRunner(name + "-task-" + taskIdGenerator.getAndIncrement(),
-                partitionsToOffset, this::createSourceTask);
+        String taskName = name + "-task-" + taskIdGenerator.getAndIncrement();
+        TaskRunner taskRunner = new TaskRunner(taskName, this::createSourceTask);
         taskRunners.add(taskRunner);
         requestTaskReconfiguration();
         return taskRunner;
@@ -96,14 +86,6 @@ public class ConnectorWrapper {
         return newInstance(Thread.currentThread().getContextClassLoader(), taskClass.getName());
     }
 
-    public Map<Map<String, ?>, Map<String, ?>> createSnapshot() {
-        return partitionsToOffset;
-    }
-
-    public void restoreSnapshot(List<Map<Map<String, ?>, Map<String, ?>>> snapshots) {
-        this.partitionsToOffset.clear();
-        this.partitionsToOffset.putAll(snapshots.get(0));
-    }
 
     private class JetConnectorContext implements ConnectorContext {
 

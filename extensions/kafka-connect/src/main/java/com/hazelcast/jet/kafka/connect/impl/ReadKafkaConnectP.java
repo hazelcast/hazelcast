@@ -17,21 +17,31 @@
 package com.hazelcast.jet.kafka.connect.impl;
 
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.Map.Entry;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
+import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 
 public class ReadKafkaConnectP extends AbstractProcessor {
 
     private final ConnectorWrapper connectorWrapper;
     private final EventTimeMapper<? super SourceRecord> eventTimeMapper;
     private TaskRunner taskRunner;
+    private boolean snapshotInProgress;
+    private Traverser<Entry<BroadcastKey<String>, TaskRunner.State>> snapshotTraverser;
+    private boolean snapshotsEnabled;
+    private int processorIndex;
+    private Traverser<?> traverser;
 
     public ReadKafkaConnectP(ConnectorWrapper connectorWrapper, EventTimePolicy<? super SourceRecord> eventTimePolicy) {
         this.connectorWrapper = connectorWrapper;
@@ -42,7 +52,9 @@ public class ReadKafkaConnectP extends AbstractProcessor {
 
     @Override
     protected void init(@Nonnull Context context) {
-        this.taskRunner = connectorWrapper.createTaskRunner();
+        taskRunner = connectorWrapper.createTaskRunner();
+        snapshotsEnabled = context.snapshottingEnabled();
+        processorIndex = context.globalProcessorIndex();
     }
 
     @Override
@@ -52,13 +64,23 @@ public class ReadKafkaConnectP extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        emitFromTraverser(traverser());
+        if (snapshotInProgress) {
+            return false;
+        }
+        List<SourceRecord> sourceRecords = taskRunner.poll();
+        if (traverser == null) {
+            this.traverser = traverser(sourceRecords)
+                    .onFirstNull(() -> traverser = null);
+        }
+        emitFromTraverser(traverser);
+        for (SourceRecord rec : sourceRecords) {
+            taskRunner.commitRecord(rec);
+        }
         return false;
     }
 
     @Nonnull
-    public Traverser<?> traverser() {
-        List<SourceRecord> sourceRecords = taskRunner.poll();
+    public Traverser<?> traverser(List<SourceRecord> sourceRecords) {
         if (sourceRecords.isEmpty()) {
             return eventTimeMapper.flatMapIdle();
         }
@@ -68,6 +90,46 @@ public class ReadKafkaConnectP extends AbstractProcessor {
                     return eventTimeMapper.flatMapEvent(rec, 0, eventTime);
                 });
     }
+
+    @Override
+    public boolean saveToSnapshot() {
+        if (!snapshotsEnabled) {
+            return true;
+        }
+        snapshotInProgress = true;
+        if (snapshotTraverser == null) {
+            snapshotTraverser = Traversers.singleton(entry(snapshotKey(), taskRunner.createSnapshot()))
+                    .onFirstNull(() -> {
+                        snapshotTraverser = null;
+                        getLogger().finest("Finished saving snapshot");
+                    });
+        }
+        return emitFromTraverserToSnapshot(snapshotTraverser);
+    }
+
+    private BroadcastKey<String> snapshotKey() {
+        return broadcastKey("snapshot-" + processorIndex);
+    }
+
+    protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
+        boolean forThisProcessor = snapshotKey().equals(key);
+        if (forThisProcessor) {
+            taskRunner.restoreSnapshot((TaskRunner.State) value);
+        }
+    }
+
+    @Override
+    public boolean snapshotCommitFinish(boolean success) {
+        try {
+            if (success) {
+                taskRunner.commit();
+            }
+        } finally {
+            snapshotInProgress = false;
+        }
+        return true;
+    }
+
 
     @Override
     public void close() {

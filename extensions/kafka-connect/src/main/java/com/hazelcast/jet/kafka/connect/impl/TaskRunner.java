@@ -23,10 +23,12 @@ import org.apache.kafka.connect.source.SourceTask;
 import org.apache.kafka.connect.source.SourceTaskContext;
 import org.apache.kafka.connect.storage.OffsetStorageReader;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
@@ -35,16 +37,16 @@ class TaskRunner {
     private static final ILogger LOGGER = Logger.getLogger(TaskRunner.class);
     private final String name;
     private final ReentrantLock taskLifecycleLock = new ReentrantLock();
-    private final Map<Map<String, ?>, Map<String, ?>> partitionsToOffset;
+    private final State state = new State();
     private final SourceTaskFactory sourceTaskFactory;
     private volatile boolean running;
     private volatile boolean reconfigurationNeeded;
     private SourceTask task;
     private Map<String, String> taskConfig;
 
-    TaskRunner(String name, Map<Map<String, ?>, Map<String, ?>> partitionsToOffset, SourceTaskFactory sourceTaskFactory) {
+
+    TaskRunner(String name, SourceTaskFactory sourceTaskFactory) {
         this.name = name;
-        this.partitionsToOffset = partitionsToOffset;
         this.sourceTaskFactory = sourceTaskFactory;
     }
 
@@ -112,7 +114,7 @@ class TaskRunner {
                 if (taskConfig != null) {
                     SourceTask taskLocal = sourceTaskFactory.create();
                     LOGGER.info("Initializing task '" + name + "'");
-                    taskLocal.initialize(new JetSourceTaskContext(taskConfig, partitionsToOffset));
+                    taskLocal.initialize(new JetSourceTaskContext(taskConfig, state));
                     LOGGER.info("Starting task '" + name + "'");
                     taskLocal.start(taskConfig);
                     this.task = taskLocal;
@@ -126,14 +128,25 @@ class TaskRunner {
         }
     }
 
+    public void commit() {
+        if (running) {
+            try {
+                task.commit();
+            } catch (InterruptedException e) {
+                LOGGER.warning("Interrupted while committing");
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
     private static final class JetSourceTaskContext implements SourceTaskContext {
         private final Map<String, String> taskConfig;
-        private final Map<Map<String, ?>, Map<String, ?>> partitionsToOffset;
+        private final State state;
 
         private JetSourceTaskContext(Map<String, String> taskConfig,
-                                     Map<Map<String, ?>, Map<String, ?>> partitionsToOffset) {
+                                     State state) {
             this.taskConfig = taskConfig;
-            this.partitionsToOffset = partitionsToOffset;
+            this.state = state;
         }
 
         @Override
@@ -143,12 +156,34 @@ class TaskRunner {
 
         @Override
         public OffsetStorageReader offsetStorageReader() {
-            return new SourceOffsetStorageReader(partitionsToOffset);
+            return new SourceOffsetStorageReader(state.partitionsToOffset);
         }
     }
 
-    public void commitRecord(SourceRecord record) {
-        partitionsToOffset.put(record.sourcePartition(), record.sourceOffset());
+    public void commitRecord(SourceRecord rec) {
+        state.commitRecord(rec);
+        try {
+            if (running) {
+                task.commitRecord(rec, null);
+            }
+        } catch (InterruptedException ie) {
+            LOGGER.warning("Interrupted while committing record");
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    public State createSnapshot() {
+        State snapshot = new State();
+        snapshot.load(state);
+        return snapshot;
+    }
+
+    public void restoreSnapshot(State state) {
+        this.state.load(state);
+    }
+
+    public String getName() {
+        return name;
     }
 
     @Override
@@ -161,5 +196,62 @@ class TaskRunner {
     @FunctionalInterface
     interface SourceTaskFactory {
         SourceTask create();
+    }
+
+    static class State implements Serializable {
+
+        /**
+         * Key represents the partition which the record originated from. Value
+         * represents the offset within that partition. Kafka Connect represents
+         * the partition and offset as arbitrary values so that is why it is
+         * stored as map.
+         * See {@link SourceRecord} for more information regarding the format.
+         */
+        private final Map<Map<String, ?>, Map<String, ?>> partitionsToOffset;
+
+        State() {
+            this(new ConcurrentHashMap<>());
+        }
+
+        /**
+         * just for testing
+         */
+        State(Map<Map<String, ?>, Map<String, ?>> partitionsToOffset) {
+            this.partitionsToOffset = new ConcurrentHashMap<>(partitionsToOffset);
+        }
+
+        void commitRecord(SourceRecord rec) {
+            partitionsToOffset.put(rec.sourcePartition(), rec.sourceOffset());
+        }
+
+        void load(State state) {
+            partitionsToOffset.clear();
+            partitionsToOffset.putAll(state.partitionsToOffset);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            State state = (State) o;
+            return partitionsToOffset.equals(state.partitionsToOffset);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(partitionsToOffset);
+        }
+
+        @Override
+        public String toString() {
+            return "State{" +
+                    "partitionsToOffset=" + partitionsToOffset +
+                    '}';
+        }
     }
 }
