@@ -36,6 +36,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlMemoryManagementTest extends SqlTestSupport {
@@ -72,11 +73,18 @@ public class SqlMemoryManagementTest extends SqlTestSupport {
 
     private void test_changeJobConfig(Function<String, String[]> statementsFn) {
         String mapName = randomName();
-        createMapping(mapName, Integer.class, String.class);
+        createMapping(mapName, String.class, Integer.class);
 
         String jobName = randomName();
-        sqlService.execute("CREATE JOB " + jobName + " OPTIONS ('suspendOnFailure'='true') "
-                + "AS INSERT INTO " + mapName + " VALUES (0, '0'), (1, '1'), (2, '2')");
+        String sql = "CREATE JOB " + jobName + " OPTIONS ('suspendOnFailure'='true') " +
+                "AS INSERT INTO " + mapName + " " +
+                "SELECT window_start || '-' || (v % 3) AS key, 42 " +
+                "FROM TABLE(TUMBLE(" +
+                "(SELECT * FROM TABLE(IMPOSE_ORDER((SELECT v FROM TABLE(generate_stream(10))), DESCRIPTOR(v), 0)))," +
+                "DESCRIPTOR(v), 10))" +
+                "GROUP BY window_start, v % 3";
+        System.out.println(sql);
+        sqlService.execute(sql);
         Job job = instance().getJet().getJob(jobName);
         assertJobStatusEventually(job, SUSPENDED);
         assertThat(job.getSuspensionCause().errorCause())
@@ -85,7 +93,7 @@ public class SqlMemoryManagementTest extends SqlTestSupport {
         for (String statement : statementsFn.apply(jobName)) {
             sqlService.execute(statement);
         }
-        assertEqualsEventually(instance().getMap(mapName)::size, 3);
+        assertTrueEventually(() -> assertTrue(instance().getMap(mapName).size() >= 3), 3);
     }
 
     @Test
