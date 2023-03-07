@@ -1,3 +1,19 @@
+/*
+ * Copyright 2023 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.jet.sql.impl.connector.infoschema.DataLinksTable;
@@ -8,7 +24,6 @@ import com.hazelcast.sql.impl.schema.datalink.DataLink;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 
@@ -19,7 +34,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
 public class DataLinksResolver implements TableResolver {
-    // We contain separate schema, so separate resolver was implemented.
+    // It will be in the separate schema, so separate resolver is implemented.
     private static final List<List<String>> SEARCH_PATHS = singletonList(
             asList(CATALOG, SCHEMA_NAME_PUBLIC)
     );
@@ -48,11 +63,6 @@ public class DataLinksResolver implements TableResolver {
         if (dataLinkStorage.removeDataLink(name) == null && !ifExists) {
             throw QueryException.error("Data link does not exist: " + name);
         }
-    }
-
-    @Nonnull
-    public Collection<String> getDataLinkNames() {
-        return dataLinkStorage.dataLinkNames();
     }
 
     @Nonnull

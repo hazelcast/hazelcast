@@ -36,7 +36,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
+import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_NAME;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -83,7 +83,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("dataLinkRef must be set");
+                .hasMessageContaining("data-link-name must be set");
     }
 
     @Test
@@ -96,7 +96,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ") "
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
+                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
         ))
                 .isInstanceOf(HazelcastSqlException.class);
@@ -128,7 +128,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 + ") "
                 + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
+                + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
                 + ")"
         );
 
@@ -155,7 +155,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ") "
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
+                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
                 )
         ).isInstanceOf(HazelcastSqlException.class)
@@ -183,7 +183,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ") "
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
+                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
                 )
         ).isInstanceOf(HazelcastSqlException.class)
@@ -206,7 +206,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ") "
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
+                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
                 )
         ).isInstanceOf(HazelcastSqlException.class)
@@ -225,7 +225,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         execute("CREATE MAPPING " + tableName
                 + " TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                 + " OPTIONS ( "
-                + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
+                + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
                 + ")"
         );
 
@@ -265,7 +265,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         execute("CREATE MAPPING " + tableName
                 + " TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
+                + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
                 + ")"
         );
 

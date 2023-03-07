@@ -57,6 +57,7 @@ import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_LI
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_TYPE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_VIEW;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_DESTROY;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_DROP_LINK;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_DROP_TYPE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_DROP_VIEW;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_INDEX;
@@ -257,7 +258,11 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new SqlPermission(name, ACTION_VIEW_LINK, ACTION_CREATE_LINK));
+            if (isReplace()) {
+                context.checkPermission(new SqlPermission(name, ACTION_CREATE_LINK, ACTION_DROP_LINK));
+            } else {
+                context.checkPermission(new SqlPermission(name, ACTION_CREATE_LINK));
+            }
         }
 
         @Override
@@ -301,7 +306,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new SqlPermission(name, ACTION_VIEW_LINK, ACTION_CREATE_LINK));
+            context.checkPermission(new SqlPermission(name, ACTION_VIEW_LINK, ACTION_DROP_LINK));
         }
 
         @Override

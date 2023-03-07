@@ -28,7 +28,7 @@ import static java.util.Objects.requireNonNull;
 
 abstract class AbstractJdbcSqlConnectorProcessorSupplier implements ProcessorSupplier {
 
-    protected String dataLinkRef;
+    protected String dataLinkName;
 
     protected transient JdbcDataLink dataLink;
     protected transient DataSource dataSource;
@@ -36,17 +36,19 @@ abstract class AbstractJdbcSqlConnectorProcessorSupplier implements ProcessorSup
     AbstractJdbcSqlConnectorProcessorSupplier() {
     }
 
-    AbstractJdbcSqlConnectorProcessorSupplier(String dataLinkRef) {
-        this.dataLinkRef = requireNonNull(dataLinkRef, "dataLinkRef must not be null");
+    AbstractJdbcSqlConnectorProcessorSupplier(String dataLinkName) {
+        this.dataLinkName = requireNonNull(dataLinkName, "dataLinkName must not be null");
     }
 
     public void init(@Nonnull Context context) throws Exception {
-        dataLink = context.dataLinkService().getDataLink(dataLinkRef, JdbcDataLink.class);
+        dataLink = context.dataLinkService().getAndRetainDataLink(dataLinkName, JdbcDataLink.class);
         dataSource = new DataSourceFromConnectionSupplier(dataLink::getConnection);
     }
 
     @Override
     public void close(@Nullable Throwable error) throws Exception {
-        dataLink.close();
+        if (dataLink != null) {
+            dataLink.release();
+        }
     }
 }

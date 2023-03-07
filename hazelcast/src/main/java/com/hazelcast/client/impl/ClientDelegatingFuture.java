@@ -36,6 +36,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.util.Objects.requireNonNull;
 
@@ -64,7 +65,7 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
         this.decodedResponse = VOID;
         this.clientMessageDecoder = clientMessageDecoder;
         this.deserializeResponse = deserializeResponse;
-        this.future.whenComplete((v, t) -> completeSuper(v, (Throwable) t));
+        this.future.whenCompleteAsync((v, t) -> completeSuper(v, (Throwable) t), CALLER_RUNS);
     }
 
     public ClientDelegatingFuture(ClientInvocationFuture clientInvocationFuture,

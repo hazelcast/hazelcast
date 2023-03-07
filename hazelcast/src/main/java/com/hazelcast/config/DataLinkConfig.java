@@ -18,8 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.datalink.DataLink;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
-import com.hazelcast.jet.pipeline.BatchSource;
-import com.hazelcast.jet.pipeline.Sink;
+import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.nio.ObjectDataInput;
@@ -37,10 +36,11 @@ import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
- * Contains configuration of an data link that can be used as a
+ * A configuration of a data link that can be used:
  * <ul>
- * <li>{@link BatchSource} and {@link Sink} in Jet JDBC connector.</li>
- * <li>Data link for {@link MapStore} and {@link MapLoader} </li>
+ *     <li>to create a source or sink in a Jet {@link Pipeline},
+ *     <li>as a data link for {@link MapStore} and {@link MapLoader},
+ *     <li>to create an SQL mapping.
  * </ul>
  *
  * @since 5.3
@@ -90,8 +90,6 @@ public class DataLinkConfig implements IdentifiedDataSerializable, NamedConfig {
 
     /**
      * Returns the name of the {@link DataLink} implementation class
-     *
-     * @return the name of the {@link DataLink} implementation class
      */
     public String getClassName() {
         return className;
@@ -99,8 +97,6 @@ public class DataLinkConfig implements IdentifiedDataSerializable, NamedConfig {
 
     /**
      * Sets the name for the {@link DataLink} implementation class
-     *
-     * @param className the name to set for the {@link DataLink} implementation class
      */
     public DataLinkConfig setClassName(@Nonnull String className) {
         this.className = checkHasText(className, "Data link class name must contain text");
@@ -170,7 +166,7 @@ public class DataLinkConfig implements IdentifiedDataSerializable, NamedConfig {
      * @return this DataLinkConfig
      */
     public DataLinkConfig setProperties(Properties properties) {
-        this.properties = checkNotNull(properties, "Data link properties cannot be null!");
+        this.properties = checkNotNull(properties, "Data link properties cannot be null, they can be empty");
         return this;
     }
 

@@ -16,35 +16,40 @@
 
 package com.hazelcast.datalink;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.DataLinkConfig;
-import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 
 /**
- * DataLinkService provides access to existing {@link DataLink}s.
+ * The interface provides access to {@link DataLink}s for Jet processors. A Jet
+ * processor can obtain a reference to the service via {@link
+ * ProcessorMetaSupplier.Context#dataLinkService()}.
  * <p>
- * DataLinks can be configured via one of the following:
+ * DataLinks can be created via one of the following ways:
  * <ul>
- * <li>statically in the configuration</li>
- * <li>dynamically via {@link com.hazelcast.config.Config#addDataLinkConfig(DataLinkConfig)}</li>
- * <li>via SQL {@code CREATE DATA LINK ...} command</li>
+ *     <li>statically in the configuration
+ *     <li>dynamically via {@link Config#addDataLinkConfig(DataLinkConfig)}
+ *     <li>via SQL {@code CREATE DATA LINK ...} command
  * </ul>
+ *
  * @since 5.3
  */
-@Beta
 public interface DataLinkService {
 
     /**
-     * Returns DataLink with the given name.
+     * Returns {@link DataLink} with the given name and `retain` it (calls
+     * {@link DataLink#retain()}). The caller is responsible for calling
+     * {@link DataLink#release()} after it is done with the DataLink.
      * <p>
-     * Type checked against the provided clazz parameter.
-     * <p>
-     * The callers must call {@link DataLink#close()} after obtaining required
-     * resources (e.g. connections) from the data link to ensure correct
-     * cleanup of resources.
+     * Type is checked against the provided `clazz` argument.
      *
      * @param name  name of the DataLink
-     * @param clazz type of the DataLink
+     * @param clazz expected type of the DataLink
+     *
+     * @throws HazelcastException if the requested DataLink doesn't exist, or has
+     *     a different type than `clazz`
      */
-    <T extends DataLink> T getDataLink(String name, Class<T> clazz);
+    <T extends DataLink> T getAndRetainDataLink(String name, Class<T> clazz);
 
 }

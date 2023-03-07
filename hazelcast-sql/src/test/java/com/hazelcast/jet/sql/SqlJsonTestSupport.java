@@ -23,12 +23,14 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.internal.json.ParseException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -92,12 +94,16 @@ public abstract class SqlJsonTestSupport extends SqlTestSupport {
     }
 
     protected void assertJsonRowsAnyOrder(String sql, Collection<Row> rows) {
+        assertJsonRowsAnyOrder(sql, Collections.emptyList(), rows);
+    }
+
+    protected void assertJsonRowsAnyOrder(String sql, List<Object> params, Collection<Row> rows) {
         for (Row row : rows) {
             convertRow(row);
         }
 
         List<Row> actualRows = new ArrayList<>();
-        try (SqlResult result = instance().getSql().execute(sql)) {
+        try (SqlResult result = instance().getSql().execute(sql, params.toArray())) {
             result.iterator().forEachRemaining(row -> actualRows.add(convertRow(new Row(row))));
         }
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(rows);
@@ -108,8 +114,12 @@ public abstract class SqlJsonTestSupport extends SqlTestSupport {
         for (int i = 0; i < rowObj.length; i++) {
             if (rowObj[i] instanceof HazelcastJsonValue) {
                 HazelcastJsonValue value = (HazelcastJsonValue) rowObj[i];
-                if (Json.parse(value.getValue()) instanceof JsonObject) {
-                    rowObj[i] = new JsonObjectWithRelaxedEquality(value);
+                try {
+                    if (Json.parse(value.getValue()) instanceof JsonObject) {
+                        rowObj[i] = new JsonObjectWithRelaxedEquality(value);
+                    }
+                } catch (ParseException parseException) {
+                    throw new HazelcastException("Invalid JSON: " + value.getValue(), parseException);
                 }
             }
         }

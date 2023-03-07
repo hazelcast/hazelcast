@@ -38,7 +38,7 @@ import static java.util.Objects.requireNonNull;
 public class SqlDropDataLink extends SqlDrop {
 
     public static final SqlSpecialOperator DROP_DATA_LINK =
-            new SqlSpecialOperator("DROP DATA LINK", SqlKind.OTHER_FUNCTION);
+            new SqlSpecialOperator("DROP DATA LINK", SqlKind.OTHER_DDL);
 
     private final SqlIdentifier name;
 

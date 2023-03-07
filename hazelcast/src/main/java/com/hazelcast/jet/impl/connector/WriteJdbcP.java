@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
@@ -146,6 +147,54 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
 
                     @Nonnull
                     @Override
+                    public Collection<? extends Processor> get(int count) {
+                        return IntStream.range(0, count)
+                                .mapToObj(i -> new WriteJdbcP<>(updateQuery, dataSource, bindFn,
+                                        exactlyOnce, batchLimit))
+                                .collect(Collectors.toList());
+                    }
+
+                    @Override
+                    public List<Permission> permissions() {
+                        return singletonList(ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE));
+                    }
+                });
+    }
+
+    /**
+     * Use {@link SinkProcessors#writeJdbcP}.
+     */
+    public static <T> ProcessorMetaSupplier metaSupplier(
+            @Nullable String jdbcUrl,
+            @Nonnull String updateQuery,
+            @Nonnull String dataLinkName,
+            @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
+            boolean exactlyOnce,
+            int batchLimit
+    ) {
+        checkSerializable(bindFn, "bindFn");
+        checkPositive(batchLimit, "batchLimit");
+
+        return ProcessorMetaSupplier.preferLocalParallelismOne(
+                ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE),
+                new ProcessorSupplier() {
+                    private transient JdbcDataLink dataLink;
+                    private transient CommonDataSource dataSource;
+
+                    @Override
+                    public void init(@Nonnull Context context) {
+                        dataLink = context.dataLinkService().getAndRetainDataLink(dataLinkName, JdbcDataLink.class);
+                        dataSource = new DataSourceFromConnectionSupplier(dataLink::getConnection);
+                    }
+
+                    @Override
+                    public void close(Throwable error) throws Exception {
+                        if (dataLink != null) {
+                            dataLink.release();
+                        }
+                    }
+
+                    @Nonnull @Override
                     public Collection<? extends Processor> get(int count) {
                         return IntStream.range(0, count)
                                 .mapToObj(i -> new WriteJdbcP<>(updateQuery, dataSource, bindFn,

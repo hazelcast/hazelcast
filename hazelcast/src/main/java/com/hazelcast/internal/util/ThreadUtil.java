@@ -18,12 +18,33 @@ package com.hazelcast.internal.util;
 
 import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static java.lang.invoke.MethodType.methodType;
 
 /**
  * Utility class to manipulate and query thread ID.
  */
 public final class ThreadUtil {
+
+    private static final MethodHandle ON_SPIN_WAIT_REFERENCE;
+
+    static {
+        // Here we are trying to access java.lang.Thread.onSpinWait() method.
+        // The method is available after java version 9.
+        MethodHandle methodHandle = null;
+        try {
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            methodHandle = lookup.findStatic(Thread.class, "onSpinWait", methodType(void.class));
+        } catch (Exception ignored) {
+            ignore(ignored);
+        }
+
+        ON_SPIN_WAIT_REFERENCE = methodHandle;
+    }
 
     private static final ThreadLocal<Long> THREAD_LOCAL = new ThreadLocal<Long>();
 
@@ -92,4 +113,24 @@ public final class ThreadUtil {
     public static boolean isRunningOnPartitionThread() {
         return Thread.currentThread() instanceof PartitionOperationThread;
     }
+
+    /**
+     * Only valid with java 9 or later.
+     * <p>
+     * Caller thread of this method hints the runtime that it is
+     * busy-waiting. The runtime may take action to improve the
+     * performance of invoking spin-wait loop constructions.
+     */
+    public static void hintOnSpinWait() {
+        if (ON_SPIN_WAIT_REFERENCE == null) {
+            return;
+        }
+
+        try {
+            ON_SPIN_WAIT_REFERENCE.invokeExact();
+        } catch (Throwable ignored) {
+            ignore(ignored);
+        }
+    }
+
 }

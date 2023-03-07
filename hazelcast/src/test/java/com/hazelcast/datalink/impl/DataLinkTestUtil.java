@@ -19,10 +19,12 @@ package com.hazelcast.datalink.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.datalink.DataLink;
+import com.hazelcast.datalink.DataLinkBase;
 import com.hazelcast.datalink.DataLinkRegistration;
 import com.hazelcast.datalink.DataLinkResource;
 import com.hazelcast.datalink.JdbcDataLink;
 
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -61,41 +63,22 @@ public final class DataLinkTestUtil {
         config.getDataLinkConfigs().put(name, dataLinkConfig);
     }
 
-    public static class DummyDataLink implements DataLink {
+    public static class DummyDataLink extends DataLinkBase {
 
-        private final DataLinkConfig config;
         private boolean closed;
 
         public DummyDataLink(DataLinkConfig config) {
-            this.config = config;
+            super(config);
         }
 
-        @Override
-        public String getName() {
-            return config.getName();
-        }
-
+        @Nonnull
         @Override
         public List<DataLinkResource> listResources() {
             return Collections.emptyList();
         }
 
         @Override
-        public DataLinkConfig getConfig() {
-            return config;
-        }
-
-        @Override
-        public void retain() {
-
-        }
-
-        public Object getDataLink() {
-            return new Object();
-        }
-
-        @Override
-        public void close() throws Exception {
+        public void destroy() {
             closed = true;
         }
 
