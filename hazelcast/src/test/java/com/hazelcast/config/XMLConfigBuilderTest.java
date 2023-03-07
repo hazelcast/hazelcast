@@ -3483,15 +3483,14 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(MemoryUnit.GIGABYTES, memoryTierConfig.getCapacity().getUnit());
         assertEquals(1L, memoryTierConfig.getCapacity().getValue());
 
-        assertTrue(tieredStoreConfig.getDiskTierConfig().isEnabled());
-        assertEquals(DEFAULT_DEVICE_NAME, tieredStoreConfig.getDiskTierConfig().getDeviceName());
+        assertFalse(tieredStoreConfig.getDiskTierConfig().isEnabled());
 
         tieredStoreConfig = config.getMapConfig("map3").getTieredStoreConfig();
         memoryTierConfig = tieredStoreConfig.getMemoryTierConfig();
         assertEquals(DEFAULT_CAPACITY, memoryTierConfig.getCapacity());
 
         diskTierConfig = tieredStoreConfig.getDiskTierConfig();
-        assertTrue(diskTierConfig.isEnabled());
+        assertFalse(diskTierConfig.isEnabled());
         assertEquals(DEFAULT_DEVICE_NAME, diskTierConfig.getDeviceName());
 
         xml = HAZELCAST_START_TAG
