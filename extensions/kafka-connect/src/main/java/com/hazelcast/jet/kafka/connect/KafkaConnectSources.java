@@ -64,8 +64,8 @@ public final class KafkaConnectSources {
      * partition offsets, it will restore the partition offsets and
      * resume the consumption from where it left off.
      * <p>
-     * Hazelcast Jet will instantiate a single task for the specified
-     * source in the cluster.
+     * Hazelcast Jet will instantiate tasks on a random cluster member and use local parallelism for scaling.
+     * Scaling has to be enabled by setting `tasks.max` property. Default value for `tasks.max` is 1.
      *
      * @param properties Kafka connect properties
      * @return a source to use in {@link com.hazelcast.jet.pipeline.Pipeline#readFrom(StreamSource)}
