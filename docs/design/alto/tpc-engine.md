@@ -117,8 +117,8 @@ Each eventloop can handle many
 AsyncSockets/AsyncServerSockets/AsyncFiles, but each
 AsyncSocket/AsyncServerSocket/AsyncFile belongs to a single reactor.
 
-AsyncSocket and AsyncServerSockets are created using AsyncSocketBuilder
-and AsyncServerSocketBuilders. The big advantage of this approach is
+AsyncSocket and AsyncServerSocket are created using AsyncSocketBuilder
+and AsyncServerSocketBuilder. The big advantage of this approach is
 that most of the complexities of configuring the Async(Server)Socket can
 be moved to builders and seriously simplify the Async(Server)Socket.
 
