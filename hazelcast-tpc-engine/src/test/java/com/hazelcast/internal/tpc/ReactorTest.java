@@ -62,13 +62,13 @@ public abstract class ReactorTest {
     }
 
     @Test
-    public void test_context(){
+    public void test_context() {
         Reactor reactor = newReactor();
         assertNotNull(reactor.context());
     }
 
     @Test
-    public void test_scheduler(){
+    public void test_scheduler() {
         Reactor reactor = newReactor();
         assertNotNull(reactor.scheduler());
     }
