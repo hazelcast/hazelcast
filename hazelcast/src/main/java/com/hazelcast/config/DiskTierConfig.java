@@ -35,12 +35,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  */
 public class DiskTierConfig implements IdentifiedDataSerializable {
 
-    /**
-     * Default enabled value of disk tier.
-     */
-    public static final boolean DEFAULT_DISK_TIER_ENABLED = true;
-
-    private boolean enabled = DEFAULT_DISK_TIER_ENABLED;
+    private boolean enabled;
 
     private String deviceName = DEFAULT_DEVICE_NAME;
 
