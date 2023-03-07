@@ -32,9 +32,9 @@ import javax.annotation.Nonnull;
  * @since 5.3
  */
 @Beta
-public final class MongoDBSinks {
+public final class MongoSinks {
 
-    private MongoDBSinks() {
+    private MongoSinks() {
     }
 
     /**
@@ -74,12 +74,12 @@ public final class MongoDBSinks {
      * @param <T>                type of the items the sink accepts
      */
     @Beta
-    public static <T> MongoDBSinkBuilder<T> builder(
+    public static <T> MongoSinkBuilder<T> builder(
             @Nonnull String name,
             @Nonnull Class<T> itemClass,
             @Nonnull SupplierEx<MongoClient> clientSupplier
     ) {
-        return new MongoDBSinkBuilder<>(name, itemClass, clientSupplier);
+        return new MongoSinkBuilder<>(name, itemClass, clientSupplier);
     }
 
 
@@ -115,7 +115,7 @@ public final class MongoDBSinks {
             @Nonnull String database,
             @Nonnull String collection
     ) {
-        return MongoDBSinks
+        return MongoSinks
                 .builder(name, Document.class, () -> MongoClients.create(connectionString))
                 .into(database, collection)
                 .identifyDocumentBy("_id", doc -> doc.get("_id"))

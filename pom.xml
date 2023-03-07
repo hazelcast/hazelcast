@@ -82,7 +82,7 @@
         <maven.os.plugin.version>1.7.1</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
         <maven.resources.plugin.version>3.3.0</maven.resources.plugin.version>
-        <owasp.dependency-check.version>8.1.0</owasp.dependency-check.version>
+        <owasp.dependency-check.version>8.1.2</owasp.dependency-check.version>
         <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
         <codehause.license.plugin.version>2.0.0</codehause.license.plugin.version>
 
@@ -94,7 +94,7 @@
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.1</avro.version>
         <aws.sdk.version>1.12.414</aws.sdk.version>
-        <classgraph.version>4.8.155</classgraph.version>
+        <classgraph.version>4.8.156</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
         <grpc.version>1.48.0</grpc.version>
         <guava.version>31.1-jre</guava.version>
@@ -126,7 +126,7 @@
         Protobuf libraries for each language have own major version, but share minor and patch
         See https://developers.google.com/protocol-buffers/docs/news/2022-05-06
         -->
-        <protobuf.version>21.12</protobuf.version>
+        <protobuf.version>22.0</protobuf.version>
         <java.protobuf.version>3.${protobuf.version}</java.protobuf.version>
         <python.protobuf.version>4.${protobuf.version}</python.protobuf.version>
 
@@ -1815,7 +1815,7 @@
             <dependency>
                 <groupId>com.nimbusds</groupId>
                 <artifactId>nimbus-jose-jwt</artifactId>
-                <version>9.30.2</version>
+                <version>9.31</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.woodstox</groupId>
@@ -1920,7 +1920,7 @@
             <dependency>
                 <groupId>com.google.api.grpc</groupId>
                 <artifactId>proto-google-iam-v1</artifactId>
-                <version>1.8.0</version>
+                <version>1.9.2</version>
             </dependency>
             <!-- Force higher version, compatible with M1 -->
             <!-- Otherwise Docker for Java (used by TestContainers) is not able to load all JNA files for aarch64 -->

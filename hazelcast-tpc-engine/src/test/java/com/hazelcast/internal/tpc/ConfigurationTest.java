@@ -23,19 +23,19 @@ public class ConfigurationTest {
 
     @Test(expected = NullPointerException.class)
     public void test_setReactorBuilder_whenNull() {
-        Configuration configuration = new Configuration();
+        TpcEngineBuilder configuration = new TpcEngineBuilder();
         configuration.setReactorBuilder(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_setReactorCount_whenZero() {
-        Configuration configuration = new Configuration();
+        TpcEngineBuilder configuration = new TpcEngineBuilder();
         configuration.setReactorCount(0);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_setReactorCount_whenNegative() {
-        Configuration configuration = new Configuration();
+        TpcEngineBuilder configuration = new TpcEngineBuilder();
         configuration.setReactorCount(-1);
     }
 }

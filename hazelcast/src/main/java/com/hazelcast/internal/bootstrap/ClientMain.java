@@ -26,7 +26,7 @@ import static com.hazelcast.internal.bootstrap.TpcServerBootstrap.ALTO_ENABLED;
 import static com.hazelcast.internal.bootstrap.TpcServerBootstrap.ALTO_EVENTLOOP_COUNT;
 
 /**
- * Demo application for TPC. Will be removed in in the final release.
+ * Demo application for TPC. Will be removed in the final release.
  */
 @SuppressWarnings("all")
 public class ClientMain {
@@ -55,6 +55,7 @@ public class ClientMain {
         long duration = System.currentTimeMillis() - startTime;
         double throughput = count * 1000f / duration;
         System.out.println("Throughput:" + throughput + " op/s");
-        System.exit(0);
+        client.shutdown();
+        server.shutdown();
     }
 }

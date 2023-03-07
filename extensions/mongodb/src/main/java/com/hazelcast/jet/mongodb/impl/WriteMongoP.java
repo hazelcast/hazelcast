@@ -84,7 +84,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
      */
     private static final int MAX_BATCH_SIZE = 2_000;
 
-    private final MongoDbConnection connection;
+    private final MongoConnection connection;
     private final Class<I> documentType;
     private ILogger logger;
 
@@ -105,7 +105,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
      * Creates a new processor that will always insert to the same database and collection.
      */
     public WriteMongoP(WriteMongoParams<I> params) {
-        this.connection = new MongoDbConnection(params.clientSupplier, client -> {
+        this.connection = new MongoConnection(params.clientSupplier, client -> {
         });
         this.documentIdentityFn = params.documentIdentityFn;
         this.documentIdentityFieldName = params.documentIdentityFieldName;
