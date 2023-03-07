@@ -156,13 +156,15 @@ public class Mapping implements IdentifiedDataSerializable, Versioned {
         Mapping mapping = (Mapping) o;
         return Objects.equals(name, mapping.name)
                 && Objects.equals(externalName, mapping.externalName)
+                && Objects.equals(dataLink, mapping.dataLink)
                 && Objects.equals(type, mapping.type)
+                && Objects.equals(objectType, mapping.objectType)
                 && Objects.equals(mappingFields, mapping.mappingFields)
                 && Objects.equals(options, mapping.options);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, externalName, type, mappingFields, options);
+        return Objects.hash(name, externalName, dataLink, type, objectType, mappingFields, options);
     }
 }
