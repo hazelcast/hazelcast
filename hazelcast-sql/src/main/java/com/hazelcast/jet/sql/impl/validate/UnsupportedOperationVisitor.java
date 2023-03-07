@@ -502,6 +502,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         throw unsupported(call, operator.getName());
     }
 
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     private void processOtherDdl(SqlCall call) {
         if (!(call instanceof SqlCreateJob)
                 && !(call instanceof SqlDropJob)
