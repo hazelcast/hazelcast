@@ -69,7 +69,6 @@ import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastGetDdlFunc
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastMapValueConstructor;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastRowOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastSqlCase;
-import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastToRowFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastValuesOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastConcatOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastConcatWSOperator;
@@ -312,7 +311,6 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlSpecialOperator ROW = new HazelcastRowOperator();
     public static final SqlSpecialOperator COLLECTION_TABLE = new HazelcastCollectionTableOperator("TABLE");
     public static final SqlSpecialOperator MAP_VALUE_CONSTRUCTOR = new HazelcastMapValueConstructor();
-    public static final SqlFunction TO_ROW = HazelcastToRowFunction.INSTANCE;
 
     //#region System
 
