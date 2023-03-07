@@ -17,9 +17,9 @@
 package com.hazelcast.client.impl.proxy.txn;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.transaction.TransactionException;
 
 import java.util.concurrent.Future;
@@ -45,7 +45,7 @@ public final class ClientTransactionUtil {
      * sends IOException to user. This wraps that exception into a TransactionException.
      */
     public static ClientMessage invoke(ClientMessage request, Object objectName, HazelcastClientInstanceImpl client,
-                                       Connection connection) {
+                                       ClientConnection connection) {
         try {
             final ClientInvocation clientInvocation = new ClientInvocation(client, request, objectName, connection);
             final Future<ClientMessage> future = clientInvocation.invoke();

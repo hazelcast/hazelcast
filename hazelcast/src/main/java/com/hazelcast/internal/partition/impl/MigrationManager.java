@@ -107,6 +107,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeUnit.BOOLEAN;
 import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.memory.MemoryUnit.MEGABYTES;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_CHUNKED_MAX_MIGRATING_DATA_IN_MB;
@@ -1164,11 +1165,11 @@ public class MigrationManager {
 
                 try {
                     CompletionStage<Boolean> f = new AsyncMigrationTask(migration).run();
-                    f.thenRun(() -> {
+                    f.thenRunAsync(() -> {
                         logger.fine("AsyncMigrationTask completed: " + migration);
                         boolean offered = completed.offer(migration);
                         assert offered : "Failed to offer completed migration: " + migration;
-                    });
+                    }, CALLER_RUNS);
                 } catch (Throwable e) {
                     logger.warning("AsyncMigrationTask failed: " + migration, e);
                     boolean offered = completed.offer(migration);

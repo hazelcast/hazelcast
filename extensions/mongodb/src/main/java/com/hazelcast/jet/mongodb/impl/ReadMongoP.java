@@ -22,6 +22,7 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
+import com.hazelcast.jet.mongodb.impl.CursorTraverser.EmptyItem;
 import com.hazelcast.logging.ILogger;
 import com.mongodb.MongoException;
 import com.mongodb.MongoServerException;
@@ -38,7 +39,6 @@ import org.bson.BsonDocument;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import org.bson.types.ObjectId;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -53,7 +53,6 @@ import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.mongodb.impl.MongoUtilities.partitionAggregate;
-import static com.hazelcast.jet.mongodb.impl.MongoUtilities.readChunk;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.sort;
 import static com.mongodb.client.model.Filters.gt;
@@ -87,7 +86,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
     private boolean snapshotInProgress;
     private final MongoChunkedReader reader;
-    private final MongoDbConnection connection;
+    private final MongoConnection connection;
 
     private Traverser<?> traverser;
     private Traverser<Entry<BroadcastKey<Integer>, Object>> snapshotTraverser;
@@ -97,12 +96,12 @@ public class ReadMongoP<I> extends AbstractProcessor {
             EventTimeMapper<I> eventTimeMapper = new EventTimeMapper<>(params.eventTimePolicy);
             eventTimeMapper.addPartitions(1);
             this.reader = new StreamMongoReader(params.databaseName, params.collectionName, params.mapStreamFn,
-                    params.startAtTimestamp, params.aggregates, eventTimeMapper);
+                    params.getStartAtTimestamp(), params.aggregates, eventTimeMapper);
         } else {
             this.reader = new BatchMongoReader(params.databaseName, params.collectionName, params.mapItemFn,
                     params.aggregates);
         }
-        this.connection = new MongoDbConnection(params.clientSupplier, client -> reader.connect(client,
+        this.connection = new MongoConnection(params.clientSupplier, client -> reader.connect(client,
                 snapshotsEnabled));
     }
 
@@ -196,14 +195,8 @@ public class ReadMongoP<I> extends AbstractProcessor {
         boolean forThisProcessor = keyAb % totalParallelism == processorIndex;
         if (forThisProcessor) {
             if (!wm) {
-                Document currentRT = (Document) reader.snapshot();
-                ObjectId currentRTId = currentRT == null ? null : currentRT.getObjectId("_data");
-
-                ObjectId valueId = ((Document) value).getObjectId("_data");
-                if (currentRTId == null || valueId.getTimestamp() < currentRTId.getTimestamp()) {
-                    reader.restore(value);
-                    reader.connect(connection.client(), true);
-                }
+                reader.restore(value);
+                reader.connect(connection.client(), true);
             } else if (reader.supportsWatermarks()) {
                 reader.restoreWatermark((Long) value);
             }
@@ -372,7 +365,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
     private final class StreamMongoReader extends MongoChunkedReader {
         private final FunctionEx<ChangeStreamDocument<Document>, I> mapFn;
-        private final Long startTimestamp;
+        private final BsonTimestamp startTimestamp;
         private final List<Bson> aggregates;
         private final EventTimeMapper<I> eventTimeMapper;
         private MongoCursor<ChangeStreamDocument<Document>> cursor;
@@ -382,7 +375,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
                 String databaseName,
                 String collectionName,
                 FunctionEx<ChangeStreamDocument<Document>, I> mapFn,
-                Long startTimestamp,
+                BsonTimestamp startTimestamp,
                 List<Bson> aggregates,
                 EventTimeMapper<I> eventTimeMapper
         ) {
@@ -411,7 +404,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
             if (resumeToken != null) {
                 changeStream.resumeAfter(resumeToken);
             } else if (startTimestamp != null) {
-                changeStream.startAtOperationTime(new BsonTimestamp(startTimestamp));
+                changeStream.startAtOperationTime(startTimestamp);
             }
             cursor = changeStream.batchSize(BATCH_SIZE).fullDocument(UPDATE_LOOKUP).iterator();
         }
@@ -421,17 +414,17 @@ public class ReadMongoP<I> extends AbstractProcessor {
             return false;
         }
 
+        @SuppressWarnings("unchecked")
         @Nonnull
         @Override
         public Traverser<?> nextChunkTraverser() {
             try {
-                List<ChangeStreamDocument<Document>> chunk = readChunk(cursor, BATCH_SIZE);
-                if (chunk.isEmpty()) {
-                    return eventTimeMapper.flatMapIdle();
-                }
-
-                return traverseIterable(chunk)
-                        .flatMap(doc -> {
+                return new CursorTraverser(cursor)
+                        .flatMap(input -> {
+                            if (input instanceof EmptyItem) {
+                                return eventTimeMapper.flatMapIdle();
+                            }
+                            ChangeStreamDocument<Document> doc = (ChangeStreamDocument<Document>) input;
                             resumeToken = doc.getResumeToken();
                             long eventTime = clusterTime(doc);
                             I item = mapFn.apply(doc);
