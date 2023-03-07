@@ -172,16 +172,19 @@ public class TableResolverImpl implements TableResolver {
         SqlConnector connector;
         assert dataLink != null;
         InternalDataLinkService dataLinkService = nodeEngine.getDataLinkService();
-        if (!dataLinkService.existsDataLink(dataLink)) {
-            throw QueryException.error("Data link " + dataLink + " doesn't exists");
-        }
         com.hazelcast.datalink.DataLink dl = dataLinkService.getAndRetainDataLink(dataLink,
                 com.hazelcast.datalink.DataLink.class);
-
-        if (dl instanceof JdbcDataLink) {
-            connector = connectorCache.forType("JDBC");
-        } else {
-            throw QueryException.error("Unknown data link " + dl.getClass().getName());
+        if (dl == null) {
+            throw QueryException.error("Data link " + dataLink + " doesn't exists");
+        }
+        try {
+            if (dl instanceof JdbcDataLink) {
+                connector = connectorCache.forType("JDBC");
+            } else {
+                throw QueryException.error("Unknown data link " + dl.getClass().getName());
+            }
+        } finally {
+            dl.release();
         }
         return connector;
     }
