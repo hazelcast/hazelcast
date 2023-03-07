@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.schema.SqlCatalogObject;
 
 import java.io.IOException;
 import java.util.Map;
@@ -28,7 +29,7 @@ import java.util.Objects;
 /**
  * SQL schema POJO class.
  */
-public class DataLink implements IdentifiedDataSerializable {
+public class DataLink implements IdentifiedDataSerializable, SqlCatalogObject {
     private String name;
     private String type;
     private Map<String, String> options;
@@ -42,28 +43,47 @@ public class DataLink implements IdentifiedDataSerializable {
         this.options = options;
     }
 
-    public String getName() {
+    public String name() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getType() {
+    public String type() {
         return type;
     }
 
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public Map<String, String> getOptions() {
+    public Map<String, String> options() {
         return options;
     }
 
-    public void setOptions(Map<String, String> options) {
-        this.options = options;
+    @Override
+    public String unparse() {
+        StringBuilder buffer = new StringBuilder();
+
+        buffer.append("CREATE OR REPLACE DATA LINK ");
+        buffer.append("\"hazelcast\".\"public\".").append("\"").append(name).append("\" ");
+
+        buffer.append("TYPE").append(" \"");
+        buffer.append(type).append("\" ");
+
+        buffer.append("OPTIONS").append(" (");
+        if (options.size() > 0) {
+            int optionsSize = options.size() - 1;
+            for (Map.Entry<String, String> option : options.entrySet()) {
+                buffer.append("'")
+                        .append(option.getKey())
+                        .append("'")
+                        .append(" = ")
+                        .append("'")
+                        .append(option.getValue())
+                        .append("'");
+                if (optionsSize-- > 0) {
+                    buffer.append(",\n");
+                }
+            }
+        }
+        buffer.append(")\n");
+
+        return buffer.toString();
     }
 
     @Override

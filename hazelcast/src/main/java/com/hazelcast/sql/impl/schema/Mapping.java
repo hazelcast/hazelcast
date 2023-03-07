@@ -132,10 +132,10 @@ public class Mapping implements IdentifiedDataSerializable, SqlCatalogObject {
     @Override
     @Nonnull
     public String unparse() {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
 
-        buffer.append("CREATE OR REPLACE MAPPING");
-        buffer.append("\"hazelcast\".\"public\".").append(" \"").append(name()).append("\" ");
+        buffer.append("CREATE OR REPLACE MAPPING ");
+        buffer.append("\"hazelcast\".\"public\".").append("\"").append(name()).append("\" ");
 
         // external name defaults to mapping name - omit it if it's equal
         if (externalName() != null && !externalName().equals(name())) {

@@ -28,6 +28,8 @@ import com.hazelcast.sql.impl.schema.SqlCatalogObject;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
+import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_DATA_LINK;
 import static com.hazelcast.sql.impl.expression.string.StringFunctionUtils.asVarchar;
 
 public class GetDdlFunction extends TriExpression<String> implements IdentifiedDataSerializable {
@@ -57,13 +59,18 @@ public class GetDdlFunction extends TriExpression<String> implements IdentifiedD
 
         IMap sqlCatalog = context.getNodeEngine().getHazelcastInstance().getMap(SQL_CATALOG_MAP_NAME);
         final String ddl;
-        if (!namespace.equals(RELATION_NAMESPACE)) {
+        if (!(namespace.equals(RELATION_NAMESPACE) || namespace.equals(DATALINK_NAMESPACE))) {
             throw QueryException.error(
                     "Namespace '" + namespace + "' is not supported."
-                            + " Only '" + RELATION_NAMESPACE + "' namespace is supported.");
+                            + " Only '" + RELATION_NAMESPACE + "' and '" + DATALINK_NAMESPACE + "' namespaces are supported.");
         }
 
-        final Object obj = sqlCatalog.get(objectName);
+        String keyName = objectName;
+        if (namespace.equals(DATALINK_NAMESPACE)) {
+            keyName = wrap(objectName);
+        }
+
+        final Object obj = sqlCatalog.get(keyName);
         if (obj == null) {
             throw QueryException.error("Object '" + objectName + "' does not exist in namespace '" + namespace + "'");
         } else if (obj instanceof SqlCatalogObject) {
@@ -96,5 +103,9 @@ public class GetDdlFunction extends TriExpression<String> implements IdentifiedD
 
     public static GetDdlFunction create(Expression<?> namespace, Expression<?> objectName, Expression<?> schema) {
         return new GetDdlFunction(namespace, objectName, schema);
+    }
+
+    static String wrap(String dataLinkKey) {
+        return "\"" + CATALOG + "\".\"" + SCHEMA_NAME_DATA_LINK + "\"." + dataLinkKey + "\"";
     }
 }

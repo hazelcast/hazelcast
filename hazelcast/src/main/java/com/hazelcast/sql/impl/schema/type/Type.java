@@ -119,10 +119,10 @@ public class Type implements IdentifiedDataSerializable, Serializable, SqlCatalo
     @Override
     @Nonnull
     public String unparse() {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
 
-        buffer.append("CREATE OR REPLACE TYPE");
-        buffer.append(" \"").append(name).append("\" ");
+        buffer.append("CREATE OR REPLACE TYPE ");
+        buffer.append("\"").append(name).append("\" ");
 
         if (fields.size() > 0) {
             int fieldsSize = fields.size() - 1;
@@ -162,7 +162,7 @@ public class Type implements IdentifiedDataSerializable, Serializable, SqlCatalo
         return buffer.toString();
     }
 
-    private static void appendOption(StringBuffer buffer, String optionKey, String optionValue, boolean first) {
+    private static void appendOption(StringBuilder buffer, String optionKey, String optionValue, boolean first) {
         if (first) {
             buffer.append("'");
         } else {
@@ -177,7 +177,7 @@ public class Type implements IdentifiedDataSerializable, Serializable, SqlCatalo
                 .append("'");
     }
 
-    private static void appendOption(StringBuffer buffer, String optionKey, Integer optionValue, boolean first) {
+    private static void appendOption(StringBuilder buffer, String optionKey, Integer optionValue, boolean first) {
         if (first) {
             buffer.append("'");
         } else {

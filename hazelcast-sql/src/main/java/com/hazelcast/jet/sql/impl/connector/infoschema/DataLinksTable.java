@@ -57,9 +57,9 @@ public class DataLinksTable extends InfoSchemaTable {
             Object[] row = new Object[]{
                     catalog(),
                     dataLinkSchema,
-                    dl.getName(),
-                    dl.getType(),
-                    dl.getOptions().toString()
+                    dl.name(),
+                    dl.type(),
+                    dl.options().toString()
             };
             rows.add(row);
         }

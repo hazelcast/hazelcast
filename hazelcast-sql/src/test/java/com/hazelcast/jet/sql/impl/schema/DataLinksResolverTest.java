@@ -59,26 +59,26 @@ public class DataLinksResolverTest {
     public void when_createDataLink_then_succeeds() {
         // given
         DataLink dataLink = dataLink();
-        given(relationsStorage.putIfAbsent(dataLink.getName(), dataLink)).willReturn(true);
+        given(relationsStorage.putIfAbsent(dataLink.name(), dataLink)).willReturn(true);
 
         // when
         catalog.createDataLink(dataLink, false, false);
 
         // then
-        verify(relationsStorage).putIfAbsent(eq(dataLink.getName()), isA(DataLink.class));
+        verify(relationsStorage).putIfAbsent(eq(dataLink.name()), isA(DataLink.class));
     }
 
     @Test
     public void when_createsDataLinkIfNotExists_then_succeeds() {
         // given
         DataLink dataLink = dataLink();
-        given(relationsStorage.putIfAbsent(dataLink.getName(), dataLink)).willReturn(true);
+        given(relationsStorage.putIfAbsent(dataLink.name(), dataLink)).willReturn(true);
 
         // when
         catalog.createDataLink(dataLink, false, true);
 
         // then
-        verify(relationsStorage).putIfAbsent(eq(dataLink.getName()), isA(DataLink.class));
+        verify(relationsStorage).putIfAbsent(eq(dataLink.name()), isA(DataLink.class));
     }
 
     @Test
@@ -90,7 +90,7 @@ public class DataLinksResolverTest {
         catalog.createDataLink(dataLink, true, false);
 
         // then
-        verify(relationsStorage).put(eq(dataLink.getName()), isA(DataLink.class));
+        verify(relationsStorage).put(eq(dataLink.name()), isA(DataLink.class));
     }
 
     @Test
@@ -102,20 +102,20 @@ public class DataLinksResolverTest {
         catalog.createDataLink(dataLink, true, true);
 
         // then
-        verify(relationsStorage).putIfAbsent(eq(dataLink.getName()), isA(DataLink.class));
+        verify(relationsStorage).putIfAbsent(eq(dataLink.name()), isA(DataLink.class));
     }
 
     @Test
     public void when_createsDuplicateDataLink_then_throws() {
         // given
         DataLink dataLink = dataLink();
-        given(relationsStorage.putIfAbsent(eq(dataLink.getName()), isA(DataLink.class))).willReturn(false);
+        given(relationsStorage.putIfAbsent(eq(dataLink.name()), isA(DataLink.class))).willReturn(false);
 
         // when
         // then
         assertThatThrownBy(() -> catalog.createDataLink(dataLink, false, false))
                 .isInstanceOf(QueryException.class)
-                .hasMessageContaining("Data link already exists: " + dataLink.getName());
+                .hasMessageContaining("Data link already exists: " + dataLink.name());
     }
 
     @Test

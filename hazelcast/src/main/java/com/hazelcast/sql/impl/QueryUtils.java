@@ -46,7 +46,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class QueryUtils {
 
     public static final String SCHEMA_NAME_PUBLIC = "public";
-    public static final String SCHEMA_NAME_DATA_LINK = "data_link";
+    public static final String SCHEMA_NAME_DATA_LINK = "datalink";
     public static final String SCHEMA_NAME_INFORMATION_SCHEMA = "information_schema";
     public static final String CATALOG = "hazelcast";
 

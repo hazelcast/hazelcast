@@ -73,9 +73,9 @@ public class DataLinkStorageTest extends SimpleTestInClusterSupport {
         assertThat(storage.putIfAbsent(name, dataLink(name, "type-1"))).isTrue();
         assertThat(storage.putIfAbsent(name, dataLink(name, "type-2"))).isFalse();
         assertTrue(storage.allObjects().stream()
-                .anyMatch(dl -> dl instanceof DataLink && ((DataLink) dl).getType().equals("type-1")));
+                .anyMatch(dl -> dl instanceof DataLink && ((DataLink) dl).type().equals("type-1")));
         assertTrue(storage.allObjects().stream()
-                .noneMatch(dl -> dl instanceof DataLink && ((DataLink) dl).getType().equals("type-2")));
+                .noneMatch(dl -> dl instanceof DataLink && ((DataLink) dl).type().equals("type-2")));
     }
 
     @Test

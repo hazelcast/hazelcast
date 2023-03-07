@@ -51,11 +51,11 @@ public class DataLinksResolver implements TableResolver {
 
     public void createDataLink(DataLink dl, boolean replace, boolean ifNotExists) {
         if (ifNotExists) {
-            dataLinkStorage.putIfAbsent(dl.getName(), dl);
+            dataLinkStorage.putIfAbsent(dl.name(), dl);
         } else if (replace) {
-            dataLinkStorage.put(dl.getName(), dl);
-        } else if (!dataLinkStorage.putIfAbsent(dl.getName(), dl)) {
-            throw QueryException.error("Data link already exists: " + dl.getName());
+            dataLinkStorage.put(dl.name(), dl);
+        } else if (!dataLinkStorage.putIfAbsent(dl.name(), dl)) {
+            throw QueryException.error("Data link already exists: " + dl.name());
         }
     }
 

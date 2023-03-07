@@ -49,7 +49,7 @@ public class DataLinkStorage extends AbstractSchemaStorage {
         return storage().values()
                 .stream()
                 .filter(m -> m instanceof DataLink)
-                .map(m -> ((DataLink) m).getName())
+                .map(m -> ((DataLink) m).name())
                 .collect(Collectors.toList());
     }
 
@@ -61,7 +61,7 @@ public class DataLinkStorage extends AbstractSchemaStorage {
                 .collect(Collectors.toList());
     }
 
-    private static String wrap(String dataLinkKey) {
+    static String wrap(String dataLinkKey) {
         return KEY_PREFIX + dataLinkKey + "\"";
     }
 }
