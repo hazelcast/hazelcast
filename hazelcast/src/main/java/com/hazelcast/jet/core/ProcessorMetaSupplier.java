@@ -36,6 +36,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.PermissionsUtil;
+import com.hazelcast.spi.annotation.Beta;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
@@ -482,8 +483,10 @@ public interface ProcessorMetaSupplier extends Serializable {
      * @param supplier                  the supplier that will be wrapped
      * @param preferredLocalParallelism the value to return from {@link #preferredLocalParallelism()}
      * @return the wrapped {@code ProcessorMetaSupplier}
+     * @since 5.3
      */
     @Nonnull
+    @Beta
     static ProcessorMetaSupplier preferLocalParallelismOnSingleMember(
             @Nonnull ProcessorSupplier supplier,
             int preferredLocalParallelism
