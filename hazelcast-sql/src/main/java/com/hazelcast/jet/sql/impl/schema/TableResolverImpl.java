@@ -175,7 +175,7 @@ public class TableResolverImpl implements TableResolver {
         if (!dataLinkService.existsDataLink(dataLink)) {
             throw QueryException.error("Data link " + dataLink + " doesn't exists");
         }
-        com.hazelcast.datalink.DataLink dl = dataLinkService.getDataLink(dataLink,
+        com.hazelcast.datalink.DataLink dl = dataLinkService.getAndRetainDataLink(dataLink,
                 com.hazelcast.datalink.DataLink.class);
 
         if (dl instanceof JdbcDataLink) {

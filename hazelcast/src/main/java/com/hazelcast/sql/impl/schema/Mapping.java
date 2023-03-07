@@ -63,6 +63,24 @@ public class Mapping implements IdentifiedDataSerializable, Versioned {
         this.options = options;
     }
 
+    public Mapping(
+            String name,
+            String externalName,
+            String dataLink,
+            String type,
+            String objectType,
+            List<MappingField> fields,
+            Map<String, String> options
+    ) {
+        this.name = name;
+        this.externalName = externalName;
+        this.dataLink = dataLink;
+        this.type = type;
+        this.objectType = objectType;
+        this.mappingFields = fields;
+        this.options = options;
+    }
+
     public String name() {
         return name;
     }

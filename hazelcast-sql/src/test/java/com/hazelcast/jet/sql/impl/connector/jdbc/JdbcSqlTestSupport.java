@@ -166,7 +166,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         try (SqlResult result = instance().getSql().execute("CREATE OR REPLACE MAPPING " + name +
                 " DATA LINK " + dataLink + "\n"
                 + "OPTIONS ( "
-                + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
+                + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
                 + ")"
         )) {
             assertThat(result.updateCount()).isEqualTo(0);
