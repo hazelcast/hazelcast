@@ -58,7 +58,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public abstract class AbstractJobProxy<C, M> implements Job {
 
     private static final long TERMINATE_RETRY_DELAY_NS = MILLISECONDS.toNanos(100);
-    private static final String NOT_LOADED = "NOT_LOADED";
+    private static final String NOT_LOADED = new String("NOT_LOADED");
 
     /** Null for normal jobs, non-null for light jobs  */
     protected final M lightJobCoordinator;
@@ -327,7 +327,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     protected abstract JobConfig doGetJobConfig();
 
     /**
-     * Sends a {@link UpdateJobConfigOperation} to the master member. On the master member,
+     * Sends an {@link UpdateJobConfigOperation} to the master member. On the master member,
      * if the job is SUSPENDED, the job record is updated both locally and {@linkplain
      * JobRepository#JOB_RECORDS_MAP_NAME globally} (in order for {@link #getConfig()} to
      * reflect the changes); otherwise, the operation fails.
