@@ -1,9 +1,13 @@
-package com.hazelcast.internal.tpcengine.net;
+package com.hazelcast.nio.ssl;
 
 import javax.net.ssl.SSLEngine;
 import java.net.SocketAddress;
 import java.util.Properties;
 
+/**
+ * This class comes from EE. Probably this class needs to remain in OS, so that the
+ * {@link com.hazelcast.internal.tpc.AsyncSocketBuilder} can rely on it.
+ */
 public interface SSLEngineFactory {
 
     /**

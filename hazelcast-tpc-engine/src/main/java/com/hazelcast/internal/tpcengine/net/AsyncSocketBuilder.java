@@ -19,6 +19,8 @@ package com.hazelcast.internal.tpcengine.net;
 import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.Reactor;
 
+import com.hazelcast.nio.ssl.SSLEngineFactory;
+
 import java.util.concurrent.Executor;
 
 /**

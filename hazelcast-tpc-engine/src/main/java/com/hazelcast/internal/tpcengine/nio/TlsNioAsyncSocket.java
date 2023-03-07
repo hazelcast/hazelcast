@@ -719,7 +719,7 @@ public class TlsNioAsyncSocket extends AsyncSocket {
                 close("Failed to execute SSL/TLS handshake task.", e);
                 throw ExceptionUtil.sneakyThrow(e);
             } finally {
-                if (!reactor.offer(handler)){
+                if (!reactor.offer(handler)) {
                     close("Failed to reschedule the TlsHandler after running the SSL/TLS handshake tasks.", null);
                 }
             }
