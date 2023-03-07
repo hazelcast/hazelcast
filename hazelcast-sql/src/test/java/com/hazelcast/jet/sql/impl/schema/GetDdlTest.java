@@ -44,7 +44,7 @@ public class GetDdlTest extends SqlTestSupport {
         createMapping("a", int.class, int.class);
 
         assertRowsAnyOrder("SELECT GET_DDL('relation', 'a')", ImmutableList.of(
-                new Row("CREATE MAPPING \"a\" " +
+                new Row("CREATE OR REPLACE MAPPING \"hazelcast\".\"public\".\"a\" " +
                         "(__key INTEGER EXTERNAL NAME __key, this INTEGER EXTERNAL NAME this) \n" +
                         "TYPE IMap \n" +
                         "OPTIONS( \n" +
@@ -69,7 +69,7 @@ public class GetDdlTest extends SqlTestSupport {
 
     @Test
     public void when_queryTypeFromTableNamespace_then_success() {
-        String createTypeQuery = "CREATE TYPE \"t\" (a INTEGER, b INTEGER) OPTIONS (\n"
+        String createTypeQuery = "CREATE OR REPLACE TYPE \"t\" (a INTEGER, b INTEGER) OPTIONS (\n"
                 + "'format' = 'portable', 'portableFactoryId' = '1', "
                 + "'portableClassId' = '3', 'portableClassVersion' = '0')\n";
 
@@ -140,7 +140,8 @@ public class GetDdlTest extends SqlTestSupport {
         instance().getMap("a").put(1, "a");
 
         assertRowsAnyOrder("SELECT GET_DDL('relation', this) FROM a",
-                ImmutableList.of(new Row("CREATE MAPPING \"a\" " +
+                ImmutableList.of(new Row(
+                        "CREATE OR REPLACE MAPPING \"hazelcast\".\"public\".\"a\" " +
                         "(__key INTEGER EXTERNAL NAME __key, this VARCHAR EXTERNAL NAME this) \n" +
                         "TYPE IMap \n" +
                         "OPTIONS( \n" +
