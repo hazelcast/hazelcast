@@ -42,10 +42,20 @@ public class PartitioningAttributeConfig implements IdentifiedDataSerializable {
         this.attributeName = attributeName;
     }
 
+    /**
+     * Returns the name of the attribute.
+     *
+     * @return string with the name of the attribute
+     */
     public String getAttributeName() {
         return attributeName;
     }
 
+    /**
+     * Sets the name of the attribute. Used internally only.
+     *
+     * @param attributeName - name of the attribute to set.
+     */
     public void setAttributeName(final String attributeName) {
         this.attributeName = attributeName;
     }

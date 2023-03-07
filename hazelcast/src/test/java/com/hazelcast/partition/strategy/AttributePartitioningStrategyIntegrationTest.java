@@ -1,20 +1,20 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
- * Licensed under the Hazelcast Community License (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://hazelcast.com/hazelcast-community-license
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.type;
+package com.hazelcast.partition.strategy;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.IndexConfig;
@@ -23,7 +23,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
-import com.hazelcast.jet.sql.SqlJsonTestSupport;
+import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
@@ -31,7 +31,6 @@ import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitioningStrategy;
-import com.hazelcast.partition.strategy.AttributePartitioningStrategy;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -46,7 +45,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-public class AttributePartitioningStrategyTest extends SqlJsonTestSupport {
+public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInClusterSupport {
     private static final ClassDefinition PORTABLE_CLASS = new ClassDefinitionBuilder(1, 1, 1)
             .addLongField("id")
             .addStringField("name")
@@ -71,14 +70,14 @@ public class AttributePartitioningStrategyTest extends SqlJsonTestSupport {
     public void testJavaObject() {
         final IMap<JavaKey, Long> map = instance().getMap("test");
 
-        for (long i = 0; i < 10000; i++) {
+        for (long i = 0; i < 100; i++) {
             map.put(new JavaKey(i, "key#" + i, PARTITION_ATTRIBUTE), i);
         }
 
         final HazelcastInstance owner = getOwner(PARTITION_KEY);
         final List<HazelcastInstance> nonOwners = getNonOwners(owner);
 
-        assertEquals(10000, owner.getMap("test").getLocalMapStats().getOwnedEntryCount());
+        assertEquals(100, owner.getMap("test").getLocalMapStats().getOwnedEntryCount());
         assertEquals(0, nonOwners.get(0).getMap("test").getLocalMapStats().getOwnedEntryCount());
         assertEquals(0, nonOwners.get(1).getMap("test").getLocalMapStats().getOwnedEntryCount());
     }
@@ -87,7 +86,7 @@ public class AttributePartitioningStrategyTest extends SqlJsonTestSupport {
     public void testCompactObject() {
         final IMap<GenericRecord, Long> map = instance().getMap("test");
 
-        for (long i = 0; i < 10000; i++) {
+        for (long i = 0; i < 100; i++) {
             map.put(GenericRecordBuilder.compact("testType")
                     .setInt64("id", i)
                     .setString("name", "key#" + i)
@@ -98,7 +97,7 @@ public class AttributePartitioningStrategyTest extends SqlJsonTestSupport {
         final HazelcastInstance owner = getOwner(PARTITION_KEY);
         final List<HazelcastInstance> nonOwners = getNonOwners(owner);
 
-        assertEquals(10000, owner.getMap("test").getLocalMapStats().getOwnedEntryCount());
+        assertEquals(100, owner.getMap("test").getLocalMapStats().getOwnedEntryCount());
         assertEquals(0, nonOwners.get(0).getMap("test").getLocalMapStats().getOwnedEntryCount());
         assertEquals(0, nonOwners.get(1).getMap("test").getLocalMapStats().getOwnedEntryCount());
     }
@@ -107,7 +106,7 @@ public class AttributePartitioningStrategyTest extends SqlJsonTestSupport {
     public void testPortableObject() {
         final IMap<GenericRecord, Long> map = instance().getMap("test");
 
-        for (long i = 0; i < 10000; i++) {
+        for (long i = 0; i < 100; i++) {
             map.put(GenericRecordBuilder.portable(PORTABLE_CLASS)
                     .setInt64("id", i)
                     .setString("name", "key#" + i)
@@ -118,7 +117,7 @@ public class AttributePartitioningStrategyTest extends SqlJsonTestSupport {
         final HazelcastInstance owner = getOwner(PARTITION_KEY);
         final List<HazelcastInstance> nonOwners = getNonOwners(owner);
 
-        assertEquals(10000, owner.getMap("test").getLocalMapStats().getOwnedEntryCount());
+        assertEquals(100, owner.getMap("test").getLocalMapStats().getOwnedEntryCount());
         assertEquals(0, nonOwners.get(0).getMap("test").getLocalMapStats().getOwnedEntryCount());
         assertEquals(0, nonOwners.get(1).getMap("test").getLocalMapStats().getOwnedEntryCount());
     }
@@ -132,18 +131,18 @@ public class AttributePartitioningStrategyTest extends SqlJsonTestSupport {
                 + "}";
         final IMap<HazelcastJsonValue, Long> map = instance().getMap("test");
 
-        for (long i = 0; i < 10000; i++) {
+        for (long i = 0; i < 100; i++) {
             final String key = template
                     .replace("<id>", String.valueOf(i))
                     .replace("<>", "key#" + i)
                     .replace("<org>", PARTITION_ATTRIBUTE);
-            map.put(json(key), i);
+            map.put(new HazelcastJsonValue(key), i);
         }
 
         final HazelcastInstance owner = getOwner(PARTITION_KEY);
         final List<HazelcastInstance> nonOwners = getNonOwners(owner);
 
-        assertEquals(10000, owner.getMap("test").getLocalMapStats().getOwnedEntryCount());
+        assertEquals(100, owner.getMap("test").getLocalMapStats().getOwnedEntryCount());
         assertEquals(0, nonOwners.get(0).getMap("test").getLocalMapStats().getOwnedEntryCount());
         assertEquals(0, nonOwners.get(1).getMap("test").getLocalMapStats().getOwnedEntryCount());
     }

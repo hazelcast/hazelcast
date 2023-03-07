@@ -32,7 +32,7 @@ import java.io.Serializable;
 @SerializableByConvention
 public class AttributePartitioningStrategy implements PartitioningStrategy {
 
-    private String[] attributes;
+    private final String[] attributes;
 
     public AttributePartitioningStrategy(String... attributes) {
         this.attributes = attributes;
@@ -45,66 +45,66 @@ public class AttributePartitioningStrategy implements PartitioningStrategy {
             return null;
         }
 
-        final Object[] values = new Object[attributes.length];
         if (key instanceof InternalGenericRecord) {
-            if (!extractFromGenericRecord((InternalGenericRecord) key, values)) {
+            return extractFromGenericRecord((InternalGenericRecord) key);
+        }
+
+        if (key instanceof HazelcastJsonValue) {
+            return extractFromJson(key);
+        }
+
+        if (key instanceof DataSerializable || key instanceof Serializable) {
+            return extractFromPojo(key);
+        }
+
+        // fall back to default partition calculation for Portable and Compact POJOs
+        return null;
+    }
+
+    private Object[] extractFromPojo(final Object key) {
+        final Object[] values = new Object[attributes.length];
+        for (int i = 0; i < attributes.length; i++) {
+            final String attribute = attributes[i];
+            final Object value = ReflectionUtils.getFieldValue(attribute, key);
+            if (value == null) {
                 return null;
             }
-        } else if (key instanceof HazelcastJsonValue) {
-            if (!extractFromJson(key, values)) {
-                return null;
-            }
-        } else if (key instanceof DataSerializable || key instanceof Serializable) {
-            if (!extractFromPojo(key, values)) {
-                return null;
-            }
-        } else {
-            // fall back to default partition calculation for Portable and Compact POJOs
-            return null;
+            values[i] = value;
         }
 
         return values;
     }
 
-    private boolean extractFromPojo(final Object key, final Object[] values) {
-        for (int i = 0; i < attributes.length; i++) {
-            final String attribute = attributes[i];
-            final Object value = ReflectionUtils.getFieldValue(attribute, key);
-            if (value == null) {
-                return false;
-            }
-            values[i] = value;
-        }
-        return true;
-    }
-
-    private boolean extractFromJson(final Object key, final Object[] values) {
+    private Object[] extractFromJson(final Object key) {
+        final Object[] values = new Object[attributes.length];
         for (int i = 0; i < attributes.length; i++) {
             final Object value = JsonGetter.INSTANCE.getValue(key, attributes[i]);
             if (value == null) {
-                return false;
+                return null;
             }
             values[i] = value;
         }
-        return true;
+
+        return values;
     }
 
-    private boolean extractFromGenericRecord(final InternalGenericRecord key, final Object[] values) {
+    private Object[] extractFromGenericRecord(final InternalGenericRecord key) {
+        final Object[] values = new Object[attributes.length];
         final GenericRecordQueryReader reader = new GenericRecordQueryReader(key);
         for (int i = 0; i < attributes.length; i++) {
             final String attribute = attributes[i];
             try {
                 final Object value = reader.read(attribute);
                 if (value == null) {
-                    return false;
+                    return null;
                 }
                 values[i] = value;
             } catch (IOException exception) {
-                return false;
+                return null;
             }
         }
 
-        return true;
+        return values;
     }
 
     public String[] getPartitioningAttributes() {
