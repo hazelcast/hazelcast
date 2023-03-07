@@ -36,6 +36,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+
 public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<Void, List<SimpleEntry<UUID, UUID>>> {
 
     private static final Permission REQUIRED_PERMISSION = new ManagementPermission("cp.getCPMembers");
@@ -50,7 +52,7 @@ public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<Void, List
                 nodeEngine.getHazelcastInstance().getCPSubsystem().getCPSubsystemManagementService();
         ClusterService clusterService = nodeEngine.getClusterService();
         return cpService.getCPMembers().toCompletableFuture()
-                .thenApply(cpMembers -> {
+                .thenApplyAsync(cpMembers -> {
                     List<SimpleEntry<UUID, UUID>> result = new ArrayList<>(cpMembers.size());
                     for (CPMember cpMember : cpMembers) {
                         Member member = clusterService.getMember(cpMember.getAddress());
@@ -58,7 +60,7 @@ public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<Void, List
                         result.add(new SimpleEntry<>(cpMember.getUuid(), apUuid));
                     }
                     return result;
-                });
+                }, CALLER_RUNS);
     }
 
     @Override
