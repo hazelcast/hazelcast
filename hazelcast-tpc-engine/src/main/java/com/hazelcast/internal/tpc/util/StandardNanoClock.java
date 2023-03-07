@@ -29,4 +29,8 @@ public class StandardNanoClock implements NanoClock {
     public long nanoTime() {
         return System.nanoTime() - START_TIME;
     }
+
+    @Override
+    public void update() {
+    }
 }
