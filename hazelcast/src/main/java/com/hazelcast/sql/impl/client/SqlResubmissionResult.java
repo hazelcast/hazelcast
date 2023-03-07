@@ -16,11 +16,11 @@
 
 package com.hazelcast.sql.impl.client;
 
-import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.sql.SqlRowMetadata;
 
 class SqlResubmissionResult {
-    private final Connection connection;
+    private final ClientConnection connection;
     private final SqlError sqlError;
     private final SqlRowMetadata rowMetadata;
     private final SqlPage rowPage;
@@ -34,7 +34,7 @@ class SqlResubmissionResult {
         this.updateCount = 0;
     }
 
-    SqlResubmissionResult(Connection connection, SqlRowMetadata rowMetadata, SqlPage rowPage, long updateCount) {
+    SqlResubmissionResult(ClientConnection connection, SqlRowMetadata rowMetadata, SqlPage rowPage, long updateCount) {
         this.connection = connection;
         this.rowMetadata = rowMetadata;
         this.rowPage = rowPage;
@@ -42,7 +42,7 @@ class SqlResubmissionResult {
         this.sqlError = null;
     }
 
-    Connection getConnection() {
+    ClientConnection getConnection() {
         return connection;
     }
 

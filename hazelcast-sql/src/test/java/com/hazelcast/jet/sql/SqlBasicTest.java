@@ -72,6 +72,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.TimeZone;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -655,6 +656,8 @@ public class SqlBasicTest extends SqlTestSupport {
 
     abstract static class AbstractPojo implements Serializable {
 
+        private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
+
         protected boolean booleanVal;
 
         protected byte tinyIntVal;
@@ -709,7 +712,11 @@ public class SqlBasicTest extends SqlTestSupport {
             timeVal = timestampVal.toLocalTime();
 
             tsTzDateVal = new Date();
-            tsTzCalendarVal = (GregorianCalendar) GregorianCalendar.getInstance();
+            // GregorianCalendar with different timezones has different serialized length.
+            // It seems to vary between approximately 1000 and 2000 bytes.
+            // Use specific timezone to decrease variations between environments.
+            // Some tests (e.g. HD) have limited amount of memory which can be exceeded by longer values.
+            tsTzCalendarVal = (GregorianCalendar) GregorianCalendar.getInstance(UTC);
             tsTzInstantVal = Instant.now();
             tsTzOffsetDateTimeVal = OffsetDateTime.now();
             tsTzZonedDateTimeVal = ZonedDateTime.now();

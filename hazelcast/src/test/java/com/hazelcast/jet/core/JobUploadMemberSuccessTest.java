@@ -30,7 +30,7 @@ import org.junit.experimental.categories.Category;
 import java.io.IOException;
 import java.nio.file.Path;
 
-import static com.hazelcast.jet.core.JobUploadClientFailureTest.copyJar;
+import static com.hazelcast.jet.core.JobUploadClientFailureTest.getJarPath;
 import static com.hazelcast.jet.core.JobUploadClientSuccessTest.assertJobIsRunning;
 
 
@@ -45,10 +45,7 @@ public class JobUploadMemberSuccessTest extends JetTestSupport {
 
     @Test
     public void test_jarUpload_whenResourceUploadIsEnabled() throws IOException {
-
-        // Copy the jar because it will be deleted
-        String memberSimpleJob = "member2.jar";
-        Path newPath = copyJar(memberSimpleJob);
+        Path path = getJarPath();
 
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
@@ -58,7 +55,7 @@ public class JobUploadMemberSuccessTest extends JetTestSupport {
         JetService jetService = hazelcastInstance.getJet();
 
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                .setJarPath(newPath);
+                .setJarPath(path);
 
         jetService.submitJobFromJar(submitJobParameters);
 
@@ -67,10 +64,7 @@ public class JobUploadMemberSuccessTest extends JetTestSupport {
 
     @Test
     public void test_jarUpload_withMainClassname() throws IOException {
-
-        // Copy the jar because it will be deleted
-        String memberSimpleJob = "member3.jar";
-        Path newPath = copyJar(memberSimpleJob);
+        Path path = getJarPath();
 
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
@@ -80,7 +74,7 @@ public class JobUploadMemberSuccessTest extends JetTestSupport {
         JetService jetService = hazelcastInstance.getJet();
 
         SubmitJobParameters submitJobParameters = new SubmitJobParameters()
-                .setJarPath(newPath)
+                .setJarPath(path)
                 .setMainClass("org.example.Main");
 
         jetService.submitJobFromJar(submitJobParameters);

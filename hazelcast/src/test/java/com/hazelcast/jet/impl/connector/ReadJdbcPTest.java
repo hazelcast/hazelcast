@@ -37,8 +37,8 @@ import java.util.Map.Entry;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.impl.connector.DataLinkTestUtil.configureDummyDataLink;
-import static com.hazelcast.jet.impl.connector.DataLinkTestUtil.configureJdbcDataLink;
+import static com.hazelcast.datalink.impl.DataLinkTestUtil.configureDummyDataLink;
+import static com.hazelcast.datalink.impl.DataLinkTestUtil.configureJdbcDataLink;
 import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertAnyOrder;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertOrdered;
@@ -132,7 +132,7 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
                 .writeTo(assertAnyOrder(tableContents));
 
         assertThatThrownBy(() -> instance().getJet().newJob(p).join())
-                .hasMessageContaining("Data link factory 'non-existing-data-link' not found");
+                .hasMessageContaining("Data link 'non-existing-data-link' not found");
     }
 
     @Test
@@ -150,7 +150,8 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
                 .writeTo(assertAnyOrder(tableContents));
 
         assertThatThrownBy(() -> instance().getJet().newJob(p).join())
-                .hasMessageContaining("Data link factory '" + DUMMY_DATA_LINK + "' must be an instance of JdbcDataLinkFactory");
+                .hasMessageContaining("Data link '" + DUMMY_DATA_LINK
+                        + "' must be an instance of class com.hazelcast.datalink.JdbcDataLink");
     }
 
     @Test

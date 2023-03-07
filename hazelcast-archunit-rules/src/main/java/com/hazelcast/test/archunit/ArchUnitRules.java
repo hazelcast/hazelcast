@@ -16,23 +16,15 @@
 
 package com.hazelcast.test.archunit;
 
-import com.tngtech.archunit.core.domain.JavaClass;
-import com.tngtech.archunit.core.domain.JavaField;
 import com.tngtech.archunit.core.domain.JavaModifier;
-import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
-import com.tngtech.archunit.lang.ConditionEvents;
-import com.tngtech.archunit.lang.SimpleConditionEvent;
 
 import java.io.Serializable;
-import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
-import static com.hazelcast.test.archunit.ArchUnitRules.SerialVersionUidFieldCondition.haveValidSerialVersionUid;
-import static com.tngtech.archunit.lang.conditions.ArchConditions.beFinal;
-import static com.tngtech.archunit.lang.conditions.ArchConditions.beStatic;
-import static com.tngtech.archunit.lang.conditions.ArchConditions.haveRawType;
+import static com.hazelcast.test.archunit.SerialVersionUidFieldCondition.haveValidSerialVersionUid;
+import static com.hazelcast.test.archunit.CompletableFutureUsageCondition.useExplicitExecutorServiceInCFAsyncMethods;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
-
 
 public final class ArchUnitRules {
     /**
@@ -48,28 +40,14 @@ public final class ArchUnitRules {
             .should(haveValidSerialVersionUid())
             .allowEmptyShould(true);
 
+    /**
+     * ArchUnit rule checking that only {@link CompletableFuture} {@code async} methods version with explicitly
+     * defined executor service is used.
+     */
+    public static final ArchRule COMPLETABLE_FUTURE_USED_ONLY_WITH_EXPLICIT_EXECUTOR = classes()
+            .should(useExplicitExecutorServiceInCFAsyncMethods());
+
     private ArchUnitRules() {
     }
 
-    static class SerialVersionUidFieldCondition extends ArchCondition<JavaClass> {
-        private static final String FIELD_NAME = "serialVersionUID";
-
-        SerialVersionUidFieldCondition() {
-            super("have a valid " + FIELD_NAME);
-        }
-
-        @Override
-        public void check(JavaClass clazz, ConditionEvents events) {
-            Optional<JavaField> field = clazz.tryGetField(FIELD_NAME);
-            if (field.isPresent()) {
-                haveRawType("long").and(beFinal()).and(beStatic()).check(field.get(), events);
-            } else {
-                events.add(SimpleConditionEvent.violated(clazz, FIELD_NAME + " field is missing in class " + clazz.getName()));
-            }
-        }
-
-        static SerialVersionUidFieldCondition haveValidSerialVersionUid() {
-            return new SerialVersionUidFieldCondition();
-        }
-    }
 }

@@ -62,7 +62,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
-import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 
 import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
 import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
@@ -85,7 +85,7 @@ public class MapChunk extends Operation
 
     protected transient ILogger logger;
     protected transient MapChunkContext context;
-    protected transient BooleanSupplier isEndOfChunk;
+    protected transient Predicate isEndOfChunk;
     protected transient String mapName;
 
     private transient boolean loaded;
@@ -106,7 +106,7 @@ public class MapChunk extends Operation
     }
 
     public MapChunk(MapChunkContext context, int chunkNumber,
-                    BooleanSupplier isEndOfChunk) {
+                    Predicate isEndOfChunk) {
         this.context = context;
         this.isEndOfChunk = isEndOfChunk;
         this.firstChunk = (chunkNumber == 1);
@@ -521,7 +521,7 @@ public class MapChunk extends Operation
             Records.writeExpiry(out, context.getExpiryMetadata(dataKey));
             recordCount++;
 
-            if (isEndOfChunk.getAsBoolean()) {
+            if (isEndOfChunk.test(out)) {
                 break;
             }
         }
