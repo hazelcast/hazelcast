@@ -50,7 +50,7 @@ public class JetUpdateJobConfigMessageTask extends AbstractJetMessageTask<Reques
 
     @Override
     public String getMethodName() {
-        return "updateJobConfig";
+        return "updateConfig";
     }
 
     @Override

@@ -59,14 +59,14 @@ public class SqlMemoryManagementTest extends SqlTestSupport {
     @Test
     public void test_changeJobConfig_singleStatement() {
         test_changeJobConfig(name -> new String[] {
-                "ALTER JOB " + name + " OPTIONS ('maxProcessorAccumulatedRecords'='3') RESUME"
+                "ALTER JOB " + name + " OPTIONS ('maxProcessorAccumulatedRecords'='100') RESUME"
         });
     }
 
     @Test
     public void test_changeJobConfig_separateStatements() {
         test_changeJobConfig(name -> new String[] {
-                "ALTER JOB " + name + " OPTIONS ('maxProcessorAccumulatedRecords'='3')",
+                "ALTER JOB " + name + " OPTIONS ('maxProcessorAccumulatedRecords'='100')",
                 "ALTER JOB " + name + " RESUME"
         });
     }
@@ -77,12 +77,12 @@ public class SqlMemoryManagementTest extends SqlTestSupport {
 
         String jobName = randomName();
         String sql = "CREATE JOB " + jobName + " OPTIONS ('suspendOnFailure'='true') " +
-                "AS INSERT INTO " + mapName + " " +
-                "SELECT window_start || '-' || (v % 3) AS key, 42 " +
+                "AS SINK INTO " + mapName + " " +
+                "SELECT window_start || '-' || (v % 10) AS key, 42 " +
                 "FROM TABLE(TUMBLE(" +
                 "(SELECT * FROM TABLE(IMPOSE_ORDER((SELECT v FROM TABLE(generate_stream(10))), DESCRIPTOR(v), 0)))," +
                 "DESCRIPTOR(v), 10))" +
-                "GROUP BY window_start, v % 3";
+                "GROUP BY window_start, v % 10";
         System.out.println(sql);
         sqlService.execute(sql);
         Job job = instance().getJet().getJob(jobName);
@@ -93,7 +93,7 @@ public class SqlMemoryManagementTest extends SqlTestSupport {
         for (String statement : statementsFn.apply(jobName)) {
             sqlService.execute(statement);
         }
-        assertTrueEventually(() -> assertTrue(instance().getMap(mapName).size() >= 3), 3);
+        assertTrueEventually(() -> assertTrue(instance().getMap(mapName).size() >= 10));
     }
 
     @Test

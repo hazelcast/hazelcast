@@ -1062,7 +1062,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         job.resume();
         job.join();
 
-        assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig())).hasMessage("Job not suspended");
+        assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig())).hasMessage("Job not suspended, but COMPLETED");
     }
 
     @Test
