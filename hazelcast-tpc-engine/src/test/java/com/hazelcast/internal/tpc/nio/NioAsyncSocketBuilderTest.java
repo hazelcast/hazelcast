@@ -57,7 +57,7 @@ public class NioAsyncSocketBuilderTest extends AsyncSocketBuilderTest {
         builder.setReadHandler(new DevNullReadHandler());
         AsyncSocket socket = builder.build();
 
-        assertThrows(IllegalStateException.class, ()->builder.setWriteQueueCapacity(1024));
+        assertThrows(IllegalStateException.class, () -> builder.setWriteQueueCapacity(1024));
     }
 
     @Test
