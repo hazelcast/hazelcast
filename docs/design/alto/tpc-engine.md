@@ -108,7 +108,7 @@ abstractions that give a much more intuitive programming model:
   have an IOUringAsyncFile. In the future, we’ll probably add a
   NioAsyncFile. Even though there is no true async I/O possible with
   NIO, we’ll simulate it e.g. by having a threadpool of blocking I/O
-  calls. THis will be a lot less efficient than I/O uring, but can be
+  calls. This will be a lot less efficient than I/O uring, but can be
   used as a fallback option in case io_uring isn’t available (e.g.
   Windows/OSX etc., or old Linux distro). The AsyncFile will be added to
   HZ 5.4.
