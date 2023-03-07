@@ -18,13 +18,12 @@ package com.hazelcast.internal.tpc.nio;
 
 import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
 import java.util.Queue;
 
 /**
- * Contains logic to do vectorized I/O (so instead of passing a single buffer, an array of buffer is passed to socket.write).
+ * Contains logic to do vectorized I/O (so instead of passing a single buffer, an array
+ * of buffer is passed to socket.write).
  */
 public final class IOVector {
 
@@ -32,15 +31,23 @@ public final class IOVector {
 
     private final ByteBuffer[] array = new ByteBuffer[IOV_MAX];
     private final IOBuffer[] bufs = new IOBuffer[IOV_MAX];
-    private int size;
+    private int length;
     private long pending;
 
     public boolean isEmpty() {
-        return size == 0;
+        return length == 0;
+    }
+
+    public int length() {
+        return length;
+    }
+
+    public ByteBuffer[] array() {
+        return array;
     }
 
     public void populate(Queue<IOBuffer> queue) {
-        int count = IOV_MAX - size;
+        int count = IOV_MAX - length;
         for (int k = 0; k < count; k++) {
             IOBuffer buf = queue.poll();
             if (buf == null) {
@@ -48,52 +55,41 @@ public final class IOVector {
             }
 
             ByteBuffer buffer = buf.byteBuffer();
-            array[size] = buffer;
-            bufs[size] = buf;
-            size++;
+            array[length] = buffer;
+            bufs[length] = buf;
+            length++;
             pending += buffer.remaining();
         }
     }
 
     public boolean offer(IOBuffer buf) {
-        if (size == IOV_MAX) {
+        if (length == IOV_MAX) {
             return false;
         } else {
             ByteBuffer buffer = buf.byteBuffer();
-            array[size] = buffer;
-            bufs[size] = buf;
-            size++;
+            array[length] = buffer;
+            bufs[length] = buf;
+            length++;
             pending += buffer.remaining();
             return true;
         }
     }
 
-    public long write(SocketChannel socketChannel) throws IOException {
-        long written;
-        if (size == 1) {
-            written = socketChannel.write(array[0]);
-        } else {
-            written = socketChannel.write(array, 0, size);
-        }
-        compact(written);
-        return written;
-    }
-
-    void compact(long written) {
+    public void compact(long written) {
         if (written == pending) {
             // everything was written
-            for (int k = 0; k < size; k++) {
+            for (int k = 0; k < length; k++) {
                 array[k] = null;
                 bufs[k].release();
                 bufs[k] = null;
             }
-            size = 0;
+            length = 0;
             pending = 0;
         } else {
             // not everything was written
             int toIndex = 0;
-            int length = size;
-            for (int k = 0; k < length; k++) {
+            int length0 = this.length;
+            for (int k = 0; k < length0; k++) {
                 if (array[k].hasRemaining()) {
                     if (k == 0) {
                         // the first one is not empty, we are done
@@ -106,7 +102,7 @@ public final class IOVector {
                         toIndex++;
                     }
                 } else {
-                    size--;
+                    this.length--;
                     array[k] = null;
                     bufs[k].release();
                     bufs[k] = null;
@@ -114,9 +110,5 @@ public final class IOVector {
             }
             pending -= written;
         }
-    }
-
-    public int size() {
-        return size;
     }
 }
