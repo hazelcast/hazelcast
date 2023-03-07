@@ -27,14 +27,22 @@ import java.nio.file.Paths;
 import static com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadClientFailureTest.getJarPath;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class SubmitJobParametersValidatorForUploadTest {
+public class SubmitJobParametersValidatorTest {
 
     @Test
-    public void failForDirectJobExecution() {
+    public void failForDirectJobExecutionConfiguration() {
         SubmitJobParameters parameterObject = SubmitJobParameters.forDirectJobExecution();
         assertThatThrownBy(() -> SubmitJobParametersValidator.validateForJobUpload(parameterObject))
                 .isInstanceOf(JetException.class)
                 .hasMessageContaining("SubmitJobParameters is configured for direct job execution");
+    }
+
+    @Test
+    public void failForJobUploadConfiguration() {
+        SubmitJobParameters parameterObject = SubmitJobParameters.forJobUpload();
+        assertThatThrownBy(() -> SubmitJobParametersValidator.validateForDirectJobExecution(parameterObject))
+                .isInstanceOf(JetException.class)
+                .hasMessageContaining("SubmitJobParameters is configured for job upload");
     }
 
     @Test
