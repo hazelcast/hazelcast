@@ -470,7 +470,7 @@ public interface ProcessorMetaSupplier extends Serializable {
             @Nonnull ProcessorSupplier supplier,
             @Nonnull Address memberAddress
     ) {
-        return new SpecificMemberPms(supplier, memberAddress, 1);
+        return new SpecificMemberPms(supplier, memberAddress);
     }
 
 
@@ -505,7 +505,7 @@ public interface ProcessorMetaSupplier extends Serializable {
         SpecificMemberPms() {
         }
 
-        private SpecificMemberPms(ProcessorSupplier supplier, Address memberAddress, int localParallelism) {
+        private SpecificMemberPms(ProcessorSupplier supplier, Address memberAddress) {
             this.supplier = supplier;
             this.memberAddress = memberAddress;
         }
