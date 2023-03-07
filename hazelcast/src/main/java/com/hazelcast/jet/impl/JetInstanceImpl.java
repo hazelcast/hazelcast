@@ -29,7 +29,6 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.jobupload.JobMetaDataParameterObject;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -47,6 +46,7 @@ import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.impl.JetServiceBackend.wrapWithJetException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.Collections.singleton;
@@ -74,7 +74,14 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
     @Override
     public void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
         try {
+            SubmitJobParametersValidator validator = new SubmitJobParametersValidator();
+            validator.validateParameterObject(submitJobParameters);
+
             JobMetaDataParameterObject parameterObject = new JobMetaDataParameterObject();
+
+            // The jar should not be deleted
+            parameterObject.setDeleteJarAfterExecution(false);
+
             parameterObject.setSnapshotName(submitJobParameters.getSnapshotName());
             parameterObject.setJobName(submitJobParameters.getJobName());
             parameterObject.setMainClass(submitJobParameters.getMainClass());
@@ -83,9 +90,9 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
 
             JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
             jetServiceBackend.executeJar(parameterObject);
-
         } catch (Exception exception) {
-            ExceptionUtil.sneakyThrow(exception);
+            // Only throw a JetException
+            wrapWithJetException(exception);
         }
     }
 

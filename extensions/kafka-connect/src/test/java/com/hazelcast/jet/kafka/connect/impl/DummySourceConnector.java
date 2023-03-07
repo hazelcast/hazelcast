@@ -93,6 +93,10 @@ public final class DummySourceConnector extends SourceConnector {
         return initialized;
     }
 
+    public void setProperty(String key, String value) {
+        properties.put(key, value);
+    }
+
     public static final class DummyTask extends SourceTask {
         static DummyTask INSTANCE;
 
@@ -172,6 +176,10 @@ public final class DummySourceConnector extends SourceConnector {
 
         public boolean isStarted() {
             return started;
+        }
+
+        public boolean isStopped() {
+            return !started;
         }
 
         public boolean isInitialized() {

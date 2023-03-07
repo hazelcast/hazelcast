@@ -112,16 +112,7 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
     public final void executeRun() {
         nodeExtension.onThreadStart(this);
         try {
-            while (!shutdown) {
-                Object task;
-                try {
-                    task = queue.take(priority);
-                } catch (InterruptedException e) {
-                    continue;
-                }
-
-                process(task);
-            }
+            loop();
         } catch (Throwable t) {
             inspectOutOfMemoryError(t);
             logger.severe(t);
@@ -130,7 +121,21 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
         }
     }
 
-    private void process(Object task) {
+    @SuppressWarnings("java:S112")
+    protected void loop() throws Exception {
+        while (!shutdown) {
+            Object task;
+            try {
+                task = queue.take(priority);
+            } catch (InterruptedException e) {
+                continue;
+            }
+
+            process(task);
+        }
+    }
+
+    void process(Object task) {
         try {
             boolean putBackInQueue = false;
             if (task.getClass() == Packet.class) {
@@ -249,7 +254,12 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
         interrupt();
     }
 
+    public boolean isShutdown() {
+        return shutdown;
+    }
+
     public final void awaitTermination(int timeout, TimeUnit unit) throws InterruptedException {
         join(unit.toMillis(timeout));
     }
+
 }

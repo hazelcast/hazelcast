@@ -29,6 +29,7 @@ import com.hazelcast.client.impl.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.logging.ILogger;
 
 import java.util.Collection;
@@ -136,7 +137,7 @@ public class ClientClusterViewListenerService implements ConnectionListener {
             }
             //completes with exception, listener needs to be reregistered
             tryReregisterToRandomConnection(connection);
-        });
+        }, ConcurrencyUtil.getDefaultAsyncExecutor());
     }
 
 }

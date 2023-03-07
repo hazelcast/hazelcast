@@ -204,7 +204,7 @@ public class JobTest extends SimpleTestInClusterSupport {
     public void when_jobFailed_then_jobStatusIsCompletedEventually() throws InterruptedException {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS((SupplierEx<Processor>)
-                () -> new MockP().setCompleteError(new ExpectedRuntimeException()), NODE_COUNT)));
+                () -> new MockP().setCompleteError(() -> new ExpectedRuntimeException()), NODE_COUNT)));
 
         // When
         Job job = instance().getJet().newJob(dag);
@@ -329,7 +329,7 @@ public class JobTest extends SimpleTestInClusterSupport {
     public void when_jobFailed_then_trackedJobCanQueryResult() throws InterruptedException {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS((SupplierEx<Processor>)
-                () -> new MockP().setCompleteError(new ExpectedRuntimeException()), NODE_COUNT)));
+                () -> new MockP().setCompleteError(() -> new ExpectedRuntimeException()), NODE_COUNT)));
 
         // When
         Job submittedJob = instance().getJet().newJob(dag);

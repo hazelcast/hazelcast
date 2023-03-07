@@ -47,6 +47,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.cloneExceptionWithFixedAsyncStackTrace;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.util.Objects.requireNonNull;
@@ -951,13 +952,13 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
             executor.execute(() -> {
                 try {
                     CompletionStage<U> r = function.apply(res);
-                    r.whenComplete((v, t) -> {
+                    r.whenCompleteAsync((v, t) -> {
                         if (t == null) {
                             future.complete(v);
                         } else {
                             future.completeExceptionally(t);
                         }
-                    });
+                    }, CALLER_RUNS);
                 } catch (Throwable t) {
                     future.completeExceptionally(t);
                 }
@@ -1003,9 +1004,9 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         }
         // both futures are done
         if (otherFuture.isCompletedExceptionally()) {
-            otherFuture.whenComplete((v, t) -> {
+            otherFuture.whenCompleteAsync((v, t) -> {
                 future.completeExceptionally(t);
-            });
+            }, CALLER_RUNS);
             return;
         }
         U otherValue = otherFuture.join();
@@ -1051,9 +1052,9 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         }
         // both futures are done
         if (otherFuture.isCompletedExceptionally()) {
-            otherFuture.whenComplete((v, t) -> {
+            otherFuture.whenCompleteAsync((v, t) -> {
                 future.completeExceptionally(t);
-            });
+            }, CALLER_RUNS);
             return;
         }
         U otherValue = otherFuture.join();
@@ -1098,9 +1099,9 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         }
         // both futures are done
         if (otherFuture.isCompletedExceptionally()) {
-            otherFuture.whenComplete((v, t) -> {
+            otherFuture.whenCompleteAsync((v, t) -> {
                 future.completeExceptionally(t);
-            });
+            }, CALLER_RUNS);
             return;
         }
         runAfter0(future, action, executor);
@@ -1663,13 +1664,13 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
                 executor.execute(() -> {
                     try {
                         CompletionStage<U> r = function.apply((T) resolved);
-                        r.whenComplete((v, t) -> {
+                        r.whenCompleteAsync((v, t) -> {
                             if (t == null) {
                                 future.complete(v);
                             } else {
                                 future.completeExceptionally(t);
                             }
-                        });
+                        }, CALLER_RUNS);
                     } catch (Throwable t) {
                         future.completeExceptionally(t);
                     }

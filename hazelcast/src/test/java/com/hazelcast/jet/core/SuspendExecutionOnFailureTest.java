@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.TestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
@@ -49,7 +50,7 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
 
-    private static final Throwable MOCK_ERROR = new AssertionError("mock error");
+    private static final SupplierEx<Throwable> MOCK_ERROR = () -> new AssertionError("mock error");
 
     private JobConfig jobConfig;
 

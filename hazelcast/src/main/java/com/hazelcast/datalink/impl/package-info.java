@@ -17,6 +17,6 @@
 /**
  * <p>This package contains implementation of handling data links.<br>
  *
- * @since 5.2
+ * @since 5.3
  */
 package com.hazelcast.datalink.impl;
