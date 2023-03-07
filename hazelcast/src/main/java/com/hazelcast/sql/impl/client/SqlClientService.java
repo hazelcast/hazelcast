@@ -94,7 +94,7 @@ public class SqlClientService implements SqlService {
         this.resubmissionTimeoutNano = TimeUnit.MILLISECONDS.toNanos(resubmissionTimeoutMillis);
         this.resubmissionRetryPauseMillis = client.getProperties().getPositiveMillisOrDefault(INVOCATION_RETRY_PAUSE_MILLIS);
 
-        this.isSmartRouting = client.getClientConfig().getNetworkConfig().isSmartRouting();
+        this.isSmartRouting = !client.getConnectionManager().isUnisocketClient();
         final int partitionArgCacheSize = client.getProperties().getInteger(PARTITION_ARGUMENT_CACHE_SIZE);
         final int partitionArgCacheThreshold = partitionArgCacheSize + Math.min(partitionArgCacheSize / 10, 50);
         this.partitionArgumentIndexCache = new ReadOptimizedLruCache<>(partitionArgCacheSize, partitionArgCacheThreshold);

@@ -18,6 +18,7 @@ package com.hazelcast.sql;
 
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -320,6 +321,7 @@ public final class SqlStatement {
      *
      * @return partitionArgumentIndex, -1 if not set.
      */
+    @PrivateApi
     public int getPartitionArgumentIndex() {
         return partitionArgumentIndex;
     }
@@ -335,6 +337,7 @@ public final class SqlStatement {
      * @param partitionArgumentIndex index of the partition-determining argument
      *     of the statement
      */
+    @PrivateApi
     public void setPartitionArgumentIndex(final int partitionArgumentIndex) {
         if (partitionArgumentIndex < -1) {
             throw new IllegalArgumentException("The argument index must be >=0, or -1");
