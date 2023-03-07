@@ -1,8 +1,7 @@
 # Data link support TDD
 
-
 |                                |                            |
-| ------------------------------ | -------------------------- |
+|--------------------------------|----------------------------|
 | Related Github issues          | TODO                       |
 | Document Status / Completeness | Approved                   |
 | Author(s)                      | Viliam Durina              |
@@ -39,11 +38,11 @@ In 5.2, a new configuration element was introduced:
  used by map stores and jdbc sinks and sources
  -->
 <external-data-store name="mysql-database">
-   <class-name>com.hazelcast.datastore.JdbcDataStoreFactory</class-name>
-   <properties>
-       <property name="jdbcUrl">jdbc:mysql://dummy:3306</property>
-   </properties>
-   <shared>false</shared>
+    <class-name>com.hazelcast.datastore.JdbcDataStoreFactory</class-name>
+    <properties>
+        <property name="jdbcUrl">jdbc:mysql://dummy:3306</property>
+    </properties>
+    <shared>false</shared>
 </external-data-store>
 ```
 
@@ -51,11 +50,11 @@ This can then be used when creating a Java pipeline JDBC source:
 
 ```java
 @Beta
-public static <T> BatchSource<T> jdbc(
-       @Nonnull ExternalDataStoreRef externalDataStoreRef,
-       @Nonnull ToResultSetFunction resultSetFn,
-       @Nonnull FunctionEx<? super ResultSet, ? extends T> createOutputFn
-)
+public static<T> BatchSource<T> jdbc(
+@Nonnull ExternalDataStoreRef externalDataStoreRef,
+@Nonnull ToResultSetFunction resultSetFn,
+@Nonnull FunctionEx<? super ResultSet,?extends T>createOutputFn
+        )
 ```
 
 Or in a mapping:
@@ -71,13 +70,14 @@ OPTIONS (
 Or in `GenericMapStore` configuration:
 
 ```xml
+
 <map name="my-map">
-   <map-store enabled="true">
-       <class-name>com.hazelcast.mapstore.GenericMapStore</class-name>
-       <properties>
-           <property name="external-data-store-ref">my-mysql-database</property>
-       </properties>
-   </map-store>
+    <map-store enabled="true">
+        <class-name>com.hazelcast.mapstore.GenericMapStore</class-name>
+        <properties>
+            <property name="external-data-store-ref">my-mysql-database</property>
+        </properties>
+    </map-store>
 </map>
 ```
 
@@ -117,12 +117,12 @@ Particular Jet source/sink then uses the `ExternalDataStoreRef` to look the
 factory up:
 
 ```java
-ExternalDataStoreFactory<?> dataStoreFactory = nodeEngine.getExternalDataStoreService().getExternalDataStoreFactory(name);
-if (!(dataStoreFactory instanceof JdbcDataStoreFactory)) {
-   String className = JdbcDataStoreFactory.class.getSimpleName();
-   throw new HazelcastException("Data store factory '" + name + "' must be an instance of " + className);
-}
-return (JdbcDataStoreFactory) dataStoreFactory;
+ExternalDataStoreFactory<?> dataStoreFactory=nodeEngine.getExternalDataStoreService().getExternalDataStoreFactory(name);
+        if(!(dataStoreFactory instanceof JdbcDataStoreFactory)){
+        String className=JdbcDataStoreFactory.class.getSimpleName();
+        throw new HazelcastException("Data store factory '"+name+"' must be an instance of "+className);
+        }
+        return(JdbcDataStoreFactory)dataStoreFactory;
 ```
 
 We considered 2 use cases of a data source - shared and non-shared:
@@ -279,7 +279,7 @@ link in SQL, one has to enclose it in double quotes.
 ### Multiple types of resources in a single data link
 
 Since one connector can have multiple types of data sources, both bounded and
-unbounded, and we want to use the same connection for all of them,  we need to
+unbounded, and we want to use the same connection for all of them, we need to
 move the `SqlConnector.isStream()` method to `JetTable` class (or another
 object-level class). For example, Hazelcast can support not only imap, but also
 imap journal, IList, queue etc., and we want to access all of them using the
@@ -411,34 +411,34 @@ the default schema.[^4]
 
 ```java
 interface JetConnector {
-  // moved from SqlConnector
-  String typeName();
+    // moved from SqlConnector
+    String typeName();
 
-  // the implementation might decide to throw UnsupOpExc
-  DataLink createDataLink(String name,
-    Map<String, String> options);
+    // the implementation might decide to throw UnsupOpExc
+    DataLink createDataLink(String name,
+                            Map<String, String> options);
 }
 
 interface DataLink {
-  // returns the name specified in config, or in CREATE DATA LINK
-  String getName();
+    // returns the name specified in config, or in CREATE DATA LINK
+    String getName();
 
 
-  // list available resources: tuples of {object_type, object_name}
-  List<Tuple2<String, String>> listResources(); 
+    // list available resources: tuples of {object_type, object_name}
+    List<Tuple2<String, String>> listResources();
 
 
-  // not implementing:
-  // tries to connect, but don't read any data.
-  void testConnection();
+    // not implementing:
+    // tries to connect, but don't read any data.
+    void testConnection();
 
-  // options from the config or SQL command
-  Map<String, String> getOptions();
+    // options from the config or SQL command
+    Map<String, String> getOptions();
 
-  // Called for DROP DATA LINK.
-  // Should close unused connections in the pool. Shared connection
-  // should be closed when last thread returns it (by refcounting)
-  void destroy();
+    // Called for DROP DATA LINK.
+    // Should close unused connections in the pool. Shared connection
+    // should be closed when last thread returns it (by refcounting)
+    void destroy();
 }
 ```
 
@@ -446,17 +446,17 @@ interface DataLink {
 
 ```java
 interface SqlConnector extends DataLinkConnector {
-  // add arguments:
-  //   @Nullable String objectType
-  //   @Nullable DataLink dataLink
-  // to methods resolveAndValidateFields() and createTable()
+    // add arguments:
+    //   @Nullable String objectType
+    //   @Nullable DataLink dataLink
+    // to methods resolveAndValidateFields() and createTable()
 
-  // move isStream() to JetConnector
+    // move isStream() to JetConnector
 
-  // move all the remaining methods to Table
+    // move all the remaining methods to Table
 
-  // in Table, add `boolean unbounded` to sink–producing methods:
-  // insertProcessor, sinkProcessor, updateProcessor, deleteProcessor
+    // in Table, add `boolean unbounded` to sink–producing methods:
+    // insertProcessor, sinkProcessor, updateProcessor, deleteProcessor
 }
 ```
 
@@ -490,7 +490,9 @@ the type of the job:
 ```java
 public class KafkaDataLink implements DataLink {
     KafkaConcumer createSingleUseConsumer();
+
     KafkaProducer createSingleUseProducer();
+
     KafkaProducer getPooledProducer();
 }
 ```
@@ -505,6 +507,7 @@ public class KafkaDataLink implements DataLink {
 ```java
 public class JdbcDataLink implements DataLink {
     Connection getPooledConnection();
+
     Connection createSingleUseConnection();
 }
 ```
@@ -653,12 +656,13 @@ The data links can contain sensitive information such as passwords. We will have
 these privileges related to data links:
 
 * new SQL actions `create-datalink` and `drop-datalink`. To CREATE OR REPLACE a
-  data link, one needs permission to both actions
+  data link, one needs permission to both actions.
 * new SQL action: `view-datalink`. Without this permission the user won’t be
   able to see data link options, which might contain passwords. This includes
   the `get_ddl` function, or views in information_schema, if we have them. Also
   note that the `__sql.catalog` IMap exposes the data link options in a
   non-documented way, so access to this map must be denied.
+* To DROP data link, we require all both `view-datalink` and `drop-datalink`.
 
 There will be no way to grant/revoke access to individual data links, or to
 individual remote resources, every user will be able to access every data link.
@@ -694,20 +698,20 @@ All tasks can be done in parallel after task 1 is done.
 ## Notes
 
 [^1]:
-    
+
 Future work for this kind of jobs is to avoid running them on all members. It
 does not make sense to launch a distributed job to insert one row. This is not
 part of this TDD.
 
 [^2]:
-    
+
 E.g. rolled back
 
 [^3]:
-    
+
 Adding support for user-created schemas was discussed, but it’s not on the
 roadmap yet.
 
 [^4]:
-    
+
 It should also validate the external name to avoid SQL injection.
