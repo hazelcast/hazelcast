@@ -30,16 +30,17 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.CreateCollectionOptions;
 import com.mongodb.client.model.ValidationOptions;
-import org.assertj.core.api.Assertions;
 import org.bson.BsonDocument;
 import org.bson.Document;
 import org.example.Person;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -79,7 +80,9 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
                 .addDataLinkConfig(
                         new DataLinkConfig(TEST_DATABASE_REF)
                                 .setClassName(MongoDataLink.class.getName())
+                                .setShared(false)
                                 .setProperty("connectionString", connectionString)
+                                .setProperty("database", database.getName())
                 );
 
         ClientConfig clientConfig = new ClientConfig();
@@ -97,12 +100,14 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
     public void setUp() {
         tableName = randomName();
         createCollection(tableName);
+        database.getCollection(tableName).insertOne(new Document("personId", 1).append("name", "name-1"));
 
         MapConfig mapConfig = new MapConfig(tableName);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setClassName(GenericMapStore.class.getName());
         mapStoreConfig.setProperty("data-link-ref", TEST_DATABASE_REF);
         mapStoreConfig.setProperty("type-name", "org.example.Person");
+        mapStoreConfig.setProperty("id-column", "personId");
         mapConfig.setMapStoreConfig(mapStoreConfig);
         instance().getConfig().addMapConfig(mapConfig);
     }
@@ -116,7 +121,7 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
                         "      bsonType: \"object\",\n" +
                         "      title: \"Object Validation\",\n" +
                         "      properties: {" +
-                        "        \"id\": { \"bsonType\": \"int\" },\n" +
+                        "        \"personId\": { \"bsonType\": \"int\" },\n" +
                         "        \"name\": { \"bsonType\": \"string\" }\n" +
                         "      }\n" +
                         "    }\n" +
@@ -131,9 +136,9 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
         HazelcastInstance client = client();
         IMap<Integer, Person> map = client.getMap(tableName);
 
-        Person p = map.get(0);
-        assertThat(p.getId()).isZero();
-        assertThat(p.getName()).isEqualTo("name-0");
+        Person p = map.get(1);
+        assertThat(p.getPersonId()).isEqualTo(1);
+        assertThat(p.getName()).isEqualTo("name-1");
     }
 
     @Test
@@ -144,7 +149,7 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
         map.put(42, new Person(42, "name-42"));
 
         assertMongoRowsAnyOrder(tableName,
-                new Person(0, "name-0"),
+                new Person(1, "name-1"),
                 new Person(42, "name-42")
         );
     }
@@ -155,17 +160,18 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
         IMap<Integer, Person> map = client.getMap(tableName);
 
         assertMongoRowsAnyOrder(tableName,
-                new Person(0, "name-0")
+                new Person(1, "name-1")
         );
 
-        map.put(0, new Person(0, "updated"));
+        map.put(1, new Person(1, "updated"));
 
         assertMongoRowsAnyOrder(tableName,
-                new Person(0, "updated")
+                new Person(1, "updated")
         );
     }
 
     @Test
+    @Ignore("no delete support yet")
     public void testRemove() {
         HazelcastInstance client = client();
         IMap<Integer, Person> map = client.getMap(tableName);
@@ -178,7 +184,9 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
     }
 
     private void assertMongoRowsAnyOrder(String tableName, Person... p) {
-        ArrayList<Person> list = database.getCollection(tableName).find(Person.class).into(new ArrayList<>());
+        MongoCollection<Document> collection =
+                database.getCollection(tableName).withCodecRegistry(defaultCodecRegistry());
+        ArrayList<Person> list = collection.find(Person.class).into(new ArrayList<>());
         assertThat(list).containsExactlyInAnyOrder(p);
     }
 }

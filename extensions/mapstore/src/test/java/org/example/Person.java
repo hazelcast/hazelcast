@@ -16,28 +16,30 @@
 
 package org.example;
 
+import java.util.Objects;
+
 /**
  * This class must be in other package than com.hazelcast.*
  */
 public class Person {
 
-    Integer id;
+    Integer personId;
     String name;
 
     public Person() {
     }
 
-    public Person(Integer id, String name) {
-        this.id = id;
+    public Person(Integer personId, String name) {
+        this.personId = personId;
         this.name = name;
     }
 
-    public Integer getId() {
-        return id;
+    public Integer getPersonId() {
+        return personId;
     }
 
-    public void setId(Integer id) {
-        this.id = id;
+    public void setPersonId(Integer personId) {
+        this.personId = personId;
     }
 
     public String getName() {
@@ -46,5 +48,30 @@ public class Person {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    @Override
+    public String toString() {
+        return "Person{" +
+                "personId=" + personId +
+                ", name='" + name + '\'' +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Person)) {
+            return false;
+        }
+        Person person = (Person) o;
+        return Objects.equals(personId, person.personId) && Objects.equals(name, person.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(personId, name);
     }
 }
