@@ -77,7 +77,6 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     // Flag which indicates if this proxy has sent a request to join the job result or not
     private final AtomicBoolean joinedJob = new AtomicBoolean();
     private final BiConsumer<Void, Throwable> joinJobCallback;
-
     private final Supplier<Long> submissionTimeSup = memoizeConcurrent(this::doGetJobSubmissionTime);
 
     /**
