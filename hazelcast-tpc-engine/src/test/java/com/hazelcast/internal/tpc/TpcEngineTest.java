@@ -46,7 +46,7 @@ public class TpcEngineTest {
 
     @Test
     public void test() {
-        Configuration configuration = new Configuration();
+        TpcEngineBuilder configuration = new TpcEngineBuilder();
         int reactorCount = 5;
         configuration.setReactorCount(reactorCount);
 

@@ -69,7 +69,7 @@ public class ClientSchemaService implements SchemaService {
         ClientMessage message = invocation.invoke().joinInternal();
         schema = ClientFetchSchemaCodec.decodeResponse(message);
         if (schema != null) {
-            schemas.put(schemaId, schema);
+            schemas.putIfAbsent(schemaId, schema);
         }
         return schema;
     }

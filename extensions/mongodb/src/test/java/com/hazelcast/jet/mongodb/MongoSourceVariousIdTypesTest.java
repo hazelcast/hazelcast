@@ -33,12 +33,12 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
-import static com.hazelcast.jet.mongodb.MongoDBSources.batch;
+import static com.hazelcast.jet.mongodb.MongoSources.batch;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Category({QuickTest.class})
-public class MongoDBSourceVariousIdTypesTest extends AbstractMongoDBTest {
+public class MongoSourceVariousIdTypesTest extends AbstractMongoTest {
 
     @Parameter(0)
     public Object id1;

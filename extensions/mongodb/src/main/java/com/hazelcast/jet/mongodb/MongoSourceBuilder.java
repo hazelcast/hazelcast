@@ -53,9 +53,9 @@ import static com.hazelcast.jet.mongodb.impl.Mappers.toClass;
  *
  */
 @Beta
-public final class MongoDBSourceBuilder {
+public final class MongoSourceBuilder {
 
-    private MongoDBSourceBuilder() {
+    private MongoSourceBuilder() {
     }
 
     /**
@@ -73,7 +73,7 @@ public final class MongoDBSourceBuilder {
      * @param clientSupplier a function that creates MongoDB client
      */
     @Nonnull
-    public static MongoDBSourceBuilder.Batch<Document> batch(
+    public static MongoSourceBuilder.Batch<Document> batch(
             @Nonnull String name,
             @Nonnull SupplierEx<? extends MongoClient> clientSupplier
     ) {
@@ -93,7 +93,7 @@ public final class MongoDBSourceBuilder {
      * @param clientSupplier a function that creates MongoDB client
      */
     @Nonnull
-    public static MongoDBSourceBuilder.Stream<Document> stream(
+    public static MongoSourceBuilder.Stream<Document> stream(
             @Nonnull String name,
             @Nonnull SupplierEx<? extends MongoClient> clientSupplier
     ) {

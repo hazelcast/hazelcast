@@ -20,8 +20,8 @@ import com.google.common.collect.Sets;
 import com.hazelcast.collection.IList;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.mongodb.MongoDBSourceBuilder.Batch;
-import com.hazelcast.jet.mongodb.MongoDBSourceBuilder.Stream;
+import com.hazelcast.jet.mongodb.MongoSourceBuilder.Batch;
+import com.hazelcast.jet.mongodb.MongoSourceBuilder.Stream;
 import com.hazelcast.jet.mongodb.impl.Mappers;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -44,7 +44,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
-import static com.hazelcast.jet.mongodb.MongoDBSources.batch;
+import static com.hazelcast.jet.mongodb.MongoSources.batch;
 import static com.hazelcast.jet.mongodb.impl.Mappers.streamToClass;
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
@@ -60,7 +60,7 @@ import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Category({QuickTest.class})
-public class MongoDBSourceTest extends AbstractMongoDBTest {
+public class MongoSourceTest extends AbstractMongoTest {
 
     private static final int COUNT_IN_BATCH = 10;
     private static final int FILTERED_BOUND = 5;
@@ -179,7 +179,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         String connectionString = mongoContainer.getConnectionString();
 
         Pipeline pipeline = Pipeline.create();
-        pipeline.readFrom(MongoDBSources.stream(SOURCE_NAME, connectionString, defaultDatabase(), methodName, null, null))
+        pipeline.readFrom(MongoSources.stream(SOURCE_NAME, connectionString, defaultDatabase(), methodName, null, null))
                 .withNativeTimestamps(0)
                 .setLocalParallelism(1)
                 .writeTo(Sinks.list(list));
@@ -200,9 +200,9 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
     public void testStreamOneCollection() {
         IList<Object> list = instance().getList(testName.getMethodName());
         String connectionString = mongoContainer.getConnectionString();
-        Stream<?> sourceBuilder = MongoDBSources.stream(SOURCE_NAME, () -> mongoClient(connectionString))
-                                                      .database(defaultDatabase())
-                                                      .collection(testName.getMethodName(), Document.class);
+        Stream<?> sourceBuilder = MongoSources.stream(SOURCE_NAME, () -> mongoClient(connectionString))
+                                              .database(defaultDatabase())
+                                              .collection(testName.getMethodName(), Document.class);
         sourceBuilder = streamFilters(sourceBuilder);
 
         Pipeline pipeline = Pipeline.create();
@@ -232,7 +232,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
         String connectionString = mongoContainer.getConnectionString();
 
-        Stream<?> builder = MongoDBSourceBuilder
+        Stream<?> builder = MongoSourceBuilder
                 .stream(SOURCE_NAME, () -> MongoClients.create(connectionString))
                 .database(defaultDatabase());
         builder = streamFilters(builder);
@@ -272,7 +272,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
         String connectionString = mongoContainer.getConnectionString();
 
-        Stream<?> builder = MongoDBSourceBuilder.stream(SOURCE_NAME, () -> MongoClients.create(connectionString));
+        Stream<?> builder = MongoSourceBuilder.stream(SOURCE_NAME, () -> MongoClients.create(connectionString));
         builder = streamFilters(builder);
 
         Pipeline pipeline = Pipeline.create();
