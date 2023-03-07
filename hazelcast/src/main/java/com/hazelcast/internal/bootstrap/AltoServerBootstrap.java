@@ -28,7 +28,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.tpc.AsyncServerSocket;
 import com.hazelcast.internal.tpc.AsyncSocket;
-import com.hazelcast.internal.tpc.Configuration;
+import com.hazelcast.internal.tpc.TpcEngineBuilder;
 import com.hazelcast.internal.tpc.Reactor;
 import com.hazelcast.internal.tpc.ReadHandler;
 import com.hazelcast.internal.tpc.TpcEngine;
@@ -119,7 +119,7 @@ public class AltoServerBootstrap {
     }
 
     private TpcEngine newTpcEngine() {
-        Configuration configuration = new Configuration();
+        TpcEngineBuilder tpcEngineBuilder = new TpcEngineBuilder();
         NioReactorBuilder reactorBuilder = new NioReactorBuilder();
         reactorBuilder.setThreadFactory(new ThreadFactory() {
             int index;
@@ -137,9 +137,9 @@ public class AltoServerBootstrap {
         });
 
         reactorBuilder.setSchedulerSupplier(() -> new AltoOperationScheduler(1));
-        configuration.setReactorBuilder(reactorBuilder);
-        configuration.setReactorCount(loadEventloopCount());
-        return new TpcEngine(configuration);
+        tpcEngineBuilder.setReactorBuilder(reactorBuilder);
+        tpcEngineBuilder.setReactorCount(loadEventloopCount());
+        return tpcEngineBuilder.build();
     }
 
     public int eventloopCount() {

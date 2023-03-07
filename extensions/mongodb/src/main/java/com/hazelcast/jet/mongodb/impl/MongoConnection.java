@@ -31,7 +31,7 @@ import static com.hazelcast.jet.retry.IntervalFunction.exponentialBackoffWithCap
 /***
  * Manages connection to MongoDB, reconnects if necessary.
  */
-class MongoDbConnection {
+class MongoConnection {
     @SuppressWarnings("checkstyle:MagicNumber")
     private static final RetryStrategy RETRY_STRATEGY =
             RetryStrategies.custom()
@@ -42,11 +42,11 @@ class MongoDbConnection {
     private final SupplierEx<? extends MongoClient> clientSupplier;
     private final ConsumerEx<MongoClient> afterConnection;
     private final RetryTracker connectionRetryTracker;
-    private final ILogger logger = Logger.getLogger(MongoDbConnection.class);
+    private final ILogger logger = Logger.getLogger(MongoConnection.class);
 
     private MongoClient mongoClient;
 
-    MongoDbConnection(SupplierEx<? extends MongoClient> clientSupplier, ConsumerEx<MongoClient> afterConnection) {
+    MongoConnection(SupplierEx<? extends MongoClient> clientSupplier, ConsumerEx<MongoClient> afterConnection) {
         this.clientSupplier = clientSupplier;
         this.afterConnection = afterConnection;
         this.connectionRetryTracker = new RetryTracker(RETRY_STRATEGY);

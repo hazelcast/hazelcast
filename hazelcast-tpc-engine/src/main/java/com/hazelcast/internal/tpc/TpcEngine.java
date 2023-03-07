@@ -41,28 +41,28 @@ public final class TpcEngine {
     private final int reactorCount;
     private final Reactor[] reactors;
     private final AtomicReference<State> state = new AtomicReference<>(NEW);
-    private final Configuration configuration;
+    private final TpcEngineBuilder configuration;
 
     /**
-     * Creates an TpcEngine with the default {@link Configuration}.
+     * Creates an TpcEngine with the default {@link TpcEngineBuilder}.
      */
     public TpcEngine() {
-        this(new Configuration());
+        this(new TpcEngineBuilder());
     }
 
     /**
-     * Creates an TpcEngine with the given Configuration.
+     * Creates an TpcEngine with the given TpcEngineBuilder.
      *
-     * @param configuration the Configuration for the TpcEngine.
-     * @throws NullPointerException when configuration is null.
+     * @param tpcEngineBuilder the TpcEngineBuilder for the TpcEngine.
+     * @throws NullPointerException when tpcEngineBuilder is null.
      */
-    public TpcEngine(Configuration configuration) {
-        this.configuration = checkNotNull(configuration, "configuration");
-        this.reactorCount = configuration.reactorCount;
+    TpcEngine(TpcEngineBuilder tpcEngineBuilder) {
+        this.configuration = checkNotNull(tpcEngineBuilder, "tpcEngineBuilder");
+        this.reactorCount = tpcEngineBuilder.reactorCount;
         this.reactors = new Reactor[reactorCount];
         this.terminationLatch = new CountDownLatch(reactorCount);
 
-        ReactorBuilder reactorBuilder = configuration.reactorBuilder;
+        ReactorBuilder reactorBuilder = tpcEngineBuilder.reactorBuilder;
         reactorBuilder.engine = this;
         for (int idx = 0; idx < reactorCount; idx++) {
             reactors[idx] = reactorBuilder.build();
