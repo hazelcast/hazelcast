@@ -191,6 +191,10 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
         });
     }
 
+    public Map<String, DataLinkSourcePair> getDataLinks() {
+        return dataLinks;
+    }
+
     @Override
     public void shutdown() {
         for (Map.Entry<String, DataLinkSourcePair> entry : dataLinks.entrySet()) {

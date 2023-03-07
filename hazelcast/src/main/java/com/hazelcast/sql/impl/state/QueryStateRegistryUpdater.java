@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.state;
 
+import com.hazelcast.datalink.impl.DataLinkConsistencyChecker;
 import com.hazelcast.sql.impl.NodeServiceProvider;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
@@ -33,19 +34,25 @@ public class QueryStateRegistryUpdater {
     private final NodeServiceProvider nodeServiceProvider;
     private final QueryClientStateRegistry clientStateRegistry;
     private final PlanCacheChecker planCacheChecker;
+    private final DataLinkConsistencyChecker dataLinkConsistencyChecker;
 
-    /** "volatile" instead of "final" only to allow for value change from unit tests. */
+    /**
+     * "volatile" instead of "final" only to allow for value change from unit tests.
+     */
     private volatile long stateCheckFrequency;
 
-    /** Worker performing periodic state check. */
+    /**
+     * Worker performing periodic state check.
+     */
     private final Worker worker;
 
     public QueryStateRegistryUpdater(
-        String instanceName,
-        NodeServiceProvider nodeServiceProvider,
-        QueryClientStateRegistry clientStateRegistry,
-        PlanCacheChecker planCacheChecker,
-        long stateCheckFrequency
+            String instanceName,
+            NodeServiceProvider nodeServiceProvider,
+            QueryClientStateRegistry clientStateRegistry,
+            PlanCacheChecker planCacheChecker,
+            DataLinkConsistencyChecker dataLinkConsistencyChecker,
+            long stateCheckFrequency
     ) {
         if (stateCheckFrequency <= 0) {
             throw new IllegalArgumentException("State check frequency must be positive: " + stateCheckFrequency);
@@ -54,6 +61,7 @@ public class QueryStateRegistryUpdater {
         this.nodeServiceProvider = nodeServiceProvider;
         this.clientStateRegistry = clientStateRegistry;
         this.planCacheChecker = planCacheChecker;
+        this.dataLinkConsistencyChecker = dataLinkConsistencyChecker;
         this.stateCheckFrequency = stateCheckFrequency;
 
         worker = new Worker(instanceName);
@@ -137,6 +145,12 @@ public class QueryStateRegistryUpdater {
         private void checkPlans() {
             if (planCacheChecker != null) {
                 planCacheChecker.check();
+            }
+        }
+
+        private void checkDataLinkConsistency() {
+            if (dataLinkConsistencyChecker != null) {
+                dataLinkConsistencyChecker.check();
             }
         }
 
