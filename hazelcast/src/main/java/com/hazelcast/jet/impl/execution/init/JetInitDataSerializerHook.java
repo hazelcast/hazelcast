@@ -45,7 +45,6 @@ import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.jet.impl.operation.ResumeJobOperation;
-import com.hazelcast.jet.impl.operation.UpdateJobConfigOperation;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation.SnapshotPhase1Result;
 import com.hazelcast.jet.impl.operation.SnapshotPhase2Operation;
@@ -53,8 +52,9 @@ import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
 import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
 import com.hazelcast.jet.impl.operation.TerminateJobOperation;
-import com.hazelcast.jet.impl.operation.UploadJobMultiPartOperation;
+import com.hazelcast.jet.impl.operation.UpdateJobConfigOperation;
 import com.hazelcast.jet.impl.operation.UploadJobMetaDataOperation;
+import com.hazelcast.jet.impl.operation.UploadJobMultiPartOperation;
 import com.hazelcast.jet.impl.processor.NoopP;
 import com.hazelcast.jet.impl.processor.ProcessorSupplierFromSimpleSupplier;
 import com.hazelcast.jet.impl.processor.SessionWindowP;
@@ -102,7 +102,6 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int SNAPSHOT_STATS = 30;
     public static final int PREPARE_FOR_PASSIVE_CLUSTER_OP = 31;
     public static final int SNAPSHOT_VALIDATION_RECORD = 32;
-    public static final int UPDATE_JOB_CONFIG_OP = 33;
     public static final int GET_JOB_METRICS_OP = 34;
     public static final int GET_LOCAL_JOB_METRICS_OP = 35;
     public static final int SNAPSHOT_PHASE2_OPERATION = 36;
@@ -113,12 +112,12 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int NOOP_PROCESSOR_SUPPLIER = 46;
     public static final int CHECK_LIGHT_JOBS_OP = 47;
     public static final int GET_JOB_AND_SQL_SUMMARY_LIST_OP = 48;
-    public static final int SQL_SUMMARY = 48;
     public static final int WRAPPING_PROCESSOR_META_SUPPLIER = 49;
     public static final int WRAPPING_PROCESSOR_SUPPLIER = 50;
     public static final int GET_JOB_USER_CANCELLED_OP = 51;
     public static final int UPLOAD_JOB_METADATA_OP = 52;
     public static final int UPLOAD_JOB_MULTIPART_OP = 53;
+    public static final int UPDATE_JOB_CONFIG_OP = 54;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
