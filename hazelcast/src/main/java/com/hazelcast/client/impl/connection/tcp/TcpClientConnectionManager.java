@@ -55,6 +55,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.ConnectionType;
@@ -106,10 +107,6 @@ import static com.hazelcast.client.config.ConnectionRetryConfig.DEFAULT_CLUSTER_
 import static com.hazelcast.client.config.ConnectionRetryConfig.FAILOVER_CLIENT_DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS;
 import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.NOT_ALLOWED_IN_CLUSTER;
-import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.BOOLEAN_SIZE_IN_BYTES;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.LONG_SIZE_IN_BYTES;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeUUID;
 import static com.hazelcast.client.properties.ClientProperty.HEARTBEAT_TIMEOUT;
 import static com.hazelcast.client.properties.ClientProperty.IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.client.properties.ClientProperty.IO_INPUT_THREAD_COUNT;
@@ -754,15 +751,17 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             Socket socket = socketChannel.socket();
 
             bindSocketToPort(socket);
-
-            Channel channel = networking.register(currentClusterContext.getChannelInitializer(), socketChannel, true);
+            ChannelInitializer channelInitializer = currentClusterContext.getChannelInitializer();
+            Channel channel = networking.register(channelInitializer, socketChannel, true);
             channel.attributeMap().put(Address.class, target);
 
             InetSocketAddress inetSocketAddress = new InetSocketAddress(target.getInetAddress(), target.getPort());
             channel.connect(inetSocketAddress, connectionTimeoutMillis);
 
-            TcpClientConnection connection = new TcpClientConnection(client, connectionIdGen.incrementAndGet(), channel);
-            connection.setChannelInitializer(currentClusterContext.getChannelInitializer());
+            TcpClientConnection connection = new TcpClientConnection(client,
+                    connectionIdGen.incrementAndGet(),
+                    channel,
+                    channelInitializer);
 
             socketChannel.configureBlocking(true);
             SocketInterceptor socketInterceptor = currentClusterContext.getSocketInterceptor();
@@ -772,6 +771,33 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
             channel.start();
             return connection;
+        } catch (Exception e) {
+            closeResource(socketChannel);
+            logger.finest(e);
+            throw rethrow(e);
+        }
+    }
+
+    private Channel createAltoChannel(Address address, TcpClientConnection connection, ChannelInitializer channelInitializer) {
+        SocketChannel socketChannel = null;
+        try {
+            socketChannel = SocketChannel.open();
+            Socket socket = socketChannel.socket();
+
+            // TODO: Outbound ports for Alto?
+            bindSocketToPort(socket);
+            Channel channel = networking.register(channelInitializer, socketChannel, true);
+
+            ConcurrentMap attributeMap = channel.attributeMap();
+            attributeMap.put(Address.class, address);
+            attributeMap.put(TcpClientConnection.class, connection);
+
+            InetSocketAddress socketAddress = new InetSocketAddress(address.getHost(), address.getPort());
+            channel.connect(socketAddress, connectionTimeoutMillis);
+
+            // TODO: Socket interceptor for Alto?
+            channel.start();
+            return channel;
         } catch (Exception e) {
             closeResource(socketChannel);
             logger.finest(e);
@@ -952,30 +978,14 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
      * The returned connection could be different than the one passed to this method if there is already an existing
      * connection to the given member.
      */
-    @SuppressWarnings("java:S1135")
     private TcpClientConnection onAuthenticated(TcpClientConnection connection,
                                                 ClientAuthenticationCodec.ResponseParameters response,
                                                 boolean switchingToNextCluster) {
-        List<Integer> tpcPorts = response.tpcPorts;
-
         synchronized (clientStateMutex) {
             checkAuthenticationResponse(connection, response);
             connection.setRemoteAddress(response.address);
             connection.setRemoteUuid(response.memberUuid);
             connection.setClusterUuid(response.clusterId);
-
-            if (!isAltoAwareClient || tpcPorts == null || tpcPorts.isEmpty()) {
-                logger.finest("TPC Client: disabled, no TPC ports detected");
-            } else {
-                logger.info("TPC Client: connecting to ports (" + tpcPorts.size() + "): " + tpcPorts
-                        + " for connection: " + connection);
-                try {
-                    connectToTpcPorts(connection, tpcPorts);
-                } catch (IOException e) {
-                    // TODO: Improved handling.
-                    logger.warning(e);
-                }
-            }
 
             TcpClientConnection existingConnection = activeConnections.get(response.memberUuid);
             if (existingConnection != null) {
@@ -999,6 +1009,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 client.onConnectionToNewCluster();
             }
             checkClientState(connection, switchingToNextCluster);
+
+            List<Integer> altoPorts = response.altoPorts;
+            if (isAltoAwareClient && altoPorts != null && !altoPorts.isEmpty()) {
+                connectAltoPorts(connection, altoPorts);
+            }
 
             boolean connectionsEmpty = activeConnections.isEmpty();
             activeConnections.put(response.memberUuid, connection);
@@ -1057,40 +1072,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             onConnectionClose(connection);
         }
         return connection;
-    }
-
-    private void connectToTpcPorts(TcpClientConnection connection, List<Integer> tpcPorts) throws IOException {
-        Channel[] tpcChannels = new Channel[tpcPorts.size()];
-        for (int k = 0; k < tpcChannels.length; k++) {
-            Address address = new Address(connection.getRemoteAddress().getHost(), tpcPorts.get(k));
-            logger.info("TPC Client: Connecting to:" + address);
-            SocketChannel tpcSocketChannel = SocketChannel.open();
-
-            Channel tpcChannel = networking.register(connection.getChannelInitializer(), tpcSocketChannel, true);
-            tpcChannel.attributeMap().put(Address.class, address);
-            tpcChannel.attributeMap().put(TcpClientConnection.class, connection);
-
-            InetSocketAddress tpcSocketChannelAddress = new InetSocketAddress(address.getHost(), address.getPort());
-
-            tpcChannel.connect(tpcSocketChannelAddress, connectionTimeoutMillis);
-
-            logger.info("TPC Client: Successfully connected to " + tpcSocketChannelAddress);
-
-            tpcChannel.start();
-
-            // first thing we need to send is the clientUuid so this new socket can be connected
-            // to the connection on the member.
-            ClientMessage clientUuidMessage = ClientMessage.createForEncode();
-            ClientMessage.Frame initialFrame = new ClientMessage.Frame(
-                    new byte[BOOLEAN_SIZE_IN_BYTES + 2 * LONG_SIZE_IN_BYTES], UNFRAGMENTED_MESSAGE);
-            encodeUUID(initialFrame.content, 0, clientUuid);
-            clientUuidMessage.add(initialFrame);
-            tpcChannel.write(clientUuidMessage);
-            tpcChannels[k] = tpcChannel;
-        }
-
-        logger.info("TPC Client: All channel connections made for connection: " + connection);
-        connection.setTpcChannels(tpcChannels);
     }
 
     /**
@@ -1263,6 +1244,17 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 }
             }
         }
+    }
+
+    private void connectAltoPorts(TcpClientConnection connection, List<Integer> altoPorts) {
+        AltoChannelConnector connector = new AltoChannelConnector(clientUuid,
+                connection,
+                altoPorts,
+                executor,
+                connection.getChannelInitializer(),
+                this::createAltoChannel,
+                client.getLoggingService());
+        connector.initiate();
     }
 
     private class ClientConnectionChannelErrorHandler implements ChannelErrorHandler {

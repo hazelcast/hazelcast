@@ -4036,6 +4036,21 @@
           "type": "integer",
           "default": 0,
           "description": "Specifies the TCP linger seconds."
+        },
+        "keep-idle-seconds": {
+          "type": "integer",
+          "default": 7200,
+          "description": "Specifies the TCP Keep-Alive idle time: the number of seconds of idle time before keep-alive initiates a probe."
+        },
+        "keep-interval-seconds": {
+          "type": "integer",
+          "default": 75,
+          "description": "Specifies the TCP keep-alive interval: the number of seconds between keep-alive probes."
+        },
+        "keep-count": {
+          "type": "integer",
+          "default": 8,
+          "description": "Specifies the TCP Keep-Alive count: the maximum number of TCP keep-alive probes to send before giving up and closing the connection if no response is obtained from the other side."
         }
       }
     },
@@ -5002,7 +5017,7 @@
           },
           "class-name": {
             "type": "string",
-            "description": "The name of the class implementing DataLinkFactory."
+            "description": "The name of the class implementing DataLink."
           },
           "shared": {
             "type": "boolean",

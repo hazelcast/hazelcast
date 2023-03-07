@@ -23,8 +23,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.DataLinkService;
 import com.hazelcast.datalink.impl.DataLinkServiceImpl;
+import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.bootstrap.TpcServerBootstrap;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -133,7 +133,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
     private final ConcurrencyDetection concurrencyDetection;
     private final TenantControlServiceImpl tenantControlService;
-    private final DataLinkService dataLinkService;
+    private final InternalDataLinkService dataLinkService;
     private final TpcServerBootstrap tpcServerBootstrap;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
@@ -383,7 +383,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public DataLinkService getDataLinkService() {
+    public InternalDataLinkService getDataLinkService() {
         return dataLinkService;
     }
 
@@ -592,7 +592,7 @@ public class NodeEngineImpl implements NodeEngine {
             diagnostics.shutdown();
         }
         if (dataLinkService != null) {
-            dataLinkService.close();
+            dataLinkService.shutdown();
         }
 
     }

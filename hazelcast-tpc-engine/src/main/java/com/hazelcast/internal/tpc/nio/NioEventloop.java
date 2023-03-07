@@ -21,7 +21,6 @@ import com.hazelcast.internal.tpc.Scheduler;
 import com.hazelcast.internal.tpc.util.NanoClock;
 import org.jctools.queues.MpmcArrayQueue;
 
-import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
@@ -82,7 +81,7 @@ class NioEventloop extends Eventloop {
                     NioHandler handler = (NioHandler) key.attachment();
                     try {
                         handler.handle();
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         handler.close(null, e);
                     }
                 }

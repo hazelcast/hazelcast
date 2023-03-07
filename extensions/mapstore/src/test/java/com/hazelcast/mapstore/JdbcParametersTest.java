@@ -27,11 +27,35 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class GenericRecordUtilsTest {
+public class JdbcParametersTest {
+
+    @Test
+    public void testShiftParametersForUpdateForPosition0() {
+        JdbcParameters jDBCParameters = new JdbcParameters();
+        jDBCParameters.setParams(new Object[]{1, 2, 3});
+
+        jDBCParameters.shiftIdParameterToEnd();
+
+        Object[] params = jDBCParameters.getParams();
+
+        assertThat(params).isEqualTo(new Object[]{2, 3, 1});
+    }
+
+    @Test
+    public void testShiftParametersForUpdateForPosition1() {
+        JdbcParameters jDBCParameters = new JdbcParameters();
+        jDBCParameters.setParams(new Object[]{1, 2, 3});
+        jDBCParameters.setIdPos(1);
+
+        jDBCParameters.shiftIdParameterToEnd();
+
+        Object[] params = jDBCParameters.getParams();
+
+        assertThat(params).isEqualTo(new Object[]{1, 3, 2});
+    }
 
     @Test
     public void testToJDBCParameters() {
-
         List<SqlColumnMetadata> columnMetadata = Arrays.asList(
                 new SqlColumnMetadata("id", SqlColumnType.INTEGER, false),
                 new SqlColumnMetadata("name", SqlColumnType.VARCHAR, true),
@@ -40,15 +64,13 @@ public class GenericRecordUtilsTest {
 
         // Create GenericRecord containing id column, the id column should be used as JDBC parameter
         GenericRecord genericRecord = GenericRecordBuilder.compact("person")
-                .setInt32("id", 1)
-                .setString("name", "name_value")
-                .setString("address", "address_value")
-                .build();
+                                                          .setInt32("id", 1)
+                                                          .setString("name", "name_value")
+                                                          .setString("address", "address_value")
+                                                          .build();
 
         Integer key = 10;
-        JDBCParameters jdbcParameters = GenericRecordUtils.toJDBCParameters(key, genericRecord,
-                columnMetadata,
-                "id");
+        JdbcParameters jdbcParameters = JdbcParameters.convert(key, genericRecord, columnMetadata, "id");
 
         Object[] expected = {10, "name_value", "address_value"};
         assertThat(jdbcParameters.getParams()).isEqualTo(expected);
