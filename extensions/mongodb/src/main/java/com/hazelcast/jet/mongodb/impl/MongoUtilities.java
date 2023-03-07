@@ -51,9 +51,27 @@ final class MongoUtilities {
     static List<Bson> partitionAggregate(int totalParallelism, int processorIndex, boolean stream) {
         List<Bson> aggregateList = new ArrayList<>(3);
 
-        String code = "function(s) {\n"
-                + "    return s === null ? -1 : s.getTimestamp().getTime() %"
-                        + totalParallelism + " == " + processorIndex + ";\n"
+        String hashFunction = "function hash(s) { \n" +
+                "  var hash = 0, i, chr;\n" +
+                "  if (s.length === 0) return hash;\n" +
+                "  for (i = 0; i < s.length; i++) {\n" +
+                "    chr = s.charCodeAt(i);\n" +
+                "    hash = ((hash << 5) - hash) + chr;\n" +
+                "    hash |= 0;\n" +
+                "  }\n" +
+                "  return hash;\n" +
+                "}\n";
+
+        String moduloPart = " %" + totalParallelism + " == " + processorIndex + ";\n";
+        String code = "function(id) {\n"
+                + "if (id instanceof ObjectId)"
+                + "    return id === null ? -1 : id.getTimestamp().getTime() " + moduloPart
+                + "if (typeof(id) === 'number' || typeof(id) === 'bigint') return id " + moduloPart
+                + "if (typeof(id) === 'string') {\n"
+                + hashFunction
+                + "    return hash(id) " + moduloPart
+                + "}\n"
+                + "else return 0;\n"
                 + "}";
 
         String idRef = stream ? "$fullDocument._id" : "$_id";

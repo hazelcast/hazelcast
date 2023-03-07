@@ -18,79 +18,207 @@ package com.hazelcast.datalink.impl;
 
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datalink.DataLinkFactory;
-import com.hazelcast.datalink.DataLinkService;
+import com.hazelcast.datalink.DataLink;
+import com.hazelcast.datalink.DataLinkRegistration;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.logging.ILogger;
 
+import java.lang.reflect.Constructor;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource.CONFIG;
+import static com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource.SQL;
+import static com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSourcePair.pair;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
-public class DataLinkServiceImpl implements DataLinkService {
-    private final Map<String, DataLinkFactory<?>> dataLinkFactories = new ConcurrentHashMap<>();
+public class DataLinkServiceImpl implements InternalDataLinkService {
+
+    private final Map<String, Class<? extends DataLink>> typeToDataLinkClass = new HashMap<>();
+    private final Map<Class<? extends DataLink>, String> dataLinkClassToType = new HashMap<>();
+
+    private final Map<String, DataLinkSourcePair> dataLinks = new ConcurrentHashMap<>();
+
     private final ClassLoader classLoader;
-    private final Node node;
     private final ILogger logger;
 
     public DataLinkServiceImpl(Node node, ClassLoader classLoader) {
         this.classLoader = classLoader;
-        this.node = node;
-        this.logger = node.getLogger(DataLinkServiceImpl.class);
-        for (Map.Entry<String, DataLinkConfig> entry : node.getConfig().getDataLinkConfigs().entrySet()) {
-            dataLinkFactories.put(entry.getKey(), createFactory(entry.getValue()));
+        this.logger = node.getLogger(getClass());
+        processDataLinkRegistrations(classLoader);
+
+        for (DataLinkConfig config : node.getConfig().getDataLinkConfigs().values()) {
+            put(config, CONFIG, false);
         }
     }
 
-    private <DS> DataLinkFactory<DS> createFactory(DataLinkConfig config) {
-        logger.finest("Creating '" + config.getName() + "' data link factory");
-        String className = config.getClassName();
+    private void processDataLinkRegistrations(ClassLoader classLoader) {
         try {
-            DataLinkFactory<DS> dataLinkFactory = ClassLoaderUtil.newInstance(classLoader, className);
-            dataLinkFactory.init(config);
-            return dataLinkFactory;
+            ServiceLoader.iterator(
+                    DataLinkRegistration.class,
+                    DataLinkRegistration.class.getName(),
+                    classLoader
+            ).forEachRemaining(registration -> {
+                typeToDataLinkClass.put(registration.type(), registration.clazz());
+                dataLinkClassToType.put(registration.clazz(), registration.type());
+            });
+        } catch (Exception e) {
+            throw new HazelcastException("Could not register DataLinks", e);
+        }
+    }
+
+    @Override
+    public void createConfigDataLink(DataLinkConfig config) {
+        put(config, CONFIG, true);
+    }
+
+    private void put(DataLinkConfig config, DataLinkSource source, boolean replace) {
+        dataLinks.compute(config.getName(),
+                (key, current) -> {
+                    if (current != null) {
+                        if (!replace) {
+                            throw new HazelcastException("Data link '" + config.getName() + "' already exists");
+                        }
+                        if (current.source == CONFIG) {
+                            throw new HazelcastException("Cannot replace a data link created from configuration");
+                        }
+                        // close the old DataLink
+                        try {
+                            current.instance.release();
+                        } catch (Exception e) {
+                            logger.severe("Error when closing data link '" + config.getName()
+                                    + "', ignoring it: " + e, e);
+                        }
+                    }
+                    return pair(createDataLinkInstance(config), source);
+                });
+    }
+
+    @Override
+    public void createSqlDataLink(String name, String type, Map<String, String> options, boolean replace) {
+        put(toConfig(name, type, options), SQL, replace);
+    }
+
+    @Override
+    public boolean existsDataLink(String name) {
+        return dataLinks.containsKey(name);
+    }
+
+    private DataLinkConfig toConfig(String name, String type, Map<String, String> options) {
+        Properties properties = new Properties();
+        properties.putAll(options);
+        return new DataLinkConfig(name)
+                .setClassName(type)
+                .setProperties(properties);
+    }
+
+    private DataLink createDataLinkInstance(DataLinkConfig config) {
+        logger.finest("Creating '" + config.getName() + "' data link");
+        String type = config.getClassName();
+        try {
+            Class<? extends DataLink> dataLinkClass;
+            if (typeToDataLinkClass.containsKey(type)) {
+                dataLinkClass = typeToDataLinkClass.get(type);
+            } else {
+                // TODO get rid of this branch when change className -> type in config
+                dataLinkClass = getDataLinkClass(type);
+            }
+            Constructor<? extends DataLink> constructor = dataLinkClass.getConstructor(DataLinkConfig.class);
+            return constructor.newInstance(config);
         } catch (ClassCastException e) {
             throw new HazelcastException("Data link '" + config.getName() + "' misconfigured: "
-                    + "'" + className + "' must implement '"
-                    + DataLinkFactory.class.getName() + "'", e);
+                    + "'" + type + "' must implement '"
+                    + DataLink.class.getName() + "'", e);
 
         } catch (ClassNotFoundException e) {
             throw new HazelcastException("Data link '" + config.getName() + "' misconfigured: "
-                    + "class '" + className + "' not found", e);
+                    + "class '" + type + "' not found", e);
         } catch (Exception e) {
             throw rethrow(e);
         }
     }
 
-    @Override
-    public boolean testConnection(DataLinkConfig config) throws Exception {
-        try (DataLinkFactory<Object> factory = createFactory(config)) {
-            return factory.testConnection();
+    @SuppressWarnings("unchecked")
+    private <T> Class<T> getDataLinkClass(String className) throws ClassNotFoundException {
+        if (classLoader != null) {
+            return (Class<T>) classLoader.loadClass(className);
+        } else {
+            return (Class<T>) DataLinkServiceImpl.class.getClassLoader().loadClass(className);
         }
     }
 
     @Override
-    public <DS> DataLinkFactory<DS> getDataLinkFactory(String name) {
-        DataLinkConfig dataLinkConfig = node.getConfig().getDataLinkConfigs().get(name);
-        if (dataLinkConfig == null) {
-            throw new HazelcastException("Data link factory '" + name + "' not found");
+    public String typeForDataLink(String name) {
+        DataLinkSourcePair dataLink = dataLinks.get(name);
+        if (dataLink == null) {
+            throw new HazelcastException("DataLink with name '" + name + "' does not exist");
         }
-        return (DataLinkFactory<DS>) dataLinkFactories
-                .computeIfAbsent(name, n -> createFactory(dataLinkConfig));
+        String type = dataLinkClassToType.get(dataLink.instance.getClass());
+        if (type == null) {
+            throw new HazelcastException("DataLink type for class '" + dataLink.getClass() + "' is not known");
+        }
+        return type;
     }
 
     @Override
-    public void close() {
-        for (Map.Entry<String, DataLinkFactory<?>> entry : dataLinkFactories.entrySet()) {
-            try {
-                logger.finest("Closing '" + entry.getKey() + "' data link factory");
-                DataLinkFactory<?> dataLinkFactory = entry.getValue();
-                dataLinkFactory.close();
-            } catch (Exception e) {
-                logger.warning("Closing '" + entry.getKey() + "' data link factory failed", e);
+    public <T extends DataLink> T getAndRetainDataLink(String name, Class<T> clazz) {
+        DataLinkSourcePair dataLink = dataLinks.computeIfPresent(name, (k, v) -> {
+            if (!clazz.isInstance(v.instance)) {
+                throw new HazelcastException("Data link '" + name + "' must be an instance of " + clazz);
             }
+            v.instance.retain();
+            return v;
+        });
+
+        if (dataLink == null) {
+            throw new HazelcastException("Data link '" + name + "' not found");
+        }
+        //noinspection unchecked
+        return (T) dataLink.instance;
+    }
+
+    @Override
+    public void removeDataLink(String name) {
+        dataLinks.computeIfPresent(name, (k, v) -> {
+            if (CONFIG.equals(v.source)) {
+                throw new HazelcastException("Data link '" + name + "' is configured via Config and can't be removed");
+            }
+            v.instance.release();
+            return null;
+        });
+    }
+
+    @Override
+    public void shutdown() {
+        for (Map.Entry<String, DataLinkSourcePair> entry : dataLinks.entrySet()) {
+            logger.finest("Closing '" + entry.getKey() + "' data link");
+            DataLinkSourcePair dataLink = entry.getValue();
+            try {
+                dataLink.instance.destroy();
+            } catch (Exception e) {
+                logger.warning("Closing '" + entry.getKey() + "' data link failed", e);
+            }
+        }
+    }
+
+    enum DataLinkSource {
+        CONFIG, SQL
+    }
+
+    static class DataLinkSourcePair {
+        final DataLink instance;
+        final DataLinkSource source;
+
+        DataLinkSourcePair(DataLink instance, DataLinkSource source) {
+            this.instance = instance;
+            this.source = source;
+        }
+
+        static DataLinkSourcePair pair(DataLink dataLink, DataLinkSource source) {
+            return new DataLinkSourcePair(dataLink, source);
         }
     }
 }

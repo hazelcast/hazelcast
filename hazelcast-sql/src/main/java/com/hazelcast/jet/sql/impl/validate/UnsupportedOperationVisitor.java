@@ -17,8 +17,10 @@
 package com.hazelcast.jet.sql.impl.validate;
 
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateDataLink;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateSnapshot;
+import com.hazelcast.jet.sql.impl.parse.SqlDropDataLink;
 import com.hazelcast.jet.sql.impl.parse.SqlDropJob;
 import com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot;
 import com.hazelcast.jet.sql.impl.parse.SqlOption;
@@ -243,6 +245,8 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
 
         // Extensions
         SUPPORTED_OPERATORS.add(SqlOption.OPERATOR);
+        SUPPORTED_OPERATORS.add(SqlCreateDataLink.CREATE_DATA_LINK);
+        SUPPORTED_OPERATORS.add(SqlDropDataLink.DROP_DATA_LINK);
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_MAPPINGS);
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_VIEWS);
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_JOBS);
@@ -500,12 +504,15 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         throw unsupported(call, operator.getName());
     }
 
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     private void processOtherDdl(SqlCall call) {
         if (!(call instanceof SqlCreateJob)
                 && !(call instanceof SqlDropJob)
                 && !(call instanceof SqlAlterJob)
                 && !(call instanceof SqlCreateSnapshot)
                 && !(call instanceof SqlDropSnapshot)
+                && !(call instanceof SqlCreateDataLink)
+                && !(call instanceof SqlDropDataLink)
         ) {
             throw unsupported(call, "OTHER DDL class (" + call.getClass().getSimpleName() + ")");
         }

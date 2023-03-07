@@ -53,6 +53,7 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.CollectionUtil;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.map.IMapEvent;
 import com.hazelcast.map.MapEvent;
@@ -180,7 +181,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
             ClientMessage request = MultiMapPutAllCodec.encodeRequest(name, entry.getValue());
             new ClientInvocation(getClient(), request, getName(), partitionId)
                     .invoke()
-                    .whenCompleteAsync(callback);
+                    .whenCompleteAsync(callback, ConcurrencyUtil.getDefaultAsyncExecutor());
         }
     }
 

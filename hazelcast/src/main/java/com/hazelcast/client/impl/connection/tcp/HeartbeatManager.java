@@ -17,10 +17,10 @@
 package com.hazelcast.client.impl.connection.tcp;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
@@ -46,10 +46,10 @@ public final class HeartbeatManager {
                              ILogger logger,
                              long heartbeatIntervalMillis,
                              long heartbeatTimeoutMillis,
-                             Collection<Connection> unmodifiableActiveConnections) {
+                             Collection<ClientConnection> unmodifiableActiveConnections) {
         taskScheduler.scheduleWithRepetition(() -> {
             long now = Clock.currentTimeMillis();
-            for (Connection connection : unmodifiableActiveConnections) {
+            for (ClientConnection connection : unmodifiableActiveConnections) {
                 if (!connection.isAlive()) {
                     return;
                 }

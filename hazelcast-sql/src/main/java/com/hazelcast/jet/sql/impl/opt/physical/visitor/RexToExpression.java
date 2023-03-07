@@ -20,6 +20,7 @@ import com.google.common.collect.RangeSet;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.expression.Sarg;
 import com.hazelcast.jet.sql.impl.expression.ToRowFunction;
+import com.hazelcast.jet.sql.impl.expression.UdtObjectToJsonFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonArrayFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonObjectFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
@@ -27,6 +28,7 @@ import com.hazelcast.jet.sql.impl.expression.json.JsonQueryFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonParseFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastUdtObjectToJsonFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastLikeOperator;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.SqlColumnType;
@@ -505,6 +507,8 @@ public final class RexToExpression {
                     return JsonArrayFunction.create(fields, nullClause);
                 } else if (function == HazelcastSqlOperatorTable.TO_ROW) {
                     return ToRowFunction.create(operands[0]);
+                } else if (function == HazelcastUdtObjectToJsonFunction.INSTANCE) {
+                    return UdtObjectToJsonFunction.create(operands[0]);
                 }
 
                 break;

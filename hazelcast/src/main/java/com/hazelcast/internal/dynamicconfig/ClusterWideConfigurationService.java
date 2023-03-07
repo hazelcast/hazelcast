@@ -20,10 +20,10 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
@@ -331,6 +331,9 @@ public class ClusterWideConfigurationService implements
         } else if (newConfig instanceof DataLinkConfig) {
             DataLinkConfig config = (DataLinkConfig) newConfig;
             currentConfig = dataLinkConfigs.putIfAbsent(config.getName(), config);
+            if (currentConfig == null) {
+                nodeEngine.getDataLinkService().createConfigDataLink(config);
+            }
         } else {
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
         }
