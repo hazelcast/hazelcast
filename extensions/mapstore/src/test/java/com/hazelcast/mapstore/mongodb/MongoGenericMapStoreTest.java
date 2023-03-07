@@ -97,7 +97,6 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
     public void setUp() {
         tableName = randomName();
         createCollection(tableName);
-        database.getCollection(tableName).insertOne(new Document("id", 1).append("name", "name-1"));
 
         MapConfig mapConfig = new MapConfig(tableName);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
@@ -171,11 +170,11 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
         HazelcastInstance client = client();
         IMap<Integer, Person> map = client.getMap(tableName);
 
-        Assertions.assertThat(database.getCollection(tableName).countDocuments()).isEqualTo(1);
+        assertThat(database.getCollection(tableName).countDocuments()).isEqualTo(1);
 
         map.remove(0);
 
-        Assertions.assertThat(database.getCollection(tableName).countDocuments()).isEqualTo(0);
+        assertThat(database.getCollection(tableName).countDocuments()).isZero();
     }
 
     private void assertMongoRowsAnyOrder(String tableName, Person... p) {

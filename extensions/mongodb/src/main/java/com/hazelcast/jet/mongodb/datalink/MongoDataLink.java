@@ -16,9 +16,8 @@
 package com.hazelcast.jet.mongodb.datalink;
 
 import com.hazelcast.config.DataLinkConfig;
-import com.hazelcast.datalink.DataLink;
+import com.hazelcast.datalink.DataLinkBase;
 import com.hazelcast.datalink.DataLinkResource;
-import com.hazelcast.datalink.impl.ReferenceCounter;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
@@ -38,47 +37,45 @@ import static com.hazelcast.internal.util.Preconditions.checkState;
  *
  * @since 5.3
  */
-public class MongoDataLink implements DataLink {
+public class MongoDataLink extends DataLinkBase {
     /**
      * Name of a property which holds connection string to the mongodb instance.
      */
     public static final String CONNECTION_STRING_PROPERTY = "connectionString";
-    protected final DataLinkConfig config;
-    protected final ReferenceCounter refCounter;
     private MongoClient mongoClient;
 
     /**
      * Creates a new data link based on given config.
      */
     public MongoDataLink(DataLinkConfig config) {
-        this.config = config;
-        this.refCounter = new ReferenceCounter(this::destroy);
+        super(config);
+        this.mongoClient = new CloseableMongoClient(createClient(config), this::release);
+    }
 
+    private MongoClient createClient(DataLinkConfig config) {
         String connectionString = config.getProperty(CONNECTION_STRING_PROPERTY);
         checkNotNull(connectionString, "connectionString property cannot be null");
-        this.mongoClient = new CloseableMongoClient(MongoClients.create(connectionString), refCounter::release);
+        return MongoClients.create(connectionString);
     }
 
     /**
      * Returns an instance of {@link MongoClient}.
      *
-     * {@linkplain MongoClient#close()} won't take an effect if there will be still some usages of given client.
+     * If client is {@linkplain DataLinkConfig#isShared() shared} and there will be still some usages of given client,
+     * the {@linkplain MongoClient#close()} method won't take an effect.
      */
     @Nonnull
     public MongoClient getClient() {
-        refCounter.retain();
-        checkState(mongoClient != null, "Mongo client should not be closed at this point");
-        return mongoClient;
+        if (getConfig().isShared()) {
+            retain();
+            checkState(mongoClient != null, "Mongo client should not be closed at this point");
+            return mongoClient;
+        } else {
+            MongoClient client = createClient(getConfig());
+            return new CloseableMongoClient(client, client::close);
+        }
     }
 
-    /**
-     * Returns name of this data link.
-     */
-    @Nonnull
-    @Override
-    public String getName() {
-        return config.getName();
-    }
 
     /**
      * Lists all MongoDB collections in all databases.
@@ -87,33 +84,15 @@ public class MongoDataLink implements DataLink {
     @Override
     public List<DataLinkResource> listResources() {
         List<DataLinkResource> resources = new ArrayList<>();
-        for (String databaseName : mongoClient.listDatabaseNames()) {
-            MongoDatabase database = mongoClient.getDatabase(databaseName);
+        MongoClient client = getClient();
+
+        for (String databaseName : client.listDatabaseNames()) {
+            MongoDatabase database = client.getDatabase(databaseName);
             for (String collectionName : database.listCollectionNames()) {
-                resources.add(new DataLinkResource("collection", collectionName));
+                resources.add(new DataLinkResource("collection", databaseName + "." + collectionName));
             }
         }
         return resources;
-    }
-
-    /**
-     * Returns configuration of this data link.
-     */
-    @Nonnull
-    @Override
-    public DataLinkConfig getConfig() {
-        return config;
-    }
-
-    @Override
-    public void retain() {
-        refCounter.retain();
-    }
-
-    @Override
-    public void release() {
-        refCounter.release();
-
     }
 
     /**

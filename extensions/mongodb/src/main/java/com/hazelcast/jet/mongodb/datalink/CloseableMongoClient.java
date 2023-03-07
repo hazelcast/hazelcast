@@ -45,6 +45,13 @@ class CloseableMongoClient implements MongoClient {
         return delegate;
     }
 
+    @Override
+    public void close() {
+        onClose.run();
+    }
+
+    // All the following methods are delegating actions to underlying client.
+
     @Nonnull
     @Override
     public MongoDatabase getDatabase(@Nonnull String databaseName) {
@@ -61,11 +68,6 @@ class CloseableMongoClient implements MongoClient {
     @Override
     public ClientSession startSession(@Nonnull ClientSessionOptions options) {
         return delegate.startSession(options);
-    }
-
-    @Override
-    public void close() {
-        onClose.run();
     }
 
     @Nonnull

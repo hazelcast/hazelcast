@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.mongodb.datalink;
+package com.hazelcast.jet.mongodb.datalink.impl;
 
 import com.hazelcast.datalink.DataLink;
 import com.hazelcast.datalink.DataLinkRegistration;
+import com.hazelcast.jet.mongodb.datalink.MongoDataLink;
 
 /**
  * Registers {@link MongoDataLink} in streaming version.
@@ -26,7 +27,7 @@ import com.hazelcast.datalink.DataLinkRegistration;
 public class MongoStreamDataLinkRegistration implements DataLinkRegistration {
 
     /**
-     * Returns "MongoDBStream" - will be used to determine Data link class based when it's this mapping type.
+     * Returns "MongoDBStream" - will be used to determine Data link class based on it's this mapping type.
      */
     @Override
     public String type() {

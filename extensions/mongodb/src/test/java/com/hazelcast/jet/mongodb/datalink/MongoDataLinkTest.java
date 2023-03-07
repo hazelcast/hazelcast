@@ -47,12 +47,14 @@ public class MongoDataLinkTest extends AbstractMongoDBTest {
 
     @After
     public void cleanup() {
-        dataLink.destroy();
-        dataLink = null;
+        if (dataLink != null) {
+            dataLink.destroy();
+            dataLink = null;
+        }
     }
 
     @Test
-    public void should_return_same_link() {
+    public void should_return_same_link_when_shared() {
         dataLink = new MongoDataLink(mongoDataLinkConf("mongo", connectionString));
 
         MongoClient client1 = dataLink.getClient();
@@ -93,10 +95,37 @@ public class MongoDataLinkTest extends AbstractMongoDBTest {
         db2.createCollection("col3");
 
         assertThat(dataLink.listResources()).contains(
-                new DataLinkResource("collection", "col1"),
-                new DataLinkResource("collection", "col2"),
-                new DataLinkResource("collection", "col3")
+                new DataLinkResource("collection", "test.col1"),
+                new DataLinkResource("collection", "test.col2"),
+                new DataLinkResource("collection", "test2.col3")
         );
+    }
+
+    @Test
+    public void should_return_new_link_when_not_shared() {
+        dataLink = new MongoDataLink(mongoDataLinkConf("mongo", connectionString).setShared(false));
+
+        MongoClient client1 = dataLink.getClient();
+        MongoClient client2 = dataLink.getClient();
+
+        assertThat(client1).isNotNull();
+        assertThat(client2).isNotNull();
+        assertThat(client1).isNotSameAs(client2);
+    }
+
+    @Test
+    public void should_close_client_when_all_released_when_not_shared() {
+        dataLink = new MongoDataLink(mongoDataLinkConf("mongo", connectionString).setShared(false));
+
+        MongoClient client1 = dataLink.getClient();
+        MongoClient client2 = dataLink.getClient();
+
+        client1.close();
+        assertNotClosed(client2);
+        client2.close();
+
+        assertClosed(client1);
+        assertClosed(client2);
     }
 
     private void assertNotClosed(MongoClient client) {
