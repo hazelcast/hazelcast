@@ -74,9 +74,7 @@ makes testing a lot less cumbersome.
 The functionality of the tpc-engine doesn't know anything about
 functionality running on top like Alto or Hazelcast classic.
 
-The TpcEngine is created using the Configuration object. Probably this
-should be renamed to TpcEngineBuilder since most of the other objects
-are created using Builders.
+The TpcEngine is created using the TpcEngineBuilder.
 
 ## Scheduler
 
