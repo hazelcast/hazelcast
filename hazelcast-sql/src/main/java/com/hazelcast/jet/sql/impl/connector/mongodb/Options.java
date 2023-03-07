@@ -15,6 +15,9 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import com.hazelcast.jet.mongodb.impl.MongoUtilities;
+import org.bson.BsonTimestamp;
+
 import java.time.Instant;
 import java.util.Map;
 
@@ -28,15 +31,15 @@ final class Options {
     private Options() {
     }
 
-    static Long startAt(Map<String, String> options) {
+    static BsonTimestamp startAt(Map<String, String> options) {
         String startAtValue = options.get(START_AT_OPTION);
         if ("now".equalsIgnoreCase(startAtValue)) {
-            return System.currentTimeMillis();
+            return MongoUtilities.bsonTimestampFromTimeMillis(System.currentTimeMillis());
         } else {
             try {
-                return Long.parseLong(startAtValue);
+                return MongoUtilities.bsonTimestampFromTimeMillis(Long.parseLong(startAtValue));
             } catch (NumberFormatException e) {
-                return Instant.parse(startAtValue).toEpochMilli();
+                return MongoUtilities.bsonTimestampFromTimeMillis(Instant.parse(startAtValue).toEpochMilli());
             }
         }
     }

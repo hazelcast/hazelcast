@@ -32,6 +32,7 @@ import org.bson.conversions.Bson;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.bsonTimestampFromTimeMillis;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -226,7 +227,7 @@ public final class MongoSources {
         if (filter != null) {
             builder.filter(filter);
         }
-        builder.startAtOperationTime(new BsonTimestamp((int) MILLISECONDS.toSeconds(System.currentTimeMillis()), 0));
+        builder.startAtOperationTime(bsonTimestampFromTimeMillis(System.currentTimeMillis()));
         return builder.build();
     }
 }

@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
+import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -62,7 +63,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
     private transient ExpressionEvalContext evalContext;
     private final QueryDataType[] types;
 
-    SelectProcessorSupplier(MongoTable table, Document predicate, List<String> projection, Long startAt, boolean stream,
+    SelectProcessorSupplier(MongoTable table, Document predicate, List<String> projection, BsonTimestamp startAt, boolean stream,
                             FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
         checkArgument(projection != null && !projection.isEmpty(), "projection cannot be empty");
 
@@ -71,14 +72,14 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         this.connectionString = table.connectionString;
         this.databaseName = table.databaseName;
         this.collectionName = table.collectionName;
-        this.startAt = startAt;
+        this.startAt = startAt == null ? null : startAt.getValue();
         this.stream = stream;
         this.eventTimePolicyProvider = eventTimePolicyProvider;
         this.types = table.resolveColumnTypes(projection);
     }
 
 
-    SelectProcessorSupplier(MongoTable table, Document predicate, List<String> projection, Long startAt,
+    SelectProcessorSupplier(MongoTable table, Document predicate, List<String> projection, BsonTimestamp startAt,
                             FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
         this(table, predicate, projection, startAt, true, eventTimePolicyProvider);
     }
@@ -122,7 +123,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
                             .setCollectionName(collectionName)
                             .setMapItemFn(this::convertDocToRow)
                             .setMapStreamFn(this::convertStreamDocToRow)
-                            .setStartAtTimestamp(startAt)
+                            .setStartAtTimestamp(new BsonTimestamp(startAt))
                             .setEventTimePolicy(eventTimePolicy)
             );
 

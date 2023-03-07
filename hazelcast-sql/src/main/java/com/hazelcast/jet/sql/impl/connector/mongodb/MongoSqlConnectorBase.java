@@ -32,6 +32,7 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import org.apache.calcite.rex.RexNode;
 import org.bson.BsonDocument;
+import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -139,7 +140,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
 
         SelectProcessorSupplier supplier;
         if (isStream()) {
-            Long startAt = Options.startAt(table.getOptions());
+            BsonTimestamp startAt = Options.startAt(table.getOptions());
             supplier = new SelectProcessorSupplier(table, filter.result, projectionList, startAt,
                     eventTimePolicyProvider);
         } else {
