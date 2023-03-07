@@ -88,7 +88,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             }
             this.writeThrough = builder.writeThrough;
             this.regularSchedule = builder.regularSchedule;
-            this.writeQueue = new MpmcArrayQueue<>(builder.unflushedBufsCapacity);
+            this.writeQueue = new MpmcArrayQueue<>(builder.writeQueueCapacity);
             this.handler = new Handler(builder);
             this.key = socketChannel.register(reactor.selector, 0, handler);
             this.readHandler = builder.readHandler;
