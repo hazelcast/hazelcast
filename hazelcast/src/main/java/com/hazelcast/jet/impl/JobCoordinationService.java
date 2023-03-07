@@ -833,7 +833,7 @@ public class JobCoordinationService {
         return callWithJob(jobId,
                 masterContext -> masterContext.updateJobConfig(deltaConfig),
                 jobResult -> {
-                    throw new IllegalStateException("Job not suspended");
+                    throw new IllegalStateException("Job not suspended, but " + jobResult.getJobStatus());
                 },
                 jobRecord -> {
                     throw new IllegalStateException("Job not suspended");

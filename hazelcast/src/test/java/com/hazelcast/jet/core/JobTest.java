@@ -1082,13 +1082,13 @@ public class JobTest extends SimpleTestInClusterSupport {
                 .writeTo(Sinks.noop());
 
         Job job = instance.getJet().newJob(pipeline);
-        assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig())).hasMessage("Job not suspended");
+        assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig())).hasMessageStartingWith("Job not suspended, but");
 
         assertJobStatusEventually(job, RUNNING);
-        assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig())).hasMessage("Job not suspended");
+        assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig())).hasMessage("Job not suspended, but RUNNING");
 
         cancelAndJoin(job);
-        assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig())).hasMessage("Job not suspended");
+        assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig())).hasMessage("Job not suspended, but FAILED");
     }
 
     // ### Tests for light jobs
