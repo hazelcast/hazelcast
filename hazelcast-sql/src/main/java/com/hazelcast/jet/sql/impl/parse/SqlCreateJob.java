@@ -35,7 +35,6 @@ import javax.annotation.Nonnull;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Supplier;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
@@ -143,15 +142,6 @@ public class SqlCreateJob extends SqlCreate {
                 throw validator.newValidationError(option, RESOURCE.duplicateOption(key));
             }
 
-            Supplier<Long> valueAsLong = () -> {
-                try {
-                    return Long.parseLong(value);
-                } catch (NumberFormatException e) {
-                    throw validator.newValidationError(option.value(),
-                            RESOURCE.jobOptionIncorrectNumber(key, value));
-                }
-            };
-
             switch (key) {
                 case "processingGuarantee":
                     switch (value) {
@@ -170,7 +160,7 @@ public class SqlCreateJob extends SqlCreate {
                     }
                     break;
                 case "snapshotIntervalMillis":
-                    jobConfig.setSnapshotIntervalMillis(valueAsLong.get());
+                    jobConfig.setSnapshotIntervalMillis(parseLong(validator, option));
                     break;
                 case "autoScaling":
                     jobConfig.setAutoScaling(Boolean.parseBoolean(value));
@@ -188,7 +178,7 @@ public class SqlCreateJob extends SqlCreate {
                     jobConfig.setInitialSnapshotName(value);
                     break;
                 case "maxProcessorAccumulatedRecords":
-                    jobConfig.setMaxProcessorAccumulatedRecords(valueAsLong.get());
+                    jobConfig.setMaxProcessorAccumulatedRecords(parseLong(validator, option));
                     break;
                 case "suspendOnFailure":
                     jobConfig.setSuspendOnFailure(Boolean.parseBoolean(value));
@@ -199,5 +189,14 @@ public class SqlCreateJob extends SqlCreate {
         }
 
         validator.validate(sqlInsert);
+    }
+
+    private static long parseLong(SqlValidator validator, SqlOption option) {
+        try {
+            return Long.parseLong(option.valueString());
+        } catch (NumberFormatException e) {
+            throw validator.newValidationError(option.value(),
+                    RESOURCE.jobOptionIncorrectNumber(option.keyString(), option.valueString()));
+        }
     }
 }
