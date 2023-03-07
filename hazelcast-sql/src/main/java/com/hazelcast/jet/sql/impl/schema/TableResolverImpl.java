@@ -35,6 +35,7 @@ import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
+import com.hazelcast.sql.impl.schema.datalink.DataLink;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 
@@ -47,6 +48,8 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_INFORMATION_SCHEMA;
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PUBLIC;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
@@ -55,10 +58,6 @@ import static java.util.Collections.singletonList;
  * information_schema}.
  */
 public class TableResolverImpl implements TableResolver {
-
-    public static final String SCHEMA_NAME_PUBLIC = "public";
-    public static final String SCHEMA_NAME_INFORMATION_SCHEMA = "information_schema";
-
     private static final List<List<String>> SEARCH_PATHS = singletonList(
             asList(CATALOG, SCHEMA_NAME_PUBLIC)
     );
@@ -73,7 +72,7 @@ public class TableResolverImpl implements TableResolver {
     );
 
     private final NodeEngine nodeEngine;
-    private final TablesStorage tableStorage;
+    private final RelationsStorage relationsStorage;
     private final SqlConnectorCache connectorCache;
     private final List<TableListener> listeners;
 
@@ -87,11 +86,11 @@ public class TableResolverImpl implements TableResolver {
 
     public TableResolverImpl(
             NodeEngine nodeEngine,
-            TablesStorage tableStorage,
+            RelationsStorage relationsStorage,
             SqlConnectorCache connectorCache
     ) {
         this.nodeEngine = nodeEngine;
-        this.tableStorage = tableStorage;
+        this.relationsStorage = relationsStorage;
         this.connectorCache = connectorCache;
         this.listeners = new CopyOnWriteArrayList<>();
 
@@ -100,7 +99,7 @@ public class TableResolverImpl implements TableResolver {
         // we skip events originating from local member to avoid double processing
         nodeEngine.getHazelcastInstance().getLifecycleService().addLifecycleListener(event -> {
             if (event.getState() == LifecycleEvent.LifecycleState.STARTED) {
-                this.tableStorage.initializeWithListener(new TablesStorage.EntryListenerAdapter() {
+                this.relationsStorage.initializeWithListener(new AbstractSchemaStorage.EntryListenerAdapter() {
                     @Override
                     public void entryUpdated(EntryEvent<String, Object> event) {
                         if (!event.getMember().localMember()) {
@@ -126,11 +125,11 @@ public class TableResolverImpl implements TableResolver {
 
         String name = resolved.name();
         if (ifNotExists) {
-            tableStorage.putIfAbsent(name, resolved);
+            relationsStorage.putIfAbsent(name, resolved);
         } else if (replace) {
-            tableStorage.put(name, resolved);
+            relationsStorage.put(name, resolved);
             listeners.forEach(TableListener::onTableChanged);
-        } else if (!tableStorage.putIfAbsent(name, resolved)) {
+        } else if (!relationsStorage.putIfAbsent(name, resolved)) {
             throw QueryException.error("Mapping or view already exists: " + name);
         }
     }
@@ -156,7 +155,7 @@ public class TableResolverImpl implements TableResolver {
     }
 
     public void removeMapping(String name, boolean ifExists) {
-        if (tableStorage.removeMapping(name) != null) {
+        if (relationsStorage.removeMapping(name) != null) {
             listeners.forEach(TableListener::onTableChanged);
         } else if (!ifExists) {
             throw QueryException.error("Mapping does not exist: " + name);
@@ -165,7 +164,7 @@ public class TableResolverImpl implements TableResolver {
 
     @Nonnull
     public Collection<String> getMappingNames() {
-        return tableStorage.mappingNames();
+        return relationsStorage.mappingNames();
     }
     // endregion
 
@@ -173,23 +172,23 @@ public class TableResolverImpl implements TableResolver {
 
     public void createView(View view, boolean replace, boolean ifNotExists) {
         if (ifNotExists) {
-            tableStorage.putIfAbsent(view.name(), view);
+            relationsStorage.putIfAbsent(view.name(), view);
         } else if (replace) {
-            tableStorage.put(view.name(), view);
-        } else if (!tableStorage.putIfAbsent(view.name(), view)) {
+            relationsStorage.put(view.name(), view);
+        } else if (!relationsStorage.putIfAbsent(view.name(), view)) {
             throw QueryException.error("Mapping or view already exists: " + view.name());
         }
     }
 
     public void removeView(String name, boolean ifExists) {
-        if (tableStorage.removeView(name) == null && !ifExists) {
+        if (relationsStorage.removeView(name) == null && !ifExists) {
             throw QueryException.error("View does not exist: " + name);
         }
     }
 
     @Nonnull
     public Collection<String> getViewNames() {
-        return tableStorage.viewNames();
+        return relationsStorage.viewNames();
     }
 
     // endregion
@@ -197,25 +196,25 @@ public class TableResolverImpl implements TableResolver {
     // region type
 
     public Collection<String> getTypeNames() {
-        return tableStorage.typeNames();
+        return relationsStorage.typeNames();
     }
 
     public Collection<Type> getTypes() {
-        return tableStorage.getAllTypes();
+        return relationsStorage.getAllTypes();
     }
 
     public void createType(Type type, boolean replace, boolean ifNotExists) {
         if (ifNotExists) {
-            tableStorage.putIfAbsent(type.getName(), type);
+            relationsStorage.putIfAbsent(type.getName(), type);
         } else if (replace) {
-            tableStorage.put(type.getName(), type);
-        } else if (!tableStorage.putIfAbsent(type.getName(), type)) {
+            relationsStorage.put(type.getName(), type);
+        } else if (!relationsStorage.putIfAbsent(type.getName(), type)) {
             throw QueryException.error("Type already exists: " + type.getName());
         }
     }
 
     public void removeType(String name, boolean ifExists) {
-        if (tableStorage.removeType(name) == null && !ifExists) {
+        if (relationsStorage.removeType(name) == null && !ifExists) {
             throw QueryException.error("Type does not exist: " + name);
         }
     }
@@ -231,7 +230,7 @@ public class TableResolverImpl implements TableResolver {
     @Nonnull
     @Override
     public List<Table> getTables() {
-        Collection<Object> objects = tableStorage.allObjects();
+        Collection<Object> objects = relationsStorage.allObjects();
         List<Table> tables = new ArrayList<>(objects.size() + ADDITIONAL_TABLE_PRODUCERS.size());
 
         int lastMappingsSize = this.lastMappingsSize;
@@ -252,6 +251,10 @@ public class TableResolverImpl implements TableResolver {
                 views.add((View) o);
             } else if (o instanceof Type) {
                 types.add((Type) o);
+            } else if (o instanceof DataLink) {
+                // Note: data link is not a 'table' or 'relation',
+                // it contains in a separate schema.
+                continue;
             } else {
                 throw new RuntimeException("Unexpected: " + o);
             }

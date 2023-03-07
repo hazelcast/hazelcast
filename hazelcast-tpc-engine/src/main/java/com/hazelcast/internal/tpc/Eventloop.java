@@ -114,6 +114,7 @@ public abstract class Eventloop {
                 return false;
             }
 
+            // the task first needs to be removed from the task queue.
             scheduledTaskQueue0.poll();
             earliestDeadlineNanos = -1;
             try {

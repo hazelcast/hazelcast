@@ -16,10 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.map.IMap;
-import com.hazelcast.map.MapEvent;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.type.Type;
@@ -28,13 +24,10 @@ import com.hazelcast.sql.impl.schema.view.View;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
+public class RelationsStorage extends AbstractSchemaStorage {
 
-public class TablesStorage {
-    private final NodeEngine nodeEngine;
-
-    public TablesStorage(NodeEngine nodeEngine) {
-        this.nodeEngine = nodeEngine;
+    public RelationsStorage(NodeEngine nodeEngine) {
+        super(nodeEngine);
     }
 
     void put(String name, Mapping mapping) {
@@ -88,10 +81,6 @@ public class TablesStorage {
         return (View) storage().remove(name);
     }
 
-    Collection<Object> allObjects() {
-        return storage().values();
-    }
-
     Collection<String> mappingNames() {
         return storage().values()
                 .stream()
@@ -114,48 +103,5 @@ public class TablesStorage {
                 .filter(t -> t instanceof Type)
                 .map(t -> ((Type) t).getName())
                 .collect(Collectors.toList());
-    }
-
-    void initializeWithListener(EntryListener<String, Object> listener) {
-        if (!nodeEngine.getLocalMember().isLiteMember()) {
-            storage().addEntryListener(listener, false);
-        }
-    }
-
-    IMap<String, Object> storage() {
-        return nodeEngine.getHazelcastInstance().getMap(SQL_CATALOG_MAP_NAME);
-    }
-
-    abstract static class EntryListenerAdapter implements EntryListener<String, Object> {
-
-        @Override
-        public final void entryAdded(EntryEvent<String, Object> event) {
-        }
-
-        @Override
-        public abstract void entryUpdated(EntryEvent<String, Object> event);
-
-        @Override
-        public abstract void entryRemoved(EntryEvent<String, Object> event);
-
-        @Override
-        public final void entryEvicted(EntryEvent<String, Object> event) {
-            throw new UnsupportedOperationException("SQL catalog entries must never be evicted - " + event);
-        }
-
-        @Override
-        public void entryExpired(EntryEvent<String, Object> event) {
-            throw new UnsupportedOperationException("SQL catalog entries must never be expired - " + event);
-        }
-
-        @Override
-        public final void mapCleared(MapEvent event) {
-            throw new UnsupportedOperationException("SQL catalog must never be cleared - " + event);
-        }
-
-        @Override
-        public final void mapEvicted(MapEvent event) {
-            throw new UnsupportedOperationException("SQL catalog must never be evicted - " + event);
-        }
     }
 }
