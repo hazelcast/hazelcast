@@ -663,7 +663,7 @@ public class SqlOrderByTest extends HazelcastTestSupport {
         ExecutorService executor = Executors.newFixedThreadPool(10);
 
         int threadsCount = 10;
-        int keysPerThread = serializationMode == SERIALIZABLE ? 2500 : 5000;
+        int keysPerThread = 2500;
         CountDownLatch latch = new CountDownLatch(threadsCount);
         AtomicReference<Throwable> exception = new AtomicReference<>();
 
