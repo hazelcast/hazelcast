@@ -300,6 +300,13 @@
             <xs:element name="query-caches" type="query-caches" minOccurs="0"/>
             <xs:element name="tiered-store" type="tiered-store" minOccurs="0"/>
             <xs:element name="partition-attributes" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        List of attribute names to be provided to the AttributePartitioningStrategy.
+                        Providing this list automatically sets the strategy to AttributePartitioningStrategy regardless
+                        of class name provided in the partitioning-strategy property.
+                    </xs:documentation>
+                </xs:annotation>
                 <xs:complexType>
                     <xs:sequence>
                         <xs:element name="attribute" type="partition-attribute" maxOccurs="unbounded"/>
@@ -6018,6 +6025,11 @@
         <xs:attribute name="realm" type="xs:string" use="required"/>
     </xs:complexType>
     <xs:complexType name="partition-attribute">
+        <xs:annotation>
+            <xs:documentation>
+                Non-space string with the name of the attribute.
+            </xs:documentation>
+        </xs:annotation>
         <xs:simpleContent>
             <xs:extension base="non-space-string"/>
         </xs:simpleContent>

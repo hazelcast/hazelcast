@@ -34,6 +34,10 @@ public class PartitioningAttributeConfig implements IdentifiedDataSerializable {
 
     public PartitioningAttributeConfig() { }
 
+    public PartitioningAttributeConfig(final PartitioningAttributeConfig config) {
+        this.attributeName = config.attributeName;
+    }
+
     public PartitioningAttributeConfig(final String attributeName) {
         this.attributeName = attributeName;
     }
