@@ -49,12 +49,17 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     private final int MINUTES = 60 * 1000;
     private IMap<Object, Object> map;
 
-    @Before
-    public void setUp() {
+    @Override
+    protected Config getConfig() {
         Config config = new Config();
         // default minimum is 100000 * 1.5f
         config.setProperty(ClusterProperty.QUERY_RESULT_SIZE_LIMIT.getName(), "1");
-        HazelcastInstance hz = createHazelcastInstance(config);
+        return config;
+    }
+
+    @Before
+    public void setUp() {
+        HazelcastInstance hz = createHazelcastInstance();
         map = hz.getMap("trial");
     }
 
