@@ -16,6 +16,7 @@
 
 package com.hazelcast.datalink;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastException;
@@ -25,8 +26,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,26 +45,24 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Category({QuickTest.class})
 public class HazelcastDataLinkTest extends HazelcastTestSupport {
 
-    private static HazelcastInstance instance;
+    private String clusterName;
+    private HazelcastInstance instance;
     private HazelcastDataLink hazelcastDataLink;
 
-    @BeforeClass
-    public static void setUp() throws Exception {
-        instance = Hazelcast.newHazelcastInstance();
-    }
-
-    @AfterClass
-    public static void afterClass() throws Exception {
-        if (instance != null) {
-            instance.shutdown();
-            instance = null;
-        }
+    @Before
+    public void setUp() throws Exception {
+        clusterName = randomName();
+        instance = Hazelcast.newHazelcastInstance(new Config().setClusterName(clusterName));
     }
 
     @After
     public void tearDown() throws Exception {
         if (hazelcastDataLink != null) {
             hazelcastDataLink.release();
+        }
+        if (instance != null) {
+            instance.shutdown();
+            instance = null;
         }
     }
 
@@ -73,7 +71,7 @@ public class HazelcastDataLinkTest extends HazelcastTestSupport {
         IMap<Integer, String> map = instance.getMap("my_map");
         map.put(42, "42");
 
-        DataLinkConfig dataLinkConfig = sharedDataLinkConfig();
+        DataLinkConfig dataLinkConfig = sharedDataLinkConfig(clusterName);
 
         hazelcastDataLink = new HazelcastDataLink(dataLinkConfig);
         Collection<DataLinkResource> resources = hazelcastDataLink.listResources();
@@ -83,7 +81,7 @@ public class HazelcastDataLinkTest extends HazelcastTestSupport {
 
     @Test
     public void list_resources_should_not_return_system_maps() throws Exception {
-        DataLinkConfig dataLinkConfig = sharedDataLinkConfig();
+        DataLinkConfig dataLinkConfig = sharedDataLinkConfig(clusterName);
 
         hazelcastDataLink = new HazelcastDataLink(dataLinkConfig);
         Collection<DataLinkResource> resources = hazelcastDataLink.listResources();
@@ -106,7 +104,7 @@ public class HazelcastDataLinkTest extends HazelcastTestSupport {
 
     @Test
     public void shared_client_should_return_same_instance() {
-        DataLinkConfig dataLinkConfig = sharedDataLinkConfig();
+        DataLinkConfig dataLinkConfig = sharedDataLinkConfig(clusterName);
         hazelcastDataLink = new HazelcastDataLink(dataLinkConfig);
         HazelcastInstance c1 = hazelcastDataLink.getClient();
         HazelcastInstance c2 = hazelcastDataLink.getClient();
@@ -121,7 +119,7 @@ public class HazelcastDataLinkTest extends HazelcastTestSupport {
 
     @Test
     public void non_shared_client_should_return_new_client_instance() {
-        DataLinkConfig dataLinkConfig = nonSharedDataLinkConfig();
+        DataLinkConfig dataLinkConfig = nonSharedDataLinkConfig(clusterName);
         hazelcastDataLink = new HazelcastDataLink(dataLinkConfig);
         HazelcastInstance c1 = hazelcastDataLink.getClient();
         HazelcastInstance c2 = hazelcastDataLink.getClient();
@@ -134,18 +132,18 @@ public class HazelcastDataLinkTest extends HazelcastTestSupport {
         }
     }
 
-    private static DataLinkConfig nonSharedDataLinkConfig() {
-        return sharedDataLinkConfig()
+    private static DataLinkConfig nonSharedDataLinkConfig(String clusterName) {
+        return sharedDataLinkConfig(clusterName)
                 .setShared(false);
     }
     @Nonnull
-    private static DataLinkConfig sharedDataLinkConfig() {
+    private static DataLinkConfig sharedDataLinkConfig(String clusterName) {
         DataLinkConfig dataLinkConfig = new DataLinkConfig("data-link-name")
                 .setClassName(HazelcastDataLink.class.getName())
                 .setShared(true);
         try {
             byte[] bytes = readAllBytes(Paths.get("src", "test", "resources", "hazelcast-client-test-external.xml"));
-            String xmlString = new String(bytes, StandardCharsets.UTF_8);
+            String xmlString = new String(bytes, StandardCharsets.UTF_8).replace("$CLUSTER_NAME$", clusterName);
             dataLinkConfig.setProperty(HazelcastDataLink.CLIENT_XML, xmlString);
             return dataLinkConfig;
         } catch (IOException e) {
