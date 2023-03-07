@@ -16,7 +16,7 @@
 package com.hazelcast.jet.mongodb.datalink;
 
 import com.hazelcast.datalink.DataLinkResource;
-import com.hazelcast.jet.mongodb.AbstractMongoDBTest;
+import com.hazelcast.jet.mongodb.AbstractMongoTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MongoDataLinkTest extends AbstractMongoDBTest {
+public class MongoDataLinkTest extends AbstractMongoTest {
     private MongoDataLink dataLink;
     private String connectionString;
 

@@ -52,7 +52,7 @@ public final class MongoSources {
      * Example usage:
      * <pre>{@code
      * BatchSource<Document> batchSource =
-     *         MongoDBSources.batch("batch-source", () -> MongoClients.create("mongodb://127.0.0.1:27017"))
+     *         MongoSources.batch("batch-source", () -> MongoClients.create("mongodb://127.0.0.1:27017"))
      *                 .into("myDatabase", "myCollection")
      *                 .filter(new Document("age", new Document("$gt", 10)),
      *                 .projection(new Document("age", 1))
@@ -87,7 +87,7 @@ public final class MongoSources {
      *
      * <pre>{@code
      * BatchSource<Document> batchSource =
-     *         MongoDBSources.batch(
+     *         MongoSources.batch(
      *                 "batch-source",
      *                 "mongodb://127.0.0.1:27017",
      *                 "myDatabase",
@@ -138,7 +138,7 @@ public final class MongoSources {
      * Example usage:
      * <pre>{@code
      * StreamSource<Document> streamSource =
-     *         MongoDBSources.stream("batch-source", () -> MongoClients.create("mongodb://127.0.0.1:27017"))
+     *         MongoSources.stream("batch-source", () -> MongoClients.create("mongodb://127.0.0.1:27017"))
      *                 .into("myDatabase", "myCollection")
      *                 .filter(new Document("fullDocument.age", new Document("$gt", 10)),
      *                 .projection(new Document("fullDocument.age", 1))
@@ -181,7 +181,7 @@ public final class MongoSources {
      *
      * <pre>{@code
      * StreamSource<? extends Document> streamSource =
-     *         MongoDBSources.stream(
+     *         MongoSources.stream(
      *                 "stream-source",
      *                 "mongodb://127.0.0.1:27017",
      *                 "myDatabase",

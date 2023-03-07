@@ -145,7 +145,7 @@ public final class MongoSourceBuilder {
          * <pre>{@code
          * import static com.mongodb.client.model.Projections.include;
          *
-         *  MongoDBSourceBuilder.stream(name, supplier)
+         *  MongoSourceBuilder.stream(name, supplier)
          *      .projection(include("fieldName"));
          * }</pre>
          * @param projection Bson form of projection;
@@ -165,7 +165,7 @@ public final class MongoSourceBuilder {
          * <pre>{@code
          *  import static com.mongodb.client.model.Sorts.ascending;
          *
-         *  MongoDBSourceBuilder.stream(name, supplier)
+         *  MongoSourceBuilder.stream(name, supplier)
          *      .sort(ascending("fieldName"));
          * }</pre>
          * @param sort Bson form of sort. Use {@link com.mongodb.client.model.Sorts} to create sort.
@@ -185,7 +185,7 @@ public final class MongoSourceBuilder {
          * <pre>{@code
          *  import static com.mongodb.client.model.Filters.eq;
          *
-         *  MongoDBSourceBuilder.stream(name, supplier)
+         *  MongoSourceBuilder.stream(name, supplier)
          *      .filter(eq("fieldName", 10));
          * }</pre>
          *
@@ -228,7 +228,7 @@ public final class MongoSourceBuilder {
          * <p>
          * Example usage:
          * <pre>{@code
-         *  MongoDBSourceBuilder.stream(name, supplier)
+         *  MongoSourceBuilder.stream(name, supplier)
          *      .collection("myCollection");
          * }</pre>
          *
@@ -252,7 +252,7 @@ public final class MongoSourceBuilder {
          * <p>
          * Example usage:
          * <pre>{@code
-         *  MongoDBSourceBuilder.stream(name, supplier)
+         *  MongoSourceBuilder.stream(name, supplier)
          *      .collection("myCollection", MyDocumentPojo.class);
          * }</pre>
          *
@@ -260,7 +260,7 @@ public final class MongoSourceBuilder {
          * <pre>{@code
          * import static com.hazelcast.jet.mongodb.impl.Mappers.toClass;
          *
-         *  MongoDBSourceBuilder.stream(name, supplier)
+         *  MongoSourceBuilder.stream(name, supplier)
          *      .collection("myCollection")
          *      .mapFn(toClass(MyuDocumentPojo.class));
          * }</pre>
@@ -316,7 +316,7 @@ public final class MongoSourceBuilder {
          * <pre>{@code
          * import static com.mongodb.client.model.Projections.include;
          *
-         *  MongoDBSourceBuilder.stream(name, supplier)
+         *  MongoSourceBuilder.stream(name, supplier)
          *      .projection(include("fieldName"));
          * }</pre>
          * @param projection Bson form of projection;
@@ -337,7 +337,7 @@ public final class MongoSourceBuilder {
          * <pre>{@code
          *  import static com.mongodb.client.model.Filters.eq;
          *
-         *  MongoDBSourceBuilder.stream(name, supplier)
+         *  MongoSourceBuilder.stream(name, supplier)
          *      .filter(eq("fieldName", 10));
          * }</pre>
          * @param filter Bson form of filter. Use {@link com.mongodb.client.model.Filters} to create sort.
@@ -366,7 +366,7 @@ public final class MongoSourceBuilder {
          *
          * Example usage:
          * <pre>{@code
-         *  MongoDBSourceBuilder.stream(name, supplier)
+         *  MongoSourceBuilder.stream(name, supplier)
          *      .collection("myCollection");
          * }</pre>
          *
@@ -390,7 +390,7 @@ public final class MongoSourceBuilder {
          *
          * Example usage:
          * <pre>{@code
-         *  MongoDBSourceBuilder.stream(name, supplier)
+         *  MongoSourceBuilder.stream(name, supplier)
          *      .collection("myCollection", MyDocumentPojo.class);
          * }</pre>
          *
@@ -398,7 +398,7 @@ public final class MongoSourceBuilder {
          * <pre>{@code
          * import static com.hazelcast.jet.mongodb.impl.Mappers.toClass;
          *
-         *  MongoDBSourceBuilder.stream(name, supplier)
+         *  MongoSourceBuilder.stream(name, supplier)
          *      .collection("myCollection")
          *      .mapFn(toClass(MyuDocumentPojo.class));
          * }</pre>

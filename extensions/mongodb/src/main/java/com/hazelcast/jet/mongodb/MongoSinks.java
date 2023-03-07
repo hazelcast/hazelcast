@@ -52,7 +52,7 @@ public final class MongoSinks {
      * Example usage:
      * <pre>{@code
      * Sink<Document> mongoSink =
-     *         MongoDBSinks.builder(
+     *         MongoSinks.builder(
      *                     "stream-sink",
      *                     Document.class,
      *                     () -> MongoClients.create("mongodb://127.0.0.1:27017")
@@ -89,7 +89,7 @@ public final class MongoSinks {
      * Example usage:
      * <pre>{@code
      * Sink<Document> mongoSink =
-     *         MongoDBSinks.builder(
+     *         MongoSinks.builder(
      *                 "mongoSink",
      *                 "mongodb://127.0.0.1:27017",
      *                 "myDatabase",
