@@ -168,8 +168,8 @@ public interface Job {
     JobConfig getConfig();
 
     /**
-     * Applies the specified delta configuration if this job is suspended and
-     * returns the updated configuration.
+     * Applies the specified delta configuration to a {@link #suspend()
+     * suspended} job and returns the updated configuration.
      *
      * @throws IllegalStateException if this job is not suspended
      * @throws UnsupportedOperationException if called for a light job
