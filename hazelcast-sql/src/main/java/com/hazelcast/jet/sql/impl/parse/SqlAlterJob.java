@@ -52,7 +52,7 @@ public class SqlAlterJob extends SqlAlter {
 
     private final DeltaJobConfig deltaConfig;
 
-    public SqlAlterJob(SqlIdentifier name, SqlNodeList options, AlterJobOperation operation, SqlParserPos pos) {
+    public SqlAlterJob(SqlIdentifier name, SqlNodeList options, @Nullable AlterJobOperation operation, SqlParserPos pos) {
         super(pos, "JOB");
 
         this.name = requireNonNull(name, "Name must not be null");
@@ -76,6 +76,10 @@ public class SqlAlterJob extends SqlAlter {
         return deltaConfig;
     }
 
+    /**
+     * Operation is null if the command is only a change of OPTIONS. If it's null,
+     * {@link #getDeltaConfig()} is not-null.
+     */
     @Nullable
     public AlterJobOperation getOperation() {
         return operation;

@@ -193,9 +193,7 @@ public class PlanExecutor {
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
                 .setArgument(KEY_SQL_QUERY_TEXT, plan.getQuery())
                 .setArgument(KEY_SQL_UNBOUNDED, isStreamingJob);
-        if (!jobConfig.isSuspendOnFailure()) {
-            jobConfig.setSuspendOnFailure(isStreamingJob);
-        }
+        jobConfig.setSuspendOnFailure(isStreamingJob);
         if (plan.isIfNotExists()) {
             hazelcastInstance.getJet().newJobIfAbsent(plan.getExecutionPlan().getDag(), jobConfig);
         } else {
@@ -209,6 +207,7 @@ public class PlanExecutor {
         if (job == null) {
             throw QueryException.error("The job '" + plan.getJobName() + "' doesn't exist");
         }
+        assert plan.getDeltaConfig() != null || plan.getOperation() != null;
         if (plan.getDeltaConfig() != null) {
             try {
                 job.updateConfig(plan.getDeltaConfig());
