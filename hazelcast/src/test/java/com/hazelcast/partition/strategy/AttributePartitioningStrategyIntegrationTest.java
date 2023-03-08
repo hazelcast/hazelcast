@@ -51,9 +51,9 @@ public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInCl
             .addStringField("org")
             .build();
 
-    private static final PartitioningStrategy STRATEGY = new AttributePartitioningStrategy("org");
-    private static final String PARTITION_ATTRIBUTE = "1";
-    private static final Object[] PARTITION_KEY = new Object[]{PARTITION_ATTRIBUTE};
+    private static final PartitioningStrategy<?> STRATEGY = new AttributePartitioningStrategy("org");
+    private static final String PARTITION_ATTRIBUTE_VALUE = "1";
+    private static final Object[] PARTITION_KEY = new Object[]{PARTITION_ATTRIBUTE_VALUE};
 
     @BeforeClass
     public static void beforeClass() {
@@ -69,7 +69,7 @@ public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInCl
         final IMap<JavaKey, Long> map = instance().getMap("test");
 
         for (long i = 0; i < 100; i++) {
-            map.put(new JavaKey(i, "key#" + i, PARTITION_ATTRIBUTE), i);
+            map.put(new JavaKey(i, "key#" + i, PARTITION_ATTRIBUTE_VALUE), i);
         }
 
         final HazelcastInstance owner = getOwner(PARTITION_KEY);
@@ -88,7 +88,7 @@ public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInCl
             map.put(GenericRecordBuilder.compact("testType")
                     .setInt64("id", i)
                     .setString("name", "key#" + i)
-                    .setString("org", PARTITION_ATTRIBUTE)
+                    .setString("org", PARTITION_ATTRIBUTE_VALUE)
                     .build(), i);
         }
 
@@ -108,7 +108,7 @@ public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInCl
             map.put(GenericRecordBuilder.portable(PORTABLE_CLASS)
                     .setInt64("id", i)
                     .setString("name", "key#" + i)
-                    .setString("org", PARTITION_ATTRIBUTE)
+                    .setString("org", PARTITION_ATTRIBUTE_VALUE)
                     .build(), i);
         }
 
@@ -133,7 +133,7 @@ public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInCl
             final String key = template
                     .replace("<id>", String.valueOf(i))
                     .replace("<>", "key#" + i)
-                    .replace("<org>", PARTITION_ATTRIBUTE);
+                    .replace("<org>", PARTITION_ATTRIBUTE_VALUE);
             map.put(new HazelcastJsonValue(key), i);
         }
 

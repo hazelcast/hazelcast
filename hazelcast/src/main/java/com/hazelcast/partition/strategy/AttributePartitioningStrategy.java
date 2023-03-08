@@ -26,11 +26,14 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.getters.JsonGetter;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.Serializable;
 
+import static java.util.Objects.requireNonNull;
+
 @SerializableByConvention
-public class AttributePartitioningStrategy implements PartitioningStrategy {
+public class AttributePartitioningStrategy implements PartitioningStrategy<Object> {
 
     private final String[] attributes;
 
@@ -51,53 +54,43 @@ public class AttributePartitioningStrategy implements PartitioningStrategy {
             throw new HazelcastException("Unsupported key used with attribute partition strategy");
         }
 
-        if (result == null) {
-            throw new HazelcastException("Failed to extract partition key attributes");
-        }
-
         return result;
     }
 
+    @Nonnull
     private Object[] extractFromPojo(final Object key) {
         final Object[] values = new Object[attributes.length];
         for (int i = 0; i < attributes.length; i++) {
             final String attribute = attributes[i];
-            final Object value = ReflectionUtils.getFieldValue(attribute, key);
-            if (value == null) {
-                return null;
-            }
+            final Object value = requireNonNull(ReflectionUtils.getFieldValue(attribute, key), "Null partitioning key");
             values[i] = value;
         }
 
         return values;
     }
 
+    @Nonnull
     private Object[] extractFromJson(final Object key) {
         final Object[] values = new Object[attributes.length];
         for (int i = 0; i < attributes.length; i++) {
-            final Object value = JsonGetter.INSTANCE.getValue(key, attributes[i]);
-            if (value == null) {
-                return null;
-            }
+            final Object value = requireNonNull(JsonGetter.INSTANCE.getValue(key, attributes[i]), "Null partitioning key");
             values[i] = value;
         }
 
         return values;
     }
 
+    @Nonnull
     private Object[] extractFromGenericRecord(final InternalGenericRecord key) {
         final Object[] values = new Object[attributes.length];
         final GenericRecordQueryReader reader = new GenericRecordQueryReader(key);
         for (int i = 0; i < attributes.length; i++) {
             final String attribute = attributes[i];
             try {
-                final Object value = reader.read(attribute);
-                if (value == null) {
-                    return null;
-                }
+                final Object value = requireNonNull(reader.read(attribute), "Null partitioning key");
                 values[i] = value;
-            } catch (IOException exception) {
-                return null;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         }
 

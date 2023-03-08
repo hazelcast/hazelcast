@@ -52,16 +52,16 @@ public final class PartitioningStrategyFactory {
      * then looks up its internal cache of partitioning strategies; if one has already been created for the given
      * {@code mapName}, it is returned, otherwise it is instantiated, cached and returned.
      *
-     * @param mapName                      Map for which this partitioning strategy is being created
-     * @param config                       the partitioning strategy configuration
-     * @param partitioningAttributeConfigs
+     * @param mapName          Map for which this partitioning strategy is being created
+     * @param config           The partitioning strategy configuration
+     * @param attributeConfigs The partitioning attributes
      * @return
      */
     @SuppressWarnings("checkstyle:NestedIfDepth")
     public PartitioningStrategy getPartitioningStrategy(
             String mapName,
             PartitioningStrategyConfig config,
-            final List<PartitioningAttributeConfig> partitioningAttributeConfigs
+            final List<PartitioningAttributeConfig> attributeConfigs
     ) {
         PartitioningStrategy strategy = null;
         if (config != null) {
@@ -69,12 +69,12 @@ public final class PartitioningStrategyFactory {
             if (strategy == null) {
                 if (cache.containsKey(mapName)) {
                     strategy = cache.get(mapName);
-                } else if (partitioningAttributeConfigs != null && !partitioningAttributeConfigs.isEmpty()) {
+                } else if (attributeConfigs != null && !attributeConfigs.isEmpty()) {
                     if (config.getPartitioningStrategyClass() != null) {
-                        throw new HazelcastException("Partition Strategy Attributes are only supported for built in "
+                        throw new HazelcastException("Partition Strategy Attributes are only supported for built-in "
                                 + AttributePartitioningStrategy.class.getSimpleName());
                     }
-                    strategy = createAttributePartitionStrategy(partitioningAttributeConfigs);
+                    strategy = createAttributePartitionStrategy(attributeConfigs);
                     cache.put(mapName, strategy);
                 } else if (config.getPartitioningStrategyClass() != null) {
                     try {

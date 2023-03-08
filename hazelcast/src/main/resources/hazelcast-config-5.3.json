@@ -1583,7 +1583,7 @@
           },
           "partition-attributes": {
             "type": "array",
-            "description": "List of attribute names to be provided to the AttributePartitioningStrategy. Providing this list automatically sets the strategy to AttributePartitioningStrategy regardless of class name provided in the partitioning-strategy property.",
+            "description": "List of key attributes to use for partitioning the data in the maps. Providing this list automatically sets the strategy to `com.hazelcast.partition.strategy.AttributePartitioningStrategy` regardless of the class name provided in the `partition-strategy` property.",
             "items": {
               "type": "string"
             },

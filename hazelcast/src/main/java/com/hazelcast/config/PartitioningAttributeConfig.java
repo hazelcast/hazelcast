@@ -20,14 +20,14 @@ import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.partition.strategy.AttributePartitioningStrategy;
 
 import java.io.IOException;
 import java.util.Objects;
 
-
 /**
  * Contains the configuration for attributes used to create
- * {@link com.hazelcast.partition.strategy.AttributePartitioningStrategy}
+ * {@link AttributePartitioningStrategy}
  */
 public class PartitioningAttributeConfig implements IdentifiedDataSerializable {
     private String attributeName;
