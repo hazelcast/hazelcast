@@ -57,11 +57,6 @@ public class MapPutAllWithBouncingMemberTest extends HazelcastTestSupport {
         config = getConfig();
     }
 
-    @After
-    public void tearDown() {
-        factory.terminateAll();
-    }
-
     @Test
     public void testPutAll_whenAddingAndTerminatingMembers_thenPutAllShouldNotFail() {
         testPutAll();

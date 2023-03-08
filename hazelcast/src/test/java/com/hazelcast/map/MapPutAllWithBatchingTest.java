@@ -63,11 +63,6 @@ public class MapPutAllWithBatchingTest extends HazelcastTestSupport {
         warmUpPartitions(instances);
     }
 
-    @After
-    public void tearDown() {
-        factory.terminateAll();
-    }
-
     @Test
     public void testPutAll() {
         testPutAll(1 + BATCH_SIZE * INSTANCE_COUNT * 2);

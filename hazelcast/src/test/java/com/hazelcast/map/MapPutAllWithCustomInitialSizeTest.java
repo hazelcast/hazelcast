@@ -59,11 +59,6 @@ public class MapPutAllWithCustomInitialSizeTest extends HazelcastTestSupport {
         warmUpPartitions(instances);
     }
 
-    @After
-    public void tearDown() {
-        factory.terminateAll();
-    }
-
     @Test
     public void testPutAll() {
         testPutAll(20);
