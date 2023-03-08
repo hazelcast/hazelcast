@@ -454,6 +454,14 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>10</source>
+                    <target>10</target>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -464,7 +472,11 @@
             <artifactId>hazelcast-tpc-engine</artifactId>
             <version>5.4.0-SNAPSHOT</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-tpc-engine-iouring</artifactId>
+            <version>5.3.0-SNAPSHOT</version>
+        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>

@@ -32,6 +32,7 @@ import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.server.tcp.TcpServer;
 import com.hazelcast.internal.server.tcp.TcpServerConnectionChannelErrorHandler;
 import com.hazelcast.internal.server.tcp.TcpServerContext;
+import com.hazelcast.internal.tpc.server.ServerTpcRuntime;
 import com.hazelcast.internal.util.InstantiationUtils;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
@@ -148,6 +149,7 @@ public class DefaultNodeContext implements NodeContext {
         TcpServerContext context = new TcpServerContext(node, node.nodeEngine);
         Networking networking = createNetworking(node);
         Config config = node.getConfig();
+        ServerTpcRuntime tpcRuntime = node.getTpcRuntime();
 
         MetricsRegistry metricsRegistry = node.nodeEngine.getMetricsRegistry();
         return new TcpServer(config,

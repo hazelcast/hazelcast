@@ -39,8 +39,10 @@ public class ThreadAffinity {
 
     final List<BitSet> allowedCpusList;
     final AtomicInteger threadIndex = new AtomicInteger();
+    private final String affinity;
 
     public ThreadAffinity(String affinity) {
+        this.affinity = affinity;
         allowedCpusList = parse(affinity);
 
         if (allowedCpusList.isEmpty()) {
@@ -50,6 +52,10 @@ public class ThreadAffinity {
         if (!isAffinityAvailable()) {
             throw new RuntimeException("Can't use affinity '" + affinity + "'. Thread affinity support is not available.");
         }
+    }
+
+    public String toString() {
+        return affinity;
     }
 
     /**

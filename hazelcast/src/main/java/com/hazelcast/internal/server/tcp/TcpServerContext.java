@@ -37,8 +37,8 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.MemberSocketInterceptor;
@@ -54,6 +54,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -69,12 +71,18 @@ public class TcpServerContext implements ServerContext {
     private final NodeEngineImpl nodeEngine;
     private final RestApiConfig restApiConfig;
     private final MemcacheProtocolConfig memcacheProtocolConfig;
+    private final ConcurrentMap<String, String> extraHandshakeOptions = new ConcurrentHashMap<>();
 
     public TcpServerContext(Node node, NodeEngineImpl nodeEngine) {
         this.node = node;
         this.nodeEngine = nodeEngine;
         this.restApiConfig = initRestApiConfig(node.getConfig());
         this.memcacheProtocolConfig = initMemcacheProtocolConfig(node.getConfig());
+    }
+
+    @Override
+    public ConcurrentMap<String, String> getExtraHandshakeOptions() {
+        return extraHandshakeOptions;
     }
 
     private static RestApiConfig initRestApiConfig(Config config) {

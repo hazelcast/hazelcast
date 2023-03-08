@@ -21,6 +21,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -42,6 +43,9 @@ public abstract class AbstractPartitionMessageTask<P>
 
     @Override
     protected CompletableFuture<Object> processInternal() {
+//        NormalResponse response = new NormalResponse(null, clientMessage.getCorrelationId(), 0, false);
+//        return CompletableFuture.completedFuture(response);
+
         Operation op = prepareOperation();
         if (ClientMessage.isFlagSet(clientMessage.getHeaderFlags(), ClientMessage.BACKUP_AWARE_FLAG)) {
             op.setClientCallId(clientMessage.getCorrelationId());

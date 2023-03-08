@@ -22,6 +22,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
@@ -85,11 +86,11 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
         ServerConnectionManager connectionManager = operation.getConnection().getConnectionManager();
         boolean send;
         if (obj == null) {
-            send = sendNormalResponse(connectionManager, target, operation.getCallId(), 0, operation.isUrgent(), null);
+            send = sendNormalResponse(connectionManager, target, operation.getPartitionId(), operation.getCallId(), 0, operation.isUrgent(), null);
         } else if (obj.getClass() == NormalResponse.class) {
             NormalResponse response = (NormalResponse) obj;
-            send = sendNormalResponse(connectionManager, target, response.getCallId(),
-                    response.getBackupAcks(), response.isUrgent(), response.getValue());
+            send = sendNormalResponse(connectionManager, target, operation.getPartitionId(),
+                    response.getCallId(), response.getBackupAcks(), response.isUrgent(), response.getValue());
         } else if (obj.getClass() == ErrorResponse.class || obj.getClass() == CallTimeoutResponse.class) {
             send = send(connectionManager, target, (Response) obj);
         } else if (obj instanceof Throwable) {
@@ -98,7 +99,8 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
         } else {
             // most regular responses not wrapped in a NormalResponse. So we are now completely skipping the
             // NormalResponse instance
-            send = sendNormalResponse(connectionManager, target, operation.getCallId(), 0, operation.isUrgent(), obj);
+            send = sendNormalResponse(
+                    connectionManager, target, operation.getPartitionId(), operation.getCallId(), 0, operation.isUrgent(), obj);
         }
 
         if (!send) {
@@ -115,21 +117,22 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
 
         byte[] bytes = serializationService.toBytes(response);
 
-        Packet packet = newResponsePacket(bytes, response.isUrgent());
+        Packet packet = newResponsePacket(bytes, -1, response.isUrgent());
 
         return transmit(target, packet, connectionManager);
     }
 
-    private boolean sendNormalResponse(ServerConnectionManager connectionManager, Address target, long callId,
+    private boolean sendNormalResponse(ServerConnectionManager connectionManager, Address target,
+                                       int partitionId, long callId,
                                        int backupAcks, boolean urgent, Object value) {
         checkTarget(target);
 
-        Packet packet = toNormalResponsePacket(callId, (byte) backupAcks, urgent, value);
+        Packet packet = toNormalResponsePacket(partitionId, callId, (byte) backupAcks, urgent, value);
 
         return transmit(target, packet, connectionManager);
     }
 
-    Packet toNormalResponsePacket(long callId, int backupAcks, boolean urgent, Object value) {
+    Packet toNormalResponsePacket(int partitionId, long callId, int backupAcks, boolean urgent, Object value) {
         byte[] bytes;
         boolean isData = value instanceof Data;
         if (isData) {
@@ -155,7 +158,7 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
             bytes = serializationService.toBytes(value, OFFSET_NOT_DATA, false);
         }
 
-        writeResponsePrologueBytes(bytes, NORMAL_RESPONSE, callId, urgent);
+        writeResponsePrologueBytes(partitionId, bytes, NORMAL_RESPONSE, callId, urgent);
 
         // backup-acks (will fit in a byte)
         bytes[OFFSET_BACKUP_ACKS] = (byte) backupAcks;
@@ -163,28 +166,28 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
         bytes[OFFSET_IS_DATA] = (byte) (isData ? 1 : 0);
         //the remaining part of the byte array is already filled, so we are done.
 
-        return newResponsePacket(bytes, urgent);
+        return newResponsePacket(bytes, partitionId, urgent);
     }
 
-    public void sendBackupAck(ServerConnectionManager connectionManager, Address target, long callId, boolean urgent) {
+    public void sendBackupAck(ServerConnectionManager connectionManager, int partitionId, Address target, long callId, boolean urgent) {
         checkTarget(target);
 
-        Packet packet = toBackupAckPacket(callId, urgent);
+        Packet packet = toBackupAckPacket(partitionId, callId, urgent);
 
         transmit(target, packet, connectionManager);
     }
 
-    Packet toBackupAckPacket(long callId, boolean urgent) {
+    Packet toBackupAckPacket(int partitionId, long callId, boolean urgent) {
         byte[] bytes = new byte[BACKUP_RESPONSE_SIZE_IN_BYTES];
 
-        writeResponsePrologueBytes(bytes, BACKUP_ACK_RESPONSE, callId, urgent);
+        writeResponsePrologueBytes(partitionId, bytes, BACKUP_ACK_RESPONSE, callId, urgent);
 
-        return newResponsePacket(bytes, urgent);
+        return newResponsePacket(bytes, partitionId, urgent);
     }
 
-    private void writeResponsePrologueBytes(byte[] bytes, int typeId, long callId, boolean urgent) {
+    private void writeResponsePrologueBytes(int partitionId, byte[] bytes, int typeId, long callId, boolean urgent) {
         // partition hash (which is always 0 in case of response)
-        writeIntB(bytes, 0, 0);
+        writeIntB(bytes, 0, partitionId);
         // data-serializable type (this is always written with big endian)
         writeIntB(bytes, OFFSET_SERIALIZER_TYPE_ID, CONSTANT_TYPE_DATA_SERIALIZABLE);
         // identified or not
@@ -199,8 +202,8 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
         bytes[OFFSET_URGENT] = (byte) (urgent ? 1 : 0);
     }
 
-    private Packet newResponsePacket(byte[] bytes, boolean urgent) {
-        Packet packet = new Packet(bytes, -1)
+    private Packet newResponsePacket(byte[] bytes, int partitionId, boolean urgent) {
+        Packet packet = new Packet(bytes, partitionId)
                 .setPacketType(OPERATION)
                 .raiseFlags(FLAG_OP_RESPONSE);
 

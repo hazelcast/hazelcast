@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpcengine.net;
 
-import com.hazelcast.internal.tpcengine.PrintAtomicLongThread;
+import com.hazelcast.internal.tpcengine.util.PrintAtomicLongThread;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
@@ -65,8 +65,12 @@ public abstract class AsyncSocket_LargePayloadTest {
 
     @Before
     public void before() {
-        clientReactor = newReactorBuilder().build().start();
-        serverReactor = newReactorBuilder().build().start();
+        clientReactor = newReactorBuilder()
+                .build()
+                .start();
+        serverReactor = newReactorBuilder()
+                .build()
+                .start();
         printThread.start();
     }
 
@@ -246,7 +250,7 @@ public abstract class AsyncSocket_LargePayloadTest {
     }
 
     private AsyncServerSocket newServer() {
-        AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
+        AsyncServerSocket serverSocket = serverReactor.newAsyncServerBuilder()
                 .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
                 .setAcceptConsumer(acceptRequest -> {
                     serverReactor.newAsyncSocketBuilder(acceptRequest)

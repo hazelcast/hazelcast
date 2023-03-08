@@ -16,8 +16,10 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
+import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Scheduler;
+import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.util.NanoClock;
 import org.jctools.queues.MpmcArrayQueue;
 
@@ -38,6 +40,16 @@ class NioEventloop extends Eventloop {
 
     NioEventloop(NioReactor reactor, NioReactorBuilder builder) {
         super(reactor, builder);
+    }
+
+    @Override
+    public IOBufferAllocator fileIOBufferAllocator() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public AsyncFile newAsyncFile(String path) {
+        throw new UnsupportedOperationException();
     }
 
     @SuppressWarnings("java:S3776")

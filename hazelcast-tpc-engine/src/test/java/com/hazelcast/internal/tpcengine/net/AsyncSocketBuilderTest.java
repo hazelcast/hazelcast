@@ -53,7 +53,7 @@ public abstract class AsyncSocketBuilderTest {
 
     @After
     public void after() {
-        TpcTestSupport.terminateAll(reactors);
+        terminateAll(reactors);
     }
 
     @Test

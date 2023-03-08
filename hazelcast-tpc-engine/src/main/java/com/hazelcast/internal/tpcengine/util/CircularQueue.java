@@ -96,6 +96,15 @@ public final class CircularQueue<E> {
     }
 
     /**
+     * Checks if there are remaining items on this CircularQueue.
+     *
+     * @return true if there are remaining items, false otherwise.
+     */
+    public boolean hasRemaining() {
+        return tail >= head;
+    }
+
+    /**
      * Adds an item to this CircularQueue.
      *
      * @param item the item to add.
@@ -185,4 +194,5 @@ public final class CircularQueue<E> {
             return item;
         }
     }
+
 }

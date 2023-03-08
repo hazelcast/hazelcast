@@ -63,6 +63,7 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
             return EXT_SO_OPTS_TCP_KEEPINTERVAL;
         } else if (TCP_KEEPIDLE.equals(option)) {
             return EXT_SOCK_OPTS_TCP_KEEPIDLE;
+
         } else {
             return null;
         }

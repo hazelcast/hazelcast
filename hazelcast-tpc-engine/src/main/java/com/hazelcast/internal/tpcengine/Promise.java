@@ -16,8 +16,9 @@
 
 package com.hazelcast.internal.tpcengine;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
@@ -42,7 +43,7 @@ public class Promise<E> {
 
     private Object value = EMPTY;
     private final Eventloop eventloop;
-    private final List<BiConsumer<E, Throwable>> consumers = new ArrayList<>();
+    private final ArrayList<BiConsumer<E, Throwable>> consumers = new ArrayList<>();
     private boolean exceptional;
     private boolean releaseOnComplete;
 
@@ -103,6 +104,10 @@ public class Promise<E> {
         if (releaseOnComplete) {
             release();
         }
+    }
+
+    public void completeWithIOException(String message, Throwable cause){
+        completeExceptionally(new UncheckedIOException(new IOException(message,cause)));
     }
 
     /**

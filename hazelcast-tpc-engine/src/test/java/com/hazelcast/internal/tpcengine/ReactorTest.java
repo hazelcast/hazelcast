@@ -20,6 +20,7 @@ import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -43,6 +44,14 @@ import static org.junit.Assert.assertTrue;
 
 public abstract class ReactorTest {
 
+    @Rule
+    public final PortFreeRule portFreeRule = new PortFreeRule(5000);
+
+    @After
+    public void after() throws InterruptedException {
+        terminateAll(reactors);
+    }
+
     private final List<Reactor> reactors = new ArrayList<>();
 
     public abstract ReactorBuilder newReactorBuilder();
@@ -56,11 +65,6 @@ public abstract class ReactorTest {
 
     public ReactorType getType() {
         return newReactorBuilder().type;
-    }
-
-    @After
-    public void after() throws InterruptedException {
-        terminateAll(reactors);
     }
 
     @Test
@@ -190,7 +194,7 @@ public abstract class ReactorTest {
     public void test_shutdown_thenAsyncServerSocketsClosed() {
         Reactor reactor = newReactor();
         reactor.start();
-        AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
+        AsyncServerSocket serverSocket = reactor.newAsyncServerBuilder()
                 .setAcceptConsumer(acceptRequest -> {
                 })
                 .build();
@@ -206,7 +210,7 @@ public abstract class ReactorTest {
     public void test_shutdown_thenAsyncSocketClosed() {
         Reactor serverReactor = newReactor();
         serverReactor.start();
-        AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
+        AsyncServerSocket serverSocket = serverReactor.newAsyncServerBuilder()
                 .setAcceptConsumer(acceptRequest -> {
                 })
                 .build();

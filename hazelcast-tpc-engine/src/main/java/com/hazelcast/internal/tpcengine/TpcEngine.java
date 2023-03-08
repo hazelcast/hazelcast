@@ -132,7 +132,7 @@ public final class TpcEngine {
      *
      * @throws IllegalStateException if the Reactor is shutdown or terminated.
      */
-    public void start() {
+    public TpcEngine start() {
         logger.info("Starting " + reactorCount + " reactors of type [" + reactorType() + "]");
 
         for (; ; ) {
@@ -149,6 +149,8 @@ public final class TpcEngine {
         for (Reactor reactor : reactors) {
             reactor.start();
         }
+
+        return this;
     }
 
     /**

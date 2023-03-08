@@ -16,8 +16,13 @@
 
 package com.hazelcast.internal.tpcengine;
 
+import com.hazelcast.internal.tpcengine.file.StorageDeviceRegistry;
+import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
+import com.hazelcast.internal.tpcengine.util.Preconditions;
 import com.hazelcast.internal.util.ThreadAffinity;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
@@ -31,6 +36,7 @@ import static java.lang.System.getProperty;
  * A builder for {@link Reactor} instances.
  */
 public abstract class ReactorBuilder {
+
     public static final String NAME_LOCAL_TASK_QUEUE_CAPACITY = "hazelcast.tpc.localTaskQueue.capacity";
     public static final String NAME_EXTERNAL_TASK_QUEUE_CAPACITY = "hazelcast.tpc.externalTaskQueue.capacity";
     public static final String NAME_SCHEDULED_TASK_QUEUE_CAPACITY = "hazelcast.tpc.scheduledTaskQueue.capacity";
@@ -46,10 +52,31 @@ public abstract class ReactorBuilder {
     private static final int DEFAULT_CLOCK_REFRESH_INTERVAL = 16;
     private static final boolean DEFAULT_SPIN = false;
 
+    private static final Constructor<ReactorBuilder> IO_URING_REACTOR_BUILDER_CONSTRUCTOR;
+
+    private static final String IOURING_IOURING_REACTOR_BUILDER_CLASS_NAME
+            = "com.hazelcast.internal.tpcengine.iouring.IOUringReactorBuilder";
+
+    static {
+        Constructor<ReactorBuilder> constructor = null;
+        try {
+            Class clazz = ReactorBuilder.class.getClassLoader().loadClass(
+                    IOURING_IOURING_REACTOR_BUILDER_CLASS_NAME);
+            constructor = clazz.getConstructor();
+        } catch (ClassNotFoundException e) {
+            constructor = null;
+        } catch (NoSuchMethodException e) {
+            throw new Error(e);
+        } finally {
+            IO_URING_REACTOR_BUILDER_CONSTRUCTOR = constructor;
+        }
+    }
+
+    protected StorageDeviceRegistry deviceRegistry = new StorageDeviceRegistry();
     protected final ReactorType type;
     Supplier<Scheduler> schedulerSupplier = NopScheduler::new;
     Supplier<String> threadNameSupplier;
-    Supplier<String> reactorNameSupplier = new Supplier<String>() {
+    Supplier<String> reactorNameSupplier = new Supplier<>() {
         private final AtomicInteger idGenerator = new AtomicInteger();
 
         @Override
@@ -80,6 +107,28 @@ public abstract class ReactorBuilder {
         this.batchSize = Integer.getInteger(NAME_BATCH_SIZE, DEFAULT_BATCH_SIZE);
         this.clockRefreshPeriod = Integer.getInteger(NAME_CLOCK_REFRESH_PERIOD, DEFAULT_CLOCK_REFRESH_INTERVAL);
         this.spin = Boolean.parseBoolean(getProperty(NAME_REACTOR_SPIN, Boolean.toString(DEFAULT_SPIN)));
+    }
+
+    public static ReactorBuilder newReactorBuilder(ReactorType type) {
+        Preconditions.checkNotNull(type, "type");
+        switch (type) {
+            case NIO:
+                return new NioReactorBuilder();
+            case IOURING:
+                if (IO_URING_REACTOR_BUILDER_CONSTRUCTOR == null) {
+                    throw new IllegalStateException("class " + IOURING_IOURING_REACTOR_BUILDER_CLASS_NAME + " is not found");
+                }
+
+                try {
+                    return IO_URING_REACTOR_BUILDER_CONSTRUCTOR.newInstance();
+                } catch (InvocationTargetException
+                         | InstantiationException
+                         | IllegalAccessException e) {
+                    throw new RuntimeException(e);
+                }
+            default:
+                throw new IllegalStateException("Unhandled reactorType: " + type);
+        }
     }
 
     /**
@@ -210,5 +259,9 @@ public abstract class ReactorBuilder {
      */
     public final void setSchedulerSupplier(Supplier<Scheduler> schedulerSupplier) {
         this.schedulerSupplier = checkNotNull(schedulerSupplier);
+    }
+
+    public void setStorageDeviceRegistry(StorageDeviceRegistry deviceRegistry) {
+        this.deviceRegistry = checkNotNull(deviceRegistry);
     }
 }

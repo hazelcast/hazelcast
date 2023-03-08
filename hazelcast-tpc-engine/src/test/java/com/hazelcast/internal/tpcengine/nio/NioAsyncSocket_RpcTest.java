@@ -20,9 +20,9 @@ import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket_RpcTest;
 
 public class NioAsyncSocket_RpcTest extends AsyncSocket_RpcTest {
-
     @Override
     public ReactorBuilder newReactorBuilder() {
         return new NioReactorBuilder();
     }
+
 }

@@ -27,13 +27,17 @@ import java.util.concurrent.CompletableFuture;
 /**
  * A Socket that is asynchronous. So reads and writes do not block,
  * but are executed on an {@link Reactor}.
+ * <p/>
+ * If in the future we want to support Virtual Threads, we do not need to introduce a new
+ * 'SyncSocket'. It would be sufficient to rename this class to e.g. Socket and offer
+ * a blocking read.
  */
 @SuppressWarnings({"checkstyle:MethodCount", "checkstyle:VisibilityModifier"})
-public abstract class AsyncSocket extends AbstractAsyncSocket {
+public abstract class AsyncSocket extends AbstractAsyncFile {
 
     protected volatile SocketAddress remoteAddress;
     protected volatile SocketAddress localAddress;
-    protected AsyncSocketMetrics metrics = new AsyncSocketMetrics();
+    protected final AsyncSocketMetrics metrics = new AsyncSocketMetrics();
     protected final boolean clientSide;
 
     protected AsyncSocket(boolean clientSide) {

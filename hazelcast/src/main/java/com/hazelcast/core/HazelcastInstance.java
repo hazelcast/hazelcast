@@ -68,6 +68,10 @@ import java.util.concurrent.ConcurrentMap;
  */
 public interface HazelcastInstance {
 
+    <C extends Command> C newCommand(Class<C> type);
+
+    <T extends TpcProxy> T getProxy(Class<T> type, String name);
+
     /**
      * Returns the name of this Hazelcast instance.
      *

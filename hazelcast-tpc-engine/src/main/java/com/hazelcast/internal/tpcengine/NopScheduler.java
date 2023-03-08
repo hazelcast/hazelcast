@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.tpcengine;
 
+import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
+
 /**
  * A {@link Scheduler} that doesn't do anything.
  */
@@ -32,5 +34,9 @@ public class NopScheduler implements Scheduler {
 
     @Override
     public void schedule(Object task) {
+    }
+
+    @Override
+    public void schedule(IOBuffer task) {
     }
 }

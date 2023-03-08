@@ -48,7 +48,6 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.PreJoinAwareService;
-import com.hazelcast.internal.tpc.TpcServerBootstrap;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
 import com.hazelcast.internal.util.ConcurrencyDetection;
@@ -152,7 +151,6 @@ public class NodeEngineImpl implements NodeEngine {
             this.proxyService = new ProxyServiceImpl(this);
             this.serviceManager = new ServiceManagerImpl(this);
             this.executionService = new ExecutionServiceImpl(this);
-            this.tpcServerBootstrap = new TpcServerBootstrap(this);
             this.operationService = new OperationServiceImpl(this);
             this.eventService = new EventServiceImpl(this);
             this.operationParker = new OperationParkerImpl(this);
@@ -215,10 +213,6 @@ public class NodeEngineImpl implements NodeEngine {
             // this isn't normal - we found the class, but there's something unexpected
             throw new RuntimeException(e);
         }
-    }
-
-    public TpcServerBootstrap getTpcServerBootstrap() {
-        return tpcServerBootstrap;
     }
 
     private void checkMapMergePolicies(Node node) {
@@ -286,7 +280,6 @@ public class NodeEngineImpl implements NodeEngine {
         operationService.start();
         splitBrainProtectionService.start();
         sqlService.start();
-        tpcServerBootstrap.start();
         diagnostics.start();
         node.getNodeExtension().registerPlugins(diagnostics);
     }
@@ -604,9 +597,6 @@ public class NodeEngineImpl implements NodeEngine {
         if (executionService != null) {
             executionService.shutdown();
         }
-        if (tpcServerBootstrap != null) {
-            tpcServerBootstrap.shutdown();
-        }
         if (metricsRegistry != null) {
             metricsRegistry.shutdown();
         }
@@ -616,7 +606,6 @@ public class NodeEngineImpl implements NodeEngine {
         if (dataConnectionService != null) {
             dataConnectionService.shutdown();
         }
-
     }
 
     @Override

@@ -37,6 +37,7 @@ import java.net.Socket;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
 /**
@@ -48,6 +49,15 @@ public interface ServerContext {
     int KILO_BYTE = 1024;
 
     boolean isNodeActive();
+
+    /**
+     * Returns a mutable Map containing extra handshake options. This method
+     * can be used to add new options, or get the existing options. Returned
+     * ConcurrentMap will never be <code>null</code>.
+     *
+     * @return the extra handshake options.
+     */
+    ConcurrentMap<String, String> getExtraHandshakeOptions();
 
     HazelcastProperties properties();
 

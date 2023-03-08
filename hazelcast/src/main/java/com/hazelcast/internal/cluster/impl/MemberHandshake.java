@@ -59,6 +59,7 @@ public class MemberHandshake
     public static final byte SCHEMA_VERSION_2 = (byte) 2;
 
     public static final String OPTION_PLANE_COUNT = "planeCount";
+    public static final String OPTION_TPC_PORTS = "tpcPorts";
     public static final String OPTION_PLANE_INDEX = "planeIndex";
 
     private byte schemaVersion;
@@ -83,9 +84,22 @@ public class MemberHandshake
         this.uuid = uuid;
     }
 
-    public MemberHandshake addOption(String key, Object value) {
-        options.put(key, "" + value);
+    public Map<String,String> options(){
+        return options;
+    }
+
+    public MemberHandshake addOption(String key, String value) {
+        options.put(key, value);
         return this;
+    }
+
+    public void addOptions(Map<String, String> options) {
+        this.options.putAll(options);
+    }
+
+    public String getOption(String key, String defaultValue) {
+        String value = options.get(key);
+        return value == null ? defaultValue :value;
     }
 
     public int getIntOption(String key, int defaultValue) {
@@ -194,4 +208,5 @@ public class MemberHandshake
                 + ", options=" + options
                 + '}';
     }
+
 }

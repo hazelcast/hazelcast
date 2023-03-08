@@ -23,7 +23,6 @@ import com.hazelcast.client.impl.operations.GetConnectedClientsOperation;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.client.impl.protocol.task.AuthenticationBaseMessageTask;
 import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
@@ -122,7 +121,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     private final Map<UUID, Consumer<Long>> backupListeners = new ConcurrentHashMap<>();
     private final AddressChecker addressChecker;
     private final IOBufferAllocator responseBufAllocator = new ConcurrentIOBufferAllocator(4096, true);
-    private final boolean tpcEnabled;
 
     // not final for the testing purposes
     private ClientEndpointStatisticsManager endpointStatisticsManager;
@@ -145,7 +143,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         this.addressChecker = new AddressCheckerImpl(trustedInterfaces, logger);
         this.endpointStatisticsManager = PhoneHome.isPhoneHomeEnabled(node)
                 ? new ClientEndpointStatisticsManagerImpl() : new NoOpClientEndpointStatisticsManager();
-        this.tpcEnabled = nodeEngine.getTpcServerBootstrap().isEnabled();
     }
 
     private ClientExceptionFactory initClientExceptionFactory() {
@@ -223,16 +220,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         return endpointManager.size();
     }
 
-    //PETER:
     public void accept(ClientMessage clientMessage) {
         Connection connection = clientMessage.getConnection();
         MessageTask messageTask = messageTaskFactory.create(clientMessage, connection);
 
-        if (tpcEnabled && messageTask instanceof AbstractMessageTask) {
-            AbstractMessageTask abstractMessageTask = (AbstractMessageTask) messageTask;
-            abstractMessageTask.setAsyncSocket(clientMessage.getAsyncSocket());
-            abstractMessageTask.setResponseBufAllocator(responseBufAllocator);
-        }
         OperationServiceImpl operationService = nodeEngine.getOperationService();
         if (isUrgent(messageTask)) {
             operationService.execute((UrgentMessageTask) messageTask);

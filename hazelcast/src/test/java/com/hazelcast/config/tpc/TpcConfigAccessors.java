@@ -17,30 +17,30 @@
 package com.hazelcast.config.tpc;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.tpc.TpcServerBootstrap;
+import com.hazelcast.internal.tpc.server.ServerTpcRuntime;
 
 import java.util.List;
 
 import static com.hazelcast.test.Accessors.getNode;
 
 public class TpcConfigAccessors {
-    public static TpcServerBootstrap getTpcServerBootstrap(HazelcastInstance hz) {
-        return getNode(hz).getNodeEngine().getTpcServerBootstrap();
+    public static ServerTpcRuntime getTpcRuntime(HazelcastInstance hz) {
+        return getNode(hz).getTpcRuntime();
     }
 
     public static int getEventloopCount(HazelcastInstance hz) {
-        return getTpcServerBootstrap(hz).getTpcEngine().reactorCount();
+        return getTpcRuntime(hz).getTpcEngine().reactorCount();
     }
 
     public static boolean isTpcEnabled(HazelcastInstance hz) {
-        return getTpcServerBootstrap(hz).isEnabled();
+        return getTpcRuntime(hz).isEnabled();
     }
 
     public static TpcSocketConfig getClientSocketConfig(HazelcastInstance hz) {
-        return getTpcServerBootstrap(hz).getClientSocketConfig();
+        return getTpcRuntime(hz).getClientPlane().getTcpSocketConfig();
     }
 
-    public static List<Integer> getClientPorts(HazelcastInstance hz) {
-        return getTpcServerBootstrap(hz).getClientPorts();
+    public static List<Integer> getServerPortsClientPlane(HazelcastInstance hz) {
+        return getTpcRuntime(hz).getClientPlaneServerPorts();
     }
 }

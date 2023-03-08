@@ -47,15 +47,15 @@
     </dependencies>
 
     <profiles>
-        <profile>
-            <id>jdk-17</id>
-            <activation>
-                <jdk>[17,)</jdk>
-            </activation>
-            <modules>
-                <module>jdk17-tests</module>
-            </modules>
-        </profile>
+<!--        <profile>-->
+<!--            <id>jdk-17</id>-->
+<!--            <activation>-->
+<!--                <jdk>[17,)</jdk>-->
+<!--            </activation>-->
+<!--            <modules>-->
+<!--                <module>jdk17-tests</module>-->
+<!--            </modules>-->
+<!--        </profile>-->
         <profile>
             <id>nightly-build</id>
             <modules>

@@ -212,7 +212,7 @@ public class OutboundResponseHandlerTest {
     }
 
     private void testToBackupAckPacket(int callId, boolean urgent) {
-        Packet packet = handler.toBackupAckPacket(callId, urgent);
+        Packet packet = handler.toBackupAckPacket(0, callId, urgent);
         HeapData expected = serializationService.toData(new BackupAckResponse(callId, urgent));
         assertEquals(expected, new HeapData(packet.toByteArray()));
     }
@@ -235,7 +235,7 @@ public class OutboundResponseHandlerTest {
     }
 
     private void testToNormalResponsePacket(Object value, int callId, int backupAcks, boolean urgent) {
-        Packet packet = handler.toNormalResponsePacket(callId, backupAcks, urgent, value);
+        Packet packet = handler.toNormalResponsePacket(0, callId, backupAcks, urgent, value);
         HeapData expected = serializationService.toData(new NormalResponse(value, callId, backupAcks, urgent));
         assertEquals(expected, new HeapData(packet.toByteArray()));
     }

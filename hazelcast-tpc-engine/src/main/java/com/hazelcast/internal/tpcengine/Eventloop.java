@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.tpcengine;
 
+import com.hazelcast.internal.tpcengine.file.AsyncFile;
+import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpcengine.util.BoundPriorityQueue;
@@ -55,7 +57,7 @@ public abstract class Eventloop {
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
     protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     protected final NanoClock nanoClock;
-    protected final PromiseAllocator promiseAllocator;
+    public final PromiseAllocator promiseAllocator;
     protected final Scheduler scheduler;
 
     protected long earliestDeadlineNanos = -1;
@@ -76,6 +78,10 @@ public abstract class Eventloop {
         this.scheduler = builder.schedulerSupplier.get();
         scheduler.init(this);
     }
+
+    public abstract IOBufferAllocator fileIOBufferAllocator();
+
+    public abstract AsyncFile newAsyncFile(String path);
 
     /**
      * Runs the actual eventloop.

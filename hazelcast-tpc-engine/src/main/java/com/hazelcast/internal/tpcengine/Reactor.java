@@ -237,7 +237,7 @@ public abstract class Reactor implements Executor {
      * @return the created AsyncServerSocketBuilder.
      * @throws IllegalStateException if the reactor isn't running.
      */
-    public abstract AsyncServerSocketBuilder newAsyncServerSocketBuilder();
+    public abstract AsyncServerSocketBuilder newAsyncServerBuilder();
 
     protected void verifyRunning() {
         State state0 = state;

@@ -24,7 +24,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.tpc.TpcServerBootstrap;
+import com.hazelcast.internal.tpc.server.ServerTpcRuntime;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -90,7 +90,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
 
     protected OperationExecutorImpl initExecutor() {
         // Tpc is disabled in these tests. To not get NPE we mock the bootstrap.
-        TpcServerBootstrap bootstrap = mock(TpcServerBootstrap.class);
+        ServerTpcRuntime bootstrap = mock(ServerTpcRuntime.class);
         when(bootstrap.isEnabled()).thenReturn(false);
 
         props = new HazelcastProperties(config);

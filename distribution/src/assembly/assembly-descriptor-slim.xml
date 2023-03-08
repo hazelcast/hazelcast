@@ -44,11 +44,11 @@
         </dependencySet>
     </dependencySets>
     <files>
-        <file>
-            <source>${project.build.directory}/classes/META-INF/THIRD-PARTY.txt</source>
-            <destName>THIRD-PARTY.txt</destName>
-            <outputDirectory>licenses</outputDirectory>
-        </file>
+<!--        <file>-->
+<!--            <source>${project.build.directory}/classes/META-INF/THIRD-PARTY.txt</source>-->
+<!--            <destName>THIRD-PARTY.txt</destName>-->
+<!--            <outputDirectory>licenses</outputDirectory>-->
+<!--        </file>-->
         <file>
             <source>${basedir}/../target/aggregated-attribution.txt</source>
             <destName>attribution.txt</destName>

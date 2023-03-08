@@ -1,0 +1,25 @@
+diff a/hazelcast-tpc-engine/src/main/java/com/hazelcast/internal/tpc/util/BufferUtil.java b/hazelcast-tpc-engine/src/main/java/com/hazelcast/internal/tpc/util/BufferUtil.java	(rejected hunks)
+@@ -67,17 +150,19 @@ public final class BufferUtil {
+     }
+ 
+     public static void put(ByteBuffer dst, ByteBuffer src) {
+-        if (src.remaining() <= dst.remaining()) {
++        int readableBytes = src.remaining();
++        int writableBytes = dst.remaining();
++        if (readableBytes <= writableBytes) {
+             // there is enough space in the dst buffer to copy the src
+             dst.put(src);
+         } else {
+             // there is not enough space in the dst buffer, so we need to
+             // copy as much as we can.
+             int srcOldLimit = src.limit();
+-            src.limit(src.position() + dst.remaining());
++            src.limit(src.position() + writableBytes);
+             dst.put(src);
+             src.limit(srcOldLimit);
+         }
+     }
+ 
+-}
++}
+\ No newline at end of file

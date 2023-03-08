@@ -17,17 +17,21 @@
 package com.hazelcast.internal.server.tcp;
 
 import com.hazelcast.auditlog.AuditlogTypeIds;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.ConnectionType;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
+import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
+import com.hazelcast.internal.tpcengine.iobuffer.UnpooledIOBufferAllocator;
 import com.hazelcast.logging.ILogger;
 
 import javax.security.auth.login.LoginContext;
@@ -40,28 +44,35 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
+import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
+import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_CONNECTION_CONNECTION_TYPE;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeUnit.ENUM;
 import static com.hazelcast.internal.nio.ConnectionType.MEMBER;
 import static com.hazelcast.internal.nio.ConnectionType.NONE;
+import static com.hazelcast.internal.nio.Packet.VERSION;
+import static com.hazelcast.internal.tpc.FrameCodec.FLAG_PACKET;
+import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 
 /**
  * The Tcp/Ip implementation of the {@link Connection}.
  * <p>
  * A {@link TcpServerConnection} is not responsible for reading or writing data to the socket; that is task of
- * the {@link Channel}.
+ * the {@link com.hazelcast.internal.networking.Channel}.
  *
  * @see Networking
  */
 @SuppressWarnings("checkstyle:methodcount")
 public class TcpServerConnection implements ServerConnection {
 
-    private volatile AsyncSocket[] sockets;
+    private volatile AsyncSocket[] tpcSockets;
+    private final IOBufferAllocator bufAllocator = new UnpooledIOBufferAllocator();
 
-    private final Channel channel;
+    private final com.hazelcast.internal.networking.Channel channel;
     private final ConcurrentMap attributeMap;
 
     private final TcpServerConnectionManager connectionManager;
@@ -99,7 +110,7 @@ public class TcpServerConnection implements ServerConnection {
     public TcpServerConnection(TcpServerConnectionManager connectionManager,
                                ConnectionLifecycleListener<TcpServerConnection> lifecycleListener,
                                int connectionId,
-                               Channel channel,
+                               com.hazelcast.internal.networking.Channel channel,
                                boolean acceptorSide
     ) {
         this.connectionId = connectionId;
@@ -113,12 +124,12 @@ public class TcpServerConnection implements ServerConnection {
         attributeMap.put(ServerConnection.class, this);
     }
 
-    public AsyncSocket[] getSockets() {
-        return sockets;
+    public AsyncSocket[] getTpcSockets() {
+        return tpcSockets;
     }
 
-    public void setSockets(AsyncSocket[] sockets) {
-        this.sockets = sockets;
+    public void setTpcSockets(AsyncSocket[] tpcSockets) {
+        this.tpcSockets = tpcSockets;
     }
 
     @Override
@@ -126,7 +137,7 @@ public class TcpServerConnection implements ServerConnection {
         return attributeMap;
     }
 
-    public Channel getChannel() {
+    public com.hazelcast.internal.networking.Channel getChannel() {
         return channel;
     }
 
@@ -228,16 +239,110 @@ public class TcpServerConnection implements ServerConnection {
         return !connectionType.equals(MEMBER);
     }
 
+    private final static AtomicLong total = new AtomicLong();
+    private final static AtomicLong tpc = new AtomicLong();
+
     @Override
     public boolean write(OutboundFrame frame) {
-        if (channel.write(frame)) {
-            return true;
+        if (total.incrementAndGet() % 10000 == 0) {
+            System.out.println("Ratio " + ((1.0d + tpc.get()) / total.get()) + "");
+        }
+
+        AsyncSocket[] tpcSockets0 = tpcSockets;
+        if (tpcSockets0 == null) {
+            System.out.println("tpcSockets0 not found");
+            if (channel.write(frame)) {
+                return true;
+            }
+        } else {
+            int partitionId = -1;
+            IOBuffer buffer = null;
+            if (frame instanceof Packet) {
+                Packet packet = (Packet) frame;
+                partitionId = packet.getPartitionId();
+
+//                if(packet.isFlagRaised(Packet.FLAG_OP_RESPONSE) && partitionId<0){
+//                       new Exception().printStackTrace();
+//                }
+
+                if (partitionId > -1) {
+                    buffer = frame(packet);
+                } else {
+                 //   new Exception().printStackTrace();
+                }
+            } else if (frame instanceof ClientMessage) {
+                ClientMessage message = (ClientMessage) frame;
+                partitionId = message.getPartitionId();
+                if (partitionId > -1) {
+                    buffer = frame(message);
+                }
+            }
+
+            if (buffer == null) {
+                //System.out.println("tpcSockets0 not found");
+                if (channel.write(frame)) {
+                    return true;
+                }
+            } else {
+                //System.out.println("tpcSockets0 found");
+                //System.out.println("packet over TcpServerConnection asyncSocket");
+                // todo: check if we are on the right thread.
+
+                AsyncSocket socket = tpcSockets0[partitionId % tpcSockets0.length];
+               // System.out.println("found");
+                tpc.incrementAndGet();
+                if (socket.writeAndFlush(buffer)) {
+                    return true;
+                } else {
+                    // Unlike the 'classic' networking, the asyncSocket has a bound on the
+                    // number of packets on the write-queue to prevent running into OOME.
+                    // So if the packet can't be send, we close the connection to indicate
+                    // that the connection was congested.
+                    close("Packet could not be send due to congested socket "
+                            + socket, null);
+                }
+            }
         }
 
         if (logger.isFinestEnabled()) {
             logger.finest("Connection is closed, won't write packet -> " + frame);
         }
+
         return false;
+    }
+
+    private IOBuffer frame(Packet packet) {
+        // todo: we can use a local buffer allocator for responses send from the right thread.
+        IOBuffer buf = bufAllocator.allocate(packet.getFrameLength() + SIZEOF_INT + SIZEOF_INT);
+        buf.writeInt(packet.getFrameLength() + SIZEOF_INT);
+        buf.writeInt(FLAG_PACKET);
+        buf.writeByte(VERSION);
+        buf.writeChar(packet.getFlags());
+        buf.writeInt(packet.getPartitionId());
+        buf.writeInt(packet.totalSize());
+        buf.writeBytes(packet.toByteArray());
+        buf.flip();
+        return buf;
+    }
+
+    private IOBuffer frame(ClientMessage msg) {
+        ClientMessage.Frame frame = msg.getStartFrame();
+        IOBuffer buf = bufAllocator.allocate(msg.getBufferLength());
+        while (frame != null) {
+            buf.writeIntL(frame.content.length + SIZE_OF_FRAME_LENGTH_AND_FLAGS);
+
+            int flags = frame.flags;
+            if (frame == msg.getEndFrame()) {
+                flags = frame.flags | IS_FINAL_FLAG;
+            }
+
+            buf.writeShortL((short) flags);
+            buf.writeBytes(frame.content);
+            frame = frame.next;
+        }
+
+        buf.flip();
+        return buf;
     }
 
     @Override
@@ -272,13 +377,13 @@ public class TcpServerConnection implements ServerConnection {
         this.closeReason = reason;
 
         serverContext.getAuditLogService()
-            .eventBuilder(AuditlogTypeIds.NETWORK_DISCONNECT)
-            .message("Closing server connection.")
-            .addParameter("reason", reason)
-            .addParameter("cause", cause)
-            .addParameter("remoteAddress", remoteAddress)
-            .addParameter("remoteUuid", remoteUuid)
-            .log();
+                .eventBuilder(AuditlogTypeIds.NETWORK_DISCONNECT)
+                .message("Closing server connection.")
+                .addParameter("reason", reason)
+                .addParameter("cause", cause)
+                .addParameter("remoteAddress", remoteAddress)
+                .addParameter("remoteUuid", remoteUuid)
+                .log();
 
         logClose();
 

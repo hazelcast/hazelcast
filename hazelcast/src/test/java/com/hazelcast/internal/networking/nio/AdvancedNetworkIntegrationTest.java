@@ -51,7 +51,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.hazelcast.config.tpc.TpcConfigAccessors.getClientPorts;
+import static com.hazelcast.config.tpc.TpcConfigAccessors.getServerPortsClientPlane;
 import static com.hazelcast.config.tpc.TpcConfigAccessors.getClientSocketConfig;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
@@ -110,7 +110,7 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
         for (int i = 0; i < 3; i++) {
             assertEquals(1024, getClientSocketConfig(hz[i]).getReceiveBufferSizeKB());
             assertEquals(512, getClientSocketConfig(hz[i]).getSendBufferSizeKB());
-            assertEquals(4, getClientPorts(hz[i]).size());
+            assertEquals(4, getServerPortsClientPlane(hz[i]).size());
         }
     }
 

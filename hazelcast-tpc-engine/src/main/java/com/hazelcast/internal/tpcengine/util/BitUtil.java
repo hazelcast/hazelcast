@@ -23,8 +23,29 @@ public final class BitUtil {
     public static final int SIZEOF_LONG = Long.BYTES;
     public static final int SIZEOF_FLOAT = Float.BYTES;
     public static final int SIZEOF_DOUBLE = Double.BYTES;
+    public final static int SIZEOF_UUID = SIZEOF_LONG + SIZEOF_LONG;
+    public static final int SIZEOF_CRC32 = SIZEOF_INT;
 
     private BitUtil() {
+    }
+
+    /**
+     * Hash function based on Knuth's multiplicative method. This version is faster than using Murmur hash but provides
+     * acceptable behavior.
+     *
+     * @param k the long for which the hash will be calculated
+     * @return the hash
+     */
+    public static long fastLongMix(long k) {
+        // phi = 2^64 / goldenRatio
+        final long phi = 0x9E3779B97F4A7C15L;
+        long h = k * phi;
+        h ^= h >>> 32;
+        return h ^ (h >>> 16);
+    }
+
+    static int longHash(final long value, final int mask) {
+        return ((int) fastLongMix(value)) & mask;
     }
 
     /**

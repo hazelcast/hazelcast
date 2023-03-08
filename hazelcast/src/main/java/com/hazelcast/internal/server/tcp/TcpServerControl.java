@@ -28,12 +28,15 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.cluster.impl.MemberHandshake.OPTION_PLANE_COUNT;
+import static com.hazelcast.internal.cluster.impl.MemberHandshake.OPTION_PLANE_INDEX;
 import static com.hazelcast.spi.properties.ClusterProperty.CHANNEL_COUNT;
 
 /**
@@ -62,6 +65,7 @@ public final class TcpServerControl {
 
     public void process(Packet packet) {
         MemberHandshake handshake = serverContext.getSerializationService().toObject(packet);
+
         TcpServerConnection connection = (TcpServerConnection) packet.getConn();
         if (!connection.setHandshake()) {
             if (logger.isFinestEnabled()) {
@@ -75,6 +79,9 @@ public final class TcpServerControl {
                     + "Expected " + expectedPlaneCount + " found " + handshake.getPlaneCount(), null);
             return;
         }
+
+        // Make all handshake options available in the connection so that we can do an easy lookup.
+        connection.attributeMap().putAll(handshake.options());
 
         // before we register the connection on the plane, we make sure the plane index is set on the connection
         // so that we can safely remove the connection from the plane.
@@ -152,10 +159,10 @@ public final class TcpServerControl {
      * with which it was registered in {@link TcpServerConnectionManager#planes},
      * ignoring the {@code primaryAddress} argument.
      *
-     * @param connection           the connection that send the handshake
-     * @param remoteEndpointAddress       the address of the remote endpoint
-     * @param remoteAddressAliases alias addresses as provided by the remote endpoint, under which the connection
-     *                             will be registered. These are the public addresses configured on the remote.
+     * @param connection            the connection that send the handshake
+     * @param remoteEndpointAddress the address of the remote endpoint
+     * @param remoteAddressAliases  alias addresses as provided by the remote endpoint, under which the connection
+     *                              will be registered. These are the public addresses configured on the remote.
      */
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     @SuppressFBWarnings("RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED")
@@ -188,8 +195,11 @@ public final class TcpServerControl {
 
         serverContext.onSuccessfulConnection(primaryAddress);
         if (handshake.isReply()) {
-            new SendMemberHandshakeTask(logger, serverContext, connection, primaryAddress, false,
-                    handshake.getPlaneIndex(), handshake.getPlaneCount()).run();
+            Map<String, String> options = new HashMap<>();
+            options.put(OPTION_PLANE_COUNT, Integer.toString(handshake.getPlaneCount()));
+            options.put(OPTION_PLANE_INDEX, Integer.toString(handshake.getPlaneIndex()));
+            options.putAll(serverContext.getExtraHandshakeOptions());
+            new SendMemberHandshakeTask(logger, serverContext, connection, primaryAddress, false, options).run();
         }
 
         if (logger.isLoggable(Level.FINEST)) {

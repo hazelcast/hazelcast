@@ -62,8 +62,8 @@ public class MemberHandshakeTest {
     @Test
     public void testOptions() throws Exception {
         originalHandshake = new MemberHandshake(SCHEMA_VERSION_2, localAddresses(), targetAddress, true, uuid)
-                .addOption("foo", 1)
-                .addOption("bar", 2);
+                .addOption("foo", "1")
+                .addOption("bar", "2");
 
         MemberHandshake clonedHandshake = cloneHandshake(originalHandshake);
         assertEquals(SCHEMA_VERSION_2, clonedHandshake.getSchemaVersion());

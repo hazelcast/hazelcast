@@ -30,8 +30,8 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.config.tpc.TpcConfigAccessors.getEventloopCount;
 import static com.hazelcast.config.tpc.TpcConfigAccessors.isTpcEnabled;
-import static com.hazelcast.internal.tpc.TpcServerBootstrap.TPC_ENABLED;
-import static com.hazelcast.internal.tpc.TpcServerBootstrap.TPC_EVENTLOOP_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.TPC_ENABLED;
+import static com.hazelcast.spi.properties.ClusterProperty.TPC_EVENTLOOP_COUNT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

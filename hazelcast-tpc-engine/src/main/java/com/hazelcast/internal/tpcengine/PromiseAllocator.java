@@ -35,7 +35,7 @@ public final class PromiseAllocator {
         return index + 1;
     }
 
-    Promise allocate() {
+    public Promise allocate() {
         if (index == -1) {
             Promise promise = new Promise(eventloop);
             promise.allocator = this;
@@ -52,7 +52,7 @@ public final class PromiseAllocator {
     void free(Promise e) {
         checkNotNull(e);
 
-        if (index <= array.length - 1) {
+        if (index < array.length - 1) {
             index++;
             array[index] = e;
         }

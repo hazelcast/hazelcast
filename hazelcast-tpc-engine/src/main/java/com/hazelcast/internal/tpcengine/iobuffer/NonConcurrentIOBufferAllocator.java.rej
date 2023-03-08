@@ -1,0 +1,44 @@
+diff a/hazelcast-tpc-engine/src/main/java/com/hazelcast/internal/tpc/iobuffer/NonConcurrentIOBufferAllocator.java b/hazelcast-tpc-engine/src/main/java/com/hazelcast/internal/tpc/iobuffer/NonConcurrentIOBufferAllocator.java	(rejected hunks)
+@@ -16,25 +16,37 @@
+ 
+ package com.hazelcast.internal.tpcengine.iobuffer;
+ 
++import com.hazelcast.internal.tpcengine.util.BufferUtil;
++
+ import java.nio.ByteBuffer;
+ 
++import static com.hazelcast.internal.tpcengine.util.BufferUtil.allocateDirectAligned;
++import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
++import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
++import static java.nio.ByteBuffer.allocateDirect;
++
+ /**
+  * A {@link IOBufferAllocator} that can only be used serially (so by a single thread).
+  * <p>
+  * {@link #allocate()} should be done by the same thread as {@link #free(IOBuffer)}.
+  */
+-@SuppressWarnings("checkstyle:MagicNumber")
+ public final class NonConcurrentIOBufferAllocator implements IOBufferAllocator {
+     private final int minSize;
+     private final boolean direct;
+-    private long newAllocateCnt;
+-    private long allocateCnt;
+-    private IOBuffer[] bufs = new IOBuffer[4096];
++    private final int alignment;
++    private long newAllocateCnt = 0;
++    private long allocateCnt = 0;
++    private IOBuffer[] bufs = new IOBuffer[512];
+     private int index = -1;
+ 
+     public NonConcurrentIOBufferAllocator(int minSize, boolean direct) {
+-        this.minSize = minSize;
++        this(minSize, direct, 1);
++    }
++
++    public NonConcurrentIOBufferAllocator(int minSize, boolean direct, int alignment) {
++        this.minSize = checkNotNegative(minSize, "minSize");
+         this.direct = direct;
++        this.alignment = checkPositive(alignment, "alignment");
+     }
+ 
+     @Override

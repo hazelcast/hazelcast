@@ -56,6 +56,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.function.Consumer;
@@ -74,6 +76,7 @@ public class MockServerContext implements ServerContext {
     private final HazelcastProperties properties;
     public volatile Consumer<Packet> packetConsumer;
     private final ILogger logger;
+    private final ConcurrentMap<String, String> extraHandshakeOptions = new ConcurrentHashMap<>();
 
     public MockServerContext(int port, UUID memberUuid) throws Exception {
         loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo(), true, null);
@@ -93,6 +96,11 @@ public class MockServerContext implements ServerContext {
         props.put(IO_INPUT_THREAD_COUNT.getName(), "1");
         props.put(IO_OUTPUT_THREAD_COUNT.getName(), "1");
         this.properties = new HazelcastProperties(props);
+    }
+
+    @Override
+    public ConcurrentMap<String, String> getExtraHandshakeOptions() {
+        return extraHandshakeOptions;
     }
 
     @Override

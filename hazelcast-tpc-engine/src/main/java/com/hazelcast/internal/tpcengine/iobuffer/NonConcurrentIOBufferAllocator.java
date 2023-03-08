@@ -16,7 +16,13 @@
 
 package com.hazelcast.internal.tpcengine.iobuffer;
 
+import com.hazelcast.internal.tpcengine.util.BufferUtil;
+
 import java.nio.ByteBuffer;
+
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
+import static java.nio.ByteBuffer.allocateDirect;
 
 /**
  * A {@link IOBufferAllocator} that can only be used serially (so by a single thread).
@@ -27,14 +33,20 @@ import java.nio.ByteBuffer;
 public final class NonConcurrentIOBufferAllocator implements IOBufferAllocator {
     private final int minSize;
     private final boolean direct;
+    private final int alignment;
     private long newAllocateCnt;
     private long allocateCnt;
     private IOBuffer[] bufs = new IOBuffer[4096];
     private int index = -1;
 
     public NonConcurrentIOBufferAllocator(int minSize, boolean direct) {
-        this.minSize = minSize;
+        this(minSize, direct, 1);
+    }
+
+    public NonConcurrentIOBufferAllocator(int minSize, boolean direct, int alignment) {
+        this.minSize = checkNotNegative(minSize, "minSize");
         this.direct = direct;
+        this.alignment = checkPositive(alignment, "alignment");
     }
 
     @SuppressWarnings("java:S125")
@@ -49,7 +61,17 @@ public final class NonConcurrentIOBufferAllocator implements IOBufferAllocator {
             for (int k = 0; k < bufs.length; k++) {
                 //newAllocations.incrementAndGet();
                 //System.out.println(" new buf");
-                ByteBuffer buffer = direct ? ByteBuffer.allocateDirect(minSize) : ByteBuffer.allocate(minSize);
+                ByteBuffer buffer;
+                if (direct) {
+                    if (alignment == 1) {
+                        buffer = allocateDirect(minSize);
+                    } else {
+                        buffer = BufferUtil.allocateDirect(minSize, alignment);
+                    }
+                } else {
+                    buffer = ByteBuffer.allocate(minSize);
+                }
+
                 IOBuffer buf = new IOBuffer(buffer);
                 buf.concurrent = false;
                 newAllocateCnt++;

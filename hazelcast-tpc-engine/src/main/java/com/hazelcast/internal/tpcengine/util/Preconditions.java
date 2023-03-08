@@ -21,6 +21,16 @@ public final class Preconditions {
     private Preconditions() {
     }
 
+    public static int checkValidPort(int port, String paramName) {
+        if (port < 0) {
+            throw new IllegalArgumentException(paramName + " is " + port + " but must be >= 0");
+        } else if (port > 65335) {
+            throw new IllegalArgumentException(paramName + " is " + port + " but must be <= " + 65335);
+        } else {
+            return port;
+        }
+    }
+
     public static <E> E checkInstanceOf(Class<E> type, Object object, String paramName) {
         checkNotNull(type, "type");
         checkNotNull(object, paramName);

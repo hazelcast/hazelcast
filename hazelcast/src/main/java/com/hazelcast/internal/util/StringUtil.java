@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.internal.server.tcp.TcpServerConnection;
+
 import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
@@ -23,6 +25,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -32,6 +35,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.internal.cluster.impl.MemberHandshake.OPTION_TPC_PORTS;
 import static java.lang.Character.isLetter;
 import static java.lang.Character.isLowerCase;
 import static java.lang.Character.toLowerCase;
@@ -369,6 +373,25 @@ public final class StringUtil {
     }
 
     /**
+     * Splits the string into a list of integers.
+     *
+     * @param input
+     * @return
+     */
+    public static List<Integer> toIntegerList(String input) {
+        if(input == null){
+            return Collections.emptyList();
+        }
+
+        String[] items = input.split(",");
+        List<Integer> result = new ArrayList<>(items.length);
+        for (String item : items) {
+            result.add(Integer.parseInt(item));
+        }
+        return result;
+    }
+
+    /**
      * Returns intersection of given String arrays. If either array is {@code null}, then {@code null} is returned.
      *
      * @param arr1 first array
@@ -483,9 +506,18 @@ public final class StringUtil {
      * @return string
      */
     public static <T> String toString(Collection<T> collection) {
+        return toString(collection, LINE_SEPARATOR);
+    }
+
+    /**
+     * Converts the provided collection to string, joined by the provided separator.
+     * @param collection collection to convert to string
+     * @return string
+     */
+    public static <T> String toString(Collection<T> collection, CharSequence separator) {
         return collection.stream()
                 .map(Objects::toString)
-                .collect(Collectors.joining(LINE_SEPARATOR));
+                .collect(Collectors.joining(separator));
     }
 
     /**

@@ -24,6 +24,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 
 /**
  * Represents a 'connection' between two machines.
@@ -117,7 +118,6 @@ public interface Connection {
      * @param remoteUuid the uuid of the remote endpoint of the connection.
      */
     void setRemoteUuid(UUID remoteUuid);
-
     /**
      * Returns remote address of this Connection.
      *

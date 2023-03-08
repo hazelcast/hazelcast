@@ -46,6 +46,7 @@ import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.internal.tpc.server.ServerTpcRuntime;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.cluster.impl.ClusterJoinManager;
@@ -188,6 +189,7 @@ public class Node {
     private final HealthMonitor healthMonitor;
     private final Joiner joiner;
     private final LocalAddressRegistry localAddressRegistry;
+    private final ServerTpcRuntime tpcRuntime;
     private ManagementCenterService managementCenterService;
 
     // it can be changed on cluster service reset see: ClusterServiceImpl#resetLocalMemberUuid
@@ -261,12 +263,14 @@ public class Node {
             compatibilitySerializationService = nodeExtension.createCompatibilitySerializationService();
             securityContext = config.getSecurityConfig().isEnabled() ? nodeExtension.getSecurityContext() : null;
             warnForUsageOfDeprecatedSymmetricEncryption(config, logger);
+            tpcRuntime = new ServerTpcRuntime(this);
             nodeEngine = new NodeEngineImpl(this);
             config.setServices(nodeEngine);
             config.onSecurityServiceUpdated(getSecurityService());
             MetricsRegistry metricsRegistry = nodeEngine.getMetricsRegistry();
             metricsRegistry.provideMetrics(nodeExtension);
             localAddressRegistry = new LocalAddressRegistry(this, addressPicker);
+
             server = nodeContext.createServer(this, serverSocketRegistry, localAddressRegistry);
             healthMonitor = new HealthMonitor(this);
             clientEngine = hasClientServerSocket() ? new ClientEngineImpl(this) : new NoOpClientEngine();
@@ -308,6 +312,11 @@ public class Node {
             throw rethrow(e);
         }
     }
+
+    public ServerTpcRuntime getTpcRuntime() {
+        return tpcRuntime;
+    }
+
 
     private boolean hasClientServerSocket() {
         if (!config.getAdvancedNetworkConfig().isEnabled()) {
@@ -480,11 +489,13 @@ public class Node {
     }
 
     void start() {
+        tpcRuntime.start();
         nodeEngine.start();
         initializeListeners(config);
         hazelcastInstance.lifecycleService.fireLifecycleEvent(LifecycleState.STARTING);
         clusterService.sendLocalMembershipEvent();
         server.start();
+
         JoinConfig join = getActiveMemberNetworkConfig(config).getJoin();
         if (shouldUseMulticastJoiner(join)) {
             final Thread multicastServiceThread = new Thread(multicastService,
@@ -571,9 +582,18 @@ public class Node {
                 shuttingDown.compareAndSet(true, false);
             }
         }
+
+        if (tpcRuntime != null) {
+            tpcRuntime.shutdown();
+        }
     }
 
     private void callGracefulShutdownAwareServices(final int maxWaitSeconds) {
+        if(true) {
+            return;
+        }
+
+
         ExecutorService executor = nodeEngine.getExecutionService().getExecutor(GRACEFUL_SHUTDOWN_EXECUTOR_NAME);
         Collection<GracefulShutdownAwareService> services = nodeEngine.getServices(GracefulShutdownAwareService.class);
         Collection<Future> futures = new ArrayList<Future>(services.size());

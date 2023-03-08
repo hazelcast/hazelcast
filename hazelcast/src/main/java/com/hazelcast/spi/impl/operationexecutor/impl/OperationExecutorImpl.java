@@ -22,7 +22,9 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.tpc.TpcServerBootstrap;
+import com.hazelcast.internal.tpc.server.ServerTpcRuntime;
+import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.TpcEngine;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
@@ -111,7 +113,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     private final Address thisAddress;
     private final OperationRunner adHocOperationRunner;
     private final int priorityThreadCount;
-    private final TpcServerBootstrap tpcServerBootstrap;
+    private final ServerTpcRuntime memberTpcRuntime;
 
     @SuppressWarnings("java:S107")
     public OperationExecutorImpl(HazelcastProperties properties,
@@ -121,18 +123,18 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
                                  NodeExtension nodeExtension,
                                  String hzName,
                                  ClassLoader configClassLoader,
-                                 TpcServerBootstrap tpcServerBootstrap) {
-        this.tpcServerBootstrap = tpcServerBootstrap;
+                                 ServerTpcRuntime memberTpcRuntime) {
+        this.memberTpcRuntime = memberTpcRuntime;
         this.thisAddress = thisAddress;
         this.logger = loggerService.getLogger(OperationExecutorImpl.class);
 
         this.adHocOperationRunner = runnerFactory.createAdHocRunner();
 
         this.partitionOperationRunners = initPartitionOperationRunners(properties, runnerFactory);
-        if (!tpcServerBootstrap.isEnabled()) {
-            this.partitionThreads = initClassicPartitionThreads(properties, hzName, nodeExtension, configClassLoader);
+        if (memberTpcRuntime.isEnabled()) {
+            this.partitionThreads = initTpcPartitionThreads(memberTpcRuntime, hzName, nodeExtension, configClassLoader);
         } else {
-            this.partitionThreads = initTpcPartitionThreads(tpcServerBootstrap, hzName, nodeExtension, configClassLoader);
+            this.partitionThreads = initClassicPartitionThreads(properties, hzName, nodeExtension, configClassLoader);
         }
         this.priorityThreadCount = properties.getInteger(PRIORITY_GENERIC_OPERATION_THREAD_COUNT);
         this.genericOperationRunners = initGenericOperationRunners(properties, runnerFactory);
@@ -197,11 +199,11 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         return threads;
     }
 
-    private PartitionOperationThread[] initTpcPartitionThreads(TpcServerBootstrap tpcServerBootstrap,
+    private PartitionOperationThread[] initTpcPartitionThreads(ServerTpcRuntime tpcRuntime,
                                                                String hzName,
                                                                NodeExtension nodeExtension,
                                                                ClassLoader configClassLoader) {
-        int threadCount = tpcServerBootstrap.eventloopCount();
+        int threadCount = tpcRuntime.eventloopCount();
 
         PartitionOperationThread[] threads = new PartitionOperationThread[threadCount];
         for (int threadId = 0; threadId < threads.length; threadId++) {
@@ -563,8 +565,15 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
                     + genericThreads.length + " generic threads (" + priorityThreadCount + " dedicated for priority tasks)");
         }
 
-        // When tpc is enabled, the partitionThread are manged bu the tpcEngine.
-        if (!tpcServerBootstrap.isEnabled()) {
+        if (memberTpcRuntime.isEnabled()) {
+            // When tpc is enabled, the partitionThread are manged by the tpcEngine.
+            TpcEngine tpcEngine = memberTpcRuntime.getTpcEngine();
+            for (int k = 0; k < tpcEngine.reactorCount(); k++) {
+                Reactor reactor = tpcEngine.reactor(k);
+                TpcPartitionOperationThread partitionThread = (TpcPartitionOperationThread) reactor.eventloopThread();
+                partitionThread.getQueue().setReactor(reactor);
+            }
+        } else {
             startAll(partitionThreads);
         }
         startAll(genericThreads);
@@ -579,11 +588,11 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     @Override
     public void shutdown() {
         // when tpc is enabled, the partitionThread are manged bu the tpcEngine.
-        if (!tpcServerBootstrap.isEnabled()) {
+        if (!memberTpcRuntime.isEnabled()) {
             shutdownAll(partitionThreads);
         }
         shutdownAll(genericThreads);
-        if (!tpcServerBootstrap.isEnabled()) {
+        if (!memberTpcRuntime.isEnabled()) {
             awaitTermination(partitionThreads);
         }
         awaitTermination(genericThreads);

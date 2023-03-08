@@ -1871,6 +1871,16 @@ public final class ClusterProperty {
      */
     public static final HazelcastProperty PERSISTENCE_AUTO_CLUSTER_STATE_STRATEGY = new HazelcastProperty(
             "hazelcast.persistence.auto.cluster.state.strategy", ClusterState.NO_MIGRATION);
+    /**
+     * If set, overrides {@link com.hazelcast.config.tpc.TpcConfig#isEnabled()}
+     */
+    public static final HazelcastProperty TPC_ENABLED = new HazelcastProperty(
+            "hazelcast.internal.tpc.enabled");
+    /**
+     * If set, overrides {@link com.hazelcast.config.tpc.TpcConfig#getEventloopCount()}
+     */
+    public static final HazelcastProperty TPC_EVENTLOOP_COUNT = new HazelcastProperty(
+            "hazelcast.internal.tpc.eventloop.count");
 
     /**
      * The directory path to be used for jar uploading. The path must exist and must have

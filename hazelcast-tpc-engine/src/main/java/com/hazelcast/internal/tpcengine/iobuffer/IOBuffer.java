@@ -57,8 +57,8 @@ import static com.hazelcast.internal.tpcengine.util.BufferUtil.upcast;
 @SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:MethodCount", "java:S1149", "java:S1135"})
 public class IOBuffer {
 
-    IOBuffer next;
-    AsyncSocket socket;
+    public IOBuffer next;
+    public AsyncSocket socket;
 
     boolean trackRelease;
     IOBufferAllocator allocator;
@@ -119,9 +119,7 @@ public class IOBuffer {
         if (buff.remaining() < remaining) {
             int newCapacity = nextPowerOfTwo(buff.capacity() + remaining);
 
-            ByteBuffer newBuffer = buff.hasArray()
-                    ? ByteBuffer.allocate(newCapacity)
-                    : ByteBuffer.allocateDirect(newCapacity);
+            ByteBuffer newBuffer = buff.hasArray() ? ByteBuffer.allocate(newCapacity) : ByteBuffer.allocateDirect(newCapacity);
             upcast(buff).flip();
             newBuffer.put(buff);
             buff = newBuffer;
@@ -137,10 +135,15 @@ public class IOBuffer {
         buff.put(value);
     }
 
-    public void writeSizedBytes(byte[] src) {
-        ensureRemaining(SIZEOF_INT + src.length);
-        buff.putInt(src.length);
-        buff.put(src);
+    public void writeSizePrefixedBytes(byte[] src) {
+        if (src == null) {
+            ensureRemaining(SIZEOF_INT);
+            buff.putInt(-1);
+        } else {
+            ensureRemaining(SIZEOF_INT + src.length);
+            buff.putInt(src.length);
+            buff.put(src);
+        }
     }
 
     public void writeBytes(byte[] src) {
@@ -170,6 +173,14 @@ public class IOBuffer {
 
     public int getInt(int index) {
         return buff.getInt(index);
+    }
+
+    public int capacity() {
+        return buff.capacity();
+    }
+
+    public byte read() {
+        return buff.get();
     }
 
     public int readInt() {
@@ -211,10 +222,25 @@ public class IOBuffer {
         buff.putLong(value);
     }
 
+
+    public void write(IOBuffer src) {
+        write(src.byteBuffer());
+    }
+
+    public void write(IOBuffer src, int count) {
+        write(src.byteBuffer(), count);
+    }
+
     public void write(ByteBuffer src) {
         write(src, src.remaining());
     }
 
+    /**
+     * Write as many bytes from the src to this buffer as there is space or until the count.
+     *
+     * @param src
+     * @param count
+     */
     public void write(ByteBuffer src, int count) {
         ensureRemaining(count);
 
@@ -230,27 +256,42 @@ public class IOBuffer {
 
     // very inefficient
     public void writeString(String s) {
-        int length = s.length();
+        if (s == null) {
+            buff.putInt(-1);
+        } else {
 
-        ensureRemaining(SIZEOF_INT + length * SIZEOF_CHAR);
+            int length = s.length();
 
-        buff.putInt(length);
-        for (int k = 0; k < length; k++) {
-            buff.putChar(s.charAt(k));
+            ensureRemaining(SIZEOF_INT + length * SIZEOF_CHAR);
+
+            buff.putInt(length);
+            for (int k = 0; k < length; k++) {
+                buff.putChar(s.charAt(k));
+            }
         }
     }
 
     // very inefficient
     public void readString(StringBuffer sb) {
         int size = buff.getInt();
+        if (size == -1) {
+            return;
+        }
+
         for (int k = 0; k < size; k++) {
             sb.append(buff.getChar());
         }
     }
 
+    // very inefficient
     public String readString() {
-        StringBuilder sb = new StringBuilder();
         int size = buff.getInt();
+        if(size == -1){
+            return null;
+        }
+
+        StringBuilder sb = new StringBuilder();
+
         for (int k = 0; k < size; k++) {
             sb.append(buff.getChar());
         }

@@ -289,12 +289,12 @@
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-elasticsearch-7</artifactId>
-            <version>${project.version}</version>
-            <classifier>${fat.dependency.classifier}</classifier>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.hazelcast.jet</groupId>-->
+<!--            <artifactId>hazelcast-jet-elasticsearch-7</artifactId>-->
+<!--            <version>${project.version}</version>-->
+<!--            <classifier>${fat.dependency.classifier}</classifier>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-elasticsearch-6</artifactId>
@@ -330,12 +330,12 @@
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-files-s3</artifactId>
-            <version>${project.version}</version>
-            <classifier>${fat.dependency.classifier}</classifier>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.hazelcast.jet</groupId>-->
+<!--            <artifactId>hazelcast-jet-files-s3</artifactId>-->
+<!--            <version>${project.version}</version>-->
+<!--            <classifier>${fat.dependency.classifier}</classifier>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-hadoop-all</artifactId>
@@ -366,12 +366,12 @@
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-s3</artifactId>
-            <version>${project.version}</version>
-            <classifier>${fat.dependency.classifier}</classifier>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.hazelcast.jet</groupId>-->
+<!--            <artifactId>hazelcast-jet-s3</artifactId>-->
+<!--            <version>${project.version}</version>-->
+<!--            <classifier>${fat.dependency.classifier}</classifier>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-3-connector-interface</artifactId>

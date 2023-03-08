@@ -30,7 +30,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.config.tpc.TpcConfigAccessors.getClientPorts;
+import static com.hazelcast.config.tpc.TpcConfigAccessors.getServerPortsClientPlane;
 import static com.hazelcast.config.tpc.TpcConfigAccessors.getClientSocketConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -63,7 +63,7 @@ public class TpcSocketConfigTest extends HazelcastTestSupport {
     @Test
     public void testClientPortDefaults() {
         HazelcastInstance hz = createHazelcastInstance(config);
-        assertThat(getClientPorts(hz))
+        assertThat(getServerPortsClientPlane(hz))
                 .allSatisfy(i -> assertThat(i).isBetween(11000, 21000))
                 .hasSize(EVENTLOOP_COUNT);
     }
@@ -72,7 +72,7 @@ public class TpcSocketConfigTest extends HazelcastTestSupport {
     public void testClientPorts() {
         getTpcSocketConfig().setPortRange("13000-14000");
         HazelcastInstance hz = createHazelcastInstance(config);
-        assertThat(getClientPorts(hz))
+        assertThat(getServerPortsClientPlane(hz))
                 .allSatisfy(i -> assertThat(i).isBetween(13000, 14000))
                 .hasSize(EVENTLOOP_COUNT);
     }
@@ -95,7 +95,7 @@ public class TpcSocketConfigTest extends HazelcastTestSupport {
         getTpcSocketConfig().setPortRange("13000-14000");
         HazelcastInstance[] hz = createHazelcastInstances(config, 3);
         assertThat(hz).allSatisfy(
-                instance -> assertThat(getClientPorts(instance))
+                instance -> assertThat(getServerPortsClientPlane(instance))
                         .allSatisfy(i -> assertThat(i).isBetween(13000, 14000))
                         .hasSize(EVENTLOOP_COUNT));
     }

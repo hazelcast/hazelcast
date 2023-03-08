@@ -33,10 +33,14 @@ import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.cluster.impl.MemberHandshake.OPTION_PLANE_COUNT;
+import static com.hazelcast.internal.cluster.impl.MemberHandshake.OPTION_PLANE_INDEX;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_BIND;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_BIND_ANY;
 
@@ -200,8 +204,14 @@ class TcpServerConnector {
                     serverContext.interceptSocket(connectionManager.getEndpointQualifier(), socketChannel.socket(), false);
 
                     connection = connectionManager.newConnection(channel, remoteAddress, false);
+
+                    Map<String, String> options = new HashMap<>();
+                    options.put(OPTION_PLANE_COUNT, Integer.toString(planeCount));
+                    options.put(OPTION_PLANE_INDEX, Integer.toString(planeIndex));
+                    options.putAll(serverContext.getExtraHandshakeOptions());
+
                     new SendMemberHandshakeTask(logger, serverContext, connection,
-                            remoteAddress, true, planeIndex, planeCount).run();
+                            remoteAddress, true, options).run();
                 } catch (Exception e) {
                     closeConnection(connection, e);
                     closeSocket(socketChannel);

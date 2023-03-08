@@ -29,8 +29,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.internal.cluster.impl.MemberHandshake.OPTION_PLANE_COUNT;
-import static com.hazelcast.internal.cluster.impl.MemberHandshake.OPTION_PLANE_INDEX;
 import static com.hazelcast.internal.cluster.impl.MemberHandshake.SCHEMA_VERSION_2;
 
 public class SendMemberHandshakeTask implements Runnable {
@@ -40,23 +38,20 @@ public class SendMemberHandshakeTask implements Runnable {
     private final TcpServerConnection connection;
     private final Address remoteAddress;
     private final boolean reply;
-    private final int planeIndex;
-    private final int planeCount;
+    private final Map<String, String> options;
 
     public SendMemberHandshakeTask(ILogger logger,
                                    ServerContext serverContext,
                                    TcpServerConnection connection,
                                    Address remoteAddress,
                                    boolean reply,
-                                   int planeIndex,
-                                   int planeCount) {
+                                   Map<String, String> options) {
         this.logger = logger;
         this.serverContext = serverContext;
         this.connection = connection;
         this.remoteAddress = remoteAddress;
         this.reply = reply;
-        this.planeIndex = planeIndex;
-        this.planeCount = planeCount;
+        this.options = options;
     }
 
     @Override
@@ -72,9 +67,12 @@ public class SendMemberHandshakeTask implements Runnable {
                 getConfiguredLocalAddresses(),
                 remoteAddress,
                 reply,
-                serverContext.getThisUuid())
-                .addOption(OPTION_PLANE_COUNT, planeCount)
-                .addOption(OPTION_PLANE_INDEX, planeIndex);
+                serverContext.getThisUuid());
+
+        memberHandshake.addOptions(options);
+
+        System.out.println("MemberHandshake.options:" + memberHandshake.options());
+
         byte[] bytes = serverContext.getSerializationService().toBytes(memberHandshake);
         Packet packet = new Packet(bytes).setPacketType(Packet.Type.SERVER_CONTROL);
         connection.write(packet);

@@ -24,12 +24,14 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.Command;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICacheManager;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.LifecycleService;
+import com.hazelcast.core.TpcProxy;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
@@ -75,6 +77,16 @@ public final class BootstrappedInstanceProxy implements HazelcastInstance {
     BootstrappedInstanceProxy(HazelcastInstance instance, BootstrappedJetProxy jetProxy) {
         this.instance = instance;
         this.jetProxy = jetProxy;
+    }
+
+    @Override
+    public <C extends Command> C newCommand(Class<C> type) {
+        return instance.newCommand(type);
+    }
+
+    @Override
+    public <T extends TpcProxy> T getProxy(Class<T> type, String name) {
+        return instance.getProxy(type, name);
     }
 
     public List<Job> getSubmittedJobs() {

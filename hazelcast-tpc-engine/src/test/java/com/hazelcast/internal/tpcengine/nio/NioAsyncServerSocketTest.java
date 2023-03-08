@@ -21,6 +21,7 @@ import com.hazelcast.internal.tpcengine.net.AsyncServerSocketTest;
 
 
 public class NioAsyncServerSocketTest extends AsyncServerSocketTest {
+
     @Override
     public ReactorBuilder newReactorBuilder() {
         return new NioReactorBuilder();
