@@ -58,6 +58,9 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public abstract class AbstractJobProxy<C, M> implements Job {
 
     private static final long TERMINATE_RETRY_DELAY_NS = MILLISECONDS.toNanos(100);
+
+    // we intentionally do a `new String` to not have an interned copy of the string
+    @SuppressWarnings("StringOperationCanBeSimplified")
     private static final String NOT_LOADED = new String("NOT_LOADED");
 
     /** Null for normal jobs, non-null for light jobs  */
@@ -128,7 +131,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     }
 
     @Nullable @Override
-    @SuppressWarnings("StringEquality")
+    @SuppressWarnings({"StringEquality", "java:S4973"})
     public String getName() {
         if (isLightJob()) {
             return null;
@@ -167,7 +170,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
      * say {@code name ??}. If we have it and it is null, it will say {@code
      * name ''}.
      */
-    @SuppressWarnings("StringEquality")
+    @SuppressWarnings({"StringEquality", "java:S4973"})
     private String idAndName() {
         return getIdString() + " (name "
                 + (name != NOT_LOADED ? "'" + (name != null ? name : "") + "'" : "??")
