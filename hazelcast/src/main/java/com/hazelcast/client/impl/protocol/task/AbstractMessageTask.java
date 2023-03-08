@@ -295,9 +295,16 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
                 buf.writeBytes(frame.content);
                 frame = frame.next;
             }
-            //nasty
-            upcast(buf.byteBuffer()).flip();
-            asyncSocket.writeAndFlush(buf);
+
+            buf.flip();
+            if (!asyncSocket.writeAndFlush(buf)) {
+                // Unlike the 'classic' networking, the asyncSocket has a bound on the
+                // number of packets on the write-queue to prevent running into OOME.
+                // So if the response can't be send, we close the connection to indicate
+                // that the connection was congested.
+                connection.close("Closing connection: response could not be send due to congested socket "
+                        + asyncSocket, null);
+            }
         }
         //TODO framing not implemented yet, should be split into frames before writing to connection
         // PETER: There is no point in chopping it up in frames and in 1 go write all these frames because it still will
