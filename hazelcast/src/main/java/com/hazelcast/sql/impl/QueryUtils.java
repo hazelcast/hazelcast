@@ -110,8 +110,9 @@ public final class QueryUtils {
      * Create map from member ID to owned partitions.
      *
      * @param nodeEngine                node engine
-     * @param localMemberVersion        version of the local member. If any of partition owners have a different version, an exception
-     *                                  is thrown. The check is ignored if passed version is {@code null}
+     * @param localMemberVersion        version of the local member.
+     *                                  If any of partition owners have a different version, an exception is thrown.
+     *                                  The check is ignored if passed version is {@code null}
      * @param failOnUnassignedPartition whether the call should fail in case an unassigned partition is found; when set to
      *                                  {@code false} the missing partitions will not be included in the result
      * @return partition mapping
