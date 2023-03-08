@@ -173,7 +173,7 @@ public class MapConfigReadOnly extends MapConfig {
 
         List<PartitioningAttributeConfig> readOnlyAttributeConfigs = new ArrayList<>(attributeConfigs.size());
         for (PartitioningAttributeConfig attributeConfig : attributeConfigs) {
-            readOnlyAttributeConfigs.add(new PartitioningAttributeConfig(attributeConfig));
+            readOnlyAttributeConfigs.add(new PartitioningAttributeConfigReadOnly(attributeConfig));
         }
 
         return Collections.unmodifiableList(readOnlyAttributeConfigs);
