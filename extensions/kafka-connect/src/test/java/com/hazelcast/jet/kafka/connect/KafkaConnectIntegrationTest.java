@@ -49,7 +49,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class KafkaConnectDatagenIntegrationTest extends JetTestSupport {
+public class KafkaConnectIntegrationTest extends JetTestSupport {
     @ClassRule
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
     public static final int ITEM_COUNT = 1_000;
@@ -58,7 +58,7 @@ public class KafkaConnectDatagenIntegrationTest extends JetTestSupport {
             + "confluentinc-kafka-connect-datagen-0.6.0.zip";
 
     @Test
-    public void testReadFromDatagenConnector() throws Exception {
+    public void testReading() throws Exception {
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
         randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
@@ -94,7 +94,7 @@ public class KafkaConnectDatagenIntegrationTest extends JetTestSupport {
     }
 
     @Test
-    public void testScalingWithDatagenConnector() throws Exception {
+    public void testScaling() throws Exception {
         int localParallelism = 3;
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
