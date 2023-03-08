@@ -77,7 +77,7 @@ public final class PartitioningStrategyFactory {
         }
         if (config != null && config.getPartitioningStrategyClass() != null) {
             try {
-                // We intentionally not use computeIfAbsent so that the map isn't blocked if instantiation takes a
+                // We don't use computeIfAbsent intentionally so that the map isn't blocked if instantiation takes a
                 // long time - it's user code
                 strategy = ClassLoaderUtil.newInstance(configClassLoader, config.getPartitioningStrategyClass());
             } catch (Exception e) {
