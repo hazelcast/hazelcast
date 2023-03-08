@@ -89,7 +89,7 @@ public final class KafkaConnectSources {
         return Sources.streamFromProcessorWithWatermarks(name, true,
                 eventTimePolicy -> ProcessorMetaSupplier.randomMember(
                         new ProcessorSupplier() {
-                            private ConnectorWrapper connectorWrapper;
+                            private transient ConnectorWrapper connectorWrapper;
 
                             @Override
                             public void init(@Nonnull Context context) {
