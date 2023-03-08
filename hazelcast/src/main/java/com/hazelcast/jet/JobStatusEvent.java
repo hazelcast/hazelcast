@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -36,7 +35,6 @@ import static com.hazelcast.jet.Util.idToString;
  * @see JobStatusListener
  * @since 5.3
  */
-@BinaryInterface
 public class JobStatusEvent implements IdentifiedDataSerializable {
     private long jobId;
     private JobStatus previousStatus;
