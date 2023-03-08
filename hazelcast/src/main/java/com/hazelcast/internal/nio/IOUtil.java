@@ -430,23 +430,7 @@ public final class IOUtil {
     }
 
     /**
-     * Quietly attempts to close a {@link Closeable} resource, swallowing any exception.
-     *
-     * @param closeable the resource to close. If {@code null}, no action is taken.
-     */
-    public static void closeResource(Closeable closeable) {
-        if (closeable == null) {
-            return;
-        }
-        try {
-            closeable.close();
-        } catch (IOException e) {
-            LOGGER.finest("closeResource failed", e);
-        }
-    }
-
-    /**
-     * Quietly attempts to close a {@link AutoCloseable} resource, swallowing any exception.
+     * Quietly attempts to close a {@link Closeable} or {@link AutoCloseable} resource, swallowing any exception.
      *
      * @param closeable the resource to close. If {@code null}, no action is taken.
      */
