@@ -48,8 +48,7 @@ public class AttributePartitioningStrategy implements PartitioningStrategy {
         } else if (key instanceof DataSerializable || key instanceof Serializable) {
             result = extractFromPojo(key);
         } else {
-            // non-serializable POJOs and PartitionAware are not supported
-            result = null;
+            throw new HazelcastException("Unsupported key used with attribute partition strategy");
         }
 
         if (result == null) {
