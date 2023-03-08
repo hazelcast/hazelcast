@@ -250,6 +250,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
         abstract void restore(Object value);
 
+        @Override
         public void close() {
         }
 
