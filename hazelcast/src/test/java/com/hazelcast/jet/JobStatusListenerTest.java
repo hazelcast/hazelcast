@@ -340,6 +340,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         public final UUID registrationId;
         final Job job;
         final int jobId;
+        Thread originalThread;
 
         JobStatusLogger(Job job, int jobId) {
             this.job = job;
@@ -349,9 +350,20 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
 
         @Override
         public void jobStatusChanged(JobStatusEvent e) {
-            log.add(String.format("%s: %s -> %s%s",
+            String threadInfo = "";
+            if (originalThread == null) {
+                originalThread = Thread.currentThread();
+            } else if (originalThread != Thread.currentThread()) {
+                // All event handler invocations should be on the same thread to guarantee order.
+                // This is especially important on client side.
+                threadInfo = String.format(" (invoked from different thread: expected %s but invoked on %s)",
+                        originalThread.getName(), Thread.currentThread().getName());
+            }
+
+            log.add(String.format("%s: %s -> %s%s%s",
                     e.isUserRequested() ? "User" : "Jet", e.getPreviousStatus(), e.getNewStatus(),
-                    e.getDescription() == null ? "" : " (" + e.getDescription() + ")"));
+                    e.getDescription() == null ? "" : " (" + e.getDescription() + ")",
+                    threadInfo));
         }
 
         /**
