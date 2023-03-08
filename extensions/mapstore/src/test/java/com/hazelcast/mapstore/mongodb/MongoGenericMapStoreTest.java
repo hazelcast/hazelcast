@@ -16,13 +16,16 @@
 package com.hazelcast.mapstore.mongodb;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.jet.mongodb.compact.ObjectIdCompactSerializer;
 import com.hazelcast.jet.mongodb.datalink.MongoDataLink;
 import com.hazelcast.map.IMap;
 import com.hazelcast.mapstore.GenericMapStore;
@@ -36,7 +39,7 @@ import com.mongodb.client.model.CreateCollectionOptions;
 import com.mongodb.client.model.ValidationOptions;
 import org.bson.BsonDocument;
 import org.bson.Document;
-import org.example.Person;
+import org.example.PersonWithId;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -74,6 +77,10 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
         database = mongoClient.getDatabase(randomName()).withCodecRegistry(defaultCodecRegistry());
 
         // Need to set filtering class loader so the members don't deserialize into class but into GenericRecord
+        CompactSerializationConfig compactSerializationConfig =
+                new CompactSerializationConfig()
+                        .addSerializer(new ObjectIdCompactSerializer())
+                ;
         Config memberConfig = smallInstanceConfig()
                 // Need to set filtering class loader so the members don't deserialize into class but into GenericRecord
                 .setClassLoader(new FilteringClassLoader(newArrayList("org.example"), null))
@@ -83,9 +90,13 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
                                 .setShared(false)
                                 .setProperty("connectionString", connectionString)
                                 .setProperty("database", database.getName())
-                );
+                )
+                .setSerializationConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                ;
 
-        ClientConfig clientConfig = new ClientConfig();
+        ClientConfig clientConfig = new ClientConfig()
+                .setSerializationConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .setClassLoader(new FilteringClassLoader(newArrayList("org.example"), null));
 
         initializeWithClient(2, memberConfig, clientConfig);
     }
@@ -106,7 +117,7 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setClassName(GenericMapStore.class.getName());
         mapStoreConfig.setProperty("data-link-ref", TEST_DATABASE_REF);
-        mapStoreConfig.setProperty("type-name", "org.example.Person");
+        mapStoreConfig.setProperty("type-name", "org.example.PersonWithId");
         mapStoreConfig.setProperty("id-column", "personId");
         mapConfig.setMapStoreConfig(mapStoreConfig);
         instance().getConfig().addMapConfig(mapConfig);
@@ -134,39 +145,39 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
     @Test
     public void testGet() {
         HazelcastInstance client = client();
-        IMap<Integer, Person> map = client.getMap(tableName);
+        IMap<Integer, PersonWithId> map = client.getMap(tableName);
 
-        Person p = map.get(1);
-        assertThat(p.getId()).isEqualTo(1);
+        PersonWithId p = map.get(1);
+        assertThat(p.getPersonId()).isEqualTo(1);
         assertThat(p.getName()).isEqualTo("name-1");
     }
 
     @Test
     public void testPut() {
         HazelcastInstance client = client();
-        IMap<Integer, Person> map = client.getMap(tableName);
+        IMap<Integer, PersonWithId> map = client.getMap(tableName);
 
-        map.put(42, new Person(42, "name-42"));
+        map.put(42, new PersonWithId(42, "name-42"));
 
         assertMongoRowsAnyOrder(tableName,
-                new Person(1, "name-1"),
-                new Person(42, "name-42")
+                new PersonWithId(1, "name-1"),
+                new PersonWithId(42, "name-42")
         );
     }
 
     @Test
     public void testPutWhenExists() {
         HazelcastInstance client = client();
-        IMap<Integer, Person> map = client.getMap(tableName);
+        IMap<Integer, PersonWithId> map = client.getMap(tableName);
 
         assertMongoRowsAnyOrder(tableName,
-                new Person(1, "name-1")
+                new PersonWithId(1, "name-1")
         );
 
-        map.put(1, new Person(1, "updated"));
+        map.put(1, new PersonWithId(1, "updated"));
 
         assertMongoRowsAnyOrder(tableName,
-                new Person(1, "updated")
+                new PersonWithId(1, "updated")
         );
     }
 
@@ -174,7 +185,7 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
     @Ignore("no delete support yet")
     public void testRemove() {
         HazelcastInstance client = client();
-        IMap<Integer, Person> map = client.getMap(tableName);
+        IMap<Integer, PersonWithId> map = client.getMap(tableName);
 
         assertThat(database.getCollection(tableName).countDocuments()).isEqualTo(1);
 
@@ -183,10 +194,10 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
         assertThat(database.getCollection(tableName).countDocuments()).isZero();
     }
 
-    private void assertMongoRowsAnyOrder(String tableName, Person... p) {
+    private void assertMongoRowsAnyOrder(String tableName, PersonWithId... p) {
         MongoCollection<Document> collection =
                 database.getCollection(tableName).withCodecRegistry(defaultCodecRegistry());
-        ArrayList<Person> list = collection.find(Person.class).into(new ArrayList<>());
+        ArrayList<PersonWithId> list = collection.find(PersonWithId.class).into(new ArrayList<>());
         assertThat(list).containsExactlyInAnyOrder(p);
     }
 }
