@@ -37,7 +37,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.jet.impl.submitjob.clientside.execute.JobExecuteCall;
 import com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadCall;
-import com.hazelcast.jet.impl.submitjob.validator.SubmitJobParametersValidator;
+import com.hazelcast.jet.impl.submitjob.clientside.validator.SubmitJobParametersValidator;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.logging.ILogger;

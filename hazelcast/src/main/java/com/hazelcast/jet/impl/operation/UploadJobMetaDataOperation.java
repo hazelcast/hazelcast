@@ -74,7 +74,7 @@ public class UploadJobMetaDataOperation extends Operation implements IdentifiedD
         jobMetaDataParameterObject.setJarPath(Paths.get(jobMetaDataParameterObject.getFileName()));
 
         JetServiceBackend jetServiceBackend = getJetServiceBackend();
-        jetServiceBackend.executeJar(jobMetaDataParameterObject);
+        jetServiceBackend.directJobExecution(jobMetaDataParameterObject);
     }
 
     private void runUpload() {

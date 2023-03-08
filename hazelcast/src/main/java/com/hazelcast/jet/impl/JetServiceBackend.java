@@ -41,14 +41,15 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;
-import com.hazelcast.jet.impl.submitjob.memberside.JobMetaDataParameterObject;
-import com.hazelcast.jet.impl.submitjob.memberside.JobMultiPartParameterObject;
-import com.hazelcast.jet.impl.submitjob.memberside.JobUploadStatus;
-import com.hazelcast.jet.impl.submitjob.memberside.JobUploadStore;
 import com.hazelcast.jet.impl.metrics.JobMetricsPublisher;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.jet.impl.serialization.DelegatingSerializationService;
+import com.hazelcast.jet.impl.submitjob.memberside.JobMetaDataParameterObject;
+import com.hazelcast.jet.impl.submitjob.memberside.JobMultiPartParameterObject;
+import com.hazelcast.jet.impl.submitjob.memberside.JobUploadStatus;
+import com.hazelcast.jet.impl.submitjob.memberside.JobUploadStore;
+import com.hazelcast.jet.impl.submitjob.memberside.validator.JobMetaDataParameterObjectValidator;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -396,6 +397,14 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
 
     public void startScanningForJobs() {
         jobCoordinationService.startScanningForJobs();
+    }
+
+    /**
+     * Execute the given jar
+     */
+    public void directJobExecution(JobMetaDataParameterObject jobMetaDataParameterObject) {
+        JobMetaDataParameterObjectValidator.validateForDirectJobExecution(jobMetaDataParameterObject);
+        executeJar(jobMetaDataParameterObject);
     }
 
     /**

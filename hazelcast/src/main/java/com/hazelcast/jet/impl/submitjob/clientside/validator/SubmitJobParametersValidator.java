@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.submitjob.validator;
+package com.hazelcast.jet.impl.submitjob.clientside.validator;
 
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.SubmitJobParameters;
