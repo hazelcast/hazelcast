@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
+import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -45,6 +46,7 @@ public class InsertMapPhysicalRel extends AbstractRelNode implements PhysicalRel
 
     private final RelOptTable table;
     private final ExpressionValues values;
+    private final int keyParamIndex;
 
     InsertMapPhysicalRel(
             RelOptCluster cluster,
@@ -58,6 +60,7 @@ public class InsertMapPhysicalRel extends AbstractRelNode implements PhysicalRel
 
         this.table = table;
         this.values = values;
+        this.keyParamIndex = values.getDynamicParamIndex(OptUtils.findKeyIndex(table()));
     }
 
     public String mapName() {
@@ -84,6 +87,10 @@ public class InsertMapPhysicalRel extends AbstractRelNode implements PhysicalRel
                     .map(projector::project)
                     .collect(toList());
         };
+    }
+
+    public int keyParamIndex() {
+        return keyParamIndex;
     }
 
     private PartitionedMapTable table() {
