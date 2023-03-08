@@ -445,6 +445,22 @@ public final class IOUtil {
         }
     }
 
+    /**
+     * Quietly attempts to close a {@link AutoCloseable} resource, swallowing any exception.
+     *
+     * @param closeable the resource to close. If {@code null}, no action is taken.
+     */
+    public static void closeResource(AutoCloseable closeable) {
+        if (closeable == null) {
+            return;
+        }
+        try {
+            closeable.close();
+        } catch (Exception e) {
+            LOGGER.finest("closeResource failed", e);
+        }
+    }
+
     public static void closeResources(Collection<? extends Closeable> collection) {
         if (collection == null) {
             return;

@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -107,8 +108,8 @@ public abstract class AbstractMongoTest extends SimpleTestInClusterSupport {
 
     @AfterClass
     public static void tearDown() {
-        mongo.close();
-        mongoContainer.stop();
+        closeResource(mongo);
+        closeResource(mongoContainer);
     }
 
     MongoCollection<Document> collection() {
