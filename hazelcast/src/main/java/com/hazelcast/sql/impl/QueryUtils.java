@@ -51,12 +51,19 @@ public final class QueryUtils {
 
     public static final String WORKER_TYPE_STATE_CHECKER = "query-state-checker";
 
+    // Random uuid to distinguish data links in sql.catalog among other catalog items
+    public static final String DATA_LINK_KEY_PREFIX = "8bb6ac12-bd07-11ed-afa1-0242ac120002.";
+
     private QueryUtils() {
         // No-op.
     }
 
     public static String workerName(String instanceName, String workerType) {
         return instanceName + "-" + workerType;
+    }
+
+    public static String wrapDataLinkKey(String dataLinkKey) {
+        return DATA_LINK_KEY_PREFIX + dataLinkKey;
     }
 
     public static HazelcastSqlException toPublicException(Throwable e, @Nonnull UUID localMemberId) {
@@ -102,17 +109,17 @@ public final class QueryUtils {
     /**
      * Create map from member ID to owned partitions.
      *
-     * @param nodeEngine node engine
-     * @param localMemberVersion version of the local member. If any of partition owners have a different version, an exception
-     *                           is thrown. The check is ignored if passed version is {@code null}
+     * @param nodeEngine                node engine
+     * @param localMemberVersion        version of the local member. If any of partition owners have a different version, an exception
+     *                                  is thrown. The check is ignored if passed version is {@code null}
      * @param failOnUnassignedPartition whether the call should fail in case an unassigned partition is found; when set to
      *                                  {@code false} the missing partitions will not be included in the result
      * @return partition mapping
      */
     public static Map<UUID, PartitionIdSet> createPartitionMap(
-        NodeEngine nodeEngine,
-        @Nullable MemberVersion localMemberVersion,
-        boolean failOnUnassignedPartition
+            NodeEngine nodeEngine,
+            @Nullable MemberVersion localMemberVersion,
+            boolean failOnUnassignedPartition
     ) {
         Collection<Partition> parts = nodeEngine.getHazelcastInstance().getPartitionService().getPartitions();
 
@@ -126,8 +133,8 @@ public final class QueryUtils {
             if (owner == null) {
                 if (failOnUnassignedPartition) {
                     throw QueryException.error(
-                        SqlErrorCode.PARTITION_DISTRIBUTION,
-                        "Partition is not assigned to any member: " + part.getPartitionId()
+                            SqlErrorCode.PARTITION_DISTRIBUTION,
+                            "Partition is not assigned to any member: " + part.getPartitionId()
                     );
                 } else {
                     continue;
@@ -139,9 +146,9 @@ public final class QueryUtils {
                     UUID localMemberId = nodeEngine.getLocalMember().getUuid();
 
                     throw QueryException.error("Cannot execute SQL query when members have different versions "
-                        + "(make sure that all members have the same version) {localMemberId=" + localMemberId
-                        + ", localMemberVersion=" + localMemberVersion + ", remoteMemberId=" + owner.getUuid()
-                        + ", remoteMemberVersion=" + owner.getVersion() + "}");
+                            + "(make sure that all members have the same version) {localMemberId=" + localMemberId
+                            + ", localMemberVersion=" + localMemberVersion + ", remoteMemberId=" + owner.getUuid()
+                            + ", remoteMemberVersion=" + owner.getVersion() + "}");
                 }
             }
 
@@ -152,8 +159,8 @@ public final class QueryUtils {
     }
 
     public static List<List<String>> prepareSearchPaths(
-        List<List<String>> currentSearchPaths,
-        List<TableResolver> tableResolvers
+            List<List<String>> currentSearchPaths,
+            List<TableResolver> tableResolvers
     ) {
         // Current search paths have the highest priority.
         List<List<String>> res = new ArrayList<>();
@@ -187,7 +194,7 @@ public final class QueryUtils {
      * <p>
      * Used for SqlExecute and SubmitJob(light=true) messages.
      *
-     * @param members list of all members
+     * @param members     list of all members
      * @param localMember the local member, null for client instance
      * @return the chosen member or null, if no data member is found
      */

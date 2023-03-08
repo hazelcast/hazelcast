@@ -23,24 +23,24 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.sql.impl.QueryUtils.wrapDataLinkKey;
+
 public class DataLinkStorage extends AbstractSchemaStorage {
-    // Random uuid to distinguish data links in sql.catalog among other catalog items
-    private static final String KEY_PREFIX = "8bb6ac12-bd07-11ed-afa1-0242ac120002.";
 
     public DataLinkStorage(NodeEngine nodeEngine) {
         super(nodeEngine);
     }
 
     void put(String name, DataLink dataLink) {
-        storage().put(wrap(name), dataLink);
+        storage().put(wrapDataLinkKey(name), dataLink);
     }
 
     boolean putIfAbsent(String name, DataLink dataLink) {
-        return storage().putIfAbsent(wrap(name), dataLink) == null;
+        return storage().putIfAbsent(wrapDataLinkKey(name), dataLink) == null;
     }
 
     DataLink removeDataLink(String name) {
-        return (DataLink) storage().remove(wrap(name));
+        return (DataLink) storage().remove(wrapDataLinkKey(name));
     }
 
     Collection<String> dataLinkNames() {
@@ -57,9 +57,5 @@ public class DataLinkStorage extends AbstractSchemaStorage {
                 .filter(obj -> obj instanceof DataLink)
                 .map(obj -> (DataLink) obj)
                 .collect(Collectors.toList());
-    }
-
-    private static String wrap(String dataLinkKey) {
-        return KEY_PREFIX + dataLinkKey;
     }
 }
