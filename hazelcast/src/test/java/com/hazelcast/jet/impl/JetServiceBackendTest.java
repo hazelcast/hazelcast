@@ -31,7 +31,7 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.config.MapConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
-import static com.hazelcast.jet.impl.JetServiceBackend.initializeSqlCatalog;
+import static com.hazelcast.jet.impl.JetServiceBackend.createSqlCatalogConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -45,7 +45,7 @@ public class JetServiceBackendTest extends JetTestSupport {
         config.getJetConfig().setEnabled(true);
         HazelcastInstance instance = createHazelcastInstance(config);
         MapConfig mapConfig = instance.getConfig().getMapConfig(JetServiceBackend.SQL_CATALOG_MAP_NAME);
-        assertEquals(initializeSqlCatalog(), mapConfig);
+        assertEquals(createSqlCatalogConfig(), mapConfig);
     }
 
     @Test
@@ -59,7 +59,7 @@ public class JetServiceBackendTest extends JetTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         MapConfig mapConfig = instance.getConfig().getMapConfig(JetServiceBackend.SQL_CATALOG_MAP_NAME);
         assertEquals(new DataPersistenceConfig(), mapConfig.getDataPersistenceConfig());
-        assertEquals(initializeSqlCatalog(), mapConfig);
+        assertEquals(createSqlCatalogConfig(), mapConfig);
 
         MapConfig otherMapConfig = ((MapProxyImpl) instance.getMap("otherMap")).getMapConfig();
         assertFalse(otherMapConfig.getDataPersistenceConfig().isEnabled());
@@ -76,7 +76,7 @@ public class JetServiceBackendTest extends JetTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         MapConfig mapConfig = instance.getConfig().getMapConfig(JetServiceBackend.SQL_CATALOG_MAP_NAME);
         assertEquals(new DataPersistenceConfig(), mapConfig.getDataPersistenceConfig());
-        assertEquals(initializeSqlCatalog(), mapConfig);
+        assertEquals(createSqlCatalogConfig(), mapConfig);
     }
 
     @Test
@@ -104,7 +104,7 @@ public class JetServiceBackendTest extends JetTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         MapConfig mapConfig = instance.getConfig().getMapConfig(JetServiceBackend.SQL_CATALOG_MAP_NAME);
         assertEquals(new DataPersistenceConfig(), mapConfig.getDataPersistenceConfig());
-        assertEquals(initializeSqlCatalog(), mapConfig);
+        assertEquals(createSqlCatalogConfig(), mapConfig);
     }
 
     @Test
