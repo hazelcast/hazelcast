@@ -123,6 +123,7 @@ public class QueryStateRegistryUpdater {
 
                     checkClientState();
                     checkPlans();
+                    checkDataLinksConsistency();
                 } catch (InterruptedException e) {
                     if (currentStateCheckFrequency != stateCheckFrequency) {
                         // Interrupted due to frequency change.
@@ -148,7 +149,7 @@ public class QueryStateRegistryUpdater {
             }
         }
 
-        private void checkDataLinkConsistency() {
+        private void checkDataLinksConsistency() {
             if (dataLinkConsistencyChecker != null) {
                 dataLinkConsistencyChecker.check();
             }
