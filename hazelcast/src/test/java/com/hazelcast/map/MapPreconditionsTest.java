@@ -51,7 +51,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         // default minimum is 100000 * 1.5f
         config.setProperty(ClusterProperty.QUERY_RESULT_SIZE_LIMIT.getName(), "1");
         return config;
