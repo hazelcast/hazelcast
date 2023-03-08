@@ -1511,6 +1511,11 @@
                 </indexes>
             </query-cache>
         </query-caches>
+        <partition-strategy>com.example.Strategy</partition-strategy>
+        <partition-attributes>
+            <attribute>attributeName1</attribute>
+            <attribute>attributeName2</attribute>
+        </partition-attributes>
     </map>
 
     <!--

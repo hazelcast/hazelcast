@@ -17,7 +17,7 @@
 package com.hazelcast.partition.strategy;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.PartitioningStrategyConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
@@ -58,8 +58,8 @@ public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInCl
     @BeforeClass
     public static void beforeClass() {
         Config config = smallInstanceConfig().setProperty(PARTITION_COUNT.getName(), "3");
-        config.getMapConfig("test").setPartitioningStrategyConfig(new PartitioningStrategyConfig()
-                .setPartitioningStrategy(STRATEGY));
+        config.getMapConfig("test").getPartitioningAttributeConfigs()
+                .add(new PartitioningAttributeConfig("org"));
 
         initialize(3, config);
     }

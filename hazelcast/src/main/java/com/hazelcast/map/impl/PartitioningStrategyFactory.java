@@ -18,7 +18,6 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.partition.PartitioningStrategy;
@@ -64,18 +63,15 @@ public final class PartitioningStrategyFactory {
             final List<PartitioningAttributeConfig> attributeConfigs
     ) {
         PartitioningStrategy strategy = null;
-        if (config != null) {
+        if (attributeConfigs != null && !attributeConfigs.isEmpty()) {
+            strategy = cache.containsKey(mapName)
+                    ? cache.get(mapName)
+                    : createAttributePartitionStrategy(attributeConfigs);
+        } else if (config != null) {
             strategy = config.getPartitioningStrategy();
             if (strategy == null) {
                 if (cache.containsKey(mapName)) {
                     strategy = cache.get(mapName);
-                } else if (attributeConfigs != null && !attributeConfigs.isEmpty()) {
-                    if (config.getPartitioningStrategyClass() != null) {
-                        throw new HazelcastException("Partition Strategy Attributes are only supported for built-in "
-                                + AttributePartitioningStrategy.class.getSimpleName());
-                    }
-                    strategy = createAttributePartitionStrategy(attributeConfigs);
-                    cache.put(mapName, strategy);
                 } else if (config.getPartitioningStrategyClass() != null) {
                     try {
                         strategy = ClassLoaderUtil.newInstance(configClassLoader, config.getPartitioningStrategyClass());

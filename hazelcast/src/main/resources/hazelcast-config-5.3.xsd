@@ -6031,7 +6031,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:simpleContent>
-            <xs:extension base="non-space-string"/>
+            <xs:extension base="xs:string"/>
         </xs:simpleContent>
     </xs:complexType>
 
