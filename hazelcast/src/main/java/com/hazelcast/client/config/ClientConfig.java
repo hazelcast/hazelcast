@@ -36,6 +36,7 @@ import com.hazelcast.internal.config.ConfigUtils;
 import com.hazelcast.internal.config.override.ExternalConfigurationOverride;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.Credentials;
+import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
@@ -117,6 +118,7 @@ public class ClientConfig {
     private ClientMetricsConfig metricsConfig = new ClientMetricsConfig();
     private InstanceTrackingConfig instanceTrackingConfig = new InstanceTrackingConfig();
     private ClientSqlConfig sqlConfig = new ClientSqlConfig();
+    private ClientAltoConfig altoConfig = new ClientAltoConfig();
 
     public ClientConfig() {
         listenerConfigs = new LinkedList<>();
@@ -182,6 +184,7 @@ public class ClientConfig {
         metricsConfig = new ClientMetricsConfig(config.metricsConfig);
         instanceTrackingConfig = new InstanceTrackingConfig(config.instanceTrackingConfig);
         sqlConfig = new ClientSqlConfig(config.sqlConfig);
+        altoConfig = new ClientAltoConfig(config.altoConfig);
     }
 
     /**
@@ -1005,13 +1008,40 @@ public class ClientConfig {
         return this;
     }
 
+    /**
+     * Returns the Alto configuration.
+     *
+     * @return the Alto configuration
+     * @since 5.3
+     */
+    @Beta
+    @Nonnull
+    public ClientAltoConfig getAltoConfig() {
+        return altoConfig;
+    }
+
+    /**
+     * Sets the Alto configuration.
+     *
+     * @param altoConfig Alto config to set
+     * @return configured {@link ClientConfig} for chaining
+     * @throws IllegalArgumentException if the {@code altoConfig} is {@code null}
+     * @since 5.3
+     */
+    @Beta
+    @Nonnull
+    public ClientConfig setAltoConfig(@Nonnull ClientAltoConfig altoConfig) {
+        this.altoConfig = isNotNull(altoConfig, "altoConfig");
+        return this;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(backupAckToClientEnabled, classLoader, clusterName, configPatternMatcher, connectionStrategyConfig,
                 flakeIdGeneratorConfigMap, instanceName, labels, listenerConfigs, loadBalancer, loadBalancerClassName,
                 managedContext, metricsConfig, nativeMemoryConfig, nearCacheConfigMap, networkConfig, properties,
                 proxyFactoryConfigs, queryCacheConfigs, reliableTopicConfigMap, securityConfig, serializationConfig,
-                userCodeDeploymentConfig, userContext, instanceTrackingConfig, sqlConfig);
+                userCodeDeploymentConfig, userContext, instanceTrackingConfig, sqlConfig, altoConfig);
     }
 
     @Override
@@ -1047,7 +1077,8 @@ public class ClientConfig {
                 && Objects.equals(userCodeDeploymentConfig, other.userCodeDeploymentConfig)
                 && Objects.equals(userContext, other.userContext)
                 && Objects.equals(instanceTrackingConfig, other.instanceTrackingConfig)
-                && Objects.equals(sqlConfig, other.sqlConfig);
+                && Objects.equals(sqlConfig, other.sqlConfig)
+                && Objects.equals(altoConfig, other.altoConfig);
     }
 
     @Override
@@ -1076,6 +1107,7 @@ public class ClientConfig {
                 + ", metricsConfig=" + metricsConfig
                 + ", instanceTrackingConfig=" + instanceTrackingConfig
                 + ", sqlConfig=" + sqlConfig
+                + ", altoConfig=" + altoConfig
                 + '}';
     }
 }

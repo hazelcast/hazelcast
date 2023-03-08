@@ -22,7 +22,7 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier;
-import com.hazelcast.jet.sql.impl.expression.ToRowFunction;
+import com.hazelcast.jet.sql.impl.expression.UdtObjectToJsonFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonArrayFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonObjectFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
@@ -70,9 +70,11 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int ROW_IDENTITY_FN = 22;
     public static final int AGGREGATE_EXPORT_FUNCTION = 23;
     public static final int AGGREGATE_JSON_OBJECT_AGG_SUPPLIER = 24;
+    // reserved until 6.0
     public static final int TO_ROW = 25;
+    public static final int UDT_OBJECT_TO_JSON = 26;
 
-    public static final int LEN = TO_ROW + 1;
+    public static final int LEN = UDT_OBJECT_TO_JSON + 1;
 
     @Override
     public int getFactoryId() {
@@ -112,7 +114,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[ROW_IDENTITY_FN] = arg -> new AggregateAbstractPhysicalRule.RowIdentityFn();
         constructors[AGGREGATE_EXPORT_FUNCTION] = arg -> AggregateAbstractPhysicalRule.AggregateExportFunction.INSTANCE;
         constructors[AGGREGATE_JSON_OBJECT_AGG_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateObjectAggSupplier();
-        constructors[TO_ROW] = arg -> new ToRowFunction();
+        constructors[UDT_OBJECT_TO_JSON] = arg -> new UdtObjectToJsonFunction();
 
         return new ArrayDataSerializableFactory(constructors);
     }

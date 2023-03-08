@@ -209,7 +209,7 @@ public interface JetService {
     Job newLightJob(@Nonnull DAG dag, @Nonnull JobConfig config);
 
     /**
-     * For the client side, the jar is uploaded to a member and then the member runs the main method to start the job.
+     * For the client side, the jar is uploaded to job coordinator and then this member runs the main method to start the job.
      * The jar should have a main method that submits a Pipeline with {@link #newJob(Pipeline)} or
      * {@link #newLightJob(Pipeline)} methods
      * <p>
@@ -219,7 +219,7 @@ public interface JetService {
      *
      * <p>
      * For the member side, since the jar is already on the member there is no need to upload anything.
-     * The member only runs the main method of the jar to start the job
+     * The member only runs the main method of the jar to start the job.
      * <p>
      * Limitations for the client side jobs:
      * <ul>
@@ -230,6 +230,7 @@ public interface JetService {
      *     </li>
      * </ul>
      *
+     * @throws JetException on error
      */
     void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters);
 

@@ -58,6 +58,41 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
     }
 }
 
+/**
+ * Parses CREATE DATA LINK statement.
+ */
+SqlCreate SqlCreateDataLink(Span span, boolean replace) :
+{
+    SqlParserPos startPos = span.pos();
+    boolean ifNotExists = false;
+    SqlIdentifier name;
+    SqlIdentifier type;
+    SqlNodeList sqlOptions;
+}
+{
+    <DATA> <LINK>
+    [
+        <IF> <NOT> <EXISTS> { ifNotExists = true; }
+    ]
+    name = CompoundIdentifier()
+
+    <TYPE>
+    type = SimpleIdentifier()
+
+    <OPTIONS>
+    sqlOptions = SqlOptions()
+    {
+        return new SqlCreateDataLink(
+            startPos.plus(getPos()),
+            replace,
+            ifNotExists,
+            name,
+            type,
+            sqlOptions
+        );
+    }
+}
+
 SqlCreate SqlCreateType(Span span, boolean replace) :
 {
     SqlParserPos startPos = span.pos();
@@ -71,7 +106,7 @@ SqlCreate SqlCreateType(Span span, boolean replace) :
     [
         <IF> <NOT> <EXISTS> { ifNotExists = true; }
     ]
-    name = SimpleIdentifier()
+    name = CompoundIdentifier()
     columns = TypeColumns()
     <OPTIONS>
     sqlOptions = SqlOptions()
@@ -322,6 +357,27 @@ SqlDrop SqlDropMapping(Span span, boolean replace) :
 }
 
 /**
+ * Parses DROP DATA LINK statement.
+ */
+SqlDrop SqlDropDataLink(Span span, boolean replace) :
+{
+    SqlParserPos pos = span.pos();
+
+    SqlIdentifier name;
+    boolean ifExists = false;
+}
+{
+    <DATA> <LINK>
+    [
+        <IF> <EXISTS> { ifExists = true; }
+    ]
+    name = CompoundIdentifier()
+    {
+        return new SqlDropDataLink(name, ifExists, pos.plus(getPos()));
+    }
+}
+
+/**
  * Parses DROP TYPE statement.
  */
 SqlDrop SqlDropType(Span span, boolean replace) :
@@ -336,7 +392,7 @@ SqlDrop SqlDropType(Span span, boolean replace) :
     [
         <IF> <EXISTS> { ifExists = true; }
     ]
-    name = SimpleIdentifier()
+    name = CompoundIdentifier()
     {
         return new SqlDropType(name, ifExists, pos.plus(getPos()));
     }
@@ -626,7 +682,7 @@ SqlDrop SqlDropView(Span span, boolean replace) :
     [
         <IF> <EXISTS> { ifExists = true; }
     ]
-    name = SimpleIdentifier()
+    name = CompoundIdentifier()
     {
         return new SqlDropView(name, ifExists, pos.plus(getPos()));
     }

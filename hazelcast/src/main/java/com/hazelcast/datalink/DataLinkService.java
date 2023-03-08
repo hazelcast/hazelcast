@@ -16,38 +16,40 @@
 
 package com.hazelcast.datalink;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 
 /**
- * Service for accessing data link factories
+ * The interface provides access to {@link DataLink}s for Jet processors. A Jet
+ * processor can obtain a reference to the service via {@link
+ * ProcessorMetaSupplier.Context#dataLinkService()}.
+ * <p>
+ * DataLinks can be created via one of the following ways:
+ * <ul>
+ *     <li>statically in the configuration
+ *     <li>dynamically via {@link Config#addDataLinkConfig(DataLinkConfig)}
+ *     <li>via SQL {@code CREATE DATA LINK ...} command
+ * </ul>
  *
- * @since 5.2
+ * @since 5.3
  */
-@Beta
-public interface DataLinkService extends AutoCloseable {
+public interface DataLinkService {
 
     /**
-     * Tests data link configuration.
+     * Returns {@link DataLink} with the given name and `retain` it (calls
+     * {@link DataLink#retain()}). The caller is responsible for calling
+     * {@link DataLink#release()} after it is done with the DataLink.
+     * <p>
+     * Type is checked against the provided `clazz` argument.
      *
-     * @param config name of the data link factory
-     * @return {@code true} if test was successful
-     * @throws Exception if the test operation fails
-     * @since 5.3
-     */
-    boolean testConnection(DataLinkConfig config) throws Exception;
-
-    /**
-     * Returns data link factory with given name.
+     * @param name  name of the DataLink
+     * @param clazz expected type of the DataLink
      *
-     * @param name name of the data link factory
-     * @param <DL> type of the data link
-     * @return instance of the factory
-     * @throws HazelcastException if the factory with given name is not found or misconfigured*
+     * @throws HazelcastException if the requested DataLink doesn't exist, or has
+     *     a different type than `clazz`
      */
-    <DL> DataLinkFactory<DL> getDataLinkFactory(String name);
+    <T extends DataLink> T getAndRetainDataLink(String name, Class<T> clazz);
 
-    @Override
-    void close();
 }

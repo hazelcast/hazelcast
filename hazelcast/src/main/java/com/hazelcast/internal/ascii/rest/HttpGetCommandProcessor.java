@@ -216,7 +216,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                 command.send500();
                 textCommandService.sendResponse(command);
             }
-        });
+        }, internalAsyncExecutor);
     }
 
     private void handleGetCPSessions(final HttpGetCommand command) {
@@ -243,7 +243,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
 
                         textCommandService.sendResponse(command);
                     }
-                });
+                }, internalAsyncExecutor);
     }
 
     private void handleGetCPGroupByName(final HttpGetCommand command) {
@@ -273,7 +273,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                 command.send500();
                 textCommandService.sendResponse(command);
             }
-        });
+        }, internalAsyncExecutor);
     }
 
     private void handleGetCPMembers(final HttpGetCommand command) {
@@ -290,7 +290,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                 command.send500();
                 textCommandService.sendResponse(command);
             }
-        });
+        }, internalAsyncExecutor);
     }
 
     private void handleGetLocalCPMember(final HttpGetCommand command) {

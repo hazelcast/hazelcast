@@ -35,7 +35,7 @@ import java.util.Objects;
 import static com.hazelcast.internal.util.Sha256Util.calculateSha256Hex;
 
 /**
- * Holds the details of a job that is being uploaded
+ * Used by the member side to hold the details of a job that is being uploaded
  */
 public class JobUploadStatus {
 
@@ -67,6 +67,10 @@ public class JobUploadStatus {
         this.jobMetaDataParameterObject = parameterObject;
         this.clock = clock;
         changeLastUpdatedTime();
+    }
+
+    public JobMetaDataParameterObject getJobMetaDataParameterObject() {
+        return jobMetaDataParameterObject;
     }
 
     /**
@@ -102,9 +106,13 @@ public class JobUploadStatus {
      * @return JobMetaDataParameterObject if upload is complete
      * @throws IOException              in case of I/O error
      * @throws NoSuchAlgorithmException in case of message digest error
+     * @throws JetException             in case of other errors
      */
     public JobMetaDataParameterObject processJobMultipart(JobMultiPartParameterObject parameterObject)
             throws IOException, NoSuchAlgorithmException {
+
+        // Change the timestamp in the beginning to avoid expiration
+        changeLastUpdatedTime();
 
         validateReceivedParameters(parameterObject);
 
@@ -115,11 +123,6 @@ public class JobUploadStatus {
         // Parts numbers are good. Save them
         currentPart = parameterObject.getCurrentPartNumber();
         totalPart = parameterObject.getTotalPartNumber();
-
-        // If the first part
-        if (currentPart == 1) {
-            createNewTemporaryFile();
-        }
 
         Path jarPath = jobMetaDataParameterObject.getJarPath();
 
@@ -134,8 +137,6 @@ public class JobUploadStatus {
             LOGGER.info(message);
         }
 
-        changeLastUpdatedTime();
-
         JobMetaDataParameterObject result = null;
         // If parts are complete
         if (currentPart == totalPart) {
@@ -147,7 +148,7 @@ public class JobUploadStatus {
         return result;
     }
 
-    private void createNewTemporaryFile() throws IOException {
+    void createNewTemporaryFile() throws IOException {
         // Create a new temporary file
         Path jarPath = Files.createTempFile(jobMetaDataParameterObject.getFileName(), ".jar"); //NOSONAR
 

@@ -29,6 +29,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -42,7 +43,6 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartClusterDataRecoveryPolicy;
 import com.hazelcast.config.HotRestartConfig;
@@ -126,6 +126,8 @@ import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
+import com.hazelcast.config.alto.AltoConfig;
+import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -169,6 +171,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static com.hazelcast.config.EndpointConfig.DEFAULT_SOCKET_KEEP_COUNT;
+import static com.hazelcast.config.EndpointConfig.DEFAULT_SOCKET_KEEP_IDLE_SECONDS;
+import static com.hazelcast.config.EndpointConfig.DEFAULT_SOCKET_KEEP_INTERVAL_SECONDS;
 import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_CONNECT_TIMEOUT_SECONDS;
 import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_LINGER_SECONDS;
 import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE_KB;
@@ -177,16 +182,17 @@ import static com.hazelcast.config.security.LdapRoleMappingMode.getRoleMappingMo
 import static com.hazelcast.config.security.LdapSearchScope.getSearchScope;
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.getConfigByTag;
 import static com.hazelcast.internal.config.ConfigSections.ADVANCED_NETWORK;
+import static com.hazelcast.internal.config.ConfigSections.ALTO;
 import static com.hazelcast.internal.config.ConfigSections.AUDITLOG;
 import static com.hazelcast.internal.config.ConfigSections.CACHE;
 import static com.hazelcast.internal.config.ConfigSections.CARDINALITY_ESTIMATOR;
 import static com.hazelcast.internal.config.ConfigSections.CLUSTER_NAME;
 import static com.hazelcast.internal.config.ConfigSections.CP_SUBSYSTEM;
 import static com.hazelcast.internal.config.ConfigSections.CRDT_REPLICATION;
+import static com.hazelcast.internal.config.ConfigSections.DATA_LINK;
 import static com.hazelcast.internal.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.DYNAMIC_CONFIGURATION;
 import static com.hazelcast.internal.config.ConfigSections.EXECUTOR_SERVICE;
-import static com.hazelcast.internal.config.ConfigSections.DATA_LINK;
 import static com.hazelcast.internal.config.ConfigSections.FLAKE_ID_GENERATOR;
 import static com.hazelcast.internal.config.ConfigSections.HOT_RESTART_PERSISTENCE;
 import static com.hazelcast.internal.config.ConfigSections.IMPORT;
@@ -382,6 +388,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleIntegrityChecker(node);
         } else if (matches(DATA_LINK.getName(), nodeName)) {
             handleDataLinks(node);
+        } else if (matches(ALTO.getName(), nodeName)) {
+            handleAlto(node);
         } else {
             return true;
         }
@@ -936,6 +944,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
+    @SuppressWarnings("java:S3776")
     private void handleNetwork(Node node)
             throws Exception {
         for (Node child : childElements(node)) {
@@ -966,6 +975,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 handleRestApi(child);
             } else if (matches("memcache-protocol", nodeName)) {
                 handleMemcacheProtocol(child);
+            } else if (matches("alto-socket", nodeName)) {
+                handleAltoSocketConfig(child, config.getNetworkConfig().getAltoSocketConfig());
             }
         }
     }
@@ -1134,6 +1145,23 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleSocketOptions(node, endpointConfig);
         } else if (matches("symmetric-encryption", nodeName)) {
             handleViaReflection(node, endpointConfig, new SymmetricEncryptionConfig());
+        } else if (matches("alto-socket", nodeName)) {
+            handleAltoSocketConfig(node, endpointConfig.getAltoSocketConfig());
+        }
+    }
+
+    private void handleAltoSocketConfig(Node node, AltoSocketConfig altoSocketConfig) {
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if (matches("port-range", nodeName)) {
+                altoSocketConfig.setPortRange(getTextContent(child));
+            } else if (matches("receive-buffer-size-kb", nodeName)) {
+                altoSocketConfig.setReceiveBufferSizeKB(
+                        getIntegerValue("receive-buffer-size-kb", getTextContent(child)));
+            } else if (matches("send-buffer-size-kb", nodeName)) {
+                altoSocketConfig.setSendBufferSizeKB(
+                        getIntegerValue("send-buffer-size-kb", getTextContent(child)));
+            }
         }
     }
 
@@ -1158,6 +1186,15 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("linger-seconds", nodeName)) {
                 endpointConfig.setSocketLingerSeconds(getIntegerValue("linger-seconds",
                         getTextContent(child), DEFAULT_SOCKET_LINGER_SECONDS));
+            } else if (matches("keep-idle-seconds", nodeName)) {
+                endpointConfig.setSocketKeepIdleSeconds(getIntegerValue("keep-idle-seconds",
+                        getTextContent(child), DEFAULT_SOCKET_KEEP_IDLE_SECONDS));
+            } else if (matches("keep-interval-seconds", nodeName)) {
+                endpointConfig.setSocketKeepIntervalSeconds(getIntegerValue("keep-interval-seconds",
+                        getTextContent(child), DEFAULT_SOCKET_KEEP_INTERVAL_SECONDS));
+            } else if (matches("keep-count", nodeName)) {
+                endpointConfig.setSocketKeepCount(getIntegerValue("keep-count",
+                        getTextContent(child), DEFAULT_SOCKET_KEEP_COUNT));
             }
         }
     }
@@ -3429,6 +3466,20 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         Node attrEnabled = getNamedItemNode(node, "enabled");
         boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
         config.getIntegrityCheckerConfig().setEnabled(enabled);
+    }
+
+    private void handleAlto(Node node) {
+        Node attrEnabled = getNamedItemNode(node, "enabled");
+        boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
+        AltoConfig altoConfig = config.getAltoConfig();
+        altoConfig.setEnabled(enabled);
+
+        for (Node child : childElements(node)) {
+            String childName = cleanNodeName(child);
+            if (matches("eventloop-count", childName)) {
+                altoConfig.setEventloopCount(getIntegerValue("eventloop-count", getTextContent(child)));
+            }
+        }
     }
 
     protected void handleDataLinks(Node node) {

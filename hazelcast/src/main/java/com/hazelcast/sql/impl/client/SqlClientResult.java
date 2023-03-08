@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.client;
 
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
@@ -48,7 +48,7 @@ public class SqlClientResult implements SqlResult {
     private final Function<QueryId, ClientMessage> sqlExecuteMessageSupplier;
     private final boolean selectQuery;
     private volatile QueryId queryId;
-    private Connection connection;
+    private ClientConnection connection;
     private int resubmissionCount;
 
     /** Mutex to synchronize access between operations. */
@@ -77,7 +77,7 @@ public class SqlClientResult implements SqlResult {
 
     public SqlClientResult(
             SqlClientService service,
-            Connection connection,
+            ClientConnection connection,
             QueryId queryId,
             int cursorBufferSize,
             Function<QueryId, ClientMessage> sqlExecuteMessageSupplier,
