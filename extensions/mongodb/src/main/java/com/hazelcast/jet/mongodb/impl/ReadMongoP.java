@@ -42,10 +42,12 @@ import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.Traversers.singleton;
@@ -143,20 +145,8 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
     @Override
     public void close() {
-        if (reader != null) {
-            try {
-                reader.close();
-            } catch (Throwable e) {
-                logger.severe("Error while closing MongoDB connection", e);
-            }
-        }
-        if (connection != null) {
-            try {
-                connection.close();
-            } catch (Throwable e) {
-                logger.severe("Error while closing MongoDB connection", e);
-            }
-        }
+        closeResource(reader);
+        closeResource(connection);
     }
 
     @Override
@@ -214,7 +204,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
         }
     }
 
-    private abstract class MongoChunkedReader {
+    private abstract class MongoChunkedReader implements Closeable {
 
         protected MongoDatabase database;
         protected MongoCollection<Document> collection;
@@ -260,7 +250,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
         abstract void restore(Object value);
 
-        void close() {
+        public void close() {
         }
 
         abstract boolean everCompletes();
