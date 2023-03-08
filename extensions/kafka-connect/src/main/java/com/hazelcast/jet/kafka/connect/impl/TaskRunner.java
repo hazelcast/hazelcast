@@ -211,7 +211,7 @@ class TaskRunner {
         private final Map<Map<String, ?>, Map<String, ?>> partitionsToOffset;
 
         State() {
-            this(new ConcurrentHashMap<>());
+            this.partitionsToOffset = new ConcurrentHashMap<>();
         }
 
         /**
