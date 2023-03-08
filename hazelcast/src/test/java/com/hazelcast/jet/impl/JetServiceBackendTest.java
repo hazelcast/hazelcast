@@ -45,7 +45,7 @@ public class JetServiceBackendTest extends JetTestSupport {
         config.getJetConfig().setEnabled(true);
         HazelcastInstance instance = createHazelcastInstance(config);
         MapConfig mapConfig = instance.getConfig().getMapConfig(JetServiceBackend.SQL_CATALOG_MAP_NAME);
-        assertEquals(initializeSqlCatalog(new MapConfig()), mapConfig);
+        assertEquals(initializeSqlCatalog(), mapConfig);
     }
 
     @Test
@@ -59,7 +59,7 @@ public class JetServiceBackendTest extends JetTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         MapConfig mapConfig = instance.getConfig().getMapConfig(JetServiceBackend.SQL_CATALOG_MAP_NAME);
         assertEquals(new DataPersistenceConfig(), mapConfig.getDataPersistenceConfig());
-        assertEquals(initializeSqlCatalog(new MapConfig(SQL_CATALOG_MAP_NAME)), mapConfig);
+        assertEquals(initializeSqlCatalog(), mapConfig);
 
         MapConfig otherMapConfig = ((MapProxyImpl) instance.getMap("otherMap")).getMapConfig();
         assertFalse(otherMapConfig.getDataPersistenceConfig().isEnabled());
@@ -76,7 +76,7 @@ public class JetServiceBackendTest extends JetTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         MapConfig mapConfig = instance.getConfig().getMapConfig(JetServiceBackend.SQL_CATALOG_MAP_NAME);
         assertEquals(new DataPersistenceConfig(), mapConfig.getDataPersistenceConfig());
-        assertEquals(initializeSqlCatalog(new MapConfig(SQL_CATALOG_MAP_NAME)), mapConfig);
+        assertEquals(initializeSqlCatalog(), mapConfig);
     }
 
     @Test
@@ -104,7 +104,7 @@ public class JetServiceBackendTest extends JetTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         MapConfig mapConfig = instance.getConfig().getMapConfig(JetServiceBackend.SQL_CATALOG_MAP_NAME);
         assertEquals(new DataPersistenceConfig(), mapConfig.getDataPersistenceConfig());
-        assertEquals(initializeSqlCatalog(new MapConfig(SQL_CATALOG_MAP_NAME)), mapConfig);
+        assertEquals(initializeSqlCatalog(), mapConfig);
     }
 
     @Test

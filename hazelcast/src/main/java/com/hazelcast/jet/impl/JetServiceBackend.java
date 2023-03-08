@@ -158,15 +158,14 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         config.addMapConfig(internalMapConfig)
                 .addMapConfig(resultsMapConfig)
                 .addMapConfig(metricsMapConfig)
-                .addMapConfig(initializeSqlCatalog(new MapConfig()));
+                .addMapConfig(initializeSqlCatalog());
     }
 
     // visible for tests
-    static MapConfig initializeSqlCatalog(MapConfig config) {
+    static MapConfig initializeSqlCatalog() {
         // TODO HZ-1743 when implemented properly align this with the chosen
         //  approach that HZ-1743 follows
-        return config
-                .setName(SQL_CATALOG_MAP_NAME)
+        return new MapConfig(SQL_CATALOG_MAP_NAME)
                 .setBackupCount(MapConfig.MAX_BACKUP_COUNT)
                 .setAsyncBackupCount(MapConfig.MIN_BACKUP_COUNT)
                 .setTimeToLiveSeconds(DISABLED_TTL_SECONDS)
