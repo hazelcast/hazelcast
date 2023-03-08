@@ -92,7 +92,7 @@ public class JetAddJobStatusListenerMessageTask extends AbstractAddListenerMessa
         @Override
         public void jobStatusChanged(JobStatusEvent e) {
             if (endpoint.isAlive()) {
-                sendClientMessage(JetAddJobStatusListenerCodec.encodeJobStatusEvent(
+                sendClientMessage(e.getJobId(), JetAddJobStatusListenerCodec.encodeJobStatusEvent(
                         e.getJobId(), e.getPreviousStatus().getId(), e.getNewStatus().getId(),
                         e.getDescription(), e.isUserRequested()));
             }
