@@ -250,10 +250,6 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
         abstract void restore(Object value);
 
-        @Override
-        public void close() {
-        }
-
         abstract boolean everCompletes();
 
         boolean supportsWatermarks() {
@@ -358,6 +354,10 @@ public class ReadMongoP<I> extends AbstractProcessor {
         @Override
         public void restore(Object value) {
             lastKey = value;
+        }
+
+        @Override
+        public void close() {
         }
     }
 
@@ -470,7 +470,6 @@ public class ReadMongoP<I> extends AbstractProcessor {
                 cursor.close();
                 cursor = null;
             }
-            super.close();
         }
     }
 }
