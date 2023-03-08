@@ -333,6 +333,39 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
     }
 
     @Test
+    public void updatesMongo_whenCustomPK() {
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true)
+                .append("myPK_ext", 1337));
+
+        execute("CREATE MAPPING " + collectionName
+                + " ("
+                + " myPK INT external name myPK_ext, "
+                + " firstName VARCHAR, "
+                + " lastName VARCHAR, "
+                + " jedi BOOLEAN "
+                + ") "
+                + "TYPE MongoDB "
+                + "OPTIONS ("
+                + "    'connectionString' = '" + mongoContainer.getConnectionString() + "', "
+                + "    'database' = '" +  databaseName + "', "
+                + "    'collection' = '" + collectionName + "', "
+                + "    'id-column' = 'myPK' "
+                + ")");
+        execute("update " + collectionName + " set firstName = ?, lastName = ?, jedi=? " +
+                "where firstName = ?", "Han", "Solo", false, "temp");
+
+        ArrayList<Document> list = collection.find(Filters.eq("firstName", "Han"))
+                                             .into(new ArrayList<>());
+        assertEquals(1, list.size());
+        Document item = list.get(0);
+        assertEquals("Han", item.getString("firstName"));
+        assertEquals("Solo", item.getString("lastName"));
+        assertEquals(false, item.getBoolean("jedi"));
+        assertEquals(1337, item.getInteger("myPK_ext").intValue());
+    }
+
+    @Test
     public void sinkInto_allHardcoded_withId() {
         testSinksIntoMongo(true, "sink into " + collectionName + " (firstName, lastName, jedi) values ('Leia', 'Organa', true)");
     }

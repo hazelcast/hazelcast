@@ -15,6 +15,8 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import com.hazelcast.function.SupplierEx;
+import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.mongodb.WriteMode;
@@ -22,6 +24,7 @@ import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import org.bson.Document;
 
@@ -45,14 +48,33 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
     private final String[] paths;
     private final WriteMode writeMode;
     private final QueryDataType[] types;
+    private transient SupplierEx<MongoClient> clientSupplier;
+    private final String dataLinkName;
+    private final String idField;
 
     InsertProcessorSupplier(MongoTable table, WriteMode writeMode) {
+        this(table, writeMode, "_id");
+    }
+
+    InsertProcessorSupplier(MongoTable table, WriteMode writeMode, String idField) {
         this.connectionString = table.connectionString;
         this.databaseName = table.databaseName;
+        this.dataLinkName = table.dataLinkName;
         this.collectionName = table.collectionName;
         this.paths = table.externalNames();
         this.types = table.fieldTypes();
         this.writeMode = writeMode;
+        this.idField = idField;
+    }
+
+    @Override
+    public void init(@Nonnull Context context) throws Exception {
+        if (connectionString != null) {
+            clientSupplier = () -> MongoClients.create(connectionString);
+        } else if (dataLinkName != null) {
+            // todo data link support
+            EmptyStatement.ignore(null);
+        }
     }
 
     @Nonnull
@@ -60,15 +82,16 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
     public Collection<? extends Processor> get(int count) {
         Processor[] processors = new Processor[count];
 
+        final String idFieldName = idField;
         for (int i = 0; i < count; i++) {
             Processor processor = new WriteMongoP<>(
                     new WriteMongoParams<Document>()
-                            .setClientSupplier(() -> MongoClients.create(connectionString))
+                            .setClientSupplier(clientSupplier)
                             .setDatabaseName(databaseName)
                             .setCollectionName(collectionName)
                             .setDocumentType(Document.class)
-                            .setDocumentIdentityFn(doc -> doc.get("_id"))
-                            .setDocumentIdentityFieldName("_id")
+                            .setDocumentIdentityFn(doc -> doc.get(idFieldName))
+                            .setDocumentIdentityFieldName(idFieldName)
                             .setCommitRetryStrategy(DEFAULT_COMMIT_RETRY_STRATEGY)
                             .setTransactionOptionsSup(() -> DEFAULT_TRANSACTION_OPTION)
                             .setIntermediateMappingFn(this::rowToDoc)

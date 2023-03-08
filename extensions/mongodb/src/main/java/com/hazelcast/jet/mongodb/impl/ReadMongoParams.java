@@ -104,7 +104,7 @@ public class ReadMongoParams<I> implements Serializable {
     }
 
     public BsonTimestamp getStartAtTimestamp() {
-        return startAtTimestamp == null? null : new BsonTimestamp(startAtTimestamp);
+        return startAtTimestamp == null ? null : new BsonTimestamp(startAtTimestamp);
     }
 
     public ReadMongoParams<I> setStartAtTimestamp(BsonTimestamp startAtTimestamp) {

@@ -15,6 +15,8 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import com.hazelcast.function.SupplierEx;
+import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.mongodb.WriteMode;
@@ -22,7 +24,7 @@ import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import com.hazelcast.sql.impl.schema.Table;
+import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOneModel;
@@ -35,7 +37,6 @@ import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_COMMIT_RETRY_STRATEGY;
@@ -55,22 +56,31 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     private final String collectionName;
     private final List<String> fieldNames;
     private final List<? extends Serializable> updates;
-    private final List<String> pkFields;
+    private final String dataLinkName;
     private ExpressionEvalContext evalContext;
+    private transient SupplierEx<MongoClient> clientSupplier;
+    private final String pkExternalName;
 
     UpdateProcessorSupplier(MongoTable table, List<String> fieldNames, List<? extends Serializable> updates) {
         this.connectionString = table.connectionString;
+        this.dataLinkName = table.dataLinkName;
         this.databaseName = table.databaseName;
         this.collectionName = table.collectionName;
 
         // update-specific
         this.fieldNames = fieldNames;
         this.updates = updates;
-        this.pkFields = Collections.singletonList("_id");
+        this.pkExternalName = table.primaryKeyExternalName();
     }
 
     @Override
     public void init(@Nonnull Context context) throws Exception {
+        if (connectionString != null) {
+            clientSupplier = () -> MongoClients.create(connectionString);
+        } else if (dataLinkName != null) {
+           // todo data link support
+            EmptyStatement.ignore(null);
+        }
         evalContext = ExpressionEvalContext.from(context);
     }
 
@@ -79,15 +89,16 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     public Collection<? extends Processor> get(int count) {
         Processor[] processors = new Processor[count];
 
+        final String idFieldName = pkExternalName;
         for (int i = 0; i < count; i++) {
             Processor processor = new WriteMongoP<>(
                     new WriteMongoParams<Document>()
-                            .setClientSupplier(() -> MongoClients.create(connectionString))
+                            .setClientSupplier(clientSupplier)
                             .setDatabaseName(databaseName)
                             .setCollectionName(collectionName)
                             .setDocumentType(Document.class)
-                            .setDocumentIdentityFn(doc -> doc.getObjectId("_id"))
-                            .setDocumentIdentityFieldName("_id")
+                            .setDocumentIdentityFn(doc -> doc.get(idFieldName))
+                            .setDocumentIdentityFieldName(idFieldName)
                             .setCommitRetryStrategy(DEFAULT_COMMIT_RETRY_STRATEGY)
                             .setTransactionOptionsSup(() -> DEFAULT_TRANSACTION_OPTION)
                             .setIntermediateMappingFn(this::rowToUpdateDoc)
@@ -117,29 +128,19 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
             updateToPerform.add(Updates.set(fieldName, updateExpr));
         }
 
-        List<Bson> all = new ArrayList<>();
-        for (String field : pkFields) {
-            all.add(Filters.eq(field, row.get(field)));
-        }
-        Bson filter = Filters.and(all);
+        Bson filter = Filters.eq(pkExternalName, row.get(pkExternalName));
         return new UpdateOneModel<>(filter, updateToPerform);
     }
 
     /**
      * Row parameter contains values for PK fields.
-     *
-     * In Mongo we - for now - assume only default {@code _id} field, as it's
-     * in the {@linkplain MongoSqlConnectorBase#getPrimaryKey(Table)}.
      */
     private Document rowToUpdateDoc(JetSqlRow row) {
         Object[] values = row.getValues();
 
         Document doc = new Document();
-        int index = 0;
-        for (String pkField : pkFields)  {
-            Object value = values[index++];
-            doc.append(pkField, wrap(value, v -> v));
-        }
+        Object value = values[0];
+        doc.append(pkExternalName, wrap(value, v -> v));
 
         return doc;
     }

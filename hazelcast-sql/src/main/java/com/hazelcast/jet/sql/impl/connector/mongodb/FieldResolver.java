@@ -16,6 +16,7 @@
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -31,17 +32,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Predicate;
 
 import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.resolveTypeByName;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.resolveTypeFromJava;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.CONNECTION_STRING_OPTION;
-import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.DATABASE_NAME_OPTION;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.DATA_LINK_REF_OPTION;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static com.mongodb.client.model.Filters.eq;
 import static java.util.Objects.requireNonNull;
 
 class FieldResolver {
+
+    private final NodeEngine nodeEngine;
+
+    FieldResolver(NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
+    }
 
     /**
      * Resolves fields based on the options passed to the connector and schema provided by user (if any).
@@ -59,6 +66,7 @@ class FieldResolver {
             @Nonnull List<MappingField> userFields,
             boolean stream
     ) {
+        Predicate<MappingField> pkColumnName = Options.getPkColumnChecker(options, stream);
         Map<String, DocumentField> dbFields = readFields(externalName, options, stream);
 
         List<MappingField> resolvedFields = new ArrayList<>();
@@ -69,7 +77,7 @@ class FieldResolver {
                         resolveType(documentField.columnType),
                         documentField.columnName
                 );
-                mappingField.setPrimaryKey(isId(documentField.columnName, stream));
+                mappingField.setPrimaryKey(pkColumnName.test(mappingField));
                 resolvedFields.add(mappingField);
             }
         } else {
@@ -82,7 +90,7 @@ class FieldResolver {
                     throw new IllegalArgumentException("Could not resolve field with name " + nameInMongo);
                 }
                 MappingField mappingField = new MappingField(f.name(), f.type(), nameInMongo);
-                mappingField.setPrimaryKey(isId(documentField.columnName, stream));
+                mappingField.setPrimaryKey(pkColumnName.test(mappingField));
                 validateType(f, documentField);
                 resolvedFields.add(mappingField);
             }
@@ -135,8 +143,7 @@ class FieldResolver {
     Map<String, DocumentField> readFields(String collectionName, Map<String, String> options, boolean stream) {
         Map<String, DocumentField> fields = new HashMap<>();
         try (MongoClient client = connect(options)) {
-            String databaseName = requireNonNull(options.get(DATABASE_NAME_OPTION),
-                    DATABASE_NAME_OPTION + " option must be provided");
+            String databaseName = Options.getDatabaseName(nodeEngine, options);
 
             MongoDatabase database = client.getDatabase(databaseName);
             List<Document> collections = database.listCollections()

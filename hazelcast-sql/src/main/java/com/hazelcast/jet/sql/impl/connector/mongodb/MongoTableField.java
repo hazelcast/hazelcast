@@ -22,14 +22,20 @@ import java.util.Objects;
 
 class MongoTableField extends TableField {
     final String externalName;
+    final boolean primaryKey;
 
-    MongoTableField(String name, QueryDataType type, String externalName, boolean hidden) {
+    MongoTableField(String name, QueryDataType type, String externalName, boolean hidden, boolean primaryKey) {
         super(name, type, hidden);
         this.externalName = externalName;
+        this.primaryKey = primaryKey;
     }
 
     public String getExternalName() {
         return externalName;
+    }
+
+    public boolean isPrimaryKey() {
+        return primaryKey;
     }
 
     @Override
@@ -44,11 +50,11 @@ class MongoTableField extends TableField {
             return false;
         }
         MongoTableField that = (MongoTableField) o;
-        return Objects.equals(externalName, that.externalName);
+        return primaryKey == that.primaryKey && Objects.equals(externalName, that.externalName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), externalName);
+        return Objects.hash(super.hashCode(), externalName, primaryKey);
     }
 }

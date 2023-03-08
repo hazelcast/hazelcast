@@ -47,6 +47,7 @@ import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.mongodb.impl.Mappers.bsonDocumentToDocument;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -55,16 +56,14 @@ import static java.util.stream.Collectors.toList;
  * Streaming and batch connectors have similar way of dealing with scans with a few exceptions (like the requirement
  * for {@code _id field}).
  * <p>
- * All MongoDB connectors assume one primary key: {@code _id} column, which is mandatory (auto-created if not specified
+ * All MongoDB connectors assume at least one primary key.
+ * If user didn't specify any, the {@code _id} column is set to primary key - it is mandatory (auto-created if not specified
  * by user), unique and indexed.
  * <p>
- * While secondary indexes are technically possible, they are not supported right now.
  *
  * @see FieldResolver
  */
 public abstract class MongoSqlConnectorBase implements SqlConnector {
-
-    private final FieldResolver fieldResolver = new FieldResolver();
 
     @Nonnull
     @Override
@@ -74,6 +73,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             @Nonnull List<MappingField> userFields,
             @Nonnull String externalName
     ) {
+        FieldResolver fieldResolver = new FieldResolver(nodeEngine);
         return fieldResolver.resolveFields(externalName, options, userFields, isStream());
     }
 
@@ -81,7 +81,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
     @Override
     public List<String> getPrimaryKey(Table table) {
         MongoTable mongoTable = (MongoTable) table;
-        return mongoTable.primaryKeyName();
+        return singletonList(mongoTable.primaryKeyName());
     }
 
     @Nonnull
@@ -89,7 +89,9 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
     public Table createTable(@Nonnull NodeEngine nodeEngine, @Nonnull String schemaName, @Nonnull String mappingName,
                              @Nonnull String collectionName, @Nonnull Map<String, String> options,
                              @Nonnull List<MappingField> resolvedFields) {
-        String databaseName = options.get(Options.DATABASE_NAME_OPTION);
+        FieldResolver fieldResolver = new FieldResolver(nodeEngine);
+        String databaseName = Options.getDatabaseName(nodeEngine, options);
+        String pkName = Options.getPkColumn(options, isStream());
         ConstantTableStatistics stats = new ConstantTableStatistics(0);
 
         List<TableField> fields = new ArrayList<>(resolvedFields.size());
@@ -105,12 +107,12 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                     resolvedField.name(),
                     resolvedField.type(),
                     fieldExternalName,
-                    resolvedField.isPrimaryKey()
-            ));
+                    resolvedField.isPrimaryKey(),
+                    resolvedField.isPrimaryKey()));
         }
 
         if (isStream() && !containsId) {
-            fields.add(0, new MongoTableField("fullDocument._id", OBJECT, "fullDocument._id", true));
+            fields.add(0, new MongoTableField("fullDocument._id", OBJECT, "fullDocument._id", true, true));
         }
         return new MongoTable(schemaName, mappingName, databaseName, collectionName, options, this,
                 fields, stats, isStream());

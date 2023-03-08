@@ -79,7 +79,7 @@ public class FieldResolverTest {
             options.validationOptions(validationOptions);
             testDatabase.createCollection(collectionName, options);
 
-            FieldResolver resolver = new FieldResolver();
+            FieldResolver resolver = new FieldResolver(null);
 
             Map<String, String> readOpts = new HashMap<>();
             readOpts.put("connectionString", mongoContainer.getConnectionString());
@@ -103,7 +103,7 @@ public class FieldResolverTest {
                     .append("lastName", "Gawęda")
                     .append("birthYear", 1992));
 
-            FieldResolver resolver = new FieldResolver();
+            FieldResolver resolver = new FieldResolver(null);
 
             Map<String, String> readOpts = new HashMap<>();
             readOpts.put("connectionString", mongoContainer.getConnectionString());
@@ -127,7 +127,7 @@ public class FieldResolverTest {
                     .append("lastName", "Gawęda")
                     .append("birthYear", 1992));
 
-            FieldResolver resolver = new FieldResolver();
+            FieldResolver resolver = new FieldResolver(null);
 
             Map<String, String> readOpts = new HashMap<>();
             readOpts.put("connectionString", mongoContainer.getConnectionString());
@@ -154,7 +154,7 @@ public class FieldResolverTest {
                     .append("lastName", "Gawęda")
                     .append("birthYear", 1992));
 
-            FieldResolver resolver = new FieldResolver();
+            FieldResolver resolver = new FieldResolver(null);
 
             Map<String, String> readOpts = new HashMap<>();
             readOpts.put("connectionString", mongoContainer.getConnectionString());
@@ -187,7 +187,7 @@ public class FieldResolverTest {
                     .append("lastName", "Gawęda")
                     .append("birthYear", 1992));
 
-            FieldResolver resolver = new FieldResolver();
+            FieldResolver resolver = new FieldResolver(null);
 
             Map<String, String> readOpts = new HashMap<>();
             readOpts.put("connectionString", mongoContainer.getConnectionString());
@@ -215,7 +215,7 @@ public class FieldResolverTest {
                     .append("lastName", "Gawęda")
                     .append("birthYear", 1992));
 
-            FieldResolver resolver = new FieldResolver();
+            FieldResolver resolver = new FieldResolver(null);
 
             Map<String, String> readOpts = new HashMap<>();
             readOpts.put("connectionString", mongoContainer.getConnectionString());

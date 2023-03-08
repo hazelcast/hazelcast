@@ -17,6 +17,8 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SupplierEx;
+import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -25,6 +27,7 @@ import com.hazelcast.jet.mongodb.impl.ReadMongoParams;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import org.bson.BsonTimestamp;
@@ -52,7 +55,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class SelectProcessorSupplier implements ProcessorSupplier {
 
-    private final String connectionString;
+    private transient SupplierEx<? extends MongoClient> clientSupplier;
     private final String databaseName;
     private final String collectionName;
     private final boolean stream;
@@ -60,6 +63,8 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
     private final Document predicate;
     private final List<String> projection;
     private final Long startAt;
+    private final String connectionString;
+    private final String dataLinkName;
     private transient ExpressionEvalContext evalContext;
     private final QueryDataType[] types;
 
@@ -70,6 +75,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         this.predicate = predicate;
         this.projection = projection;
         this.connectionString = table.connectionString;
+        this.dataLinkName = table.dataLinkName;
         this.databaseName = table.databaseName;
         this.collectionName = table.collectionName;
         this.startAt = startAt == null ? null : startAt.getValue();
@@ -90,6 +96,12 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
 
     @Override
     public void init(@Nonnull Context context) {
+        if (connectionString != null) {
+            clientSupplier = () -> MongoClients.create(connectionString);
+        } else if (dataLinkName != null) {
+           // todo data link support
+            EmptyStatement.ignore(null);
+        }
         evalContext = ExpressionEvalContext.from(context);
     }
 
@@ -114,10 +126,11 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         EventTimePolicy<JetSqlRow> eventTimePolicy = eventTimePolicyProvider == null
                 ? EventTimePolicy.noEventTime()
                 : eventTimePolicyProvider.apply(evalContext);
+        SupplierEx<? extends MongoClient> clientSupplierEx = clientSupplier;
         for (int i = 0; i < count; i++) {
             Processor processor = new ReadMongoP<>(
                     new ReadMongoParams<JetSqlRow>(stream)
-                            .setClientSupplier(() -> MongoClients.create(connectionString))
+                            .setClientSupplier(clientSupplierEx)
                             .setAggregates(aggregates)
                             .setDatabaseName(databaseName)
                             .setCollectionName(collectionName)

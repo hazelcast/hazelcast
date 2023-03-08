@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.toList;
 
 class MongoTable extends JetTable {
@@ -38,6 +39,7 @@ class MongoTable extends JetTable {
     final String databaseName;
     final String collectionName;
     final String connectionString;
+    final String dataLinkName;
     final Map<String, String> options;
     /**
      * Streaming query always needs _id to be present, even if user don't request it
@@ -61,6 +63,7 @@ class MongoTable extends JetTable {
         this.collectionName = collectionName;
         this.options = options;
         this.connectionString = options.get(Options.CONNECTION_STRING_OPTION);
+        this.dataLinkName = options.get(Options.DATA_LINK_REF_OPTION);
         this.streaming = streaming;
 
         this.externalNames = getFields().stream()
@@ -112,11 +115,22 @@ class MongoTable extends JetTable {
         return options;
     }
 
-    public List<String> primaryKeyName() {
-        return getFields().stream()
-                          .filter(field -> ((MongoTableField) field).externalName.equals("_id"))
-                          .map(TableField::getName)
-                          .collect(toList());
+    public String primaryKeyName() {
+        List<String> list = getFields().stream()
+                                     .filter(field -> ((MongoTableField) field).isPrimaryKey())
+                                     .map(TableField::getName)
+                                     .collect(toList());
+        checkState(list.size() == 1, "there should be exactly 1 primary key, got: " + list);
+        return list.get(0);
+    }
+
+    public String primaryKeyExternalName() {
+        List<String> list = getFields().stream()
+                                     .filter(field -> ((MongoTableField) field).isPrimaryKey())
+                                     .map(field -> ((MongoTableField) field).externalName)
+                                     .collect(toList());
+        checkState(list.size() == 1, "there should be exactly 1 primary key, got: " + list);
+        return list.get(0);
     }
 
     /**
