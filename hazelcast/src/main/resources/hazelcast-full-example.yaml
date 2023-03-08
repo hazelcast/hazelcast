@@ -1491,11 +1491,11 @@ hazelcast:
           indexes:
             - attributes:
               - "name"
-    # In an actual config, only one of {partition-strategy, partition-attributes} should be present
-    partition-strategy: "com.example.Strategy"
-    partition-attributes:
-      - name: "attribute1"
-      - name: "attribute2"
+      # In an actual config, only one of {partition-strategy, partition-attributes} should be present
+      partition-strategy: "com.example.Strategy"
+      partition-attributes:
+        - name: "attributeName1"
+        - name: "attributeName2"
   #
   # ===== HAZELCAST MULTIMAP CONFIGURATION =====
   #
