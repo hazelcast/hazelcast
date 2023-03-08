@@ -35,7 +35,7 @@ import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 public class ReadKafkaConnectP extends AbstractProcessor {
 
     private final ConnectorWrapper connectorWrapper;
-    private final EventTimeMapper<? super SourceRecord> eventTimeMapper;
+    private final EventTimeMapper<SourceRecord> eventTimeMapper;
     private TaskRunner taskRunner;
     private boolean snapshotInProgress;
     private Traverser<Entry<BroadcastKey<String>, TaskRunner.State>> snapshotTraverser;
@@ -67,15 +67,16 @@ public class ReadKafkaConnectP extends AbstractProcessor {
         if (snapshotInProgress) {
             return false;
         }
-        List<SourceRecord> sourceRecords = taskRunner.poll();
         if (traverser == null) {
+            List<SourceRecord> sourceRecords = taskRunner.poll();
             this.traverser = traverser(sourceRecords)
+                    .map(rec -> {
+                        taskRunner.commitRecord((SourceRecord) rec);
+                        return rec;
+                    })
                     .onFirstNull(() -> traverser = null);
         }
         emitFromTraverser(traverser);
-        for (SourceRecord rec : sourceRecords) {
-            taskRunner.commitRecord(rec);
-        }
         return false;
     }
 
