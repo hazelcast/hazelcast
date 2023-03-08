@@ -70,7 +70,6 @@ public class KafkaConnectNeo4jIntegrationTest extends JetTestSupport {
         Properties connectorProperties = new Properties();
         connectorProperties.setProperty("name", "neo4j");
         connectorProperties.setProperty("connector.class", "streams.kafka.connect.source.Neo4jSourceConnector");
-        connectorProperties.setProperty("tasks.max", "2");
         connectorProperties.setProperty("topic", "some-topic");
         connectorProperties.setProperty("neo4j.server.uri", container.getBoltUrl());
         connectorProperties.setProperty("neo4j.authentication.basic.username", "neo4j");

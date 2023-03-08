@@ -24,6 +24,7 @@ import com.hazelcast.jet.kafka.connect.impl.ConnectorWrapper;
 import com.hazelcast.jet.kafka.connect.impl.ReadKafkaConnectP;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
+import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.spi.annotation.Beta;
 import org.apache.kafka.connect.source.SourceRecord;
 
@@ -65,8 +66,8 @@ public final class KafkaConnectSources {
      * resume the consumption from where it left off.
      * <p>
      * Hazelcast Jet will instantiate tasks on a random cluster member and use local parallelism for scaling.
-     * Scaling has to be enabled by setting <code>tasks.max</code> property. Default value for <code>tasks.max</code> is 1.
-     * Be aware that effective parallelism will be calculated as <code>min(localParallelism, tasksMax)</code>
+     * Property <code>tasks.max</code> is not allowed. Use {@link StreamStage#setLocalParallelism(int)} in the pipeline
+     * instead.
      *
      * @param properties Kafka connect properties
      * @return a source to use in {@link com.hazelcast.jet.pipeline.Pipeline#readFrom(StreamSource)}
@@ -80,10 +81,13 @@ public final class KafkaConnectSources {
         //fail fast, required by lazy-initialized KafkaConnectSource
         checkRequiredProperty(properties, "connector.class");
 
-        int tasksMax = Integer.parseInt(properties.getProperty("tasks.max", "1"));
+        if (properties.containsKey("tasks.max")) {
+            throw new IllegalArgumentException("Property 'tasks.max' not allowed. Use setLocalParallelism("
+                    + properties.getProperty("tasks.max") + ") in the pipeline instead");
+        }
 
         return Sources.streamFromProcessorWithWatermarks(name, true,
-                eventTimePolicy -> ProcessorMetaSupplier.preferLocalParallelismOnSingleMember(
+                eventTimePolicy -> ProcessorMetaSupplier.randomMember(
                         new ProcessorSupplier() {
                             private ConnectorWrapper connectorWrapper;
 
@@ -105,7 +109,7 @@ public final class KafkaConnectSources {
                                         .collect(Collectors.toList());
                             }
 
-                        }, tasksMax)
+                        })
         );
     }
 

@@ -477,21 +477,18 @@ public interface ProcessorMetaSupplier extends Serializable {
 
     /**
      * Wraps the provided {@code ProcessorSupplier} into a meta-supplier that
-     * will only use the given {@code ProcessorSupplier} on a random node with the
-     * given localParallelism.
+     * will only use the given {@code ProcessorSupplier} on a random node
      *
-     * @param supplier                  the supplier that will be wrapped
-     * @param preferredLocalParallelism the value to return from {@link #preferredLocalParallelism()}
+     * @param supplier the supplier that will be wrapped
      * @return the wrapped {@code ProcessorMetaSupplier}
      * @since 5.3
      */
     @Nonnull
     @Beta
-    static ProcessorMetaSupplier preferLocalParallelismOnSingleMember(
-            @Nonnull ProcessorSupplier supplier,
-            int preferredLocalParallelism
+    static ProcessorMetaSupplier randomMember(
+            @Nonnull ProcessorSupplier supplier
     ) {
-        return new ParallelismOnRandomMemberPms(supplier, preferredLocalParallelism);
+        return new RandomMemberPms(supplier);
     }
 
     /**
@@ -559,17 +556,15 @@ public interface ProcessorMetaSupplier extends Serializable {
         }
     }
 
-    class ParallelismOnRandomMemberPms implements ProcessorMetaSupplier, IdentifiedDataSerializable {
+    class RandomMemberPms implements ProcessorMetaSupplier, IdentifiedDataSerializable {
 
         private ProcessorSupplier supplier;
-        private int preferredLocalParallelism;
 
-        ParallelismOnRandomMemberPms() {
+        RandomMemberPms() {
         }
 
-        private ParallelismOnRandomMemberPms(ProcessorSupplier supplier, int preferredLocalParallelism) {
+        private RandomMemberPms(ProcessorSupplier supplier) {
             this.supplier = supplier;
-            this.preferredLocalParallelism = preferredLocalParallelism;
         }
 
         @Override
@@ -585,20 +580,13 @@ public interface ProcessorMetaSupplier extends Serializable {
         }
 
         @Override
-        public int preferredLocalParallelism() {
-            return preferredLocalParallelism;
-        }
-
-        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeObject(supplier);
-            out.writeInt(preferredLocalParallelism);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             supplier = in.readObject();
-            preferredLocalParallelism = in.readInt();
         }
 
         @Override
@@ -608,7 +596,7 @@ public interface ProcessorMetaSupplier extends Serializable {
 
         @Override
         public int getClassId() {
-            return JetDataSerializerHook.PARALLELISM_ON_SINGLE_MEMBER_PROCESSOR_META_SUPPLIER;
+            return JetDataSerializerHook.RANDOM_MEMBER_PROCESSOR_META_SUPPLIER;
         }
     }
 

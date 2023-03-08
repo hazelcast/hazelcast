@@ -66,12 +66,11 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
             + "/tests/confluentinc-kafka-connect-jdbc-10.6.3.zip";
 
     @Test
-    public void testReadFromJdbcConnector() throws Exception {
+    public void testReading() throws Exception {
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
         randomProperties.setProperty("connector.class", "io.confluent.connect.jdbc.JdbcSourceConnector");
         randomProperties.setProperty("mode", "incrementing");
-        randomProperties.setProperty("tasks.max", "1");
         String connectionUrl = mysql.getJdbcUrl();
         randomProperties.setProperty("connection.url", connectionUrl);
         randomProperties.setProperty("connection.user", USERNAME);
@@ -110,13 +109,12 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
     }
 
     @Test
-    public void testParallelJobWithJdbcConnector() throws Exception {
+    public void testScaling() throws Exception {
         int localParallelism = 2;
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
         randomProperties.setProperty("connector.class", "io.confluent.connect.jdbc.JdbcSourceConnector");
         randomProperties.setProperty("mode", "incrementing");
-        randomProperties.setProperty("tasks.max", Integer.toString(localParallelism));
         String connectionUrl = mysql.getJdbcUrl();
         randomProperties.setProperty("connection.url", connectionUrl);
         randomProperties.setProperty("connection.user", USERNAME);
@@ -162,7 +160,6 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
         randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
         randomProperties.setProperty("connector.class", "io.confluent.connect.jdbc.JdbcSourceConnector");
         randomProperties.setProperty("mode", "incrementing");
-        randomProperties.setProperty("tasks.max", "1");
         String connectionUrl = mysql.getJdbcUrl();
         randomProperties.setProperty("connection.url", connectionUrl);
         randomProperties.setProperty("connection.user", USERNAME);

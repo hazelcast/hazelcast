@@ -62,7 +62,6 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
         randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
-        randomProperties.setProperty("tasks.max", "1");
         randomProperties.setProperty("max.interval", "1");
         randomProperties.setProperty("kafka.topic", "users");
         randomProperties.setProperty("quickstart", "users");
@@ -70,6 +69,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         Pipeline pipeline = Pipeline.create();
         StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties))
                 .withoutTimestamps()
+                .setLocalParallelism(1)
                 .map(record -> Values.convertToString(record.valueSchema(), record.value()));
         streamStage.writeTo(Sinks.logger());
         streamStage
@@ -99,7 +99,6 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
         randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
-        randomProperties.setProperty("tasks.max", Integer.toString(localParallelism));
         randomProperties.setProperty("max.interval", "1");
         randomProperties.setProperty("kafka.topic", "users");
         randomProperties.setProperty("quickstart", "users");
@@ -139,7 +138,6 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
         randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
-        randomProperties.setProperty("tasks.max", Integer.toString(localParallelism));
         randomProperties.setProperty("max.interval", "1");
         randomProperties.setProperty("kafka.topic", "users");
         randomProperties.setProperty("quickstart", "users");

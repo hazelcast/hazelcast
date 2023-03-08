@@ -75,7 +75,8 @@ class TaskRunner {
 
     private List<SourceRecord> doPoll() {
         try {
-            return task.poll();
+            List<SourceRecord> sourceRecords = task.poll();
+            return sourceRecords == null ? Collections.emptyList() : sourceRecords;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw rethrow(e);
@@ -120,7 +121,7 @@ class TaskRunner {
                     this.task = taskLocal;
                     running = true;
                 } else {
-                    LOGGER.fine("No task config for task '" + name + "'");
+                    LOGGER.finest("No task config for task '" + name + "'");
                 }
             }
         } finally {

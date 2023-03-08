@@ -41,6 +41,17 @@ public class KafkaConnectSourcesTest {
     }
 
     @Test
+    public void should_fail_when_tasks_max_property_set() {
+        Properties properties = new Properties();
+        properties.setProperty("name", "some-name");
+        properties.setProperty("connector.class", "some-name");
+        properties.setProperty("tasks.max", "1");
+        assertThatThrownBy(() -> connect(properties))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Property 'tasks.max' not allowed. Use setLocalParallelism(1) in the pipeline instead");
+    }
+
+    @Test
     public void should_fail_when_no_connector_class_property() {
         Properties properties = new Properties();
         properties.setProperty("name", "some-name");
