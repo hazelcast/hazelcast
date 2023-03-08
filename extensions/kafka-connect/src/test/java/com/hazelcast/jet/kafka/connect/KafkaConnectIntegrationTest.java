@@ -175,6 +175,8 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
 
         assertTrueEventually(() -> assertEquals(2, hazelcastInstances[0].getCluster().getMembers().size()));
 
+        assertJobStatusEventually(job, RUNNING);
+
         try {
             job.join();
             fail("Job should have completed with an AssertionCompletedException, but completed normally");
