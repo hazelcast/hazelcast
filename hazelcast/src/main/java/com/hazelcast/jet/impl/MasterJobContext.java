@@ -132,7 +132,6 @@ public class MasterJobContext {
     public static final int SNAPSHOT_RESTORE_EDGE_PRIORITY = Integer.MIN_VALUE;
     public static final String SNAPSHOT_VERTEX_PREFIX = "__snapshot_";
 
-
     private static final int COLLECT_METRICS_RETRY_DELAY_MILLIS = 100;
     private static final Runnable NO_OP = () -> { };
 
@@ -140,6 +139,7 @@ public class MasterJobContext {
     private final ILogger logger;
     private final int defaultParallelism;
     private final int defaultQueueSize;
+
     private volatile long executionStartTime = System.currentTimeMillis();
     private volatile ExecutionFailureCallback executionFailureCallback;
     private volatile Set<Vertex> vertices;
@@ -313,7 +313,6 @@ public class MasterJobContext {
             if (mc.jobExecutionRecord().isSuspended()) {
                 mc.jobExecutionRecord().clearSuspended();
                 mc.writeJobExecutionRecord(false);
-                mc.setJobStatus(NOT_RUNNING);
             }
             if (scheduleRestartIfQuorumAbsent() || scheduleRestartIfClusterIsNotSafe()) {
                 return null;
@@ -366,15 +365,14 @@ public class MasterJobContext {
     }
 
     /**
-     * Returns a tuple of:<ol>
-     *     <li>a future that will be completed when the execution completes (or
-     *         a completed future, if execution is not RUNNING or STARTING)
-     *     <li>a string with a message why this call did nothing or null, if
-     *         this call actually initiated the termination
+     * Returns a tuple of: <ol>
+     * <li> a future that will be completed when the execution completes (or
+     *      a completed future, if execution is not RUNNING or STARTING)
+     * <li> a string with a message why this call did nothing or null, if
+     *      this call actually initiated the termination
      * </ol>
-     *
      * @param allowWhileExportingSnapshot if false and jobStatus is
-     *                                    SUSPENDED_EXPORTING_SNAPSHOT, termination will be rejected
+     *        SUSPENDED_EXPORTING_SNAPSHOT, termination will be rejected
      * @param userInitiated if the termination was requested by the user
      */
     @Nonnull
@@ -412,7 +410,7 @@ public class MasterJobContext {
             terminationRequest = new TerminationRequest(mode, userInitiated);
             // handle cancellation of a suspended job
             if (localStatus == SUSPENDED || localStatus == SUSPENDED_EXPORTING_SNAPSHOT) {
-                mc.setJobStatus(FAILED);
+                mc.setJobStatus(FAILED, mode.actionAfterTerminate().description(), true);
                 setFinalResult(createCancellationException());
             }
             if (mode.isWithTerminalSnapshot()) {
@@ -476,7 +474,7 @@ public class MasterJobContext {
         }
 
         logger.fine("Rescheduling restart of '" + mc.jobName() + "': quorum size " + quorumSize + " is not met");
-        scheduleRestart();
+        scheduleRestart("Quorum is absent");
         return true;
     }
 
@@ -486,17 +484,17 @@ public class MasterJobContext {
         }
 
         logger.fine("Rescheduling restart of '" + mc.jobName() + "': cluster is not safe");
-        scheduleRestart();
+        scheduleRestart("Cluster is not safe");
         return true;
     }
 
-    private void scheduleRestart() {
+    private void scheduleRestart(String description) {
         mc.assertLockHeld();
         JobStatus jobStatus = mc.jobStatus();
         if (jobStatus != NOT_RUNNING && jobStatus != STARTING && jobStatus != RUNNING) {
             throw new IllegalStateException("Restart scheduled in an unexpected state: " + jobStatus);
         }
-        mc.setJobStatus(NOT_RUNNING);
+        mc.setJobStatus(NOT_RUNNING, description, false);
         mc.coordinationService().scheduleRestart(mc.jobId());
     }
 
@@ -525,9 +523,7 @@ public class MasterJobContext {
         long executionId = mc.executionId();
         mc.resetStartOperationResponses();
         executionFailureCallback = new ExecutionFailureCallback(executionId, mc.startOperationResponses());
-
-        getTerminationRequest().ifPresent(request ->
-            handleTermination(request.getMode()));
+        getTerminationRequest().ifPresent(request -> handleTermination(request.getMode()));
 
         boolean savingMetricsEnabled = mc.jobConfig().isStoreMetricsAfterJobCompletion();
         Function<ExecutionPlan, Operation> operationCtor =
@@ -566,18 +562,18 @@ public class MasterJobContext {
 
     /**
      * <ul>
-     * <li>Returns {@code null} if there is no failure
-     * <li>Returns a {@link CancellationException} if the job is cancelled
-     * <li>Returns a {@link JobTerminateRequestedException} if the current
-     *     execution is stopped due to a requested termination, except for
-     *     {@link TerminationMode#CANCEL_GRACEFUL} and
-     *     {@link TerminationMode#CANCEL_FORCEFUL}, in which case
-     *     {@link CancellationException} is returned.
-     * <li>If there is at least one user failure, such as an exception in user
-     *     code (restartable or not), then returns that failure.
-     * <li>Otherwise, the failure is because a job participant has left the
-     *     cluster. In that case, it returns {@code TopologyChangeException} so
-     *     that the job will be restarted
+     * <li> Returns {@code null} if there is no failure
+     * <li> Returns a {@link CancellationException} if the job is cancelled
+     * <li> Returns a {@link JobTerminateRequestedException} if the current
+     *      execution is stopped due to a requested termination, except for
+     *      {@link TerminationMode#CANCEL_GRACEFUL} and
+     *      {@link TerminationMode#CANCEL_FORCEFUL}, in which case
+     *      {@link CancellationException} is returned.
+     * <li> If there is at least one user failure, such as an exception in user
+     *      code (restartable or not), then returns that failure.
+     * <li> Otherwise, the failure is because a job participant has left the
+     *      cluster. In that case, it returns {@code TopologyChangeException} so
+     *      that the job will be restarted
      * </ul>
      */
     private Throwable getErrorFromResponses(String opName, Collection<Map.Entry<MemberInfo, Object>> responses) {
@@ -718,13 +714,18 @@ public class MasterJobContext {
                         ? ((JobTerminateRequestedException) failure).mode().actionAfterTerminate() : null;
                 mc.snapshotContext().onExecutionTerminated();
 
+                String description = requestedTerminationMode()
+                        .map(mode -> mode.actionAfterTerminate().description())
+                        .orElse(failure != null ? failure.toString() : null);
+                boolean userRequested = isUserInitiatedTermination();
+
                 // if restart was requested, restart immediately
                 if (terminationModeAction == RESTART) {
-                    mc.setJobStatus(NOT_RUNNING);
+                    mc.setJobStatus(NOT_RUNNING, description, userRequested);
                     nonSynchronizedAction = () -> mc.coordinationService().restartJob(mc.jobId());
                 } else if (!isCancelled() && isRestartableException(failure) && mc.jobConfig().isAutoScaling()) {
                     // if restart is due to a failure, schedule a restart after a delay
-                    scheduleRestart();
+                    scheduleRestart(description);
                     nonSynchronizedAction = NO_OP;
                 } else if (terminationModeAction == SUSPEND
                         || isRestartableException(failure)
@@ -732,7 +733,7 @@ public class MasterJobContext {
                         && !mc.jobConfig().isAutoScaling()
                         && mc.jobConfig().getProcessingGuarantee() != NONE
                 ) {
-                    mc.setJobStatus(SUSPENDED);
+                    mc.setJobStatus(SUSPENDED, description, userRequested);
                     mc.jobExecutionRecord().setSuspended(null);
                     nonSynchronizedAction = () -> mc.writeJobExecutionRecord(false);
                 } else if (failure != null
@@ -740,14 +741,14 @@ public class MasterJobContext {
                         && !isCancelledGracefully()
                         && mc.jobConfig().isSuspendOnFailure()
                 ) {
-                    mc.setJobStatus(SUSPENDED);
+                    mc.setJobStatus(SUSPENDED, description, userRequested);
                     mc.jobExecutionRecord().setSuspended("Execution failure:\n" +
                             ExceptionUtil.stackTraceToString(failure));
                     nonSynchronizedAction = () -> mc.writeJobExecutionRecord(false);
                 } else {
                     long completionTime = System.currentTimeMillis();
                     boolean isSuccess = logExecutionSummary(failure, completionTime);
-                    mc.setJobStatus(isSuccess ? COMPLETED : FAILED);
+                    mc.setJobStatus(isSuccess ? COMPLETED : FAILED, description, userRequested);
                     if (failure instanceof LocalMemberResetException) {
                         logger.fine("Cancelling job " + mc.jobIdString() + " locally: member (local or remote) reset. " +
                                 "We don't delete job metadata: job will restart on majority cluster");
@@ -882,7 +883,7 @@ public class MasterJobContext {
                 logger.info("Not resuming " + mc.jobIdString() + ": not " + SUSPENDED + ", but " + mc.jobStatus());
                 return;
             }
-            mc.setJobStatus(NOT_RUNNING);
+            mc.setJobStatus(NOT_RUNNING, "Resume", true);
         } finally {
             mc.unlock();
         }
