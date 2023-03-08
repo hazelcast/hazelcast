@@ -59,6 +59,14 @@ public interface InternalDataLinkService extends DataLinkService {
     void createSqlDataLink(String name, String type, Map<String, String> options, boolean replace);
 
     /**
+     * Returns if a DataLink with given name exists or not
+     *
+     * @param name name of the DataLink
+     * @return true if a DataLink exists, false otherwise
+     */
+    boolean existsDataLink(String name);
+
+    /**
      * Removes a DataLink.
      *
      * @param name name of the DataLink

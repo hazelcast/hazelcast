@@ -36,6 +36,7 @@ import static com.hazelcast.internal.tpc.TpcTestSupport.sleepMillis;
 import static com.hazelcast.internal.tpc.TpcTestSupport.terminateAll;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public abstract class ReactorTest {
@@ -58,6 +59,18 @@ public abstract class ReactorTest {
     @After
     public void after() throws InterruptedException {
         terminateAll(reactors);
+    }
+
+    @Test
+    public void test_context() {
+        Reactor reactor = newReactor();
+        assertNotNull(reactor.context());
+    }
+
+    @Test
+    public void test_scheduler() {
+        Reactor reactor = newReactor();
+        assertNotNull(reactor.scheduler());
     }
 
     @Test(expected = NullPointerException.class)

@@ -17,8 +17,8 @@
 package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.mongodb.MongoDBSourceBuilder.Batch;
-import com.hazelcast.jet.mongodb.MongoDBSourceBuilder.Stream;
+import com.hazelcast.jet.mongodb.MongoSourceBuilder.Batch;
+import com.hazelcast.jet.mongodb.MongoSourceBuilder.Stream;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.spi.annotation.Beta;
@@ -37,17 +37,17 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 /**
  * Contains factory methods for MongoDB sources.
  * <p>
- * See {@link MongoDBSourceBuilder} for creating custom MongoDB sources.
+ * See {@link MongoSourceBuilder} for creating custom MongoDB sources.
  *
  * @since 5.3
  */
-public final class MongoDBSources {
+public final class MongoSources {
 
-    private MongoDBSources() {
+    private MongoSources() {
     }
 
     /**
-     * Creates as builder for new batch mongo source. Equivalent to calling {@link MongoDBSourceBuilder#batch}.
+     * Creates as builder for new batch mongo source. Equivalent to calling {@link MongoSourceBuilder#batch}.
      * <p>
      * Example usage:
      * <pre>{@code
@@ -68,17 +68,17 @@ public final class MongoDBSources {
      */
     @Beta
     @Nonnull
-    public static MongoDBSourceBuilder.Batch<Document> batch(
+    public static MongoSourceBuilder.Batch<Document> batch(
             @Nonnull String name,
             @Nonnull SupplierEx<? extends MongoClient> clientSupplier) {
-        return MongoDBSourceBuilder.batch(name, clientSupplier);
+        return MongoSourceBuilder.batch(name, clientSupplier);
     }
 
     /**
      * Returns a MongoDB batch source which queries the collection using given
      * {@code filter} and applies the given {@code projection} on the documents.
      * <p>
-     * See {@link MongoDBSourceBuilder} for creating custom MongoDB sources.
+     * See {@link MongoSourceBuilder} for creating custom MongoDB sources.
      * <p>
      * Here's an example which queries documents in a collection having the
      * field {@code age} with a value greater than {@code 10} and applies a
@@ -119,7 +119,7 @@ public final class MongoDBSources {
             @Nullable Bson filter,
             @Nullable Bson projection
     ) {
-        Batch<Document> builder = MongoDBSourceBuilder
+        Batch<Document> builder = MongoSourceBuilder
                 .batch(name, () -> MongoClients.create(connectionString))
                 .database(database)
                 .collection(collection);
@@ -133,7 +133,7 @@ public final class MongoDBSources {
     }
 
     /**
-     * Creates as builder for new stream mongo source. Equivalent to calling {@link MongoDBSourceBuilder#stream}.
+     * Creates as builder for new stream mongo source. Equivalent to calling {@link MongoSourceBuilder#stream}.
      *
      * Example usage:
      * <pre>{@code
@@ -155,10 +155,10 @@ public final class MongoDBSources {
      */
     @Beta
     @Nonnull
-    public static MongoDBSourceBuilder.Stream<Document> stream(
+    public static MongoSourceBuilder.Stream<Document> stream(
             @Nonnull String name,
             @Nonnull SupplierEx<? extends MongoClient> clientSupplier) {
-        return MongoDBSourceBuilder.stream(name, clientSupplier);
+        return MongoSourceBuilder.stream(name, clientSupplier);
     }
 
     /**
@@ -172,7 +172,7 @@ public final class MongoDBSources {
      * encryption-at-rest feature. You cannot watch on system collections and
      * collections in admin, local and config databases.
      * <p>
-     * See {@link MongoDBSourceBuilder} for creating custom MongoDB sources.
+     * See {@link MongoSourceBuilder} for creating custom MongoDB sources.
      * <p>
      * Here's an example which streams inserts on a collection having the
      * field {@code age} with a value greater than {@code 10} and applies a
@@ -215,7 +215,7 @@ public final class MongoDBSources {
             @Nullable Document filter,
             @Nullable Document projection
     ) {
-        Stream<Document> builder = MongoDBSourceBuilder
+        Stream<Document> builder = MongoSourceBuilder
                 .stream(name, () -> MongoClients.create(connectionString))
                 .database(database)
                 .collection(collection)

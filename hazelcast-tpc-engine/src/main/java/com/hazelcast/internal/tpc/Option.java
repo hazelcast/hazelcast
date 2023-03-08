@@ -21,6 +21,8 @@ import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 /**
  * Can be used to pass options to a socket, but in the future also files.
  *
+ * An option is uniquely determined based on its name.
+ *
  * @param <T>
  */
 public final class Option<T> {

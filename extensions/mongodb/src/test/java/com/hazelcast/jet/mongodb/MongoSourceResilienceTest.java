@@ -60,7 +60,7 @@ import java.util.function.Consumer;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
-import static com.hazelcast.jet.mongodb.AbstractMongoDBTest.TEST_MONGO_VERSION;
+import static com.hazelcast.jet.mongodb.AbstractMongoTest.TEST_MONGO_VERSION;
 import static com.hazelcast.jet.pipeline.Sinks.map;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static eu.rekawek.toxiproxy.model.ToxicDirection.DOWNSTREAM;
@@ -70,8 +70,8 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({NightlyTest.class})
-public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
-    private static final ILogger logger = Logger.getLogger(MongoDBSourceResilienceTest.class);
+public class MongoSourceResilienceTest extends SimpleTestInClusterSupport {
+    private static final ILogger logger = Logger.getLogger(MongoSourceResilienceTest.class);
 
     @Rule
     public Network network = Network.newNetwork();
@@ -233,7 +233,7 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
     private static Pipeline buildIngestPipeline(String mongoContainerConnectionString, String sinkName,
                                                 String databaseName, String collectionName) {
         Pipeline pipeline = Pipeline.create();
-        pipeline.readFrom(MongoDBSourceBuilder
+        pipeline.readFrom(MongoSourceBuilder
                         .stream("mongo source", () -> mongoClient(mongoContainerConnectionString))
                         .database(databaseName)
                         .collection(collectionName)
