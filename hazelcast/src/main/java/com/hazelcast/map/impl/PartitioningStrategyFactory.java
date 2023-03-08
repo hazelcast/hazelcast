@@ -46,7 +46,7 @@ public final class PartitioningStrategyFactory {
     }
 
     /**
-     * Obtain a {@link PartitioningStrategy} for the given {@code NodeEngine} and {@code mapName}. This method
+     * Obtain a {@link PartitioningStrategy} for the given {@code mapName}. This method
      * first attempts locating a {@link PartitioningStrategy} in {code config.getPartitioningStrategy()}. If this is {@code null},
      * then looks up its internal cache of partitioning strategies; if one has already been created for the given
      * {@code mapName}, it is returned, otherwise it is instantiated, cached and returned.
@@ -62,25 +62,28 @@ public final class PartitioningStrategyFactory {
             PartitioningStrategyConfig config,
             final List<PartitioningAttributeConfig> attributeConfigs
     ) {
-        PartitioningStrategy strategy = null;
+        if (config == null && attributeConfigs == null) {
+            return null;
+        }
+        if (config != null && config.getPartitioningStrategy() != null) {
+            return config.getPartitioningStrategy();
+        }
+        PartitioningStrategy<?> strategy = cache.get(mapName);
+        if (strategy != null) {
+            return strategy;
+        }
         if (attributeConfigs != null && !attributeConfigs.isEmpty()) {
-            strategy = cache.containsKey(mapName)
-                    ? cache.get(mapName)
-                    : createAttributePartitionStrategy(attributeConfigs);
-        } else if (config != null) {
-            strategy = config.getPartitioningStrategy();
-            if (strategy == null) {
-                if (cache.containsKey(mapName)) {
-                    strategy = cache.get(mapName);
-                } else if (config.getPartitioningStrategyClass() != null) {
-                    try {
-                        strategy = ClassLoaderUtil.newInstance(configClassLoader, config.getPartitioningStrategyClass());
-                        cache.put(mapName, strategy);
-                    } catch (Exception e) {
-                        throw ExceptionUtil.rethrow(e);
-                    }
-                }
+            return cache.computeIfAbsent(mapName, k -> createAttributePartitionStrategy(attributeConfigs));
+        }
+        if (config != null && config.getPartitioningStrategyClass() != null) {
+            try {
+                // We intentionally not use computeIfAbsent so that the map isn't blocked if instantiation takes a
+                // long time - it's user code
+                strategy = ClassLoaderUtil.newInstance(configClassLoader, config.getPartitioningStrategyClass());
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
             }
+            cache.putIfAbsent(mapName, strategy);
         }
         return strategy;
     }

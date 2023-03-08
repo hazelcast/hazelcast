@@ -1511,6 +1511,7 @@
                 </indexes>
             </query-cache>
         </query-caches>
+        <!-- In an actual config, only one of {partition-strategy, partition-attributes} should be present -->
         <partition-strategy>com.example.Strategy</partition-strategy>
         <partition-attributes>
             <attribute>attributeName1</attribute>
@@ -3965,7 +3966,7 @@
 
     <!--
       ===== HAZELCAST DATA LINK CONFIGURATION =====
-    
+
       Configuration element's name is <data-link>. Contains configuration of data links
       used by map stores and jdbc sinks and sources
       -->

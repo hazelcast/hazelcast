@@ -1491,6 +1491,7 @@ hazelcast:
           indexes:
             - attributes:
               - "name"
+    # In an actual config, only one of {partition-strategy, partition-attributes} should be present
     partition-strategy: "com.example.Strategy"
     partition-attributes:
       - "attribute1"

@@ -30,8 +30,6 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.Serializable;
 
-import static java.util.Objects.requireNonNull;
-
 @SerializableByConvention
 public class AttributePartitioningStrategy implements PartitioningStrategy<Object> {
 
@@ -44,6 +42,7 @@ public class AttributePartitioningStrategy implements PartitioningStrategy<Objec
     @Override
     public Object getPartitionKey(final Object key) {
         final Object result;
+        // TODO check whether Data can arrive here
         if (key instanceof InternalGenericRecord) {
             result = extractFromGenericRecord((InternalGenericRecord) key);
         } else if (key instanceof HazelcastJsonValue) {
@@ -62,7 +61,8 @@ public class AttributePartitioningStrategy implements PartitioningStrategy<Objec
         final Object[] values = new Object[attributes.length];
         for (int i = 0; i < attributes.length; i++) {
             final String attribute = attributes[i];
-            final Object value = requireNonNull(ReflectionUtils.getFieldValue(attribute, key), "Null partitioning key");
+            final Object value = ReflectionUtils.getFieldValue(attribute, key);
+            checkNull(value, attribute);
             values[i] = value;
         }
 
@@ -73,7 +73,8 @@ public class AttributePartitioningStrategy implements PartitioningStrategy<Objec
     private Object[] extractFromJson(final Object key) {
         final Object[] values = new Object[attributes.length];
         for (int i = 0; i < attributes.length; i++) {
-            final Object value = requireNonNull(JsonGetter.INSTANCE.getValue(key, attributes[i]), "Null partitioning key");
+            final Object value = JsonGetter.INSTANCE.getValue(key, attributes[i]);
+            checkNull(value, attributes[i]);
             values[i] = value;
         }
 
@@ -87,7 +88,8 @@ public class AttributePartitioningStrategy implements PartitioningStrategy<Objec
         for (int i = 0; i < attributes.length; i++) {
             final String attribute = attributes[i];
             try {
-                final Object value = requireNonNull(reader.read(attribute), "Null partitioning key");
+                final Object value = reader.read(attribute);
+                checkNull(value, attributes[i]);
                 values[i] = value;
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -99,5 +101,11 @@ public class AttributePartitioningStrategy implements PartitioningStrategy<Objec
 
     public String[] getPartitioningAttributes() {
         return attributes;
+    }
+
+    private static void checkNull(Object extracted, String attributeName) {
+        if (extracted == null) {
+            throw new IllegalArgumentException("Cannot extract '" + attributeName + "' from the key");
+        }
     }
 }

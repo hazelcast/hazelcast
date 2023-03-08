@@ -29,7 +29,6 @@ import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -51,7 +50,6 @@ public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInCl
             .addStringField("org")
             .build();
 
-    private static final PartitioningStrategy<?> STRATEGY = new AttributePartitioningStrategy("org");
     private static final String PARTITION_ATTRIBUTE_VALUE = "1";
     private static final Object[] PARTITION_KEY = new Object[]{PARTITION_ATTRIBUTE_VALUE};
 
