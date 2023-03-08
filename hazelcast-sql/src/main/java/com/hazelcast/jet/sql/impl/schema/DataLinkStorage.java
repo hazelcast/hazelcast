@@ -23,11 +23,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
-import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_DATA_LINK;
-
 public class DataLinkStorage extends AbstractSchemaStorage {
-    private static final String KEY_PREFIX = "\"" + CATALOG + "\".\"" + SCHEMA_NAME_DATA_LINK + "\".";
+    // Random uuid to distinguish data links in sql.catalog among other catalog items
+    private static final String KEY_PREFIX = "8bb6ac12-bd07-11ed-afa1-0242ac120002.";
 
     public DataLinkStorage(NodeEngine nodeEngine) {
         super(nodeEngine);
@@ -62,6 +60,6 @@ public class DataLinkStorage extends AbstractSchemaStorage {
     }
 
     private static String wrap(String dataLinkKey) {
-        return KEY_PREFIX + dataLinkKey + "\"";
+        return KEY_PREFIX + dataLinkKey;
     }
 }
