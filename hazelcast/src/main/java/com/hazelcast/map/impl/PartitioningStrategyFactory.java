@@ -23,6 +23,7 @@ import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.AttributePartitioningStrategy;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -47,9 +48,11 @@ public final class PartitioningStrategyFactory {
 
     /**
      * Obtain a {@link PartitioningStrategy} for the given {@code mapName}. This method
-     * first attempts locating a {@link PartitioningStrategy} in {code config.getPartitioningStrategy()}. If this is {@code null},
-     * then looks up its internal cache of partitioning strategies; if one has already been created for the given
-     * {@code mapName}, it is returned, otherwise it is instantiated, cached and returned.
+     * first checks the `attributeConfigs` - if it is non-empty, the strategy is created based on that.
+     * Then it checks `config.getPartitioningStrategy()`, and returns it, if it's not null.
+     * Then it checks `config.getPartitioningStrategyClass()`, and uses that to create the strategy.
+     * If none is present, null is returned.
+     * The instantiated strategy instances are cached for the map name.
      *
      * @param mapName          Map for which this partitioning strategy is being created
      * @param config           The partitioning strategy configuration
@@ -57,35 +60,34 @@ public final class PartitioningStrategyFactory {
      * @return
      */
     @SuppressWarnings("checkstyle:NestedIfDepth")
+    @Nullable
     public PartitioningStrategy getPartitioningStrategy(
             String mapName,
             PartitioningStrategyConfig config,
             final List<PartitioningAttributeConfig> attributeConfigs
     ) {
-        if (config == null && attributeConfigs == null) {
-            return null;
+        if (attributeConfigs != null && !attributeConfigs.isEmpty()) {
+            return cache.computeIfAbsent(mapName, k -> createAttributePartitionStrategy(attributeConfigs));
         }
         if (config != null && config.getPartitioningStrategy() != null) {
             return config.getPartitioningStrategy();
         }
-        PartitioningStrategy<?> strategy = cache.get(mapName);
-        if (strategy != null) {
-            return strategy;
-        }
-        if (attributeConfigs != null && !attributeConfigs.isEmpty()) {
-            return cache.computeIfAbsent(mapName, k -> createAttributePartitionStrategy(attributeConfigs));
-        }
         if (config != null && config.getPartitioningStrategyClass() != null) {
+            PartitioningStrategy<?> strategy = cache.get(mapName);
+            if (strategy != null) {
+                return strategy;
+            }
             try {
-                // We don't use computeIfAbsent intentionally so that the map isn't blocked if instantiation takes a
+                // We don't use computeIfAbsent intentionally so that the map isn't blocked if the instantiation takes a
                 // long time - it's user code
                 strategy = ClassLoaderUtil.newInstance(configClassLoader, config.getPartitioningStrategyClass());
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }
             cache.putIfAbsent(mapName, strategy);
+            return strategy;
         }
-        return strategy;
+        return null;
     }
 
     private PartitioningStrategy createAttributePartitionStrategy(final List<PartitioningAttributeConfig> attributes) {

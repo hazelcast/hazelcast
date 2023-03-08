@@ -81,6 +81,7 @@ import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -832,6 +833,7 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
+    @Nullable
     public PartitioningStrategy getPartitioningStrategy(
             String mapName,
             PartitioningStrategyConfig config,
