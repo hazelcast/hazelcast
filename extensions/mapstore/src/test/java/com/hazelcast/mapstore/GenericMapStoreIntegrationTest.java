@@ -102,7 +102,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         IMap<Integer, Person> map = client.getMap(tableName);
 
         Person p = map.get(0);
-        assertThat(p.getPersonId()).isZero();
+        assertThat(p.getId()).isZero();
         assertThat(p.getName()).isEqualTo("name-0");
     }
 
@@ -253,7 +253,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         assertThat(jdbcRowsTable(tableName)).hasSize(2);
 
         Person p = map.remove(0);
-        assertThat(p.getPersonId()).isZero();
+        assertThat(p.getId()).isZero();
         assertThat(p.getName()).isEqualTo("name-0");
 
         assertThat(jdbcRowsTable(tableName)).hasSize(1);
@@ -353,7 +353,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         // The new item should still be loadable via the mapping
         executeJdbc("INSERT INTO " + tableName + " VALUES(1000, 'name-1000')");
         Person p = map.get(1000);
-        assertThat(p.getPersonId()).isEqualTo(1000);
+        assertThat(p.getId()).isEqualTo(1000);
         assertThat(p.getName()).isEqualTo("name-1000");
 
         for (Throwable throwable : recorder.exceptionsLogged()) {

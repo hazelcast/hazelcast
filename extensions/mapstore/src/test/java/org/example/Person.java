@@ -23,23 +23,23 @@ import java.util.Objects;
  */
 public class Person {
 
-    Integer personId;
+    Integer id;
     String name;
 
     public Person() {
     }
 
-    public Person(Integer personId, String name) {
-        this.personId = personId;
+    public Person(Integer id, String name) {
+        this.id = id;
         this.name = name;
     }
 
-    public Integer getPersonId() {
-        return personId;
+    public Integer getId() {
+        return id;
     }
 
-    public void setPersonId(Integer personId) {
-        this.personId = personId;
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -53,7 +53,7 @@ public class Person {
     @Override
     public String toString() {
         return "Person{" +
-                "personId=" + personId +
+                "personId=" + id +
                 ", name='" + name + '\'' +
                 '}';
     }
@@ -67,11 +67,11 @@ public class Person {
             return false;
         }
         Person person = (Person) o;
-        return Objects.equals(personId, person.personId) && Objects.equals(name, person.name);
+        return Objects.equals(id, person.id) && Objects.equals(name, person.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(personId, name);
+        return Objects.hash(id, name);
     }
 }

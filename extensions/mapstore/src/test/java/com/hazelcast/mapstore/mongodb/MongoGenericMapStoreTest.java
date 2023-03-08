@@ -137,7 +137,7 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
         IMap<Integer, Person> map = client.getMap(tableName);
 
         Person p = map.get(1);
-        assertThat(p.getPersonId()).isEqualTo(1);
+        assertThat(p.getId()).isEqualTo(1);
         assertThat(p.getName()).isEqualTo("name-1");
     }
 
