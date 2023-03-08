@@ -17,7 +17,6 @@
 package com.hazelcast.partition.strategy;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
@@ -61,7 +60,6 @@ public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInCl
         Config config = smallInstanceConfig().setProperty(PARTITION_COUNT.getName(), "3");
         config.getMapConfig("test").setPartitioningStrategyConfig(new PartitioningStrategyConfig()
                 .setPartitioningStrategy(STRATEGY));
-        config.getMapConfig("test").addIndexConfig(new IndexConfig(IndexConfig.DEFAULT_TYPE, "__key.org"));
 
         initialize(3, config);
     }
