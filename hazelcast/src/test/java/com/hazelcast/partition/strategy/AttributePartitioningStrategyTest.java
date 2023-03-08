@@ -16,6 +16,7 @@
 
 package com.hazelcast.partition.strategy;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -37,8 +38,9 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.io.Serializable;
 
-import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -47,17 +49,17 @@ public class AttributePartitioningStrategyTest {
 
     @Test
     public void test_partitionAware() {
-        assertNull(strategy.getPartitionKey(new PartitionAwarePojo()));
+        checkFailure(new PartitionAwarePojo());
     }
 
     @Test
     public void test_portablePojo() {
-        assertNull(strategy.getPartitionKey(new PortablePojo()));
+        checkFailure(new PortablePojo());
     }
 
     @Test
     public void test_compactPojoOrNonSerializablePojo() {
-        assertNull(strategy.getPartitionKey(new NonSerializablePojo()));
+        checkFailure(new NonSerializablePojo());
     }
 
     @Test
@@ -66,26 +68,20 @@ public class AttributePartitioningStrategyTest {
                 + "\"name\":\"test\","
                 + "\"id\":1"
                 + "}";
-        final Object[] key = (Object[]) strategy.getPartitionKey(new HazelcastJsonValue(json));
-        assertEquals(1L, key[0]);
-        assertEquals("test", key[1]);
-        assertNull(strategy.getPartitionKey(new HazelcastJsonValue("{}")));
-        assertNull(strategy.getPartitionKey(new HazelcastJsonValue("{\"name\":\"test\"}")));
-        assertNull(strategy.getPartitionKey(new HazelcastJsonValue("{\"id\": 1}")));
+        check(new HazelcastJsonValue(json));
+        checkFailure(new HazelcastJsonValue("{}"));
+        checkFailure(new HazelcastJsonValue("{\"name\":\"test\"}"));
+        checkFailure(new HazelcastJsonValue("{\"id\": 1}"));
     }
 
     @Test
     public void test_pojo() {
-        final Object[] regularKey = (Object[]) strategy.getPartitionKey(new RegularPojo(1L, "test"));
-        assertEquals(1L, regularKey[0]);
-        assertEquals("test", regularKey[1]);
-        final Object[] idsKey = (Object[]) strategy.getPartitionKey(new IDSPojo(1L, "test"));
-        assertEquals(1L, idsKey[0]);
-        assertEquals("test", idsKey[1]);
-        assertNull(strategy.getPartitionKey(new RegularPojo(1L, null)));
-        assertNull(strategy.getPartitionKey(new RegularPojo(null, "test")));
-        assertNull(strategy.getPartitionKey(new IDSPojo(1L, null)));
-        assertNull(strategy.getPartitionKey(new IDSPojo(null, "test")));
+        check(new RegularPojo(1L, "test"));
+        check(new IDSPojo(1L, "test"));
+        checkFailure(new RegularPojo(1L, null));
+        checkFailure(new RegularPojo(null, "test"));
+        checkFailure(new IDSPojo(1L, null));
+        checkFailure(new IDSPojo(null, "test"));
     }
 
     @Test
@@ -103,11 +99,9 @@ public class AttributePartitioningStrategyTest {
                 .setString("name", null)
                 .build();
 
-        final Object[] key = (Object[]) strategy.getPartitionKey(record);
-        assertEquals(1L, key[0]);
-        assertEquals("test", key[1]);
-        assertNull(strategy.getPartitionKey(idLess));
-        assertNull(strategy.getPartitionKey(nameLess));
+        check(record);
+        checkFailure(idLess);
+        checkFailure(nameLess);
     }
 
     @Test
@@ -125,10 +119,22 @@ public class AttributePartitioningStrategyTest {
                 .setString("name", null)
                 .build();
 
-        final Object[] key = (Object[]) strategy.getPartitionKey(record);
-        assertEquals(1L, key[0]);
-        assertEquals("test", key[1]);
-        assertNull(strategy.getPartitionKey(nameLess));
+        check(record);
+        checkFailure(nameLess);
+    }
+
+    private void check(final Object obj) {
+        final Object[] key = (Object[]) strategy.getPartitionKey(obj);
+        assertNotNull(key);
+        assertEquals(2, key.length);
+        assertEquals(key[0], 1L);
+        assertEquals(key[1], "test");
+    }
+
+    private void checkFailure(final Object obj) {
+        assertThatThrownBy(() -> strategy.getPartitionKey(obj))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("Failed to extract partition key attributes");
     }
 
     public static class RegularPojo implements Serializable {

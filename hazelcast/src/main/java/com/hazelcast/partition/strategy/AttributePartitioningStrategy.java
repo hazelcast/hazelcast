@@ -16,6 +16,7 @@
 
 package com.hazelcast.partition.strategy;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
@@ -40,25 +41,26 @@ public class AttributePartitioningStrategy implements PartitioningStrategy {
 
     @Override
     public Object getPartitionKey(final Object key) {
+        final Object result;
         if (key instanceof PartitionAware) {
             // PA does not currently support attribute extraction, fall back to default partition calculation
-            return null;
+            result = null;
+        } else if (key instanceof InternalGenericRecord) {
+            result = extractFromGenericRecord((InternalGenericRecord) key);
+        } else if (key instanceof HazelcastJsonValue) {
+            result = extractFromJson(key);
+        } else if (key instanceof DataSerializable || key instanceof Serializable) {
+            result = extractFromPojo(key);
+        } else {
+            // non-serializable POJOs
+            result = null;
         }
 
-        if (key instanceof InternalGenericRecord) {
-            return extractFromGenericRecord((InternalGenericRecord) key);
+        if (result == null) {
+            throw new HazelcastException("Failed to extract partition key attributes");
         }
 
-        if (key instanceof HazelcastJsonValue) {
-            return extractFromJson(key);
-        }
-
-        if (key instanceof DataSerializable || key instanceof Serializable) {
-            return extractFromPojo(key);
-        }
-
-        // fall back to default partition calculation for Portable and Compact POJOs
-        return null;
+        return result;
     }
 
     private Object[] extractFromPojo(final Object key) {
