@@ -18,35 +18,36 @@ package com.hazelcast.internal.serialization.impl;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataInputStream;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataOutputStream;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationClassNameFilter;
+import com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.JavaSerializer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.VersionedPortable;
+import com.hazelcast.nio.serialization.compatibility.CustomByteArraySerializer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.QuickTest;;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -109,13 +110,14 @@ public class SerializationUtilTest {
     }
 
     @Test
-    public void testGetInterfacesCalledVerified() {
-        SerializationUtil serializationUtil = mock(SerializationUtil.class);
-       // HashSet implements Set<E>, Cloneable, java.io.Serializable, hence using it for this test
-        Class type = HashSet.class;
-        final Set<Class> interfaces = new LinkedHashSet<Class>(5);
-        serializationUtil.getInterfaces(type, interfaces);
-        verify(serializationUtil, times(1)).getInterfaces(type, interfaces);
+    public void testCreateSerializerAdapter() {
+        ClassNameFilter classNameFilter = new SerializationClassNameFilter(new JavaSerializationFilterConfig());
+        // JavaSerializer is instance of StreamSerializer, hence using it as parameter
+        SerializerAdapter streamSerializerAdapter = SerializationUtil.createSerializerAdapter(new JavaSerializer(true, true, classNameFilter));
+        assertEquals(streamSerializerAdapter.getClass(), StreamSerializerAdapter.class);
+        // CustomByteArraySerializer is instance of ByteArraySerializer, hence using it as parameter
+        SerializerAdapter byteArraySerializerAdapter = SerializationUtil.createSerializerAdapter(new CustomByteArraySerializer());
+        assertEquals(byteArraySerializerAdapter.getClass(), ByteArraySerializerAdapter.class);
     }
 
     private byte[] serialize(Boolean b) throws IOException {
