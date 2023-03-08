@@ -65,7 +65,8 @@ public final class KafkaConnectSources {
      * resume the consumption from where it left off.
      * <p>
      * Hazelcast Jet will instantiate tasks on a random cluster member and use local parallelism for scaling.
-     * Scaling has to be enabled by setting `tasks.max` property. Default value for `tasks.max` is 1.
+     * Scaling has to be enabled by setting <code>tasks.max</code> property. Default value for <code>tasks.max</code> is 1.
+     * Be aware that effective parallelism will be calculated as <code>min(localParallelism, tasksMax)</code>
      *
      * @param properties Kafka connect properties
      * @return a source to use in {@link com.hazelcast.jet.pipeline.Pipeline#readFrom(StreamSource)}
