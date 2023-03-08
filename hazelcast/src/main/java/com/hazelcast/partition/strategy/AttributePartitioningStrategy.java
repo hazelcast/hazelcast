@@ -41,8 +41,8 @@ public class AttributePartitioningStrategy implements PartitioningStrategy<Objec
 
     @Override
     public Object getPartitionKey(final Object key) {
-        final Object result;
-        // TODO check whether Data can arrive here
+        final Object[] result;
+
         if (key instanceof InternalGenericRecord) {
             result = extractFromGenericRecord((InternalGenericRecord) key);
         } else if (key instanceof HazelcastJsonValue) {
@@ -53,7 +53,7 @@ public class AttributePartitioningStrategy implements PartitioningStrategy<Objec
             throw new HazelcastException("Cannot extract attributes from the key");
         }
 
-        return result;
+        return attributes.length == 1 ? result[0] : result;
     }
 
     @Nonnull

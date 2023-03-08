@@ -1494,8 +1494,8 @@ hazelcast:
     # In an actual config, only one of {partition-strategy, partition-attributes} should be present
     partition-strategy: "com.example.Strategy"
     partition-attributes:
-      - "attribute1"
-      - "attribute2"
+      - name: "attribute1"
+      - name: "attribute2"
   #
   # ===== HAZELCAST MULTIMAP CONFIGURATION =====
   #

@@ -1585,7 +1585,7 @@
             "type": "array",
             "description": "List of key attributes to use for partitioning the data in the maps. Providing this list automatically sets the strategy to `com.hazelcast.partition.strategy.AttributePartitioningStrategy` regardless of the class name provided in the `partition-strategy` property.",
             "items": {
-              "type": "string"
+              "$ref": "#/definitions/PartitionAttribute"
             },
             "minItems": 1
           }
@@ -5072,6 +5072,18 @@
         }
       },
       "description": "Socket configuration for Alto. In Alto, each eventloop has its own socket."
+    },
+    "PartitionAttribute": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ]
     }
   }
 }

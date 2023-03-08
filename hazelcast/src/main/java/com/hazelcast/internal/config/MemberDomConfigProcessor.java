@@ -3507,9 +3507,15 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handlePartitionAttributes(Node node, MapConfig mapConfig) {
         for (final Node childElement : childElements(node)) {
-            mapConfig.getPartitioningAttributeConfigs()
-                    .add(new PartitioningAttributeConfig(getTextContent(childElement)));
+            final PartitioningAttributeConfig attributeConfig = new PartitioningAttributeConfig();
+            handlePartitioningAttributeConfig(childElement, attributeConfig);
+
+            mapConfig.getPartitioningAttributeConfigs().add(attributeConfig);
         }
+    }
+
+    protected void handlePartitioningAttributeConfig(Node node, PartitioningAttributeConfig config) {
+        config.setAttributeName(getTextContent(node));
     }
 
     protected void fillClusterLoginConfig(AbstractClusterLoginConfig<?> config, Node node) {

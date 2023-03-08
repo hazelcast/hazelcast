@@ -4581,8 +4581,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  map:\n"
                 + "    test:\n"
                 + "      partition-attributes:\n"
-                + "        - attr1\n"
-                + "        - attr2\n";
+                + "        - name: attr1\n"
+                + "        - name: attr2\n";
 
         final MapConfig mapConfig = buildConfig(yaml).getMapConfig("test");
         assertThat(mapConfig.getPartitioningAttributeConfigs()).containsExactly(
