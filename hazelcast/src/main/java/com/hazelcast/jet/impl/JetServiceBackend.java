@@ -173,11 +173,11 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         config.addMapConfig(internalMapConfig)
                 .addMapConfig(resultsMapConfig)
                 .addMapConfig(metricsMapConfig)
-                .addMapConfig(initializeSqlCatalog());
+                .addMapConfig(createSqlCatalogConfig());
     }
 
     // visible for tests
-    static MapConfig initializeSqlCatalog() {
+    static MapConfig createSqlCatalogConfig() {
         // TODO HZ-1743 when implemented properly align this with the chosen
         //  approach that HZ-1743 follows
         return new MapConfig(SQL_CATALOG_MAP_NAME)
