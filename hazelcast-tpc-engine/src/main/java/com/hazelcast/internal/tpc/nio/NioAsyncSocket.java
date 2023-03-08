@@ -17,6 +17,7 @@
 package com.hazelcast.internal.tpc.nio;
 
 import com.hazelcast.internal.tpc.AsyncSocket;
+import com.hazelcast.internal.tpc.AsyncSocketMetrics;
 import com.hazelcast.internal.tpc.AsyncSocketOptions;
 import com.hazelcast.internal.tpc.ReadHandler;
 import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
@@ -339,6 +340,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     @SuppressWarnings("java:S125")
     private final class Handler implements NioHandler, Runnable {
         private final ByteBuffer receiveBuffer;
+        private final AsyncSocketMetrics metrics = NioAsyncSocket.this.metrics;
 
         private Handler(NioAsyncSocketBuilder builder) throws SocketException {
             int receiveBufferSize = builder.socketChannel.socket().getReceiveBufferSize();
@@ -390,7 +392,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         }
 
         private void handleRead() throws IOException {
-            readEvents.inc();
+            metrics.incReadEvents();
 
             int read = socketChannel.read(receiveBuffer);
             //System.out.println(NioAsyncSocket.this + " bytes read: " + read);
@@ -398,7 +400,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             if (read == -1) {
                 throw new EOFException("Remote socket closed!");
             } else {
-                bytesRead.inc(read);
+                metrics.incBytesRead(read);
                 upcast(receiveBuffer).flip();
                 readHandler.onRead(receiveBuffer);
                 compactOrClear(receiveBuffer);
@@ -408,7 +410,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         private void handleWrite() throws IOException {
             assert flushThread.get() != null;
 
-            writeEvents.inc();
+            metrics.incWriteEvents();
 
             ioVector.populate(writeQueue);
 
@@ -420,7 +422,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
             ioVector.compact(written);
 
-            bytesWritten.inc(written);
+            metrics.incBytesWritten(written);
             //System.out.println(NioAsyncSocket.this + " bytes written:" + written);
 
             if (ioVector.isEmpty()) {

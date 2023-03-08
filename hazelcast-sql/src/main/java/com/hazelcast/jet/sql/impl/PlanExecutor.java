@@ -101,6 +101,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -129,6 +130,9 @@ public class PlanExecutor {
     private final DataLinksResolver dataLinksCatalog;
     private final HazelcastInstance hazelcastInstance;
     private final QueryResultRegistry resultRegistry;
+
+    // test-only
+    private final AtomicLong directIMapQueriesExecuted = new AtomicLong();
 
     public PlanExecutor(
             TableResolverImpl catalog,
@@ -453,7 +457,16 @@ public class PlanExecutor {
         StaticQueryResultProducerImpl resultProducer = row != null
                 ? new StaticQueryResultProducerImpl(row)
                 : new StaticQueryResultProducerImpl(emptyIterator());
-        return new SqlResultImpl(queryId, resultProducer, plan.rowMetadata(), false);
+
+        directIMapQueriesExecuted.getAndIncrement();
+
+        return new SqlResultImpl(
+                queryId,
+                resultProducer,
+                plan.rowMetadata(),
+                false,
+                plan.keyConditionParamIndex()
+        );
     }
 
     SqlResult execute(IMapInsertPlan plan, List<Object> arguments, long timeout) {
@@ -471,7 +484,10 @@ public class PlanExecutor {
                 throw QueryException.error("Duplicate key");
             }
         }
-        return UpdateSqlResultImpl.createUpdateCountResult(0);
+
+        directIMapQueriesExecuted.getAndIncrement();
+
+        return UpdateSqlResultImpl.createUpdateCountResult(0, plan.keyParamIndex());
     }
 
     SqlResult execute(IMapSinkPlan plan, List<Object> arguments, long timeout) {
@@ -493,7 +509,8 @@ public class PlanExecutor {
                 .submitToKey(key, plan.updaterSupplier().get(arguments))
                 .toCompletableFuture();
         await(future, timeout);
-        return UpdateSqlResultImpl.createUpdateCountResult(0);
+        directIMapQueriesExecuted.getAndIncrement();
+        return UpdateSqlResultImpl.createUpdateCountResult(0, plan.keyConditionParamIndex());
     }
 
     SqlResult execute(IMapDeletePlan plan, List<Object> arguments, long timeout) {
@@ -504,7 +521,10 @@ public class PlanExecutor {
                 .submitToKey(key, EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR)
                 .toCompletableFuture();
         await(future, timeout);
-        return UpdateSqlResultImpl.createUpdateCountResult(0);
+
+        directIMapQueriesExecuted.getAndIncrement();
+
+        return UpdateSqlResultImpl.createUpdateCountResult(0, plan.keyConditionParamIndex());
     }
 
     SqlResult execute(CreateTypePlan plan) {
@@ -660,5 +680,9 @@ public class PlanExecutor {
         MapService mapService = mapProxy.getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         return mapServiceContext.getMapContainer(map.getName());
+    }
+
+    public long getDirectIMapQueriesExecuted() {
+        return directIMapQueriesExecuted.get();
     }
 }
