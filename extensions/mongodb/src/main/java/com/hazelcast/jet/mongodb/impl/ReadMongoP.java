@@ -144,7 +144,18 @@ public class ReadMongoP<I> extends AbstractProcessor {
     @Override
     public void close() {
         if (reader != null) {
-            reader.close();
+            try {
+                reader.close();
+            } catch (Throwable e) {
+                logger.severe("Error while closing MongoDB connection", e);
+            }
+        }
+        if (connection != null) {
+            try {
+                connection.close();
+            } catch (Throwable e) {
+                logger.severe("Error while closing MongoDB connection", e);
+            }
         }
     }
 
@@ -205,7 +216,6 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
     private abstract class MongoChunkedReader {
 
-        protected MongoClient mongoClient;
         protected MongoDatabase database;
         protected MongoCollection<Document> collection;
         private final String databaseName;
@@ -251,9 +261,6 @@ public class ReadMongoP<I> extends AbstractProcessor {
         abstract void restore(Object value);
 
         void close() {
-            if (mongoClient != null) {
-                mongoClient.close();
-            }
         }
 
         abstract boolean everCompletes();
