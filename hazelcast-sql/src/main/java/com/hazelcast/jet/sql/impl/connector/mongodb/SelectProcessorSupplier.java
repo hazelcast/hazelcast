@@ -123,7 +123,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
                             .setCollectionName(collectionName)
                             .setMapItemFn(this::convertDocToRow)
                             .setMapStreamFn(this::convertStreamDocToRow)
-                            .setStartAtTimestamp(new BsonTimestamp(startAt))
+                            .setStartAtTimestamp(startAt == null ? null : new BsonTimestamp(startAt))
                             .setEventTimePolicy(eventTimePolicy)
             );
 
