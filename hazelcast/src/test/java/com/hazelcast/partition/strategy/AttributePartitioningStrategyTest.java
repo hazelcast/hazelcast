@@ -134,7 +134,7 @@ public class AttributePartitioningStrategyTest {
     private void checkFailure(final Object obj) {
         assertThatThrownBy(() -> strategy.getPartitionKey(obj))
                 .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Failed to extract partition key attributes");
+                .hasMessageMatching("Cannot extract '?\\w+'? from the key");
     }
 
     public static class RegularPojo implements Serializable {

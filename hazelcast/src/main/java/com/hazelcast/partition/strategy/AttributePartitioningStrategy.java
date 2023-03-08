@@ -50,7 +50,7 @@ public class AttributePartitioningStrategy implements PartitioningStrategy<Objec
         } else if (key instanceof DataSerializable || key instanceof Serializable) {
             result = extractFromPojo(key);
         } else {
-            throw new HazelcastException("Unsupported key used with attribute partition strategy");
+            throw new HazelcastException("Cannot extract attributes from the key");
         }
 
         return result;
@@ -105,7 +105,7 @@ public class AttributePartitioningStrategy implements PartitioningStrategy<Objec
 
     private static void checkNull(Object extracted, String attributeName) {
         if (extracted == null) {
-            throw new IllegalArgumentException("Cannot extract '" + attributeName + "' from the key");
+            throw new HazelcastException("Cannot extract '" + attributeName + "' from the key");
         }
     }
 }
