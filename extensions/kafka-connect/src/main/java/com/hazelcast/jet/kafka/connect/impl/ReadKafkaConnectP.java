@@ -47,7 +47,6 @@ public class ReadKafkaConnectP extends AbstractProcessor {
         this.connectorWrapper = connectorWrapper;
         this.eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
         eventTimeMapper.addPartitions(1);
-
     }
 
     @Override
