@@ -98,7 +98,9 @@ public final class KafkaConnectSources {
 
                             @Override
                             public void close(@Nullable Throwable error) {
-                                connectorWrapper.stop();
+                                if (connectorWrapper != null) {
+                                    connectorWrapper.stop();
+                                }
                             }
 
                             @Nonnull
