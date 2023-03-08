@@ -53,10 +53,6 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
     private final String idField;
 
     InsertProcessorSupplier(MongoTable table, WriteMode writeMode) {
-        this(table, writeMode, "_id");
-    }
-
-    InsertProcessorSupplier(MongoTable table, WriteMode writeMode, String idField) {
         this.connectionString = table.connectionString;
         this.databaseName = table.databaseName;
         this.dataLinkName = table.dataLinkName;
@@ -64,7 +60,7 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
         this.paths = table.externalNames();
         this.types = table.fieldTypes();
         this.writeMode = writeMode;
-        this.idField = idField;
+        this.idField = table.primaryKeyExternalName();
     }
 
     @Override
