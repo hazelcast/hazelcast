@@ -87,15 +87,25 @@ public class JobUploadStatus {
     }
 
     /**
-     * Called when this object is removed from JobUploadStore
+     * Called when this object is removed from JobUploadStore because of an exception or expiration
      */
-    public void onRemove() {
-        try {
-            if (jobMetaDataParameterObject.getJarPath() != null) {
-                Files.delete(jobMetaDataParameterObject.getJarPath());
+    public void removeBadSession() {
+        cleanup(jobMetaDataParameterObject);
+    }
+
+    /**
+     * Perform cleaning of the JobMetaDataParameterObject
+     */
+    public static void cleanup(JobMetaDataParameterObject jobMetaDataParameterObject) {
+        if (jobMetaDataParameterObject.isJobUpload()) {
+            Path jarPath = jobMetaDataParameterObject.getJarPath();
+            if (jarPath != null) {
+                try {
+                    Files.delete(jarPath);
+                } catch (IOException exception) {
+                    LOGGER.severe("Could not delete the jar : " + jarPath, exception);
+                }
             }
-        } catch (IOException exception) {
-            LOGGER.severe("Error while deleting file : " + jobMetaDataParameterObject.getJarPath(), exception);
         }
     }
 

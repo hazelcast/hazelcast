@@ -512,8 +512,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
             // Rethrow the exception back to client to notify  that job did not run
             throwJetExceptionFromJobMetaData(jobMetaDataParameterObject, exception);
         } finally {
-            // We are done with the jar.
-            jobMetaDataParameterObject.afterExecution();
+            JobUploadStatus.cleanup(jobMetaDataParameterObject);
         }
     }
 

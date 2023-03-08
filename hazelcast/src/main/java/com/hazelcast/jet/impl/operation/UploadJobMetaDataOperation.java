@@ -68,8 +68,6 @@ public class UploadJobMetaDataOperation extends Operation implements IdentifiedD
     }
 
     private void runDirectJobExecution() {
-        // The jar should not be deleted, because we are directly executing it
-        jobMetaDataParameterObject.setDeleteJarAfterExecution(false);
         // JarPath is not the temp directory. It is the given file name
         jobMetaDataParameterObject.setJarPath(Paths.get(jobMetaDataParameterObject.getFileName()));
 
@@ -78,9 +76,6 @@ public class UploadJobMetaDataOperation extends Operation implements IdentifiedD
     }
 
     private void runUpload() {
-        // The jar should be deleted, because we are uploading it
-        jobMetaDataParameterObject.setDeleteJarAfterExecution(true);
-
         JetServiceBackend jetServiceBackend = getJetServiceBackend();
         jetServiceBackend.storeJobMetaData(jobMetaDataParameterObject);
     }

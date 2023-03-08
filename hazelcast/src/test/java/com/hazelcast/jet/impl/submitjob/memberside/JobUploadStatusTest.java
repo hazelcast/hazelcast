@@ -73,12 +73,13 @@ public class JobUploadStatusTest {
     }
 
     @Test
-    public void testOnRemove() throws Exception {
+    public void testRemoveBadSession() throws Exception {
         Path jarPath = Files.createTempFile("runjob", ".jar");
         assertTrue(Files.exists(jarPath));
         when(jobMetaDataParameterObject.getJarPath()).thenReturn(jarPath);
+        when(jobMetaDataParameterObject.isJobUpload()).thenReturn(true);
 
-        jobUploadStatus.onRemove();
+        jobUploadStatus.removeBadSession();
 
         assertFalse(Files.exists(jarPath));
     }

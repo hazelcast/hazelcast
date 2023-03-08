@@ -16,11 +16,6 @@
 
 package com.hazelcast.jet.impl.submitjob.memberside;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
@@ -30,13 +25,9 @@ import java.util.UUID;
  */
 public class JobMetaDataParameterObject {
 
-    private static final ILogger LOGGER = Logger.getLogger(JobMetaDataParameterObject.class);
-
     private UUID sessionId;
 
     private boolean directJobExecution;
-
-    private boolean deleteJarAfterExecution;
 
     private String sha256Hex;
 
@@ -64,18 +55,12 @@ public class JobMetaDataParameterObject {
         return directJobExecution;
     }
 
+    public boolean isJobUpload() {
+        return !directJobExecution;
+    }
+
     public void setDirectJobExecution(boolean directJobExecution) {
         this.directJobExecution = directJobExecution;
-    }
-
-    public void setDeleteJarAfterExecution(boolean deleteJarAfterExecution) {
-        this.deleteJarAfterExecution = deleteJarAfterExecution;
-    }
-
-    public void afterExecution() {
-        if (deleteJarAfterExecution) {
-            deleteJar();
-        }
     }
 
     public String getSha256Hex() {
@@ -134,19 +119,12 @@ public class JobMetaDataParameterObject {
         this.jarPath = jarPath;
     }
 
-    private void deleteJar() {
-        try {
-            Files.delete(jarPath);
-        } catch (IOException exception) {
-            LOGGER.severe("Could not delete the jar : " + jarPath, exception);
-        }
-    }
-
     // Not all parameters need to be exposed
     // Convert only parameters that should be with an exception
     public String exceptionString() {
-        return "SubmittedParameters{" +
-               "fileName='" + fileName + '\'' +
+        return "JobMetaDataParameterObject{" +
+               "directJobExecution='" + directJobExecution + '\'' +
+               ", fileName='" + fileName + '\'' +
                ", snapshotName='" + snapshotName + '\'' +
                ", jobName='" + jobName + '\'' +
                ", mainClass='" + mainClass + '\'' +
