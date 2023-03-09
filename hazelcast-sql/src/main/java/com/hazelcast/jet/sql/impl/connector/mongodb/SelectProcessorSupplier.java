@@ -21,7 +21,6 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.mongodb.datalink.MongoDataLink;
 import com.hazelcast.jet.mongodb.impl.ReadMongoP;
 import com.hazelcast.jet.mongodb.impl.ReadMongoParams;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -42,6 +41,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.JSON;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.project;
@@ -98,10 +98,6 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
     public void init(@Nonnull Context context) {
         if (connectionString != null) {
             clientSupplier = () -> MongoClients.create(connectionString);
-        } else if (dataLinkName != null) {
-            MongoDataLink link = context.dataLinkService().getAndRetainDataLink(dataLinkName,
-                    MongoDataLink.class);
-            clientSupplier = link::getClient;
         }
         evalContext = ExpressionEvalContext.from(context);
     }
@@ -132,6 +128,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
             Processor processor = new ReadMongoP<>(
                     new ReadMongoParams<JetSqlRow>(stream)
                             .setClientSupplier(clientSupplierEx)
+                            .setDataLinkRef(dataLinkRef(dataLinkName))
                             .setAggregates(aggregates)
                             .setDatabaseName(databaseName)
                             .setCollectionName(collectionName)

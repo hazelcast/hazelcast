@@ -103,15 +103,15 @@ public class MongoDataLink extends DataLinkBase {
     @Override
     public List<DataLinkResource> listResources() {
         List<DataLinkResource> resources = new ArrayList<>();
-        MongoClient client = getClient();
-
-        if (databaseName != null) {
-            MongoDatabase mongoDatabase = client.getDatabase(databaseName);
-            addResources(resources, mongoDatabase);
-        } else {
-            for (String databaseName : client.listDatabaseNames()) {
-                MongoDatabase database = client.getDatabase(databaseName);
-                addResources(resources, database);
+        try (MongoClient client = getClient()) {
+            if (databaseName != null) {
+                MongoDatabase mongoDatabase = client.getDatabase(databaseName);
+                addResources(resources, mongoDatabase);
+            } else {
+                for (String databaseName : client.listDatabaseNames()) {
+                    MongoDatabase database = client.getDatabase(databaseName);
+                    addResources(resources, database);
+                }
             }
         }
         return resources;

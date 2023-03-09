@@ -56,6 +56,7 @@ class MongoConnection implements Closeable {
     private final ILogger logger = Logger.getLogger(MongoConnection.class);
 
     private MongoClient mongoClient;
+    private MongoDataLink dataLink;
 
     MongoConnection(SupplierEx<? extends MongoClient> clientSupplier, DataLinkRef dataLinkRef,
                     Consumer<MongoClient> afterConnection) {
@@ -117,6 +118,9 @@ class MongoConnection implements Closeable {
             mongoClient.close();
             mongoClient = null;
         }
+        if (dataLink != null) {
+            dataLink.release();
+        }
     }
 
     /**
@@ -125,9 +129,8 @@ class MongoConnection implements Closeable {
      */
     public void assembleSupplier(NodeEngineImpl nodeEngine) {
         if (dataLinkRef != null) {
-            MongoDataLink link =
-                    nodeEngine.getDataLinkService().getAndRetainDataLink(dataLinkRef.getName(), MongoDataLink.class);
-            clientSupplier = link::getClient;
+            dataLink = nodeEngine.getDataLinkService().getAndRetainDataLink(dataLinkRef.getName(), MongoDataLink.class);
+            clientSupplier = dataLink::getClient;
         }
     }
 }

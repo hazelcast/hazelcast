@@ -19,7 +19,6 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.mongodb.WriteMode;
-import com.hazelcast.jet.mongodb.datalink.MongoDataLink;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -42,6 +41,7 @@ import java.util.List;
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_COMMIT_RETRY_STRATEGY;
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_TRANSACTION_OPTION;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
+import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.wrap;
 import static java.util.Arrays.asList;
 
@@ -77,10 +77,6 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     public void init(@Nonnull Context context) throws Exception {
         if (connectionString != null) {
             clientSupplier = () -> MongoClients.create(connectionString);
-        } else if (dataLinkName != null) {
-            MongoDataLink link = context.dataLinkService().getAndRetainDataLink(dataLinkName,
-                    MongoDataLink.class);
-            clientSupplier = link::getClient;
         }
         evalContext = ExpressionEvalContext.from(context);
     }
@@ -95,6 +91,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
             Processor processor = new WriteMongoP<>(
                     new WriteMongoParams<Document>()
                             .setClientSupplier(clientSupplier)
+                            .setDataLinkRef(dataLinkRef(dataLinkName))
                             .setDatabaseName(databaseName)
                             .setCollectionName(collectionName)
                             .setDocumentType(Document.class)
