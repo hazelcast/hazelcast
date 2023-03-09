@@ -42,7 +42,6 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Observable;
-import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
@@ -670,11 +669,6 @@ public final class HazelcastBootstrap {
         @Override
         public Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
             return addToSubmittedJobs(jet.newJobIfAbsent(pipeline, updateJobConfig(config)));
-        }
-
-        @Override
-        public void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
-            jet.submitJobFromJar(submitJobParameters);
         }
 
         @Nonnull

@@ -15,3 +15,4 @@
 #
 
 com.hazelcast.datalink.impl.JdbcDataLinkRegistration
+com.hazelcast.datalink.impl.HazelcastDataLinkRegistration

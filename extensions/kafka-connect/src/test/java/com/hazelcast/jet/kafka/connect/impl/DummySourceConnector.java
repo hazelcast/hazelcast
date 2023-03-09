@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.kafka.connect.impl;
 
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.ConnectorContext;
 import org.apache.kafka.connect.connector.Task;
@@ -65,7 +66,9 @@ public final class DummySourceConnector extends SourceConnector {
     public List<Map<String, String>> taskConfigs(int maxTasks) {
         List<Map<String, String>> configs = new ArrayList<>();
         for (int i = 0; i < maxTasks; i++) {
-            configs.add(new HashMap<>(properties));
+            HashMap<String, String> taskConfig = new HashMap<>(properties);
+            taskConfig.put("task.id", String.valueOf(i));
+            configs.add(taskConfig);
         }
         return configs;
     }
@@ -97,6 +100,10 @@ public final class DummySourceConnector extends SourceConnector {
         properties.put(key, value);
     }
 
+    public void triggerReconfiguration() {
+        context.requestTaskReconfiguration();
+    }
+
     public static final class DummyTask extends SourceTask {
         static DummyTask INSTANCE;
 
@@ -108,11 +115,14 @@ public final class DummySourceConnector extends SourceConnector {
         private final AtomicInteger counter = new AtomicInteger();
 
         private boolean initialized;
+        private boolean wasCommit;
 
         static {
             SOURCE_PARTITION = new HashMap<>();
             SOURCE_PARTITION.put("sourcePartition", 1);
         }
+
+        private List<SourceRecord> committedRecords = new ArrayList<>();
 
         public DummyTask() {
             super();
@@ -151,13 +161,13 @@ public final class DummySourceConnector extends SourceConnector {
             List<SourceRecord> sourceRecords = new ArrayList<>();
 
             for (int i = 0; i < size; i++) {
-                sourceRecords.add(newIntegerRecord(counter.getAndIncrement()));
+                sourceRecords.add(dummyRecord(counter.getAndIncrement()));
             }
             return sourceRecords;
         }
 
         @Nonnull
-        private SourceRecord newIntegerRecord(int value) {
+        static SourceRecord dummyRecord(int value) {
             Map<String, Object> sourceOffset = offset(value);
             return new SourceRecord(SOURCE_PARTITION, sourceOffset, "topic", 1, Schema.INT32_SCHEMA, value);
         }
@@ -184,6 +194,24 @@ public final class DummySourceConnector extends SourceConnector {
 
         public boolean isInitialized() {
             return initialized;
+        }
+
+        @Override
+        public void commit() {
+            wasCommit = true;
+        }
+
+        @Override
+        public void commitRecord(SourceRecord rec, RecordMetadata metadata) {
+            committedRecords.add(rec);
+        }
+
+        public boolean recordCommitted(SourceRecord rec) {
+            return committedRecords.contains(rec);
+        }
+
+        public boolean wasCommit() {
+            return wasCommit;
         }
     }
 }

@@ -37,7 +37,7 @@ public class JetUploadJobMultipartTask extends
     protected JetUploadJobMultipartTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection,
                 JetUploadJobMultipartCodec::decodeRequest,
-                JetUploadJobMultipartCodec::encodeResponse);
+                encoder -> JetUploadJobMultipartCodec.encodeResponse());
     }
 
     @Override

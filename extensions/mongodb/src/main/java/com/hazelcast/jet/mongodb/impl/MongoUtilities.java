@@ -19,6 +19,7 @@ import com.mongodb.client.model.Field;
 import com.mongodb.client.model.Filters;
 import org.bson.BsonArray;
 import org.bson.BsonString;
+import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -30,8 +31,9 @@ import static com.mongodb.client.model.Aggregates.addFields;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.unset;
 import static java.util.Collections.singletonList;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-final class MongoUtilities {
+public final class MongoUtilities {
 
     private MongoUtilities() {
     }
@@ -86,4 +88,10 @@ final class MongoUtilities {
         return aggregateList;
     }
 
+    /**
+     * Converts given time in millisecond of unix epoch to BsonTimestamp.
+     */
+    public static BsonTimestamp bsonTimestampFromTimeMillis(long time) {
+        return new BsonTimestamp((int) MILLISECONDS.toSeconds(time), 0);
+    }
 }
