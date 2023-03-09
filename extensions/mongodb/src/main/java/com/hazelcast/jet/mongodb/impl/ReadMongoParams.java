@@ -18,6 +18,7 @@ package com.hazelcast.jet.mongodb.impl;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import org.bson.BsonTimestamp;
@@ -29,12 +30,14 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
 public class ReadMongoParams<I> implements Serializable {
     final boolean stream;
     SupplierEx<? extends MongoClient> clientSupplier;
+    DataLinkRef dataLinkRef;
     List<Bson> aggregates = new ArrayList<>();
     String databaseName;
     String collectionName;
@@ -52,6 +55,14 @@ public class ReadMongoParams<I> implements Serializable {
         return stream;
     }
 
+    public void checkConnectivityOptionsValid() {
+        boolean hasLink = dataLinkRef != null;
+        boolean hasClientSupplier = clientSupplier != null;
+        checkState(hasLink || hasClientSupplier, "Client supplier or data link ref should be provided");
+        checkState(hasLink != hasClientSupplier, "Only one of two should be provided: " +
+                "Client supplier or data link ref");
+    }
+
     @Nonnull
     public SupplierEx<? extends MongoClient> getClientSupplier() {
         return clientSupplier;
@@ -59,6 +70,15 @@ public class ReadMongoParams<I> implements Serializable {
 
     public ReadMongoParams<I> setClientSupplier(@Nonnull SupplierEx<? extends MongoClient> clientSupplier) {
         this.clientSupplier = clientSupplier;
+        return this;
+    }
+
+    public DataLinkRef getDataLinkRef() {
+        return dataLinkRef;
+    }
+
+    public ReadMongoParams<I> setDataLinkRef(DataLinkRef dataLinkRef) {
+        this.dataLinkRef = dataLinkRef;
         return this;
     }
 

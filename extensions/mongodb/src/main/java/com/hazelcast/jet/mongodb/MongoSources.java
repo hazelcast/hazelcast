@@ -20,6 +20,7 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.mongodb.MongoSourceBuilder.Batch;
 import com.hazelcast.jet.mongodb.MongoSourceBuilder.Stream;
 import com.hazelcast.jet.pipeline.BatchSource;
+import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.client.MongoClient;
@@ -71,6 +72,34 @@ public final class MongoSources {
             @Nonnull String name,
             @Nonnull SupplierEx<? extends MongoClient> clientSupplier) {
         return MongoSourceBuilder.batch(name, clientSupplier);
+    }
+
+    /**
+     * Creates as builder for new batch mongo source. Equivalent to calling {@link MongoSourceBuilder#batch}.
+     * <p>
+     * Example usage:
+     * <pre>{@code
+     * BatchSource<Document> batchSource =
+     *         MongoSources.batch("batch-source", dataLinkRef("mongo"))
+     *                 .into("myDatabase", "myCollection")
+     *                 .filter(new Document("age", new Document("$gt", 10)),
+     *                 .projection(new Document("age", 1))
+     *         );
+     * Pipeline p = Pipeline.create();
+     * BatchStage<Document> srcStage = p.readFrom(batchSource);
+     * }</pre>
+     *
+     * @since 5.3
+     * @param name descriptive name for the source (diagnostic purposes) client.
+     * @param dataLinkRef a reference to mongo data link
+     * @return Batch Mongo source builder
+     */
+    @Beta
+    @Nonnull
+    public static MongoSourceBuilder.Batch<Document> batch(
+            @Nonnull String name,
+            @Nonnull DataLinkRef dataLinkRef) {
+        return MongoSourceBuilder.batch(name, dataLinkRef);
     }
 
     /**

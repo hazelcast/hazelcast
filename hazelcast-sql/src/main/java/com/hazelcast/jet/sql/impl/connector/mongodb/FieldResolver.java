@@ -16,6 +16,7 @@
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.hazelcast.jet.mongodb.datalink.MongoDataLink;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.MappingField;
@@ -209,8 +210,10 @@ class FieldResolver {
 
     private MongoClient connect(Map<String, String> options) {
         if (options.containsKey(DATA_LINK_REF_OPTION)) {
-            // todo: external data source support
-            throw new UnsupportedOperationException("not yet supported");
+            MongoDataLink link = nodeEngine.getDataLinkService().getAndRetainDataLink(
+                    options.get(DATA_LINK_REF_OPTION),
+                    MongoDataLink.class);
+            return link.getClient();
         } else {
             String connectionString = requireNonNull(options.get(CONNECTION_STRING_OPTION),
                     "Cannot connect to MongoDB, connectionString was not provided");

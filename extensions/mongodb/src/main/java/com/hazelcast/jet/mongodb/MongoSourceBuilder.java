@@ -22,6 +22,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.mongodb.impl.ReadMongoP;
 import com.hazelcast.jet.mongodb.impl.ReadMongoParams;
 import com.hazelcast.jet.pipeline.BatchSource;
+import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.spi.annotation.Beta;
@@ -62,9 +63,6 @@ public final class MongoSourceBuilder {
      * Returns a builder object that offers a step-by-step fluent API to build
      * a custom MongoDB {@link BatchSource} for the Pipeline API.
      * <p>
-     * The created source will not be distributed, a single processor instance
-     * will be created on an arbitrary member.
-     * <p>
      * Here's an example that builds a simple source which queries all the
      * documents in a collection and emits the items as a string by transforming
      * each item to json.
@@ -78,6 +76,25 @@ public final class MongoSourceBuilder {
             @Nonnull SupplierEx<? extends MongoClient> clientSupplier
     ) {
         return new Batch<>(name, clientSupplier);
+    }
+
+    /**
+     * Returns a builder object that offers a step-by-step fluent API to build
+     * a custom MongoDB {@link BatchSource} for the Pipeline API.
+     * <p>
+     * Here's an example that builds a simple source which queries all the
+     * documents in a collection and emits the items as a string by transforming
+     * each item to json.
+     *
+     * @param name               a descriptive name for the source (diagnostic purposes)
+     * @param dataLinkRef a link to some mongo data link
+     */
+    @Nonnull
+    public static MongoSourceBuilder.Batch<Document> batch(
+            @Nonnull String name,
+            @Nonnull DataLinkRef dataLinkRef
+            ) {
+        return new Batch<>(name, dataLinkRef);
     }
 
     /**
@@ -98,6 +115,24 @@ public final class MongoSourceBuilder {
             @Nonnull SupplierEx<? extends MongoClient> clientSupplier
     ) {
         return new Stream<>(name, clientSupplier);
+    }
+
+    /**
+     * Returns a builder object that offers a step-by-step fluent API to build
+     * a custom MongoDB {@link StreamSource} for the Pipeline API.
+     * <p>
+     * The source provides native timestamps using {@link ChangeStreamDocument#getWallTime()} and fault
+     * tolerance using {@link ChangeStreamDocument#getResumeToken()}.
+     *
+     * @param name               a descriptive name for the source (diagnostic purposes)
+     * @param dataLinkRef a link to some mongo data link
+     */
+    @Nonnull
+    public static MongoSourceBuilder.Stream<Document> stream(
+            @Nonnull String name,
+            @Nonnull DataLinkRef dataLinkRef
+    ) {
+        return new Stream<>(name, dataLinkRef);
     }
 
     private abstract static class Base<T> {
@@ -137,6 +172,18 @@ public final class MongoSourceBuilder {
             this.params = new ReadMongoParams<>(false);
             params
                     .setClientSupplier(clientSupplier)
+                    .setMapItemFn((FunctionEx<Document, T>) toClass(Document.class));
+        }
+        @SuppressWarnings("unchecked")
+        private Batch(
+                @Nonnull String name,
+                @Nonnull DataLinkRef dataLinkRef
+        ) {
+            checkSerializable(dataLinkRef, "clientSupplier");
+            this.name = name;
+            this.params = new ReadMongoParams<>(false);
+            params
+                    .setDataLinkRef(dataLinkRef)
                     .setMapItemFn((FunctionEx<Document, T>) toClass(Document.class));
         }
 
@@ -282,7 +329,7 @@ public final class MongoSourceBuilder {
          */
         @Nonnull
         public BatchSource<T> build() {
-            checkNotNull(params.getClientSupplier(), "clientSupplier must be set");
+            params.checkConnectivityOptionsValid();
             checkNotNull(params.getMapItemFn(), "mapFn must be set");
 
             final ReadMongoParams<T> localParams = params;
@@ -308,6 +355,17 @@ public final class MongoSourceBuilder {
             this.name = name;
             this.params = new ReadMongoParams<>(true);
             this.params.setClientSupplier(clientSupplier);
+            this.params.setMapStreamFn((FunctionEx<ChangeStreamDocument<Document>, T>) streamToClass(Document.class));
+        }
+        @SuppressWarnings("unchecked")
+        private Stream(
+                @Nonnull String name,
+                @Nonnull DataLinkRef dataLinkRef
+        ) {
+            checkSerializable(dataLinkRef, "dataLinkRef");
+            this.name = name;
+            this.params = new ReadMongoParams<>(true);
+            this.params.setDataLinkRef(dataLinkRef);
             this.params.setMapStreamFn((FunctionEx<ChangeStreamDocument<Document>, T>) streamToClass(Document.class));
         }
 
@@ -451,7 +509,7 @@ public final class MongoSourceBuilder {
          */
         @Nonnull
         public StreamSource<T> build() {
-            checkNotNull(params.getClientSupplier(), "clientSupplier must be set");
+            params.checkConnectivityOptionsValid();
             checkNotNull(params.getMapStreamFn(), "mapFn must be set");
 
             final ReadMongoParams<T> localParams = params;
