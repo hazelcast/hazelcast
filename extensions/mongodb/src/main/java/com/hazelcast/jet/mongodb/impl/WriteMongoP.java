@@ -58,6 +58,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.Util.idToString;
@@ -317,16 +318,8 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
 
     @Override
     public void close() {
-        try {
-            connection.close();
-        } catch (Throwable e) {
-            logger.severe("Error while closing MongoDB connection", e);
-        }
-        try {
-            transactionUtility.close();
-        } catch (Throwable e) {
-            logger.severe("Error while closing MongoDB transaction utility", e);
-        }
+        closeResource(transactionUtility);
+        closeResource(connection);
     }
 
     @Override

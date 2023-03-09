@@ -91,16 +91,16 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                              @Nonnull List<MappingField> resolvedFields) {
         FieldResolver fieldResolver = new FieldResolver(nodeEngine);
         String databaseName = Options.getDatabaseName(nodeEngine, options);
-        String pkName = Options.getPkColumn(options, isStream());
         ConstantTableStatistics stats = new ConstantTableStatistics(0);
 
         List<TableField> fields = new ArrayList<>(resolvedFields.size());
         boolean containsId = false;
+        boolean isStreaming = isStream();
         for (MappingField resolvedField : resolvedFields) {
-            String externalNameFromName = (isStream() ? "fullDocument." : "") + resolvedField.name();
+            String externalNameFromName = (isStreaming ? "fullDocument." : "") + resolvedField.name();
             String fieldExternalName = firstNonNull(resolvedField.externalName(), externalNameFromName);
 
-            if (fieldResolver.isId(fieldExternalName, isStream())) {
+            if (fieldResolver.isId(fieldExternalName, isStreaming)) {
                 containsId = true;
             }
             fields.add(new MongoTableField(
@@ -111,11 +111,11 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                     resolvedField.isPrimaryKey()));
         }
 
-        if (isStream() && !containsId) {
+        if (isStreaming && !containsId) {
             fields.add(0, new MongoTableField("fullDocument._id", OBJECT, "fullDocument._id", true, true));
         }
         return new MongoTable(schemaName, mappingName, databaseName, collectionName, options, this,
-                fields, stats, isStream());
+                fields, stats, isStreaming);
     }
 
     @Override

@@ -49,7 +49,7 @@ final class Options {
         }
     }
 
-    public static String getDatabaseName(NodeEngine nodeEngine, Map<String, String> options) {
+    static String getDatabaseName(NodeEngine nodeEngine, Map<String, String> options) {
         String name = options.get(Options.DATABASE_NAME_OPTION);
         if (name != null) {
             return name;
@@ -61,12 +61,12 @@ final class Options {
         throw new IllegalArgumentException(DATABASE_NAME_OPTION + " must be provided in the mapping or data link.");
     }
 
-    public static String getPkColumn(Map<String, String> options, boolean isStreaming) {
+    static String getPkColumn(Map<String, String> options, boolean isStreaming) {
         String defaultValue = isStreaming ? "fullDocument._id" : "_id";
         return options.getOrDefault(Options.PK_COLUMN, defaultValue);
     }
 
-    public static Predicate<MappingField> getPkColumnChecker(Map<String, String> options, boolean isStreaming) {
+    static Predicate<MappingField> getPkColumnChecker(Map<String, String> options, boolean isStreaming) {
         boolean nonDefault = options.containsKey(PK_COLUMN);
 
         String defaultIdName = isStreaming ? "fullDocument._id" : "_id";

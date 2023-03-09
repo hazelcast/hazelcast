@@ -50,7 +50,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
  * @param <RES> type of the transactional resource
  */
 public abstract class TwoPhaseSnapshotCommitUtility<TXN_ID extends TransactionId,
-        RES extends TransactionalResource<TXN_ID>> {
+        RES extends TransactionalResource<TXN_ID>> implements AutoCloseable {
 
     private final boolean isSource;
     private final Outbox outbox;
