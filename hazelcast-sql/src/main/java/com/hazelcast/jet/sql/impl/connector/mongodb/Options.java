@@ -58,7 +58,7 @@ final class Options {
             MongoDataLink link =
                     nodeEngine.getDataLinkService().getAndRetainDataLink(options.get(DATA_LINK_REF_OPTION), MongoDataLink.class);
             try {
-                name = link.options().get(DATABASE_NAME_OPTION);
+                name = link.getDatabaseName();
                 if (name != null) {
                     return name;
                 }

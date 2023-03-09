@@ -18,6 +18,7 @@ package com.hazelcast.jet.mongodb.datalink;
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.datalink.DataLinkBase;
 import com.hazelcast.datalink.DataLinkResource;
+import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
@@ -37,19 +38,31 @@ import static com.hazelcast.internal.util.Preconditions.checkState;
  *
  * @since 5.3
  */
+@Beta
 public class MongoDataLink extends DataLinkBase {
     /**
      * Name of a property which holds connection string to the mongodb instance.
      */
     public static final String CONNECTION_STRING_PROPERTY = "connectionString";
-    private MongoClient mongoClient;
+    /**
+     * Name of a property with a database name hint.
+     * This is used as a <strong>hint</strong> only; {@link #listResources} will return only collection from db with this
+     * name, but client is not restricted to this database. It can be used to specify database to which SQL Mappings
+     * will point.
+     */
+    public static final String DATABASE_PROPERTY = "database";
+    private volatile MongoClient mongoClient;
+    private final String databaseName;
 
     /**
      * Creates a new data link based on given config.
      */
     public MongoDataLink(DataLinkConfig config) {
         super(config);
-        this.mongoClient = new CloseableMongoClient(createClient(config), this::release);
+        if (config.isShared()) {
+            this.mongoClient = new CloseableMongoClient(createClient(config), this::release);
+        }
+        this.databaseName = config.getProperty(DATABASE_PROPERTY);
     }
 
     private MongoClient createClient(DataLinkConfig config) {
@@ -76,6 +89,9 @@ public class MongoDataLink extends DataLinkBase {
         }
     }
 
+    public String getDatabaseName() {
+        return databaseName;
+    }
 
     /**
      * Lists all MongoDB collections in all databases.
@@ -86,13 +102,22 @@ public class MongoDataLink extends DataLinkBase {
         List<DataLinkResource> resources = new ArrayList<>();
         MongoClient client = getClient();
 
-        for (String databaseName : client.listDatabaseNames()) {
-            MongoDatabase database = client.getDatabase(databaseName);
-            for (String collectionName : database.listCollectionNames()) {
-                resources.add(new DataLinkResource("collection", databaseName + "." + collectionName));
+        if (databaseName != null) {
+            MongoDatabase mongoDatabase = client.getDatabase(databaseName);
+            addResources(resources, mongoDatabase);
+        } else {
+            for (String databaseName : client.listDatabaseNames()) {
+                MongoDatabase database = client.getDatabase(databaseName);
+                addResources(resources, database);
             }
         }
         return resources;
+    }
+
+    private static void addResources(List<DataLinkResource> resources, MongoDatabase database) {
+        for (String collectionName : database.listCollectionNames()) {
+            resources.add(new DataLinkResource("collection", database.getName() + "." + collectionName));
+        }
     }
 
     /**
