@@ -86,7 +86,6 @@ public class ClientCompatibilityTest_2_2 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
-        assertFalse(parameters.isAltoPortsExists);
     }
 
     @Test
@@ -110,7 +109,6 @@ public class ClientCompatibilityTest_2_2 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
-        assertFalse(parameters.isAltoPortsExists);
     }
 
     @Test
@@ -6616,7 +6614,6 @@ public class ClientCompatibilityTest_2_2 {
         assertTrue(isEqual(aLong, parameters.updateCount));
         assertTrue(isEqual(anSqlError, parameters.error));
         assertFalse(parameters.isIsInfiniteRowsExists);
-        assertFalse(parameters.isPartitionArgumentIndexExists);
     }
 
     @Test

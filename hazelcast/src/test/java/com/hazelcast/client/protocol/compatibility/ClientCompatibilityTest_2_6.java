@@ -86,8 +86,6 @@ public class ClientCompatibilityTest_2_6 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
-        assertTrue(parameters.isAltoPortsExists);
-        assertTrue(isEqual(aListOfIntegers, parameters.altoPorts));
     }
 
     @Test
@@ -111,8 +109,6 @@ public class ClientCompatibilityTest_2_6 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
-        assertTrue(parameters.isAltoPortsExists);
-        assertTrue(isEqual(aListOfIntegers, parameters.altoPorts));
     }
 
     @Test
@@ -6733,8 +6729,6 @@ public class ClientCompatibilityTest_2_6 {
         assertTrue(isEqual(anSqlError, parameters.error));
         assertTrue(parameters.isIsInfiniteRowsExists);
         assertTrue(isEqual(aBoolean, parameters.isInfiniteRows));
-        assertTrue(parameters.isPartitionArgumentIndexExists);
-        assertTrue(isEqual(anInt, parameters.partitionArgumentIndex));
     }
 
     @Test
@@ -7110,52 +7104,18 @@ public class ClientCompatibilityTest_2_6 {
     }
 
     @Test
-    public void test_JetAddJobStatusListenerCodec_encodeRequest() {
+    public void test_JetUpdateJobConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 905;
-        ClientMessage encoded = JetAddJobStatusListenerCodec.encodeRequest(aLong, aBoolean);
+        ClientMessage encoded = JetUpdateJobConfigCodec.encodeRequest(aLong, aData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
 
     @Test
-    public void test_JetAddJobStatusListenerCodec_decodeResponse() {
+    public void test_JetUpdateJobConfigCodec_decodeResponse() {
         int fileClientMessageIndex = 906;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aUUID, JetAddJobStatusListenerCodec.decodeResponse(fromFile)));
-    }
-
-    private static class JetAddJobStatusListenerCodecHandler extends JetAddJobStatusListenerCodec.AbstractEventHandler {
-        @Override
-        public void handleJobStatusEvent(long jobId, int previousStatus, int newStatus, java.lang.String description, boolean userRequested) {
-            assertTrue(isEqual(aLong, jobId));
-            assertTrue(isEqual(anInt, previousStatus));
-            assertTrue(isEqual(anInt, newStatus));
-            assertTrue(isEqual(aString, description));
-            assertTrue(isEqual(aBoolean, userRequested));
-        }
-    }
-
-    @Test
-    public void test_JetAddJobStatusListenerCodec_handleJobStatusEvent() {
-        int fileClientMessageIndex = 907;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        JetAddJobStatusListenerCodecHandler handler = new JetAddJobStatusListenerCodecHandler();
-        handler.handle(fromFile);
-    }
-
-    @Test
-    public void test_JetRemoveJobStatusListenerCodec_encodeRequest() {
-        int fileClientMessageIndex = 908;
-        ClientMessage encoded = JetRemoveJobStatusListenerCodec.encodeRequest(aLong, aUUID);
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        compareClientMessages(fromFile, encoded);
-    }
-
-    @Test
-    public void test_JetRemoveJobStatusListenerCodec_decodeResponse() {
-        int fileClientMessageIndex = 909;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aBoolean, JetRemoveJobStatusListenerCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(aData, JetUpdateJobConfigCodec.decodeResponse(fromFile)));
     }
 
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
