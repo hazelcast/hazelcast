@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("118fd062b7bfb2ff978c0235d487072a")
+@Generated("d4dcbb8be4a3b5c1c96869fff8cfeb32")
 public final class JetUploadJobMultipartCodec {
     //hex: 0xFE1200
     public static final int REQUEST_MESSAGE_TYPE = 16650752;
@@ -46,8 +46,7 @@ public final class JetUploadJobMultipartCodec {
     private static final int REQUEST_TOTAL_PART_NUMBER_FIELD_OFFSET = REQUEST_CURRENT_PART_NUMBER_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_PART_SIZE_FIELD_OFFSET = REQUEST_TOTAL_PART_NUMBER_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_PART_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private JetUploadJobMultipartCodec() {
     }
@@ -116,22 +115,12 @@ public final class JetUploadJobMultipartCodec {
         return request;
     }
 
-    public static ClientMessage encodeResponse(boolean response) {
+    public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        encodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         clientMessage.add(initialFrame);
 
         return clientMessage;
-    }
-
-    /**
-     * True if processed successfully, false otherwise
-     */
-    public static boolean decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ClientMessage.Frame initialFrame = iterator.next();
-        return decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 }

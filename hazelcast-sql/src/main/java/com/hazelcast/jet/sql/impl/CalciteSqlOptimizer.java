@@ -234,7 +234,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 tableResolverImpl,
                 dataLinksResolver,
                 nodeEngine.getHazelcastInstance(),
-                resultRegistry);
+                resultRegistry
+        );
 
         this.logger = nodeEngine.getLogger(getClass());
     }
@@ -264,6 +265,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     public RelationsStorage relationsStorage() {
         return relationsStorage;
+    }
+
+    // for tests
+    public PlanExecutor getPlanExecutor() {
+        return planExecutor;
     }
 
     @Override
@@ -563,7 +569,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     insert.mapName(),
                     insert.entriesFn(),
                     planExecutor,
-                    permissions
+                    permissions,
+                    insert.keyParamIndex()
             );
         } else if (physicalRel instanceof SinkMapPhysicalRel) {
             assert !isCreateJob;

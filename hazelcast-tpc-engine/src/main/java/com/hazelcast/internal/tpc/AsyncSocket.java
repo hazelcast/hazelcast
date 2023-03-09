@@ -17,7 +17,6 @@
 package com.hazelcast.internal.tpc;
 
 import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
-import com.hazelcast.internal.tpc.util.ProgressIndicator;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -33,71 +32,22 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
 
     protected volatile SocketAddress remoteAddress;
     protected volatile SocketAddress localAddress;
-
+    protected AsyncSocketMetrics metrics = new AsyncSocketMetrics();
     protected final boolean clientSide;
-    protected final ProgressIndicator ioBuffersWritten = new ProgressIndicator();
-    protected final ProgressIndicator ioBuffersRead = new ProgressIndicator();
-    protected final ProgressIndicator bytesRead = new ProgressIndicator();
-    protected final ProgressIndicator bytesWritten = new ProgressIndicator();
-    protected final ProgressIndicator writeEvents = new ProgressIndicator();
-    protected final ProgressIndicator readEvents = new ProgressIndicator();
 
     protected AsyncSocket(boolean clientSide) {
         this.clientSide = clientSide;
     }
 
     /**
-     * Gets the number of bytes read.
+     * Return the metrics of this AsyncSocket.
+     * <p/>
+     * This call can always be made no matter the state of the socket.
      *
-     * @return number of bytes read.
+     * @return the metrics.
      */
-    public final long getBytesRead() {
-        return bytesRead.get();
-    }
-
-    /**
-     * Gets the number of bytes written.
-     *
-     * @return number of bytes written.
-     */
-    public final long getBytesWritten() {
-        return bytesWritten.get();
-    }
-
-    /**
-     * Gets the number of IOBuffers read.
-     *
-     * @return the number of IOBuffers read.
-     */
-    public final long getIoBuffersRead() {
-        return ioBuffersRead.get();
-    }
-
-    /**
-     * Gets the number of IOBuffers written.
-     *
-     * @return the number of IOBuffers written.
-     */
-    public final long getIoBuffersWritten() {
-        return ioBuffersWritten.get();
-    }
-
-    /**
-     * Gets the number of write events.
-     *
-     * @return the number of write events.
-     */
-    public final long getWriteEvents() {
-        return writeEvents.get();
-    }
-
-    /**
-     * Gets the number of read events.
-     *
-     * @return the number of read events.
-     */
-    public final long getReadEvents() {
-        return readEvents.get();
+    public final AsyncSocketMetrics metrics() {
+        return metrics;
     }
 
     /**
@@ -140,7 +90,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
         return localAddress;
     }
 
-   /**
+    /**
      * Configures if this AsyncSocket is readable or not. If there is no change in the
      * readable status, the call is ignored.
      * <p/>
