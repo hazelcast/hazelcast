@@ -29,6 +29,7 @@ import java.util.concurrent.CompletableFuture;
 import static com.hazelcast.internal.tpc.TpcTestSupport.assertCompletesEventually;
 import static com.hazelcast.internal.tpc.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpc.TpcTestSupport.terminateAll;
+import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -61,6 +62,7 @@ public abstract class AsyncServerSocketTest {
                 })
                 .build();
         assertSame(reactor, socket.getReactor());
+        assertNotNull(socket.metrics());
     }
 
     @Test
@@ -181,7 +183,7 @@ public abstract class AsyncServerSocketTest {
             assertCompletesEventually(connect);
         }
 
-        assertEquals(clients, serverSocket.getAccepted());
+        assertEquals(clients, serverSocket.metrics.accepted());
     }
 
     @Test

@@ -43,6 +43,12 @@ public class CachedNanoClock implements NanoClock {
     }
 
     @Override
+    public void update() {
+        value = System.nanoTime() - START_TIME;
+        iteration = 0;
+    }
+
+    @Override
     public long nanoTime() {
         if (iteration == refreshPeriod) {
             value = System.nanoTime() - START_TIME;

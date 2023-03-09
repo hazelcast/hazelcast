@@ -17,6 +17,7 @@
 package com.hazelcast.internal.tpc.nio;
 
 import com.hazelcast.internal.tpc.AsyncSocket;
+import com.hazelcast.internal.tpc.AsyncSocketMetrics;
 import com.hazelcast.internal.tpc.AsyncSocketOptions;
 import com.hazelcast.internal.tpc.ReadHandler;
 import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
@@ -53,7 +54,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     private final NioAsyncSocketOptions options;
     private final AtomicReference<Thread> flushThread = new AtomicReference<>();
-    private final MpmcArrayQueue<IOBuffer> unflushedBufs;
+    private final MpmcArrayQueue<IOBuffer> writeQueue;
     private final Handler handler;
     private final SocketChannel socketChannel;
     private final NioReactor reactor;
@@ -88,7 +89,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             }
             this.writeThrough = builder.writeThrough;
             this.regularSchedule = builder.regularSchedule;
-            this.unflushedBufs = new MpmcArrayQueue<>(builder.unflushedBufsCapacity);
+            this.writeQueue = new MpmcArrayQueue<>(builder.writeQueueCapacity);
             this.handler = new Handler(builder);
             this.key = socketChannel.register(reactor.selector, 0, handler);
             this.readHandler = builder.readHandler;
@@ -273,7 +274,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     private void resetFlushed() {
         flushThread.set(null);
 
-        if (!unflushedBufs.isEmpty()) {
+        if (!writeQueue.isEmpty()) {
             if (flushThread.compareAndSet(null, Thread.currentThread())) {
                 reactor.offer(handler);
             }
@@ -282,12 +283,12 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     @Override
     public boolean write(IOBuffer buf) {
-        return unflushedBufs.add(buf);
+        return writeQueue.add(buf);
     }
 
     @Override
     public boolean writeAll(Collection<IOBuffer> bufs) {
-        return unflushedBufs.addAll(bufs);
+        return writeQueue.addAll(bufs);
     }
 
     @Override
@@ -311,19 +312,19 @@ public final class NioAsyncSocket extends AsyncSocket {
                 if (ioVector.offer(buf)) {
                     result = true;
                 } else {
-                    result = unflushedBufs.offer(buf);
+                    result = writeQueue.offer(buf);
                 }
             } else {
-                result = unflushedBufs.offer(buf);
+                result = writeQueue.offer(buf);
             }
         } else if (currentFlushThread == eventloopThread) {
             if (ioVector.offer(buf)) {
                 result = true;
             } else {
-                result = unflushedBufs.offer(buf);
+                result = writeQueue.offer(buf);
             }
         } else {
-            result = unflushedBufs.offer(buf);
+            result = writeQueue.offer(buf);
             flush();
         }
         return result;
@@ -339,6 +340,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     @SuppressWarnings("java:S125")
     private final class Handler implements NioHandler, Runnable {
         private final ByteBuffer receiveBuffer;
+        private final AsyncSocketMetrics metrics = NioAsyncSocket.this.metrics;
 
         private Handler(NioAsyncSocketBuilder builder) throws SocketException {
             int receiveBufferSize = builder.socketChannel.socket().getReceiveBufferSize();
@@ -390,7 +392,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         }
 
         private void handleRead() throws IOException {
-            readEvents.inc();
+            metrics.incReadEvents();
 
             int read = socketChannel.read(receiveBuffer);
             //System.out.println(NioAsyncSocket.this + " bytes read: " + read);
@@ -398,7 +400,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             if (read == -1) {
                 throw new EOFException("Remote socket closed!");
             } else {
-                bytesRead.inc(read);
+                metrics.incBytesRead(read);
                 upcast(receiveBuffer).flip();
                 readHandler.onRead(receiveBuffer);
                 compactOrClear(receiveBuffer);
@@ -408,13 +410,19 @@ public final class NioAsyncSocket extends AsyncSocket {
         private void handleWrite() throws IOException {
             assert flushThread.get() != null;
 
-            writeEvents.inc();
+            metrics.incWriteEvents();
 
-            ioVector.populate(unflushedBufs);
+            ioVector.populate(writeQueue);
 
-            long written = ioVector.write(socketChannel);
+            ByteBuffer[] srcs = ioVector.array();
+            int length = ioVector.length();
+            long written = length == 1
+                    ? socketChannel.write(srcs[0])
+                    : socketChannel.write(srcs, 0, length);
 
-            bytesWritten.inc(written);
+            ioVector.compact(written);
+
+            metrics.incBytesWritten(written);
             //System.out.println(NioAsyncSocket.this + " bytes written:" + written);
 
             if (ioVector.isEmpty()) {
