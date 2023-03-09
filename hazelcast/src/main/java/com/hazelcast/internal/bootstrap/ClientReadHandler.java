@@ -30,14 +30,18 @@ import java.util.Collection;
 import java.util.UUID;
 
 
-public class ClientAsyncReadHandler extends ReadHandler {
+/**
+ * A {@link ReadHandler} that reads incoming traffic from clients. The main
+ * payloads being the {@link ClientMessage}.
+ */
+public class ClientReadHandler extends ReadHandler {
 
     private final ClientEngine clientEngine;
     private final ClientMessageReader clientMessageReader = new ClientMessageReader(0);
     private boolean protocolBytesReceived;
     private Connection connection;
 
-    public ClientAsyncReadHandler(ClientEngine clientEngine) {
+    public ClientReadHandler(ClientEngine clientEngine) {
         this.clientEngine = clientEngine;
     }
 
