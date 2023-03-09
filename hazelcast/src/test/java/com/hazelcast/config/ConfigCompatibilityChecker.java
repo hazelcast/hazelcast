@@ -702,7 +702,7 @@ public class ConfigCompatibilityChecker {
                 return false;
             }
             return nullSafeEqual(c1.getName(), c2.getName())
-                    && nullSafeEqual(c1.getClassName(), c2.getClassName())
+                    && nullSafeEqual(c1.getType(), c2.getType())
                     && c1.isShared() == c2.isShared()
                     && nullSafeEqual(c1.getProperties(), c2.getProperties());
         }

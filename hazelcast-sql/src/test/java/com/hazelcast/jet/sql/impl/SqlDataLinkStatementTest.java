@@ -65,7 +65,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         for (InternalDataLinkService dataLinkService : dataLinkServices) {
             DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
             assertThat(dataLink).isNotNull();
-            assertThat(dataLink.getConfig().getClassName()).isEqualTo("DUMMY");
+            assertThat(dataLink.getConfig().getType()).isEqualTo("DUMMY");
             assertThat(dataLink.getConfig().isShared()).isFalse();
             assertThat(dataLink.getConfig().getProperties()).containsEntry("b", "c");
         }
@@ -82,7 +82,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         for (InternalDataLinkService dataLinkService : dataLinkServices) {
             DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
             assertThat(dataLink).isNotNull();
-            assertThat(dataLink.getConfig().getClassName()).isEqualTo("DUMMY");
+            assertThat(dataLink.getConfig().getType()).isEqualTo("DUMMY");
             assertThat(dataLink.getConfig().isShared()).isTrue();
             assertThat(dataLink.getConfig().getProperties()).containsEntry("b", "c");
         }
@@ -98,7 +98,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         for (InternalDataLinkService dataLinkService : dataLinkServices) {
             DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
             assertThat(dataLink).isNotNull();
-            assertThat(dataLink.getConfig().getClassName()).isEqualTo("DUMMY");
+            assertThat(dataLink.getConfig().getType()).isEqualTo("DUMMY");
             assertThat(dataLink.getConfig().isShared()).isTrue();
             assertThat(dataLink.getConfig().getProperties()).containsEntry("b", "c");
         }
@@ -142,7 +142,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
     public void when_createDataLinkIfAlreadyExistsCreatedByConfig_then_throws() {
         String dlName = randomName();
         DataLinkConfig dataLinkConfig = new DataLinkConfig(dlName)
-                .setClassName(DummyDataLink.class.getName())
+                .setType("dummy")
                 .setProperty("b", "c");
         for (InternalDataLinkService dataLinkService : dataLinkServices) {
             dataLinkService.createConfigDataLink(dataLinkConfig);
@@ -227,7 +227,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         String dlName = randomName();
 
         DataLinkConfig dataLinkConfig = new DataLinkConfig(dlName)
-                .setClassName(DummyDataLink.class.getName())
+                .setType("dummy")
                 .setProperty("b", "c");
         for (InternalDataLinkService dataLinkService : dataLinkServices) {
             dataLinkService.createConfigDataLink(dataLinkConfig);

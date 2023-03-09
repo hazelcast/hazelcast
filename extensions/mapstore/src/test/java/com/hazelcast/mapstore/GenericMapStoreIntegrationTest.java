@@ -22,7 +22,6 @@ import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
 import com.hazelcast.map.EntryProcessor;
@@ -73,7 +72,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
                 .setClassLoader(new FilteringClassLoader(newArrayList("org.example"), null))
                 .addDataLinkConfig(
                         new DataLinkConfig(TEST_DATABASE_REF)
-                                .setClassName(JdbcDataLink.class.getName())
+                                .setType("jdbc")
                                 .setProperty("jdbcUrl", dbConnectionUrl)
                 );
 
@@ -160,7 +159,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
         client.getConfig().addDataLinkConfig(
                 new DataLinkConfig("dynamically-added-datalink")
-                        .setClassName(JdbcDataLink.class.getName())
+                        .setType("jdbc")
                         .setProperty("jdbcUrl", dbConnectionUrl)
         );
 

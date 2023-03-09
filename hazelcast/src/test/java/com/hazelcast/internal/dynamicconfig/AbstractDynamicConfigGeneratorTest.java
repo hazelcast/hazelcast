@@ -907,7 +907,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
         properties.setProperty("prop2", "val2");
         DataLinkConfig expectedConfig = new DataLinkConfig()
                 .setName("some-name")
-                .setClassName("some-class-name")
+                .setType("some-type")
                 .setProperties(properties);
 
         Config config = new Config().addDataLinkConfig(expectedConfig);

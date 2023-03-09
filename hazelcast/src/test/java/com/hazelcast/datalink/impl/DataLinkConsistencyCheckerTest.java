@@ -52,7 +52,7 @@ public class DataLinkConsistencyCheckerTest extends SimpleTestInClusterSupport {
     private DataLinkConsistencyChecker dataLinkConsistencyChecker;
 
     private String name;
-    private final String type = DataLinkTestUtil.DummyDataLink.class.getName();
+    private final String type = "dummy";
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -138,7 +138,7 @@ public class DataLinkConsistencyCheckerTest extends SimpleTestInClusterSupport {
         sqlCatalog.put(
                 QueryUtils.wrapDataLinkKey(name),
                 new DataLinkCatalogEntry(name, type, false, Collections.emptyMap()));
-        linkService.createConfigDataLink(new DataLinkConfig(name).setClassName(type));
+        linkService.createConfigDataLink(new DataLinkConfig(name).setType(type));
         assertTrueEventually(() -> linkService.existsConfigDataLink(name));
 
         // when
