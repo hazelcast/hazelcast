@@ -1,2 +1,2 @@
 com.hazelcast.jet.mongodb.datalink.impl.MongoDataLinkRegistration
-#com.hazelcast.jet.mongodb.datalink.impl.MongoStreamDataLinkRegistration
+com.hazelcast.jet.mongodb.datalink.impl.MongoStreamDataLinkRegistration

@@ -42,4 +42,8 @@ public class MongoStreamDataLinkRegistration implements DataLinkRegistration {
         return MongoDataLink.class;
     }
 
+    @Override
+    public boolean canDeduceTypeFromClass() {
+        return false;
+    }
 }

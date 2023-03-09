@@ -63,7 +63,9 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
                     classLoader
             ).forEachRemaining(registration -> {
                 typeToDataLinkClass.put(registration.type(), registration.clazz());
-                dataLinkClassToType.put(registration.clazz(), registration.type());
+                if (registration.canDeduceTypeFromClass()) {
+                    dataLinkClassToType.put(registration.clazz(), registration.type());
+                }
             });
         } catch (Exception e) {
             throw new HazelcastException("Could not register DataLinks", e);
