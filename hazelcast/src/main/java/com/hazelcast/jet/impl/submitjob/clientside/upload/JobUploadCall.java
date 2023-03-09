@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl;
+package com.hazelcast.jet.impl.submitjob.clientside.upload;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.internal.util.Sha256Util;
 import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.jet.impl.submitjob.clientside.SubmitJobTargetMemberFinder;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.io.IOException;
@@ -28,6 +29,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.UUID;
 
+/**
+ * Holds calculated parameters required for job upload
+ */
 public class JobUploadCall {
 
     private UUID sessionId;
@@ -60,7 +64,6 @@ public class JobUploadCall {
 
     public void initializeJobUploadCall(HazelcastClientInstanceImpl client, Path jarPath)
             throws IOException, NoSuchAlgorithmException {
-
         // Create new session id
         this.sessionId = UuidUtil.newSecureUUID();
 
@@ -94,34 +97,32 @@ public class JobUploadCall {
         return fileName;
     }
 
-    UUID getSessionId() {
+    public UUID getSessionId() {
         return sessionId;
     }
 
-    // This method is public for testing purposes.
     public UUID getMemberUuid() {
         return memberUuid;
     }
 
-    String getFileNameWithoutExtension() {
+    public String getFileNameWithoutExtension() {
         return fileNameWithoutExtension;
     }
 
-    // This method is public for testing purposes.
     public void setFileNameWithoutExtension(String fileNameWithoutExtension) {
         this.fileNameWithoutExtension = fileNameWithoutExtension;
     }
 
-    String getSha256HexOfJar() {
+    public String getSha256HexOfJar() {
         return sha256HexOfJar;
     }
 
-    // This method is public for testing purposes.
+
     public void setSha256HexOfJar(String sha256HexOfJar) {
         this.sha256HexOfJar = sha256HexOfJar;
     }
 
-    int getTotalParts() {
+    public int getTotalParts() {
         return totalParts;
     }
 }

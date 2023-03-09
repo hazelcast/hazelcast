@@ -14,31 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.jobupload;
+package com.hazelcast.jet.impl.submitjob.memberside;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 
 /**
- * Used by the member side as the wrapper for all parameters to run an uploaded jar as Jet job
+ * Used by the member side as the wrapper for all parameters to run a jar that is on the client or on the member as Jet job
  */
 public class JobMetaDataParameterObject {
 
-    private static final ILogger LOGGER = Logger.getLogger(JobMetaDataParameterObject.class);
-
     private UUID sessionId;
+
+    private boolean jarOnMember;
 
     private String sha256Hex;
 
     private String fileName;
 
     private String snapshotName;
+
     private String jobName;
 
     private String mainClass;
@@ -47,15 +43,24 @@ public class JobMetaDataParameterObject {
 
     private Path jarPath;
 
-    // Indicates if the jar should be deleted after the job execution
-    private boolean deleteJarAfterExecution;
-
     public UUID getSessionId() {
         return sessionId;
     }
 
     public void setSessionId(UUID sessionId) {
         this.sessionId = sessionId;
+    }
+
+    public boolean isJarOnMember() {
+        return jarOnMember;
+    }
+
+    public boolean isJarOnClient() {
+        return !jarOnMember;
+    }
+
+    public void setJarOnMember(boolean jarOnMember) {
+        this.jarOnMember = jarOnMember;
     }
 
     public String getSha256Hex() {
@@ -114,29 +119,12 @@ public class JobMetaDataParameterObject {
         this.jarPath = jarPath;
     }
 
-    public void setDeleteJarAfterExecution(boolean deleteJarAfterExecution) {
-        this.deleteJarAfterExecution = deleteJarAfterExecution;
-    }
-
-    public void afterExecution() {
-        if (deleteJarAfterExecution) {
-            deleteJar();
-        }
-    }
-
-    private void deleteJar() {
-        try {
-            Files.delete(jarPath);
-        } catch (IOException exception) {
-            LOGGER.severe("Could not delete the jar : " + jarPath, exception);
-        }
-    }
-
     // Not all parameters need to be exposed
     // Convert only parameters that should be with an exception
     public String exceptionString() {
-        return "SubmittedParameters{" +
-               "fileName='" + fileName + '\'' +
+        return "JobMetaDataParameterObject{" +
+               "jarOnMember='" + jarOnMember + '\'' +
+               ", fileName='" + fileName + '\'' +
                ", snapshotName='" + snapshotName + '\'' +
                ", jobName='" + jobName + '\'' +
                ", mainClass='" + mainClass + '\'' +

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.jobupload;
+package com.hazelcast.jet.impl.submitjob.memberside;
 
 import com.hazelcast.jet.JetException;
 import com.hazelcast.logging.ILogger;
@@ -73,12 +73,13 @@ public class JobUploadStatusTest {
     }
 
     @Test
-    public void testOnRemove() throws Exception {
+    public void testRemoveBadSession() throws Exception {
         Path jarPath = Files.createTempFile("runjob", ".jar");
         assertTrue(Files.exists(jarPath));
         when(jobMetaDataParameterObject.getJarPath()).thenReturn(jarPath);
+        when(jobMetaDataParameterObject.isJarOnClient()).thenReturn(true);
 
-        jobUploadStatus.onRemove();
+        jobUploadStatus.removeBadSession();
 
         assertFalse(Files.exists(jarPath));
     }
