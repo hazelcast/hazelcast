@@ -31,7 +31,7 @@ final class Options {
     static final String CONNECTION_STRING_OPTION = "connectionString";
     static final String DATABASE_NAME_OPTION = "database";
     static final String START_AT_OPTION = "startAt";
-    static final String PK_COLUMN = "id-column";
+    static final String PK_COLUMN = "idColumn";
 
     private Options() {
     }
@@ -59,11 +59,6 @@ final class Options {
             EmptyStatement.ignore(null);
         }
         throw new IllegalArgumentException(DATABASE_NAME_OPTION + " must be provided in the mapping or data link.");
-    }
-
-    static String getPkColumn(Map<String, String> options, boolean isStreaming) {
-        String defaultValue = isStreaming ? "fullDocument._id" : "_id";
-        return options.getOrDefault(Options.PK_COLUMN, defaultValue);
     }
 
     static Predicate<MappingField> getPkColumnChecker(Map<String, String> options, boolean isStreaming) {

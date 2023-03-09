@@ -350,7 +350,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                 + "    'connectionString' = '" + mongoContainer.getConnectionString() + "', "
                 + "    'database' = '" +  databaseName + "', "
                 + "    'collection' = '" + collectionName + "', "
-                + "    'id-column' = 'myPK' "
+                + "    'idColumn' = 'myPK' "
                 + ")");
         execute("update " + collectionName + " set firstName = ?, lastName = ?, jedi=? " +
                 "where firstName = ?", "Han", "Solo", false, "temp");

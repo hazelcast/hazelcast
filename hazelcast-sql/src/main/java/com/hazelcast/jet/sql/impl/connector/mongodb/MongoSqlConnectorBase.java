@@ -96,6 +96,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         List<TableField> fields = new ArrayList<>(resolvedFields.size());
         boolean containsId = false;
         boolean isStreaming = isStream();
+        boolean hasPK = false;
         for (MappingField resolvedField : resolvedFields) {
             String externalNameFromName = (isStreaming ? "fullDocument." : "") + resolvedField.name();
             String fieldExternalName = firstNonNull(resolvedField.externalName(), externalNameFromName);
@@ -107,12 +108,17 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                     resolvedField.name(),
                     resolvedField.type(),
                     fieldExternalName,
-                    resolvedField.isPrimaryKey(),
+                    false,
                     resolvedField.isPrimaryKey()));
+            hasPK |= resolvedField.isPrimaryKey();
         }
 
-        if (isStreaming && !containsId) {
-            fields.add(0, new MongoTableField("fullDocument._id", OBJECT, "fullDocument._id", true, true));
+        if (!containsId) {
+            if (isStreaming) {
+                fields.add(0, new MongoTableField("fullDocument._id", OBJECT, "fullDocument._id", true, !hasPK));
+            } else {
+                fields.add(0, new MongoTableField("_id", OBJECT, "_id", true, !hasPK));
+            }
         }
         return new MongoTable(schemaName, mappingName, databaseName, collectionName, options, this,
                 fields, stats, isStreaming);
