@@ -38,11 +38,7 @@ public class MemberExecuteJarStrategy {
     /**
      * This method is used by a member to execute a jar in a multithreaded environment
      * <p>
-     * It is suggested that the jar start a single job. Because all the specified parameters are applied to each job
-     * For example if the job name is specified then the jar can not submit multiple jobs, since job names should be
-     * unique across the cluster
-     * <p>
-     * The startup of the jobs are not awaited
+     * The startup of the job is not awaited
      */
     public void executeJar(@Nonnull BootstrappedInstanceProxy instanceProxy,
                            @Nonnull String jarPath,
@@ -69,7 +65,9 @@ public class MemberExecuteJarStrategy {
         }
     }
 
-    // synchronized until main method finishes
+    /**
+     * synchronized until main method finishes
+     */
     synchronized void invokeMain(BootstrappedInstanceProxy instanceProxy, String jarPath, String snapshotName,
                                  String jobName, Method main, String[] jobArgs)
             throws IllegalAccessException, InvocationTargetException {
