@@ -26,6 +26,7 @@ import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 class KubernetesApiEndpointResolver
         extends HazelcastKubernetesDiscoveryStrategy.EndpointResolver {
@@ -80,8 +81,8 @@ class KubernetesApiEndpointResolver
 
     private void addAddress(List<DiscoveryNode> discoveredNodes, Endpoint endpoint) {
         if (Boolean.TRUE.equals(resolveNotReadyAddresses) || endpoint.isReady()) {
-            Address privateAddress = createAddress(endpoint.getPrivateAddress());
-            Address publicAddress = createAddress(endpoint.getPublicAddress());
+            Address privateAddress = createAddress(endpoint.getPrivateAddress(), this::port);
+            Address publicAddress = createAddress(endpoint.getPublicAddress(), this::portPublic);
             discoveredNodes
                     .add(new SimpleDiscoveryNode(privateAddress, publicAddress, endpoint.getAdditionalProperties()));
             if (logger.isFinestEnabled()) {
@@ -91,13 +92,14 @@ class KubernetesApiEndpointResolver
         }
     }
 
-    private Address createAddress(KubernetesClient.EndpointAddress address) {
+    private Address createAddress(KubernetesClient.EndpointAddress address,
+                                  Function<KubernetesClient.EndpointAddress, Integer> portResolver) {
         if (address == null) {
             return null;
         }
         String ip = address.getIp();
         InetAddress inetAddress = mapAddress(ip);
-        int port = port(address);
+        int port = portResolver.apply(address);
         return new Address(inetAddress, port);
     }
 
@@ -107,6 +109,17 @@ class KubernetesApiEndpointResolver
         }
         if (address.getPort() != null) {
             return address.getPort();
+        }
+        return NetworkConfig.DEFAULT_PORT;
+    }
+
+    // For the public IP address the discovered port should be preferred over the configured one
+    private int portPublic(KubernetesClient.EndpointAddress address) {
+        if (address.getPort() != null) {
+            return address.getPort();
+        }
+        if (this.port > 0) {
+            return this.port;
         }
         return NetworkConfig.DEFAULT_PORT;
     }

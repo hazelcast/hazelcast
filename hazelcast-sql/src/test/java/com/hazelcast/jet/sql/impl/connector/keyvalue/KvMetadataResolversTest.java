@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
-import com.hazelcast.jet.sql.impl.schema.TablesStorage;
+import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlServiceImpl;
@@ -62,7 +62,7 @@ public class KvMetadataResolversTest {
     private CalciteSqlOptimizer optimizer;
 
     @Mock
-    private TablesStorage tablesStorage;
+    private RelationsStorage relationsStorage;
 
     @Mock
     private SqlServiceImpl sqlService;
@@ -82,7 +82,7 @@ public class KvMetadataResolversTest {
                 .willAnswer((Answer<Stream<String>>) invocationOnMock -> Stream.of(JAVA_FORMAT));
         given(nodeEngine.getSqlService()).willReturn(sqlService);
         given(sqlService.getOptimizer()).willReturn(optimizer);
-        given(optimizer.tablesStorage()).willReturn(tablesStorage);
+        given(optimizer.relationsStorage()).willReturn(relationsStorage);
 
         resolvers = new KvMetadataResolvers(resolver);
     }

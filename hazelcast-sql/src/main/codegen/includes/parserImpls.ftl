@@ -58,6 +58,41 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
     }
 }
 
+/**
+ * Parses CREATE DATA LINK statement.
+ */
+SqlCreate SqlCreateDataLink(Span span, boolean replace) :
+{
+    SqlParserPos startPos = span.pos();
+    boolean ifNotExists = false;
+    SqlIdentifier name;
+    SqlIdentifier type;
+    SqlNodeList sqlOptions;
+}
+{
+    <DATA> <LINK>
+    [
+        <IF> <NOT> <EXISTS> { ifNotExists = true; }
+    ]
+    name = CompoundIdentifier()
+
+    <TYPE>
+    type = SimpleIdentifier()
+
+    <OPTIONS>
+    sqlOptions = SqlOptions()
+    {
+        return new SqlCreateDataLink(
+            startPos.plus(getPos()),
+            replace,
+            ifNotExists,
+            name,
+            type,
+            sqlOptions
+        );
+    }
+}
+
 SqlCreate SqlCreateType(Span span, boolean replace) :
 {
     SqlParserPos startPos = span.pos();
@@ -318,6 +353,27 @@ SqlDrop SqlDropMapping(Span span, boolean replace) :
     name = CompoundIdentifier()
     {
         return new SqlDropMapping(name, ifExists, pos.plus(getPos()));
+    }
+}
+
+/**
+ * Parses DROP DATA LINK statement.
+ */
+SqlDrop SqlDropDataLink(Span span, boolean replace) :
+{
+    SqlParserPos pos = span.pos();
+
+    SqlIdentifier name;
+    boolean ifExists = false;
+}
+{
+    <DATA> <LINK>
+    [
+        <IF> <EXISTS> { ifExists = true; }
+    ]
+    name = CompoundIdentifier()
+    {
+        return new SqlDropDataLink(name, ifExists, pos.plus(getPos()));
     }
 }
 

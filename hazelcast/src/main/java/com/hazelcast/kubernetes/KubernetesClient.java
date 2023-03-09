@@ -338,14 +338,25 @@ class KubernetesClient {
         // If multiple containers are in one POD, then use the default Hazelcast port from the configuration.
         if (containers.size() == 1) {
             JsonValue container = containers.get(0);
-            JsonArray ports = toJsonArray(container.asObject().get("ports"));
-            // If multiple ports are exposed by a container, then use the default Hazelcast port from the configuration.
-            if (ports.size() > 0) {
-                JsonValue port = ports.get(0);
-                JsonValue containerPort = port.asObject().get("containerPort");
-                if (containerPort != null && containerPort.isNumber()) {
-                    return containerPort.asInt();
+            return containerPort(container);
+        } else {
+            for (JsonValue container : containers) {
+                if (container.asObject().getString("name", "").equals("hazelcast")) {
+                    return containerPort(container);
                 }
+            }
+        }
+        return null;
+    }
+
+    private static Integer containerPort(JsonValue container) {
+        JsonArray ports = toJsonArray(container.asObject().get("ports"));
+        // If multiple ports are exposed by a container, then use the default Hazelcast port from the configuration.
+        if (ports.size() > 0) {
+            JsonValue port = ports.get(0);
+            JsonValue containerPort = port.asObject().get("containerPort");
+            if (containerPort != null && containerPort.isNumber()) {
+                return containerPort.asInt();
             }
         }
         return null;

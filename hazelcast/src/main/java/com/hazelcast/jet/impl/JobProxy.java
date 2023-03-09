@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.JobStatusListener;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -40,13 +41,16 @@ import com.hazelcast.jet.impl.operation.UpdateJobConfigOperation;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
 import com.hazelcast.jet.impl.operation.TerminateJobOperation;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.internal.cluster.Versions.V5_3;
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
@@ -230,5 +234,25 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
             throw new IllegalStateException("Master address unknown: instance is not yet initialized or is shut down");
         }
         return masterAddress;
+    }
+
+    @Override
+    public UUID addStatusListener(@Nonnull JobStatusListener listener) {
+        checkJobStatusListenerSupported(container());
+        JobEventService jobEventService = container().getService(JobEventService.SERVICE_NAME);
+        return jobEventService.addEventListener(getId(), listener);
+    }
+
+    @Override
+    public boolean removeStatusListener(@Nonnull UUID id) {
+        checkJobStatusListenerSupported(container());
+        JobEventService jobEventService = container().getService(JobEventService.SERVICE_NAME);
+        return jobEventService.removeEventListener(getId(), id);
+    }
+
+    public static void checkJobStatusListenerSupported(NodeEngine nodeEngine) {
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(V5_3)) {
+            throw new UnsupportedOperationException("Job status listener is not supported.");
+        }
     }
 }

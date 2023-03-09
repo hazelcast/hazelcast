@@ -102,6 +102,11 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
         put(toConfig(name, type, options), SQL, replace);
     }
 
+    @Override
+    public boolean existsDataLink(String name) {
+        return dataLinks.containsKey(name);
+    }
+
     private DataLinkConfig toConfig(String name, String type, Map<String, String> options) {
         Properties properties = new Properties();
         properties.putAll(options);
