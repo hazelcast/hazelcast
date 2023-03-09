@@ -72,7 +72,7 @@ public class JetMessageTaskFactoryProvider implements MessageTaskFactoryProvider
         factories.put(JetGetJobConfigCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new JetGetJobConfigMessageTask(cm, node, con));
         factories.put(JetUpdateJobConfigCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new toFactory(JetUpdateJobConfigMessageTask()));
+                (cm, con) -> new JetUpdateJobConfigMessageTask(cm, node, con));
         factories.put(JetResumeJobCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new JetResumeJobMessageTask(cm, node, con));
         factories.put(JetExportSnapshotCodec.REQUEST_MESSAGE_TYPE,
