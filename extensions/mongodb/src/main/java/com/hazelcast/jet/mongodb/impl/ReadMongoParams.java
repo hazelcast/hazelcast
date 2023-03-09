@@ -154,5 +154,4 @@ public class ReadMongoParams<I> implements Serializable {
         this.aggregates.add(doc);
         return this;
     }
-
 }

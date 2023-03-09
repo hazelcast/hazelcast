@@ -19,6 +19,7 @@ import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.mongodb.WriteMode;
+import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.mongodb.TransactionOptions;
 import com.mongodb.client.MongoClient;
@@ -38,6 +39,7 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 public class WriteMongoParams<I> implements Serializable {
 
     SupplierEx<? extends MongoClient> clientSupplier;
+    DataLinkRef dataLinkRef;
     String databaseName;
     String collectionName;
     Class<I> documentType;
@@ -67,6 +69,23 @@ public class WriteMongoParams<I> implements Serializable {
     public WriteMongoParams<I> setClientSupplier(@Nonnull SupplierEx<? extends MongoClient> clientSupplier) {
         this.clientSupplier = clientSupplier;
         return this;
+    }
+
+    public DataLinkRef getDataLinkRef() {
+        return dataLinkRef;
+    }
+
+    public WriteMongoParams<I> setDataLinkRef(DataLinkRef dataLinkRef) {
+        this.dataLinkRef = dataLinkRef;
+        return this;
+    }
+
+    public void checkConnectivityOptionsValid() {
+        boolean hasLink = dataLinkRef != null;
+        boolean hasClientSupplier = clientSupplier != null;
+        checkState(hasLink || hasClientSupplier, "Client supplier or data link ref should be provided");
+        checkState(hasLink != hasClientSupplier, "Only one of two should be provided: " +
+                "Client supplier or data link ref");
     }
 
     @Nonnull
@@ -214,7 +233,7 @@ public class WriteMongoParams<I> implements Serializable {
     }
 
     public void checkValid() {
-        checkNotNull(clientSupplier, "clientSupplier must be set");
+        checkConnectivityOptionsValid();
         checkNotNull(documentIdentityFn, "documentIdentityFn must be set");
         checkNotNull(commitRetryStrategy, "commitRetryStrategy must be set");
         checkNotNull(transactionOptionsSup, "transactionOptions must be set");

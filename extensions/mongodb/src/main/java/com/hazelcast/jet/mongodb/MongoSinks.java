@@ -17,6 +17,7 @@
 package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.client.MongoClient;
@@ -82,6 +83,50 @@ public final class MongoSinks {
         return new MongoSinkBuilder<>(name, itemClass, clientSupplier);
     }
 
+    /**
+     * Returns a builder object that offers a step-by-step fluent API to build
+     * a custom MongoDB {@link Sink} for the Pipeline API.
+     * <p>
+     * The sink inserts or replaces the items it receives to specified collection using
+     * {@link MongoCollection#bulkWrite}.
+     * <p>
+     * All operations are done within transaction if processing guarantee
+     * of the job is {@link com.hazelcast.jet.config.ProcessingGuarantee#EXACTLY_ONCE}.
+     * <p>
+     * All writes are done using default MongoDB codecs with POJO class codec added.
+     *<p>
+     * Example usage:
+     * <pre>{@code
+     * Sink<Document> mongoSink =
+     *         MongoSinks.builder(
+     *                     "stream-sink",
+     *                     Document.class,
+     *                     dataLinkRef("someMongoDB")
+     *                 )
+     *                 .into("myDatabase", "myCollection")
+     *                 .identifyDocumentBy("_id", doc -> doc.get("_id"))
+     *                 .build()
+     *         );
+     *
+     * Pipeline p = Pipeline.create();
+     * (...)
+     * someStage.writeTo(mongoSink);
+     * }</pre>
+     * @since 5.3
+     *
+     * @param name               name of the sink
+     * @param dataLinkRef        reference to mongo data link
+     * @param itemClass          type of document that will be saved
+     * @param <T>                type of the items the sink accepts
+     */
+    @Beta
+    public static <T> MongoSinkBuilder<T> builder(
+            @Nonnull String name,
+            @Nonnull Class<T> itemClass,
+            @Nonnull DataLinkRef dataLinkRef
+            ) {
+        return new MongoSinkBuilder<>(name, itemClass, dataLinkRef);
+    }
 
     /**
      * Convenience for {@link #builder}.
@@ -117,6 +162,45 @@ public final class MongoSinks {
     ) {
         return MongoSinks
                 .builder(name, Document.class, () -> MongoClients.create(connectionString))
+                .into(database, collection)
+                .identifyDocumentBy("_id", doc -> doc.get("_id"))
+                .build();
+    }
+
+    /**
+     * Convenience for {@link #builder}.
+     *
+     * Example usage:
+     * <pre>{@code
+     * Sink<Document> mongoSink =
+     *         MongoSinks.builder(
+     *                 "mongoSink",
+     *                 dataLinkRef("someMongoDB"),
+     *                 "myDatabase",
+     *                 "myCollection"
+     *         );
+     *
+     * Pipeline p = Pipeline.create();
+     * (...)
+     * someStage.writeTo(mongoSink);
+     * }</pre>
+     *
+     * @since 5.3
+     *
+     * @param name name of this sink
+     * @param dataLinkRef reference to some mongo data link
+     * @param database database to which the documents will be put into
+     * @param collection collection to which the documents will be put into
+     */
+    @Beta
+    public static Sink<Document> mongodb(
+            @Nonnull String name,
+            @Nonnull DataLinkRef dataLinkRef,
+            @Nonnull String database,
+            @Nonnull String collection
+    ) {
+        return MongoSinks
+                .builder(name, Document.class, dataLinkRef)
                 .into(database, collection)
                 .identifyDocumentBy("_id", doc -> doc.get("_id"))
                 .build();

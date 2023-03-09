@@ -161,6 +161,63 @@ public final class MongoSources {
     }
 
     /**
+     * Returns a MongoDB batch source which queries the collection using given
+     * {@code filter} and applies the given {@code projection} on the documents.
+     * <p>
+     * See {@link MongoSourceBuilder} for creating custom MongoDB sources.
+     * <p>
+     * Here's an example which queries documents in a collection having the
+     * field {@code age} with a value greater than {@code 10} and applies a
+     * projection so that only the {@code age} field is returned in the
+     * emitted document.
+     *
+     * <pre>{@code
+     * BatchSource<Document> batchSource =
+     *         MongoSources.batch(
+     *                 "batch-source",
+     *                 dataLinkRef("mongoDb"),
+     *                 "myDatabase",
+     *                 "myCollection",
+     *                 new Document("age", new Document("$gt", 10)),
+     *                 new Document("age", 1)
+     *         );
+     * Pipeline p = Pipeline.create();
+     * BatchStage<Document> srcStage = p.readFrom(batchSource);
+     * }</pre>
+     *
+     * @since 5.3
+     *
+     * @param name             a descriptive name for the source (diagnostic purposes)
+     * @param dataLinkRef      a reference to some mongo data link
+     * @param database         the name of the database
+     * @param collection       the name of the collection
+     * @param filter           filter object as a {@link Document}
+     * @param projection       projection object as a {@link Document}
+     */
+    @Beta
+    @Nonnull
+    public static BatchSource<Document> batch(
+            @Nonnull String name,
+            @Nonnull DataLinkRef dataLinkRef,
+            @Nonnull String database,
+            @Nonnull String collection,
+            @Nullable Bson filter,
+            @Nullable Bson projection
+    ) {
+        Batch<Document> builder = MongoSourceBuilder
+                .batch(name, dataLinkRef)
+                .database(database)
+                .collection(collection);
+        if (projection != null) {
+            builder.project(projection);
+        }
+        if (filter != null) {
+            builder.filter(filter);
+        }
+        return builder.build();
+    }
+
+    /**
      * Creates as builder for new stream mongo source. Equivalent to calling {@link MongoSourceBuilder#stream}.
      *
      * Example usage:

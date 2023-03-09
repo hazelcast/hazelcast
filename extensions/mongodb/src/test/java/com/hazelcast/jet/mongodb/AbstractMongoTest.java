@@ -17,9 +17,11 @@
 package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.jet.mongodb.datalink.MongoDataLink;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
@@ -71,11 +73,6 @@ public abstract class AbstractMongoTest extends SimpleTestInClusterSupport {
     @BeforeClass
     public static void setUp() {
         assumeDockerEnabled();
-        Config config = new Config();
-        config.addMapConfig(new MapConfig("*").setEventJournalConfig(new EventJournalConfig().setEnabled(true)));
-        config.getJetConfig().setEnabled(true);
-        initialize(2, config);
-
         mongoContainer.start();
         mongo = MongoClients.create(mongoContainer.getConnectionString());
 
@@ -86,6 +83,17 @@ public abstract class AbstractMongoTest extends SimpleTestInClusterSupport {
         collection.insertOne(new Document("test", 1));
         startAtOperationTime = cursor.next().getClusterTime();
         cursor.close();
+
+        Config config = new Config();
+        config.addMapConfig(new MapConfig("*").setEventJournalConfig(new EventJournalConfig().setEnabled(true)));
+        config.addDataLinkConfig(new DataLinkConfig("mongoDB")
+                .setClassName(MongoDataLink.class.getName())
+                .setName("mongoDB")
+                .setShared(true)
+                .setProperty("connectionString", mongoContainer.getConnectionString())
+        );
+        config.getJetConfig().setEnabled(true);
+        initialize(2, config);
     }
 
     @After
