@@ -89,6 +89,9 @@ public class MongoDataLink extends DataLinkBase {
         }
     }
 
+    /**
+     * Returns the database name hint.
+     */
     public String getDatabaseName() {
         return databaseName;
     }
