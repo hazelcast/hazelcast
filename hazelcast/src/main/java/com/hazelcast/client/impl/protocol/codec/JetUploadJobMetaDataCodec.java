@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("a21e94c475c2c94178ce7cfec351c32c")
+@Generated("6c91e57f38291444315b3eb72e7bef00")
 public final class JetUploadJobMetaDataCodec {
     //hex: 0xFE1100
     public static final int REQUEST_MESSAGE_TYPE = 16650496;
@@ -58,7 +58,7 @@ public final class JetUploadJobMetaDataCodec {
         public java.util.UUID sessionId;
 
         /**
-         * Flag that indicates that jar should be executed, not uploaded
+         * Flag that indicates that the jar to be executed is already present on the member, and no jar will be uploaded from the client
          */
         public boolean jarOnMember;
 
