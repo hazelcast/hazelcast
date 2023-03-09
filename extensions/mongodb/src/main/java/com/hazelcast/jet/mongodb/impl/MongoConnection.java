@@ -119,6 +119,10 @@ class MongoConnection implements Closeable {
         }
     }
 
+    /**
+     * Assembles client supplier - if data link is used, it will set {@link #clientSupplier} to
+     * correct supplier based on the data link.
+     */
     public void assembleSupplier(NodeEngineImpl nodeEngine) {
         if (dataLinkRef != null) {
             MongoDataLink link =
