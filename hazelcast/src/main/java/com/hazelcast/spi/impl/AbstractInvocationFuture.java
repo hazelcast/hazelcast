@@ -1240,8 +1240,9 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     protected void onComplete() {
-        if (state instanceof ExceptionalResult) {
-            super.completeExceptionally(((ExceptionalResult) state).getCause());
+        if (isCompletedExceptionally()) {
+            ExceptionalResult resolved = (ExceptionalResult) resolve(state);
+            super.completeExceptionally(resolved.getCause());
         } else {
             super.complete((V) state);
         }

@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.spi.impl.CompletableFutureAbstractTest;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -28,12 +29,18 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
+import static org.hamcrest.CoreMatchers.is;
 
 /**
  * Tests the {@link CompletionStage} implementation of {@link InvocationFuture}.
@@ -41,6 +48,9 @@ import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class InvocationFuture_CompletionStageTest extends CompletableFutureAbstractTest {
+
+    @Rule
+    public ExpectedException expected = ExpectedException.none();
 
     private TestHazelcastInstanceFactory factory;
     private HazelcastInstance local;
@@ -54,6 +64,40 @@ public class InvocationFuture_CompletionStageTest extends CompletableFutureAbstr
     @After
     public void tearDown() {
         factory.terminateAll();
+    }
+
+    // InvocationFuture can be completed with InvocationConstant which indicates exceptional completion.
+    // Test that using these InvocationConstants results in exceptional completion of superclass (CompletableFuture)
+    // so InvocationFutures are interoperable with JDK's CompletableFutures.
+    @Test
+    public void testInvocationFuture_superCompletedExceptionally_whenCompletedWithCallTimeoutConstant() {
+        InvocationFuture<Void> invocationFuture = invokeSleepingOperation();
+        CompletableFuture cf = CompletableFuture.allOf(invocationFuture);
+        invocationFuture.complete(InvocationConstant.CALL_TIMEOUT);
+        expected.expect(CompletionException.class);
+        expected.expectCause(is(OperationTimeoutException.class));
+        cf.join();
+    }
+
+    @Test
+    public void testInvocationFuture_superCompletedExceptionally_whenCompletedWithInterruptedConstant() {
+        InvocationFuture<Void> invocationFuture = invokeSleepingOperation();
+        CompletableFuture cf = CompletableFuture.allOf(invocationFuture);
+        invocationFuture.complete(InvocationConstant.INTERRUPTED);
+        expected.expect(CompletionException.class);
+        expected.expectCause(is(InterruptedException.class));
+        cf.join();
+    }
+
+    @Test
+    public void testInvocationFuture_superCompletedExceptionally_whenCompletedWithHeartbeatTimeoutConstant() {
+        InvocationFuture<Void> invocationFuture = invokeSleepingOperation();
+        CompletableFuture cf = CompletableFuture.allOf(invocationFuture);
+        invocationFuture.complete(InvocationConstant.HEARTBEAT_TIMEOUT);
+        expected.expect(CompletionException.class);
+        expected.expectCause(is(OperationTimeoutException.class));
+        expected.expectMessage("heartbeat");
+        cf.join();
     }
 
     protected Config getConfig() {
@@ -88,5 +132,10 @@ public class InvocationFuture_CompletionStageTest extends CompletableFutureAbstr
                 throw new ExpectedRuntimeException();
             }
         }) : CompletableFutureTestUtil.invokeAsync(instance, new SlowOperation(completeAfterMillis, returnValue));
+    }
+
+    InvocationFuture<Void> invokeSleepingOperation() {
+        return (InvocationFuture) CompletableFutureTestUtil.invokeAsync(local,
+                new OperationServiceImpl_timeoutTest.SleepingOperation(100_000));
     }
 }
