@@ -158,7 +158,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             }
 
             SocketChannel socketChannel = serverSocketChannel.accept();
-            accepted.inc();
+            metrics.incAccepted();
             if (logger.isInfoEnabled()) {
                 logger.info(NioAsyncServerSocket.this + " accepted: " + socketChannel.getRemoteAddress()
                         + "->" + socketChannel.getLocalAddress());

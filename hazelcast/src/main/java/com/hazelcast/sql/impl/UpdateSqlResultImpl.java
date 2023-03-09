@@ -27,14 +27,19 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 public final class UpdateSqlResultImpl extends AbstractSqlResult {
 
     private final long updateCount;
+    private final int partitionArgumentIndex;
 
-    private UpdateSqlResultImpl(long updateCount) {
+    private UpdateSqlResultImpl(long updateCount, int partitionArgumentIndex) {
         this.updateCount = checkNotNegative(updateCount, "the updateCount must be >= 0");
+        this.partitionArgumentIndex = partitionArgumentIndex;
     }
 
     public static UpdateSqlResultImpl createUpdateCountResult(long updateCount) {
-        checkNotNegative(updateCount, "the updateCount must be >= 0");
-        return new UpdateSqlResultImpl(updateCount);
+        return createUpdateCountResult(updateCount, -1);
+    }
+
+    public static UpdateSqlResultImpl createUpdateCountResult(long updateCount, int partitionArgumentIndex) {
+        return new UpdateSqlResultImpl(updateCount, partitionArgumentIndex);
     }
 
     @Nullable
@@ -45,6 +50,11 @@ public final class UpdateSqlResultImpl extends AbstractSqlResult {
     @Override
     public boolean isInfiniteRows() {
         return false;
+    }
+
+    @Override
+    public int getPartitionArgumentIndex() {
+        return partitionArgumentIndex;
     }
 
     @Nonnull

@@ -18,13 +18,16 @@ package com.hazelcast.jet.mongodb.impl;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.jet.mongodb.WriteMode;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.mongodb.TransactionOptions;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.ReplaceOptions;
+import com.mongodb.client.model.WriteModel;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
+import java.util.Optional;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkState;
@@ -38,6 +41,8 @@ public class WriteMongoParams<I> implements Serializable {
     String databaseName;
     String collectionName;
     Class<I> documentType;
+    @Nonnull
+    FunctionEx<?, I> intermediateMappingFn = FunctionEx.identity();
     String documentIdentityFieldName;
     FunctionEx<I, Object> documentIdentityFn;
     @Nonnull
@@ -46,6 +51,9 @@ public class WriteMongoParams<I> implements Serializable {
     SupplierEx<TransactionOptions> transactionOptionsSup;
     FunctionEx<I, String> databaseNameSelectFn;
     FunctionEx<I, String> collectionNameSelectFn;
+    @Nonnull
+    WriteMode writeMode = WriteMode.REPLACE;
+    FunctionEx<I, WriteModel<I>> writeModelFn;
 
     public WriteMongoParams() {
     }
@@ -90,6 +98,18 @@ public class WriteMongoParams<I> implements Serializable {
     @Nonnull
     public WriteMongoParams<I> setDocumentType(@Nonnull Class<I> documentType) {
         this.documentType = documentType;
+        return this;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Nonnull
+    public <T> FunctionEx<T, I> getIntermediateMappingFn() {
+        return (FunctionEx<T, I>) intermediateMappingFn;
+    }
+
+    @Nonnull
+    public <IN> WriteMongoParams<I> setIntermediateMappingFn(FunctionEx<IN, I> intermediateMappingFn) {
+        this.intermediateMappingFn = intermediateMappingFn;
         return this;
     }
 
@@ -141,7 +161,7 @@ public class WriteMongoParams<I> implements Serializable {
     }
 
     @Nonnull
-    public WriteMongoParams<I> setTransactionOptions(SupplierEx<TransactionOptions> transactionOptionsSup) {
+    public WriteMongoParams<I> setTransactionOptionsSup(SupplierEx<TransactionOptions> transactionOptionsSup) {
         this.transactionOptionsSup = transactionOptionsSup;
         return this;
     }
@@ -165,6 +185,31 @@ public class WriteMongoParams<I> implements Serializable {
     public WriteMongoParams<I> setCollectionNameSelectFn(FunctionEx<I, String> collectionNameSelectFn) {
         checkSerializable(collectionNameSelectFn, "collectionNameSelectFn");
         this.collectionNameSelectFn = collectionNameSelectFn;
+        return this;
+    }
+
+    @Nonnull
+    public WriteMode getWriteMode() {
+        return writeMode;
+    }
+
+    public WriteMongoParams<I> setWriteMode(@Nonnull WriteMode writeMode) {
+        checkNotNull(writeMode, "writeMode cannot be null");
+        this.writeMode = writeMode;
+        return this;
+    }
+
+    public FunctionEx<I, WriteModel<I>> getWriteModelFn() {
+        return writeModelFn;
+    }
+
+    public Optional<FunctionEx<I, WriteModel<I>>> getOptionalWriteModelFn() {
+        return Optional.ofNullable(writeModelFn);
+    }
+
+    @Nonnull
+    public WriteMongoParams<I> setWriteModelFn(FunctionEx<I, WriteModel<I>> writeModelFn) {
+        this.writeModelFn = writeModelFn;
         return this;
     }
 

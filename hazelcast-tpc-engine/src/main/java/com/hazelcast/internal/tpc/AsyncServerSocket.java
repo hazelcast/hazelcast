@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.util.ProgressIndicator;
-
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketAddress;
@@ -29,21 +27,28 @@ import java.util.function.Consumer;
  */
 public abstract class AsyncServerSocket extends AbstractAsyncSocket {
 
-    protected final ProgressIndicator accepted = new ProgressIndicator();
+    protected final AsyncServerSocketMetrics metrics = new AsyncServerSocketMetrics();
 
     protected AsyncServerSocket() {
     }
 
-    public abstract AsyncSocketOptions options();
+    /**
+     * Returns the AsyncServerSocketMetrics of this AsyncServerSocket.
+     * <p/>
+     * This call can always be made no matter the state of the socket.
+     *
+     * @return the metrics.
+     */
+    public AsyncServerSocketMetrics metrics() {
+        return metrics;
+    }
 
     /**
-     * Returns the number of sockets that have been accepted.
+     * Gets the AsyncSocketOptions for this AsyncServerSocket.
      *
-     * @return the number of accepted sockets.
+     * @return the options.
      */
-    public long getAccepted() {
-        return accepted.get();
-    }
+    public abstract AsyncSocketOptions options();
 
     /**
      * Gets the local address: the socket address that this channel's socket is bound to.

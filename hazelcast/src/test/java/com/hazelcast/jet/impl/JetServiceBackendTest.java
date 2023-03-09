@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -29,10 +30,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.FileNotFoundException;
+
 import static com.hazelcast.config.MapConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
 import static com.hazelcast.jet.impl.JetServiceBackend.createSqlCatalogConfig;
 import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -77,6 +81,26 @@ public class JetServiceBackendTest extends JetTestSupport {
         MapConfig mapConfig = instance.getConfig().getMapConfig(JetServiceBackend.SQL_CATALOG_MAP_NAME);
         assertEquals(new DataPersistenceConfig(), mapConfig.getDataPersistenceConfig());
         assertEquals(createSqlCatalogConfig(), mapConfig);
+    }
+
+    @Test
+    public void wrapFileNotFoundException() {
+        String message = "file not found";
+        FileNotFoundException fileNotFound = new FileNotFoundException(message);
+        assertThatThrownBy(() -> JetServiceBackend.wrapWithJetException(fileNotFound))
+                .isInstanceOf(JetException.class)
+                .hasRootCauseInstanceOf(FileNotFoundException.class)
+                .hasMessageContaining(message);
+    }
+
+    @Test
+    public void wrapJetException() {
+        String message = "jet exception";
+        JetException jetException = new JetException(message);
+        assertThatThrownBy(() -> JetServiceBackend.wrapWithJetException(jetException))
+                .isInstanceOf(JetException.class)
+                .hasNoCause()
+                .hasMessageContaining(message);
     }
 
     @Test
