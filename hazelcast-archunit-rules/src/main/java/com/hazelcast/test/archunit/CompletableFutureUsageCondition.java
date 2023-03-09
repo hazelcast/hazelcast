@@ -24,6 +24,8 @@ import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ConditionEvents;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -54,6 +56,12 @@ public class CompletableFutureUsageCondition extends ArchCondition<JavaClass> {
             .collect(toSet());
 
     private static final Set<String> SYNC_AND_ASYNC_METHODS = collectSyncAndAsyncCounterpartMethods();
+    //TODO Remove Java 8 compatibility code after JDK upgrade
+    static {
+        Collection<String> excludedSyncMethodsForJava8Compatibility
+                = Arrays.asList("exceptionally");
+        SYNC_AND_ASYNC_METHODS.removeAll(excludedSyncMethodsForJava8Compatibility);
+    }
 
     CompletableFutureUsageCondition() {
         super("use only CompletableFuture async methods with explicit executor service");
