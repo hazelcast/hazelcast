@@ -18,10 +18,10 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.mongodb.datalink.MongoDataLink;
 import com.hazelcast.jet.mongodb.impl.ReadMongoP;
 import com.hazelcast.jet.mongodb.impl.ReadMongoParams;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -99,8 +99,9 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         if (connectionString != null) {
             clientSupplier = () -> MongoClients.create(connectionString);
         } else if (dataLinkName != null) {
-           // todo data link support
-            EmptyStatement.ignore(null);
+            MongoDataLink link = context.dataLinkService().getAndRetainDataLink(dataLinkName,
+                    MongoDataLink.class);
+            clientSupplier = link::getClient;
         }
         evalContext = ExpressionEvalContext.from(context);
     }
