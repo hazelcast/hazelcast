@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl;
+package com.hazelcast.jet.impl.submitjob.clientside;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.cluster.Member;
@@ -24,12 +24,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.UUID;
 
+/**
+ * Used by client side to find a target cluster member
+ */
 public class SubmitJobTargetMemberFinder {
 
     /**
      * Pick a random cluster member
      */
-    UUID getRandomMemberId(HazelcastClientInstanceImpl client) {
+    public UUID getRandomMemberId(HazelcastClientInstanceImpl client) {
         ArrayList<Member> memberList = new ArrayList<>(client.getClientClusterService().getMemberList());
         return getRandomIdFromList(memberList);
     }

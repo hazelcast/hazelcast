@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.jobupload;
+package com.hazelcast.jet.impl.submitjob.memberside;
 
 import com.hazelcast.jet.JetException;
 import com.hazelcast.logging.ILogger;
@@ -26,12 +26,12 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Used by the member side as to hold the state of jobs that are being uploaded. Once the upload is complete the
+ * Used by the member side to hold the state of jobs that are being uploaded. Once the upload is complete, the
  * state is removed. If upload is abandoned the state is removed after it expires.
  */
 public class JobUploadStore {
 
-    private static ILogger logger = Logger.getLogger(JobUploadStore.class);
+    private static final ILogger LOGGER = Logger.getLogger(JobUploadStore.class);
 
     // Key is sessionID
     private ConcurrentHashMap<UUID, JobUploadStatus> jobMap = new ConcurrentHashMap<>();
@@ -56,7 +56,7 @@ public class JobUploadStore {
         JobUploadStatus jobUploadStatus = jobMap.remove(sessionId);
 
         if (jobUploadStatus != null) {
-            jobUploadStatus.onRemove();
+            jobUploadStatus.removeBadSession();
         }
         return jobUploadStatus;
     }
@@ -69,7 +69,7 @@ public class JobUploadStore {
     public void processJobMetaData(JobMetaDataParameterObject parameterObject) throws IOException {
         UUID sessionId = parameterObject.getSessionId();
         String message = String.format("processJobMetaData : Session : %s ", sessionId);
-        logger.info(message);
+        LOGGER.info(message);
 
         if (jobMap.containsKey(sessionId)) {
             throw new JetException("Session already exists. sessionID " + sessionId);
@@ -98,7 +98,7 @@ public class JobUploadStore {
         int totalPart = parameterObject.getTotalPartNumber();
         String message = String.format("processJobMultipart : Session : %s Received : %d of %d", sessionId, currentPart,
                 totalPart);
-        logger.info(message);
+        LOGGER.info(message);
 
         JobUploadStatus jobUploadStatus = jobMap.get(sessionId);
         if (jobUploadStatus == null) {
@@ -109,9 +109,8 @@ public class JobUploadStore {
 
         // If job upload is complete
         if (partsComplete != null) {
-
             message = String.format("Session : %s is complete. It will be removed from the map", sessionId);
-            logger.info(message);
+            LOGGER.info(message);
 
             // Remove from the map so that it does not expire
             jobMap.remove(partsComplete.getSessionId());

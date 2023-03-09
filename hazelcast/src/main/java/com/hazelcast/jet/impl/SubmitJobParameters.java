@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet;
+package com.hazelcast.jet.impl;
 
 import javax.annotation.Nonnull;
 import java.nio.file.Path;
@@ -22,14 +22,19 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * The parameter object for {{@link JetService#submitJobFromJar(SubmitJobParameters)}}
+ * The parameter object for {{@link JetClientInstanceImpl#submitJobFromJar(SubmitJobParameters)}}
  */
-public class SubmitJobParameters {
+public final class SubmitJobParameters {
 
     /**
      * Path of the jar
      */
     private Path jarPath;
+
+    /**
+     * Set to true if the jar is already present on the member. The jar will be executed directly
+     */
+    private boolean jarOnMember;
 
     /**
      * Snapshot name to be used for the job
@@ -51,12 +56,38 @@ public class SubmitJobParameters {
      */
     private List<String> jobParameters = Collections.emptyList();
 
+    private SubmitJobParameters() {
+    }
+
+    /**
+     * Create a new instance to upload and execute a local jar
+     */
+    public static SubmitJobParameters withJarOnClient() {
+        return new SubmitJobParameters();
+    }
+
+    /**
+     * Create a new instance to execute a jar on the member
+     */
+    public static SubmitJobParameters withJarOnMember() {
+        return new SubmitJobParameters().setJarOnMember();
+    }
+
     public Path getJarPath() {
         return jarPath;
     }
 
     public SubmitJobParameters setJarPath(@Nonnull Path jarPath) {
         this.jarPath = jarPath;
+        return this;
+    }
+
+    public boolean isJarOnMember() {
+        return jarOnMember;
+    }
+
+    private SubmitJobParameters setJarOnMember() {
+        this.jarOnMember = true;
         return this;
     }
 
