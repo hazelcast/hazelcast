@@ -73,7 +73,7 @@ public class ClientAltoTest extends ClientTestSupport {
         HazelcastInstance client = HazelcastClient.newHazelcastClient(getClientConfig());
 
         Collection<ClientConnection> connections = getConnectionManager(client).getActiveConnections();
-        assertEquals(2, connections.size());
+        assertTrueEventually(() -> assertEquals(2, connections.size()));
 
         assertClientConnectsAllAltoPortsEventually(connections, config.getAltoConfig().getEventloopCount());
     }
@@ -132,6 +132,7 @@ public class ClientAltoTest extends ClientTestSupport {
 
         ClientConnectionManager connectionManager = getConnectionManager(client);
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
+        assertTrueEventually(() -> assertEquals(2, connections.size()));
 
         assertClientConnectsAllAltoPortsEventually(connections, config.getAltoConfig().getEventloopCount());
 
@@ -313,7 +314,8 @@ public class ClientAltoTest extends ClientTestSupport {
 
         ClientConnectionManager connectionManager = getConnectionManager(client);
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
-        assertEquals(2, connections.size());
+        assertTrueEventually(() -> assertEquals(2, connections.size()));
+
         assertNoConnectionToAltoPortsAllTheTime(connections);
 
         map.put("42", "42");
@@ -331,7 +333,8 @@ public class ClientAltoTest extends ClientTestSupport {
 
         ClientConnectionManager connectionManager = getConnectionManager(client);
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
-        assertEquals(2, connections.size());
+        assertTrueEventually(() -> assertEquals(2, connections.size()));
+
         assertNoConnectionToAltoPortsAllTheTime(connections);
 
         map.put("42", "42");
