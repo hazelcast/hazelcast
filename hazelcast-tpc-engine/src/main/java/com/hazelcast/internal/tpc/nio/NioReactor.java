@@ -17,9 +17,6 @@
 package com.hazelcast.internal.tpc.nio;
 
 import com.hazelcast.internal.tpc.AcceptRequest;
-import com.hazelcast.internal.tpc.AsyncServerSocketBuilder;
-import com.hazelcast.internal.tpc.AsyncSocketBuilder;
-import com.hazelcast.internal.tpc.Eventloop;
 import com.hazelcast.internal.tpc.Reactor;
 import com.hazelcast.internal.tpc.ReactorBuilder;
 
@@ -44,14 +41,14 @@ public final class NioReactor extends Reactor {
     }
 
     @Override
-    public AsyncSocketBuilder newAsyncSocketBuilder() {
+    public NioAsyncSocketBuilder newAsyncSocketBuilder() {
         verifyRunning();
 
         return new NioAsyncSocketBuilder(this, null);
     }
 
     @Override
-    public AsyncSocketBuilder newAsyncSocketBuilder(AcceptRequest acceptRequest) {
+    public NioAsyncSocketBuilder newAsyncSocketBuilder(AcceptRequest acceptRequest) {
         verifyRunning();
 
         NioAcceptRequest nioAcceptRequest = checkInstanceOf(NioAcceptRequest.class, acceptRequest, "acceptRequest");
@@ -59,14 +56,14 @@ public final class NioReactor extends Reactor {
     }
 
     @Override
-    public AsyncServerSocketBuilder newAsyncServerSocketBuilder() {
+    public NioAsyncServerSocketBuilder newAsyncServerSocketBuilder() {
         verifyRunning();
 
         return new NioAsyncServerSocketBuilder(this);
     }
 
     @Override
-    protected Eventloop newEventloop(ReactorBuilder builder) {
+    protected NioEventloop newEventloop(ReactorBuilder builder) {
         return new NioEventloop(this, (NioReactorBuilder) builder);
     }
 

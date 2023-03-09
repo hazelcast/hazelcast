@@ -3,7 +3,7 @@
 |                                |                            |
 |--------------------------------|----------------------------|
 | Related Github issues          | TODO                       |
-| Document Status / Completeness | Approved                   |              
+| Document Status / Completeness | Approved                   |
 | Author(s)                      | Viliam Durina              |
 | Developer(s)                   | Sasha Syrotenko, Burak Gok |
 | Technical Reviewers            | Frantisek Hartman          |
@@ -30,7 +30,6 @@ manner.
 
 In 5.2, a new configuration element was introduced:
 
-
 ```xml
 <!--
  ===== HAZELCAST EXTERNAL DATA STORE CONFIGURATION =====
@@ -39,11 +38,11 @@ In 5.2, a new configuration element was introduced:
  used by map stores and jdbc sinks and sources
  -->
 <external-data-store name="mysql-database">
-   <class-name>com.hazelcast.datastore.JdbcDataStoreFactory</class-name>
-   <properties>
-       <property name="jdbcUrl">jdbc:mysql://dummy:3306</property>
-   </properties>
-   <shared>false</shared>
+    <class-name>com.hazelcast.datastore.JdbcDataStoreFactory</class-name>
+    <properties>
+        <property name="jdbcUrl">jdbc:mysql://dummy:3306</property>
+    </properties>
+    <shared>false</shared>
 </external-data-store>
 ```
 
@@ -51,11 +50,11 @@ This can then be used when creating a Java pipeline JDBC source:
 
 ```java
 @Beta
-public static <T> BatchSource<T> jdbc(
-       @Nonnull ExternalDataStoreRef externalDataStoreRef,
-       @Nonnull ToResultSetFunction resultSetFn,
-       @Nonnull FunctionEx<? super ResultSet, ? extends T> createOutputFn
-)
+public static<T> BatchSource<T> jdbc(
+@Nonnull ExternalDataStoreRef externalDataStoreRef,
+@Nonnull ToResultSetFunction resultSetFn,
+@Nonnull FunctionEx<? super ResultSet,?extends T>createOutputFn
+        )
 ```
 
 Or in a mapping:
@@ -68,16 +67,17 @@ OPTIONS (
 )
 ```
 
-Or in `GenericMapStore` configuration: 
+Or in `GenericMapStore` configuration:
 
 ```xml
+
 <map name="my-map">
-   <map-store enabled="true">
-       <class-name>com.hazelcast.mapstore.GenericMapStore</class-name>
-       <properties>
-           <property name="external-data-store-ref">my-mysql-database</property>
-       </properties>
-   </map-store>
+    <map-store enabled="true">
+        <class-name>com.hazelcast.mapstore.GenericMapStore</class-name>
+        <properties>
+            <property name="external-data-store-ref">my-mysql-database</property>
+        </properties>
+    </map-store>
 </map>
 ```
 
@@ -117,12 +117,12 @@ Particular Jet source/sink then uses the `ExternalDataStoreRef` to look the
 factory up:
 
 ```java
-ExternalDataStoreFactory<?> dataStoreFactory = nodeEngine.getExternalDataStoreService().getExternalDataStoreFactory(name);
-if (!(dataStoreFactory instanceof JdbcDataStoreFactory)) {
-   String className = JdbcDataStoreFactory.class.getSimpleName();
-   throw new HazelcastException("Data store factory '" + name + "' must be an instance of " + className);
-}
-return (JdbcDataStoreFactory) dataStoreFactory;
+ExternalDataStoreFactory<?> dataStoreFactory=nodeEngine.getExternalDataStoreService().getExternalDataStoreFactory(name);
+        if(!(dataStoreFactory instanceof JdbcDataStoreFactory)){
+        String className=JdbcDataStoreFactory.class.getSimpleName();
+        throw new HazelcastException("Data store factory '"+name+"' must be an instance of "+className);
+        }
+        return(JdbcDataStoreFactory)dataStoreFactory;
 ```
 
 We considered 2 use cases of a data source - shared and non-shared:
@@ -130,7 +130,6 @@ We considered 2 use cases of a data source - shared and non-shared:
 * Shared - an instance is created at startup - e.g. a single instance of the
   pool is created, getExternalDataStoreFactory(name) returns same instance each
   time
-
 * Non-shared - each getExternalDataStoreFactory(name) is called, a different
   instance is created
 
@@ -147,15 +146,12 @@ JdbcDataStoreFactory on shutdown. See
 
 * **Connector**: a type of remote system, e.g. remote Hazelcast, Kafka, Jdbc,
   Kinesis…
- 
 * **Data link**: a reference to a single external system. It contains metadata
   needed to connect, and might or might not maintain a physical connection or
   connections, depending on the connector.
-
 * **Connection**: a single physical connection instance used by a processor to
   read/write from/to a remote system. The connection might or might not be
   shared or reused, that depends on the data link implementation.
-
 
 # Background
 
@@ -175,11 +171,9 @@ feature was released in Beta status in 5.2.
 
 * **Single-use**: when a connection is needed, new one is created, and it’s
   disconnected after use
-
 * **Pooled:** if a connection is needed, it is borrowed from the pool. After
   done, it is reset[^2] and returned to the pool. One physical connection is
   always used by one process.
-
 * **Shared**: the same connection can be used by multiple threads for multiple
   concurrent tasks. The connection must be stateless. Hazelcast client works
   this way.
@@ -208,7 +202,6 @@ links, all connecting to the same remote system.
    allows us to define a GenericMapStore in config, which is common.
    Disadvantage of config is that it’s not updatable, to update the IP address
    or change password one needs to restart the cluster. \
-
 2. Through SQL: the data link metadata will be stored in SQL catalog, will be
    updatable and removable. These metadata will be lost in a full cluster
    restart (unless backed by Hot Restart).
@@ -238,15 +231,11 @@ A data link created in SQL can be also used in Jet API.
 
 1. The engine checks whether a same-named data link exists in config. If yes,
    fail
-
 2. Write the data link metadata to the SQL catalog IMap
-
 3. Send a message to all members (including itself) to pick up the new config,
    in a fire-and-forget manner
-
 4. When handling that message, create the requested data link (that means call
    `SqlConnector.createDataLink()` and store it in some map on the member).
-
 5. There should also be a background process on each that will regularly scan
    the SQL catalog and create/alter/delete the data link according to the data
    in the catalog. This avoids getting out of sync or leaking of data links.
@@ -290,7 +279,7 @@ link in SQL, one has to enclose it in double quotes.
 ### Multiple types of resources in a single data link
 
 Since one connector can have multiple types of data sources, both bounded and
-unbounded, and we want to use the same connection for all of them,  we need to
+unbounded, and we want to use the same connection for all of them, we need to
 move the `SqlConnector.isStream()` method to `JetTable` class (or another
 object-level class). For example, Hazelcast can support not only imap, but also
 imap journal, IList, queue etc., and we want to access all of them using the
@@ -354,7 +343,6 @@ The EXTERNAL NAME is a simple identifier. That means it cannot contain a dot
 (.). For remote SQL databases the dot separates the schema, but the dot can also
 be part of the table name. Take an example:
 
-
 <table>
   <tr>
    <td><strong>Schema name</strong>
@@ -369,7 +357,7 @@ be part of the table name. Take an example:
    </td>
   </tr>
   <tr>
-   <td>&lt;default>
+   <td><default>
    </td>
    <td>bar
    </td>
@@ -414,7 +402,6 @@ OR
   </tr>
 </table>
 
-
 For simplicity, the connector can always fully-qualify resources and avoid using
 the default schema.[^4]
 
@@ -422,37 +409,36 @@ the default schema.[^4]
 
 **hazelcast.jar**
 
-
 ```java
 interface JetConnector {
-  // moved from SqlConnector
-  String typeName();	
+    // moved from SqlConnector
+    String typeName();
 
-  // the implementation might decide to throw UnsupOpExc
-  DataLink createDataLink(String name,
-    Map<String, String> options);
+    // the implementation might decide to throw UnsupOpExc
+    DataLink createDataLink(String name,
+                            Map<String, String> options);
 }
 
 interface DataLink {
-  // returns the name specified in config, or in CREATE DATA LINK
-  String getName();
+    // returns the name specified in config, or in CREATE DATA LINK
+    String getName();
 
 
-  // list available resources: tuples of {object_type, object_name}
-  List<Tuple2<String, String>> listResources(); 
+    // list available resources: tuples of {object_type, object_name}
+    List<Tuple2<String, String>> listResources();
 
 
-  // not implementing:
-  // tries to connect, but don't read any data.
-  void testConnection();
+    // not implementing:
+    // tries to connect, but don't read any data.
+    void testConnection();
 
-  // options from the config or SQL command
-  Map<String, String> getOptions();
+    // options from the config or SQL command
+    Map<String, String> getOptions();
 
-  // Called for DROP DATA LINK.
-  // Should close unused connections in the pool. Shared connection
-  // should be closed when last thread returns it (by refcounting)
-  void destroy();
+    // Called for DROP DATA LINK.
+    // Should close unused connections in the pool. Shared connection
+    // should be closed when last thread returns it (by refcounting)
+    void destroy();
 }
 ```
 
@@ -460,17 +446,17 @@ interface DataLink {
 
 ```java
 interface SqlConnector extends DataLinkConnector {
-  // add arguments:
-  //   @Nullable String objectType
-  //   @Nullable DataLink dataLink
-  // to methods resolveAndValidateFields() and createTable()
+    // add arguments:
+    //   @Nullable String objectType
+    //   @Nullable DataLink dataLink
+    // to methods resolveAndValidateFields() and createTable()
 
-  // move isStream() to JetConnector
+    // move isStream() to JetConnector
 
-  // move all the remaining methods to Table
+    // move all the remaining methods to Table
 
-  // in Table, add `boolean unbounded` to sink–producing methods:
-  // insertProcessor, sinkProcessor, updateProcessor, deleteProcessor
+    // in Table, add `boolean unbounded` to sink–producing methods:
+    // insertProcessor, sinkProcessor, updateProcessor, deleteProcessor
 }
 ```
 
@@ -504,7 +490,9 @@ the type of the job:
 ```java
 public class KafkaDataLink implements DataLink {
     KafkaConcumer createSingleUseConsumer();
+
     KafkaProducer createSingleUseProducer();
+
     KafkaProducer getPooledProducer();
 }
 ```
@@ -513,14 +501,13 @@ public class KafkaDataLink implements DataLink {
 
 * For the bounded case, a pooled connection will be used. This applies to all
   sources, and for sinks in bounded jobs
-
 * For the unbounded case, a single-use connection will be used. This applies to
   sinks in unbounded jobs.
-
 
 ```java
 public class JdbcDataLink implements DataLink {
     Connection getPooledConnection();
+
     Connection createSingleUseConnection();
 }
 ```
@@ -539,7 +526,7 @@ CREATE [OR REPLACE] DATA LINK [IF NOT EXISTS] <name>
 TYPE <connector name>
 OPTIONS ( … );
 
-DROP DATA LINK <name> [IF EXISTS];
+DROP DATA LINK [IF EXISTS] <name>;
 ```
 
 Alter is not supported. Replacing or dropping a data link created in config will
@@ -580,7 +567,6 @@ Instead, to test a data link, one can use `SHOW RESOURCES` command.**
 
 To create a mapping using an existing data link, use this command:
 
-
 ```sql
 CREATE [OR REPLACE] [EXTERNAL] MAPPING [IF NOT EXISTS] <mapping name>
 [EXTERNAL NAME <resource name>]
@@ -605,7 +591,6 @@ INSERT commands, the engine connects and disconnects to Kafka 10 times.
 
 ## SHOW commands
 
-
 ```sql
 SHOW RESOURCES FOR <data link name>;
 
@@ -628,12 +613,9 @@ PostgreSQL uses a command-line tool `pg_dump`, it’s not possible to get the DD
 through SQL. Oracle uses `dbms_metadata.get_ddl`, which we can mimic. Its
 arguments will be:
 
-
 * **namespace**: allowed values: ‘relation’, ‘datalink’. ‘relation’ is used for
   mappings, views, types (and actual tables in the future, if we have them).
-
 * **object_name**
-
 * **schema** (optional)
 
 ```sql
@@ -642,7 +624,6 @@ SELECT system.get_ddl('datalink', 'my_db_link');
 ```
 
 The function will be in the `system` schema.
-
 
 # Dependency management
 
@@ -675,13 +656,13 @@ The data links can contain sensitive information such as passwords. We will have
 these privileges related to data links:
 
 * new SQL actions `create-datalink` and `drop-datalink`. To CREATE OR REPLACE a
-  data link, one needs permission to both actions
-
+  data link, one needs permission to both actions.
 * new SQL action: `view-datalink`. Without this permission the user won’t be
   able to see data link options, which might contain passwords. This includes
   the `get_ddl` function, or views in information_schema, if we have them. Also
   note that the `__sql.catalog` IMap exposes the data link options in a
   non-documented way, so access to this map must be denied.
+* To DROP data link, we require all both `view-datalink` and `drop-datalink`.
 
 There will be no way to grant/revoke access to individual data links, or to
 individual remote resources, every user will be able to access every data link.
@@ -693,7 +674,7 @@ permissions](https://docs.hazelcast.com/hazelcast/5.2/security/native-client-sec
 
 **Platform tasks**
 
-1. Add/refactor of basic APIs, adapt JDBC data link to this TDD (prereq. for all other tasks)  \
+1. Add/refactor of basic APIs, adapt JDBC data link to this TDD (prereq. for all other tasks)  
    [https://hazelcast.atlassian.net/browse/HZ-2013](https://hazelcast.atlassian.net/browse/HZ-2013) - **6MD**
 2. Implement a data link for Kafka - [https://hazelcast.atlassian.net/browse/HZ-1985](https://hazelcast.atlassian.net/browse/HZ-1985)  **3 MD**
 3. Implement a data link for MongoDB - [https://hazelcast.atlassian.net/browse/HZ-1633](https://hazelcast.atlassian.net/browse/HZ-1633)  **1 MD**

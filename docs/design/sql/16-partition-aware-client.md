@@ -154,5 +154,5 @@ The clean-up threshold can be hardcoded to: `min(cacheSize / 10, 50)`.
      * for storing this information.
      */
     public static final HazelcastProperty PARTITION_ARGUMENT_CACHE_SIZE
-            = new HazelcastProperty("hazelcast.client.partition.argument.cache.size", 100);
+            = new HazelcastProperty("hazelcast.client.sql.partition.argument.cache.size", 1024);
 ```

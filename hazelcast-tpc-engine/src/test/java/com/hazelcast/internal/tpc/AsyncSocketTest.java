@@ -28,6 +28,7 @@ import java.util.concurrent.CompletionException;
 
 import static com.hazelcast.internal.tpc.TpcTestSupport.assertCompletesEventually;
 import static com.hazelcast.internal.tpc.TpcTestSupport.terminateAll;
+import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -50,6 +51,18 @@ public abstract class AsyncSocketTest {
     @After
     public void after() throws InterruptedException {
         terminateAll(reactors);
+    }
+
+    @Test
+    public void test_construction() {
+        Reactor reactor = newReactor();
+        AsyncSocketBuilder socketBuilder = reactor
+                .newAsyncSocketBuilder()
+                .setReadHandler(new DevNullReadHandler());
+        AsyncSocket socket = socketBuilder.build();
+
+        assertNotNull(socket.metrics());
+        assertNotNull(socket.context());
     }
 
     @Test

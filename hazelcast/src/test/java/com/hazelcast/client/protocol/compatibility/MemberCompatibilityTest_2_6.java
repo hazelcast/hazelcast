@@ -7603,7 +7603,7 @@ public class MemberCompatibilityTest_2_6 {
     @Test
     public void test_SqlExecuteCodec_encodeResponse() {
         int fileClientMessageIndex = 856;
-        ClientMessage encoded = SqlExecuteCodec.encodeResponse(aListOfSqlColumnMetadata, aSqlPage, aLong, anSqlError, aBoolean);
+        ClientMessage encoded = SqlExecuteCodec.encodeResponse(aListOfSqlColumnMetadata, aSqlPage, aLong, anSqlError, aBoolean, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -7970,6 +7970,7 @@ public class MemberCompatibilityTest_2_6 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         JetUploadJobMetaDataCodec.RequestParameters parameters = JetUploadJobMetaDataCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aUUID, parameters.sessionId));
+        assertTrue(isEqual(aBoolean, parameters.jarOnMember));
         assertTrue(isEqual(aString, parameters.fileName));
         assertTrue(isEqual(aString, parameters.sha256Hex));
         assertTrue(isEqual(aString, parameters.snapshotName));
@@ -7981,7 +7982,7 @@ public class MemberCompatibilityTest_2_6 {
     @Test
     public void test_JetUploadJobMetaDataCodec_encodeResponse() {
         int fileClientMessageIndex = 902;
-        ClientMessage encoded = JetUploadJobMetaDataCodec.encodeResponse(aBoolean);
+        ClientMessage encoded = JetUploadJobMetaDataCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -8002,7 +8003,49 @@ public class MemberCompatibilityTest_2_6 {
     @Test
     public void test_JetUploadJobMultipartCodec_encodeResponse() {
         int fileClientMessageIndex = 904;
-        ClientMessage encoded = JetUploadJobMultipartCodec.encodeResponse(aBoolean);
+        ClientMessage encoded = JetUploadJobMultipartCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetAddJobStatusListenerCodec_decodeRequest() {
+        int fileClientMessageIndex = 905;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        JetAddJobStatusListenerCodec.RequestParameters parameters = JetAddJobStatusListenerCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aLong, parameters.jobId));
+        assertTrue(isEqual(aBoolean, parameters.localOnly));
+    }
+
+    @Test
+    public void test_JetAddJobStatusListenerCodec_encodeResponse() {
+        int fileClientMessageIndex = 906;
+        ClientMessage encoded = JetAddJobStatusListenerCodec.encodeResponse(aUUID);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetAddJobStatusListenerCodec_encodeJobStatusEvent() {
+        int fileClientMessageIndex = 907;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        ClientMessage encoded = JetAddJobStatusListenerCodec.encodeJobStatusEvent(aLong, anInt, anInt, aString, aBoolean);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetRemoveJobStatusListenerCodec_decodeRequest() {
+        int fileClientMessageIndex = 908;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        JetRemoveJobStatusListenerCodec.RequestParameters parameters = JetRemoveJobStatusListenerCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aLong, parameters.jobId));
+        assertTrue(isEqual(aUUID, parameters.registrationId));
+    }
+
+    @Test
+    public void test_JetRemoveJobStatusListenerCodec_encodeResponse() {
+        int fileClientMessageIndex = 909;
+        ClientMessage encoded = JetRemoveJobStatusListenerCodec.encodeResponse(aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

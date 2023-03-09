@@ -34,6 +34,13 @@ public abstract class AbstractSqlResult implements SqlResult {
      */
     public abstract boolean isInfiniteRows();
 
+    /**
+     * Returns index of the query parameter that should be used as a partition
+     * key to determine the coordinator for future executions of the same query,
+     * or -1 if there's no such parameter.
+     */
+    public abstract int getPartitionArgumentIndex();
+
     @Nonnull @Override
     public abstract ResultIterator<SqlRow> iterator();
 

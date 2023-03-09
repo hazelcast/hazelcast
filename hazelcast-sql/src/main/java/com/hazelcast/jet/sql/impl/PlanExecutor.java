@@ -19,7 +19,9 @@ package com.hazelcast.jet.sql.impl;
 import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
@@ -37,6 +39,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateSnapshotPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateTypePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateViewPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropDataLinkPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropSnapshotPlan;
@@ -51,6 +54,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.schema.DataLinksResolver;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.TypeDefinitionColumn;
 import com.hazelcast.jet.sql.impl.schema.TypesUtils;
@@ -76,6 +80,7 @@ import com.hazelcast.sql.impl.UpdateSqlResultImpl;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.schema.datalink.DataLink;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.schema.view.View;
@@ -96,6 +101,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -105,6 +111,7 @@ import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.impl.util.Util.getSerializationService;
+import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataLinkPlan;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
@@ -120,15 +127,21 @@ public class PlanExecutor {
     private static final String DEFAULT_UNIQUE_KEY_TRANSFORMATION = "OBJECT";
 
     private final TableResolverImpl catalog;
+    private final DataLinksResolver dataLinksCatalog;
     private final HazelcastInstance hazelcastInstance;
     private final QueryResultRegistry resultRegistry;
 
+    // test-only
+    private final AtomicLong directIMapQueriesExecuted = new AtomicLong();
+
     public PlanExecutor(
             TableResolverImpl catalog,
+            DataLinksResolver dataLinksCatalog,
             HazelcastInstance hazelcastInstance,
             QueryResultRegistry resultRegistry
     ) {
         this.catalog = catalog;
+        this.dataLinksCatalog = dataLinksCatalog;
         this.hazelcastInstance = hazelcastInstance;
         this.resultRegistry = resultRegistry;
     }
@@ -143,12 +156,37 @@ public class PlanExecutor {
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
+    SqlResult execute(CreateDataLinkPlan plan) {
+        InternalDataLinkService dlService = getNodeEngine(hazelcastInstance).getDataLinkService();
+        if (plan.ifNotExists() && dlService.existsDataLink(plan.name())) {
+            throw new HazelcastException("Data link '" + plan.name() + "' already exists");
+        }
+
+        dlService.createSqlDataLink(plan.name(), plan.type(), plan.options(), plan.isReplace());
+        dataLinksCatalog.createDataLink(
+                new DataLink(plan.name(), plan.type(), plan.options()),
+                plan.isReplace(),
+                plan.ifNotExists());
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
+    }
+
+    SqlResult execute(DropDataLinkPlan plan) {
+        InternalDataLinkService dlService = getNodeEngine(hazelcastInstance).getDataLinkService();
+        if (plan.ifExists()) {
+            if (!dlService.existsDataLink(plan.name())) {
+                throw new HazelcastException("Data link '" + plan.name() + "' not found");
+            }
+        }
+        dlService.removeDataLink(plan.name());
+        dataLinksCatalog.removeDataLink(plan.name(), plan.ifExists());
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
+    }
+
     SqlResult execute(CreateIndexPlan plan) {
         if (!plan.ifNotExists()) {
             // If `IF NOT EXISTS` isn't specified, we do a simple check for the existence of the index. This is not
             // OK if two clients concurrently try to create the index (they could both succeed), but covers the
-            // common case. There's no atomic operation to create an index in IMDG, so it's not easy to
-            // implement.
+            // common case. There's no atomic operation to create an index in IMDG, so it's not easy to implement.
             MapContainer mapContainer = getMapContainer(hazelcastInstance.getMap(plan.mapName()));
 
             if (mapContainer.getIndexes().getIndex(plan.indexName()) != null) {
@@ -419,7 +457,16 @@ public class PlanExecutor {
         StaticQueryResultProducerImpl resultProducer = row != null
                 ? new StaticQueryResultProducerImpl(row)
                 : new StaticQueryResultProducerImpl(emptyIterator());
-        return new SqlResultImpl(queryId, resultProducer, plan.rowMetadata(), false);
+
+        directIMapQueriesExecuted.getAndIncrement();
+
+        return new SqlResultImpl(
+                queryId,
+                resultProducer,
+                plan.rowMetadata(),
+                false,
+                plan.keyConditionParamIndex()
+        );
     }
 
     SqlResult execute(IMapInsertPlan plan, List<Object> arguments, long timeout) {
@@ -437,7 +484,10 @@ public class PlanExecutor {
                 throw QueryException.error("Duplicate key");
             }
         }
-        return UpdateSqlResultImpl.createUpdateCountResult(0);
+
+        directIMapQueriesExecuted.getAndIncrement();
+
+        return UpdateSqlResultImpl.createUpdateCountResult(0, plan.keyParamIndex());
     }
 
     SqlResult execute(IMapSinkPlan plan, List<Object> arguments, long timeout) {
@@ -459,7 +509,8 @@ public class PlanExecutor {
                 .submitToKey(key, plan.updaterSupplier().get(arguments))
                 .toCompletableFuture();
         await(future, timeout);
-        return UpdateSqlResultImpl.createUpdateCountResult(0);
+        directIMapQueriesExecuted.getAndIncrement();
+        return UpdateSqlResultImpl.createUpdateCountResult(0, plan.keyConditionParamIndex());
     }
 
     SqlResult execute(IMapDeletePlan plan, List<Object> arguments, long timeout) {
@@ -470,7 +521,10 @@ public class PlanExecutor {
                 .submitToKey(key, EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR)
                 .toCompletableFuture();
         await(future, timeout);
-        return UpdateSqlResultImpl.createUpdateCountResult(0);
+
+        directIMapQueriesExecuted.getAndIncrement();
+
+        return UpdateSqlResultImpl.createUpdateCountResult(0, plan.keyConditionParamIndex());
     }
 
     SqlResult execute(CreateTypePlan plan) {
@@ -626,5 +680,9 @@ public class PlanExecutor {
         MapService mapService = mapProxy.getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         return mapServiceContext.getMapContainer(map.getName());
+    }
+
+    public long getDirectIMapQueriesExecuted() {
+        return directIMapQueriesExecuted.get();
     }
 }

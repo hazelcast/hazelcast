@@ -83,20 +83,20 @@ public abstract class AsyncSocket_ReadableTest {
         // disable remote socket readable, send data, and verify the data is not received.
         remoteSocket.setReadable(false);
         localSocket.writeAndFlush(newSingleLongBuffer());
-        assertTrueTwoSeconds(() -> assertEquals(0, remoteSocket.bytesRead.get()));
+        assertTrueTwoSeconds(() -> assertEquals(0, remoteSocket.metrics().bytesRead()));
 
         // enable remote socket readable and verify the data is received eventually.
         remoteSocket.setReadable(true);
-        assertTrueEventually(() -> assertEquals(SIZEOF_LONG, remoteSocket.bytesRead.get()));
+        assertTrueEventually(() -> assertEquals(SIZEOF_LONG, remoteSocket.metrics().bytesRead()));
 
         // disable remote socket readable, send more data, and verify the data is not received.
         remoteSocket.setReadable(false);
         localSocket.writeAndFlush(newSingleLongBuffer());
-        assertTrueTwoSeconds(() -> assertEquals(SIZEOF_LONG, remoteSocket.bytesRead.get()));
+        assertTrueTwoSeconds(() -> assertEquals(SIZEOF_LONG, remoteSocket.metrics().bytesRead()));
 
         // enable remote socket readable and verify the data is received eventually.
         remoteSocket.setReadable(true);
-        assertTrueEventually(() -> assertEquals(2 * SIZEOF_LONG, remoteSocket.bytesRead.get()));
+        assertTrueEventually(() -> assertEquals(2 * SIZEOF_LONG, remoteSocket.metrics().bytesRead()));
     }
 
     private static IOBuffer newSingleLongBuffer() {
