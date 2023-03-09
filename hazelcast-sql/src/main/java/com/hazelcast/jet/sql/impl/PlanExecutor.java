@@ -231,7 +231,9 @@ public class PlanExecutor {
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
                 .setArgument(KEY_SQL_QUERY_TEXT, plan.getQuery())
                 .setArgument(KEY_SQL_UNBOUNDED, isStreamingJob);
-        jobConfig.setSuspendOnFailure(isStreamingJob);
+        if (!jobConfig.isSuspendOnFailure()) {
+            jobConfig.setSuspendOnFailure(isStreamingJob);
+        }
         if (plan.isIfNotExists()) {
             hazelcastInstance.getJet().newJobIfAbsent(plan.getExecutionPlan().getDag(), jobConfig);
         } else {
@@ -245,20 +247,27 @@ public class PlanExecutor {
         if (job == null) {
             throw QueryException.error("The job '" + plan.getJobName() + "' doesn't exist");
         }
-        switch (plan.getOperation()) {
-            case SUSPEND:
-                job.suspend();
-                break;
-
-            case RESUME:
-                job.resume();
-                break;
-
-            case RESTART:
-                job.restart();
-                break;
-
-            default:
+        assert plan.getDeltaConfig() != null || plan.getOperation() != null;
+        if (plan.getDeltaConfig() != null) {
+            try {
+                job.updateConfig(plan.getDeltaConfig());
+            } catch (IllegalStateException e) {
+                throw QueryException.error(e.getMessage(), e);
+            }
+        }
+        if (plan.getOperation() != null) {
+            switch (plan.getOperation()) {
+                case SUSPEND:
+                    job.suspend();
+                    break;
+                case RESUME:
+                    job.resume();
+                    break;
+                case RESTART:
+                    job.restart();
+                    break;
+                default:
+            }
         }
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }

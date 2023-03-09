@@ -7154,6 +7154,21 @@ public class ClientCompatibilityNullTest_2_6 {
         assertTrue(isEqual(aBoolean, JetRemoveJobStatusListenerCodec.decodeResponse(fromFile)));
     }
 
+    @Test
+    public void test_JetUpdateJobConfigCodec_encodeRequest() {
+        int fileClientMessageIndex = 910;
+        ClientMessage encoded = JetUpdateJobConfigCodec.encodeRequest(aLong, aData);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetUpdateJobConfigCodec_decodeResponse() {
+        int fileClientMessageIndex = 911;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aData, JetUpdateJobConfigCodec.decodeResponse(fromFile)));
+    }
+
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 

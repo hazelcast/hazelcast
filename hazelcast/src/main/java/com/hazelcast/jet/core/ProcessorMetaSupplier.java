@@ -722,7 +722,7 @@ public interface ProcessorMetaSupplier extends Serializable {
 
         /**
          * Returns the maximum number of records that can be accumulated by any
-         * single {@link Processor}.
+         * single {@link Processor}. The returned value is strictly positive (>=1).
          */
         long maxProcessorAccumulatedRecords();
 

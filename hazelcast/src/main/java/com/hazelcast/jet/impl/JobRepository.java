@@ -338,6 +338,13 @@ public class JobRepository {
     }
 
     /**
+     * Updates the job record of {@linkplain JobRecord#getJobId the corresponding job}.
+     */
+    void updateJobRecord(JobRecord jobRecord) {
+        jobRecords.get().set(jobRecord.getJobId(), jobRecord);
+    }
+
+    /**
      * Updates the job quorum size of all jobs so that it is at least {@code
      * newQuorumSize}.
      */

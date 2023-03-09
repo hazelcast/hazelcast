@@ -32,6 +32,7 @@ import com.hazelcast.client.impl.protocol.codec.JetRemoveJobStatusListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.JetResumeJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetTerminateJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetUpdateJobConfigCodec;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
@@ -44,6 +45,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStatusEvent;
 import com.hazelcast.jet.JobStatusListener;
 import com.hazelcast.jet.JobStateSnapshot;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.JobSuspensionCause;
@@ -214,6 +216,17 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
             ClientMessage response = invocation(request, masterId()).invoke().get();
             Data data = JetGetJobConfigCodec.decodeResponse(response);
             return serializationService().toObject(data);
+        });
+    }
+
+    @Override
+    protected JobConfig doUpdateJobConfig(DeltaJobConfig deltaConfig) {
+        return callAndRetryIfTargetNotFound(() -> {
+            Data deltaConfigData = serializationService().toData(deltaConfig);
+            ClientMessage request = JetUpdateJobConfigCodec.encodeRequest(getId(), deltaConfigData);
+            ClientMessage response = invocation(request, masterId()).invoke().get();
+            Data configData = JetUpdateJobConfigCodec.decodeResponse(response);
+            return serializationService().toObject(configData);
         });
     }
 
