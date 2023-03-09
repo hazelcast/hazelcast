@@ -289,7 +289,8 @@ public abstract class Reactor implements Executor {
     }
 
     /**
-     * Wakes up the {@link Reactor} when it is blocked and needs to be woken up.
+     * Wakes up the {@link Reactor} when it is blocked and needs to be woken up
+     * because there is work that requires attention.
      */
     public abstract void wakeup();
 
