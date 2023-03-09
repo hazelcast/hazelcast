@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.datalink.impl.DataLinkConsistencyChecker;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
