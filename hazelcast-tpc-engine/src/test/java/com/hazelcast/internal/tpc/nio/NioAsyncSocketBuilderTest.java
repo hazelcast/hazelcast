@@ -16,12 +16,78 @@
 
 package com.hazelcast.internal.tpc.nio;
 
+import com.hazelcast.internal.tpc.AsyncSocket;
 import com.hazelcast.internal.tpc.AsyncSocketBuilderTest;
-import com.hazelcast.internal.tpc.ReactorBuilder;
+import com.hazelcast.internal.tpc.DevNullReadHandler;
+import com.hazelcast.internal.tpc.Reactor;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 public class NioAsyncSocketBuilderTest extends AsyncSocketBuilderTest {
+
     @Override
-    public ReactorBuilder newReactorBuilder() {
+    public NioReactorBuilder newReactorBuilder() {
         return new NioReactorBuilder();
+    }
+
+    @Test
+    public void test_setWriteQueueCapacity_whenNegative() {
+        NioReactor reactor = (NioReactor) newReactor();
+        NioAsyncSocketBuilder builder = reactor.newAsyncSocketBuilder();
+
+        assertThrows(IllegalArgumentException.class, () -> builder.setWriteQueueCapacity(-1));
+    }
+
+    @Test
+    public void test_setWriteQueueCapacity_whenZero() {
+        NioReactor reactor = (NioReactor) newReactor();
+        NioAsyncSocketBuilder builder = reactor.newAsyncSocketBuilder();
+
+        assertThrows(IllegalArgumentException.class, () -> builder.setWriteQueueCapacity(0));
+    }
+
+    @Test
+    public void test_setWriteQueueCapacity_whenAlreadyBuild() {
+        NioReactor reactor = (NioReactor) newReactor();
+        NioAsyncSocketBuilder builder = reactor.newAsyncSocketBuilder();
+        builder.setReadHandler(new DevNullReadHandler());
+        AsyncSocket socket = builder.build();
+
+        assertThrows(IllegalStateException.class, () -> builder.setWriteQueueCapacity(1024));
+    }
+
+    @Test
+    public void test_setWriteQueueCapacity() {
+        Reactor reactor = newReactor();
+        NioAsyncSocketBuilder builder = (NioAsyncSocketBuilder) reactor.newAsyncSocketBuilder();
+        builder.setWriteQueueCapacity(16384);
+
+        assertEquals(16384, builder.writeQueueCapacity);
+    }
+
+    @Test
+    public void test_setReceiveBufferIsDirect_whenAlreadyBuild() {
+        NioReactor reactor = (NioReactor) newReactor();
+        NioAsyncSocketBuilder builder = reactor.newAsyncSocketBuilder();
+        builder.setReadHandler(new DevNullReadHandler());
+        AsyncSocket socket = builder.build();
+
+        assertThrows(IllegalStateException.class, builder::build);
+    }
+
+    @Test
+    public void test_setReceiveBufferIsDirect() {
+        Reactor reactor = newReactor();
+        NioAsyncSocketBuilder builder = (NioAsyncSocketBuilder) reactor.newAsyncSocketBuilder();
+
+        builder.setReceiveBufferIsDirect(false);
+        assertFalse(builder.receiveBufferIsDirect);
+
+        builder.setReceiveBufferIsDirect(true);
+        assertTrue(builder.receiveBufferIsDirect);
     }
 }

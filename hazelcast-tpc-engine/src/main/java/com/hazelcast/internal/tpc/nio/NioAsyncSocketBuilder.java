@@ -34,7 +34,7 @@ import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
  * A {@link AsyncSocketBuilder} specific to the {@link NioAsyncSocket}.
  */
 public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
-    static final int DEFAULT_UNFLUSHED_BUFS_CAPACITY = 2 << 16;
+    static final int DEFAULT_WRITE_QUEUE_CAPACITY = 2 << 16;
 
     final NioReactor reactor;
     final SocketChannel socketChannel;
@@ -43,7 +43,7 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
     boolean regularSchedule = true;
     boolean writeThrough;
     boolean receiveBufferIsDirect = true;
-    int unflushedBufsCapacity = DEFAULT_UNFLUSHED_BUFS_CAPACITY;
+    int writeQueueCapacity = DEFAULT_WRITE_QUEUE_CAPACITY;
     ReadHandler readHandler;
     NioAsyncSocketOptions options;
     private boolean build;
@@ -81,10 +81,10 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
         return this;
     }
 
-    public NioAsyncSocketBuilder setUnflushedBufsCapacity(int unflushedBufsCapacity) {
+    public NioAsyncSocketBuilder setWriteQueueCapacity(int writeQueueCapacity) {
         verifyNotBuild();
 
-        this.unflushedBufsCapacity = checkPositive(unflushedBufsCapacity, "unflushedBufsCapacity");
+        this.writeQueueCapacity = checkPositive(writeQueueCapacity, "writeQueueCapacity");
         return this;
     }
 

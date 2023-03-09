@@ -64,6 +64,9 @@ import java.util.stream.Collectors;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.core.JobStatus.COMPLETED;
+import static com.hazelcast.jet.core.JobStatus.FAILED;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createExecutionPlans;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
@@ -82,6 +85,7 @@ public final class LightMasterContext {
     };
 
     private final NodeEngine nodeEngine;
+    private final JobEventService jobEventService;
     private final long jobId;
 
     private final ILogger logger;
@@ -100,6 +104,7 @@ public final class LightMasterContext {
                               JobConfig jobConfig, Map<MemberInfo, ExecutionPlan> executionPlanMap,
                               Set<Vertex> vertices) {
         this.nodeEngine = nodeEngine;
+        this.jobEventService = nodeEngine.getService(JobEventService.SERVICE_NAME);
         this.jobId = jobId;
         this.logger = logger;
         this.jobIdString = jobIdString;
@@ -191,11 +196,13 @@ public final class LightMasterContext {
             Throwable fail = failure;
             if (fail == null) {
                 jobCompletionFuture.complete(null);
+                jobEventService.publishEvent(jobId, RUNNING, COMPLETED, null, false);
             } else {
+                TerminationMode requestedTerminationMode = fail instanceof JobTerminateRequestedException
+                        ? ((JobTerminateRequestedException) fail).mode() : null;
                 // translate JobTerminateRequestedException(CANCEL_FORCEFUL)
                 // to CancellationException or CancellationByUserException
-                if (fail instanceof JobTerminateRequestedException
-                        && ((JobTerminateRequestedException) fail).mode() == CANCEL_FORCEFUL) {
+                if (requestedTerminationMode == CANCEL_FORCEFUL) {
                     Throwable newFailure = userInitiatedTermination
                             ? new CancellationByUserException()
                             : new CancellationException();
@@ -203,7 +210,11 @@ public final class LightMasterContext {
                     fail = newFailure;
                 }
                 jobCompletionFuture.completeExceptionally(fail);
+                jobEventService.publishEvent(jobId, RUNNING, FAILED, requestedTerminationMode != null
+                            ? requestedTerminationMode.actionAfterTerminate().description() : fail.toString(),
+                        userInitiatedTermination);
             }
+            jobEventService.removeAllEventListeners(jobId);
         });
     }
 

@@ -25,14 +25,13 @@ import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
-import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.bsonTimestampFromTimeMillis;
 
 /**
  * Contains factory methods for MongoDB sources.
@@ -226,7 +225,7 @@ public final class MongoSources {
         if (filter != null) {
             builder.filter(filter);
         }
-        builder.startAtOperationTime(new BsonTimestamp((int) MILLISECONDS.toSeconds(System.currentTimeMillis()), 0));
+        builder.startAtOperationTime(bsonTimestampFromTimeMillis(System.currentTimeMillis()));
         return builder.build();
     }
 }

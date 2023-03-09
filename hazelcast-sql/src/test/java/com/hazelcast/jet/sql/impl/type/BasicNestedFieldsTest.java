@@ -22,11 +22,7 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.AllTypesValue;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlResult;
-import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import org.junit.BeforeClass;
@@ -54,10 +50,8 @@ import static java.lang.String.format;
 import static java.time.Instant.ofEpochMilli;
 import static java.time.ZoneId.systemDefault;
 import static java.time.ZoneOffset.UTC;
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import static org.junit.runners.Parameterized.Parameter;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -219,30 +213,6 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         map.put(1L, a);
 
         assertRowsAnyOrder(testInstance(), "SELECT (this).b.c.a.name FROM test", rows(1, "a"));
-    }
-
-    @Test
-    public void when_circularlyRecurrentTypesCycle_then_toRowFails() {
-        createJavaType("AType", A.class, "name VARCHAR", "b BType");
-        createJavaType("BType", B.class, "name VARCHAR", "c CType");
-        createJavaType("CType", C.class, "name VARCHAR", "a AType");
-
-        final A a = new A("a");
-        final B b = new B("b");
-        final C c = new C("c");
-
-        a.b = b;
-        b.c = c;
-        c.a = a;
-
-        createJavaMapping("test", A.class, "this AType");
-        IMap<Long, A> map = testInstance().getMap("test");
-        map.put(1L, a);
-
-        assertThatThrownBy(() -> assertRowsAnyOrder(testInstance(), "SELECT to_row(this) FROM test", rows(1, "a")))
-                .hasMessageEndingWith("Cycle detected in row value")
-                .isInstanceOf(HazelcastSqlException.class)
-                .hasFieldOrPropertyWithValue("code", SqlErrorCode.DATA_EXCEPTION);
     }
 
     @Test
@@ -468,28 +438,6 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_basicToRow() {
-        initDefault();
-
-        boolean found = false;
-        for (SqlRow r : testInstance().getSql().execute("SELECT TO_ROW(this) FROM test")) {
-            assertEquals(1, r.getMetadata().getColumnCount());
-            assertEquals(SqlColumnType.ROW, r.getMetadata().getColumn(0).getType());
-            // TODO https://github.com/hazelcast/hazelcast/issues/21998
-            Object expectedValue = useClient ? "[[1, user1, [[2, organization1, [[3, office1]]]]]]" :
-                    new RowValue(asList(1L, "user1",
-                            new RowValue(asList(2L, "organization1",
-                                    new RowValue(asList(3L, "office1"))))));
-            assertEquals(expectedValue, r.getObject(0));
-            found = true;
-        }
-
-        if (!found) {
-            fail("no row returned");
-        }
-    }
-
-    @Test
     public void test_missingType() {
         // we create UserType, that has OrganizationType field, but we don't create OrganizationType
         testInstance().getSql().execute(format("CREATE TYPE UserType (id BIGINT, name VARCHAR, organization OrganizationType) "
@@ -502,17 +450,6 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
                 + "'valueJavaClass'='" + User.class.getName() + "')"))
                 .hasMessage("Encountered type 'OrganizationType', which doesn't exist")
                 .isInstanceOf(HazelcastSqlException.class);
-    }
-
-    @Test
-    public void test_rowComparison() {
-        initDefault();
-
-        assertThatThrownBy(() -> testInstance().getSql().execute("select 1 from test where to_row((this).organization.office)=(3, 'office1')").iterator().next())
-                .hasMessageContaining("From line 1, column 26 to line 1, column 74: Comparison operators are not supported for ROW type");
-
-        assertThatThrownBy(() -> testInstance().getSql().execute("select 1 from test where (this).organization.office=(3, 'office1')").iterator().next())
-                .hasMessage("From line 1, column 27 to line 1, column 66: Comparison operators are not supported for ROW type");
     }
 
     @Test

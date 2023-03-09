@@ -56,16 +56,22 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 @SuppressWarnings("UnusedReturnValue")
 public final class MongoSinkBuilder<T> {
 
+    /**
+     * Default transaction options used by the processors.
+     */
     @SuppressWarnings("checkstyle:MagicNumber")
-    private static final TransactionOptions DEFAULT_TRANSACTION_OPTION = TransactionOptions
+    public static final TransactionOptions DEFAULT_TRANSACTION_OPTION = TransactionOptions
             .builder()
             .writeConcern(MAJORITY)
             .maxCommitTime(10L, MINUTES)
             .readPreference(primaryPreferred())
             .build();
 
+    /**
+     * Default retry strategy used by the processors.
+     */
     @SuppressWarnings("checkstyle:MagicNumber")
-    private static final RetryStrategy DEFAULT_COMMIT_RETRY_STRATEGY = RetryStrategies
+    public static final RetryStrategy DEFAULT_COMMIT_RETRY_STRATEGY = RetryStrategies
             .custom()
             .intervalFunction(exponentialBackoffWithCap(100, 2.0, 3000))
             .maxAttempts(20)
@@ -175,7 +181,6 @@ public final class MongoSinkBuilder<T> {
         return this;
     }
 
-
     /**
      * Sets options which will be used by MongoDB transaction mechanism.
      * <p>
@@ -186,7 +191,21 @@ public final class MongoSinkBuilder<T> {
      */
     @Nonnull
     public MongoSinkBuilder<T> transactionOptions(@Nonnull SupplierEx<TransactionOptions> transactionOptionsSup) {
-        params.setTransactionOptions(transactionOptionsSup);
+        params.setTransactionOptionsSup(transactionOptionsSup);
+        return this;
+    }
+
+    /**
+     * Sets write mode used by the connector. Default value is {@linkplain WriteMode#REPLACE}.
+     *
+     * @see WriteMode#INSERT_ONLY
+     * @see WriteMode#UPDATE_ONLY
+     * @see WriteMode#UPSERT
+     * @see WriteMode#REPLACE
+     */
+    @Nonnull
+    public MongoSinkBuilder<T> writeMode(@Nonnull WriteMode writeMode) {
+        params.setWriteMode(writeMode);
         return this;
     }
 
