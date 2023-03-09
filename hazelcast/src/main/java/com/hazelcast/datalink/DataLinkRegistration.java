@@ -37,12 +37,4 @@ public interface DataLinkRegistration {
      */
     Class<? extends DataLink> clazz();
 
-    /**
-     * Returns true if based on the data link class we can deduce mapping type.
-     * For Data link supporting more than one mapping type this method will return {@code false} for
-     * every of the registration except one.
-     */
-    default boolean canDeduceTypeFromClass() {
-        return true;
-    }
 }
