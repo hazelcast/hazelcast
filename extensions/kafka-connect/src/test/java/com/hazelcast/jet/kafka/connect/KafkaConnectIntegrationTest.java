@@ -17,10 +17,13 @@
 package com.hazelcast.jet.kafka.connect;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EventJournalConfig;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
@@ -28,63 +31,45 @@ import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.connect.data.Values;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.testcontainers.containers.MySQLContainer;
 
 import java.net.URL;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
 
+import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@Category({SlowTest.class, ParallelJVMTest.class})
-public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
-    public static final String USERNAME = "mysql";
-    public static final String PASSWORD = "mysql";
-
-    @ClassRule
-    public static final MySQLContainer<?> mysql = new MySQLContainer<>().withUsername(USERNAME).withPassword(PASSWORD);
-
+@Category({QuickTest.class, ParallelJVMTest.class})
+public class KafkaConnectIntegrationTest extends JetTestSupport {
     @ClassRule
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
+    public static final int ITEM_COUNT = 1_000;
 
-    private static final int ITEM_COUNT = 1_000;
-
-    private static final String CONNECTOR_URL = "https://repository.hazelcast.com/download"
-            + "/tests/confluentinc-kafka-connect-jdbc-10.6.3.zip";
+    private static final String CONNECTOR_URL = "https://repository.hazelcast.com/download/tests/"
+            + "confluentinc-kafka-connect-datagen-0.6.0.zip";
 
     @Test
     public void testReading() throws Exception {
         Properties randomProperties = new Properties();
-        randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
-        randomProperties.setProperty("connector.class", "io.confluent.connect.jdbc.JdbcSourceConnector");
-        randomProperties.setProperty("mode", "incrementing");
-        String connectionUrl = mysql.getJdbcUrl();
-        randomProperties.setProperty("connection.url", connectionUrl);
-        randomProperties.setProperty("connection.user", USERNAME);
-        randomProperties.setProperty("connection.password", PASSWORD);
-        randomProperties.setProperty("incrementing.column.name", "id");
-        randomProperties.setProperty("table.whitelist", "items1");
-        randomProperties.setProperty("table.poll.interval.ms", "5000");
-
-        createTable(connectionUrl, "items1");
-
+        randomProperties.setProperty("name", "datagen-connector");
+        randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
+        randomProperties.setProperty("max.interval", "1");
+        randomProperties.setProperty("kafka.topic", "users");
+        randomProperties.setProperty("quickstart", "users");
 
         Pipeline pipeline = Pipeline.create();
         StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties))
                 .withoutTimestamps()
+                .setLocalParallelism(1)
                 .map(record -> Values.convertToString(record.valueSchema(), record.value()));
         streamStage.writeTo(Sinks.logger());
         streamStage
@@ -110,32 +95,24 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
 
     @Test
     public void testScaling() throws Exception {
-        int localParallelism = 2;
+        int localParallelism = 3;
         Properties randomProperties = new Properties();
-        randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
-        randomProperties.setProperty("connector.class", "io.confluent.connect.jdbc.JdbcSourceConnector");
-        randomProperties.setProperty("mode", "incrementing");
-        String connectionUrl = mysql.getJdbcUrl();
-        randomProperties.setProperty("connection.url", connectionUrl);
-        randomProperties.setProperty("connection.user", USERNAME);
-        randomProperties.setProperty("connection.password", PASSWORD);
-        randomProperties.setProperty("incrementing.column.name", "id");
-        randomProperties.setProperty("table.whitelist", "parallel_items_1,parallel_items_2");
-        randomProperties.setProperty("table.poll.interval.ms", "5000");
-
-        createTable(connectionUrl, "parallel_items_1");
-        createTable(connectionUrl, "parallel_items_2");
-
+        randomProperties.setProperty("name", "datagen-connector");
+        randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
+        randomProperties.setProperty("max.interval", "1");
+        randomProperties.setProperty("kafka.topic", "users");
+        randomProperties.setProperty("quickstart", "users");
 
         Pipeline pipeline = Pipeline.create();
         StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties))
                 .withoutTimestamps()
                 .setLocalParallelism(localParallelism)
-                .map(record -> Values.convertToString(record.valueSchema(), record.value()));
+                .map(record -> Values.convertToString(record.valueSchema(), record.value()) + ", task.id: "
+                        + record.headers().lastWithName("task.id").value());
         streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
-                        list -> assertEquals(2 * ITEM_COUNT, list.size())));
+                        list -> assertEquals(localParallelism * ITEM_COUNT, list.size())));
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
@@ -154,42 +131,51 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
         }
     }
 
-    @Test
-    public void testDynamicReconfiguration() throws Exception {
-        Properties randomProperties = new Properties();
-        randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
-        randomProperties.setProperty("connector.class", "io.confluent.connect.jdbc.JdbcSourceConnector");
-        randomProperties.setProperty("mode", "incrementing");
-        String connectionUrl = mysql.getJdbcUrl();
-        randomProperties.setProperty("connection.url", connectionUrl);
-        randomProperties.setProperty("connection.user", USERNAME);
-        randomProperties.setProperty("connection.password", PASSWORD);
-        randomProperties.setProperty("incrementing.column.name", "id");
-        randomProperties.setProperty("table.whitelist", "dynamic_test_items1,dynamic_test_items2,dynamic_test_items3");
-        randomProperties.setProperty("table.poll.interval.ms", "5000");
 
-        createTable(connectionUrl, "dynamic_test_items1");
+    @Test
+    public void testSnapshotting() throws Exception {
+        int localParallelism = 3;
+        Properties randomProperties = new Properties();
+        randomProperties.setProperty("name", "datagen-connector");
+        randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
+        randomProperties.setProperty("max.interval", "1");
+        randomProperties.setProperty("kafka.topic", "users");
+        randomProperties.setProperty("quickstart", "users");
 
         Pipeline pipeline = Pipeline.create();
         StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties))
                 .withoutTimestamps()
-                .map(record -> Values.convertToString(record.valueSchema(), record.value()));
+                .setLocalParallelism(localParallelism)
+                .map(record -> Values.convertToString(record.valueSchema(), record.value()) + ", task.id: "
+                        + record.headers().lastWithName("task.id").value());
         streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
-                        list -> assertEquals(3 * ITEM_COUNT, list.size())));
+                        list -> assertEquals(localParallelism * ITEM_COUNT, list.size())));
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+        jobConfig.setProcessingGuarantee(AT_LEAST_ONCE);
+        jobConfig.setSnapshotIntervalMillis(10);
 
         Config config = smallInstanceConfig();
+        config.addMapConfig(new MapConfig("*")
+                .setEventJournalConfig(new EventJournalConfig().setEnabled(true))
+                .setBackupCount(3)
+        );
         config.getJetConfig().setResourceUploadEnabled(true);
-        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
-        Job job = hazelcastInstance.getJet().newJob(pipeline, jobConfig);
+        HazelcastInstance[] hazelcastInstances = createHazelcastInstances(config, 3);
+        JobRepository jobRepository = new JobRepository(hazelcastInstances[0]);
+        Job job = hazelcastInstances[0].getJet().newJob(pipeline, jobConfig);
         assertJobStatusEventually(job, RUNNING);
 
-        createTable(connectionUrl, "dynamic_test_items2");
-        createTable(connectionUrl, "dynamic_test_items3");
+        waitForFirstSnapshot(jobRepository, job.getId(), 30, false);
+
+        hazelcastInstances[1].shutdown();
+
+        assertTrueEventually(() -> assertEquals(2, hazelcastInstances[0].getCluster().getMembers().size()));
+
+        assertJobStatusEventually(job, RUNNING);
 
         try {
             job.join();
@@ -200,17 +186,5 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
                     + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
         }
     }
-
-    private void createTable(String connectionUrl, String tableName) throws SQLException {
-        try (Connection conn = DriverManager.getConnection(connectionUrl, USERNAME, PASSWORD);
-             Statement stmt = conn.createStatement()
-        ) {
-            stmt.execute("CREATE TABLE " + tableName + " (id INT PRIMARY KEY, name VARCHAR(128))");
-            for (int i = 0; i < ITEM_COUNT; i++) {
-                stmt.execute(String.format("INSERT INTO " + tableName + " VALUES(%d, '" + tableName + "-%d')", i, i));
-            }
-        }
-    }
-
 
 }

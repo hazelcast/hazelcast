@@ -17,45 +17,41 @@
 package com.hazelcast.jet.kafka.connect.impl;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.apache.kafka.connect.connector.ConnectorContext;
 import org.apache.kafka.connect.source.SourceConnector;
-import org.apache.kafka.connect.source.SourceRecord;
+import org.apache.kafka.connect.source.SourceTask;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.impl.protocol.util.PropertiesUtil.toMap;
 import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
 
-public class KafkaConnectSource {
-    private static final ILogger LOGGER = Logger.getLogger(KafkaConnectSource.class);
-
+public class ConnectorWrapper {
+    private static final ILogger LOGGER = Logger.getLogger(ConnectorWrapper.class);
     private final SourceConnector connector;
+    private final int tasksMax;
+    private final List<TaskRunner> taskRunners = new CopyOnWriteArrayList<>();
+    private final AtomicInteger taskIdGenerator = new AtomicInteger();
 
-    private final TaskRunner taskRunner;
+    private final String name;
 
-    /**
-     * Key represents the partition which the record originated from. Value
-     * represents the offset within that partition. Kafka Connect represents
-     * the partition and offset as arbitrary values so that is why it is
-     * stored as map.
-     * See {@link SourceRecord} for more information regarding the format.
-     */
-    private final Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new ConcurrentHashMap<>();
-
-    public KafkaConnectSource(Properties properties) {
+    public ConnectorWrapper(Properties properties) {
         String connectorClazz = checkRequiredProperty(properties, "connector.class");
+        this.name = checkRequiredProperty(properties, "name");
+        tasksMax = Integer.parseInt(properties.getProperty("tasks.max", "1"));
         this.connector = newConnectorInstance(connectorClazz);
+        LOGGER.fine("Initializing connector '" + name + "'");
         this.connector.initialize(new JetConnectorContext());
+        LOGGER.fine("Starting connector '" + name + "'");
         this.connector.start(toMap(properties));
-        this.taskRunner = new TaskRunner(connector, partitionsToOffset);
     }
 
     private static SourceConnector newConnectorInstance(String connectorClazz) {
@@ -70,53 +66,54 @@ public class KafkaConnectSource {
         }
     }
 
-    public void fillBuffer(SourceBuilder.TimestampedSourceBuffer<SourceRecord> buf) {
-        List<SourceRecord> records = taskRunner.poll();
-        if (records == null) {
-            return;
-        }
-        if (LOGGER.isFineEnabled()) {
-            LOGGER.fine("Got " + records.size() + " records from task poll");
-        }
-        for (SourceRecord record : records) {
-            addToBuffer(record, buf);
-            partitionsToOffset.put(record.sourcePartition(), record.sourceOffset());
-        }
+    public void stop() {
+        LOGGER.fine("Stopping connector '" + name + "'");
+        connector.stop();
+        LOGGER.fine("Connector '" + name + "' stopped");
+
     }
 
-
-    private void addToBuffer(SourceRecord record, SourceBuilder.TimestampedSourceBuffer<SourceRecord> buf) {
-        long ts = record.timestamp() == null ? 0 : record.timestamp();
-        buf.add(record, ts);
+    public TaskRunner createTaskRunner() {
+        String taskName = name + "-task-" + taskIdGenerator.getAndIncrement();
+        TaskRunner taskRunner = new TaskRunner(taskName, this::createSourceTask);
+        taskRunners.add(taskRunner);
+        requestTaskReconfiguration();
+        return taskRunner;
     }
 
-    public void destroy() {
-        try {
-            taskRunner.stop();
-        } finally {
-            connector.stop();
-        }
+    private SourceTask createSourceTask() {
+        Class<? extends SourceTask> taskClass = connector.taskClass().asSubclass(SourceTask.class);
+        return newInstance(Thread.currentThread().getContextClassLoader(), taskClass.getName());
     }
 
-    public Map<Map<String, ?>, Map<String, ?>> createSnapshot() {
-        return partitionsToOffset;
-    }
-
-    public void restoreSnapshot(List<Map<Map<String, ?>, Map<String, ?>>> snapshots) {
-        this.partitionsToOffset.clear();
-        this.partitionsToOffset.putAll(snapshots.get(0));
-    }
 
     private class JetConnectorContext implements ConnectorContext {
 
         @Override
         public void requestTaskReconfiguration() {
-            taskRunner.requestReconfiguration();
+            ConnectorWrapper.this.requestTaskReconfiguration();
         }
 
         @Override
         public void raiseError(Exception e) {
             throw rethrow(e);
         }
+    }
+
+    private void requestTaskReconfiguration() {
+        LOGGER.fine("Updating tasks configuration");
+        List<Map<String, String>> taskConfigs = connector.taskConfigs(Math.min(tasksMax, taskRunners.size()));
+
+        for (int i = 0; i < taskRunners.size(); i++) {
+            Map<String, String> taskConfig = i < taskConfigs.size() ? taskConfigs.get(i) : null;
+            taskRunners.get(i).updateTaskConfig(taskConfig);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "ConnectorWrapper{" +
+                "name='" + name + '\'' +
+                '}';
     }
 }
