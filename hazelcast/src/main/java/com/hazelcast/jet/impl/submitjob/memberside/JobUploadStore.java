@@ -102,14 +102,7 @@ public class JobUploadStore {
 
         JobUploadStatus jobUploadStatus = jobMap.get(sessionId);
         if (jobUploadStatus == null) {
-            String exceptionMessage = String.format(
-                    "The session %s does not exist. " +
-                    "Session has timed out due to upload inactivity? \n " +
-                    "If the network is slow, uploading with smaller parts may help.\n" +
-                    "Use a smaller value\n"  +
-                    "1. By setting \"hazelcast.client.jobupload.partsize\" environment value or \n" +
-                    "2. By setting ClientProperty.JOB_UPLOAD_PART_SIZE property of ClientConfig",
-                    sessionId);
+            String exceptionMessage = getSessionNotFoundExceptionMessage(sessionId);
             throw new JetException(exceptionMessage + sessionId);
         }
 
@@ -124,5 +117,16 @@ public class JobUploadStore {
             jobMap.remove(partsComplete.getSessionId());
         }
         return partsComplete;
+    }
+
+    private static String getSessionNotFoundExceptionMessage(UUID sessionId) {
+        return String.format(
+                "The session %s does not exist. " +
+                "Session has timed out due to upload inactivity? \n " +
+                "If the network is slow, uploading with smaller parts may help.\n" +
+                "In order to use a smaller upload part\n"  +
+                "1. Set \"hazelcast.client.jobupload.partsize\" environment value or \n" +
+                "2. Set ClientProperty.JOB_UPLOAD_PART_SIZE property of ClientConfig",
+                sessionId);
     }
 }
