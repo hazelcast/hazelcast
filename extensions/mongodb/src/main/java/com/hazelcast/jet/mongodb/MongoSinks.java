@@ -112,6 +112,10 @@ public final class MongoSinks {
      * (...)
      * someStage.writeTo(mongoSink);
      * }</pre>
+     *
+     * Connector will use provided data link reference to obtain an instance of {@link MongoClient}. Depending
+     * on the configuration this client may be shared between processors or not.
+     *
      * @since 5.3
      *
      * @param name               name of the sink

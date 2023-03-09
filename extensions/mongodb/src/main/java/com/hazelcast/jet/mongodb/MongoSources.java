@@ -89,6 +89,9 @@ public final class MongoSources {
      * BatchStage<Document> srcStage = p.readFrom(batchSource);
      * }</pre>
      *
+     * Connector will use provided data link reference to obtain an instance of {@link MongoClient}. Depending
+     * on the configuration this client may be shared between processors or not.
+     *
      * @since 5.3
      * @param name descriptive name for the source (diagnostic purposes) client.
      * @param dataLinkRef a reference to mongo data link
@@ -184,6 +187,9 @@ public final class MongoSources {
      * Pipeline p = Pipeline.create();
      * BatchStage<Document> srcStage = p.readFrom(batchSource);
      * }</pre>
+     *
+     * Connector will use provided data link reference to obtain an instance of {@link MongoClient}. Depending
+     * on the configuration this client may be shared between processors or not.
      *
      * @since 5.3
      *
