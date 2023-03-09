@@ -196,7 +196,7 @@ public final class SourceProcessors {
     ) {
         String clientXml = asXmlString(clientConfig);
         return StreamEventJournalP.streamRemoteMapSupplier(
-                mapName, clientXml, predicateFn, projectionFn, initialPos, eventTimePolicy);
+                mapName, null, clientXml, predicateFn, projectionFn, initialPos, eventTimePolicy);
     }
 
     /**
