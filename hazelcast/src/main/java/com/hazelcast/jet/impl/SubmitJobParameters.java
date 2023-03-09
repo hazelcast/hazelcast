@@ -34,7 +34,7 @@ public final class SubmitJobParameters {
     /**
      * Set to true if the jar is already present on the member. The jar will be executed directly
      */
-    private boolean directJobExecution;
+    private boolean jarOnMember;
 
     /**
      * Snapshot name to be used for the job
@@ -62,15 +62,15 @@ public final class SubmitJobParameters {
     /**
      * Create a new instance to upload and execute a local jar
      */
-    public static SubmitJobParameters forJobUpload() {
+    public static SubmitJobParameters withJarOnClient() {
         return new SubmitJobParameters();
     }
 
     /**
      * Create a new instance to execute a jar on the member
      */
-    public static SubmitJobParameters forDirectJobExecution() {
-        return new SubmitJobParameters().setDirectJobExecution();
+    public static SubmitJobParameters withJarOnMember() {
+        return new SubmitJobParameters().setJarOnMember();
     }
 
     public Path getJarPath() {
@@ -82,12 +82,12 @@ public final class SubmitJobParameters {
         return this;
     }
 
-    public boolean isDirectJobExecution() {
-        return directJobExecution;
+    public boolean isJarOnMember() {
+        return jarOnMember;
     }
 
-    private SubmitJobParameters setDirectJobExecution() {
-        this.directJobExecution = true;
+    private SubmitJobParameters setJarOnMember() {
+        this.jarOnMember = true;
         return this;
     }
 

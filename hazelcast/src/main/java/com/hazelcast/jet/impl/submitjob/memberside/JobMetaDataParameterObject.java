@@ -21,13 +21,13 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Used by the member side as the wrapper for all parameters to run an uploaded jar as Jet job
+ * Used by the member side as the wrapper for all parameters to run a jar that is on the client or on the member as Jet job
  */
 public class JobMetaDataParameterObject {
 
     private UUID sessionId;
 
-    private boolean directJobExecution;
+    private boolean jarOnMember;
 
     private String sha256Hex;
 
@@ -51,16 +51,16 @@ public class JobMetaDataParameterObject {
         this.sessionId = sessionId;
     }
 
-    public boolean isDirectJobExecution() {
-        return directJobExecution;
+    public boolean isJarOnMember() {
+        return jarOnMember;
     }
 
-    public boolean isJobUpload() {
-        return !directJobExecution;
+    public boolean isJarOnClient() {
+        return !jarOnMember;
     }
 
-    public void setDirectJobExecution(boolean directJobExecution) {
-        this.directJobExecution = directJobExecution;
+    public void setJarOnMember(boolean jarOnMember) {
+        this.jarOnMember = jarOnMember;
     }
 
     public String getSha256Hex() {
@@ -123,7 +123,7 @@ public class JobMetaDataParameterObject {
     // Convert only parameters that should be with an exception
     public String exceptionString() {
         return "JobMetaDataParameterObject{" +
-               "directJobExecution='" + directJobExecution + '\'' +
+               "jarOnMember='" + jarOnMember + '\'' +
                ", fileName='" + fileName + '\'' +
                ", snapshotName='" + snapshotName + '\'' +
                ", jobName='" + jobName + '\'' +

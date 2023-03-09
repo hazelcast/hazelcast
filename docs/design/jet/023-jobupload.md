@@ -55,8 +55,8 @@ Any language that implements Client Binary Protocol
 
 Provide a list of functions user(s) can perform.
 
-- Upload a jar file and pass the same parameters that can be used with hz-cli
-- Execute a jar file that is accessible from the cluster member with the same parameters that can be used with hz-cli
+- Upload a jar file that is on the client and pass the same parameters that can be used with hz-cli
+- Execute a jar file that is on the cluster member and pass the same parameters that can be used with hz-cli
 
 #### Additional Functional Design Topics
 
@@ -64,17 +64,17 @@ None
 
 ##### Notes/Questions/Issues
 
-Jar Execute case :
-
-- The new functionality requires that the existing file to accessible via file:// URL scheme
-
-Jar Upload case :
+Jar On Client case :
 
 - The new functionality requires that all resources accessed by the uploaded job to be available on the server. For
   example a text file that is used to populate an IMap needs to be available on the server or within the uploaded jar.
   Because a server side job can not access client side resources.
 - The client should send multi parts in a sequential manner. Out of order messages are not handled since it would
   require more resources on the server.
+
+Jar On Member case :
+
+- The new functionality requires that the existing file to accessible via file:// URL scheme
 
 ### User Interaction
 
@@ -86,24 +86,24 @@ for Jar Upload
 
 ```java
 HazelcastInstance client=...;
-        JetClientInstanceImpl jetService=(JetClientInstanceImpl)client.getJet();
+JetClientInstanceImpl jetService=(JetClientInstanceImpl)client.getJet();
 
-        SubmitJobParameters submitJobParameters=SubmitJobParameters.forJobUpload()
-        ...;
+SubmitJobParameters submitJobParameters=SubmitJobParameters.withJarOnClient()
+  ...;
 //If there is an error, throws JetException
-        jetService.submitJobFromJar(submitJobParameters);
+jetService.submitJobFromJar(submitJobParameters);
 ```
 
 for Jar Execution
 
 ```java
 HazelcastInstance client=...;
-        JetClientInstanceImpl jetService=(JetClientInstanceImpl)client.getJet();
+JetClientInstanceImpl jetService=(JetClientInstanceImpl)client.getJet();
 
-        SubmitJobParameters submitJobParameters=SubmitJobParameters.forDirectJobExecution()
-        ...;
+SubmitJobParameters submitJobParameters=SubmitJobParameters.withJarOnMember()
+  ...;
 //If there is an error, throws JetException
-        jetService.submitJobFromJar(submitJobParameters);
+jetService.submitJobFromJar(submitJobParameters);
 ```
 
 #### Client Related Changes
@@ -128,35 +128,39 @@ These messages should be sent to a member in the cluster
 
 This message is used for both jar upload and jar execution
 
-Jar Execution case :
+Jar On Member case :
 
-The execution uses only uploadJobMetaData. This message contains the fields below.
+Jar is only executed. Uses only uploadJobMetaData. This message contains the fields below.
 
-| Term               | Type                                                     | Definition                                                                                         |
-|--------------------|----------------------------------------------------------|----------------------------------------------------------------------------------------------------|
-| sessionId          | UUID    - Not null                                       | The UUID.                                                                                          |
-| directJobExecution | Boolean - Needs to be true                               | Flag that indicates that jar should be executed, not uploaded                                      |
-| filename           | String  - Not null                                       | The full path of the jar file                                                                      |
-| sha256Hex          | String  - Not null but ignored, use empty string         | Hexadecimal SHA256 of the jar file.                                                                |
-| snapshotName       | String  - Nullable                                       | Argument passed when starting the job                                                              |
-| jobName            | String  - Nullable                                       | Argument passed when starting the job                                                              |
-| mainClass          | String  - Nullable                                       | Argument passed when starting the job. If null the jar manifest should contain the mainClass value |
-| jobParameters      | List_String - Not null, use empty list for no parameters | Argument passed when starting the job.                                                             |
+| Term          | Type                                                     | Definition                                                                                         |
+|---------------|----------------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| sessionId     | UUID    - Not null                                       | The UUID.                                                                                          |
+| jarOnMember   | Boolean - Needs to be true                               | Flag that indicates that jar should be executed, not uploaded                                      |
+| filename      | String  - Not null                                       | The full path of the jar file                                                                      |
+| sha256Hex     | String  - Not null but ignored, use empty string         | Hexadecimal SHA256 of the jar file.                                                                |
+| snapshotName  | String  - Nullable                                       | Argument passed when starting the job                                                              |
+| jobName       | String  - Nullable                                       | Argument passed when starting the job                                                              |
+| mainClass     | String  - Nullable                                       | Argument passed when starting the job. If null the jar manifest should contain the mainClass value |
+| jobParameters | List_String - Not null, use empty list for no parameters | Argument passed when starting the job.                                                             |
 
-Upload case :
+Jar On Client case :
+
+** Note For Cloud Environment** : The uploaded file is stored in a temporary folder. 
+1. Pod requires a writeable file system. The writable file system maybe provided by emptyDir {} in the deployment descriptor
+2. The path to temporary file system is controlled by TMP environment variable or by java.io.tmpdir property.  
 
 The upload process starts with uploadJobMetaData. This message contains the fields below.
 
-| Term               | Type                                                      | Definition                                                                                         |
-|--------------------|-----------------------------------------------------------|----------------------------------------------------------------------------------------------------|
-| sessionId          | UUID    - Not null                                        | The UUID. This field associates all messages in a session                                          |
-| directJobExecution | Boolean - Needs to be false                               | Flag that indicates that jar should be executed, not uploaded                                      |
-| filename           | String  - Not null                                        | Name of the jar file without extension                                                             |
-| sha256Hex          | String  - Not null                                        | Hexadecimal SHA256 of the jar file                                                                 |
-| snapshotName       | String  - Nullable                                        | Argument passed when starting the job                                                              |
-| jobName            | String  - Nullable                                        | Argument passed when starting the job                                                              |
-| mainClass          | String  - Nullable                                        | Argument passed when starting the job. If null the jar manifest should contain the mainClass value |
-| jobParameters      | List_String - Not null , use empty list for no parameters | Argument passed when starting the job.                                                             |
+| Term          | Type                                                      | Definition                                                                                         |
+|---------------|-----------------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| sessionId     | UUID    - Not null                                        | The UUID. This field associates all messages in a session                                          |
+| jarOnMember   | Boolean - Needs to be false                               | Flag that indicates that jar should be executed, not uploaded                                      |
+| filename      | String  - Not null                                        | Name of the jar file without extension                                                             |
+| sha256Hex     | String  - Not null                                        | Hexadecimal SHA256 of the jar file                                                                 |
+| snapshotName  | String  - Nullable                                        | Argument passed when starting the job                                                              |
+| jobName       | String  - Nullable                                        | Argument passed when starting the job                                                              |
+| mainClass     | String  - Nullable                                        | Argument passed when starting the job. If null the jar manifest should contain the mainClass value |
+| jobParameters | List_String - Not null , use empty list for no parameters | Argument passed when starting the job.                                                             |
 
 Upon reception of uploadJobMetaData message, the server performs validation. If any validation rule them fails, a *
 *JetException** is thrown. If the message can be validated, the server stores a new entry in the JobUploadStore class

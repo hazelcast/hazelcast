@@ -48,7 +48,7 @@ public class UploadJobMetaDataOperation extends Operation implements IdentifiedD
         // Save the parameters received from client
         jobMetaDataParameterObject = new JobMetaDataParameterObject();
         jobMetaDataParameterObject.setSessionId(parameters.sessionId);
-        jobMetaDataParameterObject.setDirectJobExecution(parameters.directJobExecution);
+        jobMetaDataParameterObject.setJarOnMember(parameters.directJobExecution);
         jobMetaDataParameterObject.setSha256Hex(parameters.sha256Hex);
         jobMetaDataParameterObject.setFileName(parameters.fileName);
         jobMetaDataParameterObject.setSnapshotName(parameters.snapshotName);
@@ -60,22 +60,22 @@ public class UploadJobMetaDataOperation extends Operation implements IdentifiedD
 
     @Override
     public void run() {
-        if (jobMetaDataParameterObject.isDirectJobExecution()) {
-            runDirectJobExecution();
+        if (jobMetaDataParameterObject.isJarOnMember()) {
+            runJarOnMember();
         } else {
-            runUpload();
+            runJarOnClient();
         }
     }
 
-    private void runDirectJobExecution() {
+    private void runJarOnMember() {
         // JarPath is not the temp directory. It is the given file name
         jobMetaDataParameterObject.setJarPath(Paths.get(jobMetaDataParameterObject.getFileName()));
 
         JetServiceBackend jetServiceBackend = getJetServiceBackend();
-        jetServiceBackend.directJobExecution(jobMetaDataParameterObject);
+        jetServiceBackend.jarOnMember(jobMetaDataParameterObject);
     }
 
-    private void runUpload() {
+    private void runJarOnClient() {
         JetServiceBackend jetServiceBackend = getJetServiceBackend();
         jetServiceBackend.storeJobMetaData(jobMetaDataParameterObject);
     }

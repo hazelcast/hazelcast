@@ -109,7 +109,6 @@ public class JobUploadStore {
 
         // If job upload is complete
         if (partsComplete != null) {
-
             message = String.format("Session : %s is complete. It will be removed from the map", sessionId);
             LOGGER.info(message);
 

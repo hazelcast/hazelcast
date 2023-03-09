@@ -30,9 +30,9 @@ public final class SubmitJobParametersValidator {
     private SubmitJobParametersValidator() {
     }
 
-    public static void validateForJobUpload(SubmitJobParameters parameterObject) throws IOException {
-        if (parameterObject.isDirectJobExecution()) {
-            throw new JetException("SubmitJobParameters is configured for direct job execution");
+    public static void validateJarOnClient(SubmitJobParameters parameterObject) throws IOException {
+        if (parameterObject.isJarOnMember()) {
+            throw new JetException("SubmitJobParameters is configured for jar on member");
         }
 
         Path jarPath = parameterObject.getJarPath();
@@ -42,9 +42,9 @@ public final class SubmitJobParametersValidator {
         validateJobParameters(parameterObject.getJobParameters());
     }
 
-    public static void validateForDirectJobExecution(SubmitJobParameters parameterObject) {
-        if (!parameterObject.isDirectJobExecution()) {
-            throw new JetException("SubmitJobParameters is configured for job upload");
+    public static void validateJarOnMember(SubmitJobParameters parameterObject) {
+        if (!parameterObject.isJarOnMember()) {
+            throw new JetException("SubmitJobParameters is configured for jar on client");
         }
 
         Path jarPath = parameterObject.getJarPath();

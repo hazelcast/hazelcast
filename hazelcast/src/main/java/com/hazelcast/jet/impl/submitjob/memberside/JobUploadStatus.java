@@ -97,7 +97,7 @@ public class JobUploadStatus {
      * Perform cleaning of the JobMetaDataParameterObject
      */
     public static void cleanup(JobMetaDataParameterObject jobMetaDataParameterObject) {
-        if (jobMetaDataParameterObject.isJobUpload()) {
+        if (jobMetaDataParameterObject.isJarOnClient()) {
             Path jarPath = jobMetaDataParameterObject.getJarPath();
             if (jarPath != null) {
                 try {

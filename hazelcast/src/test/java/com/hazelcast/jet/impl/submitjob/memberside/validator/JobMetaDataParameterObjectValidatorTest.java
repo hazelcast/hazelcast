@@ -28,9 +28,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class JobMetaDataParameterObjectValidatorTest {
 
     @Test
-    public void testValidateForDirectJobExecution() {
+    public void testValidateJarOnMember() {
         JobMetaDataParameterObject parameterObject = new JobMetaDataParameterObject();
-        assertThatThrownBy(() -> JobMetaDataParameterObjectValidator.validateForDirectJobExecution(parameterObject))
+        assertThatThrownBy(() -> JobMetaDataParameterObjectValidator.validateJarOnMember(parameterObject))
                 .isInstanceOf(JetException.class);
     }
 

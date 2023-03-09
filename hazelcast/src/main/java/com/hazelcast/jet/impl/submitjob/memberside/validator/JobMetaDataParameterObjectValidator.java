@@ -34,9 +34,9 @@ public final class JobMetaDataParameterObjectValidator {
     private JobMetaDataParameterObjectValidator() {
     }
 
-    public static void validateForDirectJobExecution(JobMetaDataParameterObject parameterObject) {
-        if (!parameterObject.isDirectJobExecution()) {
-            throw new JetException("Request is not configured for direct job execution");
+    public static void validateJarOnMember(JobMetaDataParameterObject parameterObject) {
+        if (!parameterObject.isJarOnMember()) {
+            throw new JetException("Request is not configured for jar on member");
         }
 
         Path jarPath = parameterObject.getJarPath();

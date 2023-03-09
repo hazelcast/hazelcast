@@ -66,7 +66,7 @@ public class JobExecuteClientFailureTest extends JetTestSupport {
         createCluster();
         JetClientInstanceImpl jetService = getClientJetService();
 
-        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution();
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnMember();
 
         assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
                 .isInstanceOf(JetException.class)
@@ -78,7 +78,7 @@ public class JobExecuteClientFailureTest extends JetTestSupport {
         createCluster();
         JetClientInstanceImpl jetService = getClientJetService();
 
-        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnMember()
                 .setJarPath(getJarPath())
                 .setJobParameters(null);
 
@@ -92,7 +92,7 @@ public class JobExecuteClientFailureTest extends JetTestSupport {
         createCluster();
         JetClientInstanceImpl jetService = getClientJetService();
 
-        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnMember()
                 .setJarPath(getNoManifestJarPath());
 
         assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
@@ -106,7 +106,7 @@ public class JobExecuteClientFailureTest extends JetTestSupport {
         HazelcastInstance client = createHazelcastClient();
         JetClientInstanceImpl jetService = (JetClientInstanceImpl) client.getJet();
 
-        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnMember()
                 .setJarPath(getJarPath());
 
         assertThrows(JetException.class, () ->
@@ -121,7 +121,7 @@ public class JobExecuteClientFailureTest extends JetTestSupport {
         createCluster();
         JetClientInstanceImpl jetService = getClientJetService();
 
-        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnMember()
                 .setJarPath(getJarPath())
                 .setMainClass("org.example.Main1");
 
@@ -134,7 +134,7 @@ public class JobExecuteClientFailureTest extends JetTestSupport {
         createCluster();
         JetClientInstanceImpl jetService = getClientJetService();
 
-        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnMember()
                 .setJarPath(getJarPath())
                 .setMainClass("org.example.Main1");
 
@@ -153,7 +153,7 @@ public class JobExecuteClientFailureTest extends JetTestSupport {
         JetClientInstanceImpl jetService = getClientJetService();
 
         String job1 = "job1";
-        SubmitJobParameters submitJobParameters1 = SubmitJobParameters.forDirectJobExecution()
+        SubmitJobParameters submitJobParameters1 = SubmitJobParameters.withJarOnMember()
                 .setJarPath(getJarPath())
                 .setJobName(job1);
 
@@ -161,7 +161,7 @@ public class JobExecuteClientFailureTest extends JetTestSupport {
 
 
         String job2 = "job1";
-        SubmitJobParameters submitJobParameters2 = SubmitJobParameters.forDirectJobExecution()
+        SubmitJobParameters submitJobParameters2 = SubmitJobParameters.withJarOnMember()
                 .setJarPath(getJarPath())
                 .setJobName(job2);
 
@@ -205,7 +205,7 @@ public class JobExecuteClientFailureTest extends JetTestSupport {
             return jobExecuteCall;
         }).when(spyJetService).initializeJobExecuteCall(jarPath);
 
-        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnMember()
                 .setJarPath(getJarPath());
 
         // Should throw OperationTimeoutException because target instance was shut down

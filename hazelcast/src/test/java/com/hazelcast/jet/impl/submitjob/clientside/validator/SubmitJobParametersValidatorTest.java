@@ -30,34 +30,34 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class SubmitJobParametersValidatorTest {
 
     @Test
-    public void failForDirectJobExecutionConfiguration() {
-        SubmitJobParameters parameterObject = SubmitJobParameters.forDirectJobExecution();
-        assertThatThrownBy(() -> SubmitJobParametersValidator.validateForJobUpload(parameterObject))
+    public void failJarOnMemberConfiguration() {
+        SubmitJobParameters parameterObject = SubmitJobParameters.withJarOnMember();
+        assertThatThrownBy(() -> SubmitJobParametersValidator.validateJarOnClient(parameterObject))
                 .isInstanceOf(JetException.class)
-                .hasMessageContaining("SubmitJobParameters is configured for direct job execution");
+                .hasMessageContaining("SubmitJobParameters is configured for jar on member");
     }
 
     @Test
-    public void failForJobUploadConfiguration() {
-        SubmitJobParameters parameterObject = SubmitJobParameters.forJobUpload();
-        assertThatThrownBy(() -> SubmitJobParametersValidator.validateForDirectJobExecution(parameterObject))
+    public void failJarOnClientConfiguration() {
+        SubmitJobParameters parameterObject = SubmitJobParameters.withJarOnClient();
+        assertThatThrownBy(() -> SubmitJobParametersValidator.validateJarOnMember(parameterObject))
                 .isInstanceOf(JetException.class)
-                .hasMessageContaining("SubmitJobParameters is configured for job upload");
+                .hasMessageContaining("SubmitJobParameters is configured for jar on client");
     }
 
     @Test
     public void nullJarPath() {
-        SubmitJobParameters parameterObject = SubmitJobParameters.forJobUpload();
-        assertThatThrownBy(() -> SubmitJobParametersValidator.validateForJobUpload(parameterObject))
+        SubmitJobParameters parameterObject = SubmitJobParameters.withJarOnClient();
+        assertThatThrownBy(() -> SubmitJobParametersValidator.validateJarOnClient(parameterObject))
                 .isInstanceOf(JetException.class)
                 .hasMessageContaining("jarPath can not be null");
     }
 
     @Test
     public void noSuchFileException() {
-        SubmitJobParameters parameterObject = SubmitJobParameters.forJobUpload();
+        SubmitJobParameters parameterObject = SubmitJobParameters.withJarOnClient();
         parameterObject.setJarPath(Paths.get("nosuchfile.jar"));
-        assertThatThrownBy(() -> SubmitJobParametersValidator.validateForJobUpload(parameterObject))
+        assertThatThrownBy(() -> SubmitJobParametersValidator.validateJarOnClient(parameterObject))
                 .isInstanceOf(NoSuchFileException.class);
     }
 
@@ -76,10 +76,10 @@ public class SubmitJobParametersValidatorTest {
 
     @Test
     public void nullJobParameters() {
-        SubmitJobParameters parameterObject = SubmitJobParameters.forJobUpload();
+        SubmitJobParameters parameterObject = SubmitJobParameters.withJarOnClient();
         parameterObject.setJarPath(getJarPath());
         parameterObject.setJobParameters(null);
-        assertThatThrownBy(() -> SubmitJobParametersValidator.validateForJobUpload(parameterObject))
+        assertThatThrownBy(() -> SubmitJobParametersValidator.validateJarOnClient(parameterObject))
                 .isInstanceOf(JetException.class)
                 .hasMessageContaining("jobParameters can not be null");
     }

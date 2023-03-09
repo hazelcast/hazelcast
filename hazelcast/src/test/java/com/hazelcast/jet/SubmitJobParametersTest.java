@@ -25,14 +25,14 @@ public class SubmitJobParametersTest {
 
     @Test
     public void testForUpload() {
-        SubmitJobParameters submitJobParameters = SubmitJobParameters.forJobUpload();
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnClient();
         assertThat(submitJobParameters.getJobParameters()).isNotNull();
     }
 
     @Test
     public void testForExecution() {
-        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution();
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnMember();
         assertThat(submitJobParameters.getJobParameters()).isNotNull();
-        assertThat(submitJobParameters.isDirectJobExecution()).isTrue();
+        assertThat(submitJobParameters.isJarOnMember()).isTrue();
     }
 }

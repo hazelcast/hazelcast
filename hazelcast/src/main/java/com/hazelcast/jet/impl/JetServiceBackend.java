@@ -399,15 +399,13 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     /**
      * Execute the given jar
      */
-    public void directJobExecution(JobMetaDataParameterObject jobMetaDataParameterObject) {
-        JobMetaDataParameterObjectValidator.validateForDirectJobExecution(jobMetaDataParameterObject);
+    public void jarOnMember(JobMetaDataParameterObject jobMetaDataParameterObject) {
+        JobMetaDataParameterObjectValidator.validateJarOnMember(jobMetaDataParameterObject);
         executeJar(jobMetaDataParameterObject);
     }
 
     /**
-     * Store the metadata about the job jar that is uploaded from client side
-     *
-     * @param jobMetaDataParameterObject contains all the metadata about the upload operation
+     * Store the metadata about the jar that is uploaded from client side
      */
     public void storeJobMetaData(JobMetaDataParameterObject jobMetaDataParameterObject) {
         checkResourceUploadEnabled();
@@ -423,9 +421,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     }
 
     /**
-     * Store a part of job jar that is uploaded
-     *
-     * @param jobMultiPartParameterObject contains all the metadata about the upload operation
+     * Store a part of jar that is uploaded
      */
     public void storeJobMultiPart(JobMultiPartParameterObject jobMultiPartParameterObject) {
         try {

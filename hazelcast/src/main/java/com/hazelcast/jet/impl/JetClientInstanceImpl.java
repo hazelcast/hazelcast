@@ -166,7 +166,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
      * @throws JetException on error
      */
     public void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
-        if (submitJobParameters.isDirectJobExecution()) {
+        if (submitJobParameters.isJarOnMember()) {
             executeJobFromJar(submitJobParameters);
         } else {
             uploadJobFromJar(submitJobParameters);
@@ -175,7 +175,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
     private void executeJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
         try {
-            SubmitJobParametersValidator.validateForDirectJobExecution(submitJobParameters);
+            SubmitJobParametersValidator.validateJarOnMember(submitJobParameters);
 
             Path jarPath = submitJobParameters.getJarPath();
             JobExecuteCall jobExecuteCall = initializeJobExecuteCall(submitJobParameters.getJarPath());
@@ -190,7 +190,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
     private void uploadJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
         try {
-            SubmitJobParametersValidator.validateForJobUpload(submitJobParameters);
+            SubmitJobParametersValidator.validateJarOnClient(submitJobParameters);
 
             Path jarPath = submitJobParameters.getJarPath();
             JobUploadCall jobUploadCall = initializeJobUploadCall(submitJobParameters.getJarPath());
@@ -228,7 +228,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                                           SubmitJobParameters submitJobParameters) {
         ClientMessage jobMetaDataRequest = JetUploadJobMetaDataCodec.encodeRequest(
                 jobUploadCall.getSessionId(),
-                submitJobParameters.isDirectJobExecution(),
+                submitJobParameters.isJarOnMember(),
                 jobUploadCall.getFileNameWithoutExtension(),
                 jobUploadCall.getSha256HexOfJar(),
                 submitJobParameters.getSnapshotName(),
@@ -242,7 +242,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     private void sendJobMetaDataForExecute(JobExecuteCall jobExecuteCall, SubmitJobParameters submitJobParameters) {
         ClientMessage jobMetaDataRequest = JetUploadJobMetaDataCodec.encodeRequest(
                 jobExecuteCall.getSessionId(),
-                submitJobParameters.isDirectJobExecution(),
+                submitJobParameters.isJarOnMember(),
                 jobExecuteCall.getJarPath(),
                 jobExecuteCall.getSha256HexOfJar(),
                 submitJobParameters.getSnapshotName(),

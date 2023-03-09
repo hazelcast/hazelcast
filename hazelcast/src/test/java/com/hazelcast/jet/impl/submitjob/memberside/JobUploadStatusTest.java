@@ -77,7 +77,7 @@ public class JobUploadStatusTest {
         Path jarPath = Files.createTempFile("runjob", ".jar");
         assertTrue(Files.exists(jarPath));
         when(jobMetaDataParameterObject.getJarPath()).thenReturn(jarPath);
-        when(jobMetaDataParameterObject.isJobUpload()).thenReturn(true);
+        when(jobMetaDataParameterObject.isJarOnClient()).thenReturn(true);
 
         jobUploadStatus.removeBadSession();
 

@@ -65,7 +65,7 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
         JetClientInstanceImpl jetService = getClientJetService();
 
         Path jarPath = getJarPath();
-        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnMember()
                 .setJarPath(jarPath);
 
         jetService.submitJobFromJar(submitJobParameters);
@@ -81,7 +81,7 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
         // Pass the job argument that will be used as job name
         String jobName = "myjetjob";
         Path jarPath = getJarPath();
-        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnMember()
                 .setJarPath(jarPath)
                 .setJobParameters(Collections.singletonList(jobName));
 
@@ -117,7 +117,7 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
         JetClientInstanceImpl jetService = (JetClientInstanceImpl) client.getJet();
 
         Path jarPath = getJarPath();
-        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnMember()
                 .setJarPath(jarPath);
 
         jetService.submitJobFromJar(submitJobParameters);
@@ -133,7 +133,7 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
         List<String> jobParameters = emptyList();
 
         Path jarPath = getJarPath();
-        SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnMember()
                 .setJarPath(jarPath)
                 .setMainClass("org.example.Main")
                 .setJobParameters(jobParameters);
@@ -158,7 +158,7 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
                 HazelcastInstance client = createHazelcastClient();
                 JetClientInstanceImpl jetService = (JetClientInstanceImpl) client.getJet();
 
-                SubmitJobParameters submitJobParameters = SubmitJobParameters.forDirectJobExecution()
+                SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnMember()
                         .setJarPath(getJarPath());
 
                 jetService.submitJobFromJar(submitJobParameters);
@@ -177,14 +177,14 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
         JetClientInstanceImpl jetService = getClientJetService();
 
         String job1 = "job1";
-        SubmitJobParameters submitJobParameters1 = SubmitJobParameters.forDirectJobExecution()
+        SubmitJobParameters submitJobParameters1 = SubmitJobParameters.withJarOnMember()
                 .setJarPath(getJarPath())
                 .setJobName(job1);
 
         jetService.submitJobFromJar(submitJobParameters1);
 
         String job2 = "job2";
-        SubmitJobParameters submitJobParameters2 = SubmitJobParameters.forDirectJobExecution()
+        SubmitJobParameters submitJobParameters2 = SubmitJobParameters.withJarOnMember()
                 .setJarPath(getJarPath())
                 .setJobName(job2);
         jetService.submitJobFromJar(submitJobParameters2);
