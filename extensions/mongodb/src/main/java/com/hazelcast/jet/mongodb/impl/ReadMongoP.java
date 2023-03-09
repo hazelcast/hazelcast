@@ -25,7 +25,6 @@ import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.mongodb.impl.CursorTraverser.EmptyItem;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.mongodb.MongoException;
 import com.mongodb.MongoServerException;

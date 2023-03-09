@@ -57,7 +57,8 @@ class MongoConnection implements Closeable {
 
     private MongoClient mongoClient;
 
-    MongoConnection(SupplierEx<? extends MongoClient> clientSupplier, DataLinkRef dataLinkRef, Consumer<MongoClient> afterConnection) {
+    MongoConnection(SupplierEx<? extends MongoClient> clientSupplier, DataLinkRef dataLinkRef,
+                    Consumer<MongoClient> afterConnection) {
         this.clientSupplier = clientSupplier;
         this.dataLinkRef = dataLinkRef;
         this.afterConnection = afterConnection;
