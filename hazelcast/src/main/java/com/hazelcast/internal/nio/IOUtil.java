@@ -80,7 +80,7 @@ import static com.hazelcast.internal.networking.ChannelOption.TCP_KEEPIDLE;
 import static com.hazelcast.internal.networking.ChannelOption.TCP_KEEPINTERVAL;
 import static com.hazelcast.internal.networking.ChannelOption.TCP_NODELAY;
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
-import static com.hazelcast.internal.tpc.util.ReflectionUtil.findStaticFieldValue;
+import static com.hazelcast.internal.tpcengine.util.ReflectionUtil.findStaticFieldValue;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.JVMUtil.upcast;
