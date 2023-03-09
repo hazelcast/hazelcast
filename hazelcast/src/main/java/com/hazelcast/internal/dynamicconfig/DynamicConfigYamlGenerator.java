@@ -1261,14 +1261,20 @@ public class DynamicConfigYamlGenerator {
                 partitioningStrategyConfig.getPartitioningStrategy());
     }
 
-    private static List<String> getPartitioningAttributesAsList(List<PartitioningAttributeConfig> attributeConfigs) {
+    private static List<Map<String, Object>> getPartitioningAttributesAsList(List<PartitioningAttributeConfig> attributeConfigs) {
         if (attributeConfigs == null || attributeConfigs.isEmpty()) {
             return null;
         }
 
         return attributeConfigs.stream()
-                .map(PartitioningAttributeConfig::getAttributeName)
+                .map(DynamicConfigYamlGenerator::getPartitionAttributeAsMap)
                 .collect(Collectors.toList());
+    }
+
+    private static Map<String, Object> getPartitionAttributeAsMap(PartitioningAttributeConfig config) {
+        final Map<String, Object> configAsMap = new LinkedHashMap<>();
+        configAsMap.put("name", config.getAttributeName());
+        return configAsMap;
     }
 
     private static Map<String, Object> getPredicateConfigAsMap(PredicateConfig predicateConfig) {

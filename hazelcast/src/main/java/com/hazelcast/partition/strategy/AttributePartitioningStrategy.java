@@ -36,6 +36,7 @@ public class AttributePartitioningStrategy implements PartitioningStrategy<Objec
     private final String[] attributes;
 
     public AttributePartitioningStrategy(String... attributes) {
+        checkAttributesAreValid(attributes);
         this.attributes = attributes;
     }
 
@@ -106,6 +107,22 @@ public class AttributePartitioningStrategy implements PartitioningStrategy<Objec
     private static void checkNull(Object extracted, String attributeName) {
         if (extracted == null) {
             throw new HazelcastException("Cannot extract '" + attributeName + "' from the key");
+        }
+    }
+
+    private static void checkAttributesAreValid(final String[] attributes) {
+        if (attributes == null) {
+            throw new NullPointerException("Attributes names array must not be null.");
+        }
+
+        if (attributes.length == 0) {
+            throw new IllegalArgumentException("Attributes names array must not be empty.");
+        }
+
+        for (final String attribute : attributes) {
+            if (attribute == null || attribute.isEmpty()) {
+                throw new IllegalArgumentException("Attribute name must not be empty.");
+            }
         }
     }
 }
