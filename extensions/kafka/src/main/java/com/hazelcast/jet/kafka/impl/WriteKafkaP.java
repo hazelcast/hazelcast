@@ -229,7 +229,9 @@ public final class WriteKafkaP<T, K, V> implements Processor {
             @SuppressWarnings({"rawtypes", "unchecked"})
             Map<String, Object> castProperties = (Map) properties;
             Map<String, Object> copy = new HashMap<>(castProperties);
-            copy.put("transactional.id", s);
+            if (s != null) {
+                copy.put("transactional.id", s);
+            }
             return new KafkaProducer<>(copy);
         }, toRecordFn, exactlyOnce);
     }
