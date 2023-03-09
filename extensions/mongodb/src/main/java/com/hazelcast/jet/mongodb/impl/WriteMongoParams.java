@@ -27,6 +27,7 @@ import com.mongodb.client.model.ReplaceOptions;
 import com.mongodb.client.model.WriteModel;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.Optional;
 
@@ -34,6 +35,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
 public class WriteMongoParams<I> implements Serializable {
@@ -66,17 +68,27 @@ public class WriteMongoParams<I> implements Serializable {
     }
 
     @Nonnull
-    public WriteMongoParams<I> setClientSupplier(@Nonnull SupplierEx<? extends MongoClient> clientSupplier) {
+    public WriteMongoParams<I> setClientSupplier(@Nullable SupplierEx<? extends MongoClient> clientSupplier) {
         this.clientSupplier = clientSupplier;
         return this;
     }
 
+    @Nullable
     public DataLinkRef getDataLinkRef() {
         return dataLinkRef;
     }
 
-    public WriteMongoParams<I> setDataLinkRef(DataLinkRef dataLinkRef) {
+    @Nonnull
+    public WriteMongoParams<I> setDataLinkRef(@Nullable DataLinkRef dataLinkRef) {
         this.dataLinkRef = dataLinkRef;
+        return this;
+    }
+
+    @Nonnull
+    public WriteMongoParams<I> setDataLinkRef(@Nullable String dataLinkName) {
+        if (dataLinkName != null) {
+            setDataLinkRef(dataLinkRef(dataLinkName));
+        }
         return this;
     }
 

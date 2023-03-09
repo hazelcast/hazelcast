@@ -26,12 +26,14 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
+import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
 public class ReadMongoParams<I> implements Serializable {
@@ -79,6 +81,14 @@ public class ReadMongoParams<I> implements Serializable {
 
     public ReadMongoParams<I> setDataLinkRef(DataLinkRef dataLinkRef) {
         this.dataLinkRef = dataLinkRef;
+        return this;
+    }
+
+    @Nonnull
+    public ReadMongoParams<I> setDataLinkRef(@Nullable String dataLinkName) {
+        if (dataLinkName != null) {
+            setDataLinkRef(dataLinkRef(dataLinkName));
+        }
         return this;
     }
 

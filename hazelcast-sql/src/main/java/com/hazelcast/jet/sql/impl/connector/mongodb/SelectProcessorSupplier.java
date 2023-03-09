@@ -41,7 +41,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.JSON;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.project;
@@ -128,7 +127,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
             Processor processor = new ReadMongoP<>(
                     new ReadMongoParams<JetSqlRow>(stream)
                             .setClientSupplier(clientSupplierEx)
-                            .setDataLinkRef(dataLinkRef(dataLinkName))
+                            .setDataLinkRef(dataLinkName)
                             .setAggregates(aggregates)
                             .setDatabaseName(databaseName)
                             .setCollectionName(collectionName)

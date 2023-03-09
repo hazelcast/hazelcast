@@ -41,7 +41,6 @@ import java.util.List;
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_COMMIT_RETRY_STRATEGY;
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_TRANSACTION_OPTION;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
-import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.wrap;
 import static java.util.Arrays.asList;
 
@@ -91,7 +90,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
             Processor processor = new WriteMongoP<>(
                     new WriteMongoParams<Document>()
                             .setClientSupplier(clientSupplier)
-                            .setDataLinkRef(dataLinkRef(dataLinkName))
+                            .setDataLinkRef(dataLinkName)
                             .setDatabaseName(databaseName)
                             .setCollectionName(collectionName)
                             .setDocumentType(Document.class)
