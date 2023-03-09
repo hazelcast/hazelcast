@@ -25,13 +25,15 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.mongodb.client.MongoClient;
 
+import java.io.Closeable;
+
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.retry.IntervalFunction.exponentialBackoffWithCap;
 
 /***
  * Manages connection to MongoDB, reconnects if necessary.
  */
-class MongoConnection {
+class MongoConnection implements Closeable {
     @SuppressWarnings("checkstyle:MagicNumber")
     private static final RetryStrategy RETRY_STRATEGY =
             RetryStrategies.custom()
@@ -81,7 +83,8 @@ class MongoConnection {
         }
     }
 
-    void close() {
+    @Override
+    public void close() {
         if (mongoClient != null) {
             mongoClient.close();
             mongoClient = null;
