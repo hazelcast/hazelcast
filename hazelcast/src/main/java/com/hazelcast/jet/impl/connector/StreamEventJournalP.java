@@ -391,12 +391,12 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         @Override
         public int preferredLocalParallelism() {
-            return dataLinkName != null || clientXml != null ? 1 : 2;
+            return isRemote(dataLinkName, clientXml) ? 1 : 2;
         }
 
         @Override
         public void init(@Nonnull Context context) {
-            if (dataLinkName != null || clientXml != null) {
+            if (isRemote(dataLinkName, clientXml)) {
                 initRemote(context);
             } else {
                 PermissionsUtil.checkPermission(eventJournalReaderSupplier, context);
@@ -439,10 +439,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         @Override
         public Permission getRequiredPermission() {
-            if (dataLinkName != null) {
-                return null;
-            }
-            if (clientXml != null) {
+            if (isRemote(dataLinkName, clientXml)) {
                 return null;
             }
             return permissionFn.get();
@@ -502,7 +499,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
             // The order is important.
             // If dataLinkConfig is specified prefer it to clientXml
-            if (dataLinkName != null || clientXml != null) {
+            if (isRemote(dataLinkName, clientXml)) {
                 client = createRemoteClient(context, dataLinkName, clientXml);
                 instance = client;
             }
@@ -555,6 +552,10 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         } else {
             return newHazelcastClient(asClientConfig(clientXml));
         }
+    }
+
+    private static boolean isRemote(String dataLinkName, String clientXml) {
+        return dataLinkName != null || clientXml != null;
     }
 
     public static <K, V, T> ProcessorMetaSupplier streamMapSupplier(
