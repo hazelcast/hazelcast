@@ -139,8 +139,10 @@ public class Mapping implements IdentifiedDataSerializable, SqlCatalogObject {
 
         // external name defaults to mapping name - omit it if it's equal
         if (externalName() != null && !externalName().equals(name())) {
-            buffer.append("EXTERNAL NAME");
-            buffer.append(" ").append(externalName()).append(" \n");
+            buffer.append(" ").append("EXTERNAL NAME ")
+                    .append("\"")
+                    .append(externalName())
+                    .append("\"");
         }
 
         List<MappingField> fields = fields();

@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.expression.service;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -28,8 +29,6 @@ import com.hazelcast.sql.impl.schema.SqlCatalogObject;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
-import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
-import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_DATA_LINK;
 import static com.hazelcast.sql.impl.expression.string.StringFunctionUtils.asVarchar;
 
 public class GetDdlFunction extends TriExpression<String> implements IdentifiedDataSerializable {
@@ -67,7 +66,7 @@ public class GetDdlFunction extends TriExpression<String> implements IdentifiedD
 
         String keyName = objectName;
         if (namespace.equals(DATALINK_NAMESPACE)) {
-            keyName = wrap(objectName);
+            keyName = QueryUtils.wrapDataLinkKey(objectName);
         }
 
         final Object obj = sqlCatalog.get(keyName);
@@ -103,9 +102,5 @@ public class GetDdlFunction extends TriExpression<String> implements IdentifiedD
 
     public static GetDdlFunction create(Expression<?> namespace, Expression<?> objectName, Expression<?> schema) {
         return new GetDdlFunction(namespace, objectName, schema);
-    }
-
-    static String wrap(String dataLinkKey) {
-        return "\"" + CATALOG + "\".\"" + SCHEMA_NAME_DATA_LINK + "\"." + dataLinkKey + "\"";
     }
 }
