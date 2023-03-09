@@ -7970,7 +7970,7 @@ public class MemberCompatibilityNullTest_2_6 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         JetUploadJobMetaDataCodec.RequestParameters parameters = JetUploadJobMetaDataCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aUUID, parameters.sessionId));
-        assertTrue(isEqual(aBoolean, parameters.directJobExecution));
+        assertTrue(isEqual(aBoolean, parameters.jarOnMember));
         assertTrue(isEqual(aString, parameters.fileName));
         assertTrue(isEqual(aString, parameters.sha256Hex));
         assertTrue(isEqual(null, parameters.snapshotName));

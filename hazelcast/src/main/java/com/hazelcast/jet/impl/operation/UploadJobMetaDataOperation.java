@@ -48,7 +48,7 @@ public class UploadJobMetaDataOperation extends Operation implements IdentifiedD
         // Save the parameters received from client
         jobMetaDataParameterObject = new JobMetaDataParameterObject();
         jobMetaDataParameterObject.setSessionId(parameters.sessionId);
-        jobMetaDataParameterObject.setJarOnMember(parameters.directJobExecution);
+        jobMetaDataParameterObject.setJarOnMember(parameters.jarOnMember);
         jobMetaDataParameterObject.setSha256Hex(parameters.sha256Hex);
         jobMetaDataParameterObject.setFileName(parameters.fileName);
         jobMetaDataParameterObject.setSnapshotName(parameters.snapshotName);
