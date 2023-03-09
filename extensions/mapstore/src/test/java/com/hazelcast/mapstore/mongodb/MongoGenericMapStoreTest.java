@@ -78,9 +78,9 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
 
         // Need to set filtering class loader so the members don't deserialize into class but into GenericRecord
         CompactSerializationConfig compactSerializationConfig =
-                new CompactSerializationConfig()
-                        .addSerializer(new ObjectIdCompactSerializer())
-                ;
+                new CompactSerializationConfig().addSerializer(new ObjectIdCompactSerializer());
+        SerializationConfig serializationConfig =
+                new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig);
         Config memberConfig = smallInstanceConfig()
                 // Need to set filtering class loader so the members don't deserialize into class but into GenericRecord
                 .setClassLoader(new FilteringClassLoader(newArrayList("org.example"), null))
@@ -91,11 +91,10 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
                                 .setProperty("connectionString", connectionString)
                                 .setProperty("database", database.getName())
                 )
-                .setSerializationConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
-                ;
+                .setSerializationConfig(serializationConfig);
 
         ClientConfig clientConfig = new ClientConfig()
-                .setSerializationConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .setSerializationConfig(serializationConfig)
                 .setClassLoader(new FilteringClassLoader(newArrayList("org.example"), null));
 
         initializeWithClient(2, memberConfig, clientConfig);

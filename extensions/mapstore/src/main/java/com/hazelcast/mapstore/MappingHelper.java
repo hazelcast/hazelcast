@@ -33,7 +33,8 @@ final class MappingHelper {
         this.sqlService = sqlService;
     }
 
-    public void createMapping(String mappingName, String tableName, String mappingType, String dataLinkRef, String idColumn) {
+    public void createMapping(String mappingName, String tableName, String mappingType, String dataLinkRef,
+                              String idColumn) {
         sqlService.execute(
                 "CREATE MAPPING \"" + mappingName + "\""
                 + " EXTERNAL NAME \"" + tableName + "\" "
