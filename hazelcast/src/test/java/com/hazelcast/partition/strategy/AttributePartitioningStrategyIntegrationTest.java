@@ -51,7 +51,6 @@ public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInCl
             .build();
 
     private static final String PARTITION_ATTRIBUTE_VALUE = "1";
-    private static final Object[] PARTITION_KEY = new Object[]{PARTITION_ATTRIBUTE_VALUE};
 
     @BeforeClass
     public static void beforeClass() {
@@ -70,7 +69,7 @@ public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInCl
             map.put(new JavaKey(i, "key#" + i, PARTITION_ATTRIBUTE_VALUE), i);
         }
 
-        final HazelcastInstance owner = getOwner(PARTITION_KEY);
+        final HazelcastInstance owner = getOwner(PARTITION_ATTRIBUTE_VALUE);
         final List<HazelcastInstance> nonOwners = getNonOwners(owner);
 
         assertEquals(100, owner.getMap("test").getLocalMapStats().getOwnedEntryCount());
@@ -90,7 +89,7 @@ public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInCl
                     .build(), i);
         }
 
-        final HazelcastInstance owner = getOwner(PARTITION_KEY);
+        final HazelcastInstance owner = getOwner(PARTITION_ATTRIBUTE_VALUE);
         final List<HazelcastInstance> nonOwners = getNonOwners(owner);
 
         assertEquals(100, owner.getMap("test").getLocalMapStats().getOwnedEntryCount());
@@ -110,7 +109,7 @@ public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInCl
                     .build(), i);
         }
 
-        final HazelcastInstance owner = getOwner(PARTITION_KEY);
+        final HazelcastInstance owner = getOwner(PARTITION_ATTRIBUTE_VALUE);
         final List<HazelcastInstance> nonOwners = getNonOwners(owner);
 
         assertEquals(100, owner.getMap("test").getLocalMapStats().getOwnedEntryCount());
@@ -135,7 +134,7 @@ public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInCl
             map.put(new HazelcastJsonValue(key), i);
         }
 
-        final HazelcastInstance owner = getOwner(PARTITION_KEY);
+        final HazelcastInstance owner = getOwner(PARTITION_ATTRIBUTE_VALUE);
         final List<HazelcastInstance> nonOwners = getNonOwners(owner);
 
         assertEquals(100, owner.getMap("test").getLocalMapStats().getOwnedEntryCount());
