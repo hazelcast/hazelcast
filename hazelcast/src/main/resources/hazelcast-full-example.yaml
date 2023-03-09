@@ -611,14 +611,14 @@ hazelcast:
   #       all Hazelcast cluster members would be within one network switch/router therefore
   #       default of 0 is usually sufficient.
   #
-  # - "alto-socket":
-  #   Socket configuration for Alto. In Alto, each eventloop has its own socket.
+  # - "tpc-socket":
+  #   Socket configuration for Tpc. In Tpc, each eventloop has its own socket.
   #   - "port-range":
-  #       Configures the port range available for Alto sockets.
+  #       Configures the port range available for Tpc sockets.
   #   - "receive-buffer-size-kb":
-  #       Configures SO_RCVBUF socket option for Alto sockets.
+  #       Configures SO_RCVBUF socket option for Tpc sockets.
   #   - "send-buffer-size-kb":
-  #       Configures SO_SNDBUF socket option for Alto sockets.
+  #       Configures SO_SNDBUF socket option for Tpc sockets.
   network:
     public-address: 11.22.33.44:5555
     port:
@@ -782,7 +782,7 @@ hazelcast:
     memcache-protocol:
       enabled: false
 
-    alto-socket:
+    tpc-socket:
       port-range: 14000-16000
       receive-buffer-size-kb: 256
       send-buffer-size-kb: 256
@@ -3118,14 +3118,14 @@ hazelcast:
   #              When keep-alive is true and supported by the platform, sets the number of seconds to wait between keep-alive
   #              probes.
   #
-  #      - "alto-socket":
-  #        Socket configuration for Alto. In Alto, each eventloop has its own socket.
+  #      - "tpc-socket":
+  #        Socket configuration for Tpc. In Tpc, each eventloop has its own socket.
   #        - "port-range":
-  #            Configures the port range available for Alto sockets.
+  #            Configures the port range available for Tpc sockets.
   #        - "receive-buffer-size-kb":
-  #            Configures SO_RCVBUF socket option for Alto sockets.
+  #            Configures SO_RCVBUF socket option for Tpc sockets.
   #        - "send-buffer-size-kb":
-  #            Configures SO_SNDBUF socket option for Alto sockets.
+  #            Configures SO_SNDBUF socket option for Tpc sockets.
   #
   #  * "rest-server-socket-endpoint-config":
   #      Controls access to Hazelcast HTTP REST API.
@@ -3300,7 +3300,7 @@ hazelcast:
       public-address: dummy
       # If the address should be reused. See NetworkConfig.setReuseAddress for more information.
       reuse-address: true
-      alto-socket:
+      tpc-socket:
         port-range: 14000-16000
         receive-buffer-size-kb: 256
         send-buffer-size-kb: 256
@@ -3327,7 +3327,7 @@ hazelcast:
         port: 9999
       public-address: 10.10.0.10
       reuse-address: true
-      alto-socket:
+      tpc-socket:
         port-range: 14000-16000
         receive-buffer-size-kb: 256
         send-buffer-size-kb: 256
@@ -3337,7 +3337,7 @@ hazelcast:
         enabled: false
         interfaces:
           - 10.10.1.*
-      alto-socket:
+      tpc-socket:
         port-range: 14000-16000
         receive-buffer-size-kb: 256
         send-buffer-size-kb: 256
@@ -3362,7 +3362,7 @@ hazelcast:
           factory-class-name: com.hazelcast.examples.MySSLContextFactory
           properties:
             foo: bar
-        alto-socket:
+        tpc-socket:
           port-range: 14000-16000
           receive-buffer-size-kb: 256
           send-buffer-size-kb: 256
@@ -3380,7 +3380,7 @@ hazelcast:
           interfaces:
             - 192.168.8.101
             - 10.20.10.100
-        alto-socket:
+        tpc-socket:
           port-range: 14000-16000
           receive-buffer-size-kb: 256
           send-buffer-size-kb: 256
@@ -3390,7 +3390,7 @@ hazelcast:
         auto-increment: false
         port-count: 10
         port: 6000
-      alto-socket:
+      tpc-socket:
         port-range: 14000-16000
         receive-buffer-size-kb: 256
         send-buffer-size-kb: 256
@@ -3880,11 +3880,11 @@ hazelcast:
     other-database:
       class-name: com.hazelcast.datalink.OtherDataLink
 
-  #    ===== HAZELCAST ALTO CONFIGURATION =====
+  #    ===== HAZELCAST TPC CONFIGURATION =====
   #
-  #    Hazelcast Alto is the next generation of Hazelcast built with thread per core architecture.
-  #    It's still being developed and everything is subject to change. Alto is disabled by default.
-  alto:
+  #    Hazelcast Tpc is the next generation of Hazelcast built with thread per core architecture.
+  #    It's still being developed and everything is subject to change. Tpc is disabled by default.
+  apc:
     enabled: true
     # Configures the number of eventloops. It's equal to available processor count by default.
     eventloop-count: 12

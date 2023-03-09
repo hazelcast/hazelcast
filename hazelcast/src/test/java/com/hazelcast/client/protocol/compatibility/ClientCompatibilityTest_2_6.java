@@ -86,8 +86,8 @@ public class ClientCompatibilityTest_2_6 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
-        assertTrue(parameters.isAltoPortsExists);
-        assertTrue(isEqual(aListOfIntegers, parameters.altoPorts));
+        assertTrue(parameters.doTpcPortsExists);
+        assertTrue(isEqual(aListOfIntegers, parameters.tpcPorts));
     }
 
     @Test
@@ -111,8 +111,8 @@ public class ClientCompatibilityTest_2_6 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
-        assertTrue(parameters.isAltoPortsExists);
-        assertTrue(isEqual(aListOfIntegers, parameters.altoPorts));
+        assertTrue(parameters.doTpcPortsExists);
+        assertTrue(isEqual(aListOfIntegers, parameters.tpcPorts));
     }
 
     @Test

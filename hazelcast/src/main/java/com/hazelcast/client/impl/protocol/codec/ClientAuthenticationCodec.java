@@ -188,18 +188,18 @@ public final class ClientAuthenticationCodec {
         public boolean failoverSupported;
 
         /**
-         * Returns the list of Alto ports or null if Alto is disabled.
+         * Returns the list of Tpc ports or null if Tpc is disabled.
          */
-        public @Nullable java.util.List<java.lang.Integer> altoPorts;
+        public @Nullable java.util.List<java.lang.Integer> tpcPorts;
 
         /**
-         * True if the altoPorts is received from the member, false otherwise.
-         * If this is false, altoPorts has the default value for its type.
+         * True if the tpcPorts is received from the member, false otherwise.
+         * If this is false, tpcPorts has the default value for its type.
          */
-        public boolean isAltoPortsExists;
+        public boolean doTpcPortsExists;
     }
 
-    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported, @Nullable java.util.Collection<java.lang.Integer> altoPorts) {
+    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported, @Nullable java.util.Collection<java.lang.Integer> tpcPorts) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
@@ -213,7 +213,7 @@ public final class ClientAuthenticationCodec {
 
         CodecUtil.encodeNullable(clientMessage, address, AddressCodec::encode);
         StringCodec.encode(clientMessage, serverHazelcastVersion);
-        CodecUtil.encodeNullable(clientMessage, altoPorts, ListIntegerCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, tpcPorts, ListIntegerCodec::encode);
         return clientMessage;
     }
 
@@ -230,10 +230,10 @@ public final class ClientAuthenticationCodec {
         response.address = CodecUtil.decodeNullable(iterator, AddressCodec::decode);
         response.serverHazelcastVersion = StringCodec.decode(iterator);
         if (iterator.hasNext()) {
-            response.altoPorts = CodecUtil.decodeNullable(iterator, ListIntegerCodec::decode);
-            response.isAltoPortsExists = true;
+            response.tpcPorts = CodecUtil.decodeNullable(iterator, ListIntegerCodec::decode);
+            response.doTpcPortsExists = true;
         } else {
-            response.isAltoPortsExists = false;
+            response.doTpcPortsExists = false;
         }
         return response;
     }

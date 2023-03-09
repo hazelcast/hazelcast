@@ -15,6 +15,14 @@
  */
 
 /**
- * <p>This package containsa alto functionality for Hazelcast.<br>
+ * This package contains Tpc integration for Hazelcast.
+ * <p/>
+ * The com.hazelcast.internal.tpcengine package contains the lower level
+ * {@link com.hazelcast.internal.tpcengine.TpcEngine}. This engine is useful
+ * for asynchronous I/O and processing. It is unaware of Hazelcast.
+ * <p/>
+ * The com.hazelcast.internal.tpc package contains the integration of Hazelcast
+ * on top of the {@link com.hazelcast.internal.tpcengine.TpcEngine}. This is
+ * where we'll see Hazelcast specific functionality.
  */
-package com.hazelcast.internal.bootstrap;
+package com.hazelcast.internal.tpc;

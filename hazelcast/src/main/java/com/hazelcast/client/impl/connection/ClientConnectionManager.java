@@ -92,7 +92,7 @@ public interface ClientConnectionManager extends ConnectionListenable<ClientConn
      * Returns {@code true} if the client is unisocket, {@code false} otherwise.
      * <p>
      * The client operates on the unisocket mode only if the smart routing and
-     * the Alto config is disabled.
+     * the Tpc config is disabled.
      */
     boolean isUnisocketClient();
 }

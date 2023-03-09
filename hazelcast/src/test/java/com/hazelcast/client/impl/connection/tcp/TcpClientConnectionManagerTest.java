@@ -49,35 +49,35 @@ public class TcpClientConnectionManagerTest extends ClientTestSupport {
     }
 
     @Test
-    public void testIsUnisocketClient_whenAltoDisabledAndSmartRoutingDisabled() {
+    public void testIsUnisocketClient_whenTpcDisabledAndSmartRoutingDisabled() {
         verifyIsUnisocketClient(false, false);
     }
 
     @Test
-    public void testIsUnisocketClient_whenAltoEnabledAndSmartRoutingDisabled() {
+    public void testIsUnisocketClient_whenTpcEnabledAndSmartRoutingDisabled() {
         verifyIsUnisocketClient(true, false);
     }
 
     @Test
-    public void testIsUnisocketClient_whenAltoDisabledAndSmartRoutingEnabled() {
+    public void testIsUnisocketClient_whenTpcDisabledAndSmartRoutingEnabled() {
         verifyIsUnisocketClient(false, true);
     }
 
     @Test
-    public void testIsUnisocketClient_whenAltoEnabledAndSmartRoutingEnabled() {
+    public void testIsUnisocketClient_whenTpcEnabledAndSmartRoutingEnabled() {
         verifyIsUnisocketClient(true, true);
     }
 
-    private void verifyIsUnisocketClient(boolean altoEnabled, boolean smartRouting) {
+    private void verifyIsUnisocketClient(boolean tpcEnabled, boolean smartRouting) {
         ClientConfig config = new ClientConfig();
-        config.getAltoConfig().setEnabled(altoEnabled);
+        config.getTpcConfig().setEnabled(tpcEnabled);
         config.getNetworkConfig().setSmartRouting(smartRouting);
 
         HazelcastInstance client = factory.newHazelcastClient(config);
         HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
 
         boolean isUnisocket = clientImpl.getConnectionManager().isUnisocketClient();
-        // should be unisocket only when smart routing is false and Alto disabled
-        assertEquals(!smartRouting && !altoEnabled, isUnisocket);
+        // should be unisocket only when smart routing is false and Tpc disabled
+        assertEquals(!smartRouting && !tpcEnabled, isUnisocket);
     }
 }

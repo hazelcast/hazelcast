@@ -1,7 +1,7 @@
 {
   "instance": {
     "hazelcast": {
-      "alto": {
+      "tpc": {
         "enabled": true,
         "eventloop-count": 12
       }

@@ -16,7 +16,8 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.alto.AltoSocketConfig;
+import com.hazelcast.config.tpc.TpcSocketConfig;
+import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.spi.annotation.Beta;
@@ -94,7 +95,7 @@ public class EndpointConfig implements NamedConfig {
     private int socketKeepIdleSeconds = DEFAULT_SOCKET_KEEP_IDLE_SECONDS;
     private int socketKeepIntervalSeconds = DEFAULT_SOCKET_KEEP_INTERVAL_SECONDS;
     private int socketKeepCount = DEFAULT_SOCKET_KEEP_COUNT;
-    private AltoSocketConfig altoSocketConfig = new AltoSocketConfig();
+    private TpcSocketConfig tpcSocketConfig = new TpcSocketConfig();
 
     public ProtocolType getProtocolType() {
         return protocolType;
@@ -297,31 +298,31 @@ public class EndpointConfig implements NamedConfig {
     }
 
     /**
-     * Gets the Alto socket config. Can't return null.
+     * Gets the TpcSocketConfig. Can't return null.
      *
-     * @return the Alto socket config
-     * @see com.hazelcast.config.alto.AltoConfig
+     * @return the TpcSocketConfig.
+     * @see TpcConfig
      * @since 5.3
      */
     @Beta
     @Nonnull
-    public AltoSocketConfig getAltoSocketConfig() {
-        return altoSocketConfig;
+    public TpcSocketConfig getTpcSocketConfig() {
+        return tpcSocketConfig;
     }
 
     /**
-     * Sets the Alto socket config. Can't return null.
+     * Sets the TpcSocketConfig. Can't return null.
      *
-     * @param altoSocketConfig Alto socket config to set
+     * @param tpcSocketConfig Tpc socket config to set
      * @return this endpoint config
-     * @throws NullPointerException if altoSocketConfig is null
-     * @see com.hazelcast.config.alto.AltoConfig
+     * @throws NullPointerException if tpcSocketConfig is null
+     * @see TpcConfig
      * @since 5.3
      */
     @Beta
     @Nonnull
-    public EndpointConfig setAltoSocketConfig(@Nonnull AltoSocketConfig altoSocketConfig) {
-        this.altoSocketConfig = checkNotNull(altoSocketConfig);
+    public EndpointConfig setTpcSocketConfig(@Nonnull TpcSocketConfig tpcSocketConfig) {
+        this.tpcSocketConfig = checkNotNull(tpcSocketConfig);
         return this;
     }
 
@@ -446,7 +447,7 @@ public class EndpointConfig implements NamedConfig {
                 && Objects.equals(symmetricEncryptionConfig, that.symmetricEncryptionConfig)
                 && Objects.equals(outboundPortDefinitions, that.outboundPortDefinitions)
                 && Objects.equals(outboundPorts, that.outboundPorts)
-                && Objects.equals(altoSocketConfig, that.altoSocketConfig);
+                && Objects.equals(tpcSocketConfig, that.tpcSocketConfig);
     }
 
     @Override
@@ -454,6 +455,6 @@ public class EndpointConfig implements NamedConfig {
         return Objects.hash(name, protocolType, interfaces, socketInterceptorConfig, sslConfig, symmetricEncryptionConfig,
                 outboundPortDefinitions, outboundPorts, socketBufferDirect, socketTcpNoDelay, socketKeepAlive,
                 socketConnectTimeoutSeconds, socketSendBufferSizeKb, socketRcvBufferSizeKb, socketLingerSeconds,
-                altoSocketConfig, socketKeepCount, socketKeepIdleSeconds, socketKeepIntervalSeconds);
+                tpcSocketConfig, socketKeepCount, socketKeepIdleSeconds, socketKeepIntervalSeconds);
     }
 }

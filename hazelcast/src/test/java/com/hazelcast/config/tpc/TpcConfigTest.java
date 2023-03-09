@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config.alto;
+package com.hazelcast.config.tpc;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -28,17 +28,17 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.config.alto.AltoConfigAccessors.getEventloopCount;
-import static com.hazelcast.config.alto.AltoConfigAccessors.isTpcEnabled;
-import static com.hazelcast.internal.bootstrap.AltoServerBootstrap.ALTO_ENABLED;
-import static com.hazelcast.internal.bootstrap.AltoServerBootstrap.ALTO_EVENTLOOP_COUNT;
+import static com.hazelcast.config.tpc.TpcConfigAccessors.getEventloopCount;
+import static com.hazelcast.config.tpc.TpcConfigAccessors.isTpcEnabled;
+import static com.hazelcast.internal.tpc.TpcServerBootstrap.TPC_ENABLED;
+import static com.hazelcast.internal.tpc.TpcServerBootstrap.TPC_EVENTLOOP_COUNT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class AltoConfigTest extends HazelcastTestSupport {
+public class TpcConfigTest extends HazelcastTestSupport {
     private final Config config = smallInstanceConfig();
 
     @Test
@@ -48,7 +48,7 @@ public class AltoConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testEventloopCountDefault() {
-        config.getAltoConfig().setEnabled(true);
+        config.getTpcConfig().setEnabled(true);
         HazelcastInstance hz = createHazelcastInstance(config);
         assertTrue(isTpcEnabled(hz));
         assertEquals(Runtime.getRuntime().availableProcessors(), getEventloopCount(hz));
@@ -56,7 +56,7 @@ public class AltoConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testEventloopCount() {
-        config.getAltoConfig().setEnabled(true).setEventloopCount(7);
+        config.getTpcConfig().setEnabled(true).setEventloopCount(7);
         HazelcastInstance hz = createHazelcastInstance(config);
         assertTrue(isTpcEnabled(hz));
         assertEquals(7, getEventloopCount(hz));
@@ -64,15 +64,15 @@ public class AltoConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testConfigValidation() {
-        AltoConfig altoConfig = config.getAltoConfig();
-        assertThrows(IllegalArgumentException.class, () -> altoConfig.setEventloopCount(0));
+        TpcConfig tpcConfig = config.getTpcConfig();
+        assertThrows(IllegalArgumentException.class, () -> tpcConfig.setEventloopCount(0));
     }
 
     @Test
     public void testSystemProperties() {
-        config.getAltoConfig().setEnabled(false).setEventloopCount(7);
-        System.setProperty(ALTO_ENABLED.getName(), "true");
-        System.setProperty(ALTO_EVENTLOOP_COUNT.getName(), "3");
+        config.getTpcConfig().setEnabled(false).setEventloopCount(7);
+        System.setProperty(TPC_ENABLED.getName(), "true");
+        System.setProperty(TPC_EVENTLOOP_COUNT.getName(), "3");
         HazelcastInstance hz = createHazelcastInstance(config);
         assertTrue(isTpcEnabled(hz));
         assertEquals(3, getEventloopCount(hz));
@@ -80,9 +80,9 @@ public class AltoConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testConfigProperties() {
-        config.getAltoConfig().setEnabled(false).setEventloopCount(7);
-        config.setProperty(ALTO_ENABLED.getName(), "true");
-        config.setProperty(ALTO_EVENTLOOP_COUNT.getName(), "3");
+        config.getTpcConfig().setEnabled(false).setEventloopCount(7);
+        config.setProperty(TPC_ENABLED.getName(), "true");
+        config.setProperty(TPC_EVENTLOOP_COUNT.getName(), "3");
         HazelcastInstance hz = createHazelcastInstance(config);
         assertTrue(isTpcEnabled(hz));
         assertEquals(3, getEventloopCount(hz));
@@ -91,7 +91,7 @@ public class AltoConfigTest extends HazelcastTestSupport {
     @Test
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
-        EqualsVerifier.forClass(AltoConfig.class)
+        EqualsVerifier.forClass(TpcConfig.class)
                 .usingGetClass()
                 .suppress(Warning.NONFINAL_FIELDS)
                 .verify();

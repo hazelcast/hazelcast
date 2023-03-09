@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.bootstrap;
+package com.hazelcast.internal.tpc;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.AdvancedNetworkConfig;
@@ -22,8 +22,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ServerSocketEndpointConfig;
-import com.hazelcast.config.alto.AltoConfig;
-import com.hazelcast.config.alto.AltoSocketConfig;
+import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.tpcengine.AsyncServerSocket;
@@ -35,8 +34,8 @@ import com.hazelcast.internal.tpcengine.TpcEngine;
 import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationexecutor.impl.AltoOperationScheduler;
-import com.hazelcast.spi.impl.operationexecutor.impl.AltoPartitionOperationThread;
+import com.hazelcast.spi.impl.operationexecutor.impl.TpcOperationScheduler;
+import com.hazelcast.spi.impl.operationexecutor.impl.TpcPartitionOperationThread;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -59,20 +58,22 @@ import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_SNDBUF;
 import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.TCP_NODELAY;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-@SuppressWarnings("checkstyle:MagicNumber, checkstyle:")
-public class AltoServerBootstrap {
+public class TpcServerBootstrap {
+
     /**
-     * If set, overrides {@link AltoConfig#isEnabled()}
+     * If set, overrides {@link com.hazelcast.config.tpc.TpcConfig#isEnabled()}
      */
-    public static final HazelcastProperty ALTO_ENABLED = new HazelcastProperty(
-            "hazelcast.internal.alto.enabled");
+    public static final HazelcastProperty TPC_ENABLED = new HazelcastProperty(
+            "hazelcast.internal.tpc.enabled");
+
     /**
-     * If set, overrides {@link AltoConfig#getEventloopCount()}
+     * If set, overrides {@link com.hazelcast.config.tpc.TpcConfig#getEventloopCount()}
      */
-    public static final HazelcastProperty ALTO_EVENTLOOP_COUNT = new HazelcastProperty(
-            "hazelcast.internal.alto.eventloop.count");
+    public static final HazelcastProperty TPC_EVENTLOOP_COUNT = new HazelcastProperty(
+            "hazelcast.internal.tpc.eventloop.count");
 
     private static final int TERMINATE_TIMEOUT_SECONDS = 5;
+
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
     private final Address thisAddress;
@@ -85,23 +86,23 @@ public class AltoServerBootstrap {
     private final Config config;
     private volatile List<Integer> clientPorts;
 
-    public AltoServerBootstrap(NodeEngineImpl nodeEngine) {
+    public TpcServerBootstrap(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.logger = nodeEngine.getLogger(AltoServerBootstrap.class);
+        this.logger = nodeEngine.getLogger(TpcServerBootstrap.class);
         this.config = nodeEngine.getConfig();
-        this.enabled = loadAltoEnabled();
+        this.enabled = loadTpcEnabled();
         this.thisAddress = nodeEngine.getThisAddress();
     }
 
-    private boolean loadAltoEnabled() {
+    private boolean loadTpcEnabled() {
         boolean enabled0;
-        String enabledString = nodeEngine.getProperties().getString(ALTO_ENABLED);
+        String enabledString = nodeEngine.getProperties().getString(TPC_ENABLED);
         if (enabledString != null) {
             enabled0 = Boolean.parseBoolean(enabledString);
         } else {
-            enabled0 = config.getAltoConfig().isEnabled();
+            enabled0 = config.getTpcConfig().isEnabled();
         }
-        logger.info("Alto: " + (enabled0 ? "enabled" : "disabled"));
+        logger.info("Tpc: " + (enabled0 ? "enabled" : "disabled"));
         return enabled0;
     }
 
@@ -128,14 +129,14 @@ public class AltoServerBootstrap {
                 OperationExecutorImpl operationExecutor = (OperationExecutorImpl) nodeEngine
                         .getOperationService()
                         .getOperationExecutor();
-                AltoPartitionOperationThread operationThread = (AltoPartitionOperationThread) operationExecutor
+                TpcPartitionOperationThread operationThread = (TpcPartitionOperationThread) operationExecutor
                         .getPartitionThreads()[index++];
                 operationThread.setEventloopTask(eventloopRunnable);
                 return operationThread;
             }
         });
 
-        reactorBuilder.setSchedulerSupplier(() -> new AltoOperationScheduler(1));
+        reactorBuilder.setSchedulerSupplier(() -> new TpcOperationScheduler(1));
         tpcEngineBuilder.setReactorBuilder(reactorBuilder);
         tpcEngineBuilder.setReactorCount(loadEventloopCount());
         return tpcEngineBuilder.build();
@@ -147,11 +148,11 @@ public class AltoServerBootstrap {
 
     private int loadEventloopCount() {
         int eventloopCount;
-        String eventloopCountString = nodeEngine.getProperties().getString(ALTO_EVENTLOOP_COUNT);
+        String eventloopCountString = nodeEngine.getProperties().getString(TPC_EVENTLOOP_COUNT);
         if (eventloopCountString != null) {
             eventloopCount = Integer.parseInt(eventloopCountString);
         } else {
-            eventloopCount = config.getAltoConfig().getEventloopCount();
+            eventloopCount = config.getTpcConfig().getEventloopCount();
         }
         return eventloopCount;
     }
@@ -162,7 +163,7 @@ public class AltoServerBootstrap {
         }
         this.tpcEngine = newTpcEngine();
 
-        // The AltoPartitionOperationThread are created with the right AltoOperationQueue, but
+        // The TpcPartitionOperationThread are created with the right TpcOperationQueue, but
         // the reactor isn't set yet.
         // The tpcEngine (and hence reactor.start) will create the appropriate happens-before
         // edge between the main thread and the reactor thread. So it is guaranteed to see
@@ -172,19 +173,19 @@ public class AltoServerBootstrap {
                 .getOperationExecutor();
         for (int k = 0; k < operationExecutor.getPartitionThreadCount(); k++) {
             Reactor reactor = tpcEngine.reactor(k);
-            AltoPartitionOperationThread partitionThread = (AltoPartitionOperationThread) operationExecutor
+            TpcPartitionOperationThread partitionThread = (TpcPartitionOperationThread) operationExecutor
                     .getPartitionThreads()[k];
             partitionThread.getQueue().setReactor(reactor);
         }
 
-        logger.info("Starting AltoServerBootstrap");
+        logger.info("Starting TpcServerBootstrap");
         tpcEngine.start();
         openServerSockets();
         clientPorts = serverSockets.stream().map(AsyncServerSocket::getLocalPort).collect(Collectors.toList());
     }
 
     private void openServerSockets() {
-        AltoSocketConfig clientSocketConfig = getClientSocketConfig();
+        TpcSocketConfig clientSocketConfig = getClientSocketConfig();
 
         String[] range = clientSocketConfig.getPortRange().split("-");
         int port = Integer.parseInt(range[0]);
@@ -217,7 +218,7 @@ public class AltoServerBootstrap {
     }
 
     // public for testing
-    public AltoSocketConfig getClientSocketConfig() {
+    public TpcSocketConfig getClientSocketConfig() {
         validateSocketConfig();
 
         if (config.getAdvancedNetworkConfig().isEnabled()) {
@@ -226,24 +227,24 @@ public class AltoServerBootstrap {
                     .getEndpointConfigs()
                     .get(EndpointQualifier.CLIENT);
 
-            return endpointConfig.getAltoSocketConfig();
+            return endpointConfig.getTpcSocketConfig();
         }
 
         // unified socket
-        return config.getNetworkConfig().getAltoSocketConfig();
+        return config.getNetworkConfig().getTpcSocketConfig();
     }
 
     private void validateSocketConfig() {
         AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
         if (advancedNetworkConfig.isEnabled()) {
-            AltoSocketConfig defaultAltoSocketConfig = new AltoSocketConfig();
+            TpcSocketConfig defaultTpcSocketConfig = new TpcSocketConfig();
             Map<EndpointQualifier, EndpointConfig> endpointConfigs = advancedNetworkConfig.getEndpointConfigs();
 
             endpointConfigs.forEach(((endpointQualifier, endpointConfig) -> {
                 if (endpointQualifier != EndpointQualifier.CLIENT
-                        && !endpointConfig.getAltoSocketConfig().equals(defaultAltoSocketConfig)) {
+                        && !endpointConfig.getTpcSocketConfig().equals(defaultTpcSocketConfig)) {
                     throw new InvalidConfigurationException(
-                            "Alto socket configuration is only available for clients ports for now.");
+                            "Tcp socket configuration is only available for clients ports for now.");
                 }
             }));
 
@@ -252,7 +253,7 @@ public class AltoServerBootstrap {
                 // for clients. This means cluster will run but no client ports will be
                 // created, so no clients can connect to the cluster.
                 throw new InvalidConfigurationException("Missing client server socket configuration. "
-                        + "If you have enabled Alto and advanced networking, "
+                        + "If you have enabled Tcp and advanced networking, "
                         + "please configure a client server socket.");
             }
         }
@@ -275,7 +276,7 @@ public class AltoServerBootstrap {
             }
         }
 
-        throw new HazelcastException("Could not find a free port in the Alto socket port range.");
+        throw new HazelcastException("Could not find a free port in the Tcp socket port range.");
     }
 
     public void shutdown() {
@@ -283,7 +284,7 @@ public class AltoServerBootstrap {
             return;
         }
 
-        logger.info("TcpBootstrap shutdown");
+        logger.info("TpcServerBootstrap shutdown");
 
         tpcEngine.shutdown();
 
@@ -294,6 +295,6 @@ public class AltoServerBootstrap {
             Thread.currentThread().interrupt();
         }
 
-        logger.info("TcpBootstrap terminated");
+        logger.info("TpcServerBootstrap terminated");
     }
 }

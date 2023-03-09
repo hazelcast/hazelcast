@@ -18,8 +18,8 @@ package com.hazelcast.config;
 
 import com.google.common.collect.ImmutableSet;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
-import com.hazelcast.config.alto.AltoConfig;
-import com.hazelcast.config.alto.AltoSocketConfig;
+import com.hazelcast.config.tpc.TpcConfig;
+import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -4609,73 +4609,73 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testAltoConfig() {
+    public void testTpcConfig() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  alto:\n"
+                + "  tpc:\n"
                 + "    enabled: true\n"
                 + "    eventloop-count: 12\n";
 
-        AltoConfig altoConfig = buildConfig(yaml).getAltoConfig();
+        TpcConfig tpcConfig = buildConfig(yaml).getTpcConfig();
 
-        assertThat(altoConfig.isEnabled()).isTrue();
-        assertThat(altoConfig.getEventloopCount()).isEqualTo(12);
+        assertThat(tpcConfig.isEnabled()).isTrue();
+        assertThat(tpcConfig.getEventloopCount()).isEqualTo(12);
     }
 
     @Override
     @Test
-    public void testAltoSocketConfig() {
+    public void testTpcSocketConfig() {
         String yaml = ""
                 + "hazelcast:\n"
                 + "  network:\n"
-                + "    alto-socket:\n"
+                + "    tpc-socket:\n"
                 + "      port-range: 14000-16000\n"
                 + "      receive-buffer-size-kb: 256\n"
                 + "      send-buffer-size-kb: 256\n";
 
-        AltoSocketConfig altoConfig = buildConfig(yaml).getNetworkConfig().getAltoSocketConfig();
+        TpcSocketConfig tpcSocketConfig = buildConfig(yaml).getNetworkConfig().getTpcSocketConfig();
 
-        assertThat(altoConfig.getPortRange()).isEqualTo("14000-16000");
-        assertThat(altoConfig.getReceiveBufferSizeKB()).isEqualTo(256);
-        assertThat(altoConfig.getSendBufferSizeKB()).isEqualTo(256);
+        assertThat(tpcSocketConfig.getPortRange()).isEqualTo("14000-16000");
+        assertThat(tpcSocketConfig.getReceiveBufferSizeKB()).isEqualTo(256);
+        assertThat(tpcSocketConfig.getSendBufferSizeKB()).isEqualTo(256);
     }
 
     @Override
     @Test
-    public void testAltoSocketConfigAdvanced() {
+    public void testTpcSocketConfigAdvanced() {
         String yaml = ""
                 + "hazelcast:\n"
                 + "  advanced-network:\n"
                 + "    enabled: true\n"
                 + "    member-server-socket-endpoint-config: \n"
-                + "      alto-socket: \n"
+                + "      tpc-socket: \n"
                 + "        port-range: 14000-16000\n"
                 + "        receive-buffer-size-kb: 256\n"
                 + "        send-buffer-size-kb: 256\n"
                 + "    client-server-socket-endpoint-config:\n"
-                + "      alto-socket:\n"
+                + "      tpc-socket:\n"
                 + "        port-range: 14000-16000\n"
                 + "        receive-buffer-size-kb: 256\n"
                 + "        send-buffer-size-kb: 256\n"
                 + "    memcache-server-socket-endpoint-config:\n"
-                + "      alto-socket:\n"
+                + "      tpc-socket:\n"
                 + "        port-range: 14000-16000\n"
                 + "        receive-buffer-size-kb: 256\n"
                 + "        send-buffer-size-kb: 256\n"
                 + "    rest-server-socket-endpoint-config:\n"
-                + "      alto-socket:\n"
+                + "      tpc-socket:\n"
                 + "        port-range: 14000-16000\n"
                 + "        receive-buffer-size-kb: 256\n"
                 + "        send-buffer-size-kb: 256\n"
                 + "    wan-endpoint-config: \n"
                 + "      tokyo:\n"
-                + "        alto-socket:\n"
+                + "        tpc-socket:\n"
                 + "          port-range: 14000-16000\n"
                 + "          receive-buffer-size-kb: 256\n"
                 + "          send-buffer-size-kb: 256\n"
                 + "    wan-server-socket-endpoint-config: \n"
                 + "      london:\n"
-                + "        alto-socket:\n"
+                + "        tpc-socket:\n"
                 + "          port-range: 14000-16000\n"
                 + "          receive-buffer-size-kb: 256\n"
                 + "          send-buffer-size-kb: 256\n";
@@ -4687,11 +4687,11 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertThat(endpointConfigs).hasSize(6);
 
         endpointConfigs.forEach((endpointQualifier, endpointConfig) -> {
-            AltoSocketConfig altoSocketConfig = endpointConfig.getAltoSocketConfig();
+            TpcSocketConfig TpcSocketConfig = endpointConfig.getTpcSocketConfig();
 
-            assertThat(altoSocketConfig.getPortRange()).isEqualTo("14000-16000");
-            assertThat(altoSocketConfig.getReceiveBufferSizeKB()).isEqualTo(256);
-            assertThat(altoSocketConfig.getSendBufferSizeKB()).isEqualTo(256);
+            assertThat(TpcSocketConfig.getPortRange()).isEqualTo("14000-16000");
+            assertThat(TpcSocketConfig.getReceiveBufferSizeKB()).isEqualTo(256);
+            assertThat(TpcSocketConfig.getSendBufferSizeKB()).isEqualTo(256);
         });
     }
 }

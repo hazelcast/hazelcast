@@ -32,42 +32,43 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.UUID_SIZE_IN_BYTES;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeUUID;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 
 /**
- * Establishes channels to the Alto ports of a connection in a
+ * Establishes channels to the TPC ports of a connection in a
  * non-blocking way.
  * <p>
  * Upon failures, closes all channels established so far, along
  * with the connection.
  */
-public final class AltoChannelConnector {
+public final class TpcChannelConnector {
     private final UUID clientUuid;
     private final TcpClientConnection connection;
-    private final List<Integer> altoPorts;
+    private final List<Integer> tpcPorts;
     private final ExecutorService executor;
     private final ChannelInitializer channelInitializer;
     private final ChannelCreator channelCreator;
     private final ILogger logger;
-    private final Channel[] altoChannels;
+    private final Channel[] tpcChannels;
     private final AtomicInteger remaining;
     private volatile boolean failed;
 
-    public AltoChannelConnector(UUID clientUuid,
-                                TcpClientConnection connection,
-                                List<Integer> altoPorts,
-                                ExecutorService executor,
-                                ChannelInitializer channelInitializer,
-                                ChannelCreator channelCreator,
-                                LoggingService loggingService) {
+    public TpcChannelConnector(UUID clientUuid,
+                               TcpClientConnection connection,
+                               List<Integer> tpcPorts,
+                               ExecutorService executor,
+                               ChannelInitializer channelInitializer,
+                               ChannelCreator channelCreator,
+                               LoggingService loggingService) {
         this.clientUuid = clientUuid;
         this.connection = connection;
-        this.altoPorts = altoPorts;
+        this.tpcPorts = tpcPorts;
         this.executor = executor;
         this.channelInitializer = channelInitializer;
         this.channelCreator = channelCreator;
-        this.logger = loggingService.getLogger(AltoChannelConnector.class);
-        this.altoChannels = new Channel[altoPorts.size()];
-        this.remaining = new AtomicInteger(altoPorts.size());
+        this.logger = loggingService.getLogger(TpcChannelConnector.class);
+        this.tpcChannels = new Channel[tpcPorts.size()];
+        this.remaining = new AtomicInteger(tpcPorts.size());
     }
 
     /**
@@ -76,11 +77,11 @@ public final class AltoChannelConnector {
      * This call does not block.
      */
     public void initiate() {
-        logger.info("Initiating connection attempts to Alto channels running on ports "
-                + altoPorts + " for " + connection);
+        logger.info("Initiating connection attempts to Tpc channels running on ports "
+                + tpcPorts + " for " + connection);
         String host = connection.getRemoteAddress().getHost();
         int i = 0;
-        for (int port : altoPorts) {
+        for (int port : tpcPorts) {
             int index = i++;
             executor.submit(() -> connect(host, port, index));
         }
@@ -90,13 +91,13 @@ public final class AltoChannelConnector {
         if (connectionFailed()) {
             // No need to try to connect if one of the channels
             // or the connection itself is closed/failed.
-            logger.warning("The connection to Alto channel on port " + port + " for "
+            logger.warning("The connection to Tpc channel on port " + port + " for "
                     + connection + " will not be made as either the connection or "
-                    + "one of the Alto channel connections has failed.");
+                    + "one of the Tpc channel connections has failed.");
             return;
         }
 
-        logger.info("Trying to connect to Alto channel on port " + port + " for " + connection);
+        logger.info("Trying to connect to Tpc channel on port " + port + " for " + connection);
 
         Channel channel = null;
         try {
@@ -105,7 +106,7 @@ public final class AltoChannelConnector {
             writeAuthenticationBytes(channel);
             onSuccessfulChannelConnection(channel, index);
         } catch (Exception e) {
-            logger.warning("Exception during the connection to attempt to Alto channel on port "
+            logger.warning("Exception during the connection to attempt to Tpc channel on port "
                     + port + " for " + connection + ": " + e, e);
             onFailure(channel);
         }
@@ -120,31 +121,31 @@ public final class AltoChannelConnector {
         encodeUUID(initialFrame.content, 0, clientUuid);
         clientUuidMessage.add(initialFrame);
         if (!channel.write(clientUuidMessage)) {
-            throw new HazelcastException("Cannot write authentication bytes to the Alto channel "
+            throw new HazelcastException("Cannot write authentication bytes to the Tpc channel "
                     + channel + " for " + connection);
         }
     }
 
     private void onSuccessfulChannelConnection(Channel channel, int index) {
-        synchronized (altoChannels) {
+        synchronized (tpcChannels) {
             if (connectionFailed()) {
                 // It might be the case that the connection or any
                 // of the channels are failed after this channel
                 // is established. We need to close this one as well
                 // to not leak any channels.
-                logger.warning("Closing the Alto channel " + channel + " for " + connection
+                logger.warning("Closing the Tpc channel " + channel + " for " + connection
                         + " as one of the connections is failed.");
                 onFailure(channel);
                 return;
             }
 
-            altoChannels[index] = channel;
+            tpcChannels[index] = channel;
         }
 
-        logger.info("Successfully connected to Alto channel " + channel + " for " + connection);
+        logger.info("Successfully connected to Tpc channel " + channel + " for " + connection);
 
         if (remaining.decrementAndGet() == 0) {
-            connection.setAltoChannels(altoChannels);
+            connection.setTpcChannels(tpcChannels);
 
             // If the connection is alive at this point, but
             // closes afterward, the channels will be cleaned up
@@ -153,21 +154,21 @@ public final class AltoChannelConnector {
 
             // If the connection is not alive at this point, the channels
             // might or might not be closed, depending on the order of the
-            // close and setAltoChannels calls. We will close channels
+            // close and setTpcChannels calls. We will close channels
             // if the connection is not alive here, just in case, as it is
             // OK to call close on already closed channels.
             if (!connection.isAlive()) {
-                logger.warning("Closing all Alto channel connections for "
+                logger.warning("Closing all Tpc channel connections for "
                         + connection + " as the connection is closed.");
                 closeAllChannels();
             } else {
-                logger.info("All Alto channel connections are established for the " + connection);
+                logger.info("All Tpc channel connections are established for the " + connection);
             }
         }
     }
 
     private void onFailure(Channel channel) {
-        synchronized (altoChannels) {
+        synchronized (tpcChannels) {
             closeChannel(channel);
             if (failed) {
                 return;
@@ -175,10 +176,10 @@ public final class AltoChannelConnector {
 
             failed = true;
             closeAllChannels();
-            logger.warning("Alto channel establishments for the " + connection + " have failed. "
-                    + "The client will not be using the Alto channels to route partition specific invocations, "
+            logger.warning("Tpc channel establishments for the " + connection + " have failed. "
+                    + "The client will not be using the Tpc channels to route partition specific invocations, "
                     + "and fallback to the smart routing mode for this connection. Check the firewall settings "
-                    + "to make sure the Alto channels are accessible from the client.");
+                    + "to make sure the Tpc channels are accessible from the client.");
         }
     }
 
@@ -187,19 +188,11 @@ public final class AltoChannelConnector {
     }
 
     private void closeChannel(Channel channel) {
-        if (channel == null) {
-            return;
-        }
-
-        try {
-            channel.close();
-        } catch (Exception e) {
-            logger.warning("Exception while closing Alto channel " + e.getMessage());
-        }
+        closeResource(channel);
     }
 
     private void closeAllChannels() {
-        for (Channel channel : altoChannels) {
+        for (Channel channel : tpcChannels) {
             closeChannel(channel);
         }
     }
