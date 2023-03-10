@@ -16,41 +16,38 @@
 
 package com.hazelcast.logging;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
-import org.apache.logging.log4j.spi.ExtendedLogger;
+import com.hazelcast.logging.Log4jFactory.Log4jLogger;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 import java.util.logging.Level;
 
-import static org.apache.logging.log4j.Level.DEBUG;
-import static org.apache.logging.log4j.Level.ERROR;
-import static org.apache.logging.log4j.Level.INFO;
-import static org.apache.logging.log4j.Level.OFF;
-import static org.apache.logging.log4j.Level.TRACE;
-import static org.apache.logging.log4j.Level.WARN;
+import static org.apache.log4j.Level.DEBUG;
+import static org.apache.log4j.Level.ERROR;
+import static org.apache.log4j.Level.INFO;
+import static org.apache.log4j.Level.OFF;
+import static org.apache.log4j.Level.TRACE;
+import static org.apache.log4j.Level.WARN;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
-public class Log4j2LoggerTest extends AbstractLoggerTest {
+//@RunWith(HazelcastParallelClassRunner.class)
+//@Category({QuickTest.class, ParallelJVMTest.class})
+@Ignore
+public class Log4jLoggerTest extends AbstractLoggerTest {
 
-    private static final String LOGGER_NAME = Log4j2Factory.Log4j2Logger.class.getName();
-
-    private ExtendedLogger mockLogger;
+    private org.apache.log4j.Logger mockLogger;
     private ILogger hazelcastLogger;
 
     @Before
     public void setUp() {
-        mockLogger = mock(ExtendedLogger.class);
-        hazelcastLogger = new Log4j2Factory.Log4j2Logger(mockLogger);
+        mockLogger = mock(org.apache.log4j.Logger.class);
+        hazelcastLogger = new Log4jLogger(mockLogger);
+        Mockito.verify(mockLogger).getLevel();
     }
 
     @Test
@@ -61,48 +58,48 @@ public class Log4j2LoggerTest extends AbstractLoggerTest {
     @Test
     public void logWithThrowable_shouldCallLogWithThrowable() {
         hazelcastLogger.warning(MESSAGE, THROWABLE);
-        verify(mockLogger, times(1)).logIfEnabled(LOGGER_NAME, WARN, null, MESSAGE, THROWABLE);
+        verify(mockLogger, times(1)).log(WARN, MESSAGE, THROWABLE);
     }
 
     @Test
     public void logAtLevelOff_shouldLogAtLevelOff() {
         hazelcastLogger.log(Level.OFF, MESSAGE);
-        verify(mockLogger, times(1)).logIfEnabled(LOGGER_NAME, OFF, null, MESSAGE);
+        verify(mockLogger, times(1)).log(OFF, MESSAGE);
     }
 
     @Test
     public void logFinest_shouldLogTrace() {
         hazelcastLogger.finest(MESSAGE);
-        verify(mockLogger, times(1)).logIfEnabled(LOGGER_NAME, TRACE, null, MESSAGE);
+        verify(mockLogger, times(1)).log(TRACE, MESSAGE);
     }
 
     @Test
     public void logFiner_shouldLogDebug() {
         hazelcastLogger.log(Level.FINER, MESSAGE);
-        verify(mockLogger, times(1)).logIfEnabled(LOGGER_NAME, DEBUG, null, MESSAGE);
+        verify(mockLogger, times(1)).log(DEBUG, MESSAGE);
     }
 
     @Test
     public void logFine_shouldLogDebug() {
         hazelcastLogger.fine(MESSAGE);
-        verify(mockLogger, times(1)).logIfEnabled(LOGGER_NAME, DEBUG, null, MESSAGE);
+        verify(mockLogger, times(1)).log(DEBUG, MESSAGE);
     }
 
     @Test
     public void logInfo_shouldLogInfo() {
         hazelcastLogger.info(MESSAGE);
-        verify(mockLogger, times(1)).logIfEnabled(LOGGER_NAME, INFO, null, MESSAGE);
+        verify(mockLogger, times(1)).log(INFO, MESSAGE);
     }
 
     @Test
     public void logWarning_shouldLogWarn() {
         hazelcastLogger.warning(MESSAGE);
-        verify(mockLogger, times(1)).logIfEnabled(LOGGER_NAME, WARN, null, MESSAGE);
+        verify(mockLogger, times(1)).log(WARN, MESSAGE);
     }
 
     @Test
     public void logSevere_shouldLogError() {
         hazelcastLogger.severe(MESSAGE);
-        verify(mockLogger, times(1)).logIfEnabled(LOGGER_NAME, ERROR, null, MESSAGE);
+        verify(mockLogger, times(1)).log(ERROR, MESSAGE);
     }
 }

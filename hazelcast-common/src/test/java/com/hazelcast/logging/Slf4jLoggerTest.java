@@ -16,13 +16,8 @@
 
 package com.hazelcast.logging;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 
 import java.util.logging.Level;
@@ -33,8 +28,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+//@RunWith(HazelcastParallelClassRunner.class)
+//@Category({QuickTest.class, ParallelJVMTest.class})
 public class Slf4jLoggerTest extends AbstractLoggerTest {
 
     private Logger mockLogger;

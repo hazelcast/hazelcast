@@ -14,22 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.test;
+package com.hazelcast.logging;
 
-/**
- * A task that can report the completion progress of some other tested
- * task. Used to write tests that can prolong their execution time in slow
- * environments as long as there is progress.
- *
- * @see HazelcastTestSupport#assertCompletesEventually(ProgressCheckerTask, long)
- * @see TaskProgress
- */
-@FunctionalInterface
-public interface ProgressCheckerTask {
-    /**
-     * Collects and returns progress information
-     *
-     * @return the progress information collected
-     */
-    TaskProgress checkProgress();
+
+abstract class AbstractLoggerTest {
+
+    static final String MESSAGE = "Any message";
+    static final Throwable THROWABLE = new Exception("expected exception");
+
+//    @Nonnull
+//    private static LogEvent createLogEvent(Level level, String loggerName) {
+//        LogRecord logRecord = new LogRecord(level, MESSAGE);
+//        logRecord.setThrown(THROWABLE);
+//        logRecord.setLoggerName(loggerName);
+//        Member member = new SimpleMemberImpl();
+//        return new LogEvent(logRecord, member);
+//    }
 }

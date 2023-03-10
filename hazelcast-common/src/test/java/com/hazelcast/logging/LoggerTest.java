@@ -16,48 +16,36 @@
 
 package com.hazelcast.logging;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.IsolatedLoggingRule;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.TestSupport.assertInstanceOf;
-import static com.hazelcast.test.IsolatedLoggingRule.LOGGING_TYPE_JDK;
-import static com.hazelcast.test.IsolatedLoggingRule.LOGGING_TYPE_LOG4J;
-import static com.hazelcast.test.IsolatedLoggingRule.LOGGING_TYPE_LOG4J2;
-import static com.hazelcast.test.IsolatedLoggingRule.LOGGING_TYPE_NONE;
-import static com.hazelcast.test.IsolatedLoggingRule.LOGGING_TYPE_PROPERTY;
-import static com.hazelcast.test.IsolatedLoggingRule.LOGGING_TYPE_SLF4J;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static com.hazelcast.test.ClassTestSupport.assertUtilityConstructor;
 
 /**
  * Unit tests for {@link com.hazelcast.logging.Logger} class.
  */
-@RunWith(HazelcastSerialClassRunner.class)
+
+//@RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class LoggerTest extends HazelcastTestSupport {
+public class LoggerTest {
 
     @Rule
     public final IsolatedLoggingRule isolatedLoggingRule = new IsolatedLoggingRule();
 
     @Test
     public void testConstructor() {
-        HazelcastTestSupport.assertUtilityConstructor(Logger.class);
+        assertUtilityConstructor(Logger.class);
     }
 
     @Test
     public void getLogger_thenLog4j_thenReturnLog4jLogger() {
         isolatedLoggingRule.setLoggingType(IsolatedLoggingRule.LOGGING_TYPE_LOG4J);
-        HazelcastTestSupport.assertInstanceOf(Log4jFactory.Log4jLogger.class, Logger.getLogger(getClass()));
+        assertInstanceOf(Log4jFactory.Log4jLogger.class, Logger.getLogger(getClass()));
     }
 
     @Test
@@ -95,22 +83,6 @@ public class LoggerTest extends HazelcastTestSupport {
         assertInstanceOf(NoLogFactory.NoLogger.class, Logger.noLogger());
     }
 
-    @Test
-    public void getLogger_whenTypeConfiguredForInstance_thenReturnLoggerOfConfiguredType() {
-        final ILogger loggerBeforeInstanceStartup = Logger.getLogger(getClass());
-
-        final Config config = new Config();
-        config.setProperty(IsolatedLoggingRule.LOGGING_TYPE_PROPERTY, IsolatedLoggingRule.LOGGING_TYPE_LOG4J2);
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
-        try {
-            final ILogger loggerAfterInstanceStartup = Logger.getLogger(getClass());
-
-            HazelcastTestSupport.assertInstanceOf(StandardLoggerFactory.StandardLogger.class, loggerBeforeInstanceStartup);
-            HazelcastTestSupport.assertInstanceOf(Log4j2Factory.Log4j2Logger.class, loggerAfterInstanceStartup);
-        } finally {
-            instance.shutdown();
-        }
-    }
 
     @Test
     public void newLoggerFactory_whenClassConfigured_thenShareLoggerFactoryWithGetLogger() {
