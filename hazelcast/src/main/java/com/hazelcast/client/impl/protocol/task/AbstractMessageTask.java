@@ -282,7 +282,6 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
             connection.write(resultClientMessage);
         } else {
             ClientMessage.Frame frame = resultClientMessage.getStartFrame();
-            //IOBuffer buf = new IOBuffer(resultClientMessage.getBufferLength(), false);
             IOBuffer buf = responseBufAllocator.allocate(resultClientMessage.getBufferLength());
             while (frame != null) {
                 buf.writeIntL(frame.content.length + SIZE_OF_FRAME_LENGTH_AND_FLAGS);

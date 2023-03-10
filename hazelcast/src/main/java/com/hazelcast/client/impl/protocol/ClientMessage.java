@@ -167,16 +167,8 @@ public final class ClientMessage implements OutboundFrame {
         return startFrame;
     }
 
-    public void setStartFrame(Frame startFrame) {
-        this.startFrame = startFrame;
-    }
-
     public Frame getEndFrame() {
         return endFrame;
-    }
-
-    public void setEndFrame(Frame endFrame) {
-        this.endFrame = endFrame;
     }
 
     public ClientMessage add(Frame frame) {

@@ -21,7 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.impl.DefaultNodeExtension;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.bootstrap.TpcServerBootstrap;
+import com.hazelcast.internal.bootstrap.AltoServerBootstrap;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -91,7 +91,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
 
     protected OperationExecutorImpl initExecutor() {
         // Tpc is disabled in these tests. To not get NPE we mock the bootstrap.
-        TpcServerBootstrap bootstrap = mock(TpcServerBootstrap.class);
+        AltoServerBootstrap bootstrap = mock(AltoServerBootstrap.class);
         when(bootstrap.isEnabled()).thenReturn(false);
 
         props = new HazelcastProperties(config);

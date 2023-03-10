@@ -22,6 +22,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ServerSocketEndpointConfig;
+import com.hazelcast.config.alto.AltoConfig;
 import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
@@ -60,11 +61,18 @@ import static com.hazelcast.internal.tpc.AsyncSocketOptions.TCP_NODELAY;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 @SuppressWarnings("checkstyle:MagicNumber, checkstyle:")
-public class TpcServerBootstrap {
+public class AltoServerBootstrap {
+    /**
+     * If set, overrides {@link AltoConfig#isEnabled()}
+     */
     public static final HazelcastProperty ALTO_ENABLED = new HazelcastProperty(
             "hazelcast.internal.alto.enabled");
+    /**
+     * If set, overrides {@link AltoConfig#getEventloopCount()}
+     */
     public static final HazelcastProperty ALTO_EVENTLOOP_COUNT = new HazelcastProperty(
             "hazelcast.internal.alto.eventloop.count");
+
     private static final int TERMINATE_TIMEOUT_SECONDS = 5;
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
@@ -78,9 +86,9 @@ public class TpcServerBootstrap {
     private final Config config;
     private volatile List<Integer> clientPorts;
 
-    public TpcServerBootstrap(NodeEngineImpl nodeEngine) {
+    public AltoServerBootstrap(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.logger = nodeEngine.getLogger(TpcServerBootstrap.class);
+        this.logger = nodeEngine.getLogger(AltoServerBootstrap.class);
         this.config = nodeEngine.getConfig();
         this.enabled = loadAltoEnabled();
         this.thisAddress = nodeEngine.getThisAddress();
@@ -94,7 +102,7 @@ public class TpcServerBootstrap {
         } else {
             enabled0 = config.getAltoConfig().isEnabled();
         }
-        logger.info("TPC: " + (enabled0 ? "enabled" : "disabled"));
+        logger.info("Alto: " + (enabled0 ? "enabled" : "disabled"));
         return enabled0;
     }
 
@@ -170,7 +178,7 @@ public class TpcServerBootstrap {
             partitionThread.getQueue().setReactor(reactor);
         }
 
-        logger.info("Starting TpcServerBootstrap");
+        logger.info("Starting AltoServerBootstrap");
         tpcEngine.start();
         openServerSockets();
         clientPorts = serverSockets.stream().map(AsyncServerSocket::getLocalPort).collect(Collectors.toList());
