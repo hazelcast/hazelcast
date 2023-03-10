@@ -16,13 +16,7 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -30,13 +24,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.test.ClassTestSupport.assertUtilityConstructor;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
-public class ConcurrencyUtilTest extends HazelcastTestSupport {
+//@RunWith(HazelcastParallelClassRunner.class)
+//@Category({QuickTest.class, ParallelJVMTest.class})
+public class ConcurrencyUtilTest {
 
     private final Object mutex = new Object();
     private final ContextMutexFactory mutexFactory = new ContextMutexFactory();

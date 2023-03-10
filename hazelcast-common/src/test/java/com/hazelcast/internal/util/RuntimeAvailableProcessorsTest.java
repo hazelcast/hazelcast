@@ -16,27 +16,25 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertUtilityConstructor;
+import static com.hazelcast.test.ClassTestSupport.assertUtilityConstructor;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastSerialClassRunner.class)
+//@RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class RuntimeAvailableProcessorsTest {
 
     @Test
-    public void getAvailableProcessors_withoutOverride() throws Exception {
+    public void getAvailableProcessors_withoutOverride() {
         int availableProcessors = Runtime.getRuntime().availableProcessors();
         assertEquals(availableProcessors, RuntimeAvailableProcessors.get());
     }
 
     @Test
-    public void getAvailableProcessors_withOverride() throws Exception {
+    public void getAvailableProcessors_withOverride() {
         int customAvailableProcessors = 1234;
         RuntimeAvailableProcessors.override(customAvailableProcessors);
         try {

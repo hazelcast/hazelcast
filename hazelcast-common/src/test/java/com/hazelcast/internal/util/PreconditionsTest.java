@@ -16,14 +16,9 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -32,7 +27,6 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 
-import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkHasNext;
 import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
@@ -45,8 +39,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+//@RunWith(HazelcastParallelClassRunner.class)
+//@Category({QuickTest.class, ParallelJVMTest.class})
 public class PreconditionsTest {
 
 
@@ -71,68 +65,6 @@ public class PreconditionsTest {
         Object result = Preconditions.checkNotNull(o, "");
 
         assertSame(o, result);
-    }
-
-    // =====================================================
-
-    @Test
-    public void checkBackupCount() {
-        checkBackupCount(-1, 0, false);
-        checkBackupCount(-1, -1, false);
-        checkBackupCount(0, -1, false);
-        checkBackupCount(0, 0, true);
-        checkBackupCount(0, 1, true);
-        checkBackupCount(1, 1, true);
-        checkBackupCount(2, 1, true);
-        checkBackupCount(1, 2, true);
-        checkBackupCount(MAX_BACKUP_COUNT, 0, true);
-        checkBackupCount(0, MAX_BACKUP_COUNT, true);
-        checkBackupCount(MAX_BACKUP_COUNT, 1, false);
-        checkBackupCount(MAX_BACKUP_COUNT + 1, 0, false);
-        checkBackupCount(0, MAX_BACKUP_COUNT + 1, false);
-    }
-
-    public void checkBackupCount(int newBackupCount, int currentAsyncBackupCount, boolean success) {
-        if (success) {
-            int result = BackupPreconditions.checkBackupCount(newBackupCount, currentAsyncBackupCount);
-            Assert.assertEquals(result, newBackupCount);
-        } else {
-            try {
-                BackupPreconditions.checkBackupCount(newBackupCount, currentAsyncBackupCount);
-                fail();
-            } catch (IllegalArgumentException expected) {
-            }
-        }
-    }
-
-    @Test
-    public void checkAsyncBackupCount() {
-        checkAsyncBackupCount(-1, 0, false);
-        checkAsyncBackupCount(-1, -1, false);
-        checkAsyncBackupCount(0, -1, false);
-        checkAsyncBackupCount(0, 0, true);
-        checkAsyncBackupCount(0, 1, true);
-        checkAsyncBackupCount(1, 1, true);
-        checkAsyncBackupCount(2, 1, true);
-        checkAsyncBackupCount(1, 2, true);
-        checkAsyncBackupCount(MAX_BACKUP_COUNT, 0, true);
-        checkAsyncBackupCount(0, MAX_BACKUP_COUNT, true);
-        checkAsyncBackupCount(MAX_BACKUP_COUNT, 1, false);
-        checkAsyncBackupCount(MAX_BACKUP_COUNT + 1, 0, false);
-        checkAsyncBackupCount(0, MAX_BACKUP_COUNT + 1, false);
-    }
-
-    public void checkAsyncBackupCount(int currentBackupCount, int newAsyncBackupCount, boolean success) {
-        if (success) {
-            int result = BackupPreconditions.checkAsyncBackupCount(currentBackupCount, newAsyncBackupCount);
-            Assert.assertEquals(result, newAsyncBackupCount);
-        } else {
-            try {
-                BackupPreconditions.checkAsyncBackupCount(currentBackupCount, newAsyncBackupCount);
-                fail();
-            } catch (IllegalArgumentException expected) {
-            }
-        }
     }
 
     // =====================================================
@@ -388,6 +320,7 @@ public class PreconditionsTest {
 
         assertThat(checkRequiredProperty(properties, "some-key")).isEqualTo("some-value");
     }
+
     @Test
     public void test_checkRequiredProperty_when_null() {
         Assertions.assertThatThrownBy(() -> checkRequiredProperty(null, "some-key"))
