@@ -16,11 +16,8 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.internal.tpc.logging.TpcLogger;
-import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
-import com.hazelcast.internal.tpc.util.CloseUtil;
-import com.hazelcast.internal.tpc.util.JVM;
-import com.hazelcast.internal.tpc.util.OS;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import net.openhft.affinity.Affinity;
 
 import java.io.File;
@@ -28,8 +25,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.BitSet;
-
-import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
 
 /**
  * Affinity helper class that uses a Hazelcast developed affinity
@@ -49,7 +44,7 @@ import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
 @SuppressWarnings("java:S1181")
 public final class ThreadAffinityHelper {
     private static final String AFFINITY_LIB_DISABLED = "hazelcast.affinity.lib.disabled";
-    private static final TpcLogger LOGGER = TpcLoggerLocator.getLogger(ThreadAffinityHelper.class);
+    private static final ILogger LOGGER = Logger.getLogger(ThreadAffinityHelper.class);
     private static final boolean USE_HZ_LIB;
 
     private ThreadAffinityHelper() {
@@ -116,7 +111,7 @@ public final class ThreadAffinityHelper {
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
-            closeQuietly(src);
+            CloseUtil.closeQuietly(src);
         }
     }
 

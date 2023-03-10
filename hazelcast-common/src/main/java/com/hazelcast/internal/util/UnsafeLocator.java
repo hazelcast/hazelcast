@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc.util;
+package com.hazelcast.internal.util;
 
 import sun.misc.Unsafe;
 

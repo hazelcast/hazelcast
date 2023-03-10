@@ -17,6 +17,7 @@
 package com.hazelcast.internal.tpc.util;
 
 
+import com.hazelcast.internal.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;

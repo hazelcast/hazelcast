@@ -19,8 +19,8 @@ package com.hazelcast.internal.tpc.nio;
 
 import com.hazelcast.internal.tpc.AsyncSocketOptions;
 import com.hazelcast.internal.tpc.Option;
-import com.hazelcast.internal.tpc.logging.TpcLogger;
-import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -46,7 +46,7 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
     private static final AtomicBoolean TCP_KEEPINTERVAL_PRINTED = new AtomicBoolean();
 
     private final SocketChannel channel;
-    private final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
+    private final ILogger logger = Logger.getLogger(getClass());
 
     NioAsyncSocketOptions(SocketChannel channel) {
         this.channel = channel;

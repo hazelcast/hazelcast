@@ -18,8 +18,8 @@ package com.hazelcast.internal.tpc.nio;
 
 import com.hazelcast.internal.tpc.AsyncSocketOptions;
 import com.hazelcast.internal.tpc.Option;
-import com.hazelcast.internal.tpc.logging.TpcLogger;
-import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -42,7 +42,7 @@ public class NioAsyncServerSocketOptions implements AsyncSocketOptions {
     private static final SocketOption<Boolean> JAVA_NET_SO_REUSEPORT
             = findStaticFieldValue(StandardSocketOptions.class, "SO_REUSEPORT");
 
-    private final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
+    private final ILogger logger = Logger.getLogger(getClass());
 
     private final ServerSocketChannel serverSocketChannel;
 

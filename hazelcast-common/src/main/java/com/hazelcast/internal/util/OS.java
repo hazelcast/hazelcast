@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc.util;
+package com.hazelcast.internal.util;
+
 
 /**
  * Utility methods for OS specific functionality.

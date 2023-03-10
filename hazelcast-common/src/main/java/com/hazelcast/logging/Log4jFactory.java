@@ -18,10 +18,8 @@ package com.hazelcast.logging;
 
 import com.hazelcast.logging.impl.InternalLogger;
 import org.apache.log4j.Logger;
-import org.apache.log4j.spi.LoggingEvent;
 
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 
 public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory {
 
@@ -68,26 +66,26 @@ public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory 
         }
 
         private static org.apache.log4j.Level toLog4jLevel(Level level) {
-            return level == Level.FINEST  ? org.apache.log4j.Level.TRACE
-                 : level == Level.FINE    ? org.apache.log4j.Level.DEBUG
-                 : level == Level.INFO    ? org.apache.log4j.Level.INFO
-                 : level == Level.WARNING ? org.apache.log4j.Level.WARN
-                 : level == Level.SEVERE  ? org.apache.log4j.Level.ERROR
-                 : level == Level.CONFIG  ? org.apache.log4j.Level.INFO
-                 : level == Level.FINER   ? org.apache.log4j.Level.DEBUG
-                 : level == Level.OFF     ? org.apache.log4j.Level.OFF
-                 : org.apache.log4j.Level.INFO;
+            return level == Level.FINEST ? org.apache.log4j.Level.TRACE
+                    : level == Level.FINE ? org.apache.log4j.Level.DEBUG
+                    : level == Level.INFO ? org.apache.log4j.Level.INFO
+                    : level == Level.WARNING ? org.apache.log4j.Level.WARN
+                    : level == Level.SEVERE ? org.apache.log4j.Level.ERROR
+                    : level == Level.CONFIG ? org.apache.log4j.Level.INFO
+                    : level == Level.FINER ? org.apache.log4j.Level.DEBUG
+                    : level == Level.OFF ? org.apache.log4j.Level.OFF
+                    : org.apache.log4j.Level.INFO;
         }
 
         private static Level toStandardLevel(org.apache.log4j.Level log4jLevel) {
             return log4jLevel == org.apache.log4j.Level.TRACE ? Level.FINEST
-                 : log4jLevel == org.apache.log4j.Level.DEBUG ? Level.FINE
-                 : log4jLevel == org.apache.log4j.Level.INFO  ? Level.INFO
-                 : log4jLevel == org.apache.log4j.Level.WARN  ? Level.WARNING
-                 : log4jLevel == org.apache.log4j.Level.ERROR ? Level.SEVERE
-                 : log4jLevel == org.apache.log4j.Level.FATAL ? Level.SEVERE
-                 : log4jLevel == org.apache.log4j.Level.OFF   ? Level.OFF
-                 : Level.INFO;
+                    : log4jLevel == org.apache.log4j.Level.DEBUG ? Level.FINE
+                    : log4jLevel == org.apache.log4j.Level.INFO ? Level.INFO
+                    : log4jLevel == org.apache.log4j.Level.WARN ? Level.WARNING
+                    : log4jLevel == org.apache.log4j.Level.ERROR ? Level.SEVERE
+                    : log4jLevel == org.apache.log4j.Level.FATAL ? Level.SEVERE
+                    : log4jLevel == org.apache.log4j.Level.OFF ? Level.OFF
+                    : Level.INFO;
         }
     }
 }

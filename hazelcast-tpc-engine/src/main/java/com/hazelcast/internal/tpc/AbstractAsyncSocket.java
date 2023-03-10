@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.logging.TpcLogger;
-import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -36,7 +36,7 @@ public abstract class AbstractAsyncSocket implements Closeable {
 
     protected final ConcurrentMap<?, ?> context = new ConcurrentHashMap<>();
 
-    protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
+    protected final ILogger logger = Logger.getLogger(getClass());
     protected final AtomicReference<State> state = new AtomicReference<>(State.OPEN);
     private volatile String closeReason;
     private volatile Throwable closeCause;

@@ -32,7 +32,7 @@ import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
+import static com.hazelcast.internal.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpc.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;

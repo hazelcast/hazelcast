@@ -17,11 +17,11 @@
 package com.hazelcast.internal.tpc;
 
 
-import com.hazelcast.internal.tpc.logging.TpcLogger;
-import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpc.util.CircularQueue;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.ThreadAffinityHelper;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.util.BitSet;
@@ -61,7 +61,7 @@ public abstract class Reactor implements Executor {
             = newUpdater(Reactor.class, State.class, "state");
 
     protected final ConcurrentMap<?, ?> context = new ConcurrentHashMap<>();
-    protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
+    protected final ILogger logger = Logger.getLogger(getClass());
     protected final MpmcArrayQueue externalTaskQueue;
     protected final Eventloop eventloop;
     protected final CircularQueue localTaskQueue;

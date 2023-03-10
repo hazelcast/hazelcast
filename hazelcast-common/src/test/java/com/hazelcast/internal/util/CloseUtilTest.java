@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc.util;
+package com.hazelcast.internal.util;
 
 import org.junit.Test;
 
@@ -23,8 +23,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.internal.tpc.util.CloseUtil.closeAllQuietly;
-import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
+import static com.hazelcast.internal.util.CloseUtil.closeAllQuietly;
+import static com.hazelcast.internal.util.CloseUtil.closeQuietly;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;

@@ -17,7 +17,7 @@
 package com.hazelcast.internal.tpc;
 
 import com.hazelcast.internal.tpc.nio.NioAsyncServerSocketConfigTest;
-import com.hazelcast.internal.tpc.util.JVM;
+import com.hazelcast.internal.util.JVM;
 import org.junit.After;
 import org.junit.Test;
 

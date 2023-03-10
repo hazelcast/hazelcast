@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.tpc.util.BufferUtil.compactOrClear;
 import static com.hazelcast.internal.tpc.util.BufferUtil.upcast;
-import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
+import static com.hazelcast.internal.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpc.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 import static java.nio.channels.SelectionKey.OP_CONNECT;

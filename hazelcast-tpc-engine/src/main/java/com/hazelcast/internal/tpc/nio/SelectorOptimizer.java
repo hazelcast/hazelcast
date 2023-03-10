@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.logging.TpcLogger;
-import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -42,7 +42,7 @@ import static java.lang.System.arraycopy;
  */
 public final class SelectorOptimizer {
     static final String SELECTOR_IMPL = "sun.nio.ch.SelectorImpl";
-    private static final  TpcLogger LOGGER = TpcLoggerLocator.getLogger(SelectorOptimizer.class);
+    private static final ILogger LOGGER = Logger.getLogger(SelectorOptimizer.class);
 
     private SelectorOptimizer() {
     }
@@ -76,7 +76,7 @@ public final class SelectorOptimizer {
      * @throws NullPointerException if selector or logger is null.
      */
     @SuppressWarnings({"java:S1168", "java:S3011", "java:S1181", "java:S125"})
-    static SelectionKeysSet optimize(Selector selector, TpcLogger logger) {
+    static SelectionKeysSet optimize(Selector selector, ILogger logger) {
         checkNotNull(selector, "selector");
         checkNotNull(logger, "logger");
 

@@ -26,7 +26,7 @@ import java.nio.channels.Selector;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
+import static com.hazelcast.internal.util.CloseUtil.closeQuietly;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
