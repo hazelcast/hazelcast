@@ -49,7 +49,7 @@ public class DiscoveryJoiner
     static final String DISCOVERY_PUBLIC_ADDRESS_FALLBACK_PROPERTY = "hazelcast.discovery.public.address.fallback";
 
     /**
-     * When {@code true}, reverts to old pre-5.3 behaviour of client public address enrichment in local member's address map.
+     * When {@code true}, reverts to old pre-5.2.3 behaviour of client public address enrichment in local member's address map.
      */
     private final boolean discoveryPublicAddressFallback;
 
