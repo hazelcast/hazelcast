@@ -66,8 +66,8 @@ public abstract class InstancePermission extends ClusterPermission {
         InstancePermission that = (InstancePermission) permission;
 
         if (that.actions != null && that.actions.indexOf(' ') >= 0) {
-            throw new IllegalStateException(
-                    "An InstancePermission with multiple actions is being checked! Multiple permissions with single action must be used instead!");
+            throw new IllegalStateException("An InstancePermission with multiple actions is being checked!"
+                    + " Multiple permissions with single action must be used instead!");
         }
 
         boolean maskTest = ((this.mask & that.mask) == that.mask);
