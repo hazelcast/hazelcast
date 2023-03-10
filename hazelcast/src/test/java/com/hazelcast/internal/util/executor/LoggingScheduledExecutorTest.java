@@ -16,15 +16,14 @@
 
 package com.hazelcast.internal.util.executor;
 
+import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.logging.AbstractLogger;
-import com.hazelcast.logging.LogEvent;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -267,11 +266,6 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
             throwableHolder.set(thrown);
             messageHolder.set(message);
             logLevelHolder.set(level);
-        }
-
-        @Override
-        public void log(LogEvent logEvent) {
-            throw new UnsupportedOperationException();
         }
 
         @Override

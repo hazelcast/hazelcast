@@ -19,7 +19,6 @@ package com.hazelcast.client.impl.clientside;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LogEvent;
 import com.hazelcast.logging.LogListener;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -43,7 +42,6 @@ public class ClientLoggingServiceTest extends HazelcastTestSupport {
     private TestHazelcastFactory factory;
     private LoggingService loggingService;
     private LogListener logListener;
-    private LogEvent logEvent;
 
     @Before
     public void setUp() {
@@ -54,13 +52,8 @@ public class ClientLoggingServiceTest extends HazelcastTestSupport {
 
         loggingService = client.getLoggingService();
 
-        logListener = new LogListener() {
-            @Override
-            public void log(LogEvent logEvent) {
-            }
+        logListener = logEvent -> {
         };
-
-        logEvent = new LogEvent(null, member.getCluster().getLocalMember());
     }
 
     @After
@@ -76,12 +69,6 @@ public class ClientLoggingServiceTest extends HazelcastTestSupport {
     @Test(expected = UnsupportedOperationException.class)
     public void testRemoveLogListener() {
         loggingService.removeLogListener(logListener);
-    }
-
-    @Test
-    public void testLog_whenLogEvent_thenNothingHappens() {
-        ILogger logger = loggingService.getLogger("test");
-        logger.log(logEvent);
     }
 
     @Test

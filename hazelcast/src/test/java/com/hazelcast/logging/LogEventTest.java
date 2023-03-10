@@ -58,7 +58,7 @@ public class LogEventTest {
 
     @Test
     public void testGetMember() {
-        assertEquals(member, logEvent.getMember());
+        assertEquals(member, logEvent.getSource());
     }
 
     @Test
