@@ -21,6 +21,9 @@ import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
 
+/**
+ * Contains the metrics for an {@link AsyncServerSocket}.
+ */
 @SuppressWarnings("checkstyle:ConstantName")
 public class AsyncServerSocketMetrics {
 
@@ -42,14 +45,17 @@ public class AsyncServerSocketMetrics {
     }
 
     /**
-     * Gets the current value.
+     * Returns the number of accepted sockets.
      *
-     * @return the current value.
+     * @return the number of accepted sockets.
      */
     public long accepted() {
         return accepted;
     }
 
+    /**
+     * Increases the number of accepted sockets by 1.
+     */
     public void incAccepted() {
         UNSAFE.putOrderedLong(this, OFFSET_accepted, accepted + 1);
     }
