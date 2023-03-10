@@ -33,6 +33,7 @@ import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.instance.impl.TestUtil;
+import com.hazelcast.internal.TestSupport;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.IPartition;
@@ -120,7 +121,7 @@ import static org.junit.Assume.assumeTrue;
  * so the Enterprise test can override this method to return a config with a {@link com.hazelcast.config.NativeMemoryConfig}.
  */
 @SuppressWarnings({"unused", "SameParameterValue", "WeakerAccess"})
-public abstract class HazelcastTestSupport {
+public abstract class HazelcastTestSupport extends TestSupport {
 
     public static final String JAVA_VERSION = System.getProperty("java.version");
     public static final String JVM_NAME = System.getProperty("java.vm.name");
@@ -128,8 +129,7 @@ public abstract class HazelcastTestSupport {
 
     public static final String OS_ARCHITECTURE = System.getProperty("os.arch");
 
-    public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
-    public static final int ASSERT_COMPLETES_STALL_TOLERANCE;
+     public static final int ASSERT_COMPLETES_STALL_TOLERANCE;
     public static final String PERSISTENT_MEMORY_DIRECTORIES;
 
     private static final String COMPAT_HZ_INSTANCE_FACTORY = "com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory";
@@ -964,12 +964,6 @@ public abstract class HazelcastTestSupport {
         message.append((value == null) ? "null" : value.getClass().getName()).append("<").append(valueString).append(">");
     }
 
-    @SuppressWarnings("unchecked")
-    public static <E> E assertInstanceOf(Class<E> expected, Object actual) {
-        assertNotNull(actual);
-        assertTrue(actual + " is not an instanceof " + expected.getName(), expected.isAssignableFrom(actual.getClass()));
-        return (E) actual;
-    }
 
     public static void assertJoinable(Thread... threads) {
         assertJoinable(ASSERT_TRUE_EVENTUALLY_TIMEOUT, threads);
