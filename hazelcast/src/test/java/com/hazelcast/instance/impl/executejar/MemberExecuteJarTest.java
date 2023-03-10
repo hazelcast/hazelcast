@@ -19,7 +19,7 @@ package com.hazelcast.instance.impl.executejar;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.BootstrappedInstanceProxy;
 import com.hazelcast.instance.impl.BootstrappedJetProxy;
-import com.hazelcast.jet.JetService;
+import com.hazelcast.jet.impl.AbstractJetInstance;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -33,10 +33,10 @@ public class MemberExecuteJarTest {
 
     @Test
     public void testInvokeMain() throws InvocationTargetException, IllegalAccessException {
-        // Mock HazelcastInstance and JetService
         HazelcastInstance hazelcastInstance = Mockito.mock(HazelcastInstance.class);
-        JetService abstractJetInstance = Mockito.mock(JetService.class);
+        AbstractJetInstance abstractJetInstance = Mockito.mock(AbstractJetInstance.class);
         Mockito.when(hazelcastInstance.getJet()).thenReturn(abstractJetInstance);
+        Mockito.when(abstractJetInstance.getHazelcastInstance()).thenReturn(hazelcastInstance);
 
         // Mock main method
         Method method = Mockito.mock(Method.class);
