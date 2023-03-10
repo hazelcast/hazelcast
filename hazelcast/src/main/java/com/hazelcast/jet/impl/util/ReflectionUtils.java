@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.util;
 
-import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.util.ClassLoaderUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;

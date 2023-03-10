@@ -80,7 +80,7 @@ import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.set
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.topicXmlGenerator;
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.wanReplicationXmlGenerator;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
-import static com.hazelcast.internal.util.StringUtil.formatXml;
+import static com.hazelcast.internal.util.XmlUtil.formatXml;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static java.util.Arrays.asList;
 

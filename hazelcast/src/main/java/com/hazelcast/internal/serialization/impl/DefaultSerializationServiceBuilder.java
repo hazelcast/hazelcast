@@ -25,7 +25,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.util.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.InputOutputFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationClassNameFilter;

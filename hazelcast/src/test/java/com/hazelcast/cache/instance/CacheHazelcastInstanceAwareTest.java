@@ -24,7 +24,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.util.ClassLoaderUtil;
 import com.hazelcast.internal.services.NodeAware;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

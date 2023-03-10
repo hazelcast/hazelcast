@@ -20,7 +20,7 @@ import java.util.Objects;
 import java.util.Properties;
 
 import com.hazelcast.config.security.IdentityConfig;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.util.ClassLoaderUtil;
 import com.hazelcast.security.ICredentialsFactory;
 
 /**

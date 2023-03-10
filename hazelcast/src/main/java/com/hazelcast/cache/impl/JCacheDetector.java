@@ -16,7 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.util.ClassLoaderUtil;
 import com.hazelcast.logging.ILogger;
 
 import java.security.PrivilegedAction;

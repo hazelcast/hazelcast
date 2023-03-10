@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.hadoop.impl;
 
-import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.util.ClassLoaderUtil;
 import org.apache.hadoop.io.Writable;
 
 import javax.annotation.Nonnull;

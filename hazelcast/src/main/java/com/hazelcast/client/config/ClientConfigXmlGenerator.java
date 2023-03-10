@@ -61,7 +61,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
-import static com.hazelcast.internal.util.StringUtil.formatXml;
+import static com.hazelcast.internal.util.XmlUtil.formatXml;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**

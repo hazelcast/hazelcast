@@ -41,7 +41,7 @@ import com.hazelcast.collection.impl.collection.operations.CollectionSizeOperati
 import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.util.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.RemoteService;

@@ -21,7 +21,7 @@ import com.hazelcast.internal.eviction.impl.comparator.LFUEvictionPolicyComparat
 import com.hazelcast.internal.eviction.impl.comparator.LRUEvictionPolicyComparator;
 import com.hazelcast.internal.eviction.impl.comparator.RandomEvictionPolicyComparator;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.util.ClassLoaderUtil;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;

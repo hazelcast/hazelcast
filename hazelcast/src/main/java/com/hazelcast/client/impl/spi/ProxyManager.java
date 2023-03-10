@@ -62,7 +62,7 @@ import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.internal.longregister.LongRegisterService;
 import com.hazelcast.internal.longregister.client.ClientLongRegisterProxy;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.util.ClassLoaderUtil;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.map.impl.MapService;

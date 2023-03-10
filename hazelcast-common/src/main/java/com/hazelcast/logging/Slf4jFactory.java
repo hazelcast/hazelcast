@@ -90,14 +90,5 @@ public class Slf4jFactory extends LoggerFactorySupport {
                  : level == Level.SEVERE  ? logger.isErrorEnabled()
                  : level != Level.OFF && logger.isInfoEnabled();
         }
-
-        @Override
-        public void log(LogEvent logEvent) {
-            LogRecord logRecord = logEvent.getLogRecord();
-            Level level = logEvent.getLogRecord().getLevel();
-            String message = logRecord.getMessage();
-            Throwable thrown = logRecord.getThrown();
-            log(level, message, thrown);
-        }
     }
 }
