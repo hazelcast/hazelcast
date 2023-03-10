@@ -19,6 +19,12 @@ package com.hazelcast.internal.tpcengine.logging;
 
 import java.util.logging.Level;
 
+/**
+ * The com.hazelcast.logging functionality needs to be moved to a common module so that
+ * other modules can include that functionality. Once that is done, the TpcLogger can
+ * be removed. The problem is that the com.hazelcast.logging functionality is tightly
+ * coupled the the member either due to the API or testing.
+ */
 public interface TpcLogger {
 
     /**
