@@ -120,6 +120,7 @@ class MongoConnection implements Closeable {
         }
         if (dataLink != null) {
             dataLink.release();
+            dataLink = null;
         }
     }
 

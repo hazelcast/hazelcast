@@ -71,7 +71,7 @@ public class MongoSinkTest extends AbstractMongoTest {
     private static final long COUNT = 4;
     private static final long HALF = COUNT / 2;
 
-    @Parameter(0)
+    @Parameter
     public ProcessingGuarantee processingGuarantee;
 
     @Parameters(name = "processing guarantee: {0}")

@@ -146,5 +146,4 @@ public class MongoDataLink extends DataLinkBase {
         dataLinkConfig.setClassName(MongoDataLink.class.getName());
         return dataLinkConfig;
     }
-
 }

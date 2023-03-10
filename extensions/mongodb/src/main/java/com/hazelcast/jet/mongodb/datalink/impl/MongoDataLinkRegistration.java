@@ -41,5 +41,4 @@ public class MongoDataLinkRegistration implements DataLinkRegistration {
     public Class<? extends DataLink> clazz() {
         return MongoDataLink.class;
     }
-
 }
