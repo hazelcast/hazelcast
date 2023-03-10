@@ -22,6 +22,7 @@ import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.executejar.ClientExecuteJarStrategy;
+import com.hazelcast.instance.impl.executejar.ExecuteJobParameters;
 import com.hazelcast.instance.impl.executejar.MemberExecuteJarStrategy;
 import com.hazelcast.jet.impl.util.JetConsoleLogHandler;
 import com.hazelcast.jet.impl.util.ResettableConcurrentMemoizingSupplier;
@@ -89,7 +90,8 @@ public final class HazelcastBootstrap {
         // Set the singleton, so that it can be accessed within the jar
         SINGLETON.get(() -> BootstrappedInstanceProxy.createWithJetProxy(supplierOfInstance.get()));
 
-        CLIENT_EXECUTE_JAR_STRATEGY.executeJar(SINGLETON, jarPath, snapshotName, jobName, mainClassName, args);
+        ExecuteJobParameters executeJobParameters = new ExecuteJobParameters(jarPath,snapshotName,jobName);
+        CLIENT_EXECUTE_JAR_STRATEGY.executeJar(SINGLETON, executeJobParameters, mainClassName, args);
     }
 
     /**
@@ -106,7 +108,9 @@ public final class HazelcastBootstrap {
         BootstrappedInstanceProxy bootstrappedInstanceProxy = SINGLETON
                 .get(() -> BootstrappedInstanceProxy.createWithJetProxy(supplierOfInstance.get()));
 
-        MEMBER_EXECUTE_JAR_STRATEGY.executeJar(bootstrappedInstanceProxy, jarPath, snapshotName, jobName, mainClassName, args);
+        ExecuteJobParameters executeJobParameters = new ExecuteJobParameters(jarPath,snapshotName,jobName);
+
+        MEMBER_EXECUTE_JAR_STRATEGY.executeJar(bootstrappedInstanceProxy, executeJobParameters, mainClassName, args);
     }
 
     /**

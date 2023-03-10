@@ -56,15 +56,14 @@ public class ClientExecuteJarStrategy {
      * Then the HZ client is closed
      */
     public void executeJar(@Nonnull ResettableConcurrentMemoizingSupplier<BootstrappedInstanceProxy> singleton,
-                           @Nonnull String jarPath,
-                           @Nullable String snapshotName,
-                           @Nullable String jobName,
+                           ExecuteJobParameters executeJobParameters,
                            @Nullable String mainClassName,
                            @Nonnull List<String> args
     ) throws IOException, InvocationTargetException, IllegalAccessException, ClassNotFoundException {
         BootstrappedInstanceProxy instanceProxy = singleton.remembered();
         boolean exit = false;
         try {
+            String jarPath = executeJobParameters.getJarPath();
             mainClassName = ExecuteJarStrategyHelper.findMainClassNameForJar(mainClassName, jarPath);
 
             URL jarUrl = new File(jarPath).toURI().toURL();
@@ -78,7 +77,7 @@ public class ClientExecuteJarStrategy {
 
                 String[] jobArgs = args.toArray(new String[0]);
 
-                ExecuteJarStrategyHelper.setupJetProxy(instanceProxy, jarPath, snapshotName, jobName);
+                ExecuteJarStrategyHelper.setupJetProxy(instanceProxy, executeJobParameters);
 
                 // upcast args to Object, so it's passed as a single array-typed argument
                 mainMethod.invoke(null, (Object) jobArgs);

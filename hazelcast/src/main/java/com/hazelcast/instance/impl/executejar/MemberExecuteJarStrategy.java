@@ -41,13 +41,12 @@ public class MemberExecuteJarStrategy {
      * The startup of the job is not awaited
      */
     public void executeJar(@Nonnull BootstrappedInstanceProxy instanceProxy,
-                           @Nonnull String jarPath,
-                           @Nullable String snapshotName,
-                           @Nullable String jobName,
+                           ExecuteJobParameters executeJobParameters,
                            @Nullable String mainClassName,
                            @Nonnull List<String> args
     ) throws IOException, InvocationTargetException, IllegalAccessException, ClassNotFoundException {
 
+        String jarPath = executeJobParameters.getJarPath();
         mainClassName = ExecuteJarStrategyHelper.findMainClassNameForJar(mainClassName, jarPath);
 
         URL jarUrl = new File(jarPath).toURI().toURL();
@@ -59,26 +58,23 @@ public class MemberExecuteJarStrategy {
 
             LOGGER.info("Found mainClassName :" + mainClassName + " and main method");
 
-            String[] jobArgs = args.toArray(new String[0]);
-
-            invokeMain(instanceProxy, jarPath, snapshotName, jobName, mainMethod, jobArgs);
+            invokeMain(instanceProxy, executeJobParameters, mainMethod, args);
         }
     }
 
-    /**
-     * synchronized until main method finishes
-     */
-    synchronized void invokeMain(BootstrappedInstanceProxy instanceProxy, String jarPath, String snapshotName,
-                                 String jobName, Method main, String[] jobArgs)
+    void invokeMain(BootstrappedInstanceProxy instanceProxy, ExecuteJobParameters executeJobParameters,
+                                 Method mainMethod, List<String> args)
             throws IllegalAccessException, InvocationTargetException {
 
         BootstrappedJetProxy bootstrappedJetProxy =
-                ExecuteJarStrategyHelper.setupJetProxy(instanceProxy, jarPath, snapshotName, jobName);
+                ExecuteJarStrategyHelper.setupJetProxy(instanceProxy, executeJobParameters);
 
         // Clear jobs. We don't need them
         bootstrappedJetProxy.clearSubmittedJobs();
 
+        String[] jobArgs = args.toArray(new String[0]);
+
         // upcast args to Object, so it's passed as a single array-typed argument
-        main.invoke(null, (Object) jobArgs);
+        mainMethod.invoke(null, (Object) jobArgs);
     }
 }

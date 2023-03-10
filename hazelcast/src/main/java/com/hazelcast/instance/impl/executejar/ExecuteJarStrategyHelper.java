@@ -52,13 +52,9 @@ final class ExecuteJarStrategyHelper {
     }
 
     static BootstrappedJetProxy setupJetProxy(BootstrappedInstanceProxy instanceProxy,
-                                              String jar,
-                                              String snapshotName,
-                                              String jobName) {
+                                              ExecuteJobParameters executeJobParameters) {
         BootstrappedJetProxy bootstrappedJetProxy = instanceProxy.getJet();
-        bootstrappedJetProxy.setJarName(jar);
-        bootstrappedJetProxy.setSnapshotName(snapshotName);
-        bootstrappedJetProxy.setJobName(jobName);
+        bootstrappedJetProxy.setThreadLocalParameters(executeJobParameters);
         return bootstrappedJetProxy;
     }
 }

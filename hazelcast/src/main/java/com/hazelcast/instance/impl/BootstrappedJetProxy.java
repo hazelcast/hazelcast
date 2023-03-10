@@ -19,6 +19,7 @@ package com.hazelcast.instance.impl;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.collection.IList;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.executejar.ExecuteJobParameters;
 import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
@@ -42,14 +43,17 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @SuppressWarnings({"checkstyle:methodcount"})
 public class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
     private final AbstractJetInstance<M> jet;
-    private String jar;
-    private String snapshotName;
-    private String jobName;
     private final CopyOnWriteArrayList<Job> submittedJobs = new CopyOnWriteArrayList<>();
+
+    private final ThreadLocal<ExecuteJobParameters> threadLocalValue = new ThreadLocal<>();
 
     BootstrappedJetProxy(@Nonnull JetService jet) {
         super(((AbstractJetInstance) jet).getHazelcastInstance());
         this.jet = (AbstractJetInstance<M>) jet;
+    }
+
+    public void setThreadLocalParameters(ExecuteJobParameters parameters) {
+        threadLocalValue.set(parameters);
     }
 
     @Nonnull
@@ -115,15 +119,16 @@ public class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
     }
 
     private JobConfig updateJobConfig(@Nonnull JobConfig config) {
-        if (jar != null) {
-            config.addJar(jar);
+        ExecuteJobParameters jobParameters = threadLocalValue.get();
+        config.addJar(jobParameters.getJarPath());
+
+        if (jobParameters.hasSnapshotName()) {
+            config.setInitialSnapshotName(jobParameters.getSnapshotName());
         }
-        if (snapshotName != null) {
-            config.setInitialSnapshotName(snapshotName);
+        if (jobParameters.hasJobName()) {
+            config.setName(jobParameters.getJobName());
         }
-        if (jobName != null) {
-            config.setName(jobName);
-        }
+        threadLocalValue.remove();
         return config;
     }
 
@@ -205,29 +210,5 @@ public class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
     @Override
     public Map<M, GetJobIdsOperation.GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId) {
         return jet.getJobsInt(onlyName, onlyJobId);
-    }
-
-    public String getJar() {
-        return jar;
-    }
-
-    public void setJarName(String jar) {
-        this.jar = jar;
-    }
-
-    public String getSnapshotName() {
-        return snapshotName;
-    }
-
-    public void setSnapshotName(String snapshotName) {
-        this.snapshotName = snapshotName;
-    }
-
-    public String getJobName() {
-        return jobName;
-    }
-
-    public void setJobName(String jobName) {
-        this.jobName = jobName;
     }
 }
