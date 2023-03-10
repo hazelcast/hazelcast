@@ -69,6 +69,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_DISCRIMINATOR_NAME;
@@ -210,8 +211,8 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
     }
 
     @Override
-    public void onSyncBatch(Collection<InternalWanEvent> batch, WanAcknowledgeType acknowledgeType) {
-        wanSupportingService.onSyncBatch(batch, acknowledgeType);
+    public CompletableFuture<Void> onSyncBatch(Collection<InternalWanEvent> batch, WanAcknowledgeType acknowledgeType) {
+        return wanSupportingService.onSyncBatch(batch, acknowledgeType);
     }
 
     @Override
