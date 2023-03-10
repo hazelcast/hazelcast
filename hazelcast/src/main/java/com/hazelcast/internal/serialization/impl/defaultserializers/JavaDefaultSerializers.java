@@ -19,7 +19,7 @@ package com.hazelcast.internal.serialization.impl.defaultserializers;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.compatibility.serialization.impl.CompatibilitySerializationConstants;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
-import com.hazelcast.internal.util.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;

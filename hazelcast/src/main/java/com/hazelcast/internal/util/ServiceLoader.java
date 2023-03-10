@@ -17,6 +17,7 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 

@@ -38,7 +38,7 @@ import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
 import com.hazelcast.internal.metrics.impl.MetricsService;
-import com.hazelcast.internal.util.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.services.ConfigurableService;
 import com.hazelcast.internal.services.ManagedService;

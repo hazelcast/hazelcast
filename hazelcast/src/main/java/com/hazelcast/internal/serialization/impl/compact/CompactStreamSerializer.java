@@ -22,7 +22,7 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
-import com.hazelcast.internal.util.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.impl.AbstractSerializationService;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.record.JavaRecordSerializer;

@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.util;
+package com.hazelcast.internal.nio;
 
 import com.hazelcast.internal.usercodedeployment.impl.ClassSource;
+import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;

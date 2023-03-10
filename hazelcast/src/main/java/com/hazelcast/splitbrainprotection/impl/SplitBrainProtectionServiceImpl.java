@@ -23,7 +23,7 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SplitBrainProtectionListenerConfig;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.util.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.MembershipServiceEvent;
 import com.hazelcast.internal.services.ServiceNamespace;

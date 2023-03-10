@@ -18,7 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.internal.util.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.test.annotation.ParallelJVMTest;

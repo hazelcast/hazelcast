@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.nio;
 
-import com.hazelcast.internal.util.ClassLoaderUtil;
 import org.objenesis.Objenesis;
 import org.objenesis.ObjenesisStd;
 import org.objenesis.instantiator.ObjectInstantiator;

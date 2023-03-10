@@ -22,7 +22,7 @@ import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.monitor.impl.LocalTopicStatsImpl;
-import com.hazelcast.internal.util.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.UuidUtil;

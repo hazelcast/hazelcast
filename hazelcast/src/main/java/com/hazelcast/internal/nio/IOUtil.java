@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelOptions;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.util.ClassLoaderUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
