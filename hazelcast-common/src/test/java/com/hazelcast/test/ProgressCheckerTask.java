@@ -21,7 +21,7 @@ package com.hazelcast.test;
  * task. Used to write tests that can prolong their execution time in slow
  * environments as long as there is progress.
  *
- * @see com.hazelcast.internal.TestSupport#assertCompletesEventually(ProgressCheckerTask, long)
+ * @see TestSupport#assertCompletesEventually(ProgressCheckerTask, long)
  * @see TaskProgress
  */
 @FunctionalInterface

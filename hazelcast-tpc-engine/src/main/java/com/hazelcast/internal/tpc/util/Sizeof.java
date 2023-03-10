@@ -16,22 +16,14 @@
 
 package com.hazelcast.internal.tpc.util;
 
-import org.junit.Test;
+public final class Sizeof {
+    public static final int SIZEOF_BYTE = Byte.BYTES;
+    public static final int SIZEOF_CHAR = Character.BYTES;
+    public static final int SIZEOF_INT = Integer.BYTES;
+    public static final int SIZEOF_LONG = Long.BYTES;
+    public static final int SIZEOF_FLOAT = Float.BYTES;
+    public static final int SIZEOF_DOUBLE = Double.BYTES;
 
-import static com.hazelcast.internal.tpc.util.BitUtil.nextPowerOfTwo;
-import static org.junit.Assert.assertEquals;
-
-public class BitUtilTest {
-
-    @Test
-    public void testNextPowerOfTwo() {
-        assertEquals(1, nextPowerOfTwo(-9999999));
-        assertEquals(1, nextPowerOfTwo(-1));
-        assertEquals(1, nextPowerOfTwo(0));
-        assertEquals(1, nextPowerOfTwo(1));
-        assertEquals(2, nextPowerOfTwo(2));
-        assertEquals(1024, nextPowerOfTwo(999));
-        assertEquals(1 << 23, nextPowerOfTwo((1 << 23) - 1));
-        assertEquals(1 << 23, nextPowerOfTwo(1 << 23));
+    private Sizeof() {
     }
 }

@@ -23,8 +23,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import static com.hazelcast.internal.TestSupport.assertInstanceOf;
-import static com.hazelcast.test.ClassTestSupport.assertUtilityConstructor;
+import static com.hazelcast.test.TestSupport.assertInstanceOf;
+import static com.hazelcast.test.TestSupport.assertUtilityConstructor;
 
 /**
  * Unit tests for {@link com.hazelcast.logging.Logger} class.

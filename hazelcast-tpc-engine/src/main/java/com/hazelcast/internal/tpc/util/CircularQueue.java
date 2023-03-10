@@ -18,9 +18,9 @@ package com.hazelcast.internal.tpc.util;
 
 import java.util.Queue;
 
-import static com.hazelcast.internal.tpc.util.BitUtil.nextPowerOfTwo;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.QuickMath.nextPowerOfTwo;
 
 /**
  * A CircularQueue.

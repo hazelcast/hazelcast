@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.util.OsHelper.isWindows;
+import static com.hazelcast.internal.util.OS.isWindows;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
 import static java.io.File.separator;

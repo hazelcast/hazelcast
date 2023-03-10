@@ -26,6 +26,10 @@ public final class OS {
     private static final String OS_NAME = System.getProperty("os.name", "?");
     private static final String OS_VERSION = System.getProperty("os.version", "?");
     private static final boolean IS_LINUX = isLinux0(OS_NAME);
+    private static final boolean IS_WINDOWS = isWindows0(OS_NAME);
+    private static final boolean IS_UNIX_FAMILY = isUnixFamily(OS_NAME);
+    private static final boolean IS_MAC = isMac(OS_NAME);
+
     private static final int LINUX_KERNEL_MAJOR_VERSION = linuxMajorVersion0(OS_VERSION, IS_LINUX);
     private static final int LINUX_KERNEL_MINOR_VERSION = linuxMinorVersion0(OS_VERSION, IS_LINUX);
     private static final int PAGE_SIZE = UnsafeLocator.UNSAFE.pageSize();
@@ -42,6 +46,21 @@ public final class OS {
 
     static boolean isLinux0(String osName) {
         return osName.toLowerCase().startsWith("linux");
+    }
+
+    static boolean isWindows0(String osName) {
+        osName = osName.toLowerCase();
+        return osName.contains("windows");
+    }
+
+    static boolean isUnixFamily(String osName) {
+        osName = osName.toLowerCase();
+        return (osName.contains("nix") || osName.contains("nux") || osName.contains("aix"));
+    }
+
+    static boolean isMac(String osName) {
+        osName = osName.toLowerCase();
+        return (osName.contains("mac") || osName.contains("darwin"));
     }
 
     static int linuxMajorVersion0(String version, boolean isLinux) {
@@ -162,5 +181,30 @@ public final class OS {
         return IS_64BIT;
     }
 
+    /**
+     * Returns {@code true} if the system is from Unix family.
+     *
+     * @return {@code true} if the current system is Unix/Linux/AIX.
+     */
+    public static boolean isUnixFamily() {
+        return IS_UNIX_FAMILY;
+    }
 
+    /**
+     * Returns {@code true} if the system is a Mac OS.
+     *
+     * @return {@code true} if the current system is Mac.
+     */
+    public static boolean isMac() {
+        return IS_MAC;
+    }
+
+    /**
+     * Returns {@code true} if the system is a Windows.
+     *
+     * @return {@code true} if the current system is a Windows one.
+     */
+    public static boolean isWindows() {
+        return IS_WINDOWS;
+    }
 }

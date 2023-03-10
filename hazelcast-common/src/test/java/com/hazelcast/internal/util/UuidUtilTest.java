@@ -16,20 +16,15 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.TestSupport;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
-public class ThreadLocalRandomProviderTest extends HazelcastTestSupport {
+//@RunWith(HazelcastParallelClassRunner.class)
+//@Category({QuickTest.class, ParallelJVMTest.class})
+public class UuidUtilTest {
 
     @Test
     public void testConstructor() {
-        assertUtilityConstructor(ThreadLocalRandomProvider.class);
+        TestSupport.assertUtilityConstructor(UuidUtil.class);
     }
 }

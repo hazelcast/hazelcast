@@ -16,22 +16,41 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.TestSupport;
+import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.TestSupport;
 
 import java.util.Collection;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 
-import static java.lang.Integer.getInteger;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertTrue;
 
 public class TpcTestSupport extends TestSupport {
 
-    public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT = getInteger("hazelcast.assertTrueEventually.timeout", 120);
     public static final int TERMINATION_TIMEOUT_SECONDS = 30;
 
     public static void assertCompletesEventually(final Future future) {
         assertTrueEventually(() -> assertTrue("Future has not completed", future.isDone()));
+    }
+
+    public static void assertOpenEventually(CountDownLatch latch) {
+        assertOpenEventually(latch, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    public static void assertOpenEventually(CountDownLatch latch, long timeoutSeconds) {
+        assertTrueEventually(() -> {
+            boolean success = latch.await(timeoutSeconds, SECONDS);
+            assertTrue(success);
+        }, timeoutSeconds);
+    }
+
+    public static void assertTrueFiveSeconds(AssertTask task) {
+        assertTrueAllTheTime(task, 5);
+    }
+
+    public static void assertTrueTwoSeconds(AssertTask task) {
+        assertTrueAllTheTime(task, 2);
     }
 
     public static void terminateAll(Collection<? extends Reactor> reactors) {
@@ -74,6 +93,4 @@ public class TpcTestSupport extends TestSupport {
             throw new RuntimeException(e);
         }
     }
-
-
 }

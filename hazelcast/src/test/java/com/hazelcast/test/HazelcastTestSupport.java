@@ -33,7 +33,6 @@ import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.instance.impl.TestUtil;
-import com.hazelcast.internal.TestSupport;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.IPartition;
@@ -73,10 +72,13 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
 /**
@@ -90,6 +92,7 @@ import static org.junit.Assume.assumeTrue;
 @SuppressWarnings({"unused", "SameParameterValue", "WeakerAccess"})
 public abstract class HazelcastTestSupport extends TestSupport {
     private static final String COMPAT_HZ_INSTANCE_FACTORY = "com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory";
+    public static final String PERSISTENT_MEMORY_DIRECTORIES;
 
     @Rule
     public MetricsRule metricsRule = new MetricsRule();
@@ -102,6 +105,9 @@ public abstract class HazelcastTestSupport extends TestSupport {
     public DumpBuildInfoOnFailureRule dumpInfoRule = new DumpBuildInfoOnFailureRule();
 
     static {
+        String pmemDirectories = System.getProperty("hazelcast.persistent.memory");
+        PERSISTENT_MEMORY_DIRECTORIES = pmemDirectories != null ? pmemDirectories : "/tmp/pmem0,/tmp/pmem1";
+
         ClusterProperty.METRICS_COLLECTION_FREQUENCY.setSystemProperty("1");
         ClusterProperty.METRICS_DEBUG.setSystemProperty("true");
     }
@@ -385,6 +391,45 @@ public abstract class HazelcastTestSupport extends TestSupport {
 
         if (partitionCount < memberCount) {
             throw new UnsupportedOperationException("Partition count should be equal or greater than member count!");
+        }
+    }
+
+    public static void assertOpenEventually(CountDownLatch latch) {
+        assertOpenEventually(latch, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    public static void assertOpenEventually(ICountDownLatch latch) {
+        assertOpenEventually(latch, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    public static void assertOpenEventually(String message, CountDownLatch latch) {
+        assertOpenEventually(message, new CountdownLatchAdapter(latch), ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    public static void assertOpenEventually(CountDownLatch latch, long timeoutSeconds) {
+        assertOpenEventually(null, new CountdownLatchAdapter(latch), timeoutSeconds);
+    }
+
+    public static void assertOpenEventually(ICountDownLatch latch, long timeoutSeconds) {
+        assertOpenEventually(null, new ICountdownLatchAdapter(latch), timeoutSeconds);
+    }
+
+    public static void assertOpenEventually(String message, CountDownLatch latch, long timeoutSeconds) {
+        assertOpenEventually(message, new CountdownLatchAdapter(latch), timeoutSeconds);
+    }
+
+    public static void assertOpenEventually(String message, Latch latch, long timeoutSeconds) {
+        try {
+            boolean completed = latch.await(timeoutSeconds, SECONDS);
+            if (message == null) {
+                assertTrue(format("CountDownLatch failed to complete within %d seconds, count left: %d", timeoutSeconds,
+                        latch.getCount()), completed);
+            } else {
+                assertTrue(format("%s, failed to complete within %d seconds, count left: %d", message, timeoutSeconds,
+                        latch.getCount()), completed);
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -740,6 +785,17 @@ public abstract class HazelcastTestSupport extends TestSupport {
     protected MapOperationProvider getMapOperationProvider(HazelcastInstance instance, String mapName) {
         MapService mapService = Accessors.getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
         return mapService.getMapServiceContext().getMapOperationProvider(mapName);
+    }
+
+    public static void assumeHadoopSupportsIbmPlatform() {
+        boolean missingIbmLoginModule = true;
+        try {
+            Class.forName("com.ibm.security.auth.module.JAASLoginModule");
+            missingIbmLoginModule = false;
+        } catch (ClassNotFoundException ignored) {
+        }
+        assumeFalse("Skipping due Hadoop authentication issues. See https://github.com/apache/hadoop/pull/4537",
+                JAVA_VENDOR.contains("IBM") && missingIbmLoginModule);
     }
 
     /**

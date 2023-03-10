@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal;
+package com.hazelcast.test;
 
 import com.hazelcast.internal.util.OS;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.ProgressCheckerTask;
-import com.hazelcast.test.TaskProgress;
 import com.hazelcast.test.jitter.JitterRule;
 import junit.framework.AssertionFailedError;
 import org.junit.Assume;
@@ -31,6 +29,7 @@ import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.function.ThrowingRunnable;
 
+import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -77,7 +76,6 @@ public class TestSupport {
 
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
     public static final int ASSERT_COMPLETES_STALL_TOLERANCE;
-    public static final String PERSISTENT_MEMORY_DIRECTORIES;
 
     private static final boolean EXPECT_DIFFERENT_HASHCODES = (new Object().hashCode() != new Object().hashCode());
     private static final ILogger LOGGER = Logger.getLogger(TestSupport.class);
@@ -91,9 +89,6 @@ public class TestSupport {
         LOGGER.fine("ASSERT_TRUE_EVENTUALLY_TIMEOUT = " + ASSERT_TRUE_EVENTUALLY_TIMEOUT);
         ASSERT_COMPLETES_STALL_TOLERANCE = getInteger("hazelcast.assertCompletes.stallTolerance", 20);
         LOGGER.fine("ASSERT_COMPLETES_STALL_TOLERANCE = " + ASSERT_COMPLETES_STALL_TOLERANCE);
-        String pmemDirectories = System.getProperty("hazelcast.persistent.memory");
-        PERSISTENT_MEMORY_DIRECTORIES = pmemDirectories != null ? pmemDirectories : "/tmp/pmem0,/tmp/pmem1";
-
     }
 
     protected static <T> boolean containsIn(T item1, Collection<T> collection, Comparator<T> comparator) {
@@ -520,46 +515,6 @@ public class TestSupport {
         });
     }
 
-
-    public static void assertOpenEventually(CountDownLatch latch) {
-        assertOpenEventually(latch, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
-    }
-
-    public static void assertOpenEventually(ICountDownLatch latch) {
-        assertOpenEventually(latch, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
-    }
-
-    public static void assertOpenEventually(String message, CountDownLatch latch) {
-        assertOpenEventually(message, new CountdownLatchAdapter(latch), ASSERT_TRUE_EVENTUALLY_TIMEOUT);
-    }
-
-    public static void assertOpenEventually(CountDownLatch latch, long timeoutSeconds) {
-        assertOpenEventually(null, new CountdownLatchAdapter(latch), timeoutSeconds);
-    }
-
-    public static void assertOpenEventually(ICountDownLatch latch, long timeoutSeconds) {
-        assertOpenEventually(null, new ICountdownLatchAdapter(latch), timeoutSeconds);
-    }
-
-    public static void assertOpenEventually(String message, CountDownLatch latch, long timeoutSeconds) {
-        assertOpenEventually(message, new CountdownLatchAdapter(latch), timeoutSeconds);
-    }
-
-    public static void assertOpenEventually(String message, Latch latch, long timeoutSeconds) {
-        try {
-            boolean completed = latch.await(timeoutSeconds, SECONDS);
-            if (message == null) {
-                assertTrue(format("CountDownLatch failed to complete within %d seconds, count left: %d", timeoutSeconds,
-                        latch.getCount()), completed);
-            } else {
-                assertTrue(format("%s, failed to complete within %d seconds, count left: %d", message, timeoutSeconds,
-                        latch.getCount()), completed);
-            }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public static void assertCountEventually(final String message, final int expectedCount, final CountDownLatch latch,
                                              long timeoutInSeconds) {
         assertTrueEventually(() -> {
@@ -625,7 +580,7 @@ public class TestSupport {
             try {
                 task.run();
             } catch (Exception e) {
-                throw rethrow(e);
+                throw sneakyThrow(e);
             }
             // Don't wait if there is not next iteration
             if ((i + 1) <= durationSeconds) {
@@ -645,7 +600,7 @@ public class TestSupport {
                 try {
                     task.run();
                 } catch (Exception e) {
-                    throw rethrow(e);
+                    throw sneakyThrow(e);
                 }
             } catch (AssertionError e) {
                 return;
@@ -672,7 +627,7 @@ public class TestSupport {
                 try {
                     task.run();
                 } catch (Exception e) {
-                    throw rethrow(e);
+                    throw sneakyThrow(e);
                 }
                 return;
             } catch (AssertionError e) {
@@ -768,7 +723,7 @@ public class TestSupport {
 
                 sleepMillis(sleepMillis);
             } catch (Exception e) {
-                throw rethrow(e);
+                throw sneakyThrow(e);
             }
         }
     }
@@ -786,7 +741,7 @@ public class TestSupport {
         try {
             task.run();
         } catch (Exception e) {
-            throw rethrow(e);
+            throw sneakyThrow(e);
         }
     }
 
@@ -967,17 +922,6 @@ public class TestSupport {
         assumeFalse("Zing JDK6 used", JAVA_VERSION.startsWith("1.6.") && JVM_NAME.startsWith("Zing"));
     }
 
-    public static void assumeHadoopSupportsIbmPlatform() {
-        boolean missingIbmLoginModule = true;
-        try {
-            Class.forName("com.ibm.security.auth.module.JAASLoginModule");
-            missingIbmLoginModule = false;
-        } catch (ClassNotFoundException ignored) {
-        }
-        assumeFalse("Skipping due Hadoop authentication issues. See https://github.com/apache/hadoop/pull/4537",
-                JAVA_VENDOR.contains("IBM") && missingIbmLoginModule);
-    }
-
     public static void assumeThatNoWindowsOS() {
         assumeFalse("Skipping on Windows", OS.isWindows());
     }
@@ -1014,5 +958,11 @@ public class TestSupport {
             consumer.accept(stackTraceElement, results);
         }
         return results;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Nonnull
+    public static <T extends Throwable> RuntimeException sneakyThrow(@Nonnull Throwable t) throws T {
+        throw (T) t;
     }
 }

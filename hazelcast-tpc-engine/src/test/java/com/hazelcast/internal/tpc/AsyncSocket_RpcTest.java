@@ -37,8 +37,8 @@ import static com.hazelcast.internal.tpc.AsyncSocketOptions.SO_RCVBUF;
 import static com.hazelcast.internal.tpc.AsyncSocketOptions.SO_SNDBUF;
 import static com.hazelcast.internal.tpc.AsyncSocketOptions.TCP_NODELAY;
 import static com.hazelcast.internal.tpc.TpcTestSupport.terminate;
-import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_INT;
-import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_LONG;
+import static com.hazelcast.internal.tpc.util.Sizeof.SIZEOF_INT;
+import static com.hazelcast.internal.tpc.util.Sizeof.SIZEOF_LONG;
 import static com.hazelcast.internal.tpc.util.BufferUtil.put;
 import static com.hazelcast.internal.tpc.util.BufferUtil.upcast;
 

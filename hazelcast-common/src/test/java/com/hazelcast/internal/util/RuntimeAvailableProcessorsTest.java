@@ -20,7 +20,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import static com.hazelcast.test.ClassTestSupport.assertUtilityConstructor;
+import static com.hazelcast.test.TestSupport.assertUtilityConstructor;
 import static org.junit.Assert.assertEquals;
 
 //@RunWith(HazelcastSerialClassRunner.class)

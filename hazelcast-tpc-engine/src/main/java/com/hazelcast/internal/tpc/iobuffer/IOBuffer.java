@@ -21,12 +21,12 @@ import com.hazelcast.internal.tpc.AsyncSocket;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_BYTE;
-import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_CHAR;
-import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_INT;
-import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_LONG;
-import static com.hazelcast.internal.tpc.util.BitUtil.nextPowerOfTwo;
 import static com.hazelcast.internal.tpc.util.BufferUtil.upcast;
+import static com.hazelcast.internal.tpc.util.Sizeof.SIZEOF_BYTE;
+import static com.hazelcast.internal.tpc.util.Sizeof.SIZEOF_CHAR;
+import static com.hazelcast.internal.tpc.util.Sizeof.SIZEOF_INT;
+import static com.hazelcast.internal.tpc.util.Sizeof.SIZEOF_LONG;
+import static com.hazelcast.internal.util.QuickMath.nextPowerOfTwo;
 
 
 /**
