@@ -20,7 +20,6 @@ import com.hazelcast.instance.impl.BootstrappedInstanceProxy;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.JobStatus;
-import com.hazelcast.jet.impl.util.ResettableConcurrentMemoizingSupplier;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -35,7 +34,6 @@ import java.net.URLClassLoader;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
@@ -55,7 +53,7 @@ public class ClientExecuteJarStrategy {
      * The startup of the job is awaited for some period of time before this method returns.
      * Then the HZ client is closed
      */
-    public void executeJar(@Nonnull ResettableConcurrentMemoizingSupplier<BootstrappedInstanceProxy> singleton,
+    public void executeJar(@Nonnull ResettableSingleton<BootstrappedInstanceProxy> singleton,
                            ExecuteJobParameters executeJobParameters,
                            @Nullable String mainClassName,
                            @Nonnull List<String> args
@@ -104,7 +102,7 @@ public class ClientExecuteJarStrategy {
 
     private void awaitJobsStartedByJar(BootstrappedInstanceProxy instanceProxy) {
 
-        CopyOnWriteArrayList<Job> submittedJobs = instanceProxy.getJet().submittedJobs();
+        List<Job> submittedJobs = instanceProxy.getJet().submittedJobs();
         if (submittedJobs.isEmpty()) {
             LOGGER.info("The JAR didn't submit any jobs.");
             return;

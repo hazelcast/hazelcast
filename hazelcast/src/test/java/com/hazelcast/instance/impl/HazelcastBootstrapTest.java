@@ -52,7 +52,7 @@ public class HazelcastBootstrapTest {
         // and HazelcastCommandLineTest were interfering with each
         // other before this cleanup step added.
         // See: https://github.com/hazelcast/hazelcast/issues/18725
-        HazelcastBootstrap.resetSupplier();
+        HazelcastBootstrap.resetRemembered();
     }
 
     @Test

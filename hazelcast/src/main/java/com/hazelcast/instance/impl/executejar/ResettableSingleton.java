@@ -14,30 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.util;
+package com.hazelcast.instance.impl.executejar;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.function.Supplier;
 
 /**
- * Uses a {@code Supplier} to get a value on the first invocation of  {@link #get(Supplier)}  and
+ * Creates the singleton on the first invocation of {@link #get(Supplier)}  and
  * afterwards returns the remembered instance.
  * <p>
  * The provided {@code Supplier} must return a non-null value.
  */
-public final class ResettableConcurrentMemoizingSupplier<T> {
+public final class ResettableSingleton<T> {
     private volatile T remembered;
 
     @Nonnull
     public T get(Supplier<T> onceSupplier) {
-        // The common path will use a single volatile load
+        // Double-checked locking to lazy initialize the singleton
         T loadResult = remembered;
         if (loadResult != null) {
             return loadResult;
         }
         synchronized (this) {
-            // The uncommon path can use simpler code with multiple volatile loads
             if (remembered != null) {
                 return remembered;
             }

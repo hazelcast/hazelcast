@@ -25,7 +25,7 @@ import com.hazelcast.instance.impl.executejar.ClientExecuteJarStrategy;
 import com.hazelcast.instance.impl.executejar.ExecuteJobParameters;
 import com.hazelcast.instance.impl.executejar.MemberExecuteJarStrategy;
 import com.hazelcast.jet.impl.util.JetConsoleLogHandler;
-import com.hazelcast.jet.impl.util.ResettableConcurrentMemoizingSupplier;
+import com.hazelcast.instance.impl.executejar.ResettableSingleton;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -58,8 +58,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.LOGGING_TYPE;
  **/
 public final class HazelcastBootstrap {
 
-    private static final ResettableConcurrentMemoizingSupplier<BootstrappedInstanceProxy> SINGLETON =
-            new ResettableConcurrentMemoizingSupplier<>();
+    private static final ResettableSingleton<BootstrappedInstanceProxy> SINGLETON = new ResettableSingleton<>();
 
     private static final ClientExecuteJarStrategy CLIENT_EXECUTE_JAR_STRATEGY = new ClientExecuteJarStrategy();
 
@@ -73,7 +72,7 @@ public final class HazelcastBootstrap {
     }
 
     // Public for testing
-    public static void resetSupplier() {
+    public static void resetRemembered() {
         SINGLETON.resetRemembered();
     }
 
@@ -90,7 +89,7 @@ public final class HazelcastBootstrap {
         // Set the singleton, so that it can be accessed within the jar
         SINGLETON.get(() -> BootstrappedInstanceProxy.createWithJetProxy(supplierOfInstance.get()));
 
-        ExecuteJobParameters executeJobParameters = new ExecuteJobParameters(jarPath,snapshotName,jobName);
+        ExecuteJobParameters executeJobParameters = new ExecuteJobParameters(jarPath, snapshotName, jobName);
         CLIENT_EXECUTE_JAR_STRATEGY.executeJar(SINGLETON, executeJobParameters, mainClassName, args);
     }
 
@@ -105,12 +104,12 @@ public final class HazelcastBootstrap {
                                           @Nonnull List<String> args)
             throws IOException, ClassNotFoundException, InvocationTargetException, IllegalAccessException {
         // Set the singleton, so that it can be accessed within the jar
-        BootstrappedInstanceProxy bootstrappedInstanceProxy = SINGLETON
-                .get(() -> BootstrappedInstanceProxy.createWithJetProxy(supplierOfInstance.get()));
+        BootstrappedInstanceProxy hazelcastInstance =
+                SINGLETON.get(() -> BootstrappedInstanceProxy.createWithJetProxy(supplierOfInstance.get()));
 
-        ExecuteJobParameters executeJobParameters = new ExecuteJobParameters(jarPath,snapshotName,jobName);
+        ExecuteJobParameters executeJobParameters = new ExecuteJobParameters(jarPath, snapshotName, jobName);
 
-        MEMBER_EXECUTE_JAR_STRATEGY.executeJar(bootstrappedInstanceProxy, executeJobParameters, mainClassName, args);
+        MEMBER_EXECUTE_JAR_STRATEGY.executeJar(hazelcastInstance, executeJobParameters, mainClassName, args);
     }
 
     /**

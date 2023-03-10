@@ -54,7 +54,7 @@ final class ExecuteJarStrategyHelper {
     static BootstrappedJetProxy setupJetProxy(BootstrappedInstanceProxy instanceProxy,
                                               ExecuteJobParameters executeJobParameters) {
         BootstrappedJetProxy bootstrappedJetProxy = instanceProxy.getJet();
-        bootstrappedJetProxy.setThreadLocalParameters(executeJobParameters);
+        bootstrappedJetProxy.setExecuteJobParameters(executeJobParameters);
         return bootstrappedJetProxy;
     }
 }
