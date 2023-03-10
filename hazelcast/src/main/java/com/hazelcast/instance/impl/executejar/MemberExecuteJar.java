@@ -17,7 +17,6 @@
 package com.hazelcast.instance.impl.executejar;
 
 import com.hazelcast.instance.impl.BootstrappedInstanceProxy;
-import com.hazelcast.instance.impl.BootstrappedJetProxy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -31,9 +30,9 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.List;
 
-public class MemberExecuteJarStrategy {
+public class MemberExecuteJar {
 
-    private static final ILogger LOGGER = Logger.getLogger(MemberExecuteJarStrategy.class.getName());
+    private static final ILogger LOGGER = Logger.getLogger(MemberExecuteJar.class.getName());
 
     /**
      * This method is used by a member to execute a jar in a multithreaded environment
@@ -47,30 +46,28 @@ public class MemberExecuteJarStrategy {
     ) throws IOException, InvocationTargetException, IllegalAccessException, ClassNotFoundException {
 
         String jarPath = executeJobParameters.getJarPath();
-        mainClassName = ExecuteJarStrategyHelper.findMainClassNameForJar(mainClassName, jarPath);
+        mainClassName = ExecuteJarHelper.findMainClassNameForJar(jarPath, mainClassName);
 
         URL jarUrl = new File(jarPath).toURI().toURL();
         try (URLClassLoader classLoader = URLClassLoader.newInstance(
                 new URL[]{jarUrl},
-                MemberExecuteJarStrategy.class.getClassLoader())) {
+                MemberExecuteJar.class.getClassLoader())) {
 
-            Method mainMethod = ExecuteJarStrategyHelper.findMainMethodForJar(classLoader, mainClassName);
+            Method mainMethod = ExecuteJarHelper.findMainMethodForJar(classLoader, mainClassName);
 
             LOGGER.info("Found mainClassName :" + mainClassName + " and main method");
 
             invokeMain(instanceProxy, executeJobParameters, mainMethod, args);
+        } finally {
+            instanceProxy.removeThreadLocalParameters();
         }
     }
 
     void invokeMain(BootstrappedInstanceProxy instanceProxy, ExecuteJobParameters executeJobParameters,
-                                 Method mainMethod, List<String> args)
+                    Method mainMethod, List<String> args)
             throws IllegalAccessException, InvocationTargetException {
 
-        BootstrappedJetProxy bootstrappedJetProxy =
-                ExecuteJarStrategyHelper.setupJetProxy(instanceProxy, executeJobParameters);
-
-        // Clear jobs. We don't need them
-        bootstrappedJetProxy.clearSubmittedJobs();
+        instanceProxy.setThreadLocalParameters(executeJobParameters);
 
         String[] jobArgs = args.toArray(new String[0]);
 

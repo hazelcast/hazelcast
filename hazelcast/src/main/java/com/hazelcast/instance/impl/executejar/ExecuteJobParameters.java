@@ -16,8 +16,11 @@
 
 package com.hazelcast.instance.impl.executejar;
 
+import com.hazelcast.jet.Job;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 
 public class ExecuteJobParameters {
 
@@ -27,6 +30,8 @@ public class ExecuteJobParameters {
     private final String snapshotName;
     @Nullable
     private final String jobName;
+
+    private final ArrayList<Job> submittedJobs = new ArrayList<>();
 
 
     public ExecuteJobParameters(@Nonnull String jarPath, @Nullable String snapshotName, @Nullable String jobName) {
@@ -56,5 +61,13 @@ public class ExecuteJobParameters {
     @Nullable
     public String getJobName() {
         return jobName;
+    }
+
+    public ArrayList<Job> getSubmittedJobs() {
+        return submittedJobs;
+    }
+
+    public void addSubmittedJob(Job job) {
+        submittedJobs.add(job);
     }
 }

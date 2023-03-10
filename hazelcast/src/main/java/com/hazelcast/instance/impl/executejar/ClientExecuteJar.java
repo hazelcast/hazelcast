@@ -41,9 +41,9 @@ import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
-public class ClientExecuteJarStrategy {
+public class ClientExecuteJar {
 
-    private static final ILogger LOGGER = Logger.getLogger(ClientExecuteJarStrategy.class.getName());
+    private static final ILogger LOGGER = Logger.getLogger(ClientExecuteJar.class.getName());
     private static final int JOB_START_CHECK_INTERVAL_MILLIS = 1_000;
     private static final EnumSet<JobStatus> STARTUP_STATUSES = EnumSet.of(NOT_RUNNING, STARTING);
 
@@ -62,20 +62,20 @@ public class ClientExecuteJarStrategy {
         boolean exit = false;
         try {
             String jarPath = executeJobParameters.getJarPath();
-            mainClassName = ExecuteJarStrategyHelper.findMainClassNameForJar(mainClassName, jarPath);
+            mainClassName = ExecuteJarHelper.findMainClassNameForJar(jarPath, mainClassName);
 
             URL jarUrl = new File(jarPath).toURI().toURL();
             try (URLClassLoader classLoader = URLClassLoader.newInstance(
                     new URL[]{jarUrl},
-                    ClientExecuteJarStrategy.class.getClassLoader())) {
+                    ClientExecuteJar.class.getClassLoader())) {
 
-                Method mainMethod = ExecuteJarStrategyHelper.findMainMethodForJar(classLoader, mainClassName);
+                Method mainMethod = ExecuteJarHelper.findMainMethodForJar(classLoader, mainClassName);
 
                 LOGGER.info("Found mainClassName :" + mainClassName + " and main method");
 
                 String[] jobArgs = args.toArray(new String[0]);
 
-                ExecuteJarStrategyHelper.setupJetProxy(instanceProxy, executeJobParameters);
+                instanceProxy.setThreadLocalParameters(executeJobParameters);
 
                 // upcast args to Object, so it's passed as a single array-typed argument
                 mainMethod.invoke(null, (Object) jobArgs);
@@ -88,6 +88,7 @@ public class ClientExecuteJarStrategy {
             LOGGER.severe("Exception caught while executing the jar :", exception);
             exit = true;
         } finally {
+            instanceProxy.removeThreadLocalParameters();
             try {
                 instanceProxy.shutdown();
             } catch (Exception exception) {
@@ -101,8 +102,7 @@ public class ClientExecuteJarStrategy {
     }
 
     private void awaitJobsStartedByJar(BootstrappedInstanceProxy instanceProxy) {
-
-        List<Job> submittedJobs = instanceProxy.getJet().submittedJobs();
+        List<Job> submittedJobs = instanceProxy.getSubmittedJobs();
         if (submittedJobs.isEmpty()) {
             LOGGER.info("The JAR didn't submit any jobs.");
             return;

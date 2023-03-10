@@ -29,7 +29,7 @@ import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class MemberExecuteJarStrategyTest {
+public class MemberExecuteJarTest {
 
     @Test
     public void testInvokeMain() throws InvocationTargetException, IllegalAccessException {
@@ -43,7 +43,7 @@ public class MemberExecuteJarStrategyTest {
 
         BootstrappedInstanceProxy instanceProxy = BootstrappedInstanceProxy.createWithJetProxy(hazelcastInstance);
 
-        MemberExecuteJarStrategy memberExecuteJarStrategy = new MemberExecuteJarStrategy();
+        MemberExecuteJar memberExecuteJar = new MemberExecuteJar();
 
         String jarPath = "jarPath";
         String snapshotName = "snapshotName";
@@ -52,14 +52,14 @@ public class MemberExecuteJarStrategyTest {
         ExecuteJobParameters executeJobParameters = new ExecuteJobParameters(jarPath, snapshotName, jobName);
 
         // Test that invokeMain sets thread local values in BootstrappedInstanceProxy
-        memberExecuteJarStrategy.invokeMain(instanceProxy,
+        memberExecuteJar.invokeMain(instanceProxy,
                 executeJobParameters,
                 method,
                 Collections.singletonList("jobArgs")
         );
 
         BootstrappedJetProxy bootstrappedJetProxy = instanceProxy.getJet();
-        ExecuteJobParameters parameters = bootstrappedJetProxy.getExecuteJobParameters();
+        ExecuteJobParameters parameters = bootstrappedJetProxy.getThreadLocalParameters();
 
         assertThat(parameters.getJarPath()).isEqualTo(jarPath);
         assertThat(parameters.getSnapshotName()).isEqualTo(snapshotName);

@@ -21,9 +21,9 @@ import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.executejar.ClientExecuteJarStrategy;
+import com.hazelcast.instance.impl.executejar.ClientExecuteJar;
 import com.hazelcast.instance.impl.executejar.ExecuteJobParameters;
-import com.hazelcast.instance.impl.executejar.MemberExecuteJarStrategy;
+import com.hazelcast.instance.impl.executejar.MemberExecuteJar;
 import com.hazelcast.jet.impl.util.JetConsoleLogHandler;
 import com.hazelcast.instance.impl.executejar.ResettableSingleton;
 import com.hazelcast.logging.ILogger;
@@ -60,9 +60,9 @@ public final class HazelcastBootstrap {
 
     private static final ResettableSingleton<BootstrappedInstanceProxy> SINGLETON = new ResettableSingleton<>();
 
-    private static final ClientExecuteJarStrategy CLIENT_EXECUTE_JAR_STRATEGY = new ClientExecuteJarStrategy();
+    private static final ClientExecuteJar CLIENT_EXECUTE_JAR = new ClientExecuteJar();
 
-    private static final MemberExecuteJarStrategy MEMBER_EXECUTE_JAR_STRATEGY = new MemberExecuteJarStrategy();
+    private static final MemberExecuteJar MEMBER_EXECUTE_JAR = new MemberExecuteJar();
 
     private static final ILogger LOGGER = Logger.getLogger(HazelcastBootstrap.class);
 
@@ -90,7 +90,7 @@ public final class HazelcastBootstrap {
         SINGLETON.get(() -> BootstrappedInstanceProxy.createWithJetProxy(supplierOfInstance.get()));
 
         ExecuteJobParameters executeJobParameters = new ExecuteJobParameters(jarPath, snapshotName, jobName);
-        CLIENT_EXECUTE_JAR_STRATEGY.executeJar(SINGLETON, executeJobParameters, mainClassName, args);
+        CLIENT_EXECUTE_JAR.executeJar(SINGLETON, executeJobParameters, mainClassName, args);
     }
 
     /**
@@ -109,7 +109,7 @@ public final class HazelcastBootstrap {
 
         ExecuteJobParameters executeJobParameters = new ExecuteJobParameters(jarPath, snapshotName, jobName);
 
-        MEMBER_EXECUTE_JAR_STRATEGY.executeJar(hazelcastInstance, executeJobParameters, mainClassName, args);
+        MEMBER_EXECUTE_JAR.executeJar(hazelcastInstance, executeJobParameters, mainClassName, args);
     }
 
     /**

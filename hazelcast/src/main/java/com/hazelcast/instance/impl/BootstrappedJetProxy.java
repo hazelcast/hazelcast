@@ -30,136 +30,142 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 @SuppressWarnings({"checkstyle:methodcount"})
 public class BootstrappedJetProxy implements JetService {
-    private final JetService jet;
-    private final CopyOnWriteArrayList<Job> submittedJobs = new CopyOnWriteArrayList<>();
+    private final JetService jetService;
 
     private final ThreadLocal<ExecuteJobParameters> executeJobParametersThreadLocal = new ThreadLocal<>();
 
-    BootstrappedJetProxy(@Nonnull JetService jet) {
-        this.jet = jet;
+    BootstrappedJetProxy(@Nonnull JetService jetService) {
+        this.jetService = jetService;
     }
-
 
     @Nonnull
     @Override
     public JetConfig getConfig() {
-        return jet.getConfig();
+        return jetService.getConfig();
     }
 
     @Nonnull
     @Override
-    public Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-        return addToSubmittedJobs(jet.newJob(pipeline, updateJobConfig(config)));
+    public Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig jobConfig) {
+        updateJobConfig(jobConfig);
+        Job job = jetService.newJob(pipeline, jobConfig);
+        addToSubmittedJobs(job);
+        return job;
     }
 
     @Nonnull
     @Override
-    public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
-        return addToSubmittedJobs(jet.newJob(dag, updateJobConfig(config)));
+    public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig jobConfig) {
+        updateJobConfig(jobConfig);
+        Job job = jetService.newJob(dag, jobConfig);
+        addToSubmittedJobs(job);
+        return job;
     }
 
     @Nonnull
     @Override
-    public Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-        return addToSubmittedJobs(jet.newJobIfAbsent(pipeline, updateJobConfig(config)));
+    public Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig jobConfig) {
+        updateJobConfig(jobConfig);
+        Job job = jetService.newJobIfAbsent(pipeline, jobConfig);
+        addToSubmittedJobs(job);
+        return job;
     }
 
     @Nonnull
     @Override
-    public Job newJobIfAbsent(@Nonnull DAG dag, @Nonnull JobConfig config) {
-        return addToSubmittedJobs(jet.newJobIfAbsent(dag, updateJobConfig(config)));
+    public Job newJobIfAbsent(@Nonnull DAG dag, @Nonnull JobConfig jobConfig) {
+        updateJobConfig(jobConfig);
+        Job job = jetService.newJobIfAbsent(dag, jobConfig);
+        addToSubmittedJobs(job);
+        return job;
     }
 
     @Override
-    public Job newLightJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-        return addToSubmittedJobs(jet.newLightJob(pipeline, updateJobConfig(config)));
+    public Job newLightJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig jobConfig) {
+        updateJobConfig(jobConfig);
+        Job job = jetService.newLightJob(pipeline, jobConfig);
+        addToSubmittedJobs(job);
+        return job;
     }
 
     @Override
-    public Job newLightJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
-        return addToSubmittedJobs(jet.newLightJob(dag, updateJobConfig(config)));
+    public Job newLightJob(@Nonnull DAG dag, @Nonnull JobConfig jobConfig) {
+        updateJobConfig(jobConfig);
+        Job job = jetService.newLightJob(dag, jobConfig);
+        addToSubmittedJobs(job);
+        return job;
     }
 
     @Nonnull
     @Override
     public List<Job> getJobs(@Nonnull String name) {
-        return jet.getJobs(name);
+        return jetService.getJobs(name);
     }
 
     @Nonnull
     @Override
     public <T> Observable<T> getObservable(@Nonnull String name) {
-        return jet.getObservable(name);
+        return jetService.getObservable(name);
     }
 
     @Nonnull
     @Override
     public List<Job> getJobs() {
-        return jet.getJobs();
+        return jetService.getJobs();
     }
 
     @Nullable
     @Override
     public Job getJob(long jobId) {
-        return jet.getJob(jobId);
+        return jetService.getJob(jobId);
     }
 
     @Nullable
     @Override
     public JobStateSnapshot getJobStateSnapshot(@Nonnull String name) {
-        return jet.getJobStateSnapshot(name);
+        return jetService.getJobStateSnapshot(name);
     }
 
     @Nonnull
     @Override
     public Collection<JobStateSnapshot> getJobStateSnapshots() {
-        return jet.getJobStateSnapshots();
+        return jetService.getJobStateSnapshots();
     }
 
     @Nonnull
     @Override
     public Collection<Observable<?>> getObservables() {
-        return jet.getObservables();
+        return jetService.getObservables();
     }
 
-    public void clearSubmittedJobs() {
-        submittedJobs.clear();
+    private void addToSubmittedJobs(@Nonnull Job job) {
+        getThreadLocalParameters().addSubmittedJob(job);
     }
 
-    @Nonnull
-    public List<Job> submittedJobs() {
-        return submittedJobs;
-    }
-
-    private Job addToSubmittedJobs(@Nonnull Job job) {
-        submittedJobs.add(job);
-        return job;
-    }
-
-    public ExecuteJobParameters getExecuteJobParameters() {
+    public ExecuteJobParameters getThreadLocalParameters() {
         return executeJobParametersThreadLocal.get();
     }
 
-    public void setExecuteJobParameters(ExecuteJobParameters parameters) {
+    public void setThreadLocalParameters(ExecuteJobParameters parameters) {
         executeJobParametersThreadLocal.set(parameters);
     }
 
-    private JobConfig updateJobConfig(@Nonnull JobConfig config) {
-        ExecuteJobParameters jobParameters = getExecuteJobParameters();
-        config.addJar(jobParameters.getJarPath());
+    public void removeThreadLocalParameters() {
+        executeJobParametersThreadLocal.remove();
+    }
+
+    private void updateJobConfig(@Nonnull JobConfig jobConfig) {
+        ExecuteJobParameters jobParameters = getThreadLocalParameters();
+        jobConfig.addJar(jobParameters.getJarPath());
 
         if (jobParameters.hasSnapshotName()) {
-            config.setInitialSnapshotName(jobParameters.getSnapshotName());
+            jobConfig.setInitialSnapshotName(jobParameters.getSnapshotName());
         }
         if (jobParameters.hasJobName()) {
-            config.setName(jobParameters.getJobName());
+            jobConfig.setName(jobParameters.getJobName());
         }
-        // Remove the parameters when no longer used
-        executeJobParametersThreadLocal.remove();
-        return config;
     }
 }

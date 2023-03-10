@@ -16,22 +16,20 @@
 
 package com.hazelcast.instance.impl.executejar;
 
-import com.hazelcast.instance.impl.BootstrappedInstanceProxy;
-import com.hazelcast.instance.impl.BootstrappedJetProxy;
 import com.hazelcast.jet.JetException;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
 
-final class ExecuteJarStrategyHelper {
+final class ExecuteJarHelper {
 
-    private ExecuteJarStrategyHelper() {
+    private ExecuteJarHelper() {
     }
 
-    static String findMainClassNameForJar(String mainClassName, String jarPath)
+    static String findMainClassNameForJar(String jarPath, String mainClassName)
             throws IOException {
         MainClassNameFinder mainClassNameFinder = new MainClassNameFinder();
-        mainClassNameFinder.findMainClass(mainClassName, jarPath);
+        mainClassNameFinder.findMainClass(jarPath, mainClassName);
 
         if (mainClassNameFinder.hasError()) {
             String errorMessage = mainClassNameFinder.getErrorMessage();
@@ -49,12 +47,5 @@ final class ExecuteJarStrategyHelper {
             throw new JetException(errorMessage);
         }
         return mainMethodFinder.getMainMethod();
-    }
-
-    static BootstrappedJetProxy setupJetProxy(BootstrappedInstanceProxy instanceProxy,
-                                              ExecuteJobParameters executeJobParameters) {
-        BootstrappedJetProxy bootstrappedJetProxy = instanceProxy.getJet();
-        bootstrappedJetProxy.setExecuteJobParameters(executeJobParameters);
-        return bootstrappedJetProxy;
     }
 }

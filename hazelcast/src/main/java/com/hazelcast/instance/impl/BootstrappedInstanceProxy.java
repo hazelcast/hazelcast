@@ -34,6 +34,8 @@ import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.instance.impl.executejar.ExecuteJobParameters;
+import com.hazelcast.jet.Job;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
@@ -52,6 +54,7 @@ import com.hazelcast.transaction.TransactionalTask;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
@@ -60,7 +63,6 @@ import java.util.concurrent.ConcurrentMap;
 public final class BootstrappedInstanceProxy implements HazelcastInstance {
     private HazelcastInstance instance;
     private BootstrappedJetProxy jetProxy;
-
 
     private BootstrappedInstanceProxy() {
     }
@@ -296,5 +298,18 @@ public final class BootstrappedInstanceProxy implements HazelcastInstance {
     @Override
     public void shutdown() {
         getLifecycleService().shutdown();
+    }
+
+    public void setThreadLocalParameters(ExecuteJobParameters executeJobParameters) {
+        jetProxy.setThreadLocalParameters(executeJobParameters);
+    }
+
+    public void removeThreadLocalParameters() {
+        jetProxy.removeThreadLocalParameters();
+    }
+
+    public List<Job> getSubmittedJobs() {
+        ExecuteJobParameters executeJobParameters = jetProxy.getThreadLocalParameters();
+        return executeJobParameters.getSubmittedJobs();
     }
 }
