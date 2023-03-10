@@ -29,6 +29,7 @@ import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.client.SqlClientService;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.BitSet;
@@ -78,10 +79,49 @@ public class SqlClientTest extends SqlTestSupport {
     @Test
     public void test_partitionBasedRouting() {
         createMapping("test", Integer.class, String.class);
+        createMapping("test2", Integer.class, String.class);
 
         checkPartitionArgumentIndex("SELECT * FROM test WHERE __key = ?", 0, 1);
         checkPartitionArgumentIndex("UPDATE test SET this = ? WHERE __key = ?", 1, "testVal", 1);
         checkPartitionArgumentIndex("DELETE FROM test WHERE __key = ?", 0, 1);
+        checkPartitionArgumentIndex("SELECT JSON_OBJECT(this : __key) FROM test WHERE __key = ?", 0, 1);
+        checkPartitionArgumentIndex("SELECT JSON_ARRAY(__key, this) FROM test WHERE __key = ?", 0, 1);
+
+        // aggregation
+        checkPartitionArgumentIndex("SELECT JSON_OBJECTAGG(this : __key) FROM test WHERE __key = ?", null, 1);
+        checkPartitionArgumentIndex("SELECT SUM(__key) FROM test WHERE __key = ?", null, 1);
+        checkPartitionArgumentIndex("SELECT COUNT(*) FROM test WHERE __key = ?", null, 1);
+        // join
+        checkPartitionArgumentIndex("SELECT * FROM test t1 JOIN test2 t2 ON t1.__key = t2.__key WHERE t1.__key = ?",
+                null, 1);
+        checkPartitionArgumentIndex("SELECT t1.*, t2.* FROM test t1 JOIN test2 t2 USING(__key) WHERE t1.__key = ?",
+                null, 1);
+    }
+
+    @Test
+    public void test_partitionBasedRoutingComplexKey() {
+        createMapping("test_complex", Person.class, String.class);
+
+        checkPartitionArgumentIndex("SELECT * FROM test_complex WHERE __key = ?",
+                0, new Person(1, "name-1"));
+        checkPartitionArgumentIndex("UPDATE test_complex SET this = ? WHERE __key = ?",
+                1, "testVal", new Person(1, "name-1"));
+        checkPartitionArgumentIndex("DELETE FROM test_complex WHERE __key = ?",
+                0, new Person(1, "name-1"));
+    }
+
+    @Test
+    @Ignore("Currently unsupported: https://github.com/hazelcast/hazelcast/pull/22659#issuecomment-1382086013")
+    public void test_partitionBasedRouting_multipleConditions() {
+        createMapping("test", Integer.class, String.class);
+        createMapping("complex_value", Integer.class, Person.class);
+
+        checkPartitionArgumentIndex("SELECT * FROM test WHERE __key = ? AND this = ?", 0, 1, "aaa");
+        checkPartitionArgumentIndex("SELECT * FROM test WHERE this = ? AND __key = ?", 1, "aaa", 1);
+        checkPartitionArgumentIndex("SELECT * FROM complex_value WHERE __key = ? AND id = ?",
+                0, 1, 1);
+        checkPartitionArgumentIndex("SELECT * FROM complex_value WHERE __key = ? AND id = ? AND name = ?",
+                0, 1, 1, "name-1");
     }
 
     private void checkPartitionArgumentIndex(String sql, Integer expectedIndex, Object... arguments) {
