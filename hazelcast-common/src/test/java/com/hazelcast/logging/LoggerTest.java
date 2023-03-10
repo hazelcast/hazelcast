@@ -23,6 +23,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import static com.hazelcast.test.IsolatedLoggingRule.*;
 import static com.hazelcast.test.TestSupport.assertInstanceOf;
 import static com.hazelcast.test.TestSupport.assertUtilityConstructor;
 
@@ -44,31 +45,31 @@ public class LoggerTest {
 
     @Test
     public void getLogger_thenLog4j_thenReturnLog4jLogger() {
-        isolatedLoggingRule.setLoggingType(IsolatedLoggingRule.LOGGING_TYPE_LOG4J);
+        isolatedLoggingRule.setLoggingType(LOGGING_TYPE_LOG4J);
         assertInstanceOf(Log4jFactory.Log4jLogger.class, Logger.getLogger(getClass()));
     }
 
     @Test
     public void getLogger_thenLog4j2_thenReturnLog4j2Logger() {
-        isolatedLoggingRule.setLoggingType(IsolatedLoggingRule.LOGGING_TYPE_LOG4J2);
+        isolatedLoggingRule.setLoggingType(LOGGING_TYPE_LOG4J2);
         assertInstanceOf(Log4j2Factory.Log4j2Logger.class, Logger.getLogger(getClass()));
     }
 
     @Test
     public void getLogger_whenSlf4j_thenReturnSlf4jLogger() {
-        isolatedLoggingRule.setLoggingType(IsolatedLoggingRule.LOGGING_TYPE_SLF4J);
+        isolatedLoggingRule.setLoggingType(LOGGING_TYPE_SLF4J);
         assertInstanceOf(Slf4jFactory.Slf4jLogger.class, Logger.getLogger(getClass()));
     }
 
     @Test
     public void getLogger_whenJdk_thenReturnStandardLogger() {
-        isolatedLoggingRule.setLoggingType(IsolatedLoggingRule.LOGGING_TYPE_JDK);
+        isolatedLoggingRule.setLoggingType(LOGGING_TYPE_JDK);
         assertInstanceOf(StandardLoggerFactory.StandardLogger.class, Logger.getLogger(getClass()));
     }
 
     @Test
     public void getLogger_whenNone_thenReturnNoLogger() {
-        isolatedLoggingRule.setLoggingType(IsolatedLoggingRule.LOGGING_TYPE_NONE);
+        isolatedLoggingRule.setLoggingType(LOGGING_TYPE_NONE);
         assertInstanceOf(NoLogFactory.NoLogger.class, Logger.getLogger(getClass()));
     }
 
@@ -99,10 +100,10 @@ public class LoggerTest {
 
     @Test
     public void newLoggerFactory_whenTypeConfigured_thenShareLoggerFactoryWithGetLoggerIfTypesMatch() {
-        isolatedLoggingRule.setLoggingType(IsolatedLoggingRule.LOGGING_TYPE_LOG4J2);
+        isolatedLoggingRule.setLoggingType(LOGGING_TYPE_LOG4J2);
 
         final ILogger loggerViaGetLogger = Logger.getLogger(getClass().getName());
-        final LoggerFactory loggerFactory = Logger.newLoggerFactory(IsolatedLoggingRule.LOGGING_TYPE_LOG4J2);
+        final LoggerFactory loggerFactory = Logger.newLoggerFactory(LOGGING_TYPE_LOG4J2);
         final ILogger loggerViaFactory = loggerFactory.getLogger(getClass().getName());
 
         assertInstanceOf(Log4j2Factory.Log4j2Logger.class, loggerViaGetLogger);
@@ -112,10 +113,10 @@ public class LoggerTest {
 
     @Test
     public void newLoggerFactory_whenTypeConfigured_thenDoNotShareLoggerFactoryWithGetLoggerIfTypesDoNotMatch() {
-        isolatedLoggingRule.setLoggingType(IsolatedLoggingRule.LOGGING_TYPE_LOG4J2);
+        isolatedLoggingRule.setLoggingType(LOGGING_TYPE_LOG4J2);
 
         final ILogger loggerViaGetLogger = Logger.getLogger(getClass().getName());
-        final LoggerFactory loggerFactory = Logger.newLoggerFactory(IsolatedLoggingRule.LOGGING_TYPE_LOG4J);
+        final LoggerFactory loggerFactory = Logger.newLoggerFactory(LOGGING_TYPE_LOG4J);
         final ILogger loggerViaFactory = loggerFactory.getLogger(getClass().getName());
 
         assertInstanceOf(Log4j2Factory.Log4j2Logger.class, loggerViaGetLogger);

@@ -41,6 +41,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 
 public class LoggingServiceImpl implements LoggingService {
@@ -155,14 +156,14 @@ public class LoggingServiceImpl implements LoggingService {
     @Nonnull
     @Override
     public ILogger getLogger(@Nonnull String name) {
-        Preconditions.checkNotNull(name, "name must not be null");
+        checkNotNull(name, "name must not be null");
         return getOrPutIfAbsent(mapLoggers, name, loggerConstructor);
     }
 
     @Nonnull
     @Override
     public ILogger getLogger(@Nonnull Class clazz) {
-        Preconditions.checkNotNull(clazz, "class must not be null");
+        checkNotNull(clazz, "class must not be null");
         return getOrPutIfAbsent(mapLoggers, clazz.getName(), loggerConstructor);
     }
 
@@ -192,8 +193,8 @@ public class LoggingServiceImpl implements LoggingService {
         final LogListener logListener;
 
         LogListenerRegistration(@Nonnull Level level, @Nonnull LogListener logListener) {
-            Preconditions.checkNotNull(level, "level must not be null");
-            Preconditions.checkNotNull(logListener, "logListener must not be null");
+            checkNotNull(level, "level must not be null");
+            checkNotNull(logListener, "logListener must not be null");
             this.level = level;
             this.logListener = logListener;
         }
