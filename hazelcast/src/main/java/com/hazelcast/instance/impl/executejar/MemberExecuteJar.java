@@ -44,20 +44,21 @@ public class MemberExecuteJar {
                            @Nullable String mainClassName,
                            @Nonnull List<String> args
     ) throws IOException, InvocationTargetException, IllegalAccessException, ClassNotFoundException {
+        try {
+            String jarPath = executeJobParameters.getJarPath();
+            mainClassName = ExecuteJarHelper.findMainClassNameForJar(jarPath, mainClassName);
 
-        String jarPath = executeJobParameters.getJarPath();
-        mainClassName = ExecuteJarHelper.findMainClassNameForJar(jarPath, mainClassName);
+            URL jarUrl = new File(jarPath).toURI().toURL();
+            try (URLClassLoader classLoader = URLClassLoader.newInstance(
+                    new URL[]{jarUrl},
+                    MemberExecuteJar.class.getClassLoader())) {
 
-        URL jarUrl = new File(jarPath).toURI().toURL();
-        try (URLClassLoader classLoader = URLClassLoader.newInstance(
-                new URL[]{jarUrl},
-                MemberExecuteJar.class.getClassLoader())) {
+                Method mainMethod = ExecuteJarHelper.findMainMethodForJar(classLoader, mainClassName);
 
-            Method mainMethod = ExecuteJarHelper.findMainMethodForJar(classLoader, mainClassName);
+                LOGGER.info("Found mainClassName :" + mainClassName + " and main method");
 
-            LOGGER.info("Found mainClassName :" + mainClassName + " and main method");
-
-            invokeMain(instanceProxy, executeJobParameters, mainMethod, args);
+                invokeMain(instanceProxy, executeJobParameters, mainMethod, args);
+            }
         } finally {
             instanceProxy.removeThreadLocalParameters();
         }
@@ -66,7 +67,6 @@ public class MemberExecuteJar {
     void invokeMain(BootstrappedInstanceProxy instanceProxy, ExecuteJobParameters executeJobParameters,
                     Method mainMethod, List<String> args)
             throws IllegalAccessException, InvocationTargetException {
-
         instanceProxy.setThreadLocalParameters(executeJobParameters);
 
         String[] jobArgs = args.toArray(new String[0]);

@@ -73,14 +73,8 @@ public class ClientExecuteJar {
 
                 LOGGER.info("Found mainClassName :" + mainClassName + " and main method");
 
-                String[] jobArgs = args.toArray(new String[0]);
-
-                instanceProxy.setThreadLocalParameters(executeJobParameters);
-
-                // upcast args to Object, so it's passed as a single array-typed argument
-                mainMethod.invoke(null, (Object) jobArgs);
+                invokeMain(instanceProxy, executeJobParameters, mainMethod, args);
             }
-
             // Wait for the job to start
             awaitJobsStartedByJar(instanceProxy);
 
@@ -99,6 +93,17 @@ public class ClientExecuteJar {
                 System.exit(1);
             }
         }
+    }
+
+    private void invokeMain(BootstrappedInstanceProxy instanceProxy, ExecuteJobParameters executeJobParameters,
+                            Method mainMethod, List<String> args)
+            throws IllegalAccessException, InvocationTargetException {
+        instanceProxy.setThreadLocalParameters(executeJobParameters);
+
+        String[] jobArgs = args.toArray(new String[0]);
+
+        // upcast args to Object, so it's passed as a single array-typed argument
+        mainMethod.invoke(null, (Object) jobArgs);
     }
 
     private void awaitJobsStartedByJar(BootstrappedInstanceProxy instanceProxy) {
