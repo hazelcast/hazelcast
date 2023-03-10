@@ -53,7 +53,7 @@ public class Invocation_ArbitraryArityConstructionTest extends HazelcastTestSupp
     @Before
     public void setUp() throws Exception {
         long callTimeoutMillis = 200;
-        Config config = smallInstanceConfigWithoutJetAndMetrics();
+        Config config = smallInstanceConfig();
         config.setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeoutMillis);
 
         local = factory.newHazelcastInstance(config);
