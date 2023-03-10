@@ -16,7 +16,6 @@
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.mongodb.WriteMode;
@@ -77,9 +76,6 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     public void init(@Nonnull Context context) throws Exception {
         if (connectionString != null) {
             clientSupplier = () -> MongoClients.create(connectionString);
-        } else if (dataLinkName != null) {
-           // todo data link support
-            EmptyStatement.ignore(null);
         }
         evalContext = ExpressionEvalContext.from(context);
     }
@@ -94,6 +90,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
             Processor processor = new WriteMongoP<>(
                     new WriteMongoParams<Document>()
                             .setClientSupplier(clientSupplier)
+                            .setDataLinkRef(dataLinkName)
                             .setDatabaseName(databaseName)
                             .setCollectionName(collectionName)
                             .setDocumentType(Document.class)

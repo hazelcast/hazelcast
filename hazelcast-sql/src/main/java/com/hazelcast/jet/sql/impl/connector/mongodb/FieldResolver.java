@@ -16,6 +16,8 @@
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.mongodb.datalink.MongoDataLink;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.MappingField;
@@ -34,6 +36,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
 
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.resolveTypeByName;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.resolveTypeFromJava;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.CONNECTION_STRING_OPTION;
@@ -142,7 +145,9 @@ class FieldResolver {
 
     Map<String, DocumentField> readFields(String collectionName, Map<String, String> options, boolean stream) {
         Map<String, DocumentField> fields = new HashMap<>();
-        try (MongoClient client = connect(options)) {
+        Tuple2<MongoClient, MongoDataLink> connect = connect(options);
+        try (MongoClient client = connect.f0()) {
+            requireNonNull(client);
             String databaseName = Options.getDatabaseName(nodeEngine, options);
 
             MongoDatabase database = client.getDatabase(databaseName);
@@ -191,6 +196,10 @@ class FieldResolver {
                 fields.put("operationType", new DocumentField(BsonType.STRING, "operationType"));
                 fields.put("resumeToken", new DocumentField(BsonType.STRING, "resumeToken"));
             }
+        } finally {
+            if (connect.f1() != null) {
+                connect.f1().release();
+            }
         }
         return fields;
     }
@@ -207,15 +216,17 @@ class FieldResolver {
         return returned;
     }
 
-    private MongoClient connect(Map<String, String> options) {
+    private Tuple2<MongoClient, MongoDataLink> connect(Map<String, String> options) {
         if (options.containsKey(DATA_LINK_REF_OPTION)) {
-            // todo: external data source support
-            throw new UnsupportedOperationException("not yet supported");
+            MongoDataLink link = nodeEngine.getDataLinkService().getAndRetainDataLink(
+                    options.get(DATA_LINK_REF_OPTION),
+                    MongoDataLink.class);
+            return tuple2(link.getClient(), link);
         } else {
             String connectionString = requireNonNull(options.get(CONNECTION_STRING_OPTION),
                     "Cannot connect to MongoDB, connectionString was not provided");
 
-            return MongoClients.create(connectionString);
+            return tuple2(MongoClients.create(connectionString), null);
         }
     }
 

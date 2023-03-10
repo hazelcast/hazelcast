@@ -17,11 +17,14 @@ package com.hazelcast.jet.mongodb.impl;
 
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.mongodb.datalink.MongoDataLink;
+import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.jet.retry.impl.RetryTracker;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.mongodb.MongoCommandException;
 import com.mongodb.client.MongoClient;
 import org.bson.BsonArray;
@@ -46,15 +49,19 @@ class MongoConnection implements Closeable {
                            .maxAttempts(20)
                            .build();
 
-    private final SupplierEx<? extends MongoClient> clientSupplier;
+    private SupplierEx<? extends MongoClient> clientSupplier;
+    private final DataLinkRef dataLinkRef;
     private final Consumer<MongoClient> afterConnection;
     private final RetryTracker connectionRetryTracker;
     private final ILogger logger = Logger.getLogger(MongoConnection.class);
 
     private MongoClient mongoClient;
+    private MongoDataLink dataLink;
 
-    MongoConnection(SupplierEx<? extends MongoClient> clientSupplier, Consumer<MongoClient> afterConnection) {
+    MongoConnection(SupplierEx<? extends MongoClient> clientSupplier, DataLinkRef dataLinkRef,
+                    Consumer<MongoClient> afterConnection) {
         this.clientSupplier = clientSupplier;
+        this.dataLinkRef = dataLinkRef;
         this.afterConnection = afterConnection;
         this.connectionRetryTracker = new RetryTracker(RETRY_STRATEGY);
     }
@@ -110,6 +117,21 @@ class MongoConnection implements Closeable {
         if (mongoClient != null) {
             mongoClient.close();
             mongoClient = null;
+        }
+        if (dataLink != null) {
+            dataLink.release();
+            dataLink = null;
+        }
+    }
+
+    /**
+     * Assembles client supplier - if data link is used, it will set {@link #clientSupplier} to
+     * correct supplier based on the data link.
+     */
+    public void assembleSupplier(NodeEngineImpl nodeEngine) {
+        if (dataLinkRef != null) {
+            dataLink = nodeEngine.getDataLinkService().getAndRetainDataLink(dataLinkRef.getName(), MongoDataLink.class);
+            clientSupplier = dataLink::getClient;
         }
     }
 }

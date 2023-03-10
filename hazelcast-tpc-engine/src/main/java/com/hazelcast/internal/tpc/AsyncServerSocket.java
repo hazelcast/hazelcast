@@ -33,7 +33,7 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
     }
 
     /**
-     * Returns the AsyncServerSocketMetrics of this AsyncServerSocket.
+     * Returns the {@link AsyncServerSocketMetrics} of this AsyncServerSocket.
      * <p/>
      * This call can always be made no matter the state of the socket.
      *

@@ -23,6 +23,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
+import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.SinkBuilder;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -92,6 +93,29 @@ public final class MongoSinkBuilder<T> {
     ) {
         this.name = checkNotNull(name, "sink name cannot be null");
         params.setClientSupplier(checkNonNullAndSerializable(clientSupplier, "clientSupplier"));
+        params.setDocumentType(checkNotNull(documentClass, "document class cannot be null"));
+
+        if (Document.class.isAssignableFrom(documentClass)) {
+            identifyDocumentBy("_id", doc -> ((Document) doc).get("_id"));
+        }
+        if (BsonDocument.class.isAssignableFrom(documentClass)) {
+            identifyDocumentBy("_id", doc -> ((BsonDocument) doc).get("_id"));
+        }
+
+        transactionOptions(() -> DEFAULT_TRANSACTION_OPTION);
+        commitRetryStrategy(DEFAULT_COMMIT_RETRY_STRATEGY);
+    }
+
+    /**
+     * See {@link MongoSinks#builder}
+     */
+    MongoSinkBuilder(
+            @Nonnull String name,
+            @Nonnull Class<T> documentClass,
+            @Nonnull DataLinkRef dataLinkRef
+            ) {
+        this.name = checkNotNull(name, "sink name cannot be null");
+        params.setDataLinkRef(checkNonNullAndSerializable(dataLinkRef, "dataLinkRef"));
         params.setDocumentType(checkNotNull(documentClass, "document class cannot be null"));
 
         if (Document.class.isAssignableFrom(documentClass)) {

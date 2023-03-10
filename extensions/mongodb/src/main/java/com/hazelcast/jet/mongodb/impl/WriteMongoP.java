@@ -25,6 +25,7 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility.TransactionalResource;
 import com.hazelcast.jet.impl.processor.UnboundedTransactionsProcessorUtility;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.mongodb.WriteMode;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.jet.retry.impl.RetryTracker;
@@ -149,7 +150,7 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
      * Creates a new processor that will always insert to the same database and collection.
      */
     public WriteMongoP(WriteMongoParams<I> params) {
-        this.connection = new MongoConnection(params.clientSupplier, client -> {
+        this.connection = new MongoConnection(params.clientSupplier, params.dataLinkRef, client -> {
         });
         this.documentIdentityFn = params.documentIdentityFn;
         this.documentIdentityFieldName = params.documentIdentityFieldName;
@@ -176,6 +177,7 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
     @Override
     protected void init(@Nonnull Context context) {
         logger = context.logger();
+        connection.assembleSupplier(Util.getNodeEngine(context.hazelcastInstance()));
 
         int processorIndex = context.globalProcessorIndex();
         transactionUtility = new UnboundedTransactionsProcessorUtility<>(
@@ -452,7 +454,6 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
         }
 
         @Override
-        @SuppressWarnings("resource")
         public void begin() {
             if (!txnInitialized) {
                 logFine(logger, "beginning transaction %s", transactionId);

@@ -21,6 +21,9 @@ import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
 
+/**
+ * Contains the metrics for an {@link AsyncSocket}.
+ */
 @SuppressWarnings("checkstyle:ConstantName")
 public class AsyncSocketMetrics {
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
@@ -50,35 +53,73 @@ public class AsyncSocketMetrics {
         return UNSAFE.objectFieldOffset(field);
     }
 
+    /**
+     * Returns bytes read.
+     *
+     * @return bytes read.
+     */
     public long bytesRead() {
         return bytesRead;
     }
 
+    /**
+     * Increases the bytes read.
+     *
+     * @param delta the amount to increase.
+     */
     public void incBytesRead(long delta) {
         UNSAFE.putOrderedLong(this, OFFSET_bytesRead, bytesRead + delta);
     }
 
+    /**
+     * Returns the bytes written.
+     *
+     * @return the bytes written.
+     */
     public long bytesWritten() {
         // In the future we could use an opaque read.
         return bytesWritten;
     }
 
+    /**
+     * Increases the bytes written.
+     *
+     * @param delta the amount to increase.
+     */
     public void incBytesWritten(long delta) {
         UNSAFE.putOrderedLong(this, OFFSET_bytesWritten, bytesWritten + delta);
     }
 
+    /**
+     * Returns the number of write events. So the number of times the {@link AsyncSocket}
+     * was scheduled on the {@link Reactor} for writing purposes.
+     *
+     * @return number of write events.
+     */
     public long writeEvents() {
         return writeEvents;
     }
 
+    /**
+     * Increases the number of write events by 1.
+     */
     public void incWriteEvents() {
         UNSAFE.putOrderedLong(this, OFFSET_writeEvents, writeEvents + 1);
     }
 
+    /**
+     * Returns the number of read events. So the number of times the {@link AsyncSocket}
+     * was scheduled on the {@link Reactor} for reading purposes.
+     *
+     * @return number of read events.
+     */
     public long readEvents() {
         return readEvents;
     }
 
+    /**
+     * Increases the number of read events by 1.
+     */
     public void incReadEvents() {
         UNSAFE.putOrderedLong(this, OFFSET_readEvents, readEvents + 1);
     }

@@ -26,9 +26,9 @@ import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.kafka.KafkaProcessors;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.TimeoutException;
@@ -42,7 +42,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -65,13 +64,14 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
 
     Map<TopicPartition, Integer> currentAssignment = new HashMap<>();
 
-    private final Properties properties;
+    private final FunctionEx<Context, Consumer<K, V>> kafkaConsumerFn;
+
     private final FunctionEx<? super ConsumerRecord<K, V>, ? extends T> projectionFn;
     private final EventTimeMapper<? super T> eventTimeMapper;
     private List<String> topics;
     private int totalParallelism;
 
-    private KafkaConsumer<K, V> consumer;
+    private Consumer<K, V> consumer;
     private long nextMetadataCheck = Long.MIN_VALUE;
 
     /**
@@ -85,12 +85,12 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
     private Traverser<Object> traverser = Traversers.empty();
 
     public StreamKafkaP(
-            @Nonnull Properties properties,
+            @Nonnull FunctionEx<Context, Consumer<K, V>> kafkaConsumerFn,
             @Nonnull List<String> topics,
             @Nonnull FunctionEx<? super ConsumerRecord<K, V>, ? extends T> projectionFn,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
-        this.properties = properties;
+        this.kafkaConsumerFn = kafkaConsumerFn;
         this.topics = topics;
         this.projectionFn = projectionFn;
         eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
@@ -117,7 +117,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
         topics = uniqueTopics;
         processorIndex = context.globalProcessorIndex();
         totalParallelism = context.totalParallelism();
-        consumer = new KafkaConsumer<>(properties);
+        consumer = kafkaConsumerFn.apply(context);
     }
 
     private void assignPartitions() {
@@ -321,12 +321,12 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
 
     @Nonnull
     public static <K, V, T> SupplierEx<Processor> processorSupplier(
-            @Nonnull Properties properties,
+            @Nonnull FunctionEx<Context, Consumer<K, V>> kafkaConsumerSup,
             @Nonnull List<String> topics,
             @Nonnull FunctionEx<? super ConsumerRecord<K, V>, ? extends T> projectionFn,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
-        return () -> new StreamKafkaP<>(properties, topics, projectionFn, eventTimePolicy);
+        return () -> new StreamKafkaP<>(kafkaConsumerSup, topics, projectionFn, eventTimePolicy);
     }
 
     private boolean handledByThisProcessor(int topicIndex, int partition) {

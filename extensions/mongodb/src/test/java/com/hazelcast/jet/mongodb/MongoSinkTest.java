@@ -54,6 +54,7 @@ import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.jet.mongodb.WriteMode.INSERT_ONLY;
 import static com.hazelcast.jet.mongodb.MongoSinks.builder;
 import static com.hazelcast.jet.mongodb.MongoSinks.mongodb;
+import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.pipeline.Sources.mapJournal;
 import static com.hazelcast.jet.pipeline.test.TestSources.items;
@@ -70,7 +71,7 @@ public class MongoSinkTest extends AbstractMongoTest {
     private static final long COUNT = 4;
     private static final long HALF = COUNT / 2;
 
-    @Parameter(0)
+    @Parameter
     public ProcessingGuarantee processingGuarantee;
 
     @Parameters(name = "processing guarantee: {0}")
@@ -104,6 +105,35 @@ public class MongoSinkTest extends AbstractMongoTest {
         toAddSource.merge(alreadyExistingSource).setLocalParallelism(4)
                    .rebalance(doc -> doc.get("key")).setLocalParallelism(4)
                    .writeTo(mongodb(SINK_NAME, connectionString, defaultDatabase(), testName.getMethodName()))
+                   .setLocalParallelism(2);
+
+        JobConfig config = new JobConfig().setProcessingGuarantee(processingGuarantee).setSnapshotIntervalMillis(500);
+        instance().getJet().newJob(pipeline, config).join();
+
+        assertTrueEventually(() -> assertEquals(COUNT, collection.countDocuments()));
+        assertEquals(HALF, collection.countDocuments(eq("type", "existing")));
+        assertEquals(HALF, collection.countDocuments(eq("type", "new")));
+    }
+
+    @Test
+    public void test_withBatchSource_andDataLinkRef() {
+        MongoCollection<Document> collection = collection(defaultDatabase(), testName.getMethodName());
+        List<Document> docsToUpdate = new ArrayList<>();
+        docsToUpdate.add(new Document("key", 1).append("val", 11).append("type", "existing"));
+        docsToUpdate.add(new Document("key", 2).append("val", 11).append("type", "existing"));
+        collection.insertMany(docsToUpdate);
+
+        Pipeline pipeline = Pipeline.create();
+        BatchStage<Document> toAddSource = pipeline.readFrom(items(
+                                                           new Document("key", 3).append("type", "new"),
+                                                           new Document("key", 4).append("type", "new")
+                                                   ));
+
+        BatchStage<Document> alreadyExistingSource = pipeline.readFrom(items(docsToUpdate));
+
+        toAddSource.merge(alreadyExistingSource).setLocalParallelism(4)
+                   .rebalance(doc -> doc.get("key")).setLocalParallelism(4)
+                   .writeTo(mongodb(SINK_NAME, dataLinkRef("mongoDB"), defaultDatabase(), testName.getMethodName()))
                    .setLocalParallelism(2);
 
         JobConfig config = new JobConfig().setProcessingGuarantee(processingGuarantee).setSnapshotIntervalMillis(500);
