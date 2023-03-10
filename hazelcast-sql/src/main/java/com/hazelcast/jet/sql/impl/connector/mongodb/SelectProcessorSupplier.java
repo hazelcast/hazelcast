@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -98,9 +97,6 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
     public void init(@Nonnull Context context) {
         if (connectionString != null) {
             clientSupplier = () -> MongoClients.create(connectionString);
-        } else if (dataLinkName != null) {
-           // todo data link support
-            EmptyStatement.ignore(null);
         }
         evalContext = ExpressionEvalContext.from(context);
     }
@@ -131,6 +127,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
             Processor processor = new ReadMongoP<>(
                     new ReadMongoParams<JetSqlRow>(stream)
                             .setClientSupplier(clientSupplierEx)
+                            .setDataLinkRef(dataLinkName)
                             .setAggregates(aggregates)
                             .setDatabaseName(databaseName)
                             .setCollectionName(collectionName)

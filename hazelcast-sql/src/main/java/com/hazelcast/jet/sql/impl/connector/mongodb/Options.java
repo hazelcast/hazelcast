@@ -15,7 +15,7 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-import com.hazelcast.internal.util.EmptyStatement;
+import com.hazelcast.jet.mongodb.datalink.MongoDataLink;
 import com.hazelcast.jet.mongodb.impl.MongoUtilities;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.schema.MappingField;
@@ -55,8 +55,16 @@ final class Options {
             return name;
         }
         if (options.containsKey(DATA_LINK_REF_OPTION)) {
-            // todo database name from data link
-            EmptyStatement.ignore(null);
+            MongoDataLink link =
+                    nodeEngine.getDataLinkService().getAndRetainDataLink(options.get(DATA_LINK_REF_OPTION), MongoDataLink.class);
+            try {
+                name = link.getDatabaseName();
+                if (name != null) {
+                    return name;
+                }
+            } finally {
+                link.release();
+            }
         }
         throw new IllegalArgumentException(DATABASE_NAME_OPTION + " must be provided in the mapping or data link.");
     }
