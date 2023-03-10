@@ -16,7 +16,19 @@
 
 package com.hazelcast.logging;
 
-public interface LoggerFactory {
+import java.util.EventObject;
+import java.util.logging.LogRecord;
 
-    ILogger getLogger(String name);
+public class LogEvent extends EventObject {
+
+    private final LogRecord logRecord;
+
+    public LogEvent(LogRecord logRecord, Object source) {
+        super(source);
+        this.logRecord = logRecord;
+    }
+
+    public LogRecord getLogRecord() {
+        return logRecord;
+    }
 }

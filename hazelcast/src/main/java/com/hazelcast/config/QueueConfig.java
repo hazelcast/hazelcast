@@ -33,8 +33,8 @@ import java.util.Objects;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
-import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
-import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
+import static com.hazelcast.internal.util.BackupPreconditions.checkAsyncBackupCount;
+import static com.hazelcast.internal.util.BackupPreconditions.checkBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**

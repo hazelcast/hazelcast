@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc.logging;
+package com.hazelcast.logging;
 
-public interface TpcLoggerFactory {
+public interface LoggerFactory {
 
-    TpcLogger getLogger(String name);
+    ILogger getLogger(String name);
 
-    default TpcLogger getLogger(Class clazz) {
+    default ILogger getLogger(Class clazz) {
         return getLogger(clazz.getName());
     }
 }

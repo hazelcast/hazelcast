@@ -26,8 +26,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
-import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
+import static com.hazelcast.internal.util.BackupPreconditions.checkAsyncBackupCount;
+import static com.hazelcast.internal.util.BackupPreconditions.checkBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**

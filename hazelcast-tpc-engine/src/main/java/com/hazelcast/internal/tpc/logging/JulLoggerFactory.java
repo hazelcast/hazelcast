@@ -17,28 +17,32 @@
 package com.hazelcast.internal.tpc.logging;
 
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggerFactory;
+
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public final class JulLoggerFactory implements TpcLoggerFactory {
+public final class JulLoggerFactory implements LoggerFactory {
 
-    private final ConcurrentMap<String, TpcLogger> mapLoggers = new ConcurrentHashMap<>(100);
+    private final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<>(100);
 
     @Override
-    public TpcLogger getLogger(String name) {
-        TpcLogger logger = mapLoggers.get(name);
+    public ILogger getLogger(String name) {
+        ILogger logger = mapLoggers.get(name);
         if (logger != null) {
             return logger;
         }
 
         logger = new JulLogger(Logger.getLogger(name));
-        TpcLogger found = mapLoggers.putIfAbsent(name, logger);
+        ILogger found = mapLoggers.putIfAbsent(name, logger);
         return found == null ? logger : found;
     }
 
-    private static final class JulLogger implements TpcLogger {
+    private static final class JulLogger implements ILogger {
         private final Logger logger;
 
         private JulLogger(Logger logger) {

@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.tpc.logging;
 
+import com.hazelcast.logging.ILogger;
+
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -27,7 +29,7 @@ public final class TpcLoggerLocator {
     }
 
     @SuppressWarnings("java:S112")
-    public static TpcLogger getLogger(Class clazz) {
+    public static ILogger getLogger(Class clazz) {
         Object logger = LOGGER.get();
         if (logger != null) {
             if (logger instanceof TpcLoggerFactory) {

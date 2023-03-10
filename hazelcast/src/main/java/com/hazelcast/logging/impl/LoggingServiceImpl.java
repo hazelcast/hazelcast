@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.logging.AbstractLogger;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LogEvent;
@@ -155,14 +156,14 @@ public class LoggingServiceImpl implements LoggingService {
     @Nonnull
     @Override
     public ILogger getLogger(@Nonnull String name) {
-        checkNotNull(name, "name must not be null");
+        Preconditions.checkNotNull(name, "name must not be null");
         return getOrPutIfAbsent(mapLoggers, name, loggerConstructor);
     }
 
     @Nonnull
     @Override
     public ILogger getLogger(@Nonnull Class clazz) {
-        checkNotNull(clazz, "class must not be null");
+        Preconditions.checkNotNull(clazz, "class must not be null");
         return getOrPutIfAbsent(mapLoggers, clazz.getName(), loggerConstructor);
     }
 
@@ -192,8 +193,8 @@ public class LoggingServiceImpl implements LoggingService {
         final LogListener logListener;
 
         LogListenerRegistration(@Nonnull Level level, @Nonnull LogListener logListener) {
-            checkNotNull(level, "level must not be null");
-            checkNotNull(logListener, "logListener must not be null");
+            Preconditions.checkNotNull(level, "level must not be null");
+            Preconditions.checkNotNull(logListener, "logListener must not be null");
             this.level = level;
             this.logListener = logListener;
         }
@@ -271,11 +272,6 @@ public class LoggingServiceImpl implements LoggingService {
                     handleLogEvent(logEvent);
                 }
             }
-        }
-
-        @Override
-        public void log(LogEvent logEvent) {
-            handleLogEvent(logEvent);
         }
 
         @Override

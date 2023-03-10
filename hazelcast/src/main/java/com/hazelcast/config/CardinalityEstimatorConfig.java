@@ -26,8 +26,8 @@ import com.hazelcast.spi.merge.HyperLogLogMergePolicy;
 import java.io.IOException;
 import java.util.Arrays;
 
-import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
-import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
+import static com.hazelcast.internal.util.BackupPreconditions.checkAsyncBackupCount;
+import static com.hazelcast.internal.util.BackupPreconditions.checkBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
 

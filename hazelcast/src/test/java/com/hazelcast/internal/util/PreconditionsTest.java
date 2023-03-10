@@ -94,11 +94,11 @@ public class PreconditionsTest {
 
     public void checkBackupCount(int newBackupCount, int currentAsyncBackupCount, boolean success) {
         if (success) {
-            int result = Preconditions.checkBackupCount(newBackupCount, currentAsyncBackupCount);
+            int result = BackupPreconditions.checkBackupCount(newBackupCount, currentAsyncBackupCount);
             Assert.assertEquals(result, newBackupCount);
         } else {
             try {
-                Preconditions.checkBackupCount(newBackupCount, currentAsyncBackupCount);
+                BackupPreconditions.checkBackupCount(newBackupCount, currentAsyncBackupCount);
                 fail();
             } catch (IllegalArgumentException expected) {
             }
@@ -124,11 +124,11 @@ public class PreconditionsTest {
 
     public void checkAsyncBackupCount(int currentBackupCount, int newAsyncBackupCount, boolean success) {
         if (success) {
-            int result = Preconditions.checkAsyncBackupCount(currentBackupCount, newAsyncBackupCount);
+            int result = BackupPreconditions.checkAsyncBackupCount(currentBackupCount, newAsyncBackupCount);
             Assert.assertEquals(result, newAsyncBackupCount);
         } else {
             try {
-                Preconditions.checkAsyncBackupCount(currentBackupCount, newAsyncBackupCount);
+                BackupPreconditions.checkAsyncBackupCount(currentBackupCount, newAsyncBackupCount);
                 fail();
             } catch (IllegalArgumentException expected) {
             }

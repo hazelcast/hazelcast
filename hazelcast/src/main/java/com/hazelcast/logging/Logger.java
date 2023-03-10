@@ -65,7 +65,7 @@ public final class Logger {
      * @return the obtained logger.
      */
     public static ILogger getLogger(@Nonnull Class clazz) {
-        checkNotNull(clazz, "class must not be null");
+        Preconditions.checkNotNull(clazz, "class must not be null");
         return getLoggerInternal(clazz.getName());
     }
 
@@ -76,7 +76,7 @@ public final class Logger {
      * @return the obtained logger.
      */
     public static ILogger getLogger(@Nonnull String name) {
-        checkNotNull(name, "name must not be null");
+        Preconditions.checkNotNull(name, "name must not be null");
         return getLoggerInternal(name);
     }
 

@@ -14,29 +14,7 @@
  * limitations under the License.
  */
 
+/**
+ * Contains annotations for Hazelcast SPI.
+ */
 package com.hazelcast.logging;
-
-import com.hazelcast.cluster.Member;
-
-import java.util.EventObject;
-import java.util.logging.LogRecord;
-
-public class LogEvent extends EventObject {
-
-    private final LogRecord logRecord;
-    private final Member member;
-
-    public LogEvent(LogRecord logRecord, Member member) {
-        super(member);
-        this.logRecord = logRecord;
-        this.member = member;
-    }
-
-    public Member getMember() {
-        return member;
-    }
-
-    public LogRecord getLogRecord() {
-        return logRecord;
-    }
-}
