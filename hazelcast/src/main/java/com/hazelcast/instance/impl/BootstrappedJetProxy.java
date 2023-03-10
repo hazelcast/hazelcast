@@ -205,7 +205,7 @@ public class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
         executeJobParametersThreadLocal.remove();
     }
 
-    private void updateJobConfig(@Nonnull JobConfig jobConfig) {
+    private void updateJobConfig(JobConfig jobConfig) {
         ExecuteJobParameters jobParameters = getThreadLocalParameters();
         jobConfig.addJar(jobParameters.getJarPath());
 
