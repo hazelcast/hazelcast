@@ -26,8 +26,8 @@ public final class OS {
     private static final String OS_VERSION = System.getProperty("os.version", "?");
     private static final boolean IS_LINUX = isLinux0(OS_NAME);
     private static final boolean IS_WINDOWS = isWindows0(OS_NAME);
-    private static final boolean IS_UNIX_FAMILY = isUnixFamily(OS_NAME);
-    private static final boolean IS_MAC = isMac(OS_NAME);
+    private static final boolean IS_UNIX_FAMILY = isUnixFamily0(OS_NAME);
+    private static final boolean IS_MAC = isMac0(OS_NAME);
 
     private static final int LINUX_KERNEL_MAJOR_VERSION = linuxMajorVersion0(OS_VERSION, IS_LINUX);
     private static final int LINUX_KERNEL_MINOR_VERSION = linuxMinorVersion0(OS_VERSION, IS_LINUX);
@@ -52,12 +52,12 @@ public final class OS {
         return osName.contains("windows");
     }
 
-    static boolean isUnixFamily(String osName) {
+    static boolean isUnixFamily0(String osName) {
         osName = osName.toLowerCase();
         return (osName.contains("nix") || osName.contains("nux") || osName.contains("aix"));
     }
 
-    static boolean isMac(String osName) {
+    static boolean isMac0(String osName) {
         osName = osName.toLowerCase();
         return (osName.contains("mac") || osName.contains("darwin"));
     }
