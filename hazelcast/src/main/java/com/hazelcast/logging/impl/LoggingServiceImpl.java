@@ -41,7 +41,6 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 
 public class LoggingServiceImpl implements LoggingService {

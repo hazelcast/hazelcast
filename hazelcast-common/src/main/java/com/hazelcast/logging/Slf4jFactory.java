@@ -15,21 +15,22 @@
  */
 
 package com.hazelcast.logging;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 
 public class Slf4jFactory extends LoggerFactorySupport {
 
     @Override
     protected ILogger createLogger(String name) {
-        com.hazelcast.logging.Logger logger = LoggerFactory.getLogger(name);
+        org.slf4j.Logger logger = LoggerFactory.getLogger(name);
         return new Slf4jLogger(logger);
     }
 
     static class Slf4jLogger extends AbstractLogger {
 
-        private final com.hazelcast.logging.Logger logger;
+        private final Logger logger;
 
         Slf4jLogger(Logger logger) {
             this.logger = logger;
