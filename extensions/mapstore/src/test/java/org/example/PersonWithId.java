@@ -21,25 +21,17 @@ import java.util.Objects;
 /**
  * This class must be in other package than com.hazelcast.*
  */
-public class Person {
+public class PersonWithId {
 
-    Integer id;
+    int personId;
     String name;
 
-    public Person() {
+    public PersonWithId() {
     }
 
-    public Person(Integer id, String name) {
-        this.id = id;
+    public PersonWithId(int personId, String name) {
+        this.personId = personId;
         this.name = name;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
     }
 
     public String getName() {
@@ -50,12 +42,12 @@ public class Person {
         this.name = name;
     }
 
-    @Override
-    public String toString() {
-        return "Person{" +
-                "personId=" + id +
-                ", name='" + name + '\'' +
-                '}';
+    public int getPersonId() {
+        return personId;
+    }
+
+    public void setPersonId(int personId) {
+        this.personId = personId;
     }
 
     @Override
@@ -63,15 +55,23 @@ public class Person {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Person)) {
+        if (!(o instanceof PersonWithId)) {
             return false;
         }
-        Person person = (Person) o;
-        return Objects.equals(id, person.id) && Objects.equals(name, person.name);
+        PersonWithId that = (PersonWithId) o;
+        return personId == that.personId && Objects.equals(name, that.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name);
+        return Objects.hash(personId, name);
+    }
+
+    @Override
+    public String toString() {
+        return "PersonWithObjectId{" +
+                ", personId=" + personId +
+                ", name='" + name + '\'' +
+                '}';
     }
 }

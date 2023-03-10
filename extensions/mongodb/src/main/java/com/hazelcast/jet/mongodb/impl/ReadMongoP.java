@@ -22,8 +22,10 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.mongodb.impl.CursorTraverser.EmptyItem;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.mongodb.MongoException;
 import com.mongodb.MongoServerException;
 import com.mongodb.MongoSocketException;
@@ -103,7 +105,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
             this.reader = new BatchMongoReader(params.databaseName, params.collectionName, params.mapItemFn,
                     params.aggregates);
         }
-        this.connection = new MongoConnection(params.clientSupplier, client -> reader.connect(client,
+        this.connection = new MongoConnection(params.clientSupplier, params.dataLinkRef, client -> reader.connect(client,
                 snapshotsEnabled));
     }
 
@@ -113,6 +115,9 @@ public class ReadMongoP<I> extends AbstractProcessor {
         totalParallelism = context.totalParallelism();
         processorIndex = context.globalProcessorIndex();
         this.snapshotsEnabled = context.snapshottingEnabled();
+
+        NodeEngineImpl nodeEngine = Util.getNodeEngine(context.hazelcastInstance());
+        connection.assembleSupplier(nodeEngine);
 
         connection.reconnectIfNecessary();
     }

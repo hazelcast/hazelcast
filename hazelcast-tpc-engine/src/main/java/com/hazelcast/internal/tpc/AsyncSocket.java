@@ -40,7 +40,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     }
 
     /**
-     * Return the metrics of this AsyncSocket.
+     * Return the {@link AsyncSocketMetrics} of this AsyncSocket.
      * <p/>
      * This call can always be made no matter the state of the socket.
      *
