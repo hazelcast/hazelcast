@@ -240,9 +240,11 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     private void checkPermissions(ClientEndpoint endpoint) {
         SecurityContext securityContext = clientEngine.getSecurityContext();
         if (securityContext != null) {
-            Permission permission = getRequiredPermission();
-            if (permission != null) {
-                securityContext.checkPermission(endpoint.getSubject(), permission);
+            Permission[] permissions = getRequiredPermissions();
+            if (permissions != null) {
+                for (Permission permission : permissions) {
+                    securityContext.checkPermission(endpoint.getSubject(), permission);
+                }
             }
         }
     }

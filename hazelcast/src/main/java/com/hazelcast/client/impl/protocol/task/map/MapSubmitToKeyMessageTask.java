@@ -63,8 +63,8 @@ public class MapSubmitToKeyMessageTask
     }
 
     @Override
-    public Permission getRequiredPermission() {
-        return new MapPermission(parameters.name, ActionConstants.ACTION_PUT, ActionConstants.ACTION_REMOVE);
+    public Permission[] getRequiredPermissions() {
+        return MapPermission.create(parameters.name, ActionConstants.ACTION_PUT, ActionConstants.ACTION_REMOVE);
     }
 
     @Override

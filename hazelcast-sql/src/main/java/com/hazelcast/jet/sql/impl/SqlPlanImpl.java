@@ -261,7 +261,8 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public void checkPermissions(SqlSecurityContext context) {
             if (isReplace()) {
-                context.checkPermission(new SqlPermission(name, ACTION_CREATE_LINK, ACTION_DROP_LINK));
+                context.checkPermission(new SqlPermission(name, ACTION_CREATE_LINK));
+                context.checkPermission(new SqlPermission(name, ACTION_DROP_LINK));
             } else {
                 context.checkPermission(new SqlPermission(name, ACTION_CREATE_LINK));
             }
@@ -308,7 +309,8 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new SqlPermission(name, ACTION_VIEW_LINK, ACTION_DROP_LINK));
+            context.checkPermission(new SqlPermission(name, ACTION_VIEW_LINK));
+            context.checkPermission(new SqlPermission(name, ACTION_DROP_LINK));
         }
 
         @Override
@@ -1189,7 +1191,8 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
+            context.checkPermission(new MapPermission(mapName, ACTION_CREATE));
+            context.checkPermission(new MapPermission(mapName, ACTION_READ));
             permissions.forEach(context::checkPermission);
         }
 
@@ -1263,7 +1266,8 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_PUT));
+            context.checkPermission(new MapPermission(mapName, ACTION_CREATE));
+            context.checkPermission(new MapPermission(mapName, ACTION_PUT));
             permissions.forEach(context::checkPermission);
         }
 
@@ -1329,7 +1333,9 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_PUT, ACTION_REMOVE));
+            context.checkPermission(new MapPermission(mapName, ACTION_CREATE));
+            context.checkPermission(new MapPermission(mapName, ACTION_PUT));
+            context.checkPermission(new MapPermission(mapName, ACTION_REMOVE));
             permissions.forEach(context::checkPermission);
         }
 
@@ -1411,7 +1417,10 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public void checkPermissions(SqlSecurityContext context) {
             // We are checking ACTION_CREATE and ACTION_READ permissions to align with DmlPlan.
-            context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_READ, ACTION_PUT, ACTION_REMOVE));
+            context.checkPermission(new MapPermission(mapName, ACTION_CREATE));
+            context.checkPermission(new MapPermission(mapName, ACTION_READ));
+            context.checkPermission(new MapPermission(mapName, ACTION_PUT));
+            context.checkPermission(new MapPermission(mapName, ACTION_REMOVE));
             permissions.forEach(context::checkPermission);
         }
 
@@ -1486,7 +1495,10 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public void checkPermissions(SqlSecurityContext context) {
             // We are checking ACTION_CREATE and ACTION_READ permissions to align with DmlPlan.
-            context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_READ, ACTION_PUT, ACTION_REMOVE));
+            context.checkPermission(new MapPermission(mapName, ACTION_CREATE));
+            context.checkPermission(new MapPermission(mapName, ACTION_READ));
+            context.checkPermission(new MapPermission(mapName, ACTION_PUT));
+            context.checkPermission(new MapPermission(mapName, ACTION_REMOVE));
             permissions.forEach(context::checkPermission);
         }
 

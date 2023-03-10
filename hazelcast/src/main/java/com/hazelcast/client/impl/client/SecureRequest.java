@@ -20,7 +20,18 @@ import java.security.Permission;
 
 public interface SecureRequest {
 
-    Permission getRequiredPermission();
+    Permission[] EMPTY_PERMISSIONS = new Permission[0];
+
+    default Permission getRequiredPermission() {
+        throw new IllegalStateException(
+                "At least one of the getRequiredPermission() and getRequiredPermissions() methods has to be implemented in "
+                        + getClass().getName());
+    }
+
+    default Permission[] getRequiredPermissions() {
+        Permission permission = getRequiredPermission();
+        return permission == null ? EMPTY_PERMISSIONS : new Permission[] { permission };
+    }
 
     /**
      * Used for {@link com.hazelcast.security.SecurityInterceptor}

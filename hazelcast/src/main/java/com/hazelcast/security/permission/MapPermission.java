@@ -16,6 +16,9 @@
 
 package com.hazelcast.security.permission;
 
+import java.security.Permission;
+import java.util.Arrays;
+
 public class MapPermission extends InstancePermission {
 
     private static final int PUT = 4;
@@ -60,5 +63,9 @@ public class MapPermission extends InstancePermission {
             }
         }
         return mask;
+    }
+
+    public static Permission[] create(String name, String... actions) {
+        return Arrays.stream(actions).map(a -> new MapPermission(name, a)).toArray(MapPermission[]::new);
     }
 }
