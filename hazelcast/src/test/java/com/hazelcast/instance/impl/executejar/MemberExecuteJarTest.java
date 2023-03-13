@@ -21,25 +21,26 @@ import com.hazelcast.instance.impl.BootstrappedInstanceProxy;
 import com.hazelcast.instance.impl.BootstrappedJetProxy;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class MemberExecuteJarTest {
 
     @Test
     public void testInvokeMain() throws InvocationTargetException, IllegalAccessException {
-        HazelcastInstance hazelcastInstance = Mockito.mock(HazelcastInstance.class);
-        AbstractJetInstance abstractJetInstance = Mockito.mock(AbstractJetInstance.class);
-        Mockito.when(hazelcastInstance.getJet()).thenReturn(abstractJetInstance);
-        Mockito.when(abstractJetInstance.getHazelcastInstance()).thenReturn(hazelcastInstance);
+        HazelcastInstance hazelcastInstance = mock(HazelcastInstance.class);
+        AbstractJetInstance abstractJetInstance = mock(AbstractJetInstance.class);
+        when(hazelcastInstance.getJet()).thenReturn(abstractJetInstance);
+        when(abstractJetInstance.getHazelcastInstance()).thenReturn(hazelcastInstance);
 
         // Mock main method
-        Method method = Mockito.mock(Method.class);
+        Method method = mock(Method.class);
 
         BootstrappedInstanceProxy instanceProxy = BootstrappedInstanceProxy.createWithJetProxy(hazelcastInstance);
 
