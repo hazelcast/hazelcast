@@ -110,4 +110,8 @@ public final class ParameterExpression<T> implements Expression<T>, IdentifiedDa
     public boolean isCooperative() {
         return true;
     }
+
+    public int getIndex() {
+        return index;
+    }
 }

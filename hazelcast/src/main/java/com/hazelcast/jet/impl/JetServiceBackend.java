@@ -41,14 +41,15 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;
-import com.hazelcast.jet.impl.jobupload.JobMetaDataParameterObject;
-import com.hazelcast.jet.impl.jobupload.JobMultiPartParameterObject;
-import com.hazelcast.jet.impl.jobupload.JobUploadStatus;
-import com.hazelcast.jet.impl.jobupload.JobUploadStore;
 import com.hazelcast.jet.impl.metrics.JobMetricsPublisher;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.jet.impl.serialization.DelegatingSerializationService;
+import com.hazelcast.jet.impl.submitjob.memberside.JobMetaDataParameterObject;
+import com.hazelcast.jet.impl.submitjob.memberside.JobMultiPartParameterObject;
+import com.hazelcast.jet.impl.submitjob.memberside.JobUploadStatus;
+import com.hazelcast.jet.impl.submitjob.memberside.JobUploadStore;
+import com.hazelcast.jet.impl.submitjob.memberside.validator.JobMetaDataParameterObjectValidator;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -174,17 +175,14 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         config.addMapConfig(internalMapConfig)
                 .addMapConfig(resultsMapConfig)
                 .addMapConfig(metricsMapConfig)
-                .addMapConfig(initializeSqlCatalog(config.getMapConfig(SQL_CATALOG_MAP_NAME)));
+                .addMapConfig(createSqlCatalogConfig());
     }
 
-    static MapConfig initializeSqlCatalog(MapConfig config) {
+    // visible for tests
+    static MapConfig createSqlCatalogConfig() {
         // TODO HZ-1743 when implemented properly align this with the chosen
         //  approach that HZ-1743 follows
-        // disabling tiered store configuration for the __sql.catalog map to
-        // prevent unnecessarily increasing tstore's memory demand
-        config.getTieredStoreConfig().setEnabled(false);
-        return config
-                .setName(SQL_CATALOG_MAP_NAME)
+        return new MapConfig(SQL_CATALOG_MAP_NAME)
                 .setBackupCount(MapConfig.MAX_BACKUP_COUNT)
                 .setAsyncBackupCount(MapConfig.MIN_BACKUP_COUNT)
                 .setTimeToLiveSeconds(DISABLED_TTL_SECONDS)
@@ -400,16 +398,19 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     }
 
     /**
-     * Store the metadata about the job jar that is uploaded from client side
-     *
-     * @param jobMetaDataParameterObject contains all the metadata about the upload operation
+     * Execute the given jar
+     */
+    public void jarOnMember(JobMetaDataParameterObject jobMetaDataParameterObject) {
+        JobMetaDataParameterObjectValidator.validateJarOnMember(jobMetaDataParameterObject);
+        executeJar(jobMetaDataParameterObject);
+    }
+
+    /**
+     * Store the metadata about the jar that is uploaded from client side
      */
     public void storeJobMetaData(JobMetaDataParameterObject jobMetaDataParameterObject) {
         checkResourceUploadEnabled();
         try {
-            // The jar should be deleted
-            jobMetaDataParameterObject.setDeleteJarAfterExecution(true);
-
             // Delegate processing to store
             jobUploadStore.processJobMetaData(jobMetaDataParameterObject);
         } catch (Exception exception) {
@@ -421,16 +422,16 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     }
 
     /**
-     * Store a part of job jar that is uploaded
-     *
-     * @param jobMultiPartParameterObject contains all the metadata about the upload operation
-     * @return the parameter object if upload is complete, null if upload is incomplete and more parts are expected,
+     * Store a part of jar that is uploaded
      */
-    public JobMetaDataParameterObject storeJobMultiPart(JobMultiPartParameterObject jobMultiPartParameterObject) {
-        JobMetaDataParameterObject result = null;
+    public void storeJobMultiPart(JobMultiPartParameterObject jobMultiPartParameterObject) {
         try {
-            // Delegate processing to store
-            result = jobUploadStore.processJobMultipart(jobMultiPartParameterObject);
+            JobMetaDataParameterObject partsComplete = jobUploadStore.processJobMultipart(jobMultiPartParameterObject);
+            // If parts are complete
+            if (partsComplete != null) {
+                // Execute the jar
+                executeJar(partsComplete);
+            }
         } catch (Exception exception) {
             // Upon exception, remove from the store
             JobUploadStatus jobUploadStatus = jobUploadStore.removeBadSession(jobMultiPartParameterObject.getSessionId());
@@ -447,7 +448,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
                 wrapWithJetException(exception);
             }
         }
-        return result;
     }
 
     private void throwJetExceptionFromJobMetaData(JobMetaDataParameterObject jobMetaDataParameterObject, Exception exception) {
@@ -460,12 +460,16 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
 
     }
 
-    // If exception is not JetException e.g. IOException, FileSystemException etc., wrap it with JetException
+    /**
+     * If exception is not JetException e.g. IOException, FileSystemException etc., wrap it with JetException
+     */
     static void wrapWithJetException(Exception exception) {
         // Exception is not JetException
         if (!(exception instanceof JetException)) {
+            // Get the root cause and wrap it with JetException
             ExceptionUtil.rethrow(exception);
         } else {
+            // Just throw the JetException as is
             sneakyThrow(exception);
         }
     }
@@ -476,9 +480,10 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         }
     }
 
-    // Run the given jar as Jet job. Triggered by both client and member side job uploads
+    /**
+     * Run the given jar as Jet job. Triggered by both client and member side
+     */
     public void executeJar(JobMetaDataParameterObject jobMetaDataParameterObject) {
-
         if (logger.isInfoEnabled()) {
             String message = String.format("Try executing jar file %s for session %s", jobMetaDataParameterObject.getJarPath(),
                     jobMetaDataParameterObject.getSessionId());
@@ -501,8 +506,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
             // Rethrow the exception back to client to notify  that job did not run
             throwJetExceptionFromJobMetaData(jobMetaDataParameterObject, exception);
         } finally {
-            // We are done with the jar.
-            jobMetaDataParameterObject.afterExecution();
+            JobUploadStatus.cleanup(jobMetaDataParameterObject);
         }
     }
 

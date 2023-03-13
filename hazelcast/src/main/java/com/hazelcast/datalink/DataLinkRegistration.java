@@ -36,4 +36,5 @@ public interface DataLinkRegistration {
      * @return class name of registered data link.
      */
     Class<? extends DataLink> clazz();
+
 }

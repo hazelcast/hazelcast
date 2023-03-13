@@ -53,6 +53,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.experimental.categories.Category;
 
+import javax.annotation.Nonnull;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -98,6 +99,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
+@SuppressWarnings("resource")
 @Category({QuickTest.class, ParallelJVMTest.class})
 public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
@@ -212,6 +214,43 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      * @param expectedRows Expected rows
      */
     public static void assertRowsEventuallyInAnyOrder(String sql, List<Object> arguments, Collection<Row> expectedRows) {
+        assertRowsEventuallyInAnyOrder(sql, arguments, expectedRows, 50);
+    }
+
+    /**
+     * Assert the contents of a given table via Hazelcast SQL engine
+     */
+    public static void assertRowsAnyOrder(String sql, Row... rows) {
+        assertRowsAnyOrder(sql, Arrays.asList(rows));
+    }
+
+    /**
+     * Assert the contents of a given table via Hazelcast SQL engine
+     */
+    public static void assertRowsAnyOrder(String sql, List<Object> arguments, Row... rows) {
+        assertRowsAnyOrder(sql, arguments, Arrays.asList(rows));
+    }
+
+    /**
+     * Execute a query and wait for the results to contain all the {@code
+     * expectedRows}. Suitable for streaming queries that don't terminate, but
+     * return a deterministic set of rows. Rows can arrive in any order.
+     * <p>
+     * After all expected rows are received, the method further waits a little
+     * more if any extra rows are received, and fails, if they are.
+     *
+     * @param sql          The query
+     * @param arguments    The query arguments
+     * @param expectedRows Expected rows
+     * @param timeoutForNextMs The number of ms to wait for more rows after all the
+     *                         expected rows were received
+     */
+    public static void assertRowsEventuallyInAnyOrder(
+            String sql,
+            List<Object> arguments,
+            Collection<Row> expectedRows,
+            long timeoutForNextMs
+    ) {
         SqlService sqlService = instance().getSql();
         CompletableFuture<Void> future = new CompletableFuture<>();
         Deque<Row> rows = new ArrayDeque<>();
@@ -224,8 +263,8 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
                 ResultIterator<SqlRow> iterator = (ResultIterator<SqlRow>) result.iterator();
                 for (
                         int i = 0;
-                        i < expectedRows.size() && iterator.hasNext()
-                                || iterator.hasNext(50, TimeUnit.MILLISECONDS) == YES;
+                        i < expectedRows.size() && (iterator.hasNext()
+                                || iterator.hasNext(timeoutForNextMs, TimeUnit.MILLISECONDS) == YES);
                         i++
                 ) {
                     rows.add(new Row(iterator.next()));
@@ -346,10 +385,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         SqlStatement statement = new SqlStatement(sql);
 
         SqlService sqlService = instance.getSql();
-        List<Row> actualRows = new ArrayList<>();
-        try (SqlResult result = sqlService.execute(statement)) {
-            result.iterator().forEachRemaining(row -> actualRows.add(new Row(row)));
-        }
+        List<Row> actualRows = allRows(statement, sqlService);
         assertThat(actualRows).doesNotContainAnyElementsOf(expectedRows);
     }
 
@@ -384,11 +420,25 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         arguments.forEach(statement::addParameter);
 
         SqlService sqlService = instance.getSql();
+        List<Row> actualRows = allRows(statement, sqlService);
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
+    }
+
+    @Nonnull
+    protected static List<Row> allRows(SqlStatement statement, SqlService sqlService) {
         List<Row> actualRows = new ArrayList<>();
         try (SqlResult result = sqlService.execute(statement)) {
             result.iterator().forEachRemaining(row -> actualRows.add(new Row(row)));
         }
-        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
+        return actualRows;
+    }
+    @Nonnull
+    protected static List<Row> allRows(String statement, SqlService sqlService) {
+        List<Row> actualRows = new ArrayList<>();
+        try (SqlResult result = sqlService.execute(statement)) {
+            result.iterator().forEachRemaining(row -> actualRows.add(new Row(row)));
+        }
+        return actualRows;
     }
 
     /**

@@ -82,7 +82,7 @@ Use the ⚠️ or ❓icon to indicate an outstanding issue or question, and use 
 Example usage of the source:
 ```java
 BatchSource<Document> batchSource =
-        MongoDBSources.batch(
+        MongoSources.batch(
                 "batch-source",
                 "mongodb://127.0.0.1:27017",
                 "myDatabase",
@@ -108,7 +108,7 @@ Pipeline p = Pipeline.create();
 p.readFrom(Sources.list(list))
  .map(i -> new Document("key", i))
  .writeTo(
-     MongoDBSinks.mongodb(
+     MongoSinks.mongodb(
         "sink", 
         "mongodb://localhost:27017",
         "myDatabase",

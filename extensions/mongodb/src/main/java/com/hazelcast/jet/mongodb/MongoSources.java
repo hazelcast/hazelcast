@@ -20,19 +20,19 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.mongodb.MongoSourceBuilder.Batch;
 import com.hazelcast.jet.mongodb.MongoSourceBuilder.Stream;
 import com.hazelcast.jet.pipeline.BatchSource;
+import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
-import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.bsonTimestampFromTimeMillis;
 
 /**
  * Contains factory methods for MongoDB sources.
@@ -52,7 +52,7 @@ public final class MongoSources {
      * Example usage:
      * <pre>{@code
      * BatchSource<Document> batchSource =
-     *         MongoDBSources.batch("batch-source", () -> MongoClients.create("mongodb://127.0.0.1:27017"))
+     *         MongoSources.batch("batch-source", () -> MongoClients.create("mongodb://127.0.0.1:27017"))
      *                 .into("myDatabase", "myCollection")
      *                 .filter(new Document("age", new Document("$gt", 10)),
      *                 .projection(new Document("age", 1))
@@ -75,6 +75,37 @@ public final class MongoSources {
     }
 
     /**
+     * Creates as builder for new batch mongo source. Equivalent to calling {@link MongoSourceBuilder#batch}.
+     * <p>
+     * Example usage:
+     * <pre>{@code
+     * BatchSource<Document> batchSource =
+     *         MongoSources.batch("batch-source", dataLinkRef("mongo"))
+     *                 .into("myDatabase", "myCollection")
+     *                 .filter(new Document("age", new Document("$gt", 10)),
+     *                 .projection(new Document("age", 1))
+     *         );
+     * Pipeline p = Pipeline.create();
+     * BatchStage<Document> srcStage = p.readFrom(batchSource);
+     * }</pre>
+     *
+     * Connector will use provided data link reference to obtain an instance of {@link MongoClient}. Depending
+     * on the configuration this client may be shared between processors or not.
+     *
+     * @since 5.3
+     * @param name descriptive name for the source (diagnostic purposes) client.
+     * @param dataLinkRef a reference to mongo data link
+     * @return Batch Mongo source builder
+     */
+    @Beta
+    @Nonnull
+    public static MongoSourceBuilder.Batch<Document> batch(
+            @Nonnull String name,
+            @Nonnull DataLinkRef dataLinkRef) {
+        return MongoSourceBuilder.batch(name, dataLinkRef);
+    }
+
+    /**
      * Returns a MongoDB batch source which queries the collection using given
      * {@code filter} and applies the given {@code projection} on the documents.
      * <p>
@@ -87,7 +118,7 @@ public final class MongoSources {
      *
      * <pre>{@code
      * BatchSource<Document> batchSource =
-     *         MongoDBSources.batch(
+     *         MongoSources.batch(
      *                 "batch-source",
      *                 "mongodb://127.0.0.1:27017",
      *                 "myDatabase",
@@ -133,12 +164,72 @@ public final class MongoSources {
     }
 
     /**
+     * Returns a MongoDB batch source which queries the collection using given
+     * {@code filter} and applies the given {@code projection} on the documents.
+     * <p>
+     * See {@link MongoSourceBuilder} for creating custom MongoDB sources.
+     * <p>
+     * Here's an example which queries documents in a collection having the
+     * field {@code age} with a value greater than {@code 10} and applies a
+     * projection so that only the {@code age} field is returned in the
+     * emitted document.
+     *
+     * <pre>{@code
+     * BatchSource<Document> batchSource =
+     *         MongoSources.batch(
+     *                 "batch-source",
+     *                 dataLinkRef("mongoDb"),
+     *                 "myDatabase",
+     *                 "myCollection",
+     *                 new Document("age", new Document("$gt", 10)),
+     *                 new Document("age", 1)
+     *         );
+     * Pipeline p = Pipeline.create();
+     * BatchStage<Document> srcStage = p.readFrom(batchSource);
+     * }</pre>
+     *
+     * Connector will use provided data link reference to obtain an instance of {@link MongoClient}. Depending
+     * on the configuration this client may be shared between processors or not.
+     *
+     * @since 5.3
+     *
+     * @param name             a descriptive name for the source (diagnostic purposes)
+     * @param dataLinkRef      a reference to some mongo data link
+     * @param database         the name of the database
+     * @param collection       the name of the collection
+     * @param filter           filter object as a {@link Document}
+     * @param projection       projection object as a {@link Document}
+     */
+    @Beta
+    @Nonnull
+    public static BatchSource<Document> batch(
+            @Nonnull String name,
+            @Nonnull DataLinkRef dataLinkRef,
+            @Nonnull String database,
+            @Nonnull String collection,
+            @Nullable Bson filter,
+            @Nullable Bson projection
+    ) {
+        Batch<Document> builder = MongoSourceBuilder
+                .batch(name, dataLinkRef)
+                .database(database)
+                .collection(collection);
+        if (projection != null) {
+            builder.project(projection);
+        }
+        if (filter != null) {
+            builder.filter(filter);
+        }
+        return builder.build();
+    }
+
+    /**
      * Creates as builder for new stream mongo source. Equivalent to calling {@link MongoSourceBuilder#stream}.
      *
      * Example usage:
      * <pre>{@code
      * StreamSource<Document> streamSource =
-     *         MongoDBSources.stream("batch-source", () -> MongoClients.create("mongodb://127.0.0.1:27017"))
+     *         MongoSources.stream("batch-source", () -> MongoClients.create("mongodb://127.0.0.1:27017"))
      *                 .into("myDatabase", "myCollection")
      *                 .filter(new Document("fullDocument.age", new Document("$gt", 10)),
      *                 .projection(new Document("fullDocument.age", 1))
@@ -181,7 +272,7 @@ public final class MongoSources {
      *
      * <pre>{@code
      * StreamSource<? extends Document> streamSource =
-     *         MongoDBSources.stream(
+     *         MongoSources.stream(
      *                 "stream-source",
      *                 "mongodb://127.0.0.1:27017",
      *                 "myDatabase",
@@ -226,7 +317,7 @@ public final class MongoSources {
         if (filter != null) {
             builder.filter(filter);
         }
-        builder.startAtOperationTime(new BsonTimestamp((int) MILLISECONDS.toSeconds(System.currentTimeMillis()), 0));
+        builder.startAtOperationTime(bsonTimestampFromTimeMillis(System.currentTimeMillis()));
         return builder.build();
     }
 }

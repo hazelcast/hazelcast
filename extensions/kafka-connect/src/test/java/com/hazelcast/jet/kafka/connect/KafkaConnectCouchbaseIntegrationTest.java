@@ -75,11 +75,10 @@ public class KafkaConnectCouchbaseIntegrationTest extends JetTestSupport {
             + "/tests/couchbase-kafka-connect-couchbase-4.1.11.zip";
 
     @Test
-    public void testReadFromCouchbaseConnector() throws Exception {
+    public void testReading() throws Exception {
         Properties connectorProperties = new Properties();
         connectorProperties.setProperty("name", "couchbase");
         connectorProperties.setProperty("connector.class", "com.couchbase.connect.kafka.CouchbaseSourceConnector");
-        connectorProperties.setProperty("tasks.max", "1");
         connectorProperties.setProperty("couchbase.bucket", BUCKET_NAME);
         connectorProperties.setProperty("couchbase.seed.nodes", container.getConnectionString());
         connectorProperties.setProperty("couchbase.password", container.getPassword());

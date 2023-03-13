@@ -71,5 +71,8 @@ public interface Expression<T> extends DataSerializable, Serializable {
      */
     QueryDataType getType();
 
+    /**
+     * @return boolean flag if expression is allowed to be used in cooperative processor.
+     */
     boolean isCooperative();
 }

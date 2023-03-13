@@ -47,6 +47,11 @@ public final class JetConfigDataSerializerHook implements DataSerializerHook {
      */
     public static final int RESOURCE_CONFIG = 2;
 
+    /**
+     * Serialization ID of the {@link DeltaJobConfig} class.
+     */
+    public static final int DELTA_JOB_CONFIG = 3;
+
     static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_CONFIG_DS_FACTORY, JET_CONFIG_DS_FACTORY_ID);
 
     @Override
@@ -69,6 +74,8 @@ public final class JetConfigDataSerializerHook implements DataSerializerHook {
                     return new EdgeConfig();
                 case RESOURCE_CONFIG:
                     return new ResourceConfig();
+                case DELTA_JOB_CONFIG:
+                    return new DeltaJobConfig();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }
