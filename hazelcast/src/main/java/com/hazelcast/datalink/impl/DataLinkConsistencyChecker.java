@@ -31,12 +31,26 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class DataLinkConsistencyChecker {
+    private final HazelcastInstance hazelcastInstance;
     private final DataLinkServiceImpl dataLinkService;
-    private final IMap<Object, Object> sqlCatalog;
+    // sqlCatalog supposed to be initialized lazily
+    private IMap<Object, Object> sqlCatalog;
+
+    private boolean initialized = false;
 
     public DataLinkConsistencyChecker(HazelcastInstance instance, NodeEngine nodeEngine) {
+        this.hazelcastInstance = instance;
         this.dataLinkService = (DataLinkServiceImpl) nodeEngine.getDataLinkService();
-        this.sqlCatalog = instance.getMap(JetServiceBackend.SQL_CATALOG_MAP_NAME);
+    }
+
+    /**
+     * Lazily initialize sqlCatalog.
+     * The only reason of this method existing is
+     * to prevent eager creation of SQL catalog IMap.
+     */
+    public void init() {
+        sqlCatalog = hazelcastInstance.getMap(JetServiceBackend.SQL_CATALOG_MAP_NAME);
+        initialized = true;
     }
 
     /**
@@ -44,6 +58,10 @@ public class DataLinkConsistencyChecker {
      * and adds all missed data links to __sql.catalog
      */
     public void check() {
+        if (!initialized) {
+            return;
+        }
+
         List<Map.Entry<String, DataLinkSourcePair>> sqlEntries = dataLinkService.getDataLinks()
                 .entrySet()
                 .stream()
@@ -69,6 +87,10 @@ public class DataLinkConsistencyChecker {
         // Data link is not present in service, but still present in sql.catalog
         sqlCatalog.removeAll(e -> e.getValue() instanceof DataLink
                 && !dataLinkService.existsDataLink(((DataLink) e.getValue()).getName()));
+    }
+
+    public boolean isInitialized() {
+        return initialized;
     }
 
     // package-private for testing.

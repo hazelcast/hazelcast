@@ -62,6 +62,7 @@ public class DataLinkConsistencyCheckerTest extends SimpleTestInClusterSupport {
         linkService = (DataLinkServiceImpl) getNodeEngineImpl(instance()).getDataLinkService();
         sqlCatalog = instance().getMap(JetServiceBackend.SQL_CATALOG_MAP_NAME);
         dataLinkConsistencyChecker = new DataLinkConsistencyChecker(instance(), Util.getNodeEngine(instance()));
+        dataLinkConsistencyChecker.init();
     }
 
     @After

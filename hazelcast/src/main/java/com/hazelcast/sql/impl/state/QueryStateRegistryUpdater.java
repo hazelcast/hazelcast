@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.datalink.impl.DataLinkConsistencyChecker;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.sql.impl.NodeServiceProvider;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
@@ -150,8 +151,15 @@ public class QueryStateRegistryUpdater {
         }
 
         private void checkDataLinksConsistency() {
-            if (dataLinkConsistencyChecker != null) {
+            if (dataLinkConsistencyChecker.isInitialized()) {
                 dataLinkConsistencyChecker.check();
+            } else {
+                if (nodeServiceProvider.getMap(JetServiceBackend.SQL_CATALOG_MAP_NAME) == null) {
+                    return;
+                }
+                if (!dataLinkConsistencyChecker.isInitialized()) {
+                    dataLinkConsistencyChecker.init();
+                }
             }
         }
 
