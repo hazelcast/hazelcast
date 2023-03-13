@@ -71,14 +71,11 @@ public class DataLinkConsistencyCheckerTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_missingDataLinkWasAddedToSqlCatalog() {
-        linkService.createSqlDataLink(name, type, Collections.emptyMap(), false);
-        assertFalse(sqlCatalog.containsKey(QueryUtils.wrapDataLinkKey(name)));
+    public void test_missingDataLinkWasAddedToDataLinkService() {
+        assertFalse(linkService.existsDataLink(name));
+        sqlCatalog.put(QueryUtils.wrapDataLinkKey(name), new DataLink(name, type, Collections.emptyMap(), false));
         dataLinkConsistencyChecker.check();
-        assertTrue(sqlCatalog.containsKey(QueryUtils.wrapDataLinkKey(name)));
-
-        Object obj = sqlCatalog.get(QueryUtils.wrapDataLinkKey(name));
-        assertInstanceOf(DataLink.class, obj);
+        assertTrue(linkService.existsDataLink(name));
 
         DataLinkConfig catalogDataLinkConfig = linkService.toConfig(name, type, Collections.emptyMap());
         com.hazelcast.datalink.DataLink dataLink = null;
@@ -92,17 +89,18 @@ public class DataLinkConsistencyCheckerTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_outdatedDataLinkWasAlteredInSqlCatalog() {
+    public void test_outdatedDataLinkWasAlteredInDataLinkService() {
+        // given
         linkService.createSqlDataLink(name, type, Collections.emptyMap(), false);
-        sqlCatalog.put(QueryUtils.wrapDataLinkKey(name), new DataLink(name, type, Collections.emptyMap()));
-        assertTrue(sqlCatalog.containsKey(QueryUtils.wrapDataLinkKey(name)));
+        Map<String, String> alteredOptions = singletonMap("a", "b");
+        sqlCatalog.put(QueryUtils.wrapDataLinkKey(name), new DataLink(name, type, alteredOptions, false));
 
-        linkService.removeDataLink(name);
-        Map<String, String> newOptions = singletonMap("a", "b");
-        linkService.createSqlDataLink(name, type, newOptions, false);
+        DataLinkConfig catalogDataLinkConfig = linkService.toConfig(name, type, alteredOptions);
+
+        // when
         dataLinkConsistencyChecker.check();
 
-        DataLinkConfig catalogDataLinkConfig = linkService.toConfig(name, type, newOptions);
+        // then
         com.hazelcast.datalink.DataLink dataLink = null;
         try {
             dataLink = linkService.getAndRetainDataLink(name, com.hazelcast.datalink.DataLink.class);
@@ -114,26 +112,16 @@ public class DataLinkConsistencyCheckerTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_outdatedDataLinkWasRemovedFromSqlCatalog() {
+    public void test_outdatedDataLinkWasRemovedFromDataLinkService() {
+        // given
         linkService.createSqlDataLink(name, type, Collections.emptyMap(), false);
-        sqlCatalog.put(QueryUtils.wrapDataLinkKey(name), new DataLink(name, type, Collections.emptyMap()));
-        assertTrue(sqlCatalog.containsKey(QueryUtils.wrapDataLinkKey(name)));
-
-        linkService.removeDataLink(name);
-        dataLinkConsistencyChecker.check();
+        assertTrue(linkService.existsDataLink(name));
         assertFalse(sqlCatalog.containsKey(QueryUtils.wrapDataLinkKey(name)));
-    }
 
-    @Test
-    public void test_addEntryToCatalog() {
-        linkService.createSqlDataLink(name, type, Collections.emptyMap(), false);
-        com.hazelcast.datalink.DataLink dataLink = linkService.getAndRetainDataLink(name,
-                com.hazelcast.datalink.DataLink.class);
-        DataLinkServiceImpl.DataLinkSourcePair pair = new DataLinkServiceImpl.DataLinkSourcePair(
-                dataLink,
-                DataLinkServiceImpl.DataLinkSource.SQL);
+        // when
+        dataLinkConsistencyChecker.check();
 
-        dataLinkConsistencyChecker.addEntryToCatalog(singletonMap(name, pair).entrySet().iterator().next());
-        assertTrue(sqlCatalog.containsKey(QueryUtils.wrapDataLinkKey(name)));
+        // then
+        assertFalse(linkService.existsDataLink(name));
     }
 }

@@ -71,36 +71,33 @@ public class DataLinkConsistencyChecker {
         for (Map.Entry<String, DataLinkSourcePair> entry : sqlEntries) {
             Object catalogValue = sqlCatalog.get(QueryUtils.wrapDataLinkKey(entry.getKey()));
 
-            // Data link is absent in sql catalog -> add it.
+            // Data link is absent in sql catalog -> remove it from data link service.
             if (catalogValue == null) {
-                addEntryToCatalog(entry);
+                dataLinkService.removeDataLink(entry.getKey());
             } else {
                 // Try to alter outdated data links
-                DataLink catalogDataLink = (DataLink) catalogValue;
-                if (!dataLinksAreEqual(entry.getValue(), catalogDataLink)) {
-                    sqlCatalog.remove(QueryUtils.wrapDataLinkKey(entry.getKey()));
-                    addEntryToCatalog(entry);
+                DataLink dl = (DataLink) catalogValue;
+                if (!dataLinksAreEqual(entry.getValue(), dl)) {
+                    dataLinkService.removeDataLink(entry.getKey());
+                    dataLinkService.createSqlDataLink(dl.getName(), dl.getType(), dl.getOptions(), dl.isReplace());
                 }
             }
         }
 
-        // Data link is not present in service, but still present in sql.catalog
-        sqlCatalog.removeAll(e -> e.getValue() instanceof DataLink
-                && !dataLinkService.existsDataLink(((DataLink) e.getValue()).getName()));
+        // Data link is not present in service -> add it
+        for (Map.Entry<Object, Object> entry : sqlCatalog.entrySet()) {
+            if (!(entry.getValue() instanceof DataLink)) {
+                continue;
+            }
+            DataLink dl = (DataLink) entry.getValue();
+            if (!dataLinkService.existsDataLink(dl.getName())) {
+                dataLinkService.createSqlDataLink(dl.getName(), dl.getType(), dl.getOptions(), dl.isReplace());
+            }
+        }
     }
 
     public boolean isInitialized() {
         return initialized;
-    }
-
-    // package-private for testing.
-    void addEntryToCatalog(Map.Entry<String, DataLinkSourcePair> entry) {
-        DataLinkSourcePair pair = entry.getValue();
-        DataLink dataLink = new DataLink(
-                pair.instance.getName(),
-                pair.instance.getConfig().getClassName(),
-                pair.instance.options());
-        sqlCatalog.put(QueryUtils.wrapDataLinkKey(entry.getKey()), dataLink);
     }
 
     private boolean dataLinksAreEqual(DataLinkSourcePair pair, DataLink catalogDataLink) {

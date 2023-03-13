@@ -107,6 +107,7 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
         return dataLinks.containsKey(name);
     }
 
+    // package-private for testing purposes
     DataLinkConfig toConfig(String name, String type, Map<String, String> options) {
         Properties properties = new Properties();
         properties.putAll(options);

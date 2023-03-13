@@ -160,7 +160,7 @@ public class PlanExecutor {
 
         dlService.createSqlDataLink(plan.name(), plan.type(), plan.options(), plan.isReplace());
         dataLinksCatalog.createDataLink(
-                new DataLink(plan.name(), plan.type(), plan.options()),
+                new DataLink(plan.name(), plan.type(), plan.options(), plan.isReplace()),
                 plan.isReplace(),
                 plan.ifNotExists());
         return UpdateSqlResultImpl.createUpdateCountResult(0);

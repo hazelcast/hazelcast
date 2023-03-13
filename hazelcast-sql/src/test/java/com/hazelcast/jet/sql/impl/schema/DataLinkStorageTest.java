@@ -89,6 +89,6 @@ public class DataLinkStorageTest extends SimpleTestInClusterSupport {
     }
 
     private static DataLink dataLink(String name, String type) {
-        return new DataLink(name, type, emptyMap());
+        return new DataLink(name, type, emptyMap(), false);
     }
 }

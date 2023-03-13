@@ -31,12 +31,13 @@ import java.util.Objects;
 public class DataLink implements IdentifiedDataSerializable {
     private String name;
     private String type;
+    private boolean isReplace;
     private Map<String, String> options;
 
     public DataLink() {
     }
 
-    public DataLink(String name, String type, Map<String, String> options) {
+    public DataLink(String name, String type, Map<String, String> options, boolean isReplace) {
         this.name = name;
         this.type = type;
         this.options = options;
@@ -66,10 +67,15 @@ public class DataLink implements IdentifiedDataSerializable {
         this.options = options;
     }
 
+    public boolean isReplace() {
+        return isReplace;
+    }
+
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
         type = in.readString();
+        isReplace = in.readBoolean();
         options = in.readObject();
     }
 
@@ -77,6 +83,7 @@ public class DataLink implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
         out.writeString(type);
+        out.writeBoolean(isReplace);
         out.writeObject(options);
     }
 
