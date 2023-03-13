@@ -16,7 +16,7 @@
 
 package com.hazelcast.logging;
 
-import com.hazelcast.internal.tpc.logging.TpcLogger;
+import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 
 import java.util.logging.Level;
 

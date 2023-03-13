@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.internal.tpc.logging.TpcLogger;
-import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
-import com.hazelcast.internal.tpc.util.CloseUtil;
-import com.hazelcast.internal.tpc.util.JVM;
-import com.hazelcast.internal.tpc.util.OS;
+import com.hazelcast.internal.tpcengine.logging.TpcLogger;
+import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
+import com.hazelcast.internal.tpcengine.util.CloseUtil;
+import com.hazelcast.internal.tpcengine.util.JVM;
+import com.hazelcast.internal.tpcengine.util.OS;
 import net.openhft.affinity.Affinity;
 
 import java.io.File;
@@ -29,7 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.BitSet;
 
-import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
+import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 
 /**
  * Affinity helper class that uses a Hazelcast developed affinity

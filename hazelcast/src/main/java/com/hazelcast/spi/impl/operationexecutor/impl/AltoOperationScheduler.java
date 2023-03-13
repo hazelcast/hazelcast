@@ -16,8 +16,8 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
-import com.hazelcast.internal.tpc.Eventloop;
-import com.hazelcast.internal.tpc.Scheduler;
+import com.hazelcast.internal.tpcengine.Eventloop;
+import com.hazelcast.internal.tpcengine.Scheduler;
 
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
