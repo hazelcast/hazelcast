@@ -148,8 +148,8 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     public abstract void flush();
 
     /**
-     * Writes a IOBuffer to the AsyncSocket without scheduling the AsyncSocket
-     * in the reactor.
+     * Writes a {@link IOBuffer} to this AsyncSocket without scheduling the AsyncSocket
+     * in the {@link Reactor}.
      * <p>
      * This call can be used to buffer a series of IOBuffers and then call
      * {@link #flush()} to trigger the actual writing to the socket.
@@ -167,7 +167,8 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     public abstract boolean writeAll(Collection<IOBuffer> bufs);
 
     /**
-     * Writes a IOBuffer and flushes it.
+     * Writes a {@link IOBuffer} to this AsyncSocket and flushes it. Flushing causes the AsyncSocket
+     * to be scheduled in the {@link Reactor}.
      * <p>
      * This is the same as calling {@link #write(IOBuffer)} followed by a {@link #flush()}.
      * <p>
@@ -182,7 +183,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     public abstract boolean writeAndFlush(IOBuffer buf);
 
     /**
-     * Writes a IOBuffer and ensure it gets written.
+     * Writes an {@link IOBuffer} and ensure it gets written.
      * <p>
      * Should only be called from the reactor-thread.
      */
@@ -195,6 +196,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
      *
      * @param address the address to connect to.
      * @return a {@link CompletableFuture}
+     * @throws NullPointerException if address is null
      */
     public abstract CompletableFuture<Void> connect(SocketAddress address);
 

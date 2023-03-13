@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 
 /**
  * A server socket that is asynchronous. So accepting incoming connections does not block,
- * but are executed on an {@link Reactor}.
+ * but are executed on a {@link Reactor}.
  */
 public abstract class AsyncServerSocket extends AbstractAsyncSocket {
 
@@ -87,21 +87,22 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
     public abstract int getLocalPort();
 
     /**
-     * Binds this AsyncServerSocket to the localAddress address. This method is equivalent to calling
-     * {@link #bind(SocketAddress, int)} with an Integer.MAX_VALUE backlog.
+     * Binds this AsyncServerSocket to the localAddress address. This method is equivalent
+     * to calling {@link #bind(SocketAddress, int)} with an Integer.MAX_VALUE backlog.
      * <p/>
      * This can be made on any thread, but it isn't threadsafe.
      *
      * @param localAddress the local address.
      * @throws UncheckedIOException if something failed while binding.
-     * @throws NullPointerException if localAddress is null.
+     * @throws NullPointerException if localAddress is <code>null</code>.
      */
     public void bind(SocketAddress localAddress) {
         bind(localAddress, Integer.MAX_VALUE);
     }
 
     /**
-     * Binds this AsyncServerSocket to the localAddress address by assigning the local address to it.
+     * Binds this AsyncServerSocket to the localAddress address by assigning the local
+     * address to it.
      * <p/>
      * At a socket level, this method does 2 things:
      * <ol>

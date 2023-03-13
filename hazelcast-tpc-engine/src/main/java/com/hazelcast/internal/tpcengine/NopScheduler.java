@@ -17,9 +17,10 @@
 package com.hazelcast.internal.tpcengine;
 
 /**
- * A scheduler that doesn't do anything.
+ * A {@link Scheduler} that doesn't do anything.
  */
 public class NopScheduler implements Scheduler {
+
     @Override
     public void init(Eventloop eventloop) {
     }
