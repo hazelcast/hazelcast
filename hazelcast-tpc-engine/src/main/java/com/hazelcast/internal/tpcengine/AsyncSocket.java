@@ -58,7 +58,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     public abstract Reactor reactor();
 
     /**
-     * Returns the AsyncSocketOptions of this AsyncSocket.
+     * Returns the {@link AsyncSocketOptions} of this AsyncSocket.
      *
      * @return the AsyncSocketOptions.
      */

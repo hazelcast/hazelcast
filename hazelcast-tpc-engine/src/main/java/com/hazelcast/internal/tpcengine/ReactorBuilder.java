@@ -84,6 +84,9 @@ public abstract class ReactorBuilder {
 
     /**
      * Builds a Reactor based on the configuration of this {@link ReactorBuilder}.
+     * <p/>
+     * This method can be called multiple times. So a single ReactorBuilder instance can
+     * create a family of similar {@link Reactor} instances.
      *
      * @return the created Reactor.
      */
@@ -93,7 +96,7 @@ public abstract class ReactorBuilder {
      * Sets the reactor name supplier.
      *
      * @param reactorNameSupplier the reactor name supplier.
-     * @throws NullPointerException if reactorNameSupplier is null.
+     * @throws NullPointerException if reactorNameSupplier is <code>null</code>.
      */
     public void setReactorNameSupplier(Supplier<String> reactorNameSupplier) {
         this.reactorNameSupplier = checkNotNull(reactorNameSupplier, "reactorNameSupplier");
@@ -115,23 +118,24 @@ public abstract class ReactorBuilder {
      * Sets the ThreadFactory used to create the Thread that runs the {@link Reactor}.
      *
      * @param threadFactory the ThreadFactory
-     * @throws NullPointerException if threadFactory is set to null.
+     * @throws NullPointerException if threadFactory is set to <code>null</code>>.
      */
     public void setThreadFactory(ThreadFactory threadFactory) {
         this.threadFactory = checkNotNull(threadFactory, "threadFactory");
     }
 
     /**
-     * An eventloop has multiple queues to process. This setting controls the number of items that are
-     * processed from a single queue in batch, before moving to the next queue.
+     * An eventloop has multiple queues to process. This setting controls the number of items
+     * that are processed from a single queue in batch, before moving to the next queue.
      * <p>
-     * Setting it to a lower value will improve fairness but can reduce throughput. Setting it to a very high
-     * value could in theory lead to certain queues or event sources not being processed at all. So imagine some
-     * local task that rescheduled itself, then it could happen that with a very high batch size this tasks is
-     * processed in a loop while none of the other queues/event-sources is checked and hence they are being starved
+     * Setting it to a lower value will improve fairness but can reduce throughput. Setting
+     * it to a very high value could in theory lead to certain queues or event sources not
+     * being processed at all. So imagine some local task that rescheduled itself, then it
+     * could happen that with a very high batch size this tasks is processed in a loop while
+     * none of the other queues/event-sources is checked and hence they are being starved
      * from CPU time.
      *
-     * @param batchSize
+     * @param batchSize the size of the batch
      * @throws IllegalArgumentException if batchSize smaller than 1.
      */
     public void setBatchSize(int batchSize) {
@@ -142,7 +146,8 @@ public abstract class ReactorBuilder {
      * Sets the supplier for the thread name. If configured, the thread name is set
      * after the thread is created.
      * <p/>
-     * If null, there is no thread name supplier and the thread name will not be modified.
+     * If <code>null</code>, there is no thread name supplier and the thread name
+     * will not be modified.
      *
      * @param threadNameSupplier the supplier for the thread name.
      */
@@ -151,7 +156,7 @@ public abstract class ReactorBuilder {
     }
 
     /**
-     * Sets the {@link ThreadAffinity}. If the threadAffinity is null, no thread affinity
+     * Sets the {@link ThreadAffinity}. If the threadAffinity is <code>null</code>, no thread affinity
      * is applied.
      *
      * @param threadAffinity the ThreadAffinity.
@@ -191,10 +196,18 @@ public abstract class ReactorBuilder {
         this.scheduledTaskQueueCapacity = checkPositive(scheduledTaskQueueCapacity, "scheduledTaskQueueCapacity");
     }
 
+    // In the future we want to have better policies than only spinning.
+    // See BackoffIdleStrategy
     public final void setSpin(boolean spin) {
         this.spin = spin;
     }
 
+    /**
+     * Sets the supplier function for {@link Scheduler} instances.
+     *
+     * @param schedulerSupplier the supplier
+     * @throws NullPointerException if schedulerSupplier is <code>null</code>.
+     */
     public final void setSchedulerSupplier(Supplier<Scheduler> schedulerSupplier) {
         this.schedulerSupplier = checkNotNull(schedulerSupplier);
     }

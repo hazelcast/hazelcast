@@ -40,7 +40,7 @@ public interface Scheduler {
     void init(Eventloop eventloop);
 
     /**
-     * Gives the scheduler a tick. In this tick the scheduler can do a littlebit of work.
+     * Gives the scheduler a tick. In this tick the scheduler can do a bit of work.
      *
      * @return true if there is more work, false otherwise.
      */

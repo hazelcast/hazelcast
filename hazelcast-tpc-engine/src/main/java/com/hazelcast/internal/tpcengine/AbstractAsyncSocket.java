@@ -47,6 +47,8 @@ public abstract class AbstractAsyncSocket implements Closeable {
     /**
      * Allows for objects to be bound to this AbstractAsyncSocket. Useful for the lookup
      * of services and other dependencies.
+     * <p/>
+     * This method is thread-safe.
      */
     public final ConcurrentMap<?, ?> context() {
         return context;

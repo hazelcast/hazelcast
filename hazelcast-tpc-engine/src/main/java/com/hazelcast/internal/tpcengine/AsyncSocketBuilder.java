@@ -17,10 +17,11 @@
 package com.hazelcast.internal.tpcengine;
 
 /**
- * A builder to use AsyncSocket instance. Can only be used once.
+ * A {@link AsyncSocket} builder. Can only be used once.
  * <p/>
  * This builder assumes TCP/IPv4. For different types of sockets
- * new configuration options on this builder need to be added.
+ * new configuration options on this builder need to be added or
+ * a the {@link Reactor#newAsyncSocketBuilder()} needs to be modified.
  * <p/>
  * Cast to specific builder for specialized options when available.
  */

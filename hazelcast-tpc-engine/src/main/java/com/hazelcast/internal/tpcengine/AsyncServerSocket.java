@@ -44,7 +44,9 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
     }
 
     /**
-     * Gets the AsyncSocketOptions for this AsyncServerSocket.
+     * Gets the {@link AsyncSocketOptions} for this AsyncServerSocket.
+     * <p/>
+     * This call can always be made no matter the state of the socket.
      *
      * @return the options.
      */
@@ -75,7 +77,7 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
     public abstract Reactor getReactor();
 
     /**
-     * Gets the local port of the ServerSocketChannel.
+     * Gets the local port of the {@link AsyncServerSocket}.
      * <p/>
      * If {@link #bind(SocketAddress)} has not been called, then -1 is returned.
      *
@@ -109,7 +111,7 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
      *     listen method to the AsyncServerSocket.</li>
      * </ol>
      * This can be made on any thread, but it isn't threadsafe.
-     * <p>
+     * <p/>
      * This call needs to be made before {@link #start(Consumer)}.
      * <p/>
      * Bind should only be called once, otherwise an UncheckedIOException is thrown.
@@ -131,7 +133,7 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
      * <p/>
      * This method should only be called once and isn't threadsafe.
      * <p/>
-     * Before accept is called, bind needs to be called.
+     * Before accept is called, {@link #bind(SocketAddress, int)} needs to be called.
      *
       */
     public abstract void start();
