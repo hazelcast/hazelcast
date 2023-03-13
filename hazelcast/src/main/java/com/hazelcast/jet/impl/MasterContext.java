@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
@@ -48,6 +49,7 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
+import static com.hazelcast.jet.core.JobStatus.SUSPENDED_EXPORTING_SNAPSHOT;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.jobNameAndExecutionId;
@@ -72,6 +74,7 @@ public class MasterContext {
     private final ReentrantLock lock = new ReentrantLock();
 
     private final NodeEngineImpl nodeEngine;
+    private final JobEventService jobEventService;
     private final JobCoordinationService coordinationService;
     private final ILogger logger;
     private final long jobId;
@@ -95,6 +98,7 @@ public class MasterContext {
     MasterContext(NodeEngineImpl nodeEngine, JobCoordinationService coordinationService, @Nonnull JobRecord jobRecord,
                   @Nonnull JobExecutionRecord jobExecutionRecord) {
         this.nodeEngine = nodeEngine;
+        this.jobEventService = nodeEngine.getService(JobEventService.SERVICE_NAME);
         this.coordinationService = coordinationService;
         this.jobRepository = coordinationService.jobRepository();
         this.logger = nodeEngine.getLogger(getClass());
@@ -147,12 +151,35 @@ public class MasterContext {
         return jobStatus;
     }
 
-    void setJobStatus(JobStatus jobStatus) {
+    void setJobStatus(JobStatus jobStatus, String description, boolean userRequested) {
+        JobStatus oldStatus = this.jobStatus;
         this.jobStatus = jobStatus;
+        jobEventService.publishEvent(jobId, oldStatus, jobStatus, description, userRequested);
+        if (jobStatus.isTerminal()) {
+            jobEventService.removeAllEventListeners(jobId);
+        }
+    }
+
+    void setJobStatus(JobStatus jobStatus) {
+        setJobStatus(jobStatus, null, false);
     }
 
     public JobConfig jobConfig() {
         return jobRecord.getConfig();
+    }
+
+    public JobConfig updateJobConfig(DeltaJobConfig deltaConfig) {
+        lock();
+        try {
+            if (jobStatus != SUSPENDED && jobStatus != SUSPENDED_EXPORTING_SNAPSHOT) {
+                throw new IllegalStateException("Job not suspended, but " + jobStatus);
+            }
+            deltaConfig.applyTo(jobConfig());
+            jobRepository.updateJobRecord(jobRecord);
+            return jobConfig();
+        } finally {
+            unlock();
+        }
     }
 
     public JobRecord jobRecord() {

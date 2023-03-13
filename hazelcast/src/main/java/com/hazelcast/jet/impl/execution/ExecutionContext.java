@@ -420,6 +420,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
             return;
         }
         descriptor = descriptor.withTag(MetricTags.JOB, idToString(jobId))
+                               .withTag(MetricTags.JOB_NAME, jobName)
                                .withTag(MetricTags.EXECUTION, idToString(executionId));
 
         context.collect(descriptor, EXECUTION_START_TIME, ProbeLevel.INFO, ProbeUnit.MS, startTime.get());

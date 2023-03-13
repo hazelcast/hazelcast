@@ -16,6 +16,8 @@
 
 package com.hazelcast.logging;
 
+import com.hazelcast.internal.tpcengine.logging.TpcLogger;
+
 import java.util.logging.Level;
 
 /**
@@ -25,7 +27,7 @@ import java.util.logging.Level;
  *
  * @see AbstractLogger
  */
-public interface ILogger {
+public interface ILogger extends TpcLogger {
 
     /**
      * Logs a message at the {@link Level#FINEST} level.

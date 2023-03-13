@@ -16,22 +16,23 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.impl.DefaultNodeExtension;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.bootstrap.AltoServerBootstrap;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.AssertTask;
@@ -49,13 +50,14 @@ import java.util.function.Consumer;
 import static java.util.Collections.synchronizedList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
  * Abstract test support to test the {@link OperationExecutorImpl}.
  * <p>
  * The idea is the following; all dependencies for the executor are available as fields in this object and by calling the
- * {@link #initExecutor()} method, the actual ClassicOperationExecutor instance is created. But if you need to replace
+ * {@link #initExecutor()} method, the actual OperationExecutorImpl instance is created. But if you need to replace
  * the dependencies by mocks, just replace them before calling the {@link #initExecutor()} method.
  */
 public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSupport {
@@ -88,9 +90,14 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
     }
 
     protected OperationExecutorImpl initExecutor() {
+        // Tpc is disabled in these tests. To not get NPE we mock the bootstrap.
+        AltoServerBootstrap bootstrap = mock(AltoServerBootstrap.class);
+        when(bootstrap.isEnabled()).thenReturn(false);
+
         props = new HazelcastProperties(config);
         executor = new OperationExecutorImpl(
-                props, loggingService, thisAddress, handlerFactory, nodeExtension, "hzName", Thread.currentThread().getContextClassLoader());
+                props, loggingService, thisAddress, handlerFactory, nodeExtension,
+                "hzName", Thread.currentThread().getContextClassLoader(), bootstrap);
         executor.start();
         return executor;
     }

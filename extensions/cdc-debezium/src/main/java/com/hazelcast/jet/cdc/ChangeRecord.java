@@ -128,7 +128,7 @@ public interface ChangeRecord {
     /**
      * Returns the key part of the CDC event. It identifies the affected record.
      */
-    @Nonnull
+    @Nullable
     RecordPart key();
 
     /**

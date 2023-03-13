@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataLinkConfig;
-import com.hazelcast.datalink.JdbcDataLinkFactory;
+import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
@@ -36,7 +36,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
+import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_NAME;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -63,7 +63,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         properties.setProperty("jdbcUrl", dbConnectionUrl);
         config.addDataLinkConfig(
                 new DataLinkConfig(TEST_DATABASE_REF)
-                        .setClassName(JdbcDataLinkFactory.class.getName())
+                        .setClassName(JdbcDataLink.class.getName())
                         .setProperties(properties)
         );
         initialize(2, config);
@@ -142,7 +142,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
                         + ") "
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
+                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
         );
     }
@@ -157,7 +157,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
                         + ") "
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
+                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
         );
     }
@@ -168,20 +168,6 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         try (SqlResult ignored = sqlService.execute(sql, arguments)) {
             // empty try-with-resources
         }
-    }
-
-    /**
-     * Assert the contents of a given table via Hazelcast SQL engine
-     */
-    protected static void assertRowsAnyOrder(String sql, Row... rows) {
-        assertRowsAnyOrder(sql, Arrays.asList(rows));
-    }
-
-    /**
-     * Assert the contents of a given table via Hazelcast SQL engine
-     */
-    protected static void assertRowsAnyOrder(String sql, List<Object> arguments, Row... rows) {
-        assertRowsAnyOrder(sql, arguments, Arrays.asList(rows));
     }
 
     /**

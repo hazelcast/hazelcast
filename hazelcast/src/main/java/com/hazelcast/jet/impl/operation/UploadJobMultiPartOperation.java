@@ -19,19 +19,22 @@ package com.hazelcast.jet.impl.operation;
 import com.hazelcast.client.impl.protocol.codec.JetUploadJobMultipartCodec;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.jet.impl.jobupload.JobMetaDataParameterObject;
-import com.hazelcast.jet.impl.jobupload.JobMultiPartParameterObject;
+import com.hazelcast.jet.impl.submitjob.memberside.JobMultiPartParameterObject;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import java.io.IOException;
+
+import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
+import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
 import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
 
 /**
  * Resumes the execution of a suspended job.
  */
 public class UploadJobMultiPartOperation extends Operation implements IdentifiedDataSerializable {
-
-    Boolean response = false;
 
     JobMultiPartParameterObject jobMultiPartParameterObject;
 
@@ -50,21 +53,10 @@ public class UploadJobMultiPartOperation extends Operation implements Identified
     }
 
     @Override
-    public Object getResponse() {
-        return response;
-    }
-
-    @Override
     public void run() {
         // Delegate to JetServiceBackend
         JetServiceBackend jetServiceBackend = getJetServiceBackend();
-        JobMetaDataParameterObject partsComplete = jetServiceBackend.storeJobMultiPart(jobMultiPartParameterObject);
-        // If JetServiceBackend returns that parts are complete
-        if (partsComplete != null) {
-            // Execute the jar
-            jetServiceBackend.executeJar(partsComplete);
-        }
-        response = true;
+        jetServiceBackend.storeJobMultiPart(jobMultiPartParameterObject);
     }
 
     protected JetServiceBackend getJetServiceBackend() {
@@ -81,5 +73,26 @@ public class UploadJobMultiPartOperation extends Operation implements Identified
     @Override
     public int getClassId() {
         return JetInitDataSerializerHook.UPLOAD_JOB_MULTIPART_OP;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        writeUUID(out, jobMultiPartParameterObject.getSessionId());
+        out.writeInt(jobMultiPartParameterObject.getCurrentPartNumber());
+        out.writeInt(jobMultiPartParameterObject.getTotalPartNumber());
+        out.writeByteArray(jobMultiPartParameterObject.getPartData());
+        out.writeInt(jobMultiPartParameterObject.getPartSize());
+        out.writeString(jobMultiPartParameterObject.getSha256Hex());
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        jobMultiPartParameterObject = new JobMultiPartParameterObject();
+        jobMultiPartParameterObject.setSessionId(readUUID(in));
+        jobMultiPartParameterObject.setCurrentPartNumber(in.readInt());
+        jobMultiPartParameterObject.setTotalPartNumber(in.readInt());
+        jobMultiPartParameterObject.setPartData(in.readByteArray());
+        jobMultiPartParameterObject.setPartSize(in.readInt());
+        jobMultiPartParameterObject.setSha256Hex(in.readString());
     }
 }

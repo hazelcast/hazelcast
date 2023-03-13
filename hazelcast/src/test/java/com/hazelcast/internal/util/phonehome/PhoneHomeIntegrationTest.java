@@ -62,6 +62,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.test.Accessors.getNode;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -96,9 +97,9 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         when(kubernetesTokenPath.toRealPath()).thenReturn(Paths.get(System.getProperty("user.dir")));
 
         int port = wireMockRule.port();
-        cloudInfoCollector = new CloudInfoCollector("http://localhost:" + port + "/latest/meta-data",
+        cloudInfoCollector = spy(new CloudInfoCollector("http://localhost:" + port + "/latest/meta-data",
                 "http://localhost:" + port + "/metadata/instance/compute?api-version=2018-02-01",
-                "http://localhost:" + port + "/metadata.google.internal", kubernetesTokenPath, dockerPath);
+                "http://localhost:" + port + "/metadata.google.internal", kubernetesTokenPath, dockerPath));
 
         phoneHome = new PhoneHome(node, "http://localhost:" + port + "/ping", cloudInfoCollector);
         stubUrls("200", "4XX", "4XX", "4XX");
@@ -313,6 +314,16 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         PhoneHomeParameterCreator parameterCreator2 = new PhoneHomeParameterCreator();
         cloudInfoCollector.forEachMetric(node,
                 (type, value) -> parameterCreator2.addParam(type.getRequestParameterName(), value));
+    }
 
+    @Test
+    public void testForViridian() {
+        when(cloudInfoCollector.getCloudEnvironment()).thenReturn("SERVERLESS");
+
+        stubUrls("200", "200", "4XX", "4XX");
+        phoneHome.phoneHome(false);
+
+        verify(1, postRequestedFor(urlPathEqualTo("/ping"))
+                .withRequestBody(containingParam("vrd", "SERVERLESS")));
     }
 }

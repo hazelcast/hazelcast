@@ -30,22 +30,22 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.Sha256Util;
-import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
+import com.hazelcast.jet.impl.submitjob.clientside.execute.JobExecuteCall;
+import com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadCall;
+import com.hazelcast.jet.impl.submitjob.clientside.validator.SubmitJobParametersValidator;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.properties.HazelcastProperties;
 
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
@@ -53,7 +53,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
-import static com.hazelcast.client.properties.ClientProperty.JOB_UPLOAD_PART_SIZE;
 import static com.hazelcast.jet.impl.operation.GetJobIdsOperation.ALL_JOBS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
@@ -145,81 +144,143 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         return new ClientJobProxy(client, jobId, isLightJob, jobDefinition, config);
     }
 
-    @Override
+    /**
+     * For the client side, the jar is uploaded to a random cluster member and then this member runs the main method to
+     * start the job.
+     * The jar should have a main method that submits a Pipeline with {@link #newJob(Pipeline)} or
+     * {@link #newLightJob(Pipeline)} methods
+     * <p>
+     * The upload operation is performed in parts to avoid OOM exceptions on the client and member.
+     * For Java clients the part size is controlled by {@link com.hazelcast.client.properties.ClientProperty#JOB_UPLOAD_PART_SIZE}
+     * property
+     * <p>
+     * Limitations for the client side jobs:
+     * <ul>
+     *     <li>The job can only access resources on the member or cluster. This is different from the jobs submitted from
+     *     the hz-cli tool. A job submitted from hz-cli tool creates a local HazelcastInstance on the client JVM and
+     *     connects to cluster. Therefore, the job can access local resources. This is not the case for the jar
+     *     uploaded to a member.
+     *     </li>
+     * </ul>
+     *
+     * @throws JetException on error
+     */
     public void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
+        if (submitJobParameters.isJarOnMember()) {
+            executeJobFromJar(submitJobParameters);
+        } else {
+            uploadJobFromJar(submitJobParameters);
+        }
+    }
 
+    private void executeJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
         try {
-            UUID sessionId = UuidUtil.newSecureUUID();
+            SubmitJobParametersValidator.validateJarOnMember(submitJobParameters);
 
             Path jarPath = submitJobParameters.getJarPath();
-            // Calculate some parameters for JobMetadata
-            String fileNameWithoutExtension = getFileNameWithoutExtension(jarPath);
-            String sha256Hex = calculateSha256Hex(jarPath);
-            long jarSize = Files.size(jarPath);
+            JobExecuteCall jobExecuteCall = initializeJobExecuteCall(submitJobParameters.getJarPath());
 
-            // Send job meta data
-            boolean result = sendJobMetaData(sessionId, fileNameWithoutExtension, sha256Hex, submitJobParameters);
-            if (result) {
-                logFine(getLogger(), "Submitted JobMetaData successfully for jarPath: %s", jarPath);
-            }
-            // Send job parts
-            sendJobMultipart(jarPath, sessionId, jarSize);
+            // Send only job metadata
+            logFine(getLogger(), "Submitting JobMetaData for jarPath: %s", jarPath);
+            sendJobMetaDataForExecute(jobExecuteCall, submitJobParameters);
+        } catch (Exception exception) {
+            sneakyThrow(exception);
+        }
+    }
 
+    private void uploadJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
+        try {
+            SubmitJobParametersValidator.validateJarOnClient(submitJobParameters);
+
+            Path jarPath = submitJobParameters.getJarPath();
+            JobUploadCall jobUploadCall = initializeJobUploadCall(submitJobParameters.getJarPath());
+
+            // First send job metadata
+            logFine(getLogger(), "Submitting JobMetaData for jarPath: %s", jarPath);
+            sendJobMetaDataForUpload(jobUploadCall, submitJobParameters);
+
+            // Then send job parts
+            sendJobMultipart(jobUploadCall, jarPath);
         } catch (IOException | NoSuchAlgorithmException exception) {
             sneakyThrow(exception);
         }
     }
 
-    protected String getFileNameWithoutExtension(Path jarPath) {
-        String fileName = jarPath.getFileName().toString();
-        if (!fileName.endsWith(".jar")) {
-            throw new JetException("File name extension should be .jar");
-        }
-        fileName = fileName.substring(0, fileName.lastIndexOf('.'));
-        return fileName;
+    // This method is public for testing purposes.
+    public JobUploadCall initializeJobUploadCall(Path jarPath)
+            throws IOException, NoSuchAlgorithmException {
+
+        JobUploadCall jobUploadCall = new JobUploadCall();
+        jobUploadCall.initializeJobUploadCall(client, jarPath);
+
+        return jobUploadCall;
     }
 
-    private boolean sendJobMetaData(UUID sessionId, String fileNameWithoutExtension, String sha256Hex,
-                                    SubmitJobParameters submitJobParameters) {
+    public JobExecuteCall initializeJobExecuteCall(Path jarPath) {
 
-        ClientMessage jobMetaDataRequest = JetUploadJobMetaDataCodec.encodeRequest(sessionId,
-                fileNameWithoutExtension, sha256Hex,
+        JobExecuteCall jobExecuteCall = new JobExecuteCall();
+        jobExecuteCall.initializeJobExecuteCall(client, jarPath);
+
+        return jobExecuteCall;
+    }
+
+    private void sendJobMetaDataForUpload(JobUploadCall jobUploadCall,
+                                          SubmitJobParameters submitJobParameters) {
+        ClientMessage jobMetaDataRequest = JetUploadJobMetaDataCodec.encodeRequest(
+                jobUploadCall.getSessionId(),
+                submitJobParameters.isJarOnMember(),
+                jobUploadCall.getFileNameWithoutExtension(),
+                jobUploadCall.getSha256HexOfJar(),
                 submitJobParameters.getSnapshotName(),
                 submitJobParameters.getJobName(),
                 submitJobParameters.getMainClass(),
                 submitJobParameters.getJobParameters());
 
-        return invokeRequestOnMasterAndDecodeResponse(jobMetaDataRequest, JetUploadJobMetaDataCodec::decodeResponse);
+        invokeRequestNoRetryOnRandom(jobUploadCall.getMemberUuid(), jobMetaDataRequest);
     }
 
-    private void sendJobMultipart(Path jarPath, UUID sessionId, long jarSize)
-            throws IOException, NoSuchAlgorithmException {
-        int partSize = calculatePartBufferSize();
+    private void sendJobMetaDataForExecute(JobExecuteCall jobExecuteCall, SubmitJobParameters submitJobParameters) {
+        ClientMessage jobMetaDataRequest = JetUploadJobMetaDataCodec.encodeRequest(
+                jobExecuteCall.getSessionId(),
+                submitJobParameters.isJarOnMember(),
+                jobExecuteCall.getJarPath(),
+                jobExecuteCall.getSha256HexOfJar(),
+                submitJobParameters.getSnapshotName(),
+                submitJobParameters.getJobName(),
+                submitJobParameters.getMainClass(),
+                submitJobParameters.getJobParameters());
 
-        int totalParts = calculateTotalParts(jarSize, partSize);
+        invokeRequestNoRetryOnRandom(jobExecuteCall.getMemberUuid(), jobMetaDataRequest);
+    }
+
+    private void sendJobMultipart(JobUploadCall jobUploadCall, Path jarPath)
+            throws IOException, NoSuchAlgorithmException {
+
 
         File file = jarPath.toFile();
 
-        byte[] data = new byte[partSize];
+        byte[] partBuffer = jobUploadCall.allocatePartBuffer();
 
         try (FileInputStream fileInputStream = new FileInputStream(file)) {
 
-            for (int currentPartNumber = 1; currentPartNumber <= totalParts; currentPartNumber++) {
+            // Start from part #1
+            for (int currentPartNumber = 1; currentPartNumber <= jobUploadCall.getTotalParts(); currentPartNumber++) {
 
-                // Read data
-                int bytesRead = fileInputStream.read(data);
+                int bytesRead = fileInputStream.read(partBuffer);
 
-                String sha256Hex = Sha256Util.calculateSha256Hex(data, bytesRead);
+                byte[] dataToSend = jobUploadCall.getDataToSend(partBuffer, bytesRead);
+
+                String sha256Hex = Sha256Util.calculateSha256Hex(dataToSend);
                 //Send the part
-                ClientMessage jobDataRequest = JetUploadJobMultipartCodec.encodeRequest(sessionId, currentPartNumber,
-                        totalParts, data, bytesRead, sha256Hex);
-                boolean result = invokeRequestOnMasterAndDecodeResponse(jobDataRequest,
-                        JetUploadJobMultipartCodec::decodeResponse);
-                if (result) {
-                    logFine(getLogger(), "Submitted Job Part successfully for jarPath: %s PartNumber %d",
-                            jarPath, currentPartNumber);
-                }
+                ClientMessage jobMultipartRequest = JetUploadJobMultipartCodec.encodeRequest(
+                        jobUploadCall.getSessionId(),
+                        currentPartNumber,
+                        jobUploadCall.getTotalParts(), dataToSend, bytesRead, sha256Hex);
 
+                logFine(getLogger(), "Submitting Job Part for jarPath: %s PartNumber %d",
+                        jarPath, currentPartNumber);
+
+                invokeRequestNoRetryOnRandom(jobUploadCall.getMemberUuid(), jobMultipartRequest);
             }
         }
     }
@@ -239,31 +300,35 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         return invokeRequestAndDecodeResponse(null, request, decoder);
     }
 
+    // Do not retry on random member if invocation fails
+    private void invokeRequestNoRetryOnRandom(UUID uuid, ClientMessage request) {
+        ClientInvocation invocation = new ClientInvocation(client, request, null, uuid);
+        invocation.disallowRetryOnRandom();
+        invoke(invocation);
+    }
+
+
+    // Retry on random member if invocation fails
     private <S> S invokeRequestAndDecodeResponse(UUID uuid, ClientMessage request,
                                                  Function<ClientMessage, Object> decoder) {
         ClientInvocation invocation = new ClientInvocation(client, request, null, uuid);
+        return invoke(decoder, invocation);
+    }
+
+    private <S> S invoke(Function<ClientMessage, Object> decoder, ClientInvocation invocation) {
         try {
             ClientMessage response = invocation.invoke().get();
             return serializationService.toObject(decoder.apply(response));
-        } catch (Throwable t) {
-            throw rethrow(t);
+        } catch (Exception exception) {
+            throw rethrow(exception);
         }
     }
 
-    // Calculate the buffer size from properties if defined, otherwise use default value
-    protected int calculatePartBufferSize() {
-        HazelcastProperties properties = client.getProperties();
-        return properties.getInteger(JOB_UPLOAD_PART_SIZE);
-    }
-
-    protected int calculateTotalParts(long jarSize, int partSize) {
-        return (int) Math.ceil(jarSize / (double) partSize);
-    }
-
-    // This method is public for testing purposes. Currently, we can not mock static methods with Mockito because
-    // enabling "Mock Maker Inline" is breaking other tests.
-    // When it is enabled in the future, remove this method and directly mock Sha256Util
-    public String calculateSha256Hex(Path jarPath) throws IOException, NoSuchAlgorithmException {
-        return Sha256Util.calculateSha256Hex(jarPath);
+    private void invoke(ClientInvocation invocation) {
+        try {
+            invocation.invoke().get();
+        } catch (Exception exception) {
+            throw rethrow(exception);
+        }
     }
 }
