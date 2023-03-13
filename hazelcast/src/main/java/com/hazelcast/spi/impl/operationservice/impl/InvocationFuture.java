@@ -127,13 +127,8 @@ public final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
     protected Object resolve(Object unresolved) {
         if (unresolved == null) {
             return null;
-        } else if (unresolved == INTERRUPTED) {
-            return new ExceptionalResult(
-                    new InterruptedException(invocation.op.getClass().getSimpleName() + " was interrupted. " + invocation));
-        } else if (unresolved == CALL_TIMEOUT) {
-            return new ExceptionalResult(newOperationTimeoutException(false));
-        } else if (unresolved == HEARTBEAT_TIMEOUT) {
-            return new ExceptionalResult(newOperationTimeoutException(true));
+        } else if (unresolved == INTERRUPTED || unresolved == CALL_TIMEOUT || unresolved == HEARTBEAT_TIMEOUT) {
+            return toExceptionalResult(unresolved);
         } else if (unresolved.getClass() == Packet.class) {
             NormalResponse response = invocation.context.serializationService.toObject(unresolved);
             unresolved = response.getValue();
@@ -159,6 +154,20 @@ public final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
         }
 
         return value;
+    }
+
+    @Override
+    protected ExceptionalResult toExceptionalResult(Object object) {
+        if (object == INTERRUPTED) {
+            return new ExceptionalResult(
+                    new InterruptedException(invocation.op.getClass().getSimpleName() + " was interrupted. " + invocation));
+        } else if (object == CALL_TIMEOUT) {
+            return new ExceptionalResult(newOperationTimeoutException(false));
+        } else if (object == HEARTBEAT_TIMEOUT) {
+            return new ExceptionalResult(newOperationTimeoutException(true));
+        }
+
+        return super.toExceptionalResult(object);
     }
 
     private OperationTimeoutException newOperationTimeoutException(boolean heartbeatTimeout) {
