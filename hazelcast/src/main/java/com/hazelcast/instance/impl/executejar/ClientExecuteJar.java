@@ -44,7 +44,13 @@ import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 public class ClientExecuteJar {
 
     private static final ILogger LOGGER = Logger.getLogger(ClientExecuteJar.class.getName());
+
+    // The number of attempts to check if job is starting
+    private static final int JOB_START_CHECK_ATTEMPTS = 10;
+
+    // The number of seconds to sleep between each checks
     private static final int JOB_START_CHECK_INTERVAL_MILLIS = 1_000;
+
     private static final EnumSet<JobStatus> STARTUP_STATUSES = EnumSet.of(NOT_RUNNING, STARTING);
 
     /**
@@ -114,7 +120,8 @@ public class ClientExecuteJar {
         }
 
         int previousStartingJobCount = -1;
-        while (true) {
+
+        for (int index = 0; index < JOB_START_CHECK_ATTEMPTS; index++) {
             // Sleep and wait for the jobs to start
             uncheckRun(() -> Thread.sleep(JOB_START_CHECK_INTERVAL_MILLIS));
 
