@@ -62,20 +62,17 @@ public interface AsyncSocketOptions {
     /**
      * See {@code jdk.net.ExtendedSocketOptions#TCP_KEEPIDLE}
      */
-    Option<Integer> TCP_KEEPIDLE
-            = new Option<>("TCP_KEEPIDLE", Integer.class);
+    Option<Integer> TCP_KEEPIDLE = new Option<>("TCP_KEEPIDLE", Integer.class);
 
     /**
      * See {@code jdk.net.ExtendedSocketOptions#TCP_KEEPINTERVAL}
      */
-    Option<Integer> TCP_KEEPINTERVAL
-            = new Option<>("TCP_KEEPINTERVAL", Integer.class);
+    Option<Integer> TCP_KEEPINTERVAL = new Option<>("TCP_KEEPINTERVAL", Integer.class);
 
     /**
      * See {@code jdk.net.ExtendedSocketOptions#TCP_KEEPCOUNT}
      */
-    Option<Integer> TCP_KEEPCOUNT
-            = new Option<>("TCP_KEEPCOUNT", Integer.class);
+    Option<Integer> TCP_KEEPCOUNT = new Option<>("TCP_KEEPCOUNT", Integer.class);
 
     /**
      * Sets an option value.

@@ -37,7 +37,7 @@ public class TpcEngineBuilder {
      *
      * @param reactorBuilder the reactorBuilder.
      * @return this
-     * @throws NullPointerException if reactorBuilder is null.
+     * @throws NullPointerException if reactorBuilder is <code>null</code>.
      */
     public TpcEngineBuilder setReactorBuilder(ReactorBuilder reactorBuilder) {
         this.reactorBuilder = checkNotNull(reactorBuilder, "reactorBuilder");
@@ -58,6 +58,8 @@ public class TpcEngineBuilder {
 
     /**
      * Builds a single TpcEngine instance.
+     * <p/>
+     * This method can be called multiple times although in practice is unlikely to happen.
      *
      * @return the created instance.
      */

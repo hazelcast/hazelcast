@@ -77,7 +77,6 @@ public class AsyncSocketMetrics {
      * @return the bytes written.
      */
     public long bytesWritten() {
-        // In the future we could use an opaque read.
         return bytesWritten;
     }
 

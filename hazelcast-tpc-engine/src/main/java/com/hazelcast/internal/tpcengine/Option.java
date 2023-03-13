@@ -20,10 +20,10 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 /**
  * Can be used to pass options to a socket, but in the future also files.
- *
+ * <p>
  * An option is uniquely determined based on its name.
  *
- * @param <T>
+ * @param <T> the type of the option.
  */
 public final class Option<T> {
     private final String name;

@@ -35,7 +35,7 @@ public interface AsyncServerSocketBuilder {
      * @param value the value
      * @return this
      * @param <T> the type of the option/value
-     * @throws NullPointerException when option or value is null.
+     * @throws NullPointerException when option or value is <code>null</code>.
      * @throws IllegalStateException when build already has been called
      * @throws java.io.UncheckedIOException when something failed while configuring the underlying socket.
      */
@@ -46,7 +46,7 @@ public interface AsyncServerSocketBuilder {
      *
      * @param consumer the consumer
      * @return this
-     * @throws NullPointerException if consumer is null.
+     * @throws NullPointerException if consumer is <code>null</code>.
      * @throws IllegalStateException when build already has been called.
      */
     AsyncServerSocketBuilder setAcceptConsumer(Consumer<AcceptRequest> consumer);

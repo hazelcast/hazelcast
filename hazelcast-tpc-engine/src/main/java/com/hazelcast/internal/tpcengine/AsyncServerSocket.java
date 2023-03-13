@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 
 /**
  * A server socket that is asynchronous. So accepting incoming connections does not block,
- * but are executed on an {@link Reactor}.
+ * but are executed on a {@link Reactor}.
  */
 public abstract class AsyncServerSocket extends AbstractAsyncSocket {
 
@@ -44,7 +44,9 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
     }
 
     /**
-     * Gets the AsyncSocketOptions for this AsyncServerSocket.
+     * Gets the {@link AsyncSocketOptions} for this AsyncServerSocket.
+     * <p/>
+     * This call can always be made no matter the state of the socket.
      *
      * @return the options.
      */
@@ -75,7 +77,7 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
     public abstract Reactor getReactor();
 
     /**
-     * Gets the local port of the ServerSocketChannel.
+     * Gets the local port of the {@link AsyncServerSocket}.
      * <p/>
      * If {@link #bind(SocketAddress)} has not been called, then -1 is returned.
      *
@@ -85,21 +87,22 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
     public abstract int getLocalPort();
 
     /**
-     * Binds this AsyncServerSocket to the localAddress address. This method is equivalent to calling
-     * {@link #bind(SocketAddress, int)} with an Integer.MAX_VALUE backlog.
+     * Binds this AsyncServerSocket to the localAddress address. This method is equivalent
+     * to calling {@link #bind(SocketAddress, int)} with an Integer.MAX_VALUE backlog.
      * <p/>
      * This can be made on any thread, but it isn't threadsafe.
      *
      * @param localAddress the local address.
      * @throws UncheckedIOException if something failed while binding.
-     * @throws NullPointerException if localAddress is null.
+     * @throws NullPointerException if localAddress is <code>null</code>.
      */
     public void bind(SocketAddress localAddress) {
         bind(localAddress, Integer.MAX_VALUE);
     }
 
     /**
-     * Binds this AsyncServerSocket to the localAddress address by assigning the local address to it.
+     * Binds this AsyncServerSocket to the localAddress address by assigning the local
+     * address to it.
      * <p/>
      * At a socket level, this method does 2 things:
      * <ol>
@@ -109,7 +112,7 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
      *     listen method to the AsyncServerSocket.</li>
      * </ol>
      * This can be made on any thread, but it isn't threadsafe.
-     * <p>
+     * <p/>
      * This call needs to be made before {@link #start(Consumer)}.
      * <p/>
      * Bind should only be called once, otherwise an UncheckedIOException is thrown.
@@ -131,7 +134,7 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
      * <p/>
      * This method should only be called once and isn't threadsafe.
      * <p/>
-     * Before accept is called, bind needs to be called.
+     * Before accept is called, {@link #bind(SocketAddress, int)} needs to be called.
      *
       */
     public abstract void start();

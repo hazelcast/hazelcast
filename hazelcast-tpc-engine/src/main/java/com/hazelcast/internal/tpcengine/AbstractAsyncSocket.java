@@ -45,21 +45,23 @@ public abstract class AbstractAsyncSocket implements Closeable {
     private boolean closeListenerChecked;
 
     /**
-     * Allows for objects to be bound to this AbstractAsyncSocket. Useful for the lookup
+     * Allows for objects to be bound to this {@link AbstractAsyncSocket}. Useful for the lookup
      * of services and other dependencies.
+     * <p/>
+     * This method is thread-safe.
      */
     public final ConcurrentMap<?, ?> context() {
         return context;
     }
 
     /**
-     * Configures the close listener.
+     * Configures the {@link CloseListener}.
      * <p/>
      * Can only be configured once.
      * <p/>
      * This call is threadsafe.
      * <p/>
-     * If the method is called when the socket already is closed, the close listener
+     * If the method is called when the socket already is closed, the {@link CloseListener}
      * is notified.
      *
      * @param listener the close listener to set.
@@ -104,7 +106,7 @@ public abstract class AbstractAsyncSocket implements Closeable {
     }
 
     /**
-     * Closes the socket with a null reason and cause.
+     * Closes the socket with a <code>null</code> reason and cause.
      * <p/>
      * If the socket is already closed, the call is ignored.
      * <p/>
@@ -125,9 +127,9 @@ public abstract class AbstractAsyncSocket implements Closeable {
      * This method is thread-safe.
      *
      * @param reason the reason this socket is going to be closed.
-     *               Is allowed to be null.
+     *               Is allowed to be <code>null</code>.
      * @param cause  the Throwable that caused this socket to be closed.
-     *               Is allowed to be null.
+     *               Is allowed to be <code>null</code>.
      */
     @SuppressWarnings("java:S3776")
     public final void close(String reason, Throwable cause) {
@@ -200,9 +202,9 @@ public abstract class AbstractAsyncSocket implements Closeable {
     protected abstract void close0() throws IOException;
 
     /**
-     * Gets the reason this socket was closed. Can be null if no reason was given or if
-     * the socket is still active. It is purely meant for debugging to shed some light on
-     * why sockets are closed.
+     * Gets the reason this socket was closed. Can be <code>null</code> if no reason
+     * was given or if the socket is still active. It is purely meant for debugging to
+     * shed some light on why sockets are closed.
      * <p>
      * This method is thread-safe and can be called at any moment.
      * <p>
@@ -218,9 +220,9 @@ public abstract class AbstractAsyncSocket implements Closeable {
     }
 
     /**
-     * Gets the cause this socket was closed. Can be null if no cause was given or if the
-     * socket is still active. It is purely meant for debugging to shed some light on why
-     * sockets are closed.
+     * Gets the cause this socket was closed. Can be <code>null</code> if no cause was
+     * given or if the socket is still active. It is purely meant for debugging to shed
+     * some light on why sockets are closed.
      * <p>
      * This method is thread-safe.
      *
