@@ -18,38 +18,40 @@ package com.hazelcast.instance.impl.executejar;
 
 import com.hazelcast.jet.Job;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.List;
 
 public class ExecuteJobParameters {
 
-    @Nonnull
-    private final String jarPath;
-    @Nullable
-    private final String snapshotName;
-    @Nullable
-    private final String jobName;
+    private String jarPath;
+
+    private String snapshotName;
+
+    private String jobName;
 
     private final ArrayList<Job> submittedJobs = new ArrayList<>();
 
+    public ExecuteJobParameters() {
+    }
 
-    public ExecuteJobParameters(@Nonnull String jarPath, @Nullable String snapshotName, @Nullable String jobName) {
+    public ExecuteJobParameters(String jarPath, String snapshotName, String jobName) {
         this.jarPath = jarPath;
         this.snapshotName = snapshotName;
         this.jobName = jobName;
     }
 
-    @Nonnull
     public String getJarPath() {
         return jarPath;
+    }
+
+    public boolean hasJarPath() {
+        return jarPath != null;
     }
 
     public boolean hasSnapshotName() {
         return snapshotName != null;
     }
 
-    @Nullable
     public String getSnapshotName() {
         return snapshotName;
     }
@@ -58,12 +60,11 @@ public class ExecuteJobParameters {
         return jobName != null;
     }
 
-    @Nullable
     public String getJobName() {
         return jobName;
     }
 
-    public ArrayList<Job> getSubmittedJobs() {
+    public List<Job> getSubmittedJobs() {
         return submittedJobs;
     }
 

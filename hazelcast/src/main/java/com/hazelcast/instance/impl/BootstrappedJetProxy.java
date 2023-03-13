@@ -42,7 +42,8 @@ import java.util.Map;
 @SuppressWarnings({"checkstyle:methodcount"})
 public class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
     private final AbstractJetInstance<M> jet;
-    private final ThreadLocal<ExecuteJobParameters> executeJobParametersThreadLocal = new ThreadLocal<>();
+    private final ThreadLocal<ExecuteJobParameters> executeJobParametersThreadLocal =
+            ThreadLocal.withInitial(ExecuteJobParameters::new);
 
     BootstrappedJetProxy(@Nonnull JetService jet) {
         super(((AbstractJetInstance) jet).getHazelcastInstance());
@@ -207,13 +208,16 @@ public class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
 
     private void updateJobConfig(JobConfig jobConfig) {
         ExecuteJobParameters jobParameters = getThreadLocalParameters();
-        jobConfig.addJar(jobParameters.getJarPath());
 
-        if (jobParameters.hasSnapshotName()) {
-            jobConfig.setInitialSnapshotName(jobParameters.getSnapshotName());
-        }
-        if (jobParameters.hasJobName()) {
-            jobConfig.setName(jobParameters.getJobName());
+        if (jobParameters.hasJarPath()) {
+            jobConfig.addJar(jobParameters.getJarPath());
+
+            if (jobParameters.hasSnapshotName()) {
+                jobConfig.setInitialSnapshotName(jobParameters.getSnapshotName());
+            }
+            if (jobParameters.hasJobName()) {
+                jobConfig.setName(jobParameters.getJobName());
+            }
         }
     }
 }

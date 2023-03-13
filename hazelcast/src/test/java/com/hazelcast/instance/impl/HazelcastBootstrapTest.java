@@ -45,7 +45,7 @@ public class HazelcastBootstrapTest {
         cleanUpHazelcastBootstrapSupplier();
     }
 
-    private static void cleanUpHazelcastBootstrapSupplier() throws NoSuchFieldException, IllegalAccessException {
+    private static void cleanUpHazelcastBootstrapSupplier() {
         // Set the static instance supplier field of HazelcastBootstrap
         // to null. Because of the lifetime of this field spans many
         // test classes run on the same JVM, HazelcastBootstrapTest
