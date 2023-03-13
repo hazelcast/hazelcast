@@ -29,6 +29,7 @@ import com.hazelcast.jet.kafka.KafkaProcessors;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.TimeoutException;
@@ -42,6 +43,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -338,5 +340,9 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
         int startIndex = topicIndex * Math.max(1, totalParallelism / topicsCount);
         int topicPartitionHandledBy = (startIndex + partition) % totalParallelism;
         return topicPartitionHandledBy == processorIndex;
+    }
+
+    public static <K, V> FunctionEx<Processor.Context, Consumer<K, V>> kafkaConsumerFn(Properties properties) {
+        return (c) -> new KafkaConsumer<>(properties);
     }
 }
