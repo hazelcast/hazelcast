@@ -39,6 +39,10 @@ import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This class is a stateful proxy that delegates calls to given JetService.
+ * The state is about running a jet job, and it stored in a ThreadLocal object
+ */
 @SuppressWarnings({"checkstyle:methodcount"})
 public class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
     private final AbstractJetInstance<M> jet;
@@ -48,6 +52,18 @@ public class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
     BootstrappedJetProxy(@Nonnull JetService jet) {
         super(((AbstractJetInstance) jet).getHazelcastInstance());
         this.jet = (AbstractJetInstance<M>) jet;
+    }
+
+    public ExecuteJobParameters getThreadLocalParameters() {
+        return executeJobParametersThreadLocal.get();
+    }
+
+    public void setThreadLocalParameters(ExecuteJobParameters parameters) {
+        executeJobParametersThreadLocal.set(parameters);
+    }
+
+    public void removeThreadLocalParameters() {
+        executeJobParametersThreadLocal.remove();
     }
 
     @Nonnull
@@ -192,18 +208,6 @@ public class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
 
     private void addToSubmittedJobs(@Nonnull Job job) {
         getThreadLocalParameters().addSubmittedJob(job);
-    }
-
-    public ExecuteJobParameters getThreadLocalParameters() {
-        return executeJobParametersThreadLocal.get();
-    }
-
-    public void setThreadLocalParameters(ExecuteJobParameters parameters) {
-        executeJobParametersThreadLocal.set(parameters);
-    }
-
-    public void removeThreadLocalParameters() {
-        executeJobParametersThreadLocal.remove();
     }
 
     private void updateJobConfig(JobConfig jobConfig) {
