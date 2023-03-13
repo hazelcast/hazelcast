@@ -25,6 +25,8 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility.TransactionalResource;
 import com.hazelcast.jet.impl.processor.UnboundedTransactionsProcessorUtility;
+import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.mongodb.WriteMode;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.jet.retry.impl.RetryTracker;
 import com.hazelcast.logging.ILogger;
@@ -40,7 +42,12 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.ReplaceOptions;
+import com.mongodb.client.model.UpdateOneModel;
+import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.Updates;
 import com.mongodb.client.model.WriteModel;
+import org.bson.BsonDocument;
+import org.bson.BsonValue;
 import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
@@ -52,6 +59,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.Util.idToString;
@@ -67,25 +75,59 @@ import static java.util.stream.Collectors.toList;
 
 /**
  * Processor for writing to MongoDB
- *
+ * <p>
  * For each chunk of items, processor will choose proper collection and write ReplaceOne or InsertOne operation,
  * depending on the existence of a document with given {@link #documentIdentityFieldName} in the collection.
- *
+ * <p>
  * All writes are postponed until transaction commit. This is on purpose, so that - in case of any
  * MongoDB's WriteError - we will be able to retry the commit.
- *
+ * <p>
  * Transactional guarantees are provided using {@linkplain UnboundedTransactionsProcessorUtility}.
  *
+ * <p>
+ * Flow of the data in processor:
+ * <ol>
+ *     <li>Data arrives in some format IN in the inbox</li>
+ *     <li>Data is mapped to intermediate format I using {@link #intermediateMappingFn}; it's the target format of
+ *          documents in the collection.</li>
+ *     <li>Inbound items are now grouped per collection to which they point</li>
+ *     <li>{@link #writeModelFn} creates a {@link WriteModel write model} for each item.
+ *          By default this function is derived from {@link #writeMode}:
+ *          <ul>
+ *              <li>for {@linkplain WriteMode#INSERT_ONLY} it creates {@linkplain InsertOneModel}</li>
+ *              <li>for {@linkplain WriteMode#UPDATE_ONLY} it creates {@linkplain UpdateOneModel} with upsert = false</li>
+ *              <li>for {@linkplain WriteMode#UPSERT} it creates {@linkplain UpdateOneModel} with upsert = true</li>
+ *              <li>for {@linkplain WriteMode#REPLACE} it creates {@linkplain ReplaceOneModel}</li>
+ *          </ul>
+ *          User can also provide own implementation, that takes item of type I and returns some {@link WriteModel}.
+ *     </li>
+ *
+ *     <li>{@link WriteModel}s are then saved and will be used as a parameter for {@link MongoCollection#bulkWrite(List)
+ *          MongoDB bulkWrite method}</li>
+ *
+ *     <li>Entities are recognized as the same if their {@link #documentIdentityFieldName} are the same.</li>
+ * </ol>
+ *
+ * @param <IN> input type
  * @param <I> type of saved item
  */
-public class WriteMongoP<I> extends AbstractProcessor {
+public class WriteMongoP<IN, I> extends AbstractProcessor {
     /**
      * Max number of items processed (written) in one invocation of {@linkplain #process}.
      */
     private static final int MAX_BATCH_SIZE = 2_000;
 
-    private final MongoDbConnection connection;
+    private final MongoConnection connection;
     private final Class<I> documentType;
+
+    /**
+     * Mapping function from input type to some intermediate type.
+     *
+     * Can be used to avoid additional mapping steps before using this processor, e.g. SQL connector
+     * passes JetSqlRow, which is then converted into {@linkplain org.bson.Document}, so that
+     * {@link #documentIdentityFn} and {@link #documentIdentityFieldName} are easier to reason about.
+     */
+    private final FunctionEx<IN, I> intermediateMappingFn;
     private ILogger logger;
 
     private UnboundedTransactionsProcessorUtility<MongoTransactionId, MongoTransaction> transactionUtility;
@@ -100,12 +142,15 @@ public class WriteMongoP<I> extends AbstractProcessor {
     private final Map<MongoTransactionId, MongoTransaction> activeTransactions = new HashMap<>();
     private final RetryStrategy commitRetryStrategy;
     private final SupplierEx<TransactionOptions> transactionOptionsSup;
+    private final WriteMode writeMode;
+
+    private final FunctionEx<I, WriteModel<I>> writeModelFn;
 
     /**
      * Creates a new processor that will always insert to the same database and collection.
      */
     public WriteMongoP(WriteMongoParams<I> params) {
-        this.connection = new MongoDbConnection(params.clientSupplier, client -> {
+        this.connection = new MongoConnection(params.clientSupplier, params.dataLinkRef, client -> {
         });
         this.documentIdentityFn = params.documentIdentityFn;
         this.documentIdentityFieldName = params.documentIdentityFieldName;
@@ -123,11 +168,16 @@ public class WriteMongoP<I> extends AbstractProcessor {
             this.collectionPicker = new FunctionalCollectionPicker<>(params.databaseNameSelectFn,
                     params.collectionNameSelectFn);
         }
+        this.intermediateMappingFn = params.getIntermediateMappingFn();
+        this.writeMode = params.getWriteMode();
+
+        this.writeModelFn = params.getOptionalWriteModelFn().orElse(this::defaultWriteModelSupplier);
     }
 
     @Override
     protected void init(@Nonnull Context context) {
         logger = context.logger();
+        connection.assembleSupplier(Util.getNodeEngine(context.hazelcastInstance()));
 
         int processorIndex = context.globalProcessorIndex();
         transactionUtility = new UnboundedTransactionsProcessorUtility<>(
@@ -167,10 +217,11 @@ public class WriteMongoP<I> extends AbstractProcessor {
         try {
             MongoTransaction mongoTransaction = transactionUtility.activeTransaction();
 
-            ArrayList<I> items = drainItems(inbox);
+            ArrayList<IN> items = drainItems(inbox);
             @SuppressWarnings("DataFlowIssue")
             Map<MongoCollectionKey, List<I>> itemsPerCollection = items
                     .stream()
+                    .map(intermediateMappingFn)
                     .map(e -> tuple2(collectionPicker.pick(e), e))
                     .collect(groupingBy(Tuple2::f0, mapping(Tuple2::getValue, toList())));
 
@@ -181,15 +232,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
                 List<WriteModel<I>> writes = new ArrayList<>();
 
                 for (I item : entry.getValue()) {
-                    Object id = documentIdentityFn.apply(item);
-
-                    WriteModel<I> write;
-                    if (id == null) {
-                        write = new InsertOneModel<>(item);
-                    } else {
-                        Bson filter = eq(documentIdentityFieldName, id);
-                        write = new ReplaceOneModel<>(filter, item, replaceOptions);
-                    }
+                    WriteModel<I> write = writeModelFn.apply(item);
                     writes.add(write);
                 }
                 if (transactionUtility.usesTransactionLifecycle()) {
@@ -230,18 +273,55 @@ public class WriteMongoP<I> extends AbstractProcessor {
         return items;
     }
 
+    private WriteModel<I> defaultWriteModelSupplier(I item) {
+        Object id = documentIdentityFn.apply(item);
+        switch (writeMode) {
+            case INSERT_ONLY: return insert(item);
+            case UPDATE_ONLY: return update(id, item, new UpdateOptions().upsert(false));
+            case UPSERT:      return upsert(id, item);
+            case REPLACE:     return replace(id, item);
+            default: throw new IllegalStateException("unknown write mode");
+        }
+    }
+
+    WriteModel<I> insert(I item) {
+        return new InsertOneModel<>(item);
+    }
+
+    WriteModel<I> upsert(Object id, I item) {
+        if (id == null) {
+            return new InsertOneModel<>(item);
+        } else {
+            return update(id, item, new UpdateOptions().upsert(true));
+        }
+    }
+
+    WriteModel<I> replace(Object id, I item) {
+        if (id == null) {
+            return new InsertOneModel<>(item);
+        } else {
+            Bson filter = eq(documentIdentityFieldName, id);
+            return new ReplaceOneModel<>(filter, item, replaceOptions);
+        }
+    }
+
+    WriteModel<I> update(Object id, I item, UpdateOptions opts) {
+        Bson filter = eq(documentIdentityFieldName, id);
+        BsonDocument doc = Mappers.toBsonDocument(item);
+        List<Bson> updates = doc.entrySet().stream()
+                                .map(e -> {
+                                    String field = e.getKey();
+                                    BsonValue value = e.getValue();
+                                    return Updates.set(field, value);
+                                })
+                                .collect(toList());
+        return new UpdateOneModel<>(filter, updates, opts);
+    }
+
     @Override
     public void close() {
-        try {
-            connection.close();
-        } catch (Throwable e) {
-            logger.severe("Error while closing MongoDB connection", e);
-        }
-        try {
-            transactionUtility.close();
-        } catch (Throwable e) {
-            logger.severe("Error while closing MongoDB transaction utility", e);
-        }
+        closeResource(transactionUtility);
+        closeResource(connection);
     }
 
     @Override
@@ -374,7 +454,6 @@ public class WriteMongoP<I> extends AbstractProcessor {
         }
 
         @Override
-        @SuppressWarnings("resource")
         public void begin() {
             if (!txnInitialized) {
                 logFine(logger, "beginning transaction %s", transactionId);

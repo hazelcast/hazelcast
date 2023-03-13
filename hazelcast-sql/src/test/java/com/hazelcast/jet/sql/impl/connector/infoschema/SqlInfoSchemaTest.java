@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.infoschema;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.datalink.impl.DataLinkTestUtil;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.sql.SqlService;
@@ -105,6 +106,18 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
                                 "VIEW",
                                 null, null, null, null, null,
                                 "NO", "NO", null)));
+    }
+
+    @Test
+    public void test_datalinks() {
+        String type = DataLinkTestUtil.DummyDataLink.class.getName();
+        String wrappedType = "\"" + type + "\"";
+        sqlService.execute("CREATE DATA LINK dl TYPE " + wrappedType + " OPTIONS ()");
+
+        assertRowsAnyOrder(
+                "SELECT * FROM information_schema.datalinks",
+                singletonList(new Row("hazelcast", "public", "dl", type, "{}"))
+        );
     }
 
     @Test
@@ -229,10 +242,10 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
     @Test
     public void test_userDefinedTypes() {
         assertRowsAnyOrder("SELECT "
-                + "user_defined_type_catalog, "
-                + "user_defined_type_schema, "
-                + "user_defined_type_name, "
-                + "user_defined_type_category FROM information_schema.user_defined_types",
+                        + "user_defined_type_catalog, "
+                        + "user_defined_type_schema, "
+                        + "user_defined_type_name, "
+                        + "user_defined_type_category FROM information_schema.user_defined_types",
                 rows(4,
                         "hazelcast", "public", firstTypeName, "STRUCTURED",
                         "hazelcast", "public", secondTypeName, "STRUCTURED"
@@ -243,12 +256,12 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
     public void test_attributes() {
         final List<Row> expected = Arrays.asList(
                 new Row("hazelcast", "public", firstTypeName, "id", 1, "YES", "BIGINT", null, null, 64, 2, 0, null, null, null, null),
-              new Row("hazelcast", "public", firstTypeName, "name", 2, "YES", "VARCHAR", 2147483647, 2147483647, null, null, null, null, null, null, null),
-              new Row("hazelcast", "public", firstTypeName, "created", 3, "YES", "TIMESTAMP_WITH_LOCAL_TIME_ZONE", null, null, null, null, null, 9, null, null, null),
-              new Row("hazelcast", "public", firstTypeName, "balance", 4, "YES", "DOUBLE", null, null, 53, 2, null, null, null, null, null),
-              new Row("hazelcast", "public", secondTypeName, "id", 1, "YES", "BIGINT", null, null, 64, 2, 0, null, null, null, null),
-              new Row("hazelcast", "public", secondTypeName, "name", 2, "YES", "VARCHAR", 2147483647, 2147483647, null, null, null, null, null, null, null),
-         new  Row("hazelcast", "public", secondTypeName, "other", 3, "YES", "USER-DEFINED", null, null, null, null, null, null, "hazelcast", "public", firstTypeName)
+                new Row("hazelcast", "public", firstTypeName, "name", 2, "YES", "VARCHAR", 2147483647, 2147483647, null, null, null, null, null, null, null),
+                new Row("hazelcast", "public", firstTypeName, "created", 3, "YES", "TIMESTAMP_WITH_LOCAL_TIME_ZONE", null, null, null, null, null, 9, null, null, null),
+                new Row("hazelcast", "public", firstTypeName, "balance", 4, "YES", "DOUBLE", null, null, 53, 2, null, null, null, null, null),
+                new Row("hazelcast", "public", secondTypeName, "id", 1, "YES", "BIGINT", null, null, 64, 2, 0, null, null, null, null),
+                new Row("hazelcast", "public", secondTypeName, "name", 2, "YES", "VARCHAR", 2147483647, 2147483647, null, null, null, null, null, null, null),
+                new Row("hazelcast", "public", secondTypeName, "other", 3, "YES", "USER-DEFINED", null, null, null, null, null, null, "hazelcast", "public", firstTypeName)
         );
         assertRowsAnyOrder("SELECT "
                 + "udt_catalog, "

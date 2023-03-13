@@ -19,13 +19,14 @@ package com.hazelcast.jet.impl.operation;
 import com.hazelcast.client.impl.protocol.codec.JetUploadJobMetaDataCodec;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.jet.impl.jobupload.JobMetaDataParameterObject;
+import com.hazelcast.jet.impl.submitjob.memberside.JobMetaDataParameterObject;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeList;
@@ -38,7 +39,6 @@ import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
  */
 public class UploadJobMetaDataOperation extends Operation implements IdentifiedDataSerializable {
 
-    boolean response;
     JobMetaDataParameterObject jobMetaDataParameterObject;
 
     public UploadJobMetaDataOperation() {
@@ -48,6 +48,7 @@ public class UploadJobMetaDataOperation extends Operation implements IdentifiedD
         // Save the parameters received from client
         jobMetaDataParameterObject = new JobMetaDataParameterObject();
         jobMetaDataParameterObject.setSessionId(parameters.sessionId);
+        jobMetaDataParameterObject.setJarOnMember(parameters.jarOnMember);
         jobMetaDataParameterObject.setSha256Hex(parameters.sha256Hex);
         jobMetaDataParameterObject.setFileName(parameters.fileName);
         jobMetaDataParameterObject.setSnapshotName(parameters.snapshotName);
@@ -56,16 +57,27 @@ public class UploadJobMetaDataOperation extends Operation implements IdentifiedD
         jobMetaDataParameterObject.setJobParameters(parameters.jobParameters);
     }
 
-    @Override
-    public Object getResponse() {
-        return response;
-    }
 
     @Override
     public void run() {
+        if (jobMetaDataParameterObject.isJarOnMember()) {
+            runJarOnMember();
+        } else {
+            runJarOnClient();
+        }
+    }
+
+    private void runJarOnMember() {
+        // JarPath is not the temp directory. It is the given file name
+        jobMetaDataParameterObject.setJarPath(Paths.get(jobMetaDataParameterObject.getFileName()));
+
+        JetServiceBackend jetServiceBackend = getJetServiceBackend();
+        jetServiceBackend.jarOnMember(jobMetaDataParameterObject);
+    }
+
+    private void runJarOnClient() {
         JetServiceBackend jetServiceBackend = getJetServiceBackend();
         jetServiceBackend.storeJobMetaData(jobMetaDataParameterObject);
-        response = true;
     }
 
     protected JetServiceBackend getJetServiceBackend() {

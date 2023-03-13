@@ -143,7 +143,7 @@ public class RingbufferService implements ManagedService, RemoteService, Chunked
     @Override
     public void destroyDistributedObject(String name, boolean local) {
         destroyContainer(getRingbufferPartitionId(name), getRingbufferNamespace(name));
-        nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
+        nodeEngine.getEventService().deregisterAllLocalListeners(SERVICE_NAME, name);
         splitBrainProtectionConfigCache.remove(name);
     }
 

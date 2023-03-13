@@ -29,6 +29,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExp
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DiskTierConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -38,7 +39,6 @@ import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
@@ -926,19 +926,25 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     endpointConfigBuilder.addPropertyValue("socketKeepAlive",
                             getBooleanValue(textContent));
                 } else if ("connect-timeout-seconds".equals(nodeName)) {
-                    endpointConfigBuilder.addPropertyValue("socketConnectTimeoutSeconds",
-                            getIntegerValue("socketConnectTimeoutSeconds", textContent));
+                    addIntegerPropertyValue(endpointConfigBuilder, "socketConnectTimeoutSeconds", textContent);
                 } else if ("send-buffer-size-kb".equals(nodeName)) {
-                    endpointConfigBuilder.addPropertyValue("socketSendBufferSizeKb",
-                            getIntegerValue("socketSendBufferSizeKb", textContent));
+                    addIntegerPropertyValue(endpointConfigBuilder, "socketSendBufferSizeKb", textContent);
                 } else if ("receive-buffer-size-kb".equals(nodeName)) {
-                    endpointConfigBuilder.addPropertyValue("socketRcvBufferSizeKb",
-                            getIntegerValue("socketRcvBufferSizeKb", textContent));
+                    addIntegerPropertyValue(endpointConfigBuilder, "socketRcvBufferSizeKb", textContent);
                 } else if ("linger-seconds".equals(nodeName)) {
-                    endpointConfigBuilder.addPropertyValue("socketLingerSeconds",
-                            getIntegerValue("socketLingerSeconds", textContent));
+                    addIntegerPropertyValue(endpointConfigBuilder, "socketLingerSeconds", textContent);
+                } else if ("keep-idle-seconds".equals(nodeName)) {
+                    addIntegerPropertyValue(endpointConfigBuilder, "socketKeepIdleSeconds", textContent);
+                } else if ("keep-interval-seconds".equals(nodeName)) {
+                    addIntegerPropertyValue(endpointConfigBuilder, "socketKeepIntervalSeconds", textContent);
+                } else if ("keep-count".equals(nodeName)) {
+                    addIntegerPropertyValue(endpointConfigBuilder, "socketKeepCount", textContent);
                 }
             }
+        }
+
+        private void addIntegerPropertyValue(BeanDefinitionBuilder bdb, String parameterName, String textContent) {
+            bdb.addPropertyValue(parameterName, getIntegerValue(parameterName, textContent));
         }
 
         public void handleProperties(Node node) {

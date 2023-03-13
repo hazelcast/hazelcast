@@ -262,6 +262,11 @@ public final class TcpServer implements Server {
         return connectionManager;
     }
 
+    // for testing
+    public ServerSocketRegistry getRegistry() {
+        return registry;
+    }
+
     void scheduleDeferred(Runnable task, long delay, TimeUnit unit) {
         scheduler.schedule(task, delay, unit);
     }

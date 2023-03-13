@@ -45,9 +45,11 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketOption;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.NetworkChannel;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -62,6 +64,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collection;
 import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
@@ -71,8 +75,12 @@ import static com.hazelcast.internal.networking.ChannelOption.SO_KEEPALIVE;
 import static com.hazelcast.internal.networking.ChannelOption.SO_LINGER;
 import static com.hazelcast.internal.networking.ChannelOption.SO_RCVBUF;
 import static com.hazelcast.internal.networking.ChannelOption.SO_SNDBUF;
+import static com.hazelcast.internal.networking.ChannelOption.TCP_KEEPCOUNT;
+import static com.hazelcast.internal.networking.ChannelOption.TCP_KEEPIDLE;
+import static com.hazelcast.internal.networking.ChannelOption.TCP_KEEPINTERVAL;
 import static com.hazelcast.internal.networking.ChannelOption.TCP_NODELAY;
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
+import static com.hazelcast.internal.tpcengine.util.ReflectionUtil.findStaticFieldValue;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.JVMUtil.upcast;
@@ -84,6 +92,15 @@ import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
         "checkstyle:ClassDataAbstractionCoupling"})
 public final class IOUtil {
 
+    public static final SocketOption<Integer> JDK_NET_TCP_KEEPCOUNT
+            = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPCOUNT");
+    public static final SocketOption<Integer> JDK_NET_TCP_KEEPIDLE
+            = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPIDLE");
+    public static final SocketOption<Integer> JDK_NET_TCP_KEEPINTERVAL
+            = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPINTERVAL");
+    private static final AtomicBoolean TCP_KEEPCOUNT_WARNING = new AtomicBoolean();
+    private static final AtomicBoolean TCP_KEEPIDLE_WARNING = new AtomicBoolean();
+    private static final AtomicBoolean TCP_KEEPINTERVAL_WARNING = new AtomicBoolean();
     private static final ILogger LOGGER = Logger.getLogger(IOUtil.class);
     private static final Random RANDOM = new Random();
 
@@ -413,17 +430,17 @@ public final class IOUtil {
     }
 
     /**
-     * Quietly attempts to close a {@link Closeable} resource, swallowing any exception.
+     * Quietly attempts to close a {@link Closeable} or {@link AutoCloseable} resource, swallowing any exception.
      *
      * @param closeable the resource to close. If {@code null}, no action is taken.
      */
-    public static void closeResource(Closeable closeable) {
+    public static void closeResource(AutoCloseable closeable) {
         if (closeable == null) {
             return;
         }
         try {
             closeable.close();
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOGGER.finest("closeResource failed", e);
         }
     }
@@ -886,7 +903,88 @@ public final class IOUtil {
                 .setOption(SO_KEEPALIVE, config.isSocketKeepAlive())
                 .setOption(SO_SNDBUF, config.getSocketSendBufferSizeKb() * KILO_BYTE)
                 .setOption(SO_RCVBUF, config.getSocketRcvBufferSizeKb() * KILO_BYTE)
-                .setOption(SO_LINGER, config.getSocketLingerSeconds());
+                .setOption(SO_LINGER, config.getSocketLingerSeconds())
+                .setOption(TCP_KEEPCOUNT, config.getSocketKeepCount())
+                .setOption(TCP_KEEPINTERVAL, config.getSocketKeepIntervalSeconds())
+                .setOption(TCP_KEEPIDLE, config.getSocketKeepIdleSeconds());
+    }
+
+    public static void setKeepAliveOptionsIfNotDefault(NetworkChannel serverSocketChannel, EndpointConfig endpointConfig,
+                                                       ILogger logger)
+            throws IOException {
+        setKeepCount(serverSocketChannel, endpointConfig.getSocketKeepCount(), logger);
+        setKeepIdle(serverSocketChannel, endpointConfig.getSocketKeepIdleSeconds(), logger);
+        setKeepInterval(serverSocketChannel, endpointConfig.getSocketKeepIntervalSeconds(), logger);
+    }
+
+    public static void setKeepCount(NetworkChannel socketChannel, Integer value, ILogger logger) throws IOException {
+        if (!supportsKeepAliveOptions(socketChannel)) {
+            if (TCP_KEEPCOUNT_WARNING.compareAndSet(false, true)) {
+                logger.warning("Ignoring TCP_KEEPCOUNT. "
+                        + "Please upgrade to the latest Java 8 release or Java 11+ to allow setting keep-alive count. "
+                        + "Alternatively, on Linux, configure tcp_keepalive_probes in the kernel "
+                        + "(affecting default keep-alive configuration for all sockets): "
+                        + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
+                        + "If this isn't dealt with, idle connections could be closed prematurely.");
+            }
+        } else {
+            setOptionIfNotDefault(socketChannel, JDK_NET_TCP_KEEPCOUNT, value, EndpointConfig.DEFAULT_SOCKET_KEEP_COUNT);
+        }
+    }
+
+    public static void setKeepIdle(NetworkChannel socketChannel, Integer value, ILogger logger) throws IOException {
+        if (!supportsKeepAliveOptions(socketChannel)) {
+            if (TCP_KEEPIDLE_WARNING.compareAndSet(false, true)) {
+                logger.warning("Ignoring TCP_KEEPIDLE. "
+                        + "Please upgrade to the latest Java 8 release or Java 11+ to allow setting keep-alive idle time."
+                        + "Alternatively, on Linux, configure tcp_keepalive_time in the kernel "
+                        + "(affecting default keep-alive configuration for all sockets): "
+                        + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
+                        + "If this isn't dealt with, idle connections could be closed prematurely.");
+            }
+        } else {
+            setOptionIfNotDefault(socketChannel, JDK_NET_TCP_KEEPIDLE, value, EndpointConfig.DEFAULT_SOCKET_KEEP_IDLE_SECONDS);
+        }
+    }
+
+    public static void setKeepInterval(NetworkChannel socketChannel, Integer value, ILogger logger) throws IOException {
+        if (!supportsKeepAliveOptions(socketChannel)) {
+            if (TCP_KEEPINTERVAL_WARNING.compareAndSet(false, true)) {
+                logger.warning("Ignoring TCP_KEEPINTERVAL. "
+                        + "Please upgrade to the latest Java 8 release or Java 11+ to allow setting keep-alive interval."
+                        + "Alternatively, on Linux, configure tcp_keepalive_intvl in the kernel "
+                        + "(affecting default keep-alive configuration for all sockets): "
+                        + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
+                        + "If this isn't dealt with, idle connections could be closed prematurely.");
+            }
+        } else {
+            setOptionIfNotDefault(socketChannel, JDK_NET_TCP_KEEPINTERVAL, value,
+                    EndpointConfig.DEFAULT_SOCKET_KEEP_INTERVAL_SECONDS);
+        }
+    }
+
+    private static <T> void setOptionIfNotDefault(NetworkChannel serverSocketChannel,
+                                                  SocketOption<T> socketOption,
+                                                  T value, T defaultValue) throws IOException {
+        if (socketOption != null && !defaultValue.equals(value)) {
+            serverSocketChannel.setOption(socketOption, value);
+        }
+    }
+
+    public static boolean supportsKeepAliveOptions(NetworkChannel channel) {
+        // According to https://bugs.openjdk.org/browse/JDK-8194298 per-socket keep alive options
+        // are supported for linux & macos in OpenJDK-based Java distributions since JDK 8u272 or JDK >= 11.
+        // See: ExtendedOptionsImpl.c in
+        // https://github.com/AdoptOpenJDK/openjdk-jdk8u/commit/13a9d5b0c222b92812f0bc69ac96c8b7755a63a9
+        if (JDK_NET_TCP_KEEPCOUNT == null
+            || JDK_NET_TCP_KEEPIDLE == null
+            || JDK_NET_TCP_KEEPINTERVAL == null) {
+            return false;
+        }
+        Set<SocketOption<?>> options = channel.supportedOptions();
+        return options.contains(IOUtil.JDK_NET_TCP_KEEPCOUNT)
+                && options.contains(IOUtil.JDK_NET_TCP_KEEPIDLE)
+                && options.contains(IOUtil.JDK_NET_TCP_KEEPINTERVAL);
     }
 
     private static final class ClassLoaderAwareObjectInputStream extends ObjectInputStream {

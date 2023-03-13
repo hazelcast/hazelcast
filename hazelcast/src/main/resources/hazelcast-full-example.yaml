@@ -3103,6 +3103,15 @@ hazelcast:
   #              Specifies the size of the receive buffer. The default value is 128KB.
   #          * "linger-seconds":
   #              Specifies the TCP linger seconds. The default value is 0.
+  #          * "keep-count":
+  #              When keep-alive is true and supported by the platform, sets the number of unacknowledged TCP keep-alive probes
+  #              to be sent before declaring a connection dead.
+  #          * "keep-idle-seconds":
+  #              When keep-alive is true and supported by the platform, sets the number of seconds to wait after the last
+  #              packet was sent before sending a keep-alive probe.
+  #          * "keep-interval-seconds":
+  #              When keep-alive is true and supported by the platform, sets the number of seconds to wait between keep-alive
+  #              probes.
   #
   #      - "alto-socket":
   #        Socket configuration for Alto. In Alto, each eventloop has its own socket.
@@ -3276,6 +3285,9 @@ hazelcast:
         send-buffer-size-kb: 25
         receive-buffer-size-kb: 33
         linger-seconds: 99
+        keep-idle-seconds: 600
+        keep-count: 10
+        keep-interval-seconds: 15
       port:
         port-count: 100
         auto-increment: true

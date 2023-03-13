@@ -18,62 +18,65 @@ package com.hazelcast.jet.kafka.connect.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import org.apache.kafka.connect.source.SourceConnector;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 import org.apache.kafka.connect.source.SourceTaskContext;
 import org.apache.kafka.connect.storage.OffsetStorageReader;
 
+import java.io.Serializable;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
 
 class TaskRunner {
     private static final ILogger LOGGER = Logger.getLogger(TaskRunner.class);
-    private final SourceConnector connector;
+    private final String name;
     private final ReentrantLock taskLifecycleLock = new ReentrantLock();
-    private final Map<Map<String, ?>, Map<String, ?>> partitionsToOffset;
+    private final State state = new State();
+    private final SourceTaskFactory sourceTaskFactory;
     private volatile boolean running;
-    private volatile boolean reconfigurationRequested;
+    private volatile boolean reconfigurationNeeded;
     private SourceTask task;
+    private Map<String, String> taskConfig;
 
-    TaskRunner(SourceConnector connector, Map<Map<String, ?>, Map<String, ?>> partitionsToOffset) {
-        this.connector = connector;
-        this.partitionsToOffset = partitionsToOffset;
+
+    TaskRunner(String name, SourceTaskFactory sourceTaskFactory) {
+        this.name = name;
+        this.sourceTaskFactory = sourceTaskFactory;
     }
 
     List<SourceRecord> poll() {
         restartTaskIfNeeded();
-        return doPoll();
+        if (running) {
+            return doPoll();
+        } else {
+            return Collections.emptyList();
+        }
     }
 
     void stop() {
-        LOGGER.info("Stopping task if running");
         try {
             taskLifecycleLock.lock();
             if (running) {
-                LOGGER.fine("Stopping task");
+                LOGGER.fine("Stopping task '" + name + "'");
                 task.stop();
-                LOGGER.fine("Task stopped");
+                LOGGER.fine("Task '" + name + "' stopped");
             }
         } finally {
             running = false;
-            task = null;
             taskLifecycleLock.unlock();
         }
     }
 
-    void requestReconfiguration() {
-        LOGGER.info("Task reconfiguration requested");
-        reconfigurationRequested = true;
-    }
-
     private List<SourceRecord> doPoll() {
         try {
-            return task.poll();
+            List<SourceRecord> sourceRecords = task.poll();
+            return sourceRecords == null ? Collections.emptyList() : sourceRecords;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw rethrow(e);
@@ -81,36 +84,44 @@ class TaskRunner {
     }
 
     private void restartTaskIfNeeded() {
-        if (reconfigurationRequested) {
-            reconfigurationRequested = false;
+        if (reconfigurationNeeded) {
+            reconfigurationNeeded = false;
             try {
                 stop();
             } catch (Exception ex) {
-                LOGGER.warning("Stopping task failed but proceeding with re-start", ex);
+                LOGGER.warning("Stopping task '" + name + "' failed but proceeding with re-start", ex);
             }
         }
         start();
     }
 
+    void updateTaskConfig(Map<String, String> taskConfig) {
+        try {
+            taskLifecycleLock.lock();
+            if (!Objects.equals(this.taskConfig, taskConfig)) {
+                LOGGER.info("Updating task '" + name + "' configuration");
+                this.taskConfig = taskConfig;
+                reconfigurationNeeded = true;
+            }
+        } finally {
+            taskLifecycleLock.unlock();
+        }
+    }
+
     private void start() {
-        LOGGER.info("Starting tasks if the previous not running");
         try {
             taskLifecycleLock.lock();
             if (!running) {
-                LOGGER.info("Starting tasks");
-
-                List<Map<String, String>> taskConfigs = connector.taskConfigs(1);
-                if (!taskConfigs.isEmpty()) {
-                    Map<String, String> taskConfig = taskConfigs.get(0);
-                    Class<? extends SourceTask> taskClass = connector.taskClass().asSubclass(SourceTask.class);
-                    this.task = newInstance(Thread.currentThread().getContextClassLoader(), taskClass.getName());
-                    LOGGER.info("Initializing task: " + task);
-                    task.initialize(new JetSourceTaskContext(taskConfig));
-                    LOGGER.info("Starting task: " + task + " with task config: " + taskConfig);
-                    task.start(taskConfig);
+                if (taskConfig != null) {
+                    SourceTask taskLocal = sourceTaskFactory.create();
+                    LOGGER.info("Initializing task '" + name + "'");
+                    taskLocal.initialize(new JetSourceTaskContext(taskConfig, state));
+                    LOGGER.info("Starting task '" + name + "'");
+                    taskLocal.start(taskConfig);
+                    this.task = taskLocal;
                     running = true;
                 } else {
-                    LOGGER.info("No task configs!");
+                    LOGGER.finest("No task config for task '" + name + "'");
                 }
             }
         } finally {
@@ -118,11 +129,25 @@ class TaskRunner {
         }
     }
 
-    private final class JetSourceTaskContext implements SourceTaskContext {
-        private final Map<String, String> taskConfig;
+    public void commit() {
+        if (running) {
+            try {
+                task.commit();
+            } catch (InterruptedException e) {
+                LOGGER.warning("Interrupted while committing");
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
 
-        private JetSourceTaskContext(Map<String, String> taskConfig) {
+    private static final class JetSourceTaskContext implements SourceTaskContext {
+        private final Map<String, String> taskConfig;
+        private final State state;
+
+        private JetSourceTaskContext(Map<String, String> taskConfig,
+                                     State state) {
             this.taskConfig = taskConfig;
+            this.state = state;
         }
 
         @Override
@@ -132,7 +157,102 @@ class TaskRunner {
 
         @Override
         public OffsetStorageReader offsetStorageReader() {
-            return new SourceOffsetStorageReader(partitionsToOffset);
+            return new SourceOffsetStorageReader(state.partitionsToOffset);
+        }
+    }
+
+    public void commitRecord(SourceRecord rec) {
+        state.commitRecord(rec);
+        try {
+            if (running) {
+                task.commitRecord(rec, null);
+            }
+        } catch (InterruptedException ie) {
+            LOGGER.warning("Interrupted while committing record");
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    public State createSnapshot() {
+        State snapshot = new State();
+        snapshot.load(state);
+        return snapshot;
+    }
+
+    public void restoreSnapshot(State state) {
+        this.state.load(state);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public String toString() {
+        return "TaskRunner{" +
+                "name='" + name + '\'' +
+                '}';
+    }
+
+    @FunctionalInterface
+    interface SourceTaskFactory {
+        SourceTask create();
+    }
+
+    static class State implements Serializable {
+
+        /**
+         * Key represents the partition which the record originated from. Value
+         * represents the offset within that partition. Kafka Connect represents
+         * the partition and offset as arbitrary values so that is why it is
+         * stored as map.
+         * See {@link SourceRecord} for more information regarding the format.
+         */
+        private final Map<Map<String, ?>, Map<String, ?>> partitionsToOffset;
+
+        State() {
+            this.partitionsToOffset = new ConcurrentHashMap<>();
+        }
+
+        /**
+         * just for testing
+         */
+        State(Map<Map<String, ?>, Map<String, ?>> partitionsToOffset) {
+            this.partitionsToOffset = new ConcurrentHashMap<>(partitionsToOffset);
+        }
+
+        void commitRecord(SourceRecord rec) {
+            partitionsToOffset.put(rec.sourcePartition(), rec.sourceOffset());
+        }
+
+        void load(State state) {
+            partitionsToOffset.clear();
+            partitionsToOffset.putAll(state.partitionsToOffset);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            State state = (State) o;
+            return partitionsToOffset.equals(state.partitionsToOffset);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(partitionsToOffset);
+        }
+
+        @Override
+        public String toString() {
+            return "State{" +
+                    "partitionsToOffset=" + partitionsToOffset +
+                    '}';
         }
     }
 }

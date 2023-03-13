@@ -22,8 +22,10 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.mongodb.impl.CursorTraverser.EmptyItem;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.mongodb.MongoException;
 import com.mongodb.MongoServerException;
 import com.mongodb.MongoSocketException;
@@ -42,10 +44,12 @@ import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.Traversers.singleton;
@@ -86,7 +90,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
     private boolean snapshotInProgress;
     private final MongoChunkedReader reader;
-    private final MongoDbConnection connection;
+    private final MongoConnection connection;
 
     private Traverser<?> traverser;
     private Traverser<Entry<BroadcastKey<Integer>, Object>> snapshotTraverser;
@@ -101,7 +105,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
             this.reader = new BatchMongoReader(params.databaseName, params.collectionName, params.mapItemFn,
                     params.aggregates);
         }
-        this.connection = new MongoDbConnection(params.clientSupplier, client -> reader.connect(client,
+        this.connection = new MongoConnection(params.clientSupplier, params.dataLinkRef, client -> reader.connect(client,
                 snapshotsEnabled));
     }
 
@@ -111,6 +115,9 @@ public class ReadMongoP<I> extends AbstractProcessor {
         totalParallelism = context.totalParallelism();
         processorIndex = context.globalProcessorIndex();
         this.snapshotsEnabled = context.snapshottingEnabled();
+
+        NodeEngineImpl nodeEngine = Util.getNodeEngine(context.hazelcastInstance());
+        connection.assembleSupplier(nodeEngine);
 
         connection.reconnectIfNecessary();
     }
@@ -143,9 +150,8 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
     @Override
     public void close() {
-        if (reader != null) {
-            reader.close();
-        }
+        closeResource(reader);
+        closeResource(connection);
     }
 
     @Override
@@ -203,9 +209,8 @@ public class ReadMongoP<I> extends AbstractProcessor {
         }
     }
 
-    private abstract class MongoChunkedReader {
+    private abstract class MongoChunkedReader implements Closeable {
 
-        protected MongoClient mongoClient;
         protected MongoDatabase database;
         protected MongoCollection<Document> collection;
         private final String databaseName;
@@ -249,12 +254,6 @@ public class ReadMongoP<I> extends AbstractProcessor {
         abstract Object snapshot();
 
         abstract void restore(Object value);
-
-        void close() {
-            if (mongoClient != null) {
-                mongoClient.close();
-            }
-        }
 
         abstract boolean everCompletes();
 
@@ -360,6 +359,10 @@ public class ReadMongoP<I> extends AbstractProcessor {
         @Override
         public void restore(Object value) {
             lastKey = value;
+        }
+
+        @Override
+        public void close() {
         }
     }
 
@@ -472,7 +475,6 @@ public class ReadMongoP<I> extends AbstractProcessor {
                 cursor.close();
                 cursor = null;
             }
-            super.close();
         }
     }
 }

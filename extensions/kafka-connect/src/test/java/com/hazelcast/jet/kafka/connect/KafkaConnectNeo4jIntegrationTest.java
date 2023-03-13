@@ -70,7 +70,6 @@ public class KafkaConnectNeo4jIntegrationTest extends JetTestSupport {
         Properties connectorProperties = new Properties();
         connectorProperties.setProperty("name", "neo4j");
         connectorProperties.setProperty("connector.class", "streams.kafka.connect.source.Neo4jSourceConnector");
-        connectorProperties.setProperty("tasks.max", "1");
         connectorProperties.setProperty("topic", "some-topic");
         connectorProperties.setProperty("neo4j.server.uri", container.getBoltUrl());
         connectorProperties.setProperty("neo4j.authentication.basic.username", "neo4j");
@@ -86,6 +85,7 @@ public class KafkaConnectNeo4jIntegrationTest extends JetTestSupport {
         Pipeline pipeline = Pipeline.create();
         StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(connectorProperties))
                 .withoutTimestamps()
+                .setLocalParallelism(2)
                 .map(record -> Values.convertToString(record.valueSchema(), record.value()));
         streamStage.writeTo(Sinks.logger());
         streamStage
