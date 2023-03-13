@@ -49,7 +49,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 
-import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
 import static com.hazelcast.sql.SqlExpectedResultType.ANY;
 import static com.hazelcast.sql.SqlExpectedResultType.ROWS;
 import static com.hazelcast.sql.SqlExpectedResultType.UPDATE_COUNT;
@@ -111,8 +110,8 @@ public class SqlServiceImpl implements SqlService {
                 optimizer.tableResolvers()
         );
         DataLinkConsistencyChecker dataLinkConsistencyChecker = new DataLinkConsistencyChecker(
-                nodeEngine.getDataLinkService(),
-                nodeEngine.getNode().hazelcastInstance.getMap(SQL_CATALOG_MAP_NAME)
+                nodeEngine.getHazelcastInstance(),
+                nodeEngine
         );
         internalService = new SqlInternalService(
                 resultRegistry,

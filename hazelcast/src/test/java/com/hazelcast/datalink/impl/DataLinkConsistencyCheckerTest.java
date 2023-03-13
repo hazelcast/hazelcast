@@ -19,11 +19,11 @@ package com.hazelcast.datalink.impl;
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.schema.datalink.DataLink;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -42,7 +42,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(QuickTest.class)
 public class DataLinkConsistencyCheckerTest extends SimpleTestInClusterSupport {
 
     private DataLinkServiceImpl linkService;
@@ -61,7 +61,7 @@ public class DataLinkConsistencyCheckerTest extends SimpleTestInClusterSupport {
     public void setUp() throws Exception {
         linkService = (DataLinkServiceImpl) getNodeEngineImpl(instance()).getDataLinkService();
         sqlCatalog = instance().getMap(JetServiceBackend.SQL_CATALOG_MAP_NAME);
-        dataLinkConsistencyChecker = new DataLinkConsistencyChecker(linkService, sqlCatalog);
+        dataLinkConsistencyChecker = new DataLinkConsistencyChecker(instance(), Util.getNodeEngine(instance()));
     }
 
     @After

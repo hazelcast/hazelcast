@@ -17,9 +17,12 @@
 package com.hazelcast.datalink.impl;
 
 import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource;
 import com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSourcePair;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.map.IMap;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.schema.datalink.DataLink;
 
@@ -31,10 +34,10 @@ public class DataLinkConsistencyChecker {
     private final DataLinkServiceImpl dataLinkService;
     private final IMap<Object, Object> sqlCatalog;
 
-    public DataLinkConsistencyChecker(InternalDataLinkService dataLinkService, IMap<Object, Object> sqlCatalog) {
-        assert dataLinkService instanceof DataLinkServiceImpl;
-        this.dataLinkService = (DataLinkServiceImpl) dataLinkService;
-        this.sqlCatalog = sqlCatalog;
+    public DataLinkConsistencyChecker(HazelcastInstance instance, NodeEngine nodeEngine) {
+        assert nodeEngine.getDataLinkService() instanceof DataLinkServiceImpl;
+        this.dataLinkService = (DataLinkServiceImpl) nodeEngine.getDataLinkService();
+        this.sqlCatalog = instance.getMap(JetServiceBackend.SQL_CATALOG_MAP_NAME);
     }
 
     /**
