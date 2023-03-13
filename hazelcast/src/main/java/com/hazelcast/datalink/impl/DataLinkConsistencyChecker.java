@@ -35,7 +35,6 @@ public class DataLinkConsistencyChecker {
     private final IMap<Object, Object> sqlCatalog;
 
     public DataLinkConsistencyChecker(HazelcastInstance instance, NodeEngine nodeEngine) {
-        assert nodeEngine.getDataLinkService() instanceof DataLinkServiceImpl;
         this.dataLinkService = (DataLinkServiceImpl) nodeEngine.getDataLinkService();
         this.sqlCatalog = instance.getMap(JetServiceBackend.SQL_CATALOG_MAP_NAME);
     }
@@ -59,7 +58,6 @@ public class DataLinkConsistencyChecker {
                 addEntryToCatalog(entry);
             } else {
                 // Try to alter outdated data links
-                assert catalogValue instanceof DataLink;
                 DataLink catalogDataLink = (DataLink) catalogValue;
                 if (!dataLinksAreEqual(entry.getValue(), catalogDataLink)) {
                     sqlCatalog.remove(QueryUtils.wrapDataLinkKey(entry.getKey()));
