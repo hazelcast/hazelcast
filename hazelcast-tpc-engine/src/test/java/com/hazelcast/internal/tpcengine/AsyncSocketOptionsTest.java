@@ -18,6 +18,7 @@ package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.nio.NioAsyncSocketOptionsTest;
 import com.hazelcast.internal.tpcengine.util.JVM;
+import com.hazelcast.internal.tpcengine.util.OS;
 import org.junit.After;
 import org.junit.Test;
 
@@ -144,9 +145,10 @@ public abstract class AsyncSocketOptionsTest {
         assertEquals(Boolean.FALSE, options.get(SO_KEEPALIVE));
     }
 
-    private void assumeIfNioThenJava11Plus() {
+    private void assumeIfNioThenJava11PlusAndLinux() {
         if (this instanceof NioAsyncSocketOptionsTest) {
             assumeTrue(JVM.getMajorVersion() >= 11);
+            assumeTrue(OS.isLinux());
         }
     }
 
@@ -160,7 +162,7 @@ public abstract class AsyncSocketOptionsTest {
 
     @Test
     public void test_TCP_KEEPCOUNT() {
-        assumeIfNioThenJava11Plus();
+        assumeIfNioThenJava11PlusAndLinux();
         AsyncSocket socket = newSocket();
         AsyncSocketOptions options = socket.options();
         options.set(TCP_KEEPCOUNT, 100);
@@ -169,7 +171,7 @@ public abstract class AsyncSocketOptionsTest {
 
     @Test
     public void test_TCP_KEEPIDLE() {
-        assumeIfNioThenJava11Plus();
+        assumeIfNioThenJava11PlusAndLinux();
         AsyncSocket socket = newSocket();
         AsyncSocketOptions options = socket.options();
         options.set(TCP_KEEPIDLE, 100);
@@ -178,7 +180,7 @@ public abstract class AsyncSocketOptionsTest {
 
     @Test
     public void test_TCP_KEEPINTERVAL() {
-        assumeIfNioThenJava11Plus();
+        assumeIfNioThenJava11PlusAndLinux();
         AsyncSocket socket = newSocket();
         AsyncSocketOptions options = socket.options();
         options.set(TCP_KEEPINTERVAL, 100);

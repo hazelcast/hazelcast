@@ -20,13 +20,14 @@ package com.hazelcast.internal.tpcengine.util;
  * Utility methods for OS specific functionality.
  */
 @SuppressWarnings("checkstyle:MethodName")
+// https://lopica.sourceforge.net/os.html
+// https://memorynotfound.com/detect-os-name-version-java/
 public final class OS {
 
     private static final String OS_NAME = System.getProperty("os.name", "?");
     private static final String OS_VERSION = System.getProperty("os.version", "?");
     private static final boolean IS_LINUX = isLinux0(OS_NAME);
     private static final boolean IS_WINDOWS = isWindows0(OS_NAME);
-    private static final boolean IS_UNIX_FAMILY = isUnixFamily0(OS_NAME);
     private static final boolean IS_MAC = isMac0(OS_NAME);
 
     private static final int LINUX_KERNEL_MAJOR_VERSION = linuxMajorVersion0(OS_VERSION, IS_LINUX);
@@ -50,11 +51,6 @@ public final class OS {
     static boolean isWindows0(String osName) {
         osName = osName.toLowerCase();
         return osName.contains("windows");
-    }
-
-    static boolean isUnixFamily0(String osName) {
-        osName = osName.toLowerCase();
-        return (osName.contains("nix") || osName.contains("nux") || osName.contains("aix"));
     }
 
     static boolean isMac0(String osName) {
@@ -181,15 +177,6 @@ public final class OS {
     }
 
     /**
-     * Returns {@code true} if the system is from Unix family.
-     *
-     * @return {@code true} if the current system is Unix/Linux/AIX.
-     */
-    public static boolean isUnixFamily() {
-        return IS_UNIX_FAMILY;
-    }
-
-    /**
      * Returns {@code true} if the system is a Mac OS.
      *
      * @return {@code true} if the current system is Mac.
@@ -206,5 +193,4 @@ public final class OS {
     public static boolean isWindows() {
         return IS_WINDOWS;
     }
-
 }
