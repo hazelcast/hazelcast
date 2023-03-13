@@ -98,8 +98,8 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        DataLinkCatalogEntry dataLinkCatalogEntry = (DataLinkCatalogEntry) o;
-        return name.equals(dataLinkCatalogEntry.name) && type.equals(dataLinkCatalogEntry.type) && options.equals(dataLinkCatalogEntry.options);
+        DataLinkCatalogEntry e = (DataLinkCatalogEntry) o;
+        return name.equals(e.name) && type.equals(e.type) && options.equals(e.options);
     }
 
     @Override

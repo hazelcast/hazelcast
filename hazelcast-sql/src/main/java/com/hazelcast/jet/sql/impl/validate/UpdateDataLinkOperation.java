@@ -1,3 +1,19 @@
+/*
+ * Copyright 2023 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.jet.sql.impl.validate;
 
 import com.hazelcast.datalink.impl.InternalDataLinkService;
@@ -33,9 +49,9 @@ public class UpdateDataLinkOperation extends Operation implements IdentifiedData
     public void run() throws Exception {
         InternalDataLinkService dlService = getNodeEngine().getDataLinkService();
         DataLinkStorage storage = new DataLinkStorage(getNodeEngine());
-        DataLinkCatalogEntry dataLinkCatalogEntry = storage.get(dataLinkName);
-        if (dataLinkCatalogEntry != null) {
-            dlService.replaceSqlDataLink(dataLinkCatalogEntry.getName(), dataLinkCatalogEntry.getType(), dataLinkCatalogEntry.getOptions());
+        DataLinkCatalogEntry entry = storage.get(dataLinkName);
+        if (entry != null) {
+            dlService.replaceSqlDataLink(entry.getName(), entry.getType(), entry.getOptions());
         } else {
             dlService.removeDataLink(dataLinkName);
         }

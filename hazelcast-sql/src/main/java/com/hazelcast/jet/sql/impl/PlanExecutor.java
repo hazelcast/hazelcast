@@ -723,7 +723,8 @@ public class PlanExecutor {
                 Thread.currentThread().interrupt();
                 break;
             } catch (ExecutionException e) {
-                logger.warning("Failed to update datalink '" + dataLinkName + "' on member '" + tuple.f0() + "'. Background process should resolve that.");
+                logger.warning("Failed to update datalink '" + dataLinkName + "' on member '" + tuple.f0()
+                        + "'. Background process should resolve this");
             }
         }
     }
