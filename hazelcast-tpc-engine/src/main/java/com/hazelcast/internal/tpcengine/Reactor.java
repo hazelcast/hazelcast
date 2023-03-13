@@ -44,7 +44,7 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
 /**
  * A Reactor is an implementation of the reactor design pattern. So it listen to some
  * event sources and then dispatches the events to the appropriate handler. This is coordinated
- * from the eventloop that is inside each reactor.
+ * from the {@link Eventloop} that is inside each reactor.
  * <p/>
  * There are various forms of events:
  * <ol>
@@ -114,6 +114,8 @@ public abstract class Reactor implements Executor {
     /**
      * Allows for objects to be bound to this Reactor. Useful for the lookup
      * of services and other dependencies.
+     * <p>
+     * This method is thread-safe.
      */
     public final ConcurrentMap<?, ?> context() {
         return context;
@@ -121,6 +123,8 @@ public abstract class Reactor implements Executor {
 
     /**
      * Gets the name of this reactor. Useful for debugging purposes.
+     * <p>
+     * This method is thread-safe.
      *
      * @return the name.
      */
@@ -141,6 +145,8 @@ public abstract class Reactor implements Executor {
 
     /**
      * Returns the scheduler for this Reactor.
+     * <p>
+     * This method is thread-safe.
      *
      * @return the scheduler for this reactor.
      */
@@ -192,6 +198,8 @@ public abstract class Reactor implements Executor {
 
     /**
      * Creates a new {@link AsyncServerSocketBuilder}.
+     * <p>
+     * This method is thread-safe.
      *
      * @return the created AsyncSocketBuilder.
      * @throws IllegalStateException if the reactor isn't running.
@@ -200,6 +208,8 @@ public abstract class Reactor implements Executor {
 
     /**
      * Creates a new {@link AsyncServerSocketBuilder} for the given acceptRequest.
+     * <p>
+     * This method is thread-safe.
      *
      * @param acceptRequest a wrapper around a lower level socket implemented that needs
      *                      to be accepted.
@@ -211,6 +221,8 @@ public abstract class Reactor implements Executor {
 
     /**
      * Creates a new AsyncServerSocketBuilder.
+     * <p>
+     * This method is thread-safe.
      *
      * @return the created AsyncServerSocketBuilder.
      * @throws IllegalStateException if the reactor isn't running.
@@ -226,6 +238,8 @@ public abstract class Reactor implements Executor {
 
     /**
      * Starts the reactor.
+     * <p>
+     * This method is thread-safe.
      *
      * @throws IllegalStateException if the reactor isn't in NEW state.
      */
@@ -274,6 +288,8 @@ public abstract class Reactor implements Executor {
 
     /**
      * Awaits for the termination of the Reactor with the given timeout.
+     * <p>
+     * This method is thread-safe.
      *
      * @param timeout the timeout
      * @param unit    the TimeUnit
@@ -291,6 +307,8 @@ public abstract class Reactor implements Executor {
     /**
      * Wakes up the {@link Reactor} when it is blocked and needs to be woken up
      * because there is work that requires attention.
+     * <p>
+     * This method is thread-safe.
      */
     public abstract void wakeup();
 
@@ -304,6 +322,8 @@ public abstract class Reactor implements Executor {
 
     /**
      * Offers a task to be executed on this {@link Reactor}.
+     * <p>
+     * This method is thread-safe.
      *
      * @param task the task to execute.
      * @return true if the task was accepted, false otherwise.
@@ -315,6 +335,8 @@ public abstract class Reactor implements Executor {
 
     /**
      * Offers a task to be executed on this {@link Reactor}.
+     * <p>
+     * This method is thread-safe.
      *
      * @param task the task to execute.
      * @return true if the task was accepted, false otherwise.

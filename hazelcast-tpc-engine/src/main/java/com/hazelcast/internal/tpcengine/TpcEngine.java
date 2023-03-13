@@ -31,8 +31,8 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 /**
  * The TpcEngine is effectively an array of reactors.
  * <p>
- * The TpcEngine is not aware of any specific applications. E.g. it could execute operations, but it
- * can equally well run client requests or completely different applications.
+ * The TpcEngine is not aware of any specific applications. E.g. it could execute operations,
+ * but it can equally well run client requests or completely different applications.
  */
 public final class TpcEngine {
 
@@ -81,7 +81,9 @@ public final class TpcEngine {
     }
 
     /**
-     * Returns the type of Reactor used by this TpcEngine.
+     * Returns the type of {@link Reactor} used by this TpcEngine.
+     * <p>
+     * This method is thread-safe.
      *
      * @return the type of Reactor.
      */
@@ -91,6 +93,8 @@ public final class TpcEngine {
 
     /**
      * Returns the reactors.
+     * <p>
+     * This method is thread-safe.
      *
      * @return the {@link Reactor}s.
      */
@@ -99,7 +103,7 @@ public final class TpcEngine {
     }
 
     /**
-     * Returns the number of reactor instances in this TpcEngine.
+     * Returns the number of {@link Reactor} instances in this TpcEngine.
      * <p>
      * This method is thread-safe.
      *
@@ -111,6 +115,8 @@ public final class TpcEngine {
 
     /**
      * Gets the {@link Reactor} at the given index.
+     * <p>
+     * This method is thread-safe.
      *
      * @param idx the index of the reactor.
      * @return The reactor at the given index.
@@ -121,8 +127,10 @@ public final class TpcEngine {
 
     /**
      * Starts the TpcEngine by starting all the {@link Reactor} instances.
+     * <p>
+     * This method is thread-safe.
      *
-     * @throws IllegalStateException if
+     * @throws IllegalStateException if the Reactor is shutdown or terminated.
      */
     public void start() {
         logger.info("Starting " + reactorCount + " reactors of type [" + reactorType() + "]");
