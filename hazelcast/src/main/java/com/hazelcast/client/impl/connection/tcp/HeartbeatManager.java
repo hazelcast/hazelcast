@@ -40,7 +40,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public final class HeartbeatManager {
 
     private HeartbeatManager() {
-
     }
 
     public static void start(HazelcastClientInstanceImpl client,
@@ -113,7 +112,7 @@ public final class HeartbeatManager {
         }
 
         private void check(Channel altoChannel, ClientConnection connection, long now) {
-            if (altoChannel.isClosed()) {
+            if (altoChannel.isClosed() || !connection.isAlive()) {
                 return;
             }
 
@@ -123,10 +122,9 @@ public final class HeartbeatManager {
             //  not reading anything during the initial connection, hence
             //  it is returning -1, which fails the check immediately
             if (lastReadTime > 0 && now - lastReadTime > heartbeatTimeoutMillis) {
-                logger.warning("Heartbeat failed over the Alto channel " + altoChannel + " for connection: " + connection);
-                connection.close("Heartbeat timed out",
-                        new TargetDisconnectedException("Heartbeat timed out to the Alto channel "
-                                + altoChannel + " for connection: " + connection));
+                String message = "Heartbeat failed over the Alto channel: " + altoChannel + " for connection: " + connection;
+                logger.warning(message);
+                connection.close("Heartbeat timed out", new TargetDisconnectedException(message));
                 return;
             }
 
