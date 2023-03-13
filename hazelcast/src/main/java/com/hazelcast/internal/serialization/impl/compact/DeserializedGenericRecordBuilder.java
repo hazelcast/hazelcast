@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
+import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
@@ -32,27 +33,34 @@ import java.util.TreeMap;
  */
 public class DeserializedGenericRecordBuilder extends AbstractGenericRecordBuilder {
 
-    private final TreeMap<String, Object> objects = new TreeMap<>();
+    private final TreeMap<String, Object> objects;
     private final SchemaWriter schemaWriter;
+    private boolean built;
 
     public DeserializedGenericRecordBuilder(String typeName) {
+        this.objects = new TreeMap<>();
         schemaWriter = new SchemaWriter(typeName);
     }
 
     /**
      * @return newly created GenericRecord
      * @throws HazelcastSerializationException if a field is not written when building with builder from
-     *                                         {@link GenericRecordBuilder#compact(String)} (ClassDefinition)} and
+     *                                         {@link GenericRecordBuilder#portable(ClassDefinition)} and
      *                                         {@link GenericRecord#newBuilder()}
      */
     @Nonnull
     @Override
     public GenericRecord build() {
-        return new DeserializedGenericRecord(schemaWriter.build(), objects);
+        GenericRecord record = new DeserializedGenericRecord(schemaWriter.build(), objects);
+        this.built = true;
+        return record;
     }
 
 
     protected GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldKind fieldKind) {
+        if (this.built) {
+            throw new HazelcastSerializationException("Cannot modify the generic record after building");
+        }
         if (objects.putIfAbsent(fieldName, value) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }

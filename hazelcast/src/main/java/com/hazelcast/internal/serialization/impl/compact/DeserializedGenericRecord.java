@@ -107,6 +107,10 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Nonnull
     @Override
     public GenericRecordBuilder newBuilderWithClone() {
+        TreeMap<String, Object> objects = new TreeMap<>();
+        for (String fieldName : getFieldNames()) {
+            objects.put(fieldName, readAny(fieldName));
+        }
         return new DeserializedGenericRecordCloner(schema, objects);
     }
 

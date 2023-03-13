@@ -97,7 +97,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -105,6 +105,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setBoolean(@Nonnull String fieldName, boolean value);
@@ -119,7 +125,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -127,6 +133,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setInt8(@Nonnull String fieldName, byte value);
@@ -144,7 +156,7 @@ public interface GenericRecordBuilder {
      *                  characters.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the class definition or the
      *                                         type of the field does not match
      *                                         the one in the class definition
@@ -152,6 +164,12 @@ public interface GenericRecordBuilder {
      *                                         set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setChar(@Nonnull String fieldName, char value);
@@ -166,7 +184,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -174,6 +192,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setInt16(@Nonnull String fieldName, short value);
@@ -188,7 +212,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -196,6 +220,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setInt32(@Nonnull String fieldName, int value);
@@ -210,7 +240,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -218,6 +248,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setInt64(@Nonnull String fieldName, long value);
@@ -232,7 +268,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -240,6 +276,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setFloat32(@Nonnull String fieldName, float value);
@@ -254,7 +296,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -262,6 +304,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setFloat64(@Nonnull String fieldName, double value);
@@ -278,13 +326,19 @@ public interface GenericRecordBuilder {
      * @param fieldName name of the field as it is defined in its schema.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema or the type of the
      *                                         field does not match the one in
      *                                         the schema or the same field is
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setNullableBoolean(@Nonnull String fieldName, @Nullable Boolean value);
@@ -301,13 +355,19 @@ public interface GenericRecordBuilder {
      * @param fieldName name of the field as it is defined in its schema.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema or the type of the
      *                                         field does not match the one in
      *                                         the schema or the same field is
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setNullableInt8(@Nonnull String fieldName, @Nullable Byte value);
@@ -325,13 +385,19 @@ public interface GenericRecordBuilder {
      * @param fieldName name of the field as it is defined in its schema.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema or the type of the
      *                                         field does not match the one in
      *                                         the schema or the same field is
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setNullableInt16(@Nonnull String fieldName, @Nullable Short value);
@@ -348,13 +414,19 @@ public interface GenericRecordBuilder {
      * @param fieldName name of the field as it is defined in its schema.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema or the type of the
      *                                         field does not match the one in
      *                                         the schema or the same field is
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setNullableInt32(@Nonnull String fieldName, @Nullable Integer value);
@@ -371,13 +443,19 @@ public interface GenericRecordBuilder {
      * @param fieldName name of the field as it is defined in its schema.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema or the type of the
      *                                         field does not match the one in
      *                                         the schema or the same field is
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setNullableInt64(@Nonnull String fieldName, @Nullable Long value);
@@ -394,13 +472,19 @@ public interface GenericRecordBuilder {
      * @param fieldName name of the field as it is defined in its schema.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema or the type of the
      *                                         field does not match the one in
      *                                         the schema or the same field is
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setNullableFloat32(@Nonnull String fieldName, @Nullable Float value);
@@ -417,13 +501,19 @@ public interface GenericRecordBuilder {
      * @param fieldName name of the field as it is defined in its schema.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema or the type of the
      *                                         field does not match the one in
      *                                         the schema or the same field is
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setNullableFloat64(@Nonnull String fieldName, @Nullable Double value);
@@ -438,7 +528,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -446,6 +536,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setString(@Nonnull String fieldName, @Nullable String value);
@@ -473,6 +569,12 @@ public interface GenericRecordBuilder {
      *                                         the same as the generic record that is
      *                                         being built. e.g using portable generic
      *                                         record in a compact generic record builder.
+     *                                         5. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord value);
@@ -490,7 +592,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -498,6 +600,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setDecimal(@Nonnull String fieldName, @Nullable BigDecimal value);
@@ -514,7 +622,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -522,6 +630,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setTime(@Nonnull String fieldName, @Nullable LocalTime value);
@@ -539,7 +653,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -547,6 +661,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setDate(@Nonnull String fieldName, @Nullable LocalDate value);
@@ -564,7 +684,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -572,6 +692,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime value);
@@ -590,7 +716,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -598,6 +724,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime value);
@@ -612,7 +744,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -620,6 +752,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfBoolean(@Nonnull String fieldName, @Nullable boolean[] value);
@@ -634,7 +772,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -642,6 +780,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfInt8(@Nonnull String fieldName, @Nullable byte[] value);
@@ -659,7 +803,7 @@ public interface GenericRecordBuilder {
      *                  characters
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the class definition or the
      *                                         type of the field does not match
      *                                         the one in the class definition
@@ -667,6 +811,12 @@ public interface GenericRecordBuilder {
      *                                         set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfChar(@Nonnull String fieldName, @Nullable char[] value);
@@ -681,7 +831,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -689,6 +839,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfInt16(@Nonnull String fieldName, @Nullable short[] value);
@@ -703,7 +859,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -711,6 +867,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfInt32(@Nonnull String fieldName, @Nullable int[] value);
@@ -725,7 +887,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -733,6 +895,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfInt64(@Nonnull String fieldName, @Nullable long[] value);
@@ -747,7 +915,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -755,6 +923,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfFloat32(@Nonnull String fieldName, @Nullable float[] value);
@@ -769,7 +943,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -777,6 +951,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfFloat64(@Nonnull String fieldName, @Nullable double[] value);
@@ -793,13 +973,19 @@ public interface GenericRecordBuilder {
      * @param fieldName name of the field as it is defined in its schema.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema or the type of the
      *                                         field does not match the one in
      *                                         the schema or the same field is
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfNullableBoolean(@Nonnull String fieldName, @Nullable Boolean[] value);
@@ -816,13 +1002,19 @@ public interface GenericRecordBuilder {
      * @param fieldName name of the field as it is defined in its schema.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema or the type of the
      *                                         field does not match the one in
      *                                         the schema or the same field is
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfNullableInt8(@Nonnull String fieldName, @Nullable Byte[] value);
@@ -839,13 +1031,19 @@ public interface GenericRecordBuilder {
      * @param fieldName name of the field as it is defined in its schema.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema or the type of the
      *                                         field does not match the one in
      *                                         the schema or the same field is
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfNullableInt16(@Nonnull String fieldName, @Nullable Short[] value);
@@ -862,13 +1060,19 @@ public interface GenericRecordBuilder {
      * @param fieldName name of the field as it is defined in its schema.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema or the type of the
      *                                         field does not match the one in
      *                                         the schema or the same field is
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfNullableInt32(@Nonnull String fieldName, @Nullable Integer[] value);
@@ -885,13 +1089,19 @@ public interface GenericRecordBuilder {
      * @param fieldName name of the field as it is defined in its schema.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema or the type of the
      *                                         field does not match the one in
      *                                         the schema or the same field is
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfNullableInt64(@Nonnull String fieldName, @Nullable Long[] value);
@@ -908,13 +1118,19 @@ public interface GenericRecordBuilder {
      * @param fieldName name of the field as it is defined in its schema.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema or the type of the
      *                                         field does not match the one in
      *                                         the schema or the same field is
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfNullableFloat32(@Nonnull String fieldName, @Nullable Float[] value);
@@ -931,13 +1147,19 @@ public interface GenericRecordBuilder {
      * @param fieldName name of the field as it is defined in its schema.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema or the type of the
      *                                         field does not match the one in
      *                                         the schema or the same field is
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfNullableFloat64(@Nonnull String fieldName, @Nullable Double[] value);
@@ -952,7 +1174,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -960,6 +1182,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfString(@Nonnull String fieldName, @Nullable String[] value);
@@ -974,7 +1202,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -982,6 +1210,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      * @see #setDecimal(String, BigDecimal)
      */
     @Nonnull
@@ -997,7 +1231,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -1005,6 +1239,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      * @see #setTime(String, LocalTime)
      */
     @Nonnull
@@ -1020,7 +1260,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -1028,6 +1268,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      * @see #setDate(String, LocalDate)
      */
     @Nonnull
@@ -1043,7 +1289,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -1051,6 +1297,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      * @see #setTimestamp(String, LocalDateTime)
      */
     @Nonnull
@@ -1066,7 +1318,7 @@ public interface GenericRecordBuilder {
      *                  characters for {@link Portable} GenericRecords.
      * @param value     to set to GenericRecord
      * @return itself for chaining
-     * @throws HazelcastSerializationException if the field name does not exist
+     * @throws HazelcastSerializationException 1. if the field name does not exist
      *                                         in the schema/class definition or
      *                                         the type of the field does not
      *                                         match the one in the schema/class
@@ -1074,6 +1326,12 @@ public interface GenericRecordBuilder {
      *                                         trying to be set without using
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
+     *                                         2. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      * @see #setTimestampWithTimezone(String, OffsetDateTime)
      */
     @Nonnull
@@ -1108,6 +1366,12 @@ public interface GenericRecordBuilder {
      *                                         the same as the generic record that is
      *                                         being built. e.g using portable generic
      *                                         record in a compact generic record builder.
+     *                                         5. if the field is set after the
+     *                                         GenericRecord is built. This can only
+     *                                         happen with a Compact GenericRecord
+     *                                         because Portable GenericRecords have a
+     *                                         ClassDefinition and they check for
+     *                                         field overwrites.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord[] value);
