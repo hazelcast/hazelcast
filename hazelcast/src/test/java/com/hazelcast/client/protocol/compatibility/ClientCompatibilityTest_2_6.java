@@ -87,7 +87,7 @@ public class ClientCompatibilityTest_2_6 {
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
         assertTrue(parameters.isAltoPortsExists);
-        assertTrue(isEqual(aListOfIntegers, parameters.tpcPorts));
+        assertTrue(isEqual(aListOfIntegers, parameters.altoPorts));
     }
 
     @Test

@@ -190,7 +190,7 @@ public final class ClientAuthenticationCodec {
         /**
          * Returns the list of TPC ports or null if TPC is disabled.
          */
-        public @Nullable java.util.List<java.lang.Integer> tpcPorts;
+        public @Nullable java.util.List<java.lang.Integer> altoPorts;
 
         /**
          * True if the tpcPorts is received from the member, false otherwise.
@@ -230,7 +230,7 @@ public final class ClientAuthenticationCodec {
         response.address = CodecUtil.decodeNullable(iterator, AddressCodec::decode);
         response.serverHazelcastVersion = StringCodec.decode(iterator);
         if (iterator.hasNext()) {
-            response.tpcPorts = CodecUtil.decodeNullable(iterator, ListIntegerCodec::decode);
+            response.altoPorts = CodecUtil.decodeNullable(iterator, ListIntegerCodec::decode);
             response.isAltoPortsExists = true;
         } else {
             response.isAltoPortsExists = false;

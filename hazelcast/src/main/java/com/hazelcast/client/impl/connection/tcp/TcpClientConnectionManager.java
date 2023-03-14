@@ -1013,7 +1013,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             }
             checkClientState(connection, switchingToNextCluster);
 
-            List<Integer> tpcPorts = response.tpcPorts;
+            List<Integer> tpcPorts = response.altoPorts;
             if (isTpcAwareClient && tpcPorts != null && !tpcPorts.isEmpty()) {
                 connectTpcPorts(connection, tpcPorts);
             }
