@@ -86,7 +86,7 @@ public class ClientCompatibilityNullTest_2_6 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
-        assertTrue(parameters.doTpcPortsExists);
+        assertTrue(parameters.isAltoPortsExists);
         assertTrue(isEqual(null, parameters.tpcPorts));
     }
 

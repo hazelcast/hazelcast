@@ -196,7 +196,7 @@ public final class ClientAuthenticationCodec {
          * True if the tpcPorts is received from the member, false otherwise.
          * If this is false, tpcPorts has the default value for its type.
          */
-        public boolean doTpcPortsExists;
+        public boolean isAltoPortsExists;
     }
 
     public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported, @Nullable java.util.Collection<java.lang.Integer> tpcPorts) {
@@ -231,9 +231,9 @@ public final class ClientAuthenticationCodec {
         response.serverHazelcastVersion = StringCodec.decode(iterator);
         if (iterator.hasNext()) {
             response.tpcPorts = CodecUtil.decodeNullable(iterator, ListIntegerCodec::decode);
-            response.doTpcPortsExists = true;
+            response.isAltoPortsExists = true;
         } else {
-            response.doTpcPortsExists = false;
+            response.isAltoPortsExists = false;
         }
         return response;
     }
