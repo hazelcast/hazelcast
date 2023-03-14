@@ -659,7 +659,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         private void handleTpc(Node node) {
             BeanDefinitionBuilder tpcConfigBuilder = createBeanBuilder(ClientTpcConfig.class);
             fillAttributeValues(node, tpcConfigBuilder);
-            this.configBuilder.addPropertyValue("TpcConfig", tpcConfigBuilder.getBeanDefinition());
+            this.configBuilder.addPropertyValue("tpcConfig", tpcConfigBuilder.getBeanDefinition());
         }
     }
 }
