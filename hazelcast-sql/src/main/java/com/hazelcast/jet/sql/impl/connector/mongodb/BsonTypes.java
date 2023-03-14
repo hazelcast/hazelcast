@@ -70,6 +70,14 @@ final class BsonTypes {
         return bsonType;
     }
 
+    static BsonType resolveTypeFromJavaClass(Class<?> clazz) {
+        BsonType bsonType = JAVA_TYPE_TO_BSON_TYPE.get(clazz);
+        if (bsonType == null) {
+            throw new IllegalArgumentException("BSON type " + clazz + " is not known");
+        }
+        return bsonType;
+    }
+
     static BsonType resolveTypeByName(String bsonTypeName) {
         BsonType bsonType = BSON_NAME_TO_TYPE.get(bsonTypeName.toLowerCase(ROOT));
         if (bsonType == null) {
