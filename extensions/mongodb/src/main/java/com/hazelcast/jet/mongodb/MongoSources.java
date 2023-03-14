@@ -310,7 +310,7 @@ public final class MongoSources {
                 .stream(name, () -> MongoClients.create(connectionString))
                 .database(database)
                 .collection(collection)
-                .mapFn(ChangeStreamDocument::getFullDocument);
+                .mapFn((d, t) -> d.getFullDocument());
         if (projection != null) {
             builder.project(projection);
         }

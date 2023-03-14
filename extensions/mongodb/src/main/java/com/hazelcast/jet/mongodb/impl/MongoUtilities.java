@@ -18,12 +18,16 @@ package com.hazelcast.jet.mongodb.impl;
 import com.mongodb.client.model.Field;
 import com.mongodb.client.model.Filters;
 import org.bson.BsonArray;
+import org.bson.BsonDateTime;
 import org.bson.BsonString;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,6 +36,7 @@ import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.unset;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public final class MongoUtilities {
 
@@ -93,5 +98,27 @@ public final class MongoUtilities {
      */
     public static BsonTimestamp bsonTimestampFromTimeMillis(long time) {
         return new BsonTimestamp((int) MILLISECONDS.toSeconds(time), 0);
+    }
+    /**
+     * Converts given bson timestamp to unix epoch.
+     */
+    @Nullable
+    public static LocalDateTime bsonDateTimeToLocalDateTime(@Nullable BsonDateTime time) {
+        if (time == null) {
+            return null;
+        }
+        Instant instant = Instant.ofEpochMilli(time.getValue());
+        return LocalDateTime.from(instant);
+    }
+    /**
+     * Converts given bson timest1amp to unix epoch.
+     */
+    @Nullable
+    public static LocalDateTime bsonTimestampToLocalDateTime(@Nullable BsonTimestamp time) {
+        if (time == null) {
+            return null;
+        }
+        Instant instant = Instant.ofEpochMilli(SECONDS.toMillis(time.getTime()));
+        return LocalDateTime.from(instant);
     }
 }

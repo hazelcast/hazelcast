@@ -88,17 +88,31 @@ class FieldResolver {
                 String prefixIfStream = stream ? "fullDocument." : "";
                 String nameInMongo = f.externalName() == null ? prefixIfStream + f.name() : f.externalName();
 
-                DocumentField documentField = dbFields.get(nameInMongo);
+                DocumentField documentField = getField(dbFields, f, stream);
                 if (documentField == null) {
                     throw new IllegalArgumentException("Could not resolve field with name " + nameInMongo);
                 }
-                MappingField mappingField = new MappingField(f.name(), f.type(), nameInMongo);
+                MappingField mappingField = new MappingField(f.name(), f.type(), documentField.columnName);
                 mappingField.setPrimaryKey(pkColumnName.test(mappingField));
                 validateType(f, documentField);
                 resolvedFields.add(mappingField);
             }
         }
         return resolvedFields;
+    }
+
+    private DocumentField getField(Map<String, DocumentField> dbFields, MappingField f, boolean stream) {
+        String externalName = f.externalName() == null ? f.name() : f.externalName();
+        if (stream) {
+            String withPrefix = "fullDocument." + externalName;
+            if (dbFields.containsKey(withPrefix)) {
+                return dbFields.get(withPrefix);
+            } else {
+                return dbFields.get(externalName);
+            }
+        } else {
+            return dbFields.get(externalName);
+        }
     }
 
     boolean isId(String nameInMongo, boolean stream) {
@@ -195,6 +209,9 @@ class FieldResolver {
             if (stream) {
                 fields.put("operationType", new DocumentField(BsonType.STRING, "operationType"));
                 fields.put("resumeToken", new DocumentField(BsonType.STRING, "resumeToken"));
+                fields.put("wallTime", new DocumentField(BsonType.DATE_TIME, "wallTime"));
+                fields.put("ts", new DocumentField(BsonType.DATE_TIME, "ts"));
+                fields.put("clusterTime", new DocumentField(BsonType.TIMESTAMP, "clusterTime"));
             }
         } finally {
             if (connect.f1() != null) {

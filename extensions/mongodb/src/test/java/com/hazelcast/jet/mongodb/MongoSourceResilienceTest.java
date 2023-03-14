@@ -237,7 +237,7 @@ public class MongoSourceResilienceTest extends SimpleTestInClusterSupport {
                         .stream("mongo source", () -> mongoClient(mongoContainerConnectionString))
                         .database(databaseName)
                         .collection(collectionName)
-                        .mapFn(ChangeStreamDocument::getFullDocument)
+                        .mapFn((d, t) -> d.getFullDocument())
                         .startAtOperationTime(new BsonTimestamp(System.currentTimeMillis()))
                         .build())
                 .withNativeTimestamps(0)

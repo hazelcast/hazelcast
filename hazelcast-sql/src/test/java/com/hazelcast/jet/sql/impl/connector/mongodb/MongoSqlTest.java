@@ -32,6 +32,8 @@ import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.MongoDBContainer;
 
+import static org.testcontainers.containers.wait.strategy.Wait.forListeningPort;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public abstract class MongoSqlTest extends SqlTestSupport {
@@ -51,7 +53,7 @@ public abstract class MongoSqlTest extends SqlTestSupport {
     public final TestName testName = new TestName();
 
     @BeforeClass
-    public static void beforeClass() {
+    public static void beforeClass() throws InterruptedException {
         initialize(1, null);
         sqlService = instance().getSql();
         mongoClient = MongoClients.create(mongoContainer.getConnectionString());
