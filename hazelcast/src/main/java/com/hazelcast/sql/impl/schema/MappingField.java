@@ -71,8 +71,9 @@ public class MappingField implements IdentifiedDataSerializable {
         return requireNonNull((QueryDataType) properties.get(TYPE), "missing type property");
     }
 
-    public void setType(QueryDataType type) {
+    public MappingField setType(QueryDataType type) {
         properties.put(TYPE, type);
+        return this;
     }
 
     /**
@@ -83,16 +84,18 @@ public class MappingField implements IdentifiedDataSerializable {
         return (String) properties.get(EXTERNAL_NAME);
     }
 
-    public void setExternalName(String extName) {
+    public MappingField setExternalName(String extName) {
         properties.put(EXTERNAL_NAME, extName);
+        return this;
     }
 
     public boolean isPrimaryKey() {
         return (Boolean) properties.getOrDefault(PRIMARY_KEY, Boolean.FALSE);
     }
 
-    public void setPrimaryKey(boolean primaryKey) {
+    public MappingField setPrimaryKey(boolean primaryKey) {
         properties.put(PRIMARY_KEY, primaryKey);
+        return this;
     }
 
     @Override

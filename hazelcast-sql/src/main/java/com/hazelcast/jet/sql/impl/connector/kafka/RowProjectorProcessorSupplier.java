@@ -102,7 +102,7 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
         for (int i = 0; i < count; i++) {
             KvRowProjector projector = projectorSupplier.get(evalContext, extractors);
             Processor processor = new StreamKafkaP<>(
-                    properties,
+                    StreamKafkaP.kafkaConsumerFn(properties),
                     singletonList(topic),
                     record -> projector.project(record.key(), record.value()),
                     eventTimePolicy

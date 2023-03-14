@@ -241,7 +241,11 @@ public class JetConfig {
      * </li><li>
      *     number of distinct keys accumulated by aggregation operations
      * </li><li>
+     *     number of keys in all incomplete frames in window aggregation
+     * </li><li>
      *     number of entries in the hash-join lookup tables
+     * </li><li>
+     *     number of buffered rows in the stream-to-stream SQL join
      * </li><li>
      *     number of entries in stateful transforms
      * </li><li>

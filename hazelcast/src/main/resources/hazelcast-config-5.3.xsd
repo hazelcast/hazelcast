@@ -299,6 +299,20 @@
             </xs:element>
             <xs:element name="query-caches" type="query-caches" minOccurs="0"/>
             <xs:element name="tiered-store" type="tiered-store" minOccurs="0"/>
+            <xs:element name="partition-attributes" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        List of key attributes to use for partitioning the data in the maps. Providing this list automatically sets the
+                        strategy to `com.hazelcast.partition.strategy.AttributePartitioningStrategy` regardless
+                        of the class name provided in the `partition-strategy` property.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="attribute" type="partition-attribute" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:annotation>
@@ -6009,6 +6023,16 @@
     </xs:complexType>
     <xs:complexType name="realm-reference">
         <xs:attribute name="realm" type="xs:string" use="required"/>
+    </xs:complexType>
+    <xs:complexType name="partition-attribute">
+        <xs:annotation>
+            <xs:documentation>
+                The name of the attribute.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:string"/>
+        </xs:simpleContent>
     </xs:complexType>
 
     <!-- SIMPLE TYPES -->

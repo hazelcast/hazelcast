@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.config.IndexType;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
@@ -35,6 +36,7 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.optimizer.PlanCheckContext;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
@@ -53,15 +55,18 @@ import java.util.Set;
 import java.util.function.Function;
 
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_LINK;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_TYPE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_VIEW;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_DESTROY;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_DROP_LINK;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_DROP_TYPE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_DROP_VIEW;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_INDEX;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_REMOVE;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_VIEW_LINK;
 
 abstract class SqlPlanImpl extends SqlPlan {
 
@@ -192,6 +197,128 @@ abstract class SqlPlanImpl extends SqlPlan {
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             SqlPlanImpl.ensureNoArguments("DROP MAPPING", arguments);
             SqlPlanImpl.ensureNoTimeout("DROP MAPPING", timeout);
+            return planExecutor.execute(this);
+        }
+    }
+
+    static class CreateDataLinkPlan extends SqlPlanImpl {
+        private final boolean replace;
+        private final boolean ifNotExists;
+        private final String name;
+        private final String type;
+        private final Map<String, String> options;
+        private final PlanExecutor planExecutor;
+
+        CreateDataLinkPlan(
+                PlanKey planKey,
+                boolean replace,
+                boolean ifNotExists,
+                String name,
+                String type,
+                Map<String, String> options,
+                PlanExecutor planExecutor
+        ) {
+            super(planKey);
+
+            this.ifNotExists = ifNotExists;
+            this.replace = replace;
+            this.name = name;
+            this.type = type;
+            this.options = options;
+            this.planExecutor = planExecutor;
+        }
+
+        boolean ifNotExists() {
+            return ifNotExists;
+        }
+
+        public boolean isReplace() {
+            return replace;
+        }
+
+        public String name() {
+            return name;
+        }
+
+        public String type() {
+            return type;
+        }
+
+        public Map<String, String> options() {
+            return options;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            if (isReplace()) {
+                context.checkPermission(new SqlPermission(name, ACTION_CREATE_LINK, ACTION_DROP_LINK));
+            } else {
+                context.checkPermission(new SqlPermission(name, ACTION_CREATE_LINK));
+            }
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            SqlPlanImpl.ensureNoArguments("CREATE DATA LINK", arguments);
+            SqlPlanImpl.ensureNoTimeout("CREATE DATA LINK", timeout);
+            return planExecutor.execute(this);
+        }
+    }
+
+    static class DropDataLinkPlan extends SqlPlanImpl {
+        private final String name;
+        private final boolean ifExists;
+        private final PlanExecutor planExecutor;
+
+        DropDataLinkPlan(
+                PlanKey planKey,
+                String name,
+                boolean ifExists,
+                PlanExecutor planExecutor
+        ) {
+            super(planKey);
+
+            this.name = name;
+            this.ifExists = ifExists;
+            this.planExecutor = planExecutor;
+        }
+
+        String name() {
+            return name;
+        }
+
+        boolean ifExists() {
+            return ifExists;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            context.checkPermission(new SqlPermission(name, ACTION_VIEW_LINK, ACTION_DROP_LINK));
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            SqlPlanImpl.ensureNoTimeout("DROP DATA LINK", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -401,24 +528,31 @@ abstract class SqlPlanImpl extends SqlPlan {
 
     static class AlterJobPlan extends SqlPlanImpl {
         private final String jobName;
+        private final DeltaJobConfig deltaConfig;
         private final AlterJobOperation operation;
         private final PlanExecutor planExecutor;
 
         AlterJobPlan(
                 PlanKey planKey,
                 String jobName,
+                DeltaJobConfig deltaConfig,
                 AlterJobOperation operation,
                 PlanExecutor planExecutor
         ) {
             super(planKey);
 
             this.jobName = jobName;
+            this.deltaConfig = deltaConfig;
             this.operation = operation;
             this.planExecutor = planExecutor;
         }
 
         String getJobName() {
             return jobName;
+        }
+
+        DeltaJobConfig getDeltaConfig() {
+            return deltaConfig;
         }
 
         AlterJobOperation getOperation() {
@@ -998,6 +1132,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final SqlRowMetadata rowMetadata;
         private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
+        private final int keyConditionParamIndex;
 
         IMapSelectPlan(
                 PlanKey planKey,
@@ -1020,6 +1155,9 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.rowMetadata = rowMetadata;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
+            this.keyConditionParamIndex = keyCondition instanceof ParameterExpression
+                    ? ((ParameterExpression<?>) keyCondition).getIndex()
+                    : -1;
         }
 
         QueryParameterMetadata parameterMetadata() {
@@ -1040,6 +1178,10 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         SqlRowMetadata rowMetadata() {
             return rowMetadata;
+        }
+
+        int keyConditionParamIndex() {
+            return keyConditionParamIndex;
         }
 
         @Override
@@ -1076,6 +1218,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn;
         private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
+        private final int keyParamIndex;
 
         IMapInsertPlan(
                 PlanKey planKey,
@@ -1084,16 +1227,19 @@ abstract class SqlPlanImpl extends SqlPlan {
                 String mapName,
                 Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn,
                 PlanExecutor planExecutor,
-                List<Permission> permissions
+                List<Permission> permissions,
+                int keyParamIndex
         ) {
             super(planKey);
 
+            // TODO: extract key index here
             this.objectKeys = Collections.singleton(objectKey);
             this.parameterMetadata = parameterMetadata;
             this.mapName = mapName;
             this.entriesFn = entriesFn;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
+            this.keyParamIndex = keyParamIndex;
         }
 
         QueryParameterMetadata parameterMetadata() {
@@ -1106,6 +1252,10 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn() {
             return entriesFn;
+        }
+
+        int keyParamIndex() {
+            return keyParamIndex;
         }
 
         @Override
@@ -1209,6 +1359,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final UpdatingEntryProcessor.Supplier updaterSupplier;
         private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
+        private final int keyConditionParamIndex;
 
         IMapUpdatePlan(
                 PlanKey planKey,
@@ -1229,6 +1380,9 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.updaterSupplier = updaterSupplier;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
+            this.keyConditionParamIndex = keyCondition instanceof ParameterExpression
+                    ? ((ParameterExpression<?>) keyCondition).getIndex()
+                    : -1;
         }
 
         QueryParameterMetadata parameterMetadata() {
@@ -1245,6 +1399,10 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         UpdatingEntryProcessor.Supplier updaterSupplier() {
             return updaterSupplier;
+        }
+
+        int keyConditionParamIndex() {
+            return keyConditionParamIndex;
         }
 
         @Override
@@ -1282,6 +1440,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final Expression<?> keyCondition;
         private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
+        private final int keyConditionParamIndex;
 
         IMapDeletePlan(
                 PlanKey planKey,
@@ -1300,6 +1459,9 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.keyCondition = keyCondition;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
+            this.keyConditionParamIndex = keyCondition instanceof ParameterExpression
+                    ? ((ParameterExpression<?>) keyCondition).getIndex()
+                    : -1;
         }
 
         QueryParameterMetadata parameterMetadata() {
@@ -1312,6 +1474,10 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         Expression<?> keyCondition() {
             return keyCondition;
+        }
+
+        int keyConditionParamIndex() {
+            return keyConditionParamIndex;
         }
 
         @Override

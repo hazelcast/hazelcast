@@ -23,6 +23,7 @@ data: {
     imports: [
       "com.hazelcast.jet.sql.impl.parse.ParserResource"
       "com.hazelcast.jet.sql.impl.parse.SqlAlterJob"
+      "com.hazelcast.jet.sql.impl.parse.SqlCreateDataLink"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateIndex"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateJob"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateMapping"
@@ -30,6 +31,7 @@ data: {
       "com.hazelcast.jet.sql.impl.parse.SqlCreateType"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateView"
       "com.hazelcast.jet.sql.impl.parse.SqlDataType"
+      "com.hazelcast.jet.sql.impl.parse.SqlDropDataLink"
       "com.hazelcast.jet.sql.impl.parse.SqlDropIndex"
       "com.hazelcast.jet.sql.impl.parse.SqlDropJob"
       "com.hazelcast.jet.sql.impl.parse.SqlDropMapping"
@@ -58,6 +60,7 @@ data: {
       "JOBS"
       "MAPPING"
       "MAPPINGS"
+      "LINK"
       "RESUME"
       "SINK"
       "SNAPSHOT"
@@ -398,6 +401,7 @@ data: {
       "JOBS"
       "MAPPING"
       "MAPPINGS"
+      "LINK"
       "RESUME"
       "SINK"
       "SNAPSHOT"
@@ -461,6 +465,7 @@ data: {
     # Each must accept arguments "(SqlParserPos pos, boolean replace)".
     # Example: "SqlCreateForeignSchema".
     createStatementParserMethods: [
+      "SqlCreateDataLink"
       "SqlCreateIndex"
       "SqlCreateJob"
       "SqlCreateMapping"
@@ -473,6 +478,7 @@ data: {
     # Each must accept arguments "(SqlParserPos pos)".
     # Example: "SqlDropSchema".
     dropStatementParserMethods: [
+      "SqlDropDataLink"
       "SqlDropIndex"
       "SqlDropJob"
       "SqlDropMapping"

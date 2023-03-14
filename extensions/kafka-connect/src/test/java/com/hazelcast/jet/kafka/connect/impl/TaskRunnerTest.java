@@ -19,6 +19,7 @@ package com.hazelcast.jet.kafka.connect.impl;
 import com.hazelcast.jet.kafka.connect.impl.DummySourceConnector.DummyTask;
 import com.hazelcast.test.OverridePropertyRule;
 import org.apache.kafka.connect.source.SourceRecord;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 
@@ -27,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.jet.kafka.connect.impl.DummySourceConnector.DummyTask.dummyRecord;
 import static com.hazelcast.jet.kafka.connect.impl.DummySourceConnector.ITEMS_SIZE;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,23 +37,58 @@ public class TaskRunnerTest {
 
     @ClassRule
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
+    private static final int CONFIGURED_ITEMS_SIZE = 3;
     private final DummySourceConnector connector = new DummySourceConnector();
-    private final HashMap<Map<String, ?>, Map<String, ?>> partitionsToOffset = new HashMap<>();
-    private final TaskRunner taskRunner = new TaskRunner(connector, partitionsToOffset);
+    private final TaskRunner taskRunner = new TaskRunner("some-task-name", DummyTask::new);
+
+
+    @Before
+    public void setUp() {
+        connector.start(minimalProperties());
+        taskRunner.updateTaskConfig(dummyTaskConfig());
+    }
 
     @Test
     public void should_poll_data() {
-        connector.start(minimalProperties());
-
-        assertPolledRecordsSize(3);
+        assertPolledRecordsSize(CONFIGURED_ITEMS_SIZE);
         assertThat(DummyTask.INSTANCE.isStarted()).isTrue();
         assertThat(DummyTask.INSTANCE.isInitialized()).isTrue();
     }
 
     @Test
-    public void should_stop_and_recreate_task() {
-        connector.start(minimalProperties());
+    public void should_not_poll_data_without_task_config() {
+        taskRunner.updateTaskConfig(null);
+        assertPolledRecordsSize(0);
+    }
 
+    @Test
+    public void should_commit_records() {
+        for (SourceRecord sourceRecord : taskRunner.poll()) {
+            taskRunner.commitRecord(sourceRecord);
+        }
+
+        DummyTask dummyTask = DummyTask.INSTANCE;
+        assertThat(dummyTask.recordCommitted(dummyRecord(0))).isTrue();
+        assertThat(dummyTask.recordCommitted(dummyRecord(1))).isTrue();
+        assertThat(dummyTask.recordCommitted(dummyRecord(2))).isTrue();
+    }
+
+    @Test
+    public void should_commit() {
+        taskRunner.poll();
+
+        taskRunner.commit();
+
+        DummyTask dummyTask = DummyTask.INSTANCE;
+        assertThat(dummyTask.wasCommit()).isTrue();
+    }
+
+    private Map<String, String> dummyTaskConfig() {
+        return connector.taskConfigs(1).get(0);
+    }
+
+    @Test
+    public void should_stop_and_recreate_task() {
         taskRunner.poll();
         DummyTask taskInstance_1 = DummyTask.INSTANCE;
         assertThat(taskInstance_1.isStarted()).isTrue();
@@ -59,6 +96,7 @@ public class TaskRunnerTest {
         taskRunner.stop();
         assertThat(taskInstance_1.isStopped()).isTrue();
         connector.setProperty(ITEMS_SIZE, String.valueOf(5));
+        taskRunner.updateTaskConfig(dummyTaskConfig());
 
         assertPolledRecordsSize(5);
 
@@ -69,14 +107,42 @@ public class TaskRunnerTest {
 
     @Test
     public void should_reconfigure_task() {
-        connector.start(minimalProperties());
-        assertPolledRecordsSize(3);
+        assertPolledRecordsSize(CONFIGURED_ITEMS_SIZE);
         connector.setProperty(ITEMS_SIZE, String.valueOf(5));
-        assertPolledRecordsSize(3);
+        assertPolledRecordsSize(CONFIGURED_ITEMS_SIZE);
 
-        taskRunner.requestReconfiguration();
+        taskRunner.updateTaskConfig(dummyTaskConfig());
 
         assertPolledRecordsSize(5);
+    }
+
+    @Test
+    public void should_create_snapshot() {
+        for (SourceRecord sourceRecord : taskRunner.poll()) {
+            taskRunner.commitRecord(sourceRecord);
+        }
+        TaskRunner.State snapshot = taskRunner.createSnapshot();
+
+        Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new HashMap<>();
+        SourceRecord lastRecord = dummyRecord(2);
+        partitionsToOffset.put(lastRecord.sourcePartition(), lastRecord.sourceOffset());
+        assertThat(snapshot).isEqualTo(new TaskRunner.State(partitionsToOffset));
+    }
+
+    @Test
+    public void should_restore_snapshot() {
+        TaskRunner.State initialSnapshot = taskRunner.createSnapshot();
+        assertThat(initialSnapshot).isEqualTo(new TaskRunner.State(new HashMap<>()));
+
+        Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new HashMap<>();
+        SourceRecord sourceRecord = dummyRecord(42);
+        partitionsToOffset.put(sourceRecord.sourcePartition(), sourceRecord.sourceOffset());
+        TaskRunner.State stateToRestore = new TaskRunner.State(partitionsToOffset);
+
+        taskRunner.restoreSnapshot(stateToRestore);
+
+        TaskRunner.State snapshot = taskRunner.createSnapshot();
+        assertThat(snapshot).isEqualTo(new TaskRunner.State(partitionsToOffset));
     }
 
     private void assertPolledRecordsSize(int expected) {
@@ -87,7 +153,7 @@ public class TaskRunnerTest {
     @Nonnull
     private static Map<String, String> minimalProperties() {
         Map<String, String> taskProperties = new HashMap<>();
-        taskProperties.put(ITEMS_SIZE, String.valueOf(3));
+        taskProperties.put(ITEMS_SIZE, String.valueOf(CONFIGURED_ITEMS_SIZE));
         return taskProperties;
     }
 

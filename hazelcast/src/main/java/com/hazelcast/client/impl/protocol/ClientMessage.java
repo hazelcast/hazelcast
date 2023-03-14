@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.tpc.AsyncSocket;
+import com.hazelcast.internal.tpcengine.AsyncSocket;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -167,16 +167,8 @@ public final class ClientMessage implements OutboundFrame {
         return startFrame;
     }
 
-    public void setStartFrame(Frame startFrame) {
-        this.startFrame = startFrame;
-    }
-
     public Frame getEndFrame() {
         return endFrame;
-    }
-
-    public void setEndFrame(Frame endFrame) {
-        this.endFrame = endFrame;
     }
 
     public ClientMessage add(Frame frame) {

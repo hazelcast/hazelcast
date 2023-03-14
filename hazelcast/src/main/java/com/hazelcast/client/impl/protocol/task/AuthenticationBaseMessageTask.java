@@ -213,7 +213,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
 
         return encodeAuth(status, thisAddress, uuid, serializationService.getVersion(),
                 clientEngine.getPartitionService().getPartitionCount(), clusterId, clientFailoverSupported, true,
-                        nodeEngine.getTpcServerBootstrap().getClientPorts());
+                        nodeEngine.getAltoServerBootstrap().getClientPorts());
     }
 
     private void setConnectionType() {
@@ -224,7 +224,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
     protected abstract ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid,
                                                 byte serializationVersion,
                                                 int partitionCount, UUID clusterId, boolean failoverSupported,
-                                                boolean isAuthenticated, List<Integer> tpcPorts);
+                                                boolean isAuthenticated, List<Integer> altoPorts);
 
     protected abstract String getClientType();
 

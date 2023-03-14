@@ -70,4 +70,5 @@ public interface Expression<T> extends DataSerializable, Serializable {
      * @return the return query data type of this expression.
      */
     QueryDataType getType();
+
 }
