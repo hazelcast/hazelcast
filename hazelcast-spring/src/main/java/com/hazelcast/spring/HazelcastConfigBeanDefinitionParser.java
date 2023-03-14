@@ -789,7 +789,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
 
-            beanDefinitionBuilder.addPropertyValue("TpcSocketConfig", beanDefinition);
+            beanDefinitionBuilder.addPropertyValue("tpcSocketConfig", beanDefinition);
         }
 
         void handleAdvancedNetwork(Node node) {
