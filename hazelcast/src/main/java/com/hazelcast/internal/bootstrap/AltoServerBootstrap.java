@@ -200,7 +200,6 @@ public class AltoServerBootstrap {
 
             AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
                     .set(SO_RCVBUF, clientSocketConfig.getReceiveBufferSizeKB() * KILO_BYTE)
-                    .set(SO_REUSEPORT, true)
                     .setAcceptConsumer(acceptRequest -> {
                         AsyncSocket socket = reactor.newAsyncSocketBuilder(acceptRequest)
                                 .setReadHandler(readHandlerSuppliers.get(reactor).get())
