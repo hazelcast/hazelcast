@@ -48,6 +48,7 @@ import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.PNCounterConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PersistentMemoryConfig;
@@ -966,5 +967,10 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         } else {
             persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory));
         }
+    }
+
+    @Override
+    protected void handlePartitioningAttributeConfig(Node node, PartitioningAttributeConfig config) {
+        config.setAttributeName(getAttribute(node, "name"));
     }
 }

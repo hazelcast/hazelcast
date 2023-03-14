@@ -84,6 +84,7 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PersistenceConfig;
@@ -359,7 +360,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
                 .filter(name -> !name.startsWith(INTERNAL_JET_OBJECTS_PREFIX))
                 .filter(name -> !name.equals(SQL_CATALOG_MAP_NAME))
                 .count();
-        assertEquals(27, mapConfigSize);
+        assertEquals(28, mapConfigSize);
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -510,6 +511,13 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         DiskTierConfig diskTierConfig = tieredStoreConfig.getDiskTierConfig();
         assertTrue(diskTierConfig.isEnabled());
         assertEquals("the-local0751", diskTierConfig.getDeviceName());
+
+        final List<PartitioningAttributeConfig> attributeConfigs = Arrays.asList(
+                new PartitioningAttributeConfig("attr1"),
+                new PartitioningAttributeConfig("attr2")
+        );
+        MapConfig testMapWithPartitionAttributes = config.getMapConfig("mapWithPartitionAttributes");
+        assertEquals(attributeConfigs, testMapWithPartitionAttributes.getPartitioningAttributeConfigs());
     }
 
     @Test
