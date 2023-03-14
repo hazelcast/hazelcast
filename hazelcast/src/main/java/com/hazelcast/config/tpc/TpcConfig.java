@@ -69,7 +69,7 @@ public class TpcConfig {
     }
 
     /**
-     * In Tpc, everything is done in eventloops. This method sets the
+     * In TPC, everything is done in eventloops. This method sets the
      * number eventloops. By default, it's equal to the number of
      * available processors. Can't return null.
      *
