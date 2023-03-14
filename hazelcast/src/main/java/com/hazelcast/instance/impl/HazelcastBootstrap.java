@@ -82,12 +82,12 @@ public final class HazelcastBootstrap {
      * - After the execution completes, the HazelcastInstance is shutdown and the singleton is reset<p>
      * - If there was an error during execution, it calls System.exit(1).<p>
      */
-    public static void executeJarOnClient(@Nonnull Supplier<HazelcastInstance> supplierOfInstance,
-                                          @Nonnull String jarPath,
-                                          @Nullable String snapshotName,
-                                          @Nullable String jobName,
-                                          @Nullable String mainClassName,
-                                          @Nonnull List<String> args)
+    public static void executeJarOnCLI(@Nonnull Supplier<HazelcastInstance> supplierOfInstance,
+                                       @Nonnull String jarPath,
+                                       @Nullable String snapshotName,
+                                       @Nullable String jobName,
+                                       @Nullable String mainClassName,
+                                       @Nonnull List<String> args)
             throws IOException, ClassNotFoundException, InvocationTargetException, IllegalAccessException {
         // Set the singleton, so that it can be accessed within the jar
         SINGLETON.get(() -> BootstrappedInstanceProxy.createWithJetProxy(supplierOfInstance.get()));

@@ -190,7 +190,7 @@ public class HazelcastCommandLine implements Runnable {
             printf("Will restore the job from the snapshot with name '%s'", snapshotName);
         }
 
-        HazelcastBootstrap.executeJarOnClient(
+        HazelcastBootstrap.executeJarOnCLI(
                 () -> getHazelcastClient(false),
                 file.getAbsolutePath(), snapshotName, name, mainClass, params);
     }
