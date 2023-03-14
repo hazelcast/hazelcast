@@ -188,18 +188,18 @@ public final class ClientAuthenticationCodec {
         public boolean failoverSupported;
 
         /**
-         * Returns the list of TPC ports or null if TPC is disabled.
+         * Returns the list of Alto ports or null if Alto is disabled.
          */
         public @Nullable java.util.List<java.lang.Integer> altoPorts;
 
         /**
-         * True if the tpcPorts is received from the member, false otherwise.
-         * If this is false, tpcPorts has the default value for its type.
+         * True if the altoPorts is received from the member, false otherwise.
+         * If this is false, altoPorts has the default value for its type.
          */
         public boolean isAltoPortsExists;
     }
 
-    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported, @Nullable java.util.Collection<java.lang.Integer> tpcPorts) {
+    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported, @Nullable java.util.Collection<java.lang.Integer> altoPorts) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
@@ -213,7 +213,7 @@ public final class ClientAuthenticationCodec {
 
         CodecUtil.encodeNullable(clientMessage, address, AddressCodec::encode);
         StringCodec.encode(clientMessage, serverHazelcastVersion);
-        CodecUtil.encodeNullable(clientMessage, tpcPorts, ListIntegerCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, altoPorts, ListIntegerCodec::encode);
         return clientMessage;
     }
 
