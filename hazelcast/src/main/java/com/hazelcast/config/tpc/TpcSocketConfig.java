@@ -25,7 +25,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
- * Socket configuration for Tpc. In Tpc, each eventloop has its own
+ * Socket configuration for TPC. In TPC, each eventloop has its own
  * sockets.
  *
  * @see com.hazelcast.config.tpc.TpcConfig
