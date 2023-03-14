@@ -186,16 +186,4 @@ public abstract class AsyncSocketOptionsTest {
         options.set(TCP_KEEPINTERVAL, 100);
         assertEquals(Integer.valueOf(100), options.get(TCP_KEEPINTERVAL));
     }
-
-
-//    @Test
-//    public void test_TcpKeepAliveProbes() {
-//        assumeIfNioThenJava11Plus();
-//
-//        Reactor reactor = newReactor();
-//        AsyncSocket socket = reactor.openTcpAsyncSocket();
-//
-//        socket.setTcpKeepAliveProbes(5);
-//        assertEquals(5, socket.getTcpKeepaliveProbes());
-//    }
 }
