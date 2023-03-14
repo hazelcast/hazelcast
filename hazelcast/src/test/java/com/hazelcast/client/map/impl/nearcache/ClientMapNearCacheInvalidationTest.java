@@ -24,7 +24,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.impl.nearcache.TestObjectBasedReadOnlyProcessor;
+//import com.hazelcast.map.impl.nearcache.TestObjectBasedReadOnlyProcessor;
 import com.hazelcast.map.impl.nearcache.TestReadOnlyProcessor;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.query.Predicate;
@@ -312,7 +312,7 @@ public class ClientMapNearCacheInvalidationTest extends ClientTestSupport {
     }
 
     @Test
-    public void testMapExecuteOnEntriesWithPredicate_noInvalidations() {
+    public void testMapExecuteOnEntriesWithPredicate_withReadOnlyProcessor_noInvalidations() {
         Config config = getConfig();
         configureBatching(config, 10, 1);
 
@@ -326,25 +326,23 @@ public class ClientMapNearCacheInvalidationTest extends ClientTestSupport {
 
         int mapSize = 100;
 
-        IMap<Integer, SampleTestObjects.Employee> map = server.getMap(mapName);
-        IMap<Integer, SampleTestObjects.Employee> clientMap = client.getMap(mapName);
+        IMap<Integer, Integer> map = server.getMap(mapName);
+        IMap<Integer, Integer> clientMap = client.getMap(mapName);
 
         for (int i = 0; i < mapSize; i++) {
-            map.put(i, new SampleTestObjects.Employee(i, "", 0, true, 0D));
+            map.put(i, i);
         }
 
         populateNearCache(map, mapSize);
         NearCacheStats nearCachestats = ((NearCachedClientMapProxy) clientMap).getNearCache().getNearCacheStats();
         long invalidationsBefore = nearCachestats.getInvalidations();
-        PredicateBuilder.EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
-        Predicate predicate = e.get("salary").equal(0);
-        map.executeOnEntries(new TestObjectBasedReadOnlyProcessor(), predicate);
+        map.executeOnEntries(new TestReadOnlyProcessor(), Predicates.alwaysTrue());
         long invalidationsAfter = nearCachestats.getInvalidations();
         assertEquals("There should be no invalidation after getting keys from read only entry processor", invalidationsBefore, invalidationsAfter);
     }
 
     @Test
-    public void testMapExecuteOnEntriesWithoutPredicate_noInvalidations() {
+    public void testMapExecuteOnEntriesWithoutPredicate_withReadOnlyProcessor_noInvalidations() {
         Config config = getConfig();
         configureBatching(config, 10, 1);
 
@@ -358,17 +356,17 @@ public class ClientMapNearCacheInvalidationTest extends ClientTestSupport {
 
         int mapSize = 100;
 
-        IMap<Integer, SampleTestObjects.Employee> map = server.getMap(mapName);
-        IMap<Integer, SampleTestObjects.Employee> clientMap = client.getMap(mapName);
+        IMap<Integer, Integer> map = server.getMap(mapName);
+        IMap<Integer, Integer> clientMap = client.getMap(mapName);
 
         for (int i = 0; i < mapSize; i++) {
-            map.put(i, new SampleTestObjects.Employee(i, "", 0, true, 0D));
+            map.put(i, i);
         }
 
         populateNearCache(map, mapSize);
         NearCacheStats nearCachestats = ((NearCachedClientMapProxy) clientMap).getNearCache().getNearCacheStats();
         long invalidationsBefore = nearCachestats.getInvalidations();
-        map.executeOnEntries(new TestObjectBasedReadOnlyProcessor());
+        map.executeOnEntries(new TestReadOnlyProcessor());
         long invalidationsAfter = nearCachestats.getInvalidations();
         assertEquals("There should be no invalidation after getting keys from read only entry processor", invalidationsBefore, invalidationsAfter);
     }
