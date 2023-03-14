@@ -23,6 +23,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
+import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.SinkBuilder;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -56,16 +57,22 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 @SuppressWarnings("UnusedReturnValue")
 public final class MongoSinkBuilder<T> {
 
+    /**
+     * Default transaction options used by the processors.
+     */
     @SuppressWarnings("checkstyle:MagicNumber")
-    private static final TransactionOptions DEFAULT_TRANSACTION_OPTION = TransactionOptions
+    public static final TransactionOptions DEFAULT_TRANSACTION_OPTION = TransactionOptions
             .builder()
             .writeConcern(MAJORITY)
             .maxCommitTime(10L, MINUTES)
             .readPreference(primaryPreferred())
             .build();
 
+    /**
+     * Default retry strategy used by the processors.
+     */
     @SuppressWarnings("checkstyle:MagicNumber")
-    private static final RetryStrategy DEFAULT_COMMIT_RETRY_STRATEGY = RetryStrategies
+    public static final RetryStrategy DEFAULT_COMMIT_RETRY_STRATEGY = RetryStrategies
             .custom()
             .intervalFunction(exponentialBackoffWithCap(100, 2.0, 3000))
             .maxAttempts(20)
@@ -86,6 +93,29 @@ public final class MongoSinkBuilder<T> {
     ) {
         this.name = checkNotNull(name, "sink name cannot be null");
         params.setClientSupplier(checkNonNullAndSerializable(clientSupplier, "clientSupplier"));
+        params.setDocumentType(checkNotNull(documentClass, "document class cannot be null"));
+
+        if (Document.class.isAssignableFrom(documentClass)) {
+            identifyDocumentBy("_id", doc -> ((Document) doc).get("_id"));
+        }
+        if (BsonDocument.class.isAssignableFrom(documentClass)) {
+            identifyDocumentBy("_id", doc -> ((BsonDocument) doc).get("_id"));
+        }
+
+        transactionOptions(() -> DEFAULT_TRANSACTION_OPTION);
+        commitRetryStrategy(DEFAULT_COMMIT_RETRY_STRATEGY);
+    }
+
+    /**
+     * See {@link MongoSinks#builder}
+     */
+    MongoSinkBuilder(
+            @Nonnull String name,
+            @Nonnull Class<T> documentClass,
+            @Nonnull DataLinkRef dataLinkRef
+            ) {
+        this.name = checkNotNull(name, "sink name cannot be null");
+        params.setDataLinkRef(checkNonNullAndSerializable(dataLinkRef, "dataLinkRef"));
         params.setDocumentType(checkNotNull(documentClass, "document class cannot be null"));
 
         if (Document.class.isAssignableFrom(documentClass)) {
@@ -175,7 +205,6 @@ public final class MongoSinkBuilder<T> {
         return this;
     }
 
-
     /**
      * Sets options which will be used by MongoDB transaction mechanism.
      * <p>
@@ -186,7 +215,21 @@ public final class MongoSinkBuilder<T> {
      */
     @Nonnull
     public MongoSinkBuilder<T> transactionOptions(@Nonnull SupplierEx<TransactionOptions> transactionOptionsSup) {
-        params.setTransactionOptions(transactionOptionsSup);
+        params.setTransactionOptionsSup(transactionOptionsSup);
+        return this;
+    }
+
+    /**
+     * Sets write mode used by the connector. Default value is {@linkplain WriteMode#REPLACE}.
+     *
+     * @see WriteMode#INSERT_ONLY
+     * @see WriteMode#UPDATE_ONLY
+     * @see WriteMode#UPSERT
+     * @see WriteMode#REPLACE
+     */
+    @Nonnull
+    public MongoSinkBuilder<T> writeMode(@Nonnull WriteMode writeMode) {
+        params.setWriteMode(writeMode);
         return this;
     }
 

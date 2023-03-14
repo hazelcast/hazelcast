@@ -676,7 +676,7 @@ public abstract class AbstractCacheService implements ICacheService,
                 removeFromLocalResources(registration.getId());
             }
         }
-        eventService.deregisterAllListeners(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix);
+        eventService.deregisterAllLocalListeners(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix);
         CacheContext cacheContext = cacheContexts.get(cacheNameWithPrefix);
         if (cacheContext != null) {
             cacheContext.resetCacheEntryListenerCount();

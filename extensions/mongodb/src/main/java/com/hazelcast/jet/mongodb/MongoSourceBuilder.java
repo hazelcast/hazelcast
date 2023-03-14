@@ -22,6 +22,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.mongodb.impl.ReadMongoP;
 import com.hazelcast.jet.mongodb.impl.ReadMongoParams;
 import com.hazelcast.jet.pipeline.BatchSource;
+import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.spi.annotation.Beta;
@@ -62,9 +63,6 @@ public final class MongoSourceBuilder {
      * Returns a builder object that offers a step-by-step fluent API to build
      * a custom MongoDB {@link BatchSource} for the Pipeline API.
      * <p>
-     * The created source will not be distributed, a single processor instance
-     * will be created on an arbitrary member.
-     * <p>
      * Here's an example that builds a simple source which queries all the
      * documents in a collection and emits the items as a string by transforming
      * each item to json.
@@ -78,6 +76,25 @@ public final class MongoSourceBuilder {
             @Nonnull SupplierEx<? extends MongoClient> clientSupplier
     ) {
         return new Batch<>(name, clientSupplier);
+    }
+
+    /**
+     * Returns a builder object that offers a step-by-step fluent API to build
+     * a custom MongoDB {@link BatchSource} for the Pipeline API.
+     * <p>
+     * Here's an example that builds a simple source which queries all the
+     * documents in a collection and emits the items as a string by transforming
+     * each item to json.
+     *
+     * @param name               a descriptive name for the source (diagnostic purposes)
+     * @param dataLinkRef a link to some mongo data link
+     */
+    @Nonnull
+    public static MongoSourceBuilder.Batch<Document> batch(
+            @Nonnull String name,
+            @Nonnull DataLinkRef dataLinkRef
+            ) {
+        return new Batch<>(name, dataLinkRef);
     }
 
     /**
@@ -98,6 +115,24 @@ public final class MongoSourceBuilder {
             @Nonnull SupplierEx<? extends MongoClient> clientSupplier
     ) {
         return new Stream<>(name, clientSupplier);
+    }
+
+    /**
+     * Returns a builder object that offers a step-by-step fluent API to build
+     * a custom MongoDB {@link StreamSource} for the Pipeline API.
+     * <p>
+     * The source provides native timestamps using {@link ChangeStreamDocument#getWallTime()} and fault
+     * tolerance using {@link ChangeStreamDocument#getResumeToken()}.
+     *
+     * @param name               a descriptive name for the source (diagnostic purposes)
+     * @param dataLinkRef a link to some mongo data link
+     */
+    @Nonnull
+    public static MongoSourceBuilder.Stream<Document> stream(
+            @Nonnull String name,
+            @Nonnull DataLinkRef dataLinkRef
+    ) {
+        return new Stream<>(name, dataLinkRef);
     }
 
     private abstract static class Base<T> {
@@ -139,13 +174,25 @@ public final class MongoSourceBuilder {
                     .setClientSupplier(clientSupplier)
                     .setMapItemFn((FunctionEx<Document, T>) toClass(Document.class));
         }
+        @SuppressWarnings("unchecked")
+        private Batch(
+                @Nonnull String name,
+                @Nonnull DataLinkRef dataLinkRef
+        ) {
+            checkSerializable(dataLinkRef, "clientSupplier");
+            this.name = name;
+            this.params = new ReadMongoParams<>(false);
+            params
+                    .setDataLinkRef(dataLinkRef)
+                    .setMapItemFn((FunctionEx<Document, T>) toClass(Document.class));
+        }
 
         /**
          * Adds a projection aggregate. Example use:
          * <pre>{@code
          * import static com.mongodb.client.model.Projections.include;
          *
-         *  MongoDBSourceBuilder.stream(name, supplier)
+         *  MongoSourceBuilder.stream(name, supplier)
          *      .projection(include("fieldName"));
          * }</pre>
          * @param projection Bson form of projection;
@@ -160,12 +207,12 @@ public final class MongoSourceBuilder {
 
         /**
          * Adds sort aggregate to this builder.
-         *
+         * <p>
          * Example usage:
          * <pre>{@code
          *  import static com.mongodb.client.model.Sorts.ascending;
          *
-         *  MongoDBSourceBuilder.stream(name, supplier)
+         *  MongoSourceBuilder.stream(name, supplier)
          *      .sort(ascending("fieldName"));
          * }</pre>
          * @param sort Bson form of sort. Use {@link com.mongodb.client.model.Sorts} to create sort.
@@ -185,7 +232,7 @@ public final class MongoSourceBuilder {
          * <pre>{@code
          *  import static com.mongodb.client.model.Filters.eq;
          *
-         *  MongoDBSourceBuilder.stream(name, supplier)
+         *  MongoSourceBuilder.stream(name, supplier)
          *      .filter(eq("fieldName", 10));
          * }</pre>
          *
@@ -228,7 +275,7 @@ public final class MongoSourceBuilder {
          * <p>
          * Example usage:
          * <pre>{@code
-         *  MongoDBSourceBuilder.stream(name, supplier)
+         *  MongoSourceBuilder.stream(name, supplier)
          *      .collection("myCollection");
          * }</pre>
          *
@@ -247,12 +294,12 @@ public final class MongoSourceBuilder {
          * Specifies from which collection connector will read documents. If not invoked,
          * then connector will look at all collections in given database. All documents read will be automatically
          * parsed to user-defined type using
-         * {@linkplain com.mongodb.MongoClientSettings#getDefaultCodecRegistry mongo's standard codec registry}
+         * {@linkplain com.mongodb.MongoClientSettings#getDefaultCodecRegistry MongoDB's standard codec registry}
          * with pojo support added.
          * <p>
          * Example usage:
          * <pre>{@code
-         *  MongoDBSourceBuilder.stream(name, supplier)
+         *  MongoSourceBuilder.stream(name, supplier)
          *      .collection("myCollection", MyDocumentPojo.class);
          * }</pre>
          *
@@ -260,7 +307,7 @@ public final class MongoSourceBuilder {
          * <pre>{@code
          * import static com.hazelcast.jet.mongodb.impl.Mappers.toClass;
          *
-         *  MongoDBSourceBuilder.stream(name, supplier)
+         *  MongoSourceBuilder.stream(name, supplier)
          *      .collection("myCollection")
          *      .mapFn(toClass(MyuDocumentPojo.class));
          * }</pre>
@@ -282,7 +329,7 @@ public final class MongoSourceBuilder {
          */
         @Nonnull
         public BatchSource<T> build() {
-            checkNotNull(params.getClientSupplier(), "clientSupplier must be set");
+            params.checkConnectivityOptionsValid();
             checkNotNull(params.getMapItemFn(), "mapFn must be set");
 
             final ReadMongoParams<T> localParams = params;
@@ -310,13 +357,24 @@ public final class MongoSourceBuilder {
             this.params.setClientSupplier(clientSupplier);
             this.params.setMapStreamFn((FunctionEx<ChangeStreamDocument<Document>, T>) streamToClass(Document.class));
         }
+        @SuppressWarnings("unchecked")
+        private Stream(
+                @Nonnull String name,
+                @Nonnull DataLinkRef dataLinkRef
+        ) {
+            checkSerializable(dataLinkRef, "dataLinkRef");
+            this.name = name;
+            this.params = new ReadMongoParams<>(true);
+            this.params.setDataLinkRef(dataLinkRef);
+            this.params.setMapStreamFn((FunctionEx<ChangeStreamDocument<Document>, T>) streamToClass(Document.class));
+        }
 
         /**
          * Adds a projection aggregate. Example use:
          * <pre>{@code
          * import static com.mongodb.client.model.Projections.include;
          *
-         *  MongoDBSourceBuilder.stream(name, supplier)
+         *  MongoSourceBuilder.stream(name, supplier)
          *      .projection(include("fieldName"));
          * }</pre>
          * @param projection Bson form of projection;
@@ -332,12 +390,12 @@ public final class MongoSourceBuilder {
         /**
          * Adds filter aggregate to this builder, which allows to filter documents in MongoDB, without
          * the need to download all documents.
-         *
+         * <p>
          * Example usage:
          * <pre>{@code
          *  import static com.mongodb.client.model.Filters.eq;
          *
-         *  MongoDBSourceBuilder.stream(name, supplier)
+         *  MongoSourceBuilder.stream(name, supplier)
          *      .filter(eq("fieldName", 10));
          * }</pre>
          * @param filter Bson form of filter. Use {@link com.mongodb.client.model.Filters} to create sort.
@@ -363,10 +421,10 @@ public final class MongoSourceBuilder {
         /**
          * Specifies from which collection connector will read documents. If not invoked,
          * then connector will look at all collections in given database.
-         *
+         * <p>
          * Example usage:
          * <pre>{@code
-         *  MongoDBSourceBuilder.stream(name, supplier)
+         *  MongoSourceBuilder.stream(name, supplier)
          *      .collection("myCollection");
          * }</pre>
          *
@@ -385,12 +443,12 @@ public final class MongoSourceBuilder {
          * Specifies from which collection connector will read documents. If not invoked,
          * then connector will look at all collections in given database. All documents read will be automatically
          * parsed to user-defined type using
-         * {@linkplain com.mongodb.MongoClientSettings#getDefaultCodecRegistry mongo's standard codec registry}
+         * {@linkplain com.mongodb.MongoClientSettings#getDefaultCodecRegistry MongoDB's standard codec registry}
          * with pojo support added.
-         *
+         * <p>
          * Example usage:
          * <pre>{@code
-         *  MongoDBSourceBuilder.stream(name, supplier)
+         *  MongoSourceBuilder.stream(name, supplier)
          *      .collection("myCollection", MyDocumentPojo.class);
          * }</pre>
          *
@@ -398,7 +456,7 @@ public final class MongoSourceBuilder {
          * <pre>{@code
          * import static com.hazelcast.jet.mongodb.impl.Mappers.toClass;
          *
-         *  MongoDBSourceBuilder.stream(name, supplier)
+         *  MongoSourceBuilder.stream(name, supplier)
          *      .collection("myCollection")
          *      .mapFn(toClass(MyuDocumentPojo.class));
          * }</pre>
@@ -451,7 +509,7 @@ public final class MongoSourceBuilder {
          */
         @Nonnull
         public StreamSource<T> build() {
-            checkNotNull(params.getClientSupplier(), "clientSupplier must be set");
+            params.checkConnectivityOptionsValid();
             checkNotNull(params.getMapStreamFn(), "mapFn must be set");
 
             final ReadMongoParams<T> localParams = params;

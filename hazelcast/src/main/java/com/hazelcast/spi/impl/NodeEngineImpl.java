@@ -26,7 +26,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.datalink.impl.DataLinkServiceImpl;
 import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.bootstrap.TpcServerBootstrap;
+import com.hazelcast.internal.bootstrap.AltoServerBootstrap;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
@@ -134,7 +134,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final ConcurrencyDetection concurrencyDetection;
     private final TenantControlServiceImpl tenantControlService;
     private final InternalDataLinkService dataLinkService;
-    private final TpcServerBootstrap tpcServerBootstrap;
+    private final AltoServerBootstrap altoServerBootstrap;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     public NodeEngineImpl(Node node) {
@@ -149,7 +149,7 @@ public class NodeEngineImpl implements NodeEngine {
             this.proxyService = new ProxyServiceImpl(this);
             this.serviceManager = new ServiceManagerImpl(this);
             this.executionService = new ExecutionServiceImpl(this);
-            this.tpcServerBootstrap = new TpcServerBootstrap(this);
+            this.altoServerBootstrap = new AltoServerBootstrap(this);
             this.operationService = new OperationServiceImpl(this);
             this.eventService = new EventServiceImpl(this);
             this.operationParker = new OperationParkerImpl(this);
@@ -195,8 +195,8 @@ public class NodeEngineImpl implements NodeEngine {
         }
     }
 
-    public TpcServerBootstrap getTpcServerBootstrap() {
-        return tpcServerBootstrap;
+    public AltoServerBootstrap getAltoServerBootstrap() {
+        return altoServerBootstrap;
     }
 
     private void checkMapMergePolicies(Node node) {
@@ -264,7 +264,7 @@ public class NodeEngineImpl implements NodeEngine {
         operationService.start();
         splitBrainProtectionService.start();
         sqlService.start();
-        tpcServerBootstrap.start();
+        altoServerBootstrap.start();
         diagnostics.start();
         node.getNodeExtension().registerPlugins(diagnostics);
     }
@@ -582,8 +582,8 @@ public class NodeEngineImpl implements NodeEngine {
         if (executionService != null) {
             executionService.shutdown();
         }
-        if (tpcServerBootstrap != null) {
-            tpcServerBootstrap.shutdown();
+        if (altoServerBootstrap != null) {
+            altoServerBootstrap.shutdown();
         }
         if (metricsRegistry != null) {
             metricsRegistry.shutdown();
