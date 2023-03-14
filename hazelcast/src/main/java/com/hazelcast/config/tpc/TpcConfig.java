@@ -36,7 +36,7 @@ public class TpcConfig {
     private int eventloopCount = Runtime.getRuntime().availableProcessors();
 
     /**
-     * Gets the enabled flag which defines Tpc is enabled or not.
+     * Gets the enabled flag which defines TPC is enabled or not.
      *
      * @return true if Tpc is enabled
      */
