@@ -130,6 +130,21 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
     }
 
     private <T> void setTcpKeepInterval(Integer value) throws IOException {
+        boolean unsupported = false;
+        if (JDK_NET_TCP_KEEPINTERVAL == null || TCP_KEEPINTERVAL_PRINTED.get()) {
+            unsupported = true;
+        } else {
+            try {
+                channel.setOption(JDK_NET_TCP_KEEPINTERVAL, value);
+            } catch (UnsupportedOperationException e) {
+                unsupported = true;
+            }
+        }
+
+        if(unsupported && TCP_KEEPCOUNT_PRINTED.compareAndSet(false,true)){
+
+        }
+
         if (OS.isWindows()) {
             if (TCP_KEEPINTERVAL_PRINTED.compareAndSet(false, true)) {
                 logger.warning("Ignoring TCP_KEEPINTERVAL. This option is not supported on Windows.");
