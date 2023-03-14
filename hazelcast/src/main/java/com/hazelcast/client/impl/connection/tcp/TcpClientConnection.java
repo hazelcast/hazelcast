@@ -346,7 +346,7 @@ public class TcpClientConnection implements ClientConnection {
         this.tpcChannels = tpcChannels;
     }
 
-    // Used in tests
+    @Override
     public Channel[] getTpcChannels() {
         return tpcChannels;
     }
