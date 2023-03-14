@@ -49,6 +49,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public class StoreWorker implements Runnable {
     private final String mapName;
+    private final NodeEngine nodeEngine;
     private final MapServiceContext mapServiceContext;
     private final IPartitionService partitionService;
     private final ExecutionService executionService;
@@ -71,7 +72,7 @@ public class StoreWorker implements Runnable {
     public StoreWorker(MapStoreContext mapStoreContext, WriteBehindProcessor writeBehindProcessor) {
         this.mapName = mapStoreContext.getMapName();
         this.mapServiceContext = mapStoreContext.getMapServiceContext();
-        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        this.nodeEngine = mapServiceContext.getNodeEngine();
         this.partitionService = nodeEngine.getPartitionService();
         this.executionService = nodeEngine.getExecutionService();
         this.writeBehindProcessor = writeBehindProcessor;
@@ -123,7 +124,7 @@ public class StoreWorker implements Runnable {
         List<DelayedEntry> backupsList = null;
 
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            if (currentThread().isInterrupted()) {
+            if (currentThread().isInterrupted() || !nodeEngine.isRunning()) {
                 break;
             }
 
