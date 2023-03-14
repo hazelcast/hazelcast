@@ -172,10 +172,10 @@ public class ClientConfigTest {
         ClientConfig config = new ClientConfig();
         ClientTpcConfig tpcConfig = new ClientTpcConfig();
 
-        assertFalse(TpcConfig.isEnabled());
+        assertFalse(tpcConfig.isEnabled());
 
-        TpcConfig.setEnabled(true);
-        config.setTpcConfig(TpcConfig);
+        tpcConfig.setEnabled(true);
+        config.setTpcConfig(tpcConfig);
 
         assertTrue(config.getTpcConfig().isEnabled());
         assertThrows(IllegalArgumentException.class, () -> config.setTpcConfig(null));
