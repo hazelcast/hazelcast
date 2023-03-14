@@ -6695,6 +6695,8 @@ public class MemberCompatibilityNullTest_2_6 {
         assertTrue(isEqual(aDataPersistenceConfig, parameters.dataPersistenceConfig));
         assertTrue(parameters.isTieredStoreConfigExists);
         assertTrue(isEqual(aTieredStoreConfig, parameters.tieredStoreConfig));
+        assertTrue(parameters.isPartitioningAttributeConfigsExists);
+        assertTrue(isEqual(null, parameters.partitioningAttributeConfigs));
     }
 
     @Test

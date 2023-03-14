@@ -17,6 +17,7 @@
 package com.hazelcast.partition.strategy;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
@@ -40,6 +41,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -58,7 +60,7 @@ public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInCl
         config.getMapConfig("test").getPartitioningAttributeConfigs()
                 .add(new PartitioningAttributeConfig("org"));
 
-        initialize(3, config);
+        initializeWithClient(3, config, null);
     }
 
     @Test
@@ -129,7 +131,7 @@ public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInCl
         for (long i = 0; i < 100; i++) {
             final String key = template
                     .replace("<id>", String.valueOf(i))
-                    .replace("<>", "key#" + i)
+                    .replace("<name>", "key#" + i)
                     .replace("<org>", PARTITION_ATTRIBUTE_VALUE);
             map.put(new HazelcastJsonValue(key), i);
         }
@@ -140,6 +142,32 @@ public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInCl
         assertEquals(100, owner.getMap("test").getLocalMapStats().getOwnedEntryCount());
         assertEquals(0, nonOwners.get(0).getMap("test").getLocalMapStats().getOwnedEntryCount());
         assertEquals(0, nonOwners.get(1).getMap("test").getLocalMapStats().getOwnedEntryCount());
+    }
+
+    @Test
+    public void testDynamicPartitioningAttributesConfiguration() {
+        final List<PartitioningAttributeConfig> attributeConfigs =
+                singletonList(new PartitioningAttributeConfig("name"));
+        final MapConfig mapConfig = new MapConfig("test2").setPartitioningAttributeConfigs(attributeConfigs);
+
+        client().getConfig().addMapConfig(mapConfig);
+
+        for (final HazelcastInstance instance : instances()) {
+            assertTrueEventually(() -> assertEquals(mapConfig, instance.getConfig().getMapConfig("test2")));
+        }
+
+        final IMap<JavaKey, Long> map = instance().getMap("test2");
+
+        for (long i = 0; i < 100; i++) {
+            map.put(new JavaKey(i, PARTITION_ATTRIBUTE_VALUE, "org#" + i), i);
+        }
+
+        final HazelcastInstance owner = getOwner(PARTITION_ATTRIBUTE_VALUE);
+        final List<HazelcastInstance> nonOwners = getNonOwners(owner);
+
+        assertEquals(100, owner.getMap("test2").getLocalMapStats().getOwnedEntryCount());
+        assertEquals(0, nonOwners.get(0).getMap("test2").getLocalMapStats().getOwnedEntryCount());
+        assertEquals(0, nonOwners.get(1).getMap("test2").getLocalMapStats().getOwnedEntryCount());
     }
 
     private HazelcastInstance getOwner(Object partitionKey) {

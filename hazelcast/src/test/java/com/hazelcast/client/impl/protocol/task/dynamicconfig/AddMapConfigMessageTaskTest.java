@@ -135,7 +135,8 @@ public class AddMapConfigMessageTaskTest {
                 mapConfig.getMetadataPolicy().getId(),
                 mapConfig.isPerEntryStatsEnabled(),
                 mapConfig.getDataPersistenceConfig(),
-                mapConfig.getTieredStoreConfig()
+                mapConfig.getTieredStoreConfig(),
+                null
         );
         AddMapConfigMessageTask addMapConfigMessageTask = new AddMapConfigMessageTask(addMapConfigClientMessage, mockNode, mockConnection);
         addMapConfigMessageTask.run();
@@ -185,7 +186,8 @@ public class AddMapConfigMessageTaskTest {
                 mapConfig.getMetadataPolicy().getId(),
                 mapConfig.isPerEntryStatsEnabled(),
                 mapConfig.getDataPersistenceConfig(),
-                mapConfig.getTieredStoreConfig()
+                mapConfig.getTieredStoreConfig(),
+                null
         );
         AddMapConfigMessageTask addMapConfigMessageTask = new AddMapConfigMessageTask(addMapConfigClientMessage, mockNode, mockConnection);
         addMapConfigMessageTask.run();
