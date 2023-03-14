@@ -25,7 +25,6 @@ import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
-import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 

@@ -32,8 +32,6 @@ import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.MongoDBContainer;
 
-import static org.testcontainers.containers.wait.strategy.Wait.forListeningPort;
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public abstract class MongoSqlTest extends SqlTestSupport {

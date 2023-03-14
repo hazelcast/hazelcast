@@ -356,7 +356,8 @@ public final class MongoSourceBuilder {
             this.name = name;
             this.params = new ReadMongoParams<>(true);
             this.params.setClientSupplier(clientSupplier);
-            this.params.setMapStreamFn((BiFunctionEx<ChangeStreamDocument<Document>, Long, T>) streamToClass(Document.class));
+            this.params.setMapStreamFn(
+                    (BiFunctionEx<ChangeStreamDocument<Document>, Long, T>) streamToClass(Document.class));
         }
         @SuppressWarnings("unchecked")
         private Stream(
@@ -367,7 +368,8 @@ public final class MongoSourceBuilder {
             this.name = name;
             this.params = new ReadMongoParams<>(true);
             this.params.setDataLinkRef(dataLinkRef);
-            this.params.setMapStreamFn((BiFunctionEx<ChangeStreamDocument<Document>, Long, T>) streamToClass(Document.class));
+            this.params.setMapStreamFn(
+                    (BiFunctionEx<ChangeStreamDocument<Document>, Long, T>) streamToClass(Document.class));
         }
 
         /**
