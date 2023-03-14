@@ -2380,7 +2380,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                             getIntegerValue("eventloop-count", getTextContent(child)));
                 }
             }
-            configBuilder.addPropertyValue("TpcConfig", builder.getBeanDefinition());
+            configBuilder.addPropertyValue("tpcConfig", builder.getBeanDefinition());
         }
         private void handlePartitionAttributes(final BeanDefinitionBuilder mapConfigBuilder, Node node) {
             final ManagedList<BeanDefinition> partitioningAttributeConfigs = new ManagedList<>();
