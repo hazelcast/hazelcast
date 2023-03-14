@@ -17,19 +17,20 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.instance.impl.NodeState;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
-import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.partition.IPartition;
-import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.internal.util.Clock;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,7 +50,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public class StoreWorker implements Runnable {
     private final String mapName;
-    private final NodeEngine nodeEngine;
+    private final NodeEngineImpl nodeEngine;
     private final MapServiceContext mapServiceContext;
     private final IPartitionService partitionService;
     private final ExecutionService executionService;
@@ -72,7 +73,7 @@ public class StoreWorker implements Runnable {
     public StoreWorker(MapStoreContext mapStoreContext, WriteBehindProcessor writeBehindProcessor) {
         this.mapName = mapStoreContext.getMapName();
         this.mapServiceContext = mapStoreContext.getMapServiceContext();
-        this.nodeEngine = mapServiceContext.getNodeEngine();
+        this.nodeEngine = ((NodeEngineImpl) mapServiceContext.getNodeEngine());
         this.partitionService = nodeEngine.getPartitionService();
         this.executionService = nodeEngine.getExecutionService();
         this.writeBehindProcessor = writeBehindProcessor;
@@ -124,7 +125,8 @@ public class StoreWorker implements Runnable {
         List<DelayedEntry> backupsList = null;
 
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            if (currentThread().isInterrupted() || !nodeEngine.isRunning()) {
+            if (currentThread().isInterrupted()
+                    || nodeEngine.getNode().getState() != NodeState.ACTIVE) {
                 break;
             }
 
