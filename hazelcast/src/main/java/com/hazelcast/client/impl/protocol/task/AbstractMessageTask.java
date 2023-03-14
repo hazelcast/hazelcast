@@ -55,7 +55,6 @@ import java.util.Set;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
-import static com.hazelcast.internal.tpcengine.util.BufferUtil.upcast;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 
 /**
