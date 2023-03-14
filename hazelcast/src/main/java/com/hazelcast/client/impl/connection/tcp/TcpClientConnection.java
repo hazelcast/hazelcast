@@ -346,7 +346,6 @@ public class TcpClientConnection implements ClientConnection {
         this.altoChannels = altoChannels;
     }
 
-    // Used in tests
     public Channel[] getAltoChannels() {
         return altoChannels;
     }
