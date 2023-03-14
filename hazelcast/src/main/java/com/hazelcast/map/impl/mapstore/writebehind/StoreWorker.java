@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.util.Clock;
@@ -125,8 +124,7 @@ public class StoreWorker implements Runnable {
         List<DelayedEntry> backupsList = null;
 
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            if (currentThread().isInterrupted()
-                    || nodeEngine.getNode().getState() != NodeState.ACTIVE) {
+            if (currentThread().isInterrupted() || !running) {
                 break;
             }
 
