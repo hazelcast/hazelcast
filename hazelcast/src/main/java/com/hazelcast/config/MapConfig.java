@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.partition.IPartition;
@@ -1035,7 +1036,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         out.writeBoolean(perEntryStatsEnabled);
         out.writeObject(dataPersistenceConfig);
         out.writeObject(tieredStoreConfig);
-        writeNullableList(partitioningAttributeConfigs, out);
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_3)) {
+            writeNullableList(partitioningAttributeConfigs, out);
+        }
     }
 
     @Override
@@ -1068,6 +1071,8 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         perEntryStatsEnabled = in.readBoolean();
         setDataPersistenceConfig(in.readObject());
         setTieredStoreConfig(in.readObject());
-        partitioningAttributeConfigs = readNullableList(in);
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_3)) {
+            partitioningAttributeConfigs = readNullableList(in);
+        }
     }
 }
