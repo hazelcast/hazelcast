@@ -3475,12 +3475,12 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         Node attrEnabled = getNamedItemNode(node, "enabled");
         boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
         TpcConfig tpcConfig = config.getTpcConfig();
-        tpcconfig.setEnabled(enabled);
+        tpcConfig.setEnabled(enabled);
 
         for (Node child : childElements(node)) {
             String childName = cleanNodeName(child);
             if (matches("eventloop-count", childName)) {
-                tpcconfig.setEventloopCount(getIntegerValue("eventloop-count", getTextContent(child)));
+                tpcConfig.setEventloopCount(getIntegerValue("eventloop-count", getTextContent(child)));
             }
         }
     }
