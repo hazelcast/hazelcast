@@ -45,7 +45,7 @@ public class TpcConfig {
     }
 
     /**
-     * Sets the enabled flag which defines Tpc is enabled or not. Can't
+     * Sets the enabled flag which defines TPC is enabled or not. Can't
      * return null.
      *
      * @param enabled a boolean to enable or disable tpc
