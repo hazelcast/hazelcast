@@ -21,7 +21,7 @@ import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.executejar.ClientExecuteJar;
+import com.hazelcast.instance.impl.executejar.CommandLineExecuteJar;
 import com.hazelcast.instance.impl.executejar.ExecuteJobParameters;
 import com.hazelcast.instance.impl.executejar.MemberExecuteJar;
 import com.hazelcast.jet.impl.util.JetConsoleLogHandler;
@@ -60,7 +60,7 @@ public final class HazelcastBootstrap {
 
     private static final ResettableSingleton<BootstrappedInstanceProxy> SINGLETON = new ResettableSingleton<>();
 
-    private static final ClientExecuteJar CLIENT_EXECUTE_JAR = new ClientExecuteJar();
+    private static final CommandLineExecuteJar COMMAND_LINE_EXECUTE_JAR = new CommandLineExecuteJar();
 
     private static final MemberExecuteJar MEMBER_EXECUTE_JAR = new MemberExecuteJar();
 
@@ -77,7 +77,10 @@ public final class HazelcastBootstrap {
     }
 
     /**
-     * Execute jar file that exist on the client
+     * This method is designed to be called only from the command line. It does it following<p>
+     * - Sets the HazelcastInstance singleton and executes the jar. <p>
+     * - After the execution completes, the HazelcastInstance is shutdown and the singleton is reset<p>
+     * - If there was an error during execution, it calls System.exit(1).<p>
      */
     public static void executeJarOnClient(@Nonnull Supplier<HazelcastInstance> supplierOfInstance,
                                           @Nonnull String jarPath,
@@ -90,7 +93,7 @@ public final class HazelcastBootstrap {
         SINGLETON.get(() -> BootstrappedInstanceProxy.createWithJetProxy(supplierOfInstance.get()));
 
         ExecuteJobParameters executeJobParameters = new ExecuteJobParameters(jarPath, snapshotName, jobName);
-        CLIENT_EXECUTE_JAR.executeJar(SINGLETON, executeJobParameters, mainClassName, args);
+        COMMAND_LINE_EXECUTE_JAR.executeJar(SINGLETON, executeJobParameters, mainClassName, args);
     }
 
     /**

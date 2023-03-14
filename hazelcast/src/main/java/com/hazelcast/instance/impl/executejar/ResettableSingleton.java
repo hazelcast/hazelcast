@@ -60,6 +60,8 @@ public final class ResettableSingleton<T> {
      * Reset the remembered value
      */
     public void resetRemembered() {
-        remembered = null;
+        synchronized (this) {
+            remembered = null;
+        }
     }
 }

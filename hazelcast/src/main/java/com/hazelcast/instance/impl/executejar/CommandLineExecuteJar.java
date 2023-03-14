@@ -17,7 +17,6 @@
 package com.hazelcast.instance.impl.executejar;
 
 import com.hazelcast.instance.impl.BootstrappedInstanceProxy;
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.logging.ILogger;
@@ -41,9 +40,9 @@ import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
-public class ClientExecuteJar {
+public class CommandLineExecuteJar {
 
-    private static final ILogger LOGGER = Logger.getLogger(ClientExecuteJar.class.getName());
+    private static final ILogger LOGGER = Logger.getLogger(CommandLineExecuteJar.class.getName());
 
     // The number of attempts to check if job is starting
     private static final int JOB_START_CHECK_ATTEMPTS = 10;
@@ -73,7 +72,7 @@ public class ClientExecuteJar {
             URL jarUrl = new File(jarPath).toURI().toURL();
             try (URLClassLoader classLoader = URLClassLoader.newInstance(
                     new URL[]{jarUrl},
-                    ClientExecuteJar.class.getClassLoader())) {
+                    CommandLineExecuteJar.class.getClassLoader())) {
 
                 Method mainMethod = ExecuteJarHelper.findMainMethodForJar(classLoader, mainClassName);
 
@@ -84,7 +83,7 @@ public class ClientExecuteJar {
             // Wait for the job to start
             awaitJobsStartedByJar(instanceProxy);
 
-        } catch (JetException exception) {
+        } catch (Exception exception) {
             LOGGER.severe("Exception caught while executing the jar :", exception);
             exit = true;
         } finally {
