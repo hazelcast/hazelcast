@@ -22,10 +22,10 @@ import com.hazelcast.internal.tpcengine.Scheduler;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
- * The Scheduler for Tpc. So each reactor contains an partition-operation thread
+ * The Scheduler for TPC. So each reactor contains an partition-operation thread
  * and each of these threads runs an eventloop which contains a scheduler. This
  * scheduler is given a tick on every run of the eventloop to do some work. In
- * case of the tpc, we process of a batch of operations from the operation-queue
+ * case of the TPC, we process of a batch of operations from the operation-queue
  * and then hand control back to the eventloop.
  */
 public class TpcOperationScheduler implements Scheduler {

@@ -5043,7 +5043,7 @@
       "properties": {
         "enabled": {
           "type": "boolean",
-          "description": "Enabled Hazelcast Tpc. Disabled by default."
+          "description": "Enabled Hazelcast TPC. Disabled by default."
         },
         "eventloop-count": {
           "type": "integer",
@@ -5053,22 +5053,22 @@
       "required": [
         "enabled"
       ],
-      "description": "Hazelcast Tpc is the next generation of Hazelcast built with thread per core architecture. It's still being developed and everything is subject to change. Tpc is disabled by default."
+      "description": "Hazelcast TPC is the next generation of Hazelcast built with thread per core architecture. It's still being developed and everything is subject to change. TPC is disabled by default."
     },
     "TpcSocketConfig": {
       "type": "object",
       "properties": {
         "port-range": {
           "type": "string",
-          "description": "Configures the port range available for Tpc sockets."
+          "description": "Configures the port range available for TPC sockets."
         },
         "receive-buffer-size-kb": {
           "type": "integer",
-          "description": "Configures SO_RCVBUF socket option for Tpc sockets."
+          "description": "Configures SO_RCVBUF socket option for TPC sockets."
         },
         "send-buffer-size-kb": {
           "type": "integer",
-          "description": "Configures SO_SNDBUF socket option for Tpc sockets."
+          "description": "Configures SO_SNDBUF socket option for TPC sockets."
         }
       },
       "description": "Socket configuration for Alto. In Alto, each eventloop has its own socket."

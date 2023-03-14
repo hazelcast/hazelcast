@@ -3474,7 +3474,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     private void handleTpc(Node node) {
         Node attrEnabled = getNamedItemNode(node, "enabled");
         boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
-        TpcConfig tpcconfig = config.getTpcConfig();
+        TpcConfig tpcConfig = config.getTpcConfig();
         tpcconfig.setEnabled(enabled);
 
         for (Node child : childElements(node)) {

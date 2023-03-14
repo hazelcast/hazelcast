@@ -15,7 +15,7 @@
  */
 
 /**
- * This package contains Tpc integration for Hazelcast.
+ * This package contains TPC integration for Hazelcast.
  * <p/>
  * The com.hazelcast.internal.tpcengine package contains the lower level
  * {@link com.hazelcast.internal.tpcengine.TpcEngine}. This engine is useful

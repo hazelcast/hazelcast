@@ -28,7 +28,7 @@ import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
  * takes items from the operation queue and process them. With the TpcPartitionOperationThread
  * the loop method forwards to the eventloopTask. The eventloopTask loops over even sources (like
  * Nio Selectors) and other queues including the OperationQueue. With the TpcPartitionOperationThread
- * the thread blocks on the OperationQueue with a take. With the tpc version, it will only poll
+ * the thread blocks on the OperationQueue with a take. With the TPC version, it will only poll
  * and block on the Reactor (which in Nio blocks on the selector.select).
  */
 public class TpcPartitionOperationThread extends PartitionOperationThread {

@@ -6089,8 +6089,8 @@
     <xs:complexType name="tpc">
         <xs:annotation>
             <xs:documentation>
-                Hazelcast Tpc is the next generation of Hazelcast built with thread per core architecture. It's still
-                being developed and everything is subject to change. Tpc is disabled by default.
+                Hazelcast TPC is the next generation of Hazelcast built with thread per core architecture. It's still
+                being developed and everything is subject to change. TPC is disabled by default.
             </xs:documentation>
         </xs:annotation>
         <xs:all>
@@ -6105,7 +6105,7 @@
         <xs:attribute name="enabled" type="xs:boolean" use="required">
             <xs:annotation>
                 <xs:documentation>
-                    Enables Hazelcast Tpc. Disabled by default.
+                    Enables Hazelcast TPC. Disabled by default.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -6114,7 +6114,7 @@
     <xs:complexType name="tpc-socket">
         <xs:annotation>
             <xs:documentation>
-                Socket configuration for Tpc. In Tpc, each eventloop has its own sockets.
+                Socket configuration for TPC. In TPC, each eventloop has its own sockets.
             </xs:documentation>
         </xs:annotation>
         <xs:all>

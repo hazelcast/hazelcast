@@ -102,7 +102,7 @@ public class TpcServerBootstrap {
         } else {
             enabled0 = config.getTpcConfig().isEnabled();
         }
-        logger.info("Tpc: " + (enabled0 ? "enabled" : "disabled"));
+        logger.info("TPC: " + (enabled0 ? "enabled" : "disabled"));
         return enabled0;
     }
 
@@ -244,7 +244,7 @@ public class TpcServerBootstrap {
                 if (endpointQualifier != EndpointQualifier.CLIENT
                         && !endpointConfig.getTpcSocketConfig().equals(defaultTpcSocketConfig)) {
                     throw new InvalidConfigurationException(
-                            "Tcp socket configuration is only available for clients ports for now.");
+                            "TPC socket configuration is only available for clients ports for now.");
                 }
             }));
 
@@ -253,7 +253,7 @@ public class TpcServerBootstrap {
                 // for clients. This means cluster will run but no client ports will be
                 // created, so no clients can connect to the cluster.
                 throw new InvalidConfigurationException("Missing client server socket configuration. "
-                        + "If you have enabled Tcp and advanced networking, "
+                        + "If you have enabled TPC and advanced networking, "
                         + "please configure a client server socket.");
             }
         }
@@ -276,7 +276,7 @@ public class TpcServerBootstrap {
             }
         }
 
-        throw new HazelcastException("Could not find a free port in the Tcp socket port range.");
+        throw new HazelcastException("Could not find a free port in the TPC socket port range.");
     }
 
     public void shutdown() {

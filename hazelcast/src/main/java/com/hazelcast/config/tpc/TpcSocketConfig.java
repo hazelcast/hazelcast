@@ -48,7 +48,7 @@ public class TpcSocketConfig {
     private int sendBufferSizeKB = DEFAULT_SEND_BUFFER_SIZE_KB;
 
     /**
-     * Gets the possible port range for Tpc sockets to bind. Can't return
+     * Gets the possible port range for TPC sockets to bind. Can't return
      * null.
      *
      * @return the port range string
@@ -59,11 +59,11 @@ public class TpcSocketConfig {
     }
 
     /**
-     * Sets the possible port range for Tpc sockets to bind. Can't return
+     * Sets the possible port range for TPC sockets to bind. Can't return
      * null.
      *
      * @param portRange the port range to set
-     * @return this Tpc socket config
+     * @return this TPC socket config
      * @throws IllegalArgumentException if portRange doesn't match {@code
      *                                  \d{1,5}-\d{1,5}} regular expression
      * @throws NullPointerException     if portRange is null
@@ -80,9 +80,9 @@ public class TpcSocketConfig {
     }
 
     /**
-     * Gets the receive-buffer size of the Tpc sockets in kilobytes.
+     * Gets the receive-buffer size of the TPC sockets in kilobytes.
      *
-     * @return the receive-buffer size of the Tpc sockets in kilobytes
+     * @return the receive-buffer size of the TPC sockets in kilobytes
      * @see java.net.SocketOptions#SO_RCVBUF
      */
     public int getReceiveBufferSizeKB() {
@@ -90,11 +90,11 @@ public class TpcSocketConfig {
     }
 
     /**
-     * Sets the receive-buffer size of the Tpc sockets in kilobytes. Can't
+     * Sets the receive-buffer size of the TPC sockets in kilobytes. Can't
      * return null.
      *
-     * @param receiveBufferSizeKB the receive-buffer size of the Tpc sockets in kilobytes
-     * @return this Tpc socket config
+     * @param receiveBufferSizeKB the receive-buffer size of the TPC sockets in kilobytes
+     * @return this TPC socket config
      * @throws IllegalArgumentException if receiveBufferSizeKB isn't positive
      * @see java.net.SocketOptions#SO_RCVBUF
      */
@@ -105,9 +105,9 @@ public class TpcSocketConfig {
     }
 
     /**
-     * Gets the send-buffer size of the Tpc sockets in kilobytes.
+     * Gets the send-buffer size of the TPC sockets in kilobytes.
      *
-     * @return the send-buffer size of the Tpc sockets in kilobytes
+     * @return the send-buffer size of the TPC sockets in kilobytes
      * @see java.net.SocketOptions#SO_SNDBUF
      */
     public int getSendBufferSizeKB() {
@@ -115,11 +115,11 @@ public class TpcSocketConfig {
     }
 
     /**
-     * Sets the send-buffer size of the Tpc sockets in kilobytes. Can't
+     * Sets the send-buffer size of the TPC sockets in kilobytes. Can't
      * return null.
      *
-     * @param sendBufferSizeKB the send-buffer size of the Tpc sockets in kilobytes
-     * @return this Tpc socket config
+     * @param sendBufferSizeKB the send-buffer size of the TPC sockets in kilobytes
+     * @return this TPC socket config
      * @throws IllegalArgumentException if sendBufferSizeKB isn't positive
      * @see java.net.SocketOptions#SO_SNDBUF
      */

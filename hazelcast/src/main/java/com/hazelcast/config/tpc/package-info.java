@@ -15,6 +15,6 @@
  */
 
 /**
- * This package contains configuration classes for Tpc.
+ * This package contains configuration classes for TPC.
  */
 package com.hazelcast.config.tpc;
