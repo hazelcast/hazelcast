@@ -170,7 +170,7 @@ public class ClientConfigTest {
     @Test
     public void testTpcConfig() {
         ClientConfig config = new ClientConfig();
-        ClientTpcConfig TpcConfig = new ClientTpcConfig();
+        ClientTpcConfig tpcConfig = new ClientTpcConfig();
 
         assertFalse(TpcConfig.isEnabled());
 
