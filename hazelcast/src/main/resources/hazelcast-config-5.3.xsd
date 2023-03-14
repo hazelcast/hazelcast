@@ -6135,7 +6135,7 @@
             <xs:element name="send-buffer-size-kb" type="xs:integer" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Configures SO_SNDBUF socket option for Tpc sockets.
+                        Configures SO_SNDBUF socket option for TPC sockets.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
