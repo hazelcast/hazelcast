@@ -58,10 +58,9 @@ public abstract class AsyncSocketOptionsTest {
         reactors.add(reactor);
         reactor.start();
 
-        AsyncSocket socket = reactor.newAsyncSocketBuilder()
+        return reactor.newAsyncSocketBuilder()
                 .setReadHandler(new DevNullReadHandler())
                 .build();
-        return socket;
     }
 
     @Test
