@@ -882,10 +882,10 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(2, icmpFailureDetectorConfig.getMaxAttempts());
         assertEquals(1, icmpFailureDetectorConfig.getTtl());
 
-        TpcSocketConfig TpcSocketConfig = networkConfig.getTpcSocketConfig();
-        assertEquals("14000-16000", TpcSocketConfig.getPortRange());
-        assertEquals(256, TpcSocketConfig.getReceiveBufferSizeKB());
-        assertEquals(256, TpcSocketConfig.getSendBufferSizeKB());
+        TpcSocketConfig tpcSocketConfig = networkConfig.getTpcSocketConfig();
+        assertEquals("14000-16000", tpcSocketConfig.getPortRange());
+        assertEquals(256, tpcSocketConfig.getReceiveBufferSizeKB());
+        assertEquals(256, tpcSocketConfig.getSendBufferSizeKB());
     }
 
     private void assertAwsConfig(AwsConfig aws) {
