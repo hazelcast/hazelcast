@@ -21,6 +21,7 @@ import com.hazelcast.internal.tpcengine.AsyncSocketOptions;
 import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
+import com.hazelcast.internal.tpcengine.util.OS;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -117,10 +118,17 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
             } else if (TCP_KEEPCOUNT.equals(option)) {
                 if (JDK_NET_TCP_KEEPCOUNT == null) {
                     if (TCP_KEEPCOUNT_PRINTED.compareAndSet(false, true)) {
-                        logger.warning("Ignoring TCP_KEEPCOUNT. "
-                                + "Please upgrade to Java 11+ or configure tcp_keepalive_probes in the kernel: "
-                                + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
-                                + "If this isn't dealt with, idle connections could be closed prematurely.");
+                        if (OS.isLinux()) {
+                            logger.warning("Ignoring TCP_KEEPCOUNT. "
+                                    + "Please upgrade to Java 11+ configure tcp_keepalive_probes in the kernel: "
+                                    + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
+                                    + "If this isn't dealt with, idle connections could be closed prematurely.");
+                        } else if (OS.isWindows()) {
+                            logger.warning("Ignoring TCP_KEEPCOUNT. This option is not supported on Windows.");
+                        } else {
+                            logger.warning("Ignoring TCP_KEEPCOUNT. The option either isn't supported by the OS "
+                                    + "or by the JVM (Java 11+ required).");
+                        }
                     }
                 } else {
                     channel.setOption(JDK_NET_TCP_KEEPCOUNT, (Integer) value);
@@ -128,10 +136,17 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
             } else if (TCP_KEEPIDLE.equals(option)) {
                 if (JDK_NET_TCP_KEEPIDLE == null) {
                     if (TCP_KEEPIDLE_PRINTED.compareAndSet(false, true)) {
-                        logger.warning("Ignoring TCP_KEEPIDLE. "
-                                + "Please upgrade to Java 11+ or configure tcp_keepalive_time in the kernel. "
-                                + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
-                                + "If this isn't dealt with, idle connections could be closed prematurely.");
+                        if (OS.isLinux()) {
+                            logger.warning("Ignoring TCP_KEEPIDLE. "
+                                    + "Please upgrade to Java 11+ configure tcp_keepalive_time in the kernel. "
+                                    + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
+                                    + "If this isn't dealt with, idle connections could be closed prematurely.");
+                        } else if (OS.isWindows()) {
+                            logger.warning("Ignoring TCP_KEEPIDLE. This option is not supported on Windows.");
+                        } else {
+                            logger.warning("Ignoring TCP_KEEPIDLE. The option either isn't supported by the OS "
+                                    + "or by the JVM (Java 11+ required).");
+                        }
                     }
                 } else {
                     channel.setOption(JDK_NET_TCP_KEEPIDLE, (Integer) value);
@@ -139,10 +154,17 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
             } else if (TCP_KEEPINTERVAL.equals(option)) {
                 if (JDK_NET_TCP_KEEPINTERVAL == null) {
                     if (TCP_KEEPINTERVAL_PRINTED.compareAndSet(false, true)) {
-                        logger.warning("Ignoring TCP_KEEPINTERVAL. "
-                                + "Please upgrade to Java 11+ or configure tcp_keepalive_intvl in the kernel. "
-                                + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
-                                + "If this isn't dealt with, idle connections could be closed prematurely.");
+                        if (OS.isLinux()) {
+                            logger.warning("Ignoring TCP_KEEPINTERVAL. "
+                                    + "Please upgrade to Java 11+ and Linux or configure tcp_keepalive_intvl in the kernel. "
+                                    + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
+                                    + "If this isn't dealt with, idle connections could be closed prematurely.");
+                        } else if (OS.isWindows()) {
+                            logger.warning("Ignoring TCP_KEEPINTERVAL. This option is not supported on Windows.");
+                        } else {
+                            logger.warning("Ignoring TCP_KEEPINTERVAL. The option either isn't supported by the OS "
+                                    + "or by the JVM (Java 11+ required).");
+                        }
                     }
                 } else {
                     channel.setOption(JDK_NET_TCP_KEEPINTERVAL, (Integer) value);
