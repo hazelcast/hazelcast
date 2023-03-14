@@ -130,22 +130,26 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
     }
 
     private <T> void setTcpKeepInterval(Integer value) throws IOException {
-        if (JDK_NET_TCP_KEEPINTERVAL == null) {
+        if (OS.isWindows()) {
             if (TCP_KEEPINTERVAL_PRINTED.compareAndSet(false, true)) {
-                if (OS.isLinux()) {
-                    logger.warning("Ignoring TCP_KEEPINTERVAL. "
-                            + "Please upgrade to Java 11+ and Linux or configure tcp_keepalive_intvl in the kernel. "
-                            + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
-                            + "If this isn't dealt with, idle connections could be closed prematurely.");
-                } else if (OS.isWindows()) {
-                    logger.warning("Ignoring TCP_KEEPINTERVAL. This option is not supported on Windows.");
-                } else {
-                    logger.warning("Ignoring TCP_KEEPINTERVAL. The option either isn't supported by the OS "
-                            + "or by the JVM (Java 11+ required).");
-                }
+                logger.warning("Ignoring TCP_KEEPINTERVAL. This option is not supported on Windows.");
             }
         } else {
-            channel.setOption(JDK_NET_TCP_KEEPINTERVAL, value);
+            if (JDK_NET_TCP_KEEPINTERVAL == null) {
+                if (TCP_KEEPINTERVAL_PRINTED.compareAndSet(false, true)) {
+                    if (OS.isLinux()) {
+                        logger.warning("Ignoring TCP_KEEPINTERVAL. "
+                                + "Please upgrade to Java 11+ or configure tcp_keepalive_intvl in the kernel. "
+                                + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
+                                + "If this isn't dealt with, idle connections could be closed prematurely.");
+                    } else {
+                        logger.warning("Ignoring TCP_KEEPINTERVAL. The option either isn't supported by the OS "
+                                + "or by the JVM (Java 11+ required).");
+                    }
+                }
+            } else {
+                channel.setOption(JDK_NET_TCP_KEEPINTERVAL, value);
+            }
         }
     }
 
