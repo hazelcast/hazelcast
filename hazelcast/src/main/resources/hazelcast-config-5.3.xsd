@@ -6128,7 +6128,7 @@
             <xs:element name="receive-buffer-size-kb" type="xs:integer" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Configures SO_RCVBUF socket option for Tpc sockets.
+                        Configures SO_RCVBUF socket option for TPC sockets.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
