@@ -162,6 +162,7 @@ public abstract class AsyncSocketOptionsTest {
     @Test
     public void test_TCP_KEEPCOUNT() {
         assumeIfNioThenJava11PlusAndLinux();
+
         AsyncSocket socket = newSocket();
         AsyncSocketOptions options = socket.options();
         options.set(TCP_KEEPCOUNT, 100);
@@ -171,6 +172,7 @@ public abstract class AsyncSocketOptionsTest {
     @Test
     public void test_TCP_KEEPIDLE() {
         assumeIfNioThenJava11PlusAndLinux();
+
         AsyncSocket socket = newSocket();
         AsyncSocketOptions options = socket.options();
         options.set(TCP_KEEPIDLE, 100);
@@ -180,6 +182,7 @@ public abstract class AsyncSocketOptionsTest {
     @Test
     public void test_TCP_KEEPINTERVAL() {
         assumeIfNioThenJava11PlusAndLinux();
+
         AsyncSocket socket = newSocket();
         AsyncSocketOptions options = socket.options();
         options.set(TCP_KEEPINTERVAL, 100);
