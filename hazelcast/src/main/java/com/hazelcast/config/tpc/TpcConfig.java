@@ -38,7 +38,7 @@ public class TpcConfig {
     /**
      * Gets the enabled flag which defines TPC is enabled or not.
      *
-     * @return true if Tpc is enabled
+     * @return true if TPC is enabled
      */
     public boolean isEnabled() {
         return enabled;
