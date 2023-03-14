@@ -57,7 +57,7 @@ public class DeserializedSchemaBoundGenericRecordBuilder extends AbstractGeneric
     @Override
     protected GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldKind fieldKind) {
         if (this.built) {
-            throw new HazelcastSerializationException("Cannot modify the generic record after building");
+            throw new HazelcastSerializationException("Cannot modify the GenericRecordBuilder after building");
         }
         checkTypeWithSchema(schema, fieldName, fieldKind);
         if (objects.putIfAbsent(fieldName, value) != null) {

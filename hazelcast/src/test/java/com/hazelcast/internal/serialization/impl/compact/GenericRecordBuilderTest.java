@@ -60,24 +60,6 @@ public class GenericRecordBuilderTest {
         verifyNewBuilder(genericRecord);
     }
 
-    private void verifyNewBuilder(GenericRecord genericRecord) {
-        GenericRecordBuilder recordBuilder = genericRecord.newBuilder();
-        recordBuilder.setInt32("foo", 2);
-
-        assertSetterThrows(recordBuilder, "foo", 5, "Field can only be written once");
-        assertSetterThrows(recordBuilder, "notExisting", 3, "Invalid field name");
-
-        assertThatThrownBy(recordBuilder::build)
-                .isInstanceOf(HazelcastSerializationException.class)
-                .hasMessageStartingWith("Found an unset field");
-
-        recordBuilder.setInt64("bar", 100);
-        GenericRecord newRecord = recordBuilder.build();
-
-        assertEquals(2, newRecord.getInt32("foo"));
-        assertEquals(100, newRecord.getInt64("bar"));
-    }
-
     @Test
     public void testBuildFromDeserializedGenericRecord() {
         GenericRecordBuilder builder = compact("fooBarTypeName");
@@ -206,7 +188,7 @@ public class GenericRecordBuilderTest {
         builder.build();
         assertThatThrownBy(() -> {
             builder.setInt32("bar", 2);
-        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Cannot modify the generic record after building");
+        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Cannot modify the GenericRecordBuilder after building");
     }
 
     @Test
@@ -216,7 +198,7 @@ public class GenericRecordBuilderTest {
         schemaBoundBuilder.build();
         assertThatThrownBy(() -> {
             schemaBoundBuilder.setInt32("bar", 3);
-        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Cannot modify the generic record after building");
+        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Cannot modify the GenericRecordBuilder after building");
     }
 
     @Test
@@ -226,12 +208,30 @@ public class GenericRecordBuilderTest {
         cloner.build();
         assertThatThrownBy(() -> {
             cloner.setInt32("bar", 2);
-        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Cannot modify the generic record after building");
+        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Cannot modify the GenericRecordBuilder after building");
     }
 
     private void assertSetterThrows(GenericRecordBuilder builder, String fieldName, int value, String errorMessage) {
         assertThatThrownBy(() -> builder.setInt32(fieldName, value))
                 .isInstanceOf(HazelcastSerializationException.class)
                 .hasMessageStartingWith(errorMessage);
+    }
+
+    private void verifyNewBuilder(GenericRecord genericRecord) {
+        GenericRecordBuilder recordBuilder = genericRecord.newBuilder();
+        recordBuilder.setInt32("foo", 2);
+
+        assertSetterThrows(recordBuilder, "foo", 5, "Field can only be written once");
+        assertSetterThrows(recordBuilder, "notExisting", 3, "Invalid field name");
+
+        assertThatThrownBy(recordBuilder::build)
+                .isInstanceOf(HazelcastSerializationException.class)
+                .hasMessageStartingWith("Found an unset field");
+
+        recordBuilder.setInt64("bar", 100);
+        GenericRecord newRecord = recordBuilder.build();
+
+        assertEquals(2, newRecord.getInt32("foo"));
+        assertEquals(100, newRecord.getInt64("bar"));
     }
 }

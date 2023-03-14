@@ -44,22 +44,18 @@ public class DeserializedGenericRecordBuilder extends AbstractGenericRecordBuild
 
     /**
      * @return newly created GenericRecord
-     * @throws HazelcastSerializationException if a field is not written when building with builder from
-     *                                         {@link GenericRecordBuilder#portable(ClassDefinition)} and
-     *                                         {@link GenericRecord#newBuilder()}
      */
     @Nonnull
     @Override
     public GenericRecord build() {
-        GenericRecord record = new DeserializedGenericRecord(schemaWriter.build(), objects);
         this.built = true;
-        return record;
+        return new DeserializedGenericRecord(schemaWriter.build(), objects);
     }
 
 
     protected GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldKind fieldKind) {
         if (this.built) {
-            throw new HazelcastSerializationException("Cannot modify the generic record after building");
+            throw new HazelcastSerializationException("Cannot modify the GenericRecordBuilder after building");
         }
         if (objects.putIfAbsent(fieldName, value) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
