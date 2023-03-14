@@ -21,8 +21,6 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.DataLink;
-import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
@@ -393,7 +391,8 @@ public class PlanExecutor {
         final InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
         final InternalDataLinkService dataLinkService = getNodeEngine(hazelcastInstance).getDataLinkService();
 
-        final DataLink dataLink = dataLinkService.getAndRetainDataLink(dataLinkName, DataLink.class);
+        final com.hazelcast.datalink.DataLink dataLink = dataLinkService
+                .getAndRetainDataLink(dataLinkName, com.hazelcast.datalink.DataLink.class);
         final List<JetSqlRow> rows = dataLink.listResources().stream()
                 .map(resource -> new JetSqlRow(serializationService, new Object[]{resource.name(), resource.type()}))
                 .collect(Collectors.toList());
