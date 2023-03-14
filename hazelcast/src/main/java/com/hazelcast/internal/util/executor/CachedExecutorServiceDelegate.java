@@ -37,7 +37,6 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 public final class CachedExecutorServiceDelegate implements ExecutorService, ManagedExecutorService {
@@ -220,7 +219,7 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
                 }
                 while (r != null);
             } catch (InterruptedException ignored) {
-                ignore(ignored);
+                Thread.currentThread().interrupt();
             } finally {
                 exit();
             }
