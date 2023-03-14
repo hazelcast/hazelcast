@@ -84,7 +84,7 @@ public class DataLinkStorageTest extends SimpleTestInClusterSupport {
 
         storage.put(name, dataLink(name, "type"));
 
-        assertThat(storage.removeDataLink(name)).isNotNull();
+        assertThat(storage.removeDataLink(name)).isTrue();
         assertTrue(storage.dataLinkNames().stream().noneMatch(dl -> dl.equals(name)));
     }
 

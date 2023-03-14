@@ -20,12 +20,14 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -56,7 +58,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 @RunWith(JUnitParamsRunner.class)
-public class PlanExecutorTest {
+public class PlanExecutorTest extends SimpleTestInClusterSupport {
 
     @InjectMocks
     private PlanExecutor planExecutor;
@@ -66,6 +68,9 @@ public class PlanExecutorTest {
 
     @Mock
     private HazelcastInstance hazelcastInstance;
+
+    @Mock
+    private NodeEngine nodeEngine;
 
     @Mock
     private JetService jet;

@@ -71,7 +71,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlResult;
@@ -117,7 +117,6 @@ import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_QUERY_TEXT;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
-import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.impl.util.Util.getSerializationService;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataLinkPlan;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
@@ -137,7 +136,7 @@ public class PlanExecutor {
     private final TableResolverImpl catalog;
     private final DataLinksResolver dataLinksCatalog;
     private final HazelcastInstance hazelcastInstance;
-    private final NodeEngineImpl nodeEngine;
+    private final NodeEngine nodeEngine;
     private final QueryResultRegistry resultRegistry;
 
     private final ILogger logger;
@@ -148,15 +147,16 @@ public class PlanExecutor {
     public PlanExecutor(
             TableResolverImpl catalog,
             DataLinksResolver dataLinksResolver,
+            NodeEngine nodeEngine,
             HazelcastInstance hazelcastInstance,
             QueryResultRegistry resultRegistry
     ) {
         this.catalog = catalog;
         this.dataLinksCatalog = dataLinksResolver;
+        this.nodeEngine = nodeEngine;
         this.hazelcastInstance = hazelcastInstance;
         this.resultRegistry = resultRegistry;
 
-        nodeEngine = getNodeEngine(hazelcastInstance);
         logger = nodeEngine.getLogger(getClass());
     }
 

@@ -233,6 +233,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         this.planExecutor = new PlanExecutor(
                 tableResolverImpl,
                 dataLinksResolver,
+                nodeEngine,
                 nodeEngine.getHazelcastInstance(),
                 resultRegistry
         );
