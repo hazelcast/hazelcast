@@ -301,7 +301,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
                 // number of packets on the write-queue to prevent running into OOME.
                 // So if the response can't be send, we close the connection to indicate
                 // that the connection was congested.
-                connection.close("Closing connection: response could not be send due to congested socket "
+                connection.close("Response could not be send due to congested socket "
                         + asyncSocket, null);
             }
         }
