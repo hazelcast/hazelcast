@@ -189,7 +189,6 @@ public abstract class ReactorTest {
         Reactor reactor = newReactor();
         reactor.start();
         AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
-                .set(AsyncSocketOptions.SO_REUSEPORT, true)
                 .setAcceptConsumer(acceptRequest -> {
                 })
                 .build();
@@ -207,7 +206,6 @@ public abstract class ReactorTest {
         Reactor serverReactor = newReactor();
         serverReactor.start();
         AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
-                .set(AsyncSocketOptions.SO_REUSEPORT, true)
                 .setAcceptConsumer(acceptRequest -> {
                 })
                 .build();
