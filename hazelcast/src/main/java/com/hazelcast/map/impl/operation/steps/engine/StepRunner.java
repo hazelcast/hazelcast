@@ -22,6 +22,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
+import com.hazelcast.spi.impl.operationexecutor.impl.OperationThread;
 import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
@@ -144,6 +145,9 @@ public class StepRunner extends Offload
                 if (stepSupplier == null || (step = stepSupplier.get()) == null) {
                     // set stepSupplier only on partition threads
                     if (runningOnPartitionThread) {
+                        if (((OperationThread) currentThread()).isShutdown()) {
+                            return;
+                        }
                         stepSupplier = getNextStepSupplierOrNull();
                         if (stepSupplier == null) {
                             return;
@@ -196,7 +200,8 @@ public class StepRunner extends Offload
             } catch (Throwable throwable) {
                 stepSupplier.handleOperationError(throwable);
             }
-        } while (!currentThread().isInterrupted());
+        } while (!currentThread().isInterrupted()
+                && nodeEngine.isRunning());
     }
 
     /**

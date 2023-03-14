@@ -16,12 +16,10 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.EntryLoader.MetadataAwareValue;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
+import com.hazelcast.internal.serialization.Data;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -305,16 +303,9 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
             } catch (InterruptedException ex) {
                 currentThread().interrupt();
                 break;
-            } catch (HazelcastException | HazelcastInstanceNotActiveException hzException) {
-                List failureList = task.failureList();
-                logger.severe("Unexpected hazelcast internal exception, "
-                        + "number of entries which could not be stored is = [" + failureList.size()
-                        + "]", hzException);
-                return Collections.emptyList();
             } catch (Exception ex) {
                 exception = ex;
             }
-
             if (!result) {
                 sleepSeconds(RETRY_STORE_AFTER_WAIT_SECONDS);
             } else {

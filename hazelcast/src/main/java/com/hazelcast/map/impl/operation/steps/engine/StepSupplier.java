@@ -144,7 +144,9 @@ public class StepSupplier implements Supplier<Runnable> {
                     metWithPreconditions = metWithPreconditions();
                 }
 
-                step.runStep(state);
+                if (metWithPreconditions) {
+                    step.runStep(state);
+                }
             } catch (NativeOutOfMemoryError e) {
                 assertRunningOnPartitionThread();
 
