@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.function.Predicate;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -235,7 +236,11 @@ class FieldResolver {
             checkNotNull(enumValues, "either bsonType or enum should be provided");
             Collection<?> col = (Collection<?>) enumValues;
             List<? extends Class<?>> classes =
-                    col.stream().map(Object::getClass).distinct().collect(toList());
+                    col.stream()
+                       .filter(Objects::nonNull)
+                       .map(Object::getClass)
+                       .distinct()
+                       .collect(toList());
 
             if (classes.size() != 1) {
                 return BsonType.DOCUMENT;
