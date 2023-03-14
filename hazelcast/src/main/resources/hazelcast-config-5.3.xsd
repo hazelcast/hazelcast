@@ -6121,7 +6121,7 @@
             <xs:element name="port-range" type="xs:string" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Configures the port range available for Tpc sockets.
+                        Configures the port range available for TPC sockets.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
