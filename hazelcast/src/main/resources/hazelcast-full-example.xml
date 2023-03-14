@@ -633,7 +633,7 @@
             default of 0 is usually sufficient.
 
         - <tpc-socket>:
-            Socket configuration for Tpc. In Tpc, each eventloop has its own sockets.
+            Socket configuration for TPC. In TPC, each eventloop has its own sockets.
             - <port-range>:
                 Configures the port range available for TPC sockets.
             - <receive-buffer-size-kb>:
