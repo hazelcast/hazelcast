@@ -138,7 +138,7 @@ public final class ClientConfigXmlGenerator {
         metrics(gen, clientConfig.getMetricsConfig());
         instanceTrackingConfig(gen, clientConfig.getInstanceTrackingConfig());
         sql(gen, clientConfig.getSqlConfig());
-        // Tpc
+        // TPC
         tpc(gen, clientConfig.getTpcConfig());
 
         //close HazelcastClient

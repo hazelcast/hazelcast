@@ -77,7 +77,7 @@ public final class TpcChannelConnector {
      * This call does not block.
      */
     public void initiate() {
-        logger.info("Initiating connection attempts to Tpc channels running on ports "
+        logger.info("Initiating connection attempts to TPC channels running on ports "
                 + tpcPorts + " for " + connection);
         String host = connection.getRemoteAddress().getHost();
         int i = 0;
@@ -91,13 +91,13 @@ public final class TpcChannelConnector {
         if (connectionFailed()) {
             // No need to try to connect if one of the channels
             // or the connection itself is closed/failed.
-            logger.warning("The connection to Tpc channel on port " + port + " for "
+            logger.warning("The connection to TPC channel on port " + port + " for "
                     + connection + " will not be made as either the connection or "
-                    + "one of the Tpc channel connections has failed.");
+                    + "one of the TPC channel connections has failed.");
             return;
         }
 
-        logger.info("Trying to connect to Tpc channel on port " + port + " for " + connection);
+        logger.info("Trying to connect to TPC channel on port " + port + " for " + connection);
 
         Channel channel = null;
         try {
@@ -106,7 +106,7 @@ public final class TpcChannelConnector {
             writeAuthenticationBytes(channel);
             onSuccessfulChannelConnection(channel, index);
         } catch (Exception e) {
-            logger.warning("Exception during the connection to attempt to Tpc channel on port "
+            logger.warning("Exception during the connection to attempt to TPC channel on port "
                     + port + " for " + connection + ": " + e, e);
             onFailure(channel);
         }
@@ -121,7 +121,7 @@ public final class TpcChannelConnector {
         encodeUUID(initialFrame.content, 0, clientUuid);
         clientUuidMessage.add(initialFrame);
         if (!channel.write(clientUuidMessage)) {
-            throw new HazelcastException("Cannot write authentication bytes to the Tpc channel "
+            throw new HazelcastException("Cannot write authentication bytes to the TPC channel "
                     + channel + " for " + connection);
         }
     }
@@ -133,7 +133,7 @@ public final class TpcChannelConnector {
                 // of the channels are failed after this channel
                 // is established. We need to close this one as well
                 // to not leak any channels.
-                logger.warning("Closing the Tpc channel " + channel + " for " + connection
+                logger.warning("Closing the TPC channel " + channel + " for " + connection
                         + " as one of the connections is failed.");
                 onFailure(channel);
                 return;
@@ -142,7 +142,7 @@ public final class TpcChannelConnector {
             tpcChannels[index] = channel;
         }
 
-        logger.info("Successfully connected to Tpc channel " + channel + " for " + connection);
+        logger.info("Successfully connected to TPC channel " + channel + " for " + connection);
 
         if (remaining.decrementAndGet() == 0) {
             connection.setTpcChannels(tpcChannels);
@@ -158,11 +158,11 @@ public final class TpcChannelConnector {
             // if the connection is not alive here, just in case, as it is
             // OK to call close on already closed channels.
             if (!connection.isAlive()) {
-                logger.warning("Closing all Tpc channel connections for "
+                logger.warning("Closing all TPC channel connections for "
                         + connection + " as the connection is closed.");
                 closeAllChannels();
             } else {
-                logger.info("All Tpc channel connections are established for the " + connection);
+                logger.info("All TPC channel connections are established for the " + connection);
             }
         }
     }
@@ -176,10 +176,10 @@ public final class TpcChannelConnector {
 
             failed = true;
             closeAllChannels();
-            logger.warning("Tpc channel establishments for the " + connection + " have failed. "
-                    + "The client will not be using the Tpc channels to route partition specific invocations, "
+            logger.warning("TPC channel establishments for the " + connection + " have failed. "
+                    + "The client will not be using the TPC channels to route partition specific invocations, "
                     + "and fallback to the smart routing mode for this connection. Check the firewall settings "
-                    + "to make sure the Tpc channels are accessible from the client.");
+                    + "to make sure the TPC channels are accessible from the client.");
         }
     }
 

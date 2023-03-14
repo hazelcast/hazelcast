@@ -238,7 +238,7 @@ public class TcpClientConnection implements ClientConnection {
                 try {
                     tpcChannel.close();
                 } catch (Exception e) {
-                    logger.warning("Exception while closing Tpc channel " + e.getMessage());
+                    logger.warning("Exception while closing TPC channel " + e.getMessage());
                 }
             }
         }

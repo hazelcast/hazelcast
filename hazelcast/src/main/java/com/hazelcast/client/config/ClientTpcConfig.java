@@ -22,11 +22,11 @@ import javax.annotation.Nonnull;
 import java.util.Objects;
 
 /**
- * Contains client configurations for Tpc.
+ * Contains client configurations for TPC.
  * <p>
- * Tpc is the next generation Hazelcast that uses thread-per-core model.
+ * TPC is the next generation Hazelcast that uses thread-per-core model.
  * <p>
- * Tpc-aware clients will maintain connections to all cores of all cluster
+ * TPC-aware clients will maintain connections to all cores of all cluster
  * members. The client will route partition-specific invocations to the
  * correct core of the correct member in the best effort basis.
  *
@@ -45,9 +45,9 @@ public final class ClientTpcConfig {
     }
 
     /**
-     * Returns if the tpc-aware mode is enabled.
+     * Returns if the TPC-aware mode is enabled.
      *
-     * @return {@code true} if the tpc-aware mode is enabled, {@code false} otherwise.
+     * @return {@code true} if the TPC-aware mode is enabled, {@code false} otherwise.
      * @since 5.3
      */
     public boolean isEnabled() {
@@ -55,12 +55,12 @@ public final class ClientTpcConfig {
     }
 
     /**
-     * Enables or disables the Tpc-aware mode.
+     * Enables or disables the TPC-aware mode.
      * <p>
      * When enabled, the configuration option set by the
      * {@link ClientNetworkConfig#setSmartRouting(boolean)} is ignored.
      *
-     * @param enabled flag to enable or disable tpc-aware mode
+     * @param enabled flag to enable or disable TPC-aware mode
      * @return this configuration for chaining.
      * @since 5.3
      */

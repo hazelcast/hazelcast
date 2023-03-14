@@ -635,11 +635,11 @@
         - <tpc-socket>:
             Socket configuration for Tpc. In Tpc, each eventloop has its own sockets.
             - <port-range>:
-                Configures the port range available for Tpc sockets.
+                Configures the port range available for TPC sockets.
             - <receive-buffer-size-kb>:
-                Configures SO_RCVBUF socket option for Tpc sockets.
+                Configures SO_RCVBUF socket option for TPC sockets.
             - <send-buffer-size-kb>:
-                Configures SO_SNDBUF socket option for Tpc sockets.
+                Configures SO_SNDBUF socket option for TPC sockets.
     -->
     <network>
         <public-address>11.22.33.44:5555</public-address>
@@ -3201,13 +3201,13 @@
                     When keep-alive is true and supported by the platform, sets the number of seconds to wait between keep-alive
                     probes.
             * <tpc-socket>:
-                Socket configuration for Tpc. In Tpc, each eventloop has its own socket.
+                Socket configuration for TPC. In TPC, each eventloop has its own sockets.
                 * <port-range>:
-                    Configures the port range available for Tpc sockets.
+                    Configures the port range available for TPC sockets.
                 * <receive-buffer-size-kb>:
-                    Configures SO_RCVBUF socket option for Tpc sockets.
+                    Configures SO_RCVBUF socket option for TPC sockets.
                 * <send-buffer-size-kb>:
-                    Configures SO_SNDBUF socket option for Tpc sockets.
+                    Configures SO_SNDBUF socket option for TPC sockets.
 
         * <rest-server-socket-endpoint-config>:
             Controls access to Hazelcast HTTP REST API.
@@ -3985,8 +3985,8 @@
     <!--
     ===== HAZELCAST TPC CONFIGURATION =====
 
-    Hazelcast Tpc is the next generation of Hazelcast built with thread per core architecture.
-    It's still being developed and everything is subject to change. Tpc is disabled by default.
+    Hazelcast TPC is the next generation of Hazelcast built with thread per core architecture.
+    It's still being developed and everything is subject to change. TPC is disabled by default.
     -->
     <tpc enabled="true">
         <!-- Configures the number of eventloops. It's equal to available processor count by default. -->

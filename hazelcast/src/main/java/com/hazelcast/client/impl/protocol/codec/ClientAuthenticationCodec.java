@@ -188,7 +188,7 @@ public final class ClientAuthenticationCodec {
         public boolean failoverSupported;
 
         /**
-         * Returns the list of Tpc ports or null if Tpc is disabled.
+         * Returns the list of TPC ports or null if TPC is disabled.
          */
         public @Nullable java.util.List<java.lang.Integer> tpcPorts;
 

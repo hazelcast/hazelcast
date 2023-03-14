@@ -129,7 +129,7 @@ public class TpcChannelConnectorTest {
 
         connector.initiate();
 
-        // We should set the Tpc channels
+        // We should set the TPC channels
         verify(mockConnection, times(1)).setTpcChannels(any());
         assertFalse(mockConnection.isAlive());
 

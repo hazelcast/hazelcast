@@ -77,7 +77,7 @@ public class TcpClientConnectionManagerTest extends ClientTestSupport {
         HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
 
         boolean isUnisocket = clientImpl.getConnectionManager().isUnisocketClient();
-        // should be unisocket only when smart routing is false and Tpc disabled
+        // should be unisocket only when smart routing is false and TPC disabled
         assertEquals(!smartRouting && !tpcEnabled, isUnisocket);
     }
 }

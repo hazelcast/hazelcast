@@ -6221,8 +6221,8 @@
     <xs:complexType name="tpc-client">
         <xs:annotation>
             <xs:documentation>
-                Configures the client for tpc, which is the next generation Hazelcast that
-                uses thread-per-core model. Tpc-aware clients will maintain connections to
+                Configures the client for TPC, which is the next generation Hazelcast that
+                uses thread-per-core model. TPC-aware clients will maintain connections to
                 all cores of all cluster members. The client will route partition-specific
                 invocations to the correct core of the correct member in the best effort
                 basis.
@@ -6233,7 +6233,7 @@
         <xs:attribute name="enabled" type="xs:boolean" use="required">
             <xs:annotation>
                 <xs:documentation>
-                    Enables or disables the tpc-aware mode.
+                    Enables or disables the TPC-aware mode.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

@@ -798,7 +798,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             InetSocketAddress socketAddress = new InetSocketAddress(address.getHost(), address.getPort());
             channel.connect(socketAddress, connectionTimeoutMillis);
 
-            // TODO: Socket interceptor for Tpc?
+            // TODO: Socket interceptor for TPC?
             channel.start();
             return channel;
         } catch (Exception e) {
