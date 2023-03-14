@@ -17,6 +17,7 @@
 package com.hazelcast.instance.impl.executejar;
 
 import com.hazelcast.instance.impl.BootstrappedInstanceProxy;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.logging.ILogger;
@@ -83,9 +84,13 @@ public class CommandLineExecuteJar {
             // Wait for the job to start
             awaitJobsStartedByJar(instanceProxy);
 
+        } catch (JetException exception) {
+            // Only JetException causes exit code. Other exceptions such as ClassNotFound etc. are ignored
+            LOGGER.severe("JetException caught while executing the jar :", exception);
+            exit = true;
         } catch (Exception exception) {
             LOGGER.severe("Exception caught while executing the jar :", exception);
-            exit = true;
+            throw exception;
         } finally {
             instanceProxy.removeThreadLocalParameters();
             try {
