@@ -21,7 +21,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
-import com.hazelcast.client.impl.connection.tcp.AltoChannelClientConnectionAdapter;
+import com.hazelcast.client.impl.connection.tcp.TpcChannelClientConnectionAdapter;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
@@ -77,7 +77,7 @@ public class ClientTpcTest extends ClientTestSupport {
     }
 
     @Test
-    public void testClientConnectsAllAltoPorts() {
+    public void testClientConnectsAllTpcPorts() {
         Config config = getMemberConfig();
         Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);
@@ -87,11 +87,11 @@ public class ClientTpcTest extends ClientTestSupport {
         Collection<ClientConnection> connections = getConnectionManager(client).getActiveConnections();
         assertTrueEventually(() -> assertEquals(2, connections.size()));
 
-        assertClientConnectsAllAltoPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
     }
 
     @Test
-    public void testClientConnectsAllAltoPorts_whenNewMemberJoins() {
+    public void testClientConnectsAllTpcPorts_whenNewMemberJoins() {
         Config config = getMemberConfig();
         Hazelcast.newHazelcastInstance(config);
 
@@ -102,11 +102,11 @@ public class ClientTpcTest extends ClientTestSupport {
         Collection<ClientConnection> connections = getConnectionManager(client).getActiveConnections();
         assertTrueEventually(() -> assertEquals(2, connections.size()));
 
-        assertClientConnectsAllAltoPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
     }
 
     @Test
-    public void testClientConnectsAllAltoPorts_afterRestart() {
+    public void testClientConnectsAllTpcPorts_afterRestart() {
         Config config = getMemberConfig();
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
 
@@ -120,7 +120,7 @@ public class ClientTpcTest extends ClientTestSupport {
         });
 
         Collection<ClientConnection> connections = getConnectionManager(client).getActiveConnections();
-        assertClientConnectsAllAltoPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
 
         instance.shutdown();
         assertOpenEventually(disconnected);
@@ -129,11 +129,11 @@ public class ClientTpcTest extends ClientTestSupport {
         Hazelcast.newHazelcastInstance(config);
 
         assertTrueEventually(() -> assertEquals(1, connections.size()));
-        assertClientConnectsAllAltoPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
     }
 
     @Test
-    public void testClientRoutesPartitionBoundRequestsToAltoConnections() {
+    public void testClientRoutesPartitionBoundRequestsToTpcConnections() {
         Config config = getMemberConfig();
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
@@ -146,7 +146,7 @@ public class ClientTpcTest extends ClientTestSupport {
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
         assertTrueEventually(() -> assertEquals(2, connections.size()));
 
-        assertClientConnectsAllAltoPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
 
         // Wait until the partition table is received on the client-side
         PartitionService partitionService = client.getPartitionService();
@@ -182,7 +182,7 @@ public class ClientTpcTest extends ClientTestSupport {
         ClientConnectionManager connectionManager = getConnectionManager(client);
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
 
-        assertClientConnectsAllAltoPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
 
         long currentTimeMillis = System.currentTimeMillis();
         map.size();
@@ -191,7 +191,7 @@ public class ClientTpcTest extends ClientTestSupport {
     }
 
     @Test
-    public void testConnectionCloses_whenAltoChannelsClose() {
+    public void testConnectionCloses_whenTpcChannelsClose() {
         Config config = getMemberConfig();
         Hazelcast.newHazelcastInstance(config);
 
@@ -199,7 +199,7 @@ public class ClientTpcTest extends ClientTestSupport {
         ClientConnectionManager connectionManager = getConnectionManager(client);
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
 
-        assertClientConnectsAllAltoPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
 
         CountDownLatch disconnected = new CountDownLatch(1);
         CountDownLatch reconnected = new CountDownLatch(1);
@@ -239,11 +239,11 @@ public class ClientTpcTest extends ClientTestSupport {
 
         assertOpenEventually(reconnected);
 
-        assertClientConnectsAllAltoPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
     }
 
     @Test
-    public void testAltoChannelsClose_whenConnectionCloses() {
+    public void testTpcChannelsClose_whenConnectionCloses() {
         Config config = getMemberConfig();
         Hazelcast.newHazelcastInstance(config);
 
@@ -251,7 +251,7 @@ public class ClientTpcTest extends ClientTestSupport {
         ClientConnectionManager connectionManager = getConnectionManager(client);
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
 
-        assertClientConnectsAllAltoPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
 
         CountDownLatch disconnected = new CountDownLatch(1);
         CountDownLatch reconnected = new CountDownLatch(1);
@@ -279,7 +279,7 @@ public class ClientTpcTest extends ClientTestSupport {
 
         assertOpenEventually(reconnected);
 
-        assertClientConnectsAllAltoPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
     }
 
     @Test
@@ -292,7 +292,7 @@ public class ClientTpcTest extends ClientTestSupport {
         ClientConnectionManager connectionManager = getConnectionManager(client);
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
 
-        assertClientConnectsAllAltoPortsEventually(connections, config.getTpcConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
 
         IMap<Integer, Integer> map = client.getMap(mapName);
         CompletableFuture<Integer> future = map.putAsync(1, 1).toCompletableFuture();
@@ -306,9 +306,9 @@ public class ClientTpcTest extends ClientTestSupport {
     }
 
     @Test
-    public void testAltoChannelTargetedPendingInvocations_whenConnectionCloses() {
-        // We don't send invocations to Alto channels this way, but this is just
-        // to make sure that invocation directly to the Alto channels work, and
+    public void testTPCChannelTargetedPendingInvocations_whenConnectionCloses() {
+        // We don't send invocations to TPC channels this way, but this is just
+        // to make sure that invocation directly to the TPC channels work, and
         // closing the connection (hence the channel) cleanups the pending invocations
         String mapName = randomMapName();
         Config config = getMemberWithMapStoreConfig(mapName);
@@ -319,18 +319,18 @@ public class ClientTpcTest extends ClientTestSupport {
         ClientConnectionManager connectionManager = client.getConnectionManager();
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
 
-        assertClientConnectsAllAltoPortsEventually(connections, config.getAltoConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
 
         ClientConnection connection = connections.iterator().next();
-        Channel[] altoChannels = connection.getAltoChannels();
+        Channel[] tpcChannels = connection.getTpcChannels();
 
         int key = 1;
         int value = 1;
 
         int partitionId = client.getPartitionService().getPartition(key).getPartitionId();
-        Channel targetChannel = altoChannels[partitionId % altoChannels.length];
+        Channel targetChannel = tpcChannels[partitionId % tpcChannels.length];
         ClientConnection adapter
-                = (ClientConnection) targetChannel.attributeMap().get(AltoChannelClientConnectionAdapter.class);
+                = (ClientConnection) targetChannel.attributeMap().get(TpcChannelClientConnectionAdapter.class);
 
         InternalSerializationService serializationService = client.getSerializationService();
 
@@ -350,7 +350,7 @@ public class ClientTpcTest extends ClientTestSupport {
     }
 
     @Test
-    public void testAltoEnabledClient_inAltoDisabledCluster() {
+    public void testTpcEnabledClient_inTpcDisabledCluster() {
         Hazelcast.newHazelcastInstance();
         Hazelcast.newHazelcastInstance();
 
@@ -361,14 +361,14 @@ public class ClientTpcTest extends ClientTestSupport {
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
         assertTrueEventually(() -> assertEquals(2, connections.size()));
 
-        assertNoConnectionToAltoPortsAllTheTime(connections);
+        assertNoConnectionToTpcPortsAllTheTime(connections);
 
         map.put("42", "42");
         assertEquals("42", map.get("42"));
     }
 
     @Test
-    public void testAltoDisabledClient_inAltoEnabledCluster() {
+    public void testTpcDisabledClient_inTpcEnabledCluster() {
         Config config = getMemberConfig();
         Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);
@@ -380,14 +380,14 @@ public class ClientTpcTest extends ClientTestSupport {
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
         assertTrueEventually(() -> assertEquals(2, connections.size()));
 
-        assertNoConnectionToAltoPortsAllTheTime(connections);
+        assertNoConnectionToTpcPortsAllTheTime(connections);
 
         map.put("42", "42");
         assertEquals("42", map.get("42"));
     }
 
     @Test
-    public void testAltoClient_heartbeatsToIdleAltoChannels() {
+    public void testTpcClient_heartbeatsToIdleTpcChannels() {
         Config config = getMemberConfig();
         Hazelcast.newHazelcastInstance(config);
 
@@ -398,24 +398,24 @@ public class ClientTpcTest extends ClientTestSupport {
 
         ClientConnectionManager connectionManager = getConnectionManager(client);
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
-        assertClientConnectsAllAltoPortsEventually(connections, config.getAltoConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
 
         ClientConnection connection = connectionManager.getRandomConnection();
         assertTrue(connection.isAlive());
 
-        Channel[] altoChannels = connection.getAltoChannels();
-        assertNotNull(altoChannels);
+        Channel[] tpcChannels = connection.getTpcChannels();
+        assertNotNull(tpcChannels);
 
         long now = System.currentTimeMillis();
         assertTrueEventually(() -> {
-            for (Channel channel : altoChannels) {
+            for (Channel channel : tpcChannels) {
                 assertTrue(channel.lastWriteTimeMillis() > now);
             }
         });
     }
 
     @Test
-    public void testAltoClient_heartbeatsToNotRespondingAltoChannelsTimeouts() {
+    public void testTPCClient_heartbeatsToNotRespondingTPCChannelsTimeouts() {
         Config config = getMemberConfig();
         Hazelcast.newHazelcastInstance(config);
 
@@ -427,12 +427,12 @@ public class ClientTpcTest extends ClientTestSupport {
         ClientConnectionManager connectionManager = getConnectionManager(client);
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
 
-        assertClientConnectsAllAltoPortsEventually(connections, config.getAltoConfig().getEventloopCount());
+        assertClientConnectsAllTpcPortsEventually(connections, config.getTpcConfig().getEventloopCount());
 
         ClientConnection connection = connections.iterator().next();
         assertTrue(connection.isAlive());
 
-        // This is a long-running task that will block the Alto thread, and it
+        // This is a long-running task that will block the operation thread, and it
         // should not be able to respond to ping requests
         spawn(() -> {
             String mapName = randomMapName();
@@ -451,7 +451,7 @@ public class ClientTpcTest extends ClientTestSupport {
         assertTrueEventually(() -> assertFalse(connection.isAlive()));
     }
 
-    private void assertNoConnectionToAltoPortsAllTheTime(Collection<ClientConnection> connections) {
+    private void assertNoConnectionToTpcPortsAllTheTime(Collection<ClientConnection> connections) {
         assertTrueAllTheTime(() -> {
             for (ClientConnection connection : connections) {
                 TcpClientConnection clientConnection = (TcpClientConnection) connection;
@@ -461,7 +461,7 @@ public class ClientTpcTest extends ClientTestSupport {
         }, 3);
     }
 
-    private void assertClientConnectsAllAltoPortsEventually(Collection<ClientConnection> connections, int expectedPortCount) {
+    private void assertClientConnectsAllTpcPortsEventually(Collection<ClientConnection> connections, int expectedPortCount) {
         assertTrueEventually(() -> {
             for (ClientConnection connection : connections) {
                 TcpClientConnection clientConnection = (TcpClientConnection) connection;
