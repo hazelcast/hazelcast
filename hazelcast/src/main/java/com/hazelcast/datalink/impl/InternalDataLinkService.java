@@ -48,7 +48,7 @@ public interface InternalDataLinkService extends DataLinkService {
     void createConfigDataLink(DataLinkConfig config);
 
     /**
-     * Creates a new DataLink with the given parameters.
+     * Creates a new or replace existing DataLink with the given parameters.
      *
      * @param name    name of the DataLink
      * @param type    type of the DataLink
@@ -57,10 +57,10 @@ public interface InternalDataLinkService extends DataLinkService {
     void replaceSqlDataLink(String name, String type, Map<String, String> options);
 
     /**
-     * Returns if a DataLink with given name exists or not
+     * Returns if a DataLink with given name exists in the config
      *
      * @param name name of the DataLink
-     * @return true if a DataLink exists, false otherwise
+     * @return true if a DataLink exists in the config, false otherwise
      */
     boolean existsConfigDataLink(String name);
 
