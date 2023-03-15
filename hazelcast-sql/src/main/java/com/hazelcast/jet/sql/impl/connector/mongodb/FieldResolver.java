@@ -30,23 +30,20 @@ import org.bson.Document;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.function.Predicate;
 
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.getBsonType;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.resolveTypeFromJava;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.CONNECTION_STRING_OPTION;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.DATA_LINK_REF_OPTION;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static com.mongodb.client.model.Filters.eq;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toList;
 
 class FieldResolver {
 
@@ -221,34 +218,6 @@ class FieldResolver {
             }
         }
         return fields;
-    }
-
-    private static BsonType getBsonType(Document props) {
-        Object bsonType = props.get("bsonType");
-        if (bsonType instanceof String) {
-            String bsonTypeName = (String) bsonType;
-            return BsonTypes.resolveTypeByName(bsonTypeName);
-        }
-        if (bsonType instanceof Collection) {
-            return BsonType.DOCUMENT;
-        } else if (bsonType == null) {
-            Object enumValues = props.get("enum");
-            checkNotNull(enumValues, "either bsonType or enum should be provided");
-            Collection<?> col = (Collection<?>) enumValues;
-            List<? extends Class<?>> classes =
-                    col.stream()
-                       .filter(Objects::nonNull)
-                       .map(Object::getClass)
-                       .distinct()
-                       .collect(toList());
-
-            if (classes.size() != 1) {
-                return BsonType.DOCUMENT;
-            } else {
-                return BsonTypes.resolveTypeFromJavaClass(classes.get(0));
-            }
-        }
-        throw new UnsupportedOperationException("Cannot infer BSON type from schema");
     }
 
     private Document getIgnoringNulls(@Nonnull Document doc, @Nonnull String... options) {

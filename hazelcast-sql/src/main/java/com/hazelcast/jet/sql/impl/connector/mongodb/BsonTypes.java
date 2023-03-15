@@ -42,12 +42,16 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Locale.ROOT;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Utility class to help resolve BSON-Java types.
@@ -212,5 +216,46 @@ final class BsonTypes {
         long v = value.getValue();
         int nanoOfSecond = (int) (v % 1000) * MILLIS_TO_NANOS;
         return LocalDateTime.ofEpochSecond(v / 1000, nanoOfSecond, ZoneOffset.UTC);
+    }
+
+
+    /**
+     * Gets {@link BsonType} from given Document being property descriptor from {@code jsonSchema}.
+     */
+    @SuppressWarnings("unchecked")
+    static BsonType getBsonType(Document propertyDescription) {
+        Object bsonType = propertyDescription.get("bsonType");
+        if (bsonType instanceof String) {
+            String bsonTypeName = (String) bsonType;
+            return BsonTypes.resolveTypeByName(bsonTypeName);
+        }
+        if (bsonType instanceof Collection) {
+            List<String> classes = ((Collection<String>) bsonType).stream()
+                                                                  .filter(Objects::nonNull)
+                                                                  .distinct()
+                                                                  .collect(toList());
+            if (classes.size() == 1) {
+                return BsonTypes.resolveTypeByName(classes.get(0));
+            } else {
+                return BsonType.DOCUMENT;
+            }
+        } else if (bsonType == null) {
+            Object enumValues = propertyDescription.get("enum");
+            checkNotNull(enumValues, "either bsonType or enum should be provided");
+            Collection<?> col = (Collection<?>) enumValues;
+            List<? extends Class<?>> classes =
+                    col.stream()
+                       .filter(Objects::nonNull)
+                       .map(Object::getClass)
+                       .distinct()
+                       .collect(toList());
+
+            if (classes.size() != 1) {
+                return BsonType.DOCUMENT;
+            } else {
+                return BsonTypes.resolveTypeFromJavaClass(classes.get(0));
+            }
+        }
+        throw new UnsupportedOperationException("Cannot infer BSON type from schema");
     }
 }
