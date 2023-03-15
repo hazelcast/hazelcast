@@ -1146,7 +1146,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleSocketOptions(node, endpointConfig);
         } else if (matches("symmetric-encryption", nodeName)) {
             handleViaReflection(node, endpointConfig, new SymmetricEncryptionConfig());
-        } else if (matches("tcp-socket", nodeName)) {
+        } else if (matches("tpc-socket", nodeName)) {
             handleTpcSocketConfig(node, endpointConfig.getTpcSocketConfig());
         }
     }

@@ -4640,11 +4640,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertThat(endpointConfigs).hasSize(6);
 
         endpointConfigs.forEach((endpointQualifier, endpointConfig) -> {
-            TpcSocketConfig TpcSocketConfig = endpointConfig.getTpcSocketConfig();
+            TpcSocketConfig tpcSocketConfig = endpointConfig.getTpcSocketConfig();
 
-            assertThat(TpcSocketConfig.getPortRange()).isEqualTo("14000-16000");
-            assertThat(TpcSocketConfig.getReceiveBufferSizeKB()).isEqualTo(256);
-            assertThat(TpcSocketConfig.getSendBufferSizeKB()).isEqualTo(256);
+            assertThat(tpcSocketConfig.getPortRange()).isEqualTo("14000-16000");
+            assertThat(tpcSocketConfig.getReceiveBufferSizeKB()).isEqualTo(256);
+            assertThat(tpcSocketConfig.getSendBufferSizeKB()).isEqualTo(256);
         });
     }
 
