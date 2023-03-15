@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.alto.AltoConfig;
+import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -196,7 +198,8 @@ public class ConfigXmlGenerator {
         factoryWithPropertiesXmlGenerator(gen, "auditlog", config.getAuditlogConfig());
         userCodeDeploymentConfig(gen, config);
         integrityCheckerXmlGenerator(gen, config);
-        externalDataStoreConfiguration(gen, config);
+        dataLinkConfiguration(gen, config);
+        altoConfiguration(gen, config);
 
         xml.append("</hazelcast>");
 
@@ -593,6 +596,7 @@ public class ConfigXmlGenerator {
         failureDetectorConfigXmlGenerator(gen, netCfg.getIcmpFailureDetectorConfig());
         restApiXmlGenerator(gen, netCfg);
         memcacheProtocolXmlGenerator(gen, netCfg);
+        altoSocketConfigXmlGenerator(gen, netCfg.getAltoSocketConfig());
         gen.close();
     }
 
@@ -661,6 +665,9 @@ public class ConfigXmlGenerator {
         gen.node("send-buffer-size-kb", endpointConfig.getSocketSendBufferSizeKb());
         gen.node("receive-buffer-size-kb", endpointConfig.getSocketRcvBufferSizeKb());
         gen.node("linger-seconds", endpointConfig.getSocketLingerSeconds());
+        gen.node("keep-idle-seconds", endpointConfig.getSocketKeepIdleSeconds());
+        gen.node("keep-interval-seconds", endpointConfig.getSocketKeepIntervalSeconds());
+        gen.node("keep-count", endpointConfig.getSocketKeepCount());
         gen.close();
 
         if (endpointConfig instanceof ServerSocketEndpointConfig) {
@@ -671,6 +678,8 @@ public class ConfigXmlGenerator {
                     .node("public-address", serverSocketEndpointConfig.getPublicAddress())
                     .node("reuse-address", serverSocketEndpointConfig.isReuseAddress());
         }
+
+        altoSocketConfigXmlGenerator(gen, endpointConfig.getAltoSocketConfig());
         gen.close();
     }
 
@@ -1162,6 +1171,14 @@ public class ConfigXmlGenerator {
         gen.node("memcache-protocol", null, "enabled", c.isEnabled());
     }
 
+    private static void altoSocketConfigXmlGenerator(XmlGenerator gen, AltoSocketConfig altoSocketConfig) {
+        gen.open("alto-socket")
+                .node("port-range", altoSocketConfig.getPortRange())
+                .node("receive-buffer-size-kb", altoSocketConfig.getReceiveBufferSizeKB())
+                .node("send-buffer-size-kb", altoSocketConfig.getSendBufferSizeKB())
+                .close();
+    }
+
     private static void appendSerializationFactory(XmlGenerator gen, String elementName, Map<Integer, ?> factoryMap) {
         if (MapUtil.isNullOrEmpty(factoryMap)) {
             return;
@@ -1199,18 +1216,25 @@ public class ConfigXmlGenerator {
         );
     }
 
-    private static void externalDataStoreConfiguration(final XmlGenerator gen, final Config config) {
-        for (ExternalDataStoreConfig externalDataStoreConfig : config.getExternalDataStoreConfigs().values()) {
+    private static void dataLinkConfiguration(final XmlGenerator gen, final Config config) {
+        for (DataLinkConfig dataLinkConfig : config.getDataLinkConfigs().values()) {
             gen.open(
-                            "external-data-store",
+                            "data-link",
                             "name",
-                            externalDataStoreConfig.getName()
+                            dataLinkConfig.getName()
                     )
-                    .node("class-name", externalDataStoreConfig.getClassName())
-                    .node("shared", externalDataStoreConfig.isShared())
-                    .appendProperties(externalDataStoreConfig.getProperties())
+                    .node("class-name", dataLinkConfig.getClassName())
+                    .node("shared", dataLinkConfig.isShared())
+                    .appendProperties(dataLinkConfig.getProperties())
                     .close();
         }
+    }
+
+    private static void altoConfiguration(final XmlGenerator gen, final Config config) {
+        AltoConfig altoConfig = config.getAltoConfig();
+        gen.open("alto", "enabled", altoConfig.isEnabled())
+                .node("eventloop-count", altoConfig.getEventloopCount())
+                .close();
     }
 
     /**

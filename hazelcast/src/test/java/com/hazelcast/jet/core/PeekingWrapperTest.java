@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ import static org.junit.Assert.fail;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
@@ -272,7 +272,7 @@ public class PeekingWrapperTest {
         if (shouldLogFn == null) {
             verify(logger).info("Input from ordinal 0: " + format(1));
         } else {
-            verifyZeroInteractions(logger);
+            verifyNoMoreInteractions(logger);
         }
 
         Watermark wm = new Watermark(1);
@@ -298,7 +298,7 @@ public class PeekingWrapperTest {
         outbox.queue(0).clear();
         outbox.queue(1).clear();
         outbox.reset();
-        verifyZeroInteractions(logger);
+        verifyNoMoreInteractions(logger);
 
         peekP.complete();
         verify(logger).info("Output to ordinal 0: " + format(0));
@@ -317,7 +317,7 @@ public class PeekingWrapperTest {
         outbox.queue(0).clear();
         outbox.queue(1).clear();
         outbox.reset();
-        verifyZeroInteractions(logger);
+        verifyNoMoreInteractions(logger);
 
         peekP.complete();
         wm = new Watermark(2);
@@ -326,12 +326,12 @@ public class PeekingWrapperTest {
         outbox.queue(0).clear();
         outbox.queue(1).clear();
         outbox.reset();
-        verifyZeroInteractions(logger);
+        verifyNoMoreInteractions(logger);
 
         peekP.complete();
         verify(logger).info("Output to ordinal 0: " + testJetEventString);
         verify(logger).info("Output to ordinal 1: " + testJetEventString);
-        verifyZeroInteractions(logger);
+        verifyNoMoreInteractions(logger);
     }
 
     private void assertPeekSnapshot() throws Exception {
@@ -347,7 +347,7 @@ public class PeekingWrapperTest {
             peekP.saveToSnapshot();
             verify(logger).info("Output to snapshot: " + formatEntry(1));
         }
-        verifyZeroInteractions(logger);
+        verifyNoMoreInteractions(logger);
     }
 
     private String format(Object s) {

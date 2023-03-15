@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -171,7 +171,7 @@ public class RestClientTest {
                         .get());
 
         // then
-        assertEquals(exception.getHttpErrorCode(), responseCode);
+        assertEquals(responseCode, exception.getHttpErrorCode());
     }
 
     @Test
@@ -191,7 +191,7 @@ public class RestClientTest {
                         .post());
 
         // then
-        assertEquals(exception.getHttpErrorCode(), unexpectedCode);
+        assertEquals(unexpectedCode, exception.getHttpErrorCode());
     }
 
     @Test

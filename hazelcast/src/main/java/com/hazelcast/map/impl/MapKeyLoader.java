@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.internal.util.StateMachine;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
@@ -50,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -181,6 +183,7 @@ public class MapKeyLoader {
      */
     private final Semaphore nodeWideLoadedKeyLimiter;
     private final ClusterService clusterService;
+    private final Executor internalAsyncExecutor;
 
     public MapKeyLoader(String mapName, OperationService opService, IPartitionService ps,
                         ClusterService clusterService, ExecutionService execService,
@@ -193,6 +196,7 @@ public class MapKeyLoader {
         this.execService = execService;
         this.logger = getLogger(MapKeyLoader.class);
         this.nodeWideLoadedKeyLimiter = nodeWideLoadedKeyLimiter;
+        this.internalAsyncExecutor = execService.getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
     /**
@@ -265,7 +269,8 @@ public class MapKeyLoader {
                 return false;
             });
 
-            execService.asCompletableFuture(sent).whenCompleteAsync(keyLoadFinished);
+            execService.asCompletableFuture(sent).whenCompleteAsync(keyLoadFinished,
+                    ConcurrencyUtil.getDefaultAsyncExecutor());
         }
 
         return keyLoadFinished;
@@ -289,7 +294,7 @@ public class MapKeyLoader {
                 opService.<Boolean>invokeOnPartition(SERVICE_NAME, op, mapNamePartition)
                         // required since loading may be triggered after migration
                         // and in this case the callback is the only way to get to know if the key load finished or not.
-                        .whenCompleteAsync(loadingFinishedCallback());
+                        .whenCompleteAsync(loadingFinishedCallback(), ConcurrencyUtil.getDefaultAsyncExecutor());
             });
         }
         return keyLoadFinished;

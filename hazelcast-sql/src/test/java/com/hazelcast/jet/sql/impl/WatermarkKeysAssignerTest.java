@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.UnionPhysicalRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
-import com.hazelcast.jet.sql.impl.schema.TablesStorage;
+import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -146,7 +146,7 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
         NodeEngine nodeEngine = getNodeEngine(instance());
         TableResolverImpl resolver = new TableResolverImpl(
                 nodeEngine,
-                new TablesStorage(nodeEngine),
+                new RelationsStorage(nodeEngine),
                 new SqlConnectorCache(nodeEngine));
 
         TestStreamSqlConnector.create(
@@ -203,7 +203,7 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
         NodeEngine nodeEngine = getNodeEngine(instance());
         TableResolverImpl resolver = new TableResolverImpl(
                 nodeEngine,
-                new TablesStorage(nodeEngine),
+                new RelationsStorage(nodeEngine),
                 new SqlConnectorCache(nodeEngine));
 
         String stream = "s";

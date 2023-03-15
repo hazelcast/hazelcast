@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +62,7 @@ public final class JetDataSerializerHook implements DataSerializerHook {
     public static final int EDGE_SINGLE_PARTITIONER = 18;
     public static final int EXPECT_NOTHING_PROCESSOR_SUPPLIER = 19;
     public static final int SPECIFIC_MEMBER_PROCESSOR_META_SUPPLIER = 20;
+    public static final int RANDOM_MEMBER_PROCESSOR_META_SUPPLIER = 21;
 
     /**
      * Factory ID
@@ -124,6 +125,8 @@ public final class JetDataSerializerHook implements DataSerializerHook {
                     return new ProcessorMetaSupplier.ExpectNothingProcessorSupplier();
                 case SPECIFIC_MEMBER_PROCESSOR_META_SUPPLIER:
                     return new ProcessorMetaSupplier.SpecificMemberPms();
+                case RANDOM_MEMBER_PROCESSOR_META_SUPPLIER:
+                    return new ProcessorMetaSupplier.RandomMemberPms();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

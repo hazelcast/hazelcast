@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,8 +59,6 @@ import java.util.function.BiConsumer;
 public interface RecordStore<R extends Record> {
 
     ExpirySystem getExpirySystem();
-
-    LocalRecordStoreStats getLocalRecordStoreStats();
 
     String getName();
 
@@ -659,9 +657,9 @@ public interface RecordStore<R extends Record> {
 
     EvictionPolicy getEvictionPolicy();
 
-    LocalRecordStoreStatsImpl getStats();
+    LocalRecordStoreStatsImpl getLocalRecordStoreStats();
 
-    void setStats(LocalRecordStoreStats stats);
+    void setLocalRecordStoreStats(LocalRecordStoreStats stats);
 
     default void beforeOperation() {
         // no-op

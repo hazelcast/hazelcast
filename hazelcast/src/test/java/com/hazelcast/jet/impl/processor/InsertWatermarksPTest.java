@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -272,7 +272,7 @@ public class InsertWatermarksPTest {
     }
 
     private void createProcessor(long idleTimeoutMillis) throws Exception {
-        p = new InsertWatermarksP<>(eventTimePolicy(Item::getTimestamp, wmPolicy, watermarkThrottlingFrameSize, 0,
+        p = new InsertWatermarksP<>(ctx -> eventTimePolicy(Item::getTimestamp, wmPolicy, watermarkThrottlingFrameSize, 0,
                 idleTimeoutMillis));
         p.init(outbox, context);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -197,13 +197,13 @@ public class SqlCompactTest extends SqlTestSupport {
         IMap<Object, Object> map = client().getMap(name);
         Primitives primitives = (Primitives) map.get(1);
 
-        assertEquals(primitives.b, true);
-        assertEquals(primitives.bt, 2);
-        assertEquals(primitives.s, 3);
-        assertEquals(primitives.i, 4);
-        assertEquals(primitives.l, 5);
-        assertEquals(primitives.f, 12.321, 0.1);
-        assertEquals(primitives.d, 124.311, 0.1);
+        assertEquals(true, primitives.b);
+        assertEquals(2, primitives.bt);
+        assertEquals(3, primitives.s);
+        assertEquals(4, primitives.i);
+        assertEquals(5, primitives.l);
+        assertEquals(12.321, primitives.f, 0.1);
+        assertEquals(124.311, primitives.d, 0.1);
     }
 
 

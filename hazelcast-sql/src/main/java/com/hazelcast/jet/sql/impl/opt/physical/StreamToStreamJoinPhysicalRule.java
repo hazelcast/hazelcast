@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,6 +138,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             call.transformTo(
                     fail(join, "A stream-to-stream join must have a join condition constraining the maximum " +
                             "difference between time values of the joined tables in both directions"));
+            return;
         }
 
         call.transformTo(

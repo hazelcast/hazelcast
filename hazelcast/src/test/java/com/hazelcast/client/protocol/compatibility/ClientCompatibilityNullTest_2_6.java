@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,8 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -84,6 +86,8 @@ public class ClientCompatibilityNullTest_2_6 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
+        assertTrue(parameters.isAltoPortsExists);
+        assertTrue(isEqual(null, parameters.altoPorts));
     }
 
     @Test
@@ -107,6 +111,8 @@ public class ClientCompatibilityNullTest_2_6 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
+        assertTrue(parameters.isAltoPortsExists);
+        assertTrue(isEqual(null, parameters.altoPorts));
     }
 
     @Test
@@ -128,9 +134,8 @@ public class ClientCompatibilityNullTest_2_6 {
             assertTrue(isEqual(anInt, version));
             assertTrue(isEqual(aListOfMemberInfos, memberInfos));
         }
-
         @Override
-        public void handlePartitionsViewEvent(int version, java.util.Collection<java.util.Map.Entry<java.util.UUID, List<Integer>>> partitions) {
+        public void handlePartitionsViewEvent(int version, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.util.List<java.lang.Integer>>> partitions) {
             assertTrue(isEqual(anInt, version));
             assertTrue(isEqual(aListOfUUIDToListOfIntegers, partitions));
         }
@@ -257,7 +262,7 @@ public class ClientCompatibilityNullTest_2_6 {
 
     private static class ClientAddDistributedObjectListenerCodecHandler extends ClientAddDistributedObjectListenerCodec.AbstractEventHandler {
         @Override
-        public void handleDistributedObjectEvent(String name, String serviceName, String eventType, java.util.UUID source) {
+        public void handleDistributedObjectEvent(java.lang.String name, java.lang.String serviceName, java.lang.String eventType, java.util.UUID source) {
             assertTrue(isEqual(aString, name));
             assertTrue(isEqual(aString, serviceName));
             assertTrue(isEqual(aString, eventType));
@@ -404,7 +409,6 @@ public class ClientCompatibilityNullTest_2_6 {
             assertTrue(isEqual(aMigrationState, migrationState));
             assertTrue(isEqual(anInt, type));
         }
-
         @Override
         public void handleReplicaMigrationEvent(com.hazelcast.partition.MigrationState migrationState, int partitionId, int replicaIndex, java.util.UUID sourceUuid, java.util.UUID destUuid, boolean success, long elapsedTime) {
             assertTrue(isEqual(aMigrationState, migrationState));
@@ -1530,9 +1534,8 @@ public class ClientCompatibilityNullTest_2_6 {
             assertTrue(isEqual(aUUID, partitionUuid));
             assertTrue(isEqual(aLong, sequence));
         }
-
         @Override
-        public void handleIMapBatchInvalidationEvent(java.util.Collection<com.hazelcast.internal.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<Long> sequences) {
+        public void handleIMapBatchInvalidationEvent(java.util.Collection<com.hazelcast.internal.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences) {
             assertTrue(isEqual(aListOfData, keys));
             assertTrue(isEqual(aListOfUUIDs, sourceUuids));
             assertTrue(isEqual(aListOfUUIDs, partitionUuids));
@@ -4886,16 +4889,15 @@ public class ClientCompatibilityNullTest_2_6 {
 
     private static class CacheAddNearCacheInvalidationListenerCodecHandler extends CacheAddNearCacheInvalidationListenerCodec.AbstractEventHandler {
         @Override
-        public void handleCacheInvalidationEvent(String name, com.hazelcast.internal.serialization.Data key, java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence) {
+        public void handleCacheInvalidationEvent(java.lang.String name, com.hazelcast.internal.serialization.Data key, java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence) {
             assertTrue(isEqual(aString, name));
             assertTrue(isEqual(null, key));
             assertTrue(isEqual(null, sourceUuid));
             assertTrue(isEqual(aUUID, partitionUuid));
             assertTrue(isEqual(aLong, sequence));
         }
-
         @Override
-        public void handleCacheBatchInvalidationEvent(String name, java.util.Collection<com.hazelcast.internal.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<Long> sequences) {
+        public void handleCacheBatchInvalidationEvent(java.lang.String name, java.util.Collection<com.hazelcast.internal.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences) {
             assertTrue(isEqual(aString, name));
             assertTrue(isEqual(aListOfData, keys));
             assertTrue(isEqual(aListOfUUIDs, sourceUuids));
@@ -5189,9 +5191,8 @@ public class ClientCompatibilityNullTest_2_6 {
         public void handleQueryCacheSingleEvent(com.hazelcast.map.impl.querycache.event.QueryCacheEventData data) {
             assertTrue(isEqual(aQueryCacheEventData, data));
         }
-
         @Override
-        public void handleQueryCacheBatchEvent(java.util.Collection<com.hazelcast.map.impl.querycache.event.QueryCacheEventData> events, String source, int partitionId) {
+        public void handleQueryCacheBatchEvent(java.util.Collection<com.hazelcast.map.impl.querycache.event.QueryCacheEventData> events, java.lang.String source, int partitionId) {
             assertTrue(isEqual(aListOfQueryCacheEventData, events));
             assertTrue(isEqual(aString, source));
             assertTrue(isEqual(anInt, partitionId));
@@ -5976,15 +5977,15 @@ public class ClientCompatibilityNullTest_2_6 {
     }
 
     @Test
-    public void test_DynamicConfigAddExternalDataStoreConfigCodec_encodeRequest() {
+    public void test_DynamicConfigAddDataLinkConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 757;
-        ClientMessage encoded = DynamicConfigAddExternalDataStoreConfigCodec.encodeRequest(aString, aString, aBoolean, aMapOfStringToString);
+        ClientMessage encoded = DynamicConfigAddDataLinkConfigCodec.encodeRequest(aString, aString, aBoolean, aMapOfStringToString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
 
     @Test
-    public void test_DynamicConfigAddExternalDataStoreConfigCodec_decodeResponse() {
+    public void test_DynamicConfigAddDataLinkConfigCodec_decodeResponse() {
         int fileClientMessageIndex = 758;
     }
 
@@ -6732,6 +6733,8 @@ public class ClientCompatibilityNullTest_2_6 {
         assertTrue(isEqual(null, parameters.error));
         assertTrue(parameters.isIsInfiniteRowsExists);
         assertTrue(isEqual(aBoolean, parameters.isInfiniteRows));
+        assertTrue(parameters.isPartitionArgumentIndexExists);
+        assertTrue(isEqual(anInt, parameters.partitionArgumentIndex));
     }
 
     @Test
@@ -7059,6 +7062,111 @@ public class ClientCompatibilityNullTest_2_6 {
         int fileClientMessageIndex = 898;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aListJobAndSqlSummary, JetGetJobAndSqlSummaryListCodec.decodeResponse(fromFile)));
+    }
+
+    @Test
+    public void test_JetIsJobUserCancelledCodec_encodeRequest() {
+        int fileClientMessageIndex = 899;
+        ClientMessage encoded = JetIsJobUserCancelledCodec.encodeRequest(aLong);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetIsJobUserCancelledCodec_decodeResponse() {
+        int fileClientMessageIndex = 900;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aBoolean, JetIsJobUserCancelledCodec.decodeResponse(fromFile)));
+    }
+
+    @Test
+    public void test_JetUploadJobMetaDataCodec_encodeRequest() {
+        int fileClientMessageIndex = 901;
+        ClientMessage encoded = JetUploadJobMetaDataCodec.encodeRequest(aUUID, aBoolean, aString, aString, null, null, null, aListOfStrings);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetUploadJobMetaDataCodec_decodeResponse() {
+        int fileClientMessageIndex = 902;
+    }
+
+    @Test
+    public void test_JetUploadJobMultipartCodec_encodeRequest() {
+        int fileClientMessageIndex = 903;
+        ClientMessage encoded = JetUploadJobMultipartCodec.encodeRequest(aUUID, anInt, anInt, aByteArray, anInt, aString);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetUploadJobMultipartCodec_decodeResponse() {
+        int fileClientMessageIndex = 904;
+    }
+
+    @Test
+    public void test_JetAddJobStatusListenerCodec_encodeRequest() {
+        int fileClientMessageIndex = 905;
+        ClientMessage encoded = JetAddJobStatusListenerCodec.encodeRequest(aLong, aBoolean);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetAddJobStatusListenerCodec_decodeResponse() {
+        int fileClientMessageIndex = 906;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(null, JetAddJobStatusListenerCodec.decodeResponse(fromFile)));
+    }
+
+    private static class JetAddJobStatusListenerCodecHandler extends JetAddJobStatusListenerCodec.AbstractEventHandler {
+        @Override
+        public void handleJobStatusEvent(long jobId, int previousStatus, int newStatus, java.lang.String description, boolean userRequested) {
+            assertTrue(isEqual(aLong, jobId));
+            assertTrue(isEqual(anInt, previousStatus));
+            assertTrue(isEqual(anInt, newStatus));
+            assertTrue(isEqual(null, description));
+            assertTrue(isEqual(aBoolean, userRequested));
+        }
+    }
+
+    @Test
+    public void test_JetAddJobStatusListenerCodec_handleJobStatusEvent() {
+        int fileClientMessageIndex = 907;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        JetAddJobStatusListenerCodecHandler handler = new JetAddJobStatusListenerCodecHandler();
+        handler.handle(fromFile);
+    }
+
+    @Test
+    public void test_JetRemoveJobStatusListenerCodec_encodeRequest() {
+        int fileClientMessageIndex = 908;
+        ClientMessage encoded = JetRemoveJobStatusListenerCodec.encodeRequest(aLong, aUUID);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetRemoveJobStatusListenerCodec_decodeResponse() {
+        int fileClientMessageIndex = 909;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aBoolean, JetRemoveJobStatusListenerCodec.decodeResponse(fromFile)));
+    }
+
+    @Test
+    public void test_JetUpdateJobConfigCodec_encodeRequest() {
+        int fileClientMessageIndex = 910;
+        ClientMessage encoded = JetUpdateJobConfigCodec.encodeRequest(aLong, aData);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetUpdateJobConfigCodec_decodeResponse() {
+        int fileClientMessageIndex = 911;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aData, JetUpdateJobConfigCodec.decodeResponse(fromFile)));
     }
 
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {

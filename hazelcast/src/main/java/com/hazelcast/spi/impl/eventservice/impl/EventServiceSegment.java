@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -196,16 +196,17 @@ public class EventServiceSegment<S> {
      * service of the listener deregistrations.
      *
      * @param topic the topic for which registrations are removed
+     * @return the collection of registrations which were removed or {@code null} if none matched
      */
-    void removeRegistrations(String topic) {
+    public Collection<Registration> removeRegistrations(String topic) {
         Collection<Registration> all = registrations.remove(topic);
-        if (all == null) {
-            return;
+        if (all != null) {
+            for (Registration reg : all) {
+                registrationIdMap.remove(reg.getId());
+                pingNotifiableEventListener(topic, reg, false);
+            }
         }
-        for (Registration reg : all) {
-            registrationIdMap.remove(reg.getId());
-            pingNotifiableEventListener(topic, reg, false);
-        }
+        return all;
     }
 
     void clear() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,11 @@ import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.IdBatchAndWaitTime;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -84,11 +86,17 @@ public class FlakeIdGeneratorProxyTest {
         clusterService = mock(ClusterService.class);
         NodeEngine nodeEngine = mock(NodeEngine.class);
         FlakeIdGeneratorService service = mock(FlakeIdGeneratorService.class);
+        ExecutionService mockExecutionService = mock(ExecutionService.class);
+        ManagedExecutorService mockManagedExecutorService = mock(ManagedExecutorService.class);
+
         when(nodeEngine.getLogger(FlakeIdGeneratorProxy.class)).thenReturn(logger);
         when(nodeEngine.isRunning()).thenReturn(true);
         config.setName("foo");
         when(nodeEngine.getConfig()).thenReturn(new Config().addFlakeIdGeneratorConfig(config));
         when(nodeEngine.getClusterService()).thenReturn(clusterService);
+        when(nodeEngine.getExecutionService()).thenReturn(mockExecutionService);
+        when(mockExecutionService.getExecutor(ExecutionService.ASYNC_EXECUTOR)).thenReturn(mockManagedExecutorService);
+
         Address address = null;
         try {
             address = new Address("127.0.0.1", 5701);

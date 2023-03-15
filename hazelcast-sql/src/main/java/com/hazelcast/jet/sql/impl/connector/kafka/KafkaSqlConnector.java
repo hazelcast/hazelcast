@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.kafka.KafkaProcessors;
 import com.hazelcast.jet.kafka.impl.StreamKafkaP;
+import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver;
@@ -33,7 +33,6 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolvers;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProcessors;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
@@ -120,15 +119,14 @@ public class KafkaSqlConnector implements SqlConnector {
 
     @Nonnull @Override
     public Vertex fullScanReader(
-            @Nonnull DAG dag,
-            @Nonnull Table table0,
-            @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projections,
+            @Nonnull DagBuildContext context,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
-        KafkaTable table = (KafkaTable) table0;
+        KafkaTable table = (KafkaTable) context.getTable();
 
-        return dag.newUniqueVertex(
+        return context.getDag().newUniqueVertex(
                 table.toString(),
                 ProcessorMetaSupplier.of(
                         StreamKafkaP.PREFERRED_LOCAL_PARALLELISM,
@@ -140,28 +138,28 @@ public class KafkaSqlConnector implements SqlConnector {
                                 table.types(),
                                 table.keyQueryDescriptor(),
                                 table.valueQueryDescriptor(),
-                                predicate,
-                                projections
+                                context.convertFilter(predicate),
+                                context.convertProjection(projection)
                         )
                 )
         );
     }
 
     @Nonnull @Override
-    public VertexWithInputConfig insertProcessor(@Nonnull DAG dag, @Nonnull Table table) {
-        return new VertexWithInputConfig(writeProcessor(dag, table));
+    public VertexWithInputConfig insertProcessor(@Nonnull DagBuildContext context) {
+        return new VertexWithInputConfig(writeProcessor(context));
     }
 
     @Nonnull @Override
-    public Vertex sinkProcessor(@Nonnull DAG dag, @Nonnull Table table) {
-        return writeProcessor(dag, table);
+    public Vertex sinkProcessor(@Nonnull DagBuildContext context) {
+        return writeProcessor(context);
     }
 
     @Nonnull
-    private Vertex writeProcessor(DAG dag, Table table0) {
-        KafkaTable table = (KafkaTable) table0;
+    private Vertex writeProcessor(@Nonnull DagBuildContext context) {
+        KafkaTable table = (KafkaTable) context.getTable();
 
-        Vertex vStart = dag.newUniqueVertex(
+        Vertex vStart = context.getDag().newUniqueVertex(
                 "Project(" + table + ")",
                 KvProcessors.entryProjector(
                         table.paths(),
@@ -175,7 +173,7 @@ public class KafkaSqlConnector implements SqlConnector {
         // TODO: eliminate the project vertex altogether and do the projecting in the sink directly
         vStart.localParallelism(1);
 
-        Vertex vEnd = dag.newUniqueVertex(
+        Vertex vEnd = context.getDag().newUniqueVertex(
                 table.toString(),
                 KafkaProcessors.<Entry<Object, Object>, Object, Object>writeKafkaP(
                         table.kafkaProducerProperties(),
@@ -186,7 +184,7 @@ public class KafkaSqlConnector implements SqlConnector {
                 )
         );
 
-        dag.edge(between(vStart, vEnd));
+        context.getDag().edge(between(vStart, vEnd));
         return vStart;
     }
 }

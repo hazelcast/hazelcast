@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.annotation.QuickTest;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.After;
 import org.junit.Before;
@@ -57,24 +57,24 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.datalink.impl.DataLinkTestUtil.configureDummyDataLink;
+import static com.hazelcast.datalink.impl.DataLinkTestUtil.configureJdbcDataLink;
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.impl.connector.ExternalDataStoreTestUtil.configureDummyDataStore;
-import static com.hazelcast.jet.impl.connector.ExternalDataStoreTestUtil.configureJdbcDataStore;
-import static com.hazelcast.jet.pipeline.ExternalDataStoreRef.externalDataStoreRef;
+import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-@Category({SlowTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
+@Category({QuickTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public class WriteJdbcPTest extends SimpleTestInClusterSupport {
 
-    private static final String JDBC_DATA_STORE = "jdbc-data-store";
-    private static final String DUMMY_DATA_STORE = "dummy-data-store";
+    private static final String JDBC_DATA_LINK = "jdbc-data-link";
+    private static final String DUMMY_DATA_LINK = "dummy-data-link";
 
     @ClassRule
     @SuppressWarnings({"rawtypes", "resource"})
@@ -95,8 +95,8 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     @BeforeClass
     public static void setupClass() {
         Config config = smallInstanceConfig();
-        configureJdbcDataStore(JDBC_DATA_STORE, container.getJdbcUrl(), container.getUsername(), container.getPassword(), config);
-        configureDummyDataStore(DUMMY_DATA_STORE, config);
+        configureJdbcDataLink(JDBC_DATA_LINK, container.getJdbcUrl(), container.getUsername(), container.getPassword(), config);
+        configureDummyDataLink(DUMMY_DATA_LINK, config);
         initialize(2, config);
     }
 
@@ -169,7 +169,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_supplied_closeable_datasource_is_NOT_closed() throws SQLException {
+    public void test_supplied_closeable_datasource_is_closed() throws SQLException {
         Pipeline p = Pipeline.create();
 
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
@@ -183,7 +183,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
                 ));
         instance().getJet().newJob(p).join();
         assertEquals(PERSON_COUNT, rowCount());
-        assertFalse(hikariDataSource.isClosed());
+        assertTrue(hikariDataSource.isClosed());
     }
 
     private static DataSource createHikariDataSource() {
@@ -197,13 +197,13 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_external_datastore_config() throws SQLException {
+    public void test_data_link_config() throws SQLException {
         assertEquals(0, rowCount());
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
                 .map(item -> entry(item, item.toString()))
                 .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
-                        externalDataStoreRef(JDBC_DATA_STORE),
+                        dataLinkRef(JDBC_DATA_LINK),
                         (stmt, item) -> {
                             stmt.setInt(1, item.getKey());
                             stmt.setString(2, item.getValue());

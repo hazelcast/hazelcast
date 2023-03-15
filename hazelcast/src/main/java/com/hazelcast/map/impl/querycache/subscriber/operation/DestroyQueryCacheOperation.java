@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,7 +110,7 @@ public class DestroyQueryCacheOperation extends AbstractNamedOperation {
 
     private void removeAllListeners() {
         EventService eventService = getNodeEngine().getEventService();
-        eventService.deregisterAllListeners(MapService.SERVICE_NAME, cacheId);
+        eventService.deregisterAllLocalListeners(MapService.SERVICE_NAME, cacheId);
     }
 
     private PublisherContext getPublisherContext() {

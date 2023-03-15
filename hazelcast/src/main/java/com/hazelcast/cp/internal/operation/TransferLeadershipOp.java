@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,8 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.io.IOException;
 import java.util.function.BiConsumer;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+
 /**
  * Triggers the local CP member to transfer Raft group leadership to given CP
  * member for the given CP group
@@ -57,7 +59,7 @@ public class TransferLeadershipOp extends Operation implements RaftSystemOperati
     public CallStatus call() throws Exception {
         RaftService service = getService();
         InternalCompletableFuture future = service.transferLeadership(groupId, (CPMemberInfo) destination);
-        future.whenCompleteAsync(this);
+        future.whenCompleteAsync(this, CALLER_RUNS);
         return CallStatus.VOID;
     }
 

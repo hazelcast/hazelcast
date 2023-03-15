@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,6 +83,9 @@ public final class ActionConstants {
     public static final String ACTION_DROP_VIEW = "drop-view";
     public static final String ACTION_CREATE_TYPE = "create-type";
     public static final String ACTION_DROP_TYPE = "drop-type";
+    public static final String ACTION_VIEW_LINK = "view-link";
+    public static final String ACTION_CREATE_LINK = "create-link";
+    public static final String ACTION_DROP_LINK = "drop-link";
 
     private static final Map<String, PermissionFactory> PERMISSION_FACTORY_MAP = new HashMap<>();
 

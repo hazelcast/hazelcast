@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -83,7 +83,7 @@ public class EntryEventDataCacheTest {
         MapServiceContext mapServiceContext = mock(MapServiceContext.class);
         NodeEngine mockNodeEngine = mock(NodeEngine.class);
         when(mockNodeEngine.getThisAddress()).thenReturn(ADDRESS);
-        when(mapServiceContext.toData(anyObject())).thenReturn(new HeapData());
+        when(mapServiceContext.toData(any())).thenReturn(new HeapData());
         when(mapServiceContext.getNodeEngine()).thenReturn(mockNodeEngine);
 
         return Arrays.asList(new Object[][]{

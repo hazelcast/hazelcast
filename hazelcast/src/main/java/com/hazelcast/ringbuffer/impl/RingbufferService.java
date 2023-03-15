@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,7 +143,7 @@ public class RingbufferService implements ManagedService, RemoteService, Chunked
     @Override
     public void destroyDistributedObject(String name, boolean local) {
         destroyContainer(getRingbufferPartitionId(name), getRingbufferNamespace(name));
-        nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
+        nodeEngine.getEventService().deregisterAllLocalListeners(SERVICE_NAME, name);
         splitBrainProtectionConfigCache.remove(name);
     }
 

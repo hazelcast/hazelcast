@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public final class OperationQueueImpl implements OperationQueue {
     private final Queue<Object> priorityQueue;
 
     public OperationQueueImpl() {
-        this(new LinkedBlockingQueue<Object>(), new ConcurrentLinkedQueue<Object>());
+        this(new LinkedBlockingQueue<>(), new ConcurrentLinkedQueue<>());
     }
 
     public OperationQueueImpl(BlockingQueue<Object> normalQueue, Queue<Object> priorityQueue) {
@@ -68,6 +68,28 @@ public final class OperationQueueImpl implements OperationQueue {
         } else {
             normalQueue.add(task);
         }
+    }
+
+    @Override
+    public Object poll() {
+        for (; ; ) {
+            Object priorityItem = priorityQueue.poll();
+            if (priorityItem != null) {
+                return priorityItem;
+            }
+
+            Object normalItem = normalQueue.poll();
+            if (normalItem == TRIGGER_TASK) {
+                continue;
+            }
+
+            return normalItem;
+        }
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return normalQueue.isEmpty() && priorityQueue.isEmpty();
     }
 
     @Override

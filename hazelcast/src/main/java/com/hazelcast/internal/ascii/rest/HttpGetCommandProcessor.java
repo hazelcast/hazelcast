@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
+import static com.hazelcast.internal.ascii.rest.HttpCommandProcessor.ResponseType.FAIL;
 import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_500;
 import static com.hazelcast.internal.ascii.rest.RestCallExecution.ObjectType.MAP;
 import static com.hazelcast.internal.ascii.rest.RestCallExecution.ObjectType.QUEUE;
@@ -104,6 +105,8 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                 handleLogLevel(command);
             } else if (uri.startsWith(URI_TCP_IP_MEMBER_LIST)) {
                 handleTcpIpMemberList(command);
+            } else if (uri.startsWith(URI_WAN_SYNC_PROGRESS)) {
+                handleWanSyncProgress(command);
             } else {
                 command.send404();
             }
@@ -213,7 +216,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                 command.send500();
                 textCommandService.sendResponse(command);
             }
-        });
+        }, internalAsyncExecutor);
     }
 
     private void handleGetCPSessions(final HttpGetCommand command) {
@@ -240,7 +243,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
 
                         textCommandService.sendResponse(command);
                     }
-                });
+                }, internalAsyncExecutor);
     }
 
     private void handleGetCPGroupByName(final HttpGetCommand command) {
@@ -270,7 +273,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                 command.send500();
                 textCommandService.sendResponse(command);
             }
-        });
+        }, internalAsyncExecutor);
     }
 
     private void handleGetCPMembers(final HttpGetCommand command) {
@@ -287,7 +290,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                 command.send500();
                 textCommandService.sendResponse(command);
             }
-        });
+        }, internalAsyncExecutor);
     }
 
     private void handleGetLocalCPMember(final HttpGetCommand command) {
@@ -436,5 +439,13 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             prepareResponse(HttpStatusCode.SC_400, command, new JsonObject().add("message",
                     "TCP-IP join mechanism is not enabled in the cluster."));
         }
+    }
+
+    protected void handleWanSyncProgress(HttpGetCommand command) throws Throwable {
+        prepareResponse(
+                SC_500,
+                command,
+                response(FAIL, "message", "Wan Sync requires Hazelcast Enterprise Edition.")
+        );
     }
 }

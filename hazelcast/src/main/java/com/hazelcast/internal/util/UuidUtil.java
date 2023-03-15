@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,5 +106,19 @@ public final class UuidUtil {
             leastSigBits = (leastSigBits << 8) | (data[i] & 0xff);
         }
         return new UUID(mostSigBits, leastSigBits);
+    }
+
+    /**
+     * Checks if given value is UUID of any type.
+     * @param value string to check
+     * @return if the value is an UUID
+     */
+    public static boolean isUUID(String value) {
+        try {
+            UUID.fromString(value);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 }

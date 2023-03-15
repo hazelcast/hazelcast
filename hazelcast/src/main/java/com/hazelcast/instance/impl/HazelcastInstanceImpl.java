@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -159,6 +159,15 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
 
     public ManagementService getManagementService() {
         return managementService;
+    }
+
+    /**
+     * Indicates that instance is not shutting down or it has not already shut down
+     *
+     * @return true if instance is not shutting down or it has not already shut down
+     */
+    public boolean isRunning() {
+        return node.isRunning();
     }
 
     @Nonnull

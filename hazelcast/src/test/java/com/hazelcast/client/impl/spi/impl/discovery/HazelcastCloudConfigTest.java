@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ public class HazelcastCloudConfigTest extends ClientTestSupport {
         HazelcastProperties hazelcastProperties = new HazelcastProperties(config.getProperties());
         String cloudUrlBase = hazelcastProperties.getString(HazelcastCloudDiscovery.CLOUD_URL_BASE_PROPERTY);
         String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudUrlBase, token);
-        assertEquals("https://coordinator.hazelcast.cloud/cluster/discovery?token=TOKEN", urlEndpoint);
+        assertEquals("https://api.viridian.hazelcast.com/cluster/discovery?token=TOKEN", urlEndpoint);
     }
 
 }

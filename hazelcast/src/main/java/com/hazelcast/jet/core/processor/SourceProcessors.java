@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,6 @@ package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datastore.ExternalDataStoreFactory;
-import com.hazelcast.datastore.JdbcDataStoreFactory;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.ConsumerEx;
@@ -36,7 +33,6 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.function.ToResultSetFunction;
 import com.hazelcast.jet.impl.connector.ConvenientSourceP;
 import com.hazelcast.jet.impl.connector.ConvenientSourceP.SourceBufferConsumerSide;
-import com.hazelcast.jet.impl.connector.DataSourceFromConnectionSupplier;
 import com.hazelcast.jet.impl.connector.HazelcastReaders;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
 import com.hazelcast.jet.impl.connector.ReadJdbcP;
@@ -45,8 +41,7 @@ import com.hazelcast.jet.impl.connector.StreamFilesP;
 import com.hazelcast.jet.impl.connector.StreamJmsP;
 import com.hazelcast.jet.impl.connector.StreamSocketP;
 import com.hazelcast.jet.impl.pipeline.SourceBufferImpl;
-import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.pipeline.ExternalDataStoreRef;
+import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.jet.pipeline.FileSourceBuilder;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.SourceBuilder;
@@ -59,7 +54,6 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -202,7 +196,7 @@ public final class SourceProcessors {
     ) {
         String clientXml = asXmlString(clientConfig);
         return StreamEventJournalP.streamRemoteMapSupplier(
-                mapName, clientXml, predicateFn, projectionFn, initialPos, eventTimePolicy);
+                mapName, null, clientXml, predicateFn, projectionFn, initialPos, eventTimePolicy);
     }
 
     /**
@@ -443,34 +437,21 @@ public final class SourceProcessors {
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return ReadJdbcP.supplier(context -> new DataSourceFromConnectionSupplier(newConnectionFn),
-                resultSetFn, mapOutputFn);
+        return ReadJdbcP.supplier(context -> newConnectionFn.get(), resultSetFn, mapOutputFn);
     }
 
     /**
      * Returns a supplier of processors for {@link Sources#jdbc(
-     *ExternalDataStoreRef, ToResultSetFunction, FunctionEx)}.
+     *DataLinkRef, ToResultSetFunction, FunctionEx)}.
      *
      * @since 5.2
      */
     public static <T> ProcessorMetaSupplier readJdbcP(
-            @Nonnull ExternalDataStoreRef externalDataStoreRef,
+            @Nonnull DataLinkRef dataLinkRef,
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return ReadJdbcP.supplier(context -> getDataStoreFactory(context, externalDataStoreRef.getName()).getDataStore(),
-                resultSetFn,
-                mapOutputFn);
-    }
-
-    private static JdbcDataStoreFactory getDataStoreFactory(ProcessorSupplier.Context context, String name) {
-        NodeEngineImpl nodeEngine = Util.getNodeEngine(context.hazelcastInstance());
-        ExternalDataStoreFactory<?> dataStoreFactory = nodeEngine.getExternalDataStoreService().getExternalDataStoreFactory(name);
-        if (!(dataStoreFactory instanceof JdbcDataStoreFactory)) {
-            String className = JdbcDataStoreFactory.class.getSimpleName();
-            throw new HazelcastException("Data store factory '" + name + "' must be an instance of " + className);
-        }
-        return (JdbcDataStoreFactory) dataStoreFactory;
+        return ReadJdbcP.supplier(dataLinkRef, resultSetFn, mapOutputFn);
     }
 
     /**

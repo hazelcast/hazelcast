@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,7 +87,7 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
         Vertex source = dag.newVertex("source", ListSource.supplier(singletonList(1)));
 
         Vertex process = dag.newVertex("faulty",
-                new MockPMS(() -> new MockPS(() -> new MockP().initBlocks().setProcessError(e), MEMBER_COUNT)))
+                new MockPMS(() -> new MockPS(() -> new MockP().initBlocks().setProcessError(() -> e), MEMBER_COUNT)))
                             .localParallelism(1);
         dag.edge(between(source, process));
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,7 +131,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     @Override
     public void destroyDistributedObject(String objectId, boolean local) {
         statsMap.remove(objectId);
-        nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, objectId);
+        nodeEngine.getEventService().deregisterAllLocalListeners(SERVICE_NAME, objectId);
     }
 
     @Override

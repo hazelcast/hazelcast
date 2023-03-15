@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.MapIndexInfo;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -61,7 +62,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
-import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 
 import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
 import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
@@ -77,13 +78,14 @@ import static com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries.n
  * @see #writeChunk
  */
 @SuppressWarnings("checkstyle:MethodCount")
-public class MapChunk extends Operation implements IdentifiedDataSerializable {
+public class MapChunk extends Operation
+        implements IdentifiedDataSerializable, Versioned {
 
     private static final int DISPOSE_AT_COUNT = 1024;
 
     protected transient ILogger logger;
     protected transient MapChunkContext context;
-    protected transient BooleanSupplier isEndOfChunk;
+    protected transient Predicate isEndOfChunk;
     protected transient String mapName;
 
     private transient boolean loaded;
@@ -104,7 +106,7 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
     }
 
     public MapChunk(MapChunkContext context, int chunkNumber,
-                    BooleanSupplier isEndOfChunk) {
+                    Predicate isEndOfChunk) {
         this.context = context;
         this.isEndOfChunk = isEndOfChunk;
         this.firstChunk = (chunkNumber == 1);
@@ -123,7 +125,7 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
         if (firstChunk) {
             addIndexes(recordStore, mapIndexInfo.getIndexConfigs());
             initializeRecordStore(mapName, recordStore);
-            recordStore.setStats(stats);
+            recordStore.setLocalRecordStoreStats(stats);
             recordStore.setPreMigrationLoadedStatus(loaded);
 
             applyWriteBehindState(recordStore);
@@ -410,7 +412,7 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
     protected void writeMetadata(ObjectDataOutput out) throws IOException {
         out.writeObject(context.createMapIndexInfo());
         out.writeBoolean(context.isRecordStoreLoaded());
-        context.getStats().writeData(out);
+        context.getLocalRecordStoreStats().writeData(out);
 
         writeWriteBehindState(out, context.getRecordStore());
         writeNearCacheState(out);
@@ -519,7 +521,7 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
             Records.writeExpiry(out, context.getExpiryMetadata(dataKey));
             recordCount++;
 
-            if (isEndOfChunk.getAsBoolean()) {
+            if (isEndOfChunk.test(out)) {
                 break;
             }
         }

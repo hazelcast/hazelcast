@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.WindowDefinition;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.test.SerialTest;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -88,6 +87,8 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
     @BeforeClass
     public static void beforeClass() {
         assumeDockerEnabled();
+        //Newer version of localstack with arm64 support fails in KinesisIntegrationTest
+        assumeNoArm64Architecture();
 
         localStack = new LocalStackContainer(parse("localstack/localstack")
                 .withTag("0.12.3"))
@@ -115,7 +116,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
                     .withCredentials(localStack.getAccessKey(), localStack.getSecretKey());
         }
         KINESIS = AWS_CONFIG.buildClient();
-        HELPER = new KinesisTestHelper(KINESIS, STREAM, Logger.getLogger(KinesisIntegrationTest.class));
+        HELPER = new KinesisTestHelper(KINESIS, STREAM);
     }
 
     @AfterClass

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,9 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public final class QueryUtils {
 
+    public static final String SCHEMA_NAME_PUBLIC = "public";
+    public static final String SCHEMA_NAME_DATA_LINK = "data_link";
+    public static final String SCHEMA_NAME_INFORMATION_SCHEMA = "information_schema";
     public static final String CATALOG = "hazelcast";
 
     public static final String WORKER_TYPE_STATE_CHECKER = "query-state-checker";

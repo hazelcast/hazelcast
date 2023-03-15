@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package com.hazelcast.config;
 
 import com.google.common.collect.ImmutableSet;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
+import com.hazelcast.config.alto.AltoConfig;
+import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -4067,6 +4069,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        send-buffer-size-kb: 34\n"
                 + "        receive-buffer-size-kb: 67\n"
                 + "        linger-seconds: 11\n"
+                + "        keep-count: 12\n"
+                + "        keep-interval-seconds: 13\n"
+                + "        keep-idle-seconds: 14\n"
                 + "      symmetric-encryption:\n"
                 + "        enabled: true\n"
                 + "        algorithm: Algorithm\n"
@@ -4537,35 +4542,53 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    public void testExternalDataStoreConfigs() {
+    public void testDataLinkConfigs() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  external-data-store:\n"
+                + "  data-link:\n"
                 + "    mysql-database:\n"
-                + "      class-name: com.hazelcast.datastore.JdbcDataStore\n"
+                + "      class-name: com.hazelcast.datalink.JdbcDataLink\n"
                 + "      properties:\n"
                 + "        jdbcUrl: jdbc:mysql://dummy:3306\n"
                 + "        some.property: dummy-value\n"
                 + "      shared: true\n"
                 + "    other-database:\n"
-                + "      class-name: com.hazelcast.datastore.OtherDataStore\n";
+                + "      class-name: com.hazelcast.datalink.OtherDataLink\n";
 
         Config config = new InMemoryYamlConfig(yaml);
 
-        Map<String, ExternalDataStoreConfig> externalDataStoreConfigs = config.getExternalDataStoreConfigs();
+        Map<String, DataLinkConfig> dataLinkConfigs = config.getDataLinkConfigs();
 
-        assertThat(externalDataStoreConfigs).hasSize(2);
-        assertThat(externalDataStoreConfigs).containsKey("mysql-database");
-        ExternalDataStoreConfig mysqlDataStoreConfig = externalDataStoreConfigs.get("mysql-database");
-        assertThat(mysqlDataStoreConfig.getClassName()).isEqualTo("com.hazelcast.datastore.JdbcDataStore");
-        assertThat(mysqlDataStoreConfig.getName()).isEqualTo("mysql-database");
-        assertThat(mysqlDataStoreConfig.isShared()).isTrue();
-        assertThat(mysqlDataStoreConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
-        assertThat(mysqlDataStoreConfig.getProperty("some.property")).isEqualTo("dummy-value");
+        assertThat(dataLinkConfigs).hasSize(2);
+        assertThat(dataLinkConfigs).containsKey("mysql-database");
+        DataLinkConfig mysqlDataLinkConfig = dataLinkConfigs.get("mysql-database");
+        assertThat(mysqlDataLinkConfig.getClassName()).isEqualTo("com.hazelcast.datalink.JdbcDataLink");
+        assertThat(mysqlDataLinkConfig.getName()).isEqualTo("mysql-database");
+        assertThat(mysqlDataLinkConfig.isShared()).isTrue();
+        assertThat(mysqlDataLinkConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
+        assertThat(mysqlDataLinkConfig.getProperty("some.property")).isEqualTo("dummy-value");
 
-        assertThat(externalDataStoreConfigs).containsKey("other-database");
-        ExternalDataStoreConfig otherDataStoreConfig = externalDataStoreConfigs.get("other-database");
-        assertThat(otherDataStoreConfig.getClassName()).isEqualTo("com.hazelcast.datastore.OtherDataStore");
+        assertThat(dataLinkConfigs).containsKey("other-database");
+        DataLinkConfig otherDataLinkConfig = dataLinkConfigs.get("other-database");
+        assertThat(otherDataLinkConfig.getClassName()).isEqualTo("com.hazelcast.datalink.OtherDataLink");
+    }
+
+    @Override
+    @Test
+    public void testPartitioningAttributeConfigs() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    test:\n"
+                + "      partition-attributes:\n"
+                + "        - name: attr1\n"
+                + "        - name: attr2\n";
+
+        final MapConfig mapConfig = buildConfig(yaml).getMapConfig("test");
+        assertThat(mapConfig.getPartitioningAttributeConfigs()).containsExactly(
+                new PartitioningAttributeConfig("attr1"),
+                new PartitioningAttributeConfig("attr2")
+        );
     }
 
     @Override
@@ -4582,5 +4605,93 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertEquals(Integer.MAX_VALUE, mapConfig.getTimeToLiveSeconds());
         assertEquals(Integer.MAX_VALUE, mapConfig.getMaxIdleSeconds());
+    }
+
+    @Override
+    @Test
+    public void testAltoConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  alto:\n"
+                + "    enabled: true\n"
+                + "    eventloop-count: 12\n";
+
+        AltoConfig altoConfig = buildConfig(yaml).getAltoConfig();
+
+        assertThat(altoConfig.isEnabled()).isTrue();
+        assertThat(altoConfig.getEventloopCount()).isEqualTo(12);
+    }
+
+    @Override
+    @Test
+    public void testAltoSocketConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  network:\n"
+                + "    alto-socket:\n"
+                + "      port-range: 14000-16000\n"
+                + "      receive-buffer-size-kb: 256\n"
+                + "      send-buffer-size-kb: 256\n";
+
+        AltoSocketConfig altoConfig = buildConfig(yaml).getNetworkConfig().getAltoSocketConfig();
+
+        assertThat(altoConfig.getPortRange()).isEqualTo("14000-16000");
+        assertThat(altoConfig.getReceiveBufferSizeKB()).isEqualTo(256);
+        assertThat(altoConfig.getSendBufferSizeKB()).isEqualTo(256);
+    }
+
+    @Override
+    @Test
+    public void testAltoSocketConfigAdvanced() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  advanced-network:\n"
+                + "    enabled: true\n"
+                + "    member-server-socket-endpoint-config: \n"
+                + "      alto-socket: \n"
+                + "        port-range: 14000-16000\n"
+                + "        receive-buffer-size-kb: 256\n"
+                + "        send-buffer-size-kb: 256\n"
+                + "    client-server-socket-endpoint-config:\n"
+                + "      alto-socket:\n"
+                + "        port-range: 14000-16000\n"
+                + "        receive-buffer-size-kb: 256\n"
+                + "        send-buffer-size-kb: 256\n"
+                + "    memcache-server-socket-endpoint-config:\n"
+                + "      alto-socket:\n"
+                + "        port-range: 14000-16000\n"
+                + "        receive-buffer-size-kb: 256\n"
+                + "        send-buffer-size-kb: 256\n"
+                + "    rest-server-socket-endpoint-config:\n"
+                + "      alto-socket:\n"
+                + "        port-range: 14000-16000\n"
+                + "        receive-buffer-size-kb: 256\n"
+                + "        send-buffer-size-kb: 256\n"
+                + "    wan-endpoint-config: \n"
+                + "      tokyo:\n"
+                + "        alto-socket:\n"
+                + "          port-range: 14000-16000\n"
+                + "          receive-buffer-size-kb: 256\n"
+                + "          send-buffer-size-kb: 256\n"
+                + "    wan-server-socket-endpoint-config: \n"
+                + "      london:\n"
+                + "        alto-socket:\n"
+                + "          port-range: 14000-16000\n"
+                + "          receive-buffer-size-kb: 256\n"
+                + "          send-buffer-size-kb: 256\n";
+
+        Map<EndpointQualifier, EndpointConfig> endpointConfigs = buildConfig(yaml)
+                .getAdvancedNetworkConfig()
+                .getEndpointConfigs();
+
+        assertThat(endpointConfigs).hasSize(6);
+
+        endpointConfigs.forEach((endpointQualifier, endpointConfig) -> {
+            AltoSocketConfig altoSocketConfig = endpointConfig.getAltoSocketConfig();
+
+            assertThat(altoSocketConfig.getPortRange()).isEqualTo("14000-16000");
+            assertThat(altoSocketConfig.getReceiveBufferSizeKB()).isEqualTo(256);
+            assertThat(altoSocketConfig.getSendBufferSizeKB()).isEqualTo(256);
+        });
     }
 }

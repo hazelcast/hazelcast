@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.logging;
 
+import com.hazelcast.internal.tpcengine.logging.TpcLogger;
+
 import java.util.logging.Level;
 
 /**
@@ -25,7 +27,7 @@ import java.util.logging.Level;
  *
  * @see AbstractLogger
  */
-public interface ILogger {
+public interface ILogger extends TpcLogger {
 
     /**
      * Logs a message at the {@link Level#FINEST} level.

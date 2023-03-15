@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -759,7 +759,36 @@ public final class Processors {
     public static <T> SupplierEx<Processor> insertWatermarksP(
             @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
-        return () -> new InsertWatermarksP<>(eventTimePolicy);
+        return insertWatermarksP(ctx -> eventTimePolicy);
+    }
+
+    /**
+     * Returns a supplier of processors for a vertex that inserts {@link
+     * com.hazelcast.jet.core.Watermark watermark items} into the stream. The
+     * value of the watermark is determined by the supplied {@link
+     * com.hazelcast.jet.core.EventTimePolicy} instance.
+     * <p>
+     * This processor also drops late items. It never allows an event which is
+     * late with regard to already emitted watermark to pass.
+     * <p>
+     * The processor saves value of the last emitted watermark to snapshot.
+     * Different instances of this processor can be at different watermark at
+     * snapshot time. After restart all instances will start at watermark of
+     * the most-behind instance before the restart.
+     * <p>
+     * This might sound as it could break the monotonicity requirement, but
+     * thanks to watermark coalescing, watermarks are only delivered for
+     * downstream processing after they have been received from <i>all</i>
+     * upstream processors. Another side effect of this is, that a late event,
+     * which was dropped before restart, is not considered late after restart.
+     *
+     * @param <T> the type of the stream item
+     */
+    @Nonnull
+    public static <T> SupplierEx<Processor> insertWatermarksP(
+            @Nonnull FunctionEx<ProcessorSupplier.Context, EventTimePolicy<? super T>> eventTimePolicyProvider
+    ) {
+        return () -> new InsertWatermarksP<>(eventTimePolicyProvider);
     }
 
     /**

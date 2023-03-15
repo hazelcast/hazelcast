@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -775,6 +775,14 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         clientConfig.setSqlConfig(originalConfig);
         ClientSqlConfig generatedConfig = newConfigViaGenerator().getSqlConfig();
         assertEquals(originalConfig.getResubmissionMode(), generatedConfig.getResubmissionMode());
+    }
+
+    @Test
+    public void testAltoConfig() {
+        ClientAltoConfig originalConfig = new ClientAltoConfig().setEnabled(true);
+        clientConfig.setAltoConfig(originalConfig);
+        ClientAltoConfig generatedConfig = newConfigViaGenerator().getAltoConfig();
+        assertEquals(originalConfig, generatedConfig);
     }
 
     private ClientConfig newConfigViaGenerator() {

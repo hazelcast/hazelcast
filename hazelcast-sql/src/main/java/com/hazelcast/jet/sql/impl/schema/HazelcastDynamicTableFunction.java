@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
-import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
 import com.hazelcast.jet.sql.impl.validate.ValidationUtil;
 import com.hazelcast.sql.impl.QueryException;
@@ -59,14 +58,12 @@ public abstract class HazelcastDynamicTableFunction extends HazelcastTableSource
     protected HazelcastDynamicTableFunction(
             String name,
             HazelcastSqlOperandMetadata operandMetadata,
-            Function<List<Object>, Table> tableFn,
-            SqlConnector connector
+            Function<List<Object>, Table> tableFn
     ) {
         super(
                 name,
                 operandMetadata,
-                binding -> inferReturnType(name, operandMetadata.parameters(), tableFn, binding),
-                connector
+                binding -> inferReturnType(name, operandMetadata.parameters(), tableFn, binding)
         );
 
         assert operandMetadata.parameters().stream()

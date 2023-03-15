@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpression;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -47,6 +48,13 @@ public abstract class ExpressionValues implements Serializable {
     public abstract Stream<JetSqlRow> toValues(ExpressionEvalContext context);
 
     /**
+     * Return the index of the dynamic parameter that provides the value for the
+     * given fieldIndex. If the given fieldIndex isn't supplied by a dynamic
+     * parameter, return -1.
+     */
+    public abstract int getDynamicParamIndex(int fieldIndex);
+
+    /**
      * Representation of the VALUES clause data in the form of a simple {@code
      * List<List<Expression>>}.
      */
@@ -70,6 +78,11 @@ public abstract class ExpressionValues implements Serializable {
             return expressions.stream()
                     .map(es -> new JetSqlRow(context.getSerializationService(),
                             es.stream().map(e -> e.eval(EmptyRow.INSTANCE, context)).toArray(Object[]::new)));
+        }
+
+        @Override
+        public int getDynamicParamIndex(int fieldIndex) {
+            return -1;
         }
 
         @Override
@@ -114,6 +127,18 @@ public abstract class ExpressionValues implements Serializable {
         public Stream<JetSqlRow> toValues(ExpressionEvalContext context) {
             return values.stream()
                     .flatMap(vs -> ExpressionUtil.evaluate(predicate, projection, vs.toValues(context), context).stream());
+        }
+
+        @Override
+        public int getDynamicParamIndex(int fieldIndex) {
+            if (projection == null || projection.size() <= fieldIndex) {
+                return -1;
+            }
+            Expression<?> p = projection.get(fieldIndex);
+            if (p instanceof ParameterExpression) {
+                return ((ParameterExpression<?>) p).getIndex();
+            }
+            return -1;
         }
 
         @Override

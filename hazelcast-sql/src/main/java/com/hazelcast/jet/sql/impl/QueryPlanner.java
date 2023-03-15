@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import org.apache.calcite.tools.Program;
 import org.apache.calcite.tools.Programs;
 import org.apache.calcite.tools.RuleSet;
 
+import java.io.PrintWriter;
+
 /**
  * Performs query planning.
  */
@@ -45,5 +47,9 @@ public class QueryPlanner {
                 ImmutableList.of(),
                 ImmutableList.of()
         );
+    }
+
+    public void dump(PrintWriter pw) {
+        planner.dump(pw);
     }
 }

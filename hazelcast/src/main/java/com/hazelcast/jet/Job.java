@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.config.MetricsConfig;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.DAG;
@@ -28,6 +29,7 @@ import com.hazelcast.jet.pipeline.Pipeline;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 
@@ -134,12 +136,7 @@ public interface Job {
      * submission. For light jobs it always returns {@code null}.
      */
     @Nullable
-    default String getName() {
-        if (isLightJob()) {
-            return null;
-        }
-        return getConfig().getName();
-    }
+    String getName();
 
     /**
      * Returns the current status of this job. Each invocation queries the
@@ -150,6 +147,36 @@ public interface Job {
     @Nonnull
     JobStatus getStatus();
 
+    /**
+     * Returns true, if the job is user-cancelled. Returns false, if it
+     * completed normally or failed due to another error. Jobs running in
+     * clusters before version 5.3 lack this information and will always return
+     * false.
+     *
+     * @throws IllegalStateException if the job is not done.
+     * @since 5.3
+     */
+    boolean isUserCancelled();
+
+    /**
+     * Associates the given listener to this job. The listener is automatically
+     * removed after a {@linkplain JobStatus#isTerminal terminal event}.
+     *
+     * @return The registration id
+     * @throws UnsupportedOperationException if the cluster version is less than 5.3
+     * @since 5.3
+     */
+    UUID addStatusListener(@Nonnull JobStatusListener listener);
+
+    /**
+     * Stops delivering all events to the listener with the given registration id.
+     *
+     * @return Whether the specified registration was removed
+     * @throws UnsupportedOperationException if the cluster version is less than 5.3
+     * @since 5.3
+     */
+    boolean removeStatusListener(@Nonnull UUID id);
+
     // ### Methods below apply only to normal (non-light) jobs.
 
 
@@ -159,6 +186,16 @@ public interface Job {
      */
     @Nonnull
     JobConfig getConfig();
+
+    /**
+     * Applies the specified delta configuration to a {@link #suspend()
+     * suspended} job and returns the updated configuration.
+     *
+     * @throws IllegalStateException if this job is not suspended
+     * @throws UnsupportedOperationException if called for a light job
+     * @since 5.3
+     */
+    JobConfig updateConfig(@Nonnull DeltaJobConfig deltaConfig);
 
     /**
      * Return a {@link JobSuspensionCause description of the cause} that has

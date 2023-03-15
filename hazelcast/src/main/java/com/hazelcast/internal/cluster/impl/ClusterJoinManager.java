@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -705,9 +705,10 @@ public class ClusterJoinManager {
         // If I am the master, I will just suspect from the target. If it sends a new join request, it will be processed.
         // If I am not the current master, I can turn into the new master and start the claim process
         // after I suspect from the target.
-        if (clusterService.isMaster() || targetAddress.equals(clusterService.getMasterAddress())) {
+        if (!hasMemberLeft(joinMessage.getUuid())
+                && (clusterService.isMaster() || targetAddress.equals(clusterService.getMasterAddress()))) {
             String msg = format("New join request has been received from an existing endpoint %s."
-                    + " Removing old member and processing join request...", member);
+                    + " Removing old member and processing join request with UUID %s", member, joinMessage.getUuid());
             logger.warning(msg);
 
             clusterService.suspectMember(member, msg, false);

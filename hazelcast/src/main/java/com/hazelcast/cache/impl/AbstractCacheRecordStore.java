@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,7 +114,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected final int partitionId;
     protected final int partitionCount;
-    protected final boolean wanReplicationEnabled;
     protected final boolean persistWanReplicatedData;
     protected final boolean disablePerEntryInvalidationEvents;
     /**
@@ -169,7 +168,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         if (evictionConfig == null) {
             throw new IllegalStateException("Eviction config cannot be null!");
         }
-        this.wanReplicationEnabled = cacheService.isWanReplicationEnabled(cacheNameWithPrefix);
         this.disablePerEntryInvalidationEvents = cacheConfig.isDisablePerEntryInvalidationEvents();
 
         EvictionPolicyComparator evictionPolicyComparator = createEvictionPolicyComparator(evictionConfig);
@@ -383,7 +381,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected boolean isEventsEnabled() {
-        return eventsEnabled && (cacheContext.getCacheEntryListenerCount() > 0 || wanReplicationEnabled);
+        return eventsEnabled && (cacheContext.getCacheEntryListenerCount() > 0 || isWanReplicationEnabled());
     }
 
     protected boolean isInvalidationEnabled() {
@@ -1962,7 +1960,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public boolean isWanReplicationEnabled() {
-        return wanReplicationEnabled;
+        return cacheService.isWanReplicationEnabled(name);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastSchema;
 import com.hazelcast.jet.sql.impl.schema.HazelcastSchemaUtils;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.IMapResolver;
@@ -51,6 +52,8 @@ import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.tools.RuleSet;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
@@ -224,5 +227,13 @@ public final class OptimizerContext {
 
     public Set<PlanObjectKey> getUsedViews() {
         return usedViews;
+    }
+
+    public void dump(ILogger logger) {
+        StringWriter sw = new StringWriter();
+        final PrintWriter pw = new PrintWriter(sw);
+        planner.dump(pw);
+        pw.flush();
+        logger.info(sw.toString());
     }
 }

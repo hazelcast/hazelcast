@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -533,7 +533,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
         msg = msg + " , ReplicaVersions: " + Arrays.toString(replicaVersions);
         if (shouldContainData) {
             if (replicaIndex == 0) {
-                assertArrayEquals(msg, replicaVersions, new long[]{1, 1, 1, 1, 1, 1});
+                assertArrayEquals(msg, new long[]{1, 1, 1, 1, 1, 1}, replicaVersions);
             } else {
                 for (int i = 1; i < InternalPartition.MAX_BACKUP_COUNT; i++) {
                     if (i < replicaIndex || i > BACKUP_COUNT) {
@@ -544,7 +544,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
                 }
             }
         } else {
-            assertArrayEquals(msg, replicaVersions, new long[]{0, 0, 0, 0, 0, 0});
+            assertArrayEquals(msg, new long[]{0, 0, 0, 0, 0, 0}, replicaVersions);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -462,7 +462,7 @@ public final class OptUtils {
         }
     }
 
-    private static int findKeyIndex(Table table) {
+    public static int findKeyIndex(Table table) {
         List<String> primaryKey = SqlConnectorUtil.getJetSqlConnector(table).getPrimaryKey(table);
         // just single field keys supported at the moment
         assert primaryKey.size() == 1;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.CacheDeserializedValues;
+import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
@@ -30,8 +31,8 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
-import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.WanReplicationRef;
@@ -65,6 +66,7 @@ public class MapConfigReadOnly extends MapConfig {
     private final List<QueryCacheConfig> queryCacheConfigsReadOnly;
     private final List<EntryListenerConfig> entryListenerConfigsReadOnly;
     private final TieredStoreConfigReadOnly tieredStoreConfigReadOnly;
+    private final List<PartitioningAttributeConfig> partitioningAttributeConfigsReadOnly;
 
     public MapConfigReadOnly(MapConfig config) {
         super(config);
@@ -107,6 +109,8 @@ public class MapConfigReadOnly extends MapConfig {
 
         TieredStoreConfig tieredStoreConfig = super.getTieredStoreConfig();
         tieredStoreConfigReadOnly = new TieredStoreConfigReadOnly(tieredStoreConfig);
+
+        partitioningAttributeConfigsReadOnly = getPartitioningAttributeConfigsReadOnly();
     }
 
     private List<EntryListenerConfig> getEntryListenerConfigsReadOnly() {
@@ -159,6 +163,20 @@ public class MapConfigReadOnly extends MapConfig {
             readOnlyIndexConfigs.add(new IndexConfigReadOnly(indexConfig));
         }
         return Collections.unmodifiableList(readOnlyIndexConfigs);
+    }
+
+    private List<PartitioningAttributeConfig> getPartitioningAttributeConfigsReadOnly() {
+        List<PartitioningAttributeConfig> attributeConfigs = super.getPartitioningAttributeConfigs();
+        if (CollectionUtil.isEmpty(attributeConfigs)) {
+            return Collections.emptyList();
+        }
+
+        List<PartitioningAttributeConfig> readOnlyAttributeConfigs = new ArrayList<>(attributeConfigs.size());
+        for (PartitioningAttributeConfig attributeConfig : attributeConfigs) {
+            readOnlyAttributeConfigs.add(new PartitioningAttributeConfigReadOnly(attributeConfig));
+        }
+
+        return Collections.unmodifiableList(readOnlyAttributeConfigs);
     }
 
     @Override
@@ -234,6 +252,11 @@ public class MapConfigReadOnly extends MapConfig {
     @Override
     public TieredStoreConfig getTieredStoreConfig() {
         return tieredStoreConfigReadOnly;
+    }
+
+    @Override
+    public List<PartitioningAttributeConfig> getPartitioningAttributeConfigs() {
+        return partitioningAttributeConfigsReadOnly;
     }
 
     @Override
@@ -368,6 +391,11 @@ public class MapConfigReadOnly extends MapConfig {
 
     @Override
     public MapConfig setIndexConfigs(List<IndexConfig> indexConfigs) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public MapConfig setPartitioningAttributeConfigs(final List<PartitioningAttributeConfig> partitioningAttributeConfigs) {
         throw throwReadOnly();
     }
 

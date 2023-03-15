@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import com.hazelcast.sql.impl.expression.RowExpression;
 import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.expression.SargExpression;
 import com.hazelcast.sql.impl.expression.datetime.ExtractFunction;
+import com.hazelcast.sql.impl.expression.datetime.ToCharFunction;
 import com.hazelcast.sql.impl.expression.datetime.ToEpochMillisFunction;
 import com.hazelcast.sql.impl.expression.datetime.ToTimestampTzFunction;
 import com.hazelcast.sql.impl.expression.math.AbsFunction;
@@ -80,6 +81,7 @@ import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.datalink.DataLink;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -110,6 +112,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int INDEX_FILTER_RANGE = 7;
     public static final int INDEX_FILTER_IN = 8;
 
+    public static final int EXPRESSION_TO_CHAR = 9;
     public static final int EXPRESSION_COLUMN = 10;
     public static final int EXPRESSION_IS_NULL = 11;
 
@@ -180,7 +183,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int ROW_VALUE = 66;
     public static final int QUERY_DATA_TYPE_FIELD = 67;
 
-    public static final int LEN = QUERY_DATA_TYPE_FIELD + 1;
+    public static final int DATA_LINK = 68;
+
+    public static final int LEN = DATA_LINK + 1;
 
     @Override
     public int getFactoryId() {
@@ -206,6 +211,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[INDEX_FILTER_RANGE] = arg -> new IndexRangeFilter();
         constructors[INDEX_FILTER_IN] = arg -> new IndexCompositeFilter();
 
+        constructors[EXPRESSION_TO_CHAR] = arg -> new ToCharFunction();
         constructors[EXPRESSION_COLUMN] = arg -> new ColumnExpression<>();
         constructors[EXPRESSION_IS_NULL] = arg -> new IsNullPredicate();
 
@@ -273,6 +279,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_ROW] = arg -> new RowExpression();
         constructors[ROW_VALUE] = arg -> new RowValue();
         constructors[QUERY_DATA_TYPE_FIELD] = arg -> new QueryDataType.QueryDataTypeField();
+        constructors[DATA_LINK] = arg -> new DataLink();
 
         return new ArrayDataSerializableFactory(constructors);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@ package com.hazelcast.internal.serialization.impl.compact.schema;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
-import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.ArrayList;
@@ -31,8 +31,11 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 
 /**
  * Manages the replication of the schemas across the cluster.
@@ -53,6 +56,7 @@ public class SchemaReplicator {
 
     // Not final due to late initialization with init method.
     private NodeEngine nodeEngine;
+    private Executor internalAsyncExecutor;
 
     public SchemaReplicator(MemberSchemaService schemaService) {
         this.schemaService = schemaService;
@@ -66,6 +70,8 @@ public class SchemaReplicator {
      */
     public void init(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.internalAsyncExecutor = nodeEngine.getExecutionService()
+                .getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
     /**
@@ -187,7 +193,7 @@ public class SchemaReplicator {
                     } else {
                         future.completeExceptionally(throwable);
                     }
-                }, ConcurrencyUtil.getDefaultAsyncExecutor());
+                }, internalAsyncExecutor);
         return future;
     }
 
@@ -270,12 +276,12 @@ public class SchemaReplicator {
         long schemaId = schema.getSchemaId();
         try {
             prepareOnCaller(schema)
-                    .thenCompose(result -> {
+                    .thenComposeAsync(result -> {
                         markSchemaAsPrepared(schema);
                         return sendRequestForPreparation(schema);
-                    })
-                    .thenCompose(result -> sendRequestForAcknowledgment(schemaId))
-                    .thenAccept(result -> completeInFlightOperation(schemaId, future, result))
+                    }, CALLER_RUNS)
+                    .thenComposeAsync(result -> sendRequestForAcknowledgment(schemaId), CALLER_RUNS)
+                    .thenAcceptAsync(result -> completeInFlightOperation(schemaId, future, result), CALLER_RUNS)
                     .exceptionally(throwable -> {
                         completeInFlightOperationExceptionally(schemaId, future, throwable);
                         return null;
@@ -295,8 +301,8 @@ public class SchemaReplicator {
         long schemaId = schema.getSchemaId();
         try {
             sendRequestForPreparation(schema)
-                    .thenCompose(result -> sendRequestForAcknowledgment(schemaId))
-                    .thenAccept(result -> completeInFlightOperation(schemaId, future, result))
+                    .thenComposeAsync(result -> sendRequestForAcknowledgment(schemaId), CALLER_RUNS)
+                    .thenAcceptAsync(result -> completeInFlightOperation(schemaId, future, result), CALLER_RUNS)
                     .exceptionally(throwable -> {
                         completeInFlightOperationExceptionally(schemaId, future, throwable);
                         return null;

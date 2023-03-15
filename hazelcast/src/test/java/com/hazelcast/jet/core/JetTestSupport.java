@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,6 +75,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -489,15 +490,12 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
     /**
      * Cancel the job and wait until it cancels using {@link Job#join()},
-     * ignoring the CancellationException.
+     * ignoring the {@link CancellationException}.
      */
     public static void cancelAndJoin(@Nonnull Job job) {
         job.cancel();
-        try {
-            job.join();
-            fail("join didn't fail with CancellationException");
-        } catch (CancellationException ignored) {
-        }
+        assertThatThrownBy(job::join).as("join didn't fail with CancellationException")
+                .isInstanceOf(CancellationException.class);
     }
 
     public static <T> ProcessorMetaSupplier processorFromPipelineSource(BatchSource<T> source) {

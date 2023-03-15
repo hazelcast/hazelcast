@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
-import com.hazelcast.jet.sql.impl.schema.TablesStorage;
+import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import org.apache.calcite.rel.RelNode;
@@ -57,7 +57,10 @@ public class CalcDropLateItemsTransposeTest extends OptimizerTestSupport {
     @Before
     public void setUp() throws Exception {
         NodeEngine nodeEngine = getNodeEngine(instance());
-        resolver = new TableResolverImpl(nodeEngine, new TablesStorage(nodeEngine), new SqlConnectorCache(nodeEngine));
+        resolver = new TableResolverImpl(
+                nodeEngine,
+                new RelationsStorage(nodeEngine),
+                new SqlConnectorCache(nodeEngine));
 
         String stream = "stream1";
         TestStreamSqlConnector.create(

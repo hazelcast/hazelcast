@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -58,15 +59,16 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
     }
 
     @Override
+    @SuppressWarnings("checkstyle:ParameterNumber")
     protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, byte version,
                                        int partitionCount, UUID clusterId, boolean clientFailoverSupported,
-                                       boolean isAuthenticated) {
+                                       boolean isAuthenticated, List<Integer> altoPorts) {
         String serverHazelcastVersion = "";
         if (isAuthenticated) {
             serverHazelcastVersion = getMemberBuildInfo().getVersion();
         }
         return ClientAuthenticationCodec.encodeResponse(status, thisAddress, uuid, version, serverHazelcastVersion,
-                partitionCount, clusterId, clientFailoverSupported);
+                partitionCount, clusterId, clientFailoverSupported, altoPorts);
     }
 
     @Override

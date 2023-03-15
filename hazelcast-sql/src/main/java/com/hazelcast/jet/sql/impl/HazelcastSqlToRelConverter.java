@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,13 @@ import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
 import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonParseFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonValueFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastBetweenOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastUdtObjectToJsonFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastReturnTypeInference;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 import org.apache.calcite.plan.RelOptCluster;
@@ -241,6 +243,10 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
         if (literal != null && HazelcastTypeUtils.isJsonType(to)) {
             return getRexBuilder().makeCall(HazelcastJsonParseFunction.INSTANCE, convertedOperand);
+        }
+
+        if (toType.getTypeFamily().equals(QueryDataTypeFamily.JSON) && fromType.isCustomType()) {
+            return getRexBuilder().makeCall(HazelcastUdtObjectToJsonFunction.INSTANCE, convertedOperand);
         }
 
         // Delegate to Apache Calcite.

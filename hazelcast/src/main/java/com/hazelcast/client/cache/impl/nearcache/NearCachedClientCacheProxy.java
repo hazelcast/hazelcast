@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,6 +65,7 @@ import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
 import static com.hazelcast.internal.nearcache.NearCache.UpdateSemantic.READ_UPDATE;
 import static com.hazelcast.internal.nearcache.NearCache.UpdateSemantic.WRITE_UPDATE;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getDefaultAsyncExecutor;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
@@ -324,7 +325,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
             } finally {
                 invalidateNearCache(toNearCacheKey(key, keyData));
             }
-        });
+        }, getDefaultAsyncExecutor());
     }
 
     @Nonnull
@@ -347,7 +348,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                 statsCallback.accept(t, throwable);
             }
             invalidateNearCache(toNearCacheKey(key, keyData));
-        });
+        }, getDefaultAsyncExecutor());
     }
 
     @Override
@@ -907,7 +908,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                     // Remove reservation, we haven't managed to put value.
                     invalidateNearCache(nearCacheKey);
                 }
-            });
+            }, getDefaultAsyncExecutor());
         } else {
             return future.whenCompleteAsync((response, throwable) -> {
                 if (statsCallback != null) {
@@ -915,7 +916,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                 }
 
                 invalidateNearCache(nearCacheKey);
-            });
+            }, getDefaultAsyncExecutor());
         }
     }
 

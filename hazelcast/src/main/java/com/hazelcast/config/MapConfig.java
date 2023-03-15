@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -140,6 +140,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
             .setMaxSizePolicy(DEFAULT_MAX_SIZE_POLICY)
             .setSize(DEFAULT_MAX_SIZE);
     private TieredStoreConfig tieredStoreConfig = new TieredStoreConfig();
+    private List<PartitioningAttributeConfig> partitioningAttributeConfigs;
 
     public MapConfig() {
     }
@@ -178,6 +179,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         this.merkleTreeConfig = new MerkleTreeConfig(config.merkleTreeConfig);
         this.eventJournalConfig = new EventJournalConfig(config.eventJournalConfig);
         this.tieredStoreConfig = new TieredStoreConfig(config.tieredStoreConfig);
+        this.partitioningAttributeConfigs = new ArrayList<>(config.getPartitioningAttributeConfigs());
     }
 
     /**
@@ -265,6 +267,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
      * 0 means no sync backup.
      *
      * @param backupCount the number of synchronous backups to set for this {@link IMap}
+     * @return the updated MapConfig
      * @see #setAsyncBackupCount(int)
      */
     public MapConfig setBackupCount(final int backupCount) {
@@ -286,7 +289,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
      * Sets the number of asynchronous backups. 0 means no backups.
      *
      * @param asyncBackupCount the number of asynchronous synchronous backups to set
-     * @return the updated CacheConfig
+     * @return the updated MapConfig
      * @throws IllegalArgumentException if asyncBackupCount smaller than
      *                                  0, or larger than the maximum number of backup or the sum of the
      *                                  backups and async backups is larger than the maximum number of backups
@@ -807,6 +810,25 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         return this;
     }
 
+    /**
+     * Get Partition Attribute configs used for creation of
+     * {@link com.hazelcast.partition.strategy.AttributePartitioningStrategy}
+     *
+     * @return list of partitioning attribute configs
+     */
+    public List<PartitioningAttributeConfig> getPartitioningAttributeConfigs() {
+        if (partitioningAttributeConfigs == null) {
+            partitioningAttributeConfigs = new ArrayList<>();
+        }
+
+        return partitioningAttributeConfigs;
+    }
+
+    public MapConfig setPartitioningAttributeConfigs(final List<PartitioningAttributeConfig> partitioningAttributeConfigs) {
+        this.partitioningAttributeConfigs = partitioningAttributeConfigs;
+        return this;
+    }
+
     @Override
     @SuppressWarnings("checkstyle:methodlength")
     public final boolean equals(Object o) {
@@ -899,6 +921,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         if (!tieredStoreConfig.equals(that.tieredStoreConfig)) {
             return false;
         }
+        if (!getPartitioningAttributeConfigs().equals(that.getPartitioningAttributeConfigs())) {
+            return false;
+        }
 
         return hotRestartConfig.equals(that.hotRestartConfig);
     }
@@ -933,6 +958,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         result = 31 * result + hotRestartConfig.hashCode();
         result = 31 * result + dataPersistenceConfig.hashCode();
         result = 31 * result + tieredStoreConfig.hashCode();
+        result = 31 * result + getPartitioningAttributeConfigs().hashCode();
         return result;
     }
 
@@ -965,6 +991,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", entryStatsEnabled=" + perEntryStatsEnabled
                 + ", tieredStoreConfig=" + tieredStoreConfig
+                + ", partitioningAttributeConfigs=" + partitioningAttributeConfigs
                 + '}';
     }
 
@@ -1008,6 +1035,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         out.writeBoolean(perEntryStatsEnabled);
         out.writeObject(dataPersistenceConfig);
         out.writeObject(tieredStoreConfig);
+        writeNullableList(partitioningAttributeConfigs, out);
     }
 
     @Override
@@ -1040,5 +1068,6 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         perEntryStatsEnabled = in.readBoolean();
         setDataPersistenceConfig(in.readObject());
         setTieredStoreConfig(in.readObject());
+        partitioningAttributeConfigs = readNullableList(in);
     }
 }

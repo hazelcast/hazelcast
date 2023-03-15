@@ -290,8 +290,8 @@ To prove that the example is correct, there:
    with the rows that we removed from the buffers (i.e. "we didn't remove too
    much")
 2. must not be anything in the buffer what would not join with the lowest row
-   the processor could possibly receive in the future (i.e. "we don't store what
-   we won't need again")
+   the processor could possibly receive in the future (i.e. "we don't store too
+   much")
 
 ```
 Rule 1:
@@ -467,3 +467,105 @@ The following tests will be created:
 - automated integration tests as a subset of above tests which will be run using
   Kafka streams.
 - SOAK durability tests which will verify stability over time.
+
+### Fault tolerance
+
+Since: HZ 5.3
+
+For fault tolerance, we need to save the contents of the buffers, and also
+ensure that if a null-padded row was emitted, after restore, a matching row
+that's _not late by chance_ isn't emitted, and conversely, if some joined row
+was emitted, a null-padded row is not emitted after restart. To ensure the
+latter, we need to save a flag whether a row was unused along with the row.
+
+The processor uses two routing schemes:
+
+- for equi-join, we globally partition both inputs using the equi-join fields.
+  To save the buffers, we'll use the partitioning key with each snapshot entry.
+  After restore, items will be repartitioned to the new set of processors.
+
+- for the broadcast-unicast case, we'll save the broadcast side using a
+  `broadcastKey`, but we'll do it only on processor with global index 0. This way
+  we'll ensure that only one copy is saved, and the one copy will be re-broadcast
+  after restore. For the unicast side, each processor will save all its items, but
+  we have to ensure that the entry is saved to some local partition, to avoid
+  sending the primary copy of the snapshot data over the network.
+
+Along with the buffer data, we need to save additional information to ensure
+that items that were already removed from the buffer, and for which a
+null-padded row was already emitted aren't joined with a row that is not late
+after a restart. This can happen because watermarks after the restart can be
+delayed differently than they were before the restart, because, for example,
+some source takes longer time to initialize, and watermarks are coalesced.
+
+Example:
+```
+Join condition: l.time=r.time
+LEFT JOIN
+
+in: l1(time=10)
+in: r1(time=10)
+out: joined(l1, r1)
+in: wm(l.time=15)
+out: wm(l.time=10)
+--> row `r1` removed from buffer
+# processor restarted, state saved and restored
+in: l2(time=10)
+--> Row `l2` would be late before the snapshot, but now isn't late.
+     However we already removed the matching row. Later we'll emit
+     `joined(l2, null)`, and the user will see both `l2` and `r1` in the output,
+     but not correctly joined.
+```
+
+To avoid the issue in the example, it seems we need to save `lastEmittedWm` for
+each WM key to the snapshot. By using approach similar to `SlidingWindowP`, we
+can use `broadcastKey`, and when restoring, take the minimum of all the restored
+values. But in `SlidingWindowP`, in exactly-once mode, all the values are
+guaranteed to be equal, because when a WM is broadcast through a distributed
+edge, since all processors receive the same set of watermarks before receiving
+the barrier, they will be coalesced to the same value for each processor. This
+does not hold in at-least-once mode, because watermarks can overtake barriers,
+but let's put this issue aside.
+
+This is not the case in `StreamToStreamJoinP`, because the `lastEmittedWm` value
+doesn't depend solely on the input WM, as in `SlidingWindowP`, but also on the
+`minBufferTime` value. Currently, the formula for output WM is:
+```
+outputWm = min(lastReceivedWm, minBufferTime)
+```
+
+Since the `lastEmittedWm` can effectively go back after restart even in
+exactly-once mode, the same issue as in the example above is possible, because
+what was late before the restart, might not be late after the restart.
+
+The `minBufferTime` is the lower bound for the time value _actually_ in the
+buffer. It depends on the actual buffered rows in each processor, and that's
+different in each processor. Instead of `minBufferTime` we could use `wmState`,
+which is the lower bound for the time value _possibly_ in the buffer. This value
+is the same in each processor (in ex-once mode), because it depends solely on
+the received watermarks and the postpone times. Therefore, if we change the
+formula to this:
+
+```
+outputWm = min(lastReceivedWm, wmState)
+```
+
+The `lastEmittedWm` will now be equal in all processors, because
+`lastReceivedWm` and `wmState` are also equal.
+
+This will slightly increase the output WM latency. Thanks to coalescing, the
+processors downstream from this processor would receive the WM capped by the
+minimum time in buffers in all processors, while after this change they will
+receive the lowest possible value. We consider this issue to be minor, because
+if there are sufficient events, the difference is small. If there's an event for
+every instant, the difference is zero. And, most importantly, it fixes the issue
+with incorrect results after a restart.
+
+An alternative solution would be to continue emitting WMs using the minimum
+buffer time, but we would need to store the `lastEmittedWm` with each key saved
+to the state, and also, when restoring, we would need to track the value for
+each key so that we can correctly evaluate whether a row is late or not. So
+we'll have a larger snapshot, and also larger runtime state and a lot more
+complex code, and we don't consider it worth for the benefit of lower latency in
+low-traffic scenario. I didn't even consider how would this be implemented for
+the broadcast-unicast case.

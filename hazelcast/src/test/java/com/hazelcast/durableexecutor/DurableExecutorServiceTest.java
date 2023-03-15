@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -371,7 +371,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         Callable<String> task = new BasicTestCallable();
         DurableExecutorService executor = createSingleNodeDurableExecutorService("testBasicTask");
         Future<String> future = executor.submit(task);
-        assertEquals(future.get(), BasicTestCallable.RESULT);
+        assertEquals(BasicTestCallable.RESULT, future.get());
     }
 
     @Test
@@ -465,7 +465,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     /* ############ future ############ */
 
     private void assertResult(Future<?> future, Object expected) throws Exception {
-        assertEquals(future.get(), expected);
+        assertEquals(expected, future.get());
         assertTrue(future.isDone());
     }
 

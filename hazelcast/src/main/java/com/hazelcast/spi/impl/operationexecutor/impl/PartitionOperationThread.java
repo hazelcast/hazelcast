@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,9 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION
  * An {@link OperationThread} that executes Operations for a particular partition,
  * e.g. a map.get operation.
  */
-public final class PartitionOperationThread extends OperationThread {
+public class PartitionOperationThread extends OperationThread {
 
-    private final OperationRunner[] partitionOperationRunners;
+    OperationRunner[] partitionOperationRunners;
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
     public PartitionOperationThread(String name,

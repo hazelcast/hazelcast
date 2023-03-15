@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,10 @@ public class ExceptionRecorder implements LogListener {
 
     @SuppressWarnings("UnstableApiUsage")
     private final Collection<Throwable> throwables = synchronizedCollection(EvictingQueue.create(100));
+
+    public ExceptionRecorder(HazelcastInstance instance, Level level) {
+        this(new HazelcastInstance[]{instance}, level);
+    }
 
     public ExceptionRecorder(HazelcastInstance[] instances, Level level) {
         this.instances = instances;

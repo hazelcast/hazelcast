@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
-import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.impl.util.ConstantFunctionEx;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
@@ -154,7 +153,7 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
     }
 
     @Override
-    public Vertex accept(CreateDagVisitor visitor) {
+    public <V> V accept(CreateDagVisitor<V> visitor) {
         return visitor.onSlidingWindowAggregate(this);
     }
 

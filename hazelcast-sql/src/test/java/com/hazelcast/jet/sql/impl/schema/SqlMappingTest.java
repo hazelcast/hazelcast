@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -179,9 +179,9 @@ public class SqlMappingTest extends SqlTestSupport {
                     "OPTIONS('keyFormat'='java', 'keyJavaClass'='" + javaClassName + "', 'valueFormat'='json-flat')");
         }
 
-        TablesStorage tablesStorage = new TablesStorage(getNodeEngineImpl(instance()));
-        assertEquals(aliases.length, tablesStorage.allObjects().size());
-        Iterator<Object> iterator = tablesStorage.allObjects().iterator();
+        RelationsStorage relationsStorage = new RelationsStorage(getNodeEngineImpl(instance()));
+        assertEquals(aliases.length, relationsStorage.allObjects().size());
+        Iterator<Object> iterator = relationsStorage.allObjects().iterator();
 
         // the two mappings must be equal, except for their name & objectName
         Object firstMapping = iterator.next();

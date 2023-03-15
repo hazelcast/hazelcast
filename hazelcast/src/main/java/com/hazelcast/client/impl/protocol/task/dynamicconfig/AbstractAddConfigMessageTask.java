@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,8 @@ import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
+
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 
 /**
  * Base implementation for dynamic add***Config methods.
@@ -72,7 +74,7 @@ public abstract class AbstractAddConfigMessageTask<P> extends AbstractMessageTas
         ClusterWideConfigurationService service = getService(ConfigurationService.SERVICE_NAME);
         if (checkStaticConfigDoesNotExist(config)) {
             service.broadcastConfigAsync(config)
-                   .whenCompleteAsync(this);
+                   .whenCompleteAsync(this, CALLER_RUNS);
         } else {
             sendResponse(null);
         }

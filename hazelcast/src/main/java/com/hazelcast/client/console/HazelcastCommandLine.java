@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -189,9 +189,11 @@ public class HazelcastCommandLine implements Runnable {
             printf("Will restore the job from the snapshot with name '%s'", snapshotName);
         }
 
+        // calledByMember is false because when job upload is called by client side we want the HazelcastInstance
+        // to be closed
         HazelcastBootstrap.executeJar(
                 () -> getHazelcastClient(false),
-                file.getAbsolutePath(), snapshotName, name, mainClass, params);
+                file.getAbsolutePath(), snapshotName, name, mainClass, params, false);
     }
 
     @Command(
@@ -357,7 +359,7 @@ public class HazelcastCommandLine implements Runnable {
                     .filter(job -> listAll || isActive(job.getStatus()))
                     .forEach(job -> {
                         String idString = idToString(job.getJobId());
-                        String name = job.getName().equals(idString) ? "N/A" : job.getName();
+                        String name = job.getNameOrId().equals(idString) ? "N/A" : job.getNameOrId();
                         printf(format, idString, job.getStatus(), toLocalDateTime(job.getSubmissionTime()), name);
                     });
         });

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +44,7 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 public final class UpdatingEntryProcessor
         implements EntryProcessor<Object, Object, Long>, SerializationServiceAware, DataSerializable {
@@ -105,9 +107,13 @@ public final class UpdatingEntryProcessor
     }
 
     public static Supplier supplier(
-            PartitionedMapTable table,
-            Map<String, Expression<?>> updatesByFieldNames
+            @Nonnull PartitionedMapTable table,
+            @Nonnull List<String> fieldNames,
+            @Nonnull List<Expression<?>> expressions
     ) {
+        assert fieldNames.size() == expressions.size();
+        Map<String, Expression<?>> updatesByFieldNames = IntStream.range(0, fieldNames.size()).boxed()
+                .collect(toMap(fieldNames::get, expressions::get));
         table.keyFields().filter(field -> updatesByFieldNames.containsKey(field.getName())).findFirst().ifPresent(field -> {
             throw QueryException.error("Cannot update '" + field.getName() + '\'');
         });

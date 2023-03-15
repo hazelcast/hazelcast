@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,6 +97,7 @@ import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.addCal
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.getSafely;
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.handleFailureOnCompletionListener;
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getDefaultAsyncExecutor;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowedTypeFirst;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
@@ -995,7 +996,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
                     loadAllCalls.remove(delFuture);
                     handleFailureOnCompletionListener(listener, t);
                 }
-            });
+            }, getDefaultAsyncExecutor());
         } catch (Throwable t) {
             if (delegatingFuture != null) {
                 loadAllCalls.remove(delegatingFuture);

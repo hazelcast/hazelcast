@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ public class MemberCompatibilityNullTest_2_6 {
     @Test
     public void test_ClientAuthenticationCodec_encodeResponse() {
         int fileClientMessageIndex = 1;
-        ClientMessage encoded = ClientAuthenticationCodec.encodeResponse(aByte, null, null, aByte, aString, anInt, aUUID, aBoolean);
+        ClientMessage encoded = ClientAuthenticationCodec.encodeResponse(aByte, null, null, aByte, aString, anInt, aUUID, aBoolean, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -106,7 +106,7 @@ public class MemberCompatibilityNullTest_2_6 {
     @Test
     public void test_ClientAuthenticationCustomCodec_encodeResponse() {
         int fileClientMessageIndex = 3;
-        ClientMessage encoded = ClientAuthenticationCustomCodec.encodeResponse(aByte, null, null, aByte, aString, anInt, aUUID, aBoolean);
+        ClientMessage encoded = ClientAuthenticationCustomCodec.encodeResponse(aByte, null, null, aByte, aString, anInt, aUUID, aBoolean, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6815,10 +6815,10 @@ public class MemberCompatibilityNullTest_2_6 {
     }
 
     @Test
-    public void test_DynamicConfigAddExternalDataStoreConfigCodec_decodeRequest() {
+    public void test_DynamicConfigAddDataLinkConfigCodec_decodeRequest() {
         int fileClientMessageIndex = 757;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        DynamicConfigAddExternalDataStoreConfigCodec.RequestParameters parameters = DynamicConfigAddExternalDataStoreConfigCodec.decodeRequest(fromFile);
+        DynamicConfigAddDataLinkConfigCodec.RequestParameters parameters = DynamicConfigAddDataLinkConfigCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
         assertTrue(isEqual(aString, parameters.className));
         assertTrue(isEqual(aBoolean, parameters.shared));
@@ -6826,9 +6826,9 @@ public class MemberCompatibilityNullTest_2_6 {
     }
 
     @Test
-    public void test_DynamicConfigAddExternalDataStoreConfigCodec_encodeResponse() {
+    public void test_DynamicConfigAddDataLinkConfigCodec_encodeResponse() {
         int fileClientMessageIndex = 758;
-        ClientMessage encoded = DynamicConfigAddExternalDataStoreConfigCodec.encodeResponse();
+        ClientMessage encoded = DynamicConfigAddDataLinkConfigCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -7603,7 +7603,7 @@ public class MemberCompatibilityNullTest_2_6 {
     @Test
     public void test_SqlExecuteCodec_encodeResponse() {
         int fileClientMessageIndex = 856;
-        ClientMessage encoded = SqlExecuteCodec.encodeResponse(null, null, aLong, null, aBoolean);
+        ClientMessage encoded = SqlExecuteCodec.encodeResponse(null, null, aLong, null, aBoolean, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -7945,6 +7945,124 @@ public class MemberCompatibilityNullTest_2_6 {
     public void test_JetGetJobAndSqlSummaryListCodec_encodeResponse() {
         int fileClientMessageIndex = 898;
         ClientMessage encoded = JetGetJobAndSqlSummaryListCodec.encodeResponse(aListJobAndSqlSummary);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetIsJobUserCancelledCodec_decodeRequest() {
+        int fileClientMessageIndex = 899;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aLong, JetIsJobUserCancelledCodec.decodeRequest(fromFile)));
+    }
+
+    @Test
+    public void test_JetIsJobUserCancelledCodec_encodeResponse() {
+        int fileClientMessageIndex = 900;
+        ClientMessage encoded = JetIsJobUserCancelledCodec.encodeResponse(aBoolean);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetUploadJobMetaDataCodec_decodeRequest() {
+        int fileClientMessageIndex = 901;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        JetUploadJobMetaDataCodec.RequestParameters parameters = JetUploadJobMetaDataCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aUUID, parameters.sessionId));
+        assertTrue(isEqual(aBoolean, parameters.jarOnMember));
+        assertTrue(isEqual(aString, parameters.fileName));
+        assertTrue(isEqual(aString, parameters.sha256Hex));
+        assertTrue(isEqual(null, parameters.snapshotName));
+        assertTrue(isEqual(null, parameters.jobName));
+        assertTrue(isEqual(null, parameters.mainClass));
+        assertTrue(isEqual(aListOfStrings, parameters.jobParameters));
+    }
+
+    @Test
+    public void test_JetUploadJobMetaDataCodec_encodeResponse() {
+        int fileClientMessageIndex = 902;
+        ClientMessage encoded = JetUploadJobMetaDataCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetUploadJobMultipartCodec_decodeRequest() {
+        int fileClientMessageIndex = 903;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        JetUploadJobMultipartCodec.RequestParameters parameters = JetUploadJobMultipartCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aUUID, parameters.sessionId));
+        assertTrue(isEqual(anInt, parameters.currentPartNumber));
+        assertTrue(isEqual(anInt, parameters.totalPartNumber));
+        assertTrue(isEqual(aByteArray, parameters.partData));
+        assertTrue(isEqual(anInt, parameters.partSize));
+        assertTrue(isEqual(aString, parameters.sha256Hex));
+    }
+
+    @Test
+    public void test_JetUploadJobMultipartCodec_encodeResponse() {
+        int fileClientMessageIndex = 904;
+        ClientMessage encoded = JetUploadJobMultipartCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetAddJobStatusListenerCodec_decodeRequest() {
+        int fileClientMessageIndex = 905;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        JetAddJobStatusListenerCodec.RequestParameters parameters = JetAddJobStatusListenerCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aLong, parameters.jobId));
+        assertTrue(isEqual(aBoolean, parameters.localOnly));
+    }
+
+    @Test
+    public void test_JetAddJobStatusListenerCodec_encodeResponse() {
+        int fileClientMessageIndex = 906;
+        ClientMessage encoded = JetAddJobStatusListenerCodec.encodeResponse(null);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetAddJobStatusListenerCodec_encodeJobStatusEvent() {
+        int fileClientMessageIndex = 907;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        ClientMessage encoded = JetAddJobStatusListenerCodec.encodeJobStatusEvent(aLong, anInt, anInt, null, aBoolean);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetRemoveJobStatusListenerCodec_decodeRequest() {
+        int fileClientMessageIndex = 908;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        JetRemoveJobStatusListenerCodec.RequestParameters parameters = JetRemoveJobStatusListenerCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aLong, parameters.jobId));
+        assertTrue(isEqual(aUUID, parameters.registrationId));
+    }
+
+    @Test
+    public void test_JetRemoveJobStatusListenerCodec_encodeResponse() {
+        int fileClientMessageIndex = 909;
+        ClientMessage encoded = JetRemoveJobStatusListenerCodec.encodeResponse(aBoolean);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetUpdateJobConfigCodec_decodeRequest() {
+        int fileClientMessageIndex = 910;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        JetUpdateJobConfigCodec.RequestParameters parameters = JetUpdateJobConfigCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aLong, parameters.jobId));
+        assertTrue(isEqual(aData, parameters.deltaConfig));
+    }
+
+    @Test
+    public void test_JetUpdateJobConfigCodec_encodeResponse() {
+        int fileClientMessageIndex = 911;
+        ClientMessage encoded = JetUpdateJobConfigCodec.encodeResponse(aData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
