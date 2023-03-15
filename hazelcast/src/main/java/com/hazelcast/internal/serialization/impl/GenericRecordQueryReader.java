@@ -256,6 +256,8 @@ public final class GenericRecordQueryReader implements ValueReader {
     }
 
     private Object readLeaf(InternalGenericRecord record, String path) {
+        // The inner if statement is not put here because doing that will call schema.getField() twice if lazy deserialization
+        // is not enabled and we are reading from a compact generic record. (second read will be to get the field descriptor)
         if (record instanceof CompactGenericRecord) {
             FieldDescriptor fd = ((CompactGenericRecord) record).getFieldDescriptor(path);
             FieldKind kind = fd.getKind();
