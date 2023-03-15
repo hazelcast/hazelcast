@@ -420,10 +420,6 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public void flushMaps() {
-        for (MapContainer mapContainer : mapContainers.values()) {
-            mapContainer.getMapStoreContext().stop();
-        }
-
         for (PartitionContainer partitionContainer : partitionContainers) {
             for (String mapName : mapContainers.keySet()) {
                 RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);
@@ -432,6 +428,10 @@ class MapServiceContextImpl implements MapServiceContext {
                     mapDataStore.hardFlush();
                 }
             }
+        }
+
+        for (MapContainer mapContainer : mapContainers.values()) {
+            mapContainer.getMapStoreContext().stop();
         }
     }
 

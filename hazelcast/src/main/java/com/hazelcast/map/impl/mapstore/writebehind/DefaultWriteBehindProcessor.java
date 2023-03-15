@@ -32,6 +32,7 @@ import java.util.Set;
 
 import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -262,7 +263,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
         for (Collection<DelayedEntry> value : values) {
             size += value.size();
         }
-        final String logMessage = String.format("Map store flush operation can not be done for %d entries", size);
+        final String logMessage = format("Map store flush operation can not be done for %d entries", size);
         logger.severe(logMessage);
     }
 
@@ -294,39 +295,35 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
     }
 
     private List<DelayedEntry> retryCall(RetryTask task) {
-        boolean taskRunSucceeded = false;
         Exception exception = null;
         int retryCount = 0;
-        for (; retryCount < RETRY_TIMES_OF_A_FAILED_STORE_OPERATION; retryCount++) {
+        while (!stopped
+                && !currentThread().isInterrupted()
+                && retryCount++ < RETRY_TIMES_OF_A_FAILED_STORE_OPERATION) {
+
             try {
-                taskRunSucceeded = task.run();
+                if (task.run()) {
+                    // return empty failed operation list
+                    // since task run is succeeded.
+                    return Collections.emptyList();
+                }
             } catch (InterruptedException ex) {
                 currentThread().interrupt();
-                break;
             } catch (Exception ex) {
                 exception = ex;
             }
 
-            if (taskRunSucceeded || stopped) {
-                break;
-            } else {
-                sleepSeconds(RETRY_STORE_AFTER_WAIT_SECONDS);
-            }
+            sleepSeconds(RETRY_STORE_AFTER_WAIT_SECONDS);
         }
 
-        if (taskRunSucceeded) {
-            return Collections.emptyList();
-        } else {
-            // List of entries which can not be stored for this round.
-            // We will re-add these failed entries to the front of the
-            // partition-write-behind-queues and will try to re-process
-            // them. This fail and retry cycle will be repeated indefinitely.
-            List failureList = task.failureList();
-            logger.severe(String.format("Number of entries which could not be stored is = [%d]"
-                    + ", Hazelcast will indefinitely retry to store them", failureList.size()), exception);
-            return failureList;
-        }
-
+        // List of entries which can not be stored for this round.
+        // We will re-add these failed entries to the front of the
+        // partition-write-behind-queues and will try to re-process
+        // them. This fail and retry cycle will be repeated indefinitely.
+        List failureList = task.failureList();
+        logger.severe(format("Number of entries which could not be stored is [%d]"
+                + ", Hazelcast will indefinitely retry to store them", failureList.size()), exception);
+        return failureList;
     }
 
     private void sort(List<DelayedEntry> entries) {
