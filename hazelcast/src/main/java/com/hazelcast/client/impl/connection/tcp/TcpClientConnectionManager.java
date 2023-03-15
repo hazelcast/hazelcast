@@ -419,6 +419,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         if (logger.isFineEnabled()) {
                             logger.warning("No connection to cluster: " + clusterId);
                         }
+
                         submitConnectToClusterTask();
                     }
                 }
