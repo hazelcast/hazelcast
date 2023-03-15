@@ -102,6 +102,7 @@ public final class KafkaProcessors {
             @Nonnull String... topics
     ) {
         Preconditions.checkPositive(topics.length, "At least one topic must be supplied");
+        TopicsConfig topicsConfig = new TopicsConfig().addTopics(Arrays.asList(topics));
         return ProcessorMetaSupplier.of(
                 PREFERRED_LOCAL_PARALLELISM,
                 StreamKafkaP.processorSupplier(
@@ -115,7 +116,7 @@ public final class KafkaProcessors {
                                 kafkaDataLink.release();
                             }
                         },
-                        Arrays.asList(topics),
+                        topicsConfig,
                         projectionFn,
                         eventTimePolicy
                 )
