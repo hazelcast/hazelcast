@@ -57,7 +57,6 @@ public interface AsyncSocketBuilder {
      * @return true if the option was supported, false otherwise.
      * @throws NullPointerException          when option or value is null.
      * @throws IllegalStateException         when build already has been called
-     * @throws UnsupportedOperationException if the option isn't supported.
      * @throws java.io.UncheckedIOException  when something failed while configuring
      *                                       the underlying socket.
      */

@@ -76,8 +76,12 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
             return true;
         } else {
             SocketOption socketOption = toSocketOption(option);
-            return socketOption != null && socketChannel.supportedOptions().contains(socketOption);
+            return isSupported(socketOption);
         }
+    }
+
+    private boolean isSupported(SocketOption socketOption) {
+        return socketOption != null & socketChannel.supportedOptions().contains(socketOption);
     }
 
     @Override
@@ -89,16 +93,17 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
                 return (T) (Integer) socketChannel.socket().getSoTimeout();
             } else {
                 SocketOption socketOption = toSocketOption(option);
-                if (socketOption == null || !socketChannel.supportedOptions().contains(socketOption)) {
-                    return null;
-                } else {
+                if (isSupported(socketOption)) {
                     return (T) socketChannel.getOption(socketOption);
+                } else {
+                    return null;
                 }
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
+
 
     @Override
     public <T> boolean setIfSupported(Option<T> option, T value) {
@@ -111,11 +116,11 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
                 return true;
             } else {
                 SocketOption socketOption = toSocketOption(option);
-                if (socketOption == null || !socketChannel.supportedOptions().contains(socketOption)) {
-                    return false;
-                } else {
+                if (isSupported(socketOption)) {
                     socketChannel.setOption(socketOption, value);
                     return true;
+                } else {
+                    return false;
                 }
             }
         } catch (IOException e) {

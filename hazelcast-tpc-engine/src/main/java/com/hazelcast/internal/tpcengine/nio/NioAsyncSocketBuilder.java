@@ -66,7 +66,6 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
         }
     }
 
-
     @Override
     public <T> boolean setIfSupported(Option<T> option, T value) {
         verifyNotBuild();

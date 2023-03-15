@@ -60,6 +60,10 @@ public class NioAsyncServerSocketOptions implements AsyncSocketOptions {
         checkNotNull(option, "option");
 
         SocketOption socketOption = toSocketOption(option);
+        return isSupported(socketOption);
+    }
+
+    private boolean isSupported(SocketOption socketOption) {
         return socketOption != null && serverSocketChannel.supportedOptions().contains(socketOption);
     }
 
@@ -70,11 +74,11 @@ public class NioAsyncServerSocketOptions implements AsyncSocketOptions {
 
         try {
             SocketOption socketOption = toSocketOption(option);
-            if (socketOption == null || !serverSocketChannel.supportedOptions().contains(socketOption)) {
-                return false;
-            } else {
+            if (isSupported(socketOption)) {
                 serverSocketChannel.setOption(socketOption, value);
                 return true;
+            } else {
+                return false;
             }
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to set " + option.name() + " with value [" + value + "]", e);
@@ -87,10 +91,10 @@ public class NioAsyncServerSocketOptions implements AsyncSocketOptions {
 
         try {
             SocketOption socketOption = toSocketOption(option);
-            if (socketOption == null || !serverSocketChannel.supportedOptions().contains(socketOption)) {
-                return null;
-            } else {
+            if (isSupported(socketOption)) {
                 return (T) serverSocketChannel.getOption(socketOption);
+            } else {
+                return null;
             }
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to get option " + option.name(), e);
