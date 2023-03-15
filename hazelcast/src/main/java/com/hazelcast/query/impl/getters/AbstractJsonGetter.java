@@ -104,7 +104,7 @@ public abstract class AbstractJsonGetter extends Getter {
     }
 
     @Override
-    Object getValue(Object obj, String attributePath) {
+    public Object getValue(Object obj, String attributePath) {
         JsonPathCursor pathCursor = getPath(attributePath);
 
         try (JsonParser parser = createParser(obj)) {

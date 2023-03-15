@@ -679,6 +679,20 @@
                                     <xs:element name="event-journal" type="event-journal" minOccurs="0"/>
                                     <xs:element name="partition-strategy" type="xs:string" minOccurs="0"/>
                                     <xs:element name="tiered-store" type="tiered-store" minOccurs="0"/>
+                                    <xs:element name="partition-attributes" minOccurs="0">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                List of key attributes to use for partitioning the data in the maps. Providing this list automatically sets the
+                                                strategy to `com.hazelcast.partition.strategy.AttributePartitioningStrategy` regardless
+                                                of the class name provided in the `partition-strategy` property.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                        <xs:complexType>
+                                            <xs:sequence>
+                                                <xs:element name="attribute" type="partition-attribute" maxOccurs="unbounded"/>
+                                            </xs:sequence>
+                                        </xs:complexType>
+                                    </xs:element>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="in-memory-format" type="xs:string" default="BINARY">
@@ -6286,5 +6300,16 @@
             <xs:element name="eventloop-count" type="xs:integer" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="partition-attribute">
+        <xs:annotation>
+            <xs:documentation>
+                The name of the attribute.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:string"/>
+        </xs:simpleContent>
     </xs:complexType>
 </xs:schema>

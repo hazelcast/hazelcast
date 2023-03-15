@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageReader;
 import com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.tpc.ReadHandler;
+import com.hazelcast.internal.tpcengine.ReadHandler;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;

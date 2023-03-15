@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
-import com.hazelcast.internal.tpc.Reactor;
+import com.hazelcast.internal.tpcengine.Reactor;
 
 import java.util.Queue;
 
