@@ -327,7 +327,11 @@ public class MapContainer {
     }
 
     private PartitioningStrategy createPartitioningStrategy() {
-        return mapServiceContext.getPartitioningStrategy(mapConfig.getName(), mapConfig.getPartitioningStrategyConfig());
+        return mapServiceContext.getPartitioningStrategy(
+                mapConfig.getName(),
+                mapConfig.getPartitioningStrategyConfig(),
+                mapConfig.getPartitioningAttributeConfigs()
+        );
     }
 
     /**

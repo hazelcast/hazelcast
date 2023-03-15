@@ -77,6 +77,7 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
@@ -1366,6 +1367,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     mapConfigBuilder.addPropertyValue("partitioningStrategyConfig", psConfig);
                 } else if ("tiered-store".equals(nodeName)) {
                     handleTieredStoreConfig(mapConfigBuilder, childNode);
+                } else if ("partition-attributes".equals(nodeName)) {
+                    handlePartitionAttributes(mapConfigBuilder, childNode);
                 }
             }
             mapConfigManagedMap.put(name, beanDefinition);
@@ -2378,6 +2381,15 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             configBuilder.addPropertyValue("altoConfig", builder.getBeanDefinition());
+        }
+        private void handlePartitionAttributes(final BeanDefinitionBuilder mapConfigBuilder, Node node) {
+            final ManagedList<BeanDefinition> partitioningAttributeConfigs = new ManagedList<>();
+            for (Node attributeNode : childElements(node)) {
+                BeanDefinitionBuilder attributeConfBuilder = createBeanBuilder(PartitioningAttributeConfig.class);
+                attributeConfBuilder.addPropertyValue("attributeName", getTextContent(attributeNode));
+                partitioningAttributeConfigs.add(attributeConfBuilder.getBeanDefinition());
+            }
+            mapConfigBuilder.addPropertyValue("partitioningAttributeConfigs", partitioningAttributeConfigs);
         }
     }
 }
