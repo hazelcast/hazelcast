@@ -48,7 +48,7 @@ public final class HazelcastGetDdlFunction extends HazelcastFunction {
 
     @Override
     public SqlOperandCountRange getOperandCountRange() {
-        return SqlOperandCountRanges.between(2, 3);
+        return SqlOperandCountRanges.between(2, 2);
     }
 
     @Override

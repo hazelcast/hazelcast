@@ -51,10 +51,10 @@ public class GetDdlTest extends SqlTestSupport {
                         ")\n" +
                         "TYPE \"IMap\"\n" +
                         "OPTIONS (\n" +
-                        "  'keyFormat' = 'java',\n" +
-                        "  'keyJavaClass' = 'int',\n" +
-                        "  'valueFormat' = 'java',\n" +
-                        "  'valueJavaClass' = 'int'\n" +
+                        "  'keyFormat'='java',\n" +
+                        "  'keyJavaClass'='int',\n" +
+                        "  'valueFormat'='java',\n" +
+                        "  'valueJavaClass'='int'\n" +
                         ")"))
         );
     }
@@ -78,10 +78,10 @@ public class GetDdlTest extends SqlTestSupport {
                 "  \"b\" INTEGER\n" +
                 ")\n" +
                 "OPTIONS (\n" +
-                "  'format' = 'portable',\n" +
-                "  'portableFactoryId' = '1',\n" +
-                "  'portableClassId' = '3',\n" +
-                "  'portableClassVersion' = '0'\n" +
+                "  'format'='portable',\n" +
+                "  'portableFactoryId'='1',\n" +
+                "  'portableClassId'='3',\n" +
+                "  'portableClassVersion'='0'\n" +
                 ")";
 
         instance().getSql().execute(createTypeQuery);
@@ -168,10 +168,10 @@ public class GetDdlTest extends SqlTestSupport {
                                 ")\n" +
                                 "TYPE \"IMap\"\n" +
                                 "OPTIONS (\n" +
-                                "  'keyFormat' = 'java',\n" +
-                                "  'keyJavaClass' = 'int',\n" +
-                                "  'valueFormat' = 'java',\n" +
-                                "  'valueJavaClass' = 'java.lang.String'\n" +
+                                "  'keyFormat'='java',\n" +
+                                "  'keyJavaClass'='int',\n" +
+                                "  'valueFormat'='java',\n" +
+                                "  'valueJavaClass'='java.lang.String'\n" +
                                 ")")));
     }
 }
