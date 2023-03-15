@@ -81,7 +81,7 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
     }
 
     private boolean isSupported(SocketOption socketOption) {
-        return socketOption != null & socketChannel.supportedOptions().contains(socketOption);
+        return socketOption != null && socketChannel.supportedOptions().contains(socketOption);
     }
 
     @Override
