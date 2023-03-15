@@ -382,8 +382,7 @@ public class JetConfig {
     @Override
     public String toString() {
         return "JetConfig{"
-                + "instanceConfig=" + instanceConfig
-                + ", defaultEdgeConfig=" + defaultEdgeConfig
+                + "defaultEdgeConfig=" + defaultEdgeConfig
                 + ", enabled=" + enabled
                 + ", resourceUploadEnabled=" + resourceUploadEnabled
                 + ", cooperativeThreadCount=" + cooperativeThreadCount
