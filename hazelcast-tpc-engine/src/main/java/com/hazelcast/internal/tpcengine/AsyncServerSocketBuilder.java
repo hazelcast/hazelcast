@@ -66,7 +66,7 @@ public interface AsyncServerSocketBuilder {
      *
      * @param consumer the consumer
      * @return this
-     * @throws NullPointerException  if consumer is null.
+     * @throws NullPointerException  if consumer is <code>null</code>.
      * @throws IllegalStateException when build already has been called.
      */
     AsyncServerSocketBuilder setAcceptConsumer(Consumer<AcceptRequest> consumer);
