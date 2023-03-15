@@ -18,8 +18,6 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
-import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
-import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
 import com.hazelcast.internal.serialization.impl.portable.PortableInternalGenericRecord;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.serialization.FieldKind;
@@ -258,18 +256,22 @@ public final class GenericRecordQueryReader implements ValueReader {
     }
 
     private Object readLeaf(InternalGenericRecord record, String path) {
-        FieldKind kind = record.getFieldKind(path);
-        if ((kind == FieldKind.COMPACT || kind == FieldKind.PORTABLE) && useLazyDeserialization) {
-            // Use lazy deserialization for the queries that will read a nested compact or portable field
-            return record.getInternalGenericRecord(path);
-        }
         if (record instanceof CompactGenericRecord) {
             FieldDescriptor fd = ((CompactGenericRecord) record).getFieldDescriptor(path);
+            FieldKind kind = fd.getKind();
+            if ((kind == FieldKind.COMPACT || kind == FieldKind.PORTABLE) && useLazyDeserialization) {
+                // Use lazy deserialization for the queries that will read a nested compact or portable field
+                return record.getInternalGenericRecord(path);
+            }
             return fieldOperations(kind).readAsLeafObjectOnQuery(record, path, fd);
         } else {
-            // Getting field descriptor is not possible in portable.
+            // Reading leaf of a portable.
+            FieldKind kind = record.getFieldKind(path);
+            if ((kind == FieldKind.COMPACT || kind == FieldKind.PORTABLE) && useLazyDeserialization) {
+                // Use lazy deserialization for the queries that will read a nested compact or portable field
+                return record.getInternalGenericRecord(path);
+            }
             return fieldOperations(kind).readAsLeafObjectOnQuery(record, path, null);
         }
     }
-
 }
