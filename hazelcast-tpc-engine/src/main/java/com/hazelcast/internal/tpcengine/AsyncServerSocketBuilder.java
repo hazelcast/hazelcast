@@ -35,7 +35,7 @@ public interface AsyncServerSocketBuilder {
      * @param value  the value
      * @param <T>    the type of the option/value
      * @return this
-     * @throws NullPointerException          when option or value is null.
+     * @throws NullPointerException          when option or value is <code>null</code>.
      * @throws IllegalStateException         when build already has been called
      * @throws UnsupportedOperationException if the option isn't supported.
      * @throws java.io.UncheckedIOException  when something failed while configuring the underlying socket.
@@ -55,7 +55,7 @@ public interface AsyncServerSocketBuilder {
      * @param value  the value
      * @param <T>    the type of the option/value
      * @return true if the option was supported, false otherwise.
-     * @throws NullPointerException         when option or value is null.
+     * @throws NullPointerException         when option or value is <code>null</code>.
      * @throws IllegalStateException        when build already has been called
      * @throws java.io.UncheckedIOException when something failed while configuring the underlying socket.
      */
