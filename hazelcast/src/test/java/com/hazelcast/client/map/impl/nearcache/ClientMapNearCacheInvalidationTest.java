@@ -24,7 +24,6 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.map.IMap;
-//import com.hazelcast.map.impl.nearcache.TestObjectBasedReadOnlyProcessor;
 import com.hazelcast.map.impl.nearcache.TestReadOnlyProcessor;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.query.Predicate;
