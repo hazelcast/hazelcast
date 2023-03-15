@@ -19,6 +19,7 @@ package com.hazelcast.client.connectionstrategy;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
@@ -111,6 +112,19 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
                 fail();
             }
         });
+    }
+
+    @Test
+    public void testAsyncStartTrueShouldNotBlock_whenThereIsClientStateToSend() {
+        class A { }
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(-1);
+        ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
+        clientUserCodeDeploymentConfig.addClass(A.class);
+        clientUserCodeDeploymentConfig.setEnabled(true);
+        clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig);
+        clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
+        hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
     @Test(expected = HazelcastClientNotActiveException.class)
