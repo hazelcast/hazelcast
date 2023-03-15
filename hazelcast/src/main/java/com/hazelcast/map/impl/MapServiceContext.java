@@ -142,7 +142,11 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
 
     void destroyMapStores();
 
-    void flushMaps();
+    /**
+     * @param terminate {@code true} if immediate
+     * ungraceful shutdown of hazelcast instance is asked.
+     */
+    void shutdownMapStores(boolean terminate);
 
     void destroyMap(String mapName);
 

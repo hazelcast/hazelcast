@@ -419,19 +419,25 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public void flushMaps() {
+    public void shutdownMapStores(boolean terminate) {
         for (MapContainer mapContainer : mapContainers.values()) {
             mapContainer.getMapStoreContext().stop();
         }
 
-        for (PartitionContainer partitionContainer : partitionContainers) {
-            for (String mapName : mapContainers.keySet()) {
-                RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);
-                if (recordStore != null) {
-                    MapDataStore mapDataStore = recordStore.getMapDataStore();
-                    mapDataStore.hardFlushOnShutDown();
+        if (!terminate) {
+            for (PartitionContainer partitionContainer : partitionContainers) {
+                for (String mapName : mapContainers.keySet()) {
+                    RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);
+                    if (recordStore != null) {
+                        MapDataStore mapDataStore = recordStore.getMapDataStore();
+                        mapDataStore.hardFlushOnShutDown();
+                    }
                 }
             }
+
+            // in case of a graceful shutdown flush
+            // map-stores to prevent data-loss.
+            destroyMapStores();
         }
     }
 
