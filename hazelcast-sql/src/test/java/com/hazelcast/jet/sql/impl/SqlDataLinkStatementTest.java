@@ -55,6 +55,18 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_createDataLink_fullyQualified_then_success() {
+        String dlName = randomName();
+        instance().getSql().execute("CREATE DATA LINK hazelcast.public." + dlName
+                + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                + " OPTIONS ('b' = 'c')");
+        DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
+        assertThat(dataLink).isNotNull();
+        assertThat(dataLink.getConfig().getClassName()).isEqualTo(DummyDataLink.class.getName());
+        assertThat(dataLink.getConfig().getProperties().get("b")).isEqualTo("c");
+    }
+
+    @Test
     public void when_createDataLinkInWrongNameSpace_then_throws() {
         String dlName = randomName();
         assertThatThrownBy(() ->

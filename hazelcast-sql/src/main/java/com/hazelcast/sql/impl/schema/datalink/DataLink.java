@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.schema.datalink;
 
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateDataLink;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.schema.SqlCatalogObject;
@@ -58,33 +59,7 @@ public class DataLink implements SqlCatalogObject {
     @Nonnull
     @Override
     public String unparse() {
-        StringBuilder buffer = new StringBuilder();
-
-        buffer.append("CREATE OR REPLACE DATA LINK ");
-        buffer.append("\"hazelcast\".\"public\".").append("\"").append(name).append("\" ");
-
-        buffer.append("TYPE").append(" \"");
-        buffer.append(type).append("\" ");
-
-        buffer.append("OPTIONS").append(" (");
-        if (options.size() > 0) {
-            int optionsSize = options.size() - 1;
-            for (Map.Entry<String, String> option : options.entrySet()) {
-                buffer.append("'")
-                        .append(option.getKey())
-                        .append("'")
-                        .append(" = ")
-                        .append("'")
-                        .append(option.getValue())
-                        .append("'");
-                if (optionsSize-- > 0) {
-                    buffer.append(",\n");
-                }
-            }
-        }
-        buffer.append(")\n");
-
-        return buffer.toString();
+        return SqlCreateDataLink.unparse(this);
     }
 
     @Override

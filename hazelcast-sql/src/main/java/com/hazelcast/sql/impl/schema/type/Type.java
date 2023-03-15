@@ -16,7 +16,9 @@
 
 package com.hazelcast.sql.impl.schema.type;
 
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -32,6 +34,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A class stored in the SQL catalog to represent a type created using the
@@ -116,80 +119,34 @@ public class Type implements Serializable, SqlCatalogObject {
         this.compactTypeName = compactTypeName;
     }
 
-    @Override
-    @Nonnull
-    public String unparse() {
-        StringBuilder buffer = new StringBuilder();
-
-        buffer.append("CREATE OR REPLACE TYPE ");
-        buffer.append("\"").append(name).append("\" ");
-
-        if (fields.size() > 0) {
-            int fieldsSize = fields.size() - 1;
-            buffer.append("(");
-            for (TypeField field : fields) {
-                buffer.append(field.getName()).append(" ");
-                buffer.append(field.getQueryDataType().getTypeFamily().toString());
-                if (fieldsSize-- > 0) {
-                    buffer.append(", ");
-                }
-            }
-            buffer.append(") ");
-        }
-
-        buffer.append("OPTIONS").append(" (\n");
+    public Map<String, String> options() {
         if (javaClassName != null) {
-            appendOption(buffer, "format", "java", true);
-            appendOption(buffer, "javaClass", javaClassName, false);
+            return ImmutableMap.of(
+                    "format", "java",
+                    "javaClass", javaClassName);
         }
 
         if (compactTypeName != null) {
-            appendOption(buffer, "format", "compact", true);
-            appendOption(buffer, "compactTypeName", compactTypeName, false);
+            return ImmutableMap.of(
+                    "format", "compact",
+                    "compactTypeName", compactTypeName);
         }
 
         if (portableFactoryId != null) {
-            appendOption(buffer, "format", "portable", true);
-            appendOption(buffer, "portableFactoryId", portableFactoryId, false);
-            appendOption(buffer, "portableClassId", portableClassId, false);
-            if (portableVersion != null) {
-                appendOption(buffer, "portableClassVersion", portableVersion, false);
-            }
+            return ImmutableMap.of(
+                    "format", "portable",
+                    "portableFactoryId", String.valueOf(portableFactoryId),
+                    "portableClassId", String.valueOf(portableClassId),
+                    "portableClassVersion", String.valueOf(portableVersion != null ? portableVersion : 0));
         }
 
-        buffer.append(")\n");
-
-        return buffer.toString();
+        throw new AssertionError("unexpected state");
     }
 
-    private static void appendOption(StringBuilder buffer, String optionKey, String optionValue, boolean first) {
-        if (first) {
-            buffer.append("'");
-        } else {
-            buffer.append(", '");
-        }
-
-        buffer.append(optionKey)
-                .append("'")
-                .append(" = ")
-                .append("'")
-                .append(optionValue)
-                .append("'");
-    }
-
-    private static void appendOption(StringBuilder buffer, String optionKey, Integer optionValue, boolean first) {
-        if (first) {
-            buffer.append("'");
-        } else {
-            buffer.append(", '");
-        }
-
-        buffer.append(optionKey)
-                .append("'")
-                .append(" = ")
-                .append("'")
-                .append(optionValue)
-                .append("'");
+    @Override
+    @Nonnull
+    public String unparse() {
+        return SqlCreateType.unparse(this);
     }
 
     @Override

@@ -19,13 +19,16 @@ package com.hazelcast.jet.sql.impl.parse;
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.impl.validate.ValidationUtil;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastCreateDataLinkOperator;
+import com.hazelcast.sql.impl.schema.datalink.DataLink;
 import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.pretty.SqlPrettyWriter;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 
@@ -34,6 +37,11 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
+import static com.hazelcast.jet.sql.impl.parse.UnparseUtil.identifier;
+import static com.hazelcast.jet.sql.impl.parse.UnparseUtil.nodeList;
+import static com.hazelcast.jet.sql.impl.parse.UnparseUtil.unparseOptions;
+import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PUBLIC;
 
 /**
  * AST node representing a CREATE DATA LINK statement.
@@ -60,8 +68,8 @@ public class SqlCreateDataLink extends SqlCreate {
         this.options = options;
     }
 
-    public String name() {
-        return name.toString();
+    public String nameWithoutSchema() {
+        return name.names.get(name.names.size() - 1);
     }
 
     public String type() {
@@ -107,17 +115,24 @@ public class SqlCreateDataLink extends SqlCreate {
         writer.keyword("TYPE");
         type.unparse(writer, leftPrec, rightPrec);
 
-        if (options.size() > 0) {
-            writer.newlineAndIndent();
-            writer.keyword("OPTIONS");
-            SqlWriter.Frame withFrame = writer.startList("(", ")");
-            for (SqlNode property : options) {
-                printIndent(writer);
-                property.unparse(writer, leftPrec, rightPrec);
-            }
-            writer.newlineAndIndent();
-            writer.endList(withFrame);
-        }
+        unparseOptions(writer, options);
+    }
+
+    public static String unparse(DataLink dataLink) {
+        SqlPrettyWriter writer = new SqlPrettyWriter(SqlPrettyWriter.config());
+
+        SqlCreateDataLink d = new SqlCreateDataLink(
+                SqlParserPos.ZERO, true, false,
+                identifier(CATALOG, SCHEMA_NAME_PUBLIC, dataLink.name()),
+                identifier(dataLink.type()),
+                nodeList(dataLink.options().entrySet(), o -> new SqlOption(
+                        SqlLiteral.createCharString(o.getKey(), SqlParserPos.ZERO),
+                        SqlLiteral.createCharString(o.getValue(), SqlParserPos.ZERO),
+                        SqlParserPos.ZERO
+                )));
+
+        d.unparse(writer, 0, 0);
+        return writer.toString();
     }
 
     @Override
@@ -129,11 +144,5 @@ public class SqlCreateDataLink extends SqlCreate {
         if (!ValidationUtil.isCatalogObjectNameValid(name)) {
             throw validator.newValidationError(this, RESOURCE.dataLinkIncorrectSchema());
         }
-    }
-
-    private static void printIndent(SqlWriter writer) {
-        writer.sep(",", false);
-        writer.newlineAndIndent();
-        writer.print("  ");
     }
 }

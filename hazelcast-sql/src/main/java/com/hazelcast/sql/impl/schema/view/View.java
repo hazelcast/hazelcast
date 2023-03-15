@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.schema.view;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateView;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
@@ -122,6 +123,6 @@ public class View implements Versioned, SqlCatalogObject {
     @Override
     @Nonnull
     public String unparse() {
-        return String.format("CREATE OR REPLACE VIEW \"hazelcast\".\"public\".\"%s\" AS\n%s", name(), query());
+        return SqlCreateView.unparse(this);
     }
 }

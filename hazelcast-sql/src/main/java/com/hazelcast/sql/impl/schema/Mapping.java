@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.schema;
 
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -125,59 +126,6 @@ public class Mapping implements SqlCatalogObject {
     @Override
     @Nonnull
     public String unparse() {
-        StringBuilder buffer = new StringBuilder();
-
-        buffer.append("CREATE OR REPLACE MAPPING ");
-        buffer.append("\"hazelcast\".\"public\".").append("\"").append(name()).append("\" ");
-
-        // external name defaults to mapping name - omit it if it's equal
-        if (externalName() != null && !externalName().equals(name())) {
-            buffer.append(" ").append("EXTERNAL NAME ")
-                    .append("\"")
-                    .append(externalName())
-                    .append("\"");
-        }
-
-        List<MappingField> fields = fields();
-        if (fields.size() > 0) {
-            int fieldsSize = fields.size() - 1;
-            buffer.append("(");
-            for (MappingField field : fields) {
-                buffer.append(field.name()).append(" ");
-                buffer.append(field.type().getTypeFamily().toString());
-                if (field.externalName() != null) {
-                    buffer.append(" ").append("EXTERNAL NAME").append(" ");
-                    buffer.append(field.externalName());
-                }
-                if (fieldsSize-- > 0) {
-                    buffer.append(", ");
-                }
-            }
-            buffer.append(") \n");
-        }
-
-        buffer.append("TYPE").append(" ");
-        buffer.append(type()).append(" \n");
-
-        Map<String, String> options = options();
-        if (options.size() > 0) {
-            buffer.append("OPTIONS").append("( \n");
-            int optionsSize = options.size() - 1;
-            for (Map.Entry<String, String> option : options.entrySet()) {
-                buffer.append("'")
-                        .append(option.getKey())
-                        .append("'")
-                        .append(" = ")
-                        .append("'")
-                        .append(option.getValue())
-                        .append("'");
-                if (optionsSize-- > 0) {
-                    buffer.append(",\n");
-                }
-            }
-            buffer.append(")\n");
-        }
-
-        return buffer.toString();
+        return SqlCreateMapping.unparse(this);
     }
 }

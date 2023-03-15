@@ -45,14 +45,17 @@ public class GetDdlTest extends SqlTestSupport {
         createMapping("a", int.class, int.class);
 
         assertRowsAnyOrder("SELECT GET_DDL('relation', 'a')", ImmutableList.of(
-                new Row("CREATE OR REPLACE MAPPING \"hazelcast\".\"public\".\"a\" " +
-                        "(__key INTEGER EXTERNAL NAME __key, this INTEGER EXTERNAL NAME this) \n" +
-                        "TYPE IMap \n" +
-                        "OPTIONS( \n" +
-                        "'keyFormat' = 'java',\n" +
-                        "'keyJavaClass' = 'int',\n" +
-                        "'valueFormat' = 'java',\n" +
-                        "'valueJavaClass' = 'int')\n"))
+                new Row("CREATE OR REPLACE MAPPING \"hazelcast\".\"public\".\"a\" EXTERNAL NAME \"a\" (\n" +
+                        "  \"__key\" INTEGER EXTERNAL NAME \"__key\",\n" +
+                        "  \"this\" INTEGER EXTERNAL NAME \"this\"\n" +
+                        ")\n" +
+                        "TYPE \"IMap\"\n" +
+                        "OPTIONS (\n" +
+                        "  'keyFormat' = 'java',\n" +
+                        "  'keyJavaClass' = 'int',\n" +
+                        "  'valueFormat' = 'java',\n" +
+                        "  'valueJavaClass' = 'int'\n" +
+                        ")"))
         );
     }
 
@@ -70,9 +73,16 @@ public class GetDdlTest extends SqlTestSupport {
 
     @Test
     public void when_queryTypeFromRelationNamespace_then_success() {
-        String createTypeQuery = "CREATE OR REPLACE TYPE \"t\" (a INTEGER, b INTEGER) OPTIONS (\n"
-                + "'format' = 'portable', 'portableFactoryId' = '1', "
-                + "'portableClassId' = '3', 'portableClassVersion' = '0')\n";
+        String createTypeQuery = "CREATE OR REPLACE TYPE \"hazelcast\".\"public\".\"t\" (\n" +
+                "  \"a\" INTEGER,\n" +
+                "  \"b\" INTEGER\n" +
+                ")\n" +
+                "OPTIONS (\n" +
+                "  'format' = 'portable',\n" +
+                "  'portableFactoryId' = '1',\n" +
+                "  'portableClassId' = '3',\n" +
+                "  'portableClassVersion' = '0'\n" +
+                ")";
 
         instance().getSql().execute(createTypeQuery);
         assertRowsAnyOrder("SELECT GET_DDL('relation', 't')", ImmutableList.of(new Row(createTypeQuery)));
@@ -80,13 +90,10 @@ public class GetDdlTest extends SqlTestSupport {
 
     @Test
     public void when_queryDataLinkFromDatalinkNamespace_then_success() {
-        String query = "CREATE OR REPLACE DATA LINK dl"
-                + " TYPE \"" + DataLinkTestUtil.DummyDataLink.class.getName() + "\" OPTIONS ()\n";
+        String createDLQuery = "CREATE OR REPLACE DATA LINK \"hazelcast\".\"public\".\"dl\"\n"
+                + "TYPE \"" + DataLinkTestUtil.DummyDataLink.class.getName() + "\"";
 
-        String createDLQuery = "CREATE OR REPLACE DATA LINK \"hazelcast\".\"public\".\"dl\""
-                + " TYPE \"" + DataLinkTestUtil.DummyDataLink.class.getName() + "\" OPTIONS ()\n";
-
-        instance().getSql().execute(query);
+        instance().getSql().execute(createDLQuery);
         assertRowsAnyOrder("SELECT GET_DDL('datalink', 'dl')", ImmutableList.of(new Row(createDLQuery)));
     }
 
@@ -96,7 +103,7 @@ public class GetDdlTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlRows.iterator().next())
                 .hasCauseInstanceOf(QueryException.class)
-                .hasMessageContaining("Can't fetch DDL query for null namespace");
+                .hasMessageContaining("Namespace must not be null for GET_DDL");
     }
 
     @Test
@@ -113,7 +120,7 @@ public class GetDdlTest extends SqlTestSupport {
         SqlResult sqlRows = instance().getSql().execute("SELECT GET_DDL('relation', NULL)");
         assertThatThrownBy(() -> sqlRows.iterator().next())
                 .hasCauseInstanceOf(QueryException.class)
-                .hasMessageContaining("Can't fetch DDL query for null object_name");
+                .hasMessageContaining("Object_name must not be null for GET_DDL");
     }
 
     @Test
@@ -155,13 +162,16 @@ public class GetDdlTest extends SqlTestSupport {
 
         assertRowsAnyOrder("SELECT GET_DDL('relation', this) FROM a",
                 ImmutableList.of(new Row(
-                        "CREATE OR REPLACE MAPPING \"hazelcast\".\"public\".\"a\" " +
-                                "(__key INTEGER EXTERNAL NAME __key, this VARCHAR EXTERNAL NAME this) \n" +
-                                "TYPE IMap \n" +
-                                "OPTIONS( \n" +
-                                "'keyFormat' = 'java',\n" +
-                                "'keyJavaClass' = 'int',\n" +
-                                "'valueFormat' = 'java',\n" +
-                                "'valueJavaClass' = 'java.lang.String')\n")));
+                        "CREATE OR REPLACE MAPPING \"hazelcast\".\"public\".\"a\" EXTERNAL NAME \"a\" (\n" +
+                                "  \"__key\" INTEGER EXTERNAL NAME \"__key\",\n" +
+                                "  \"this\" VARCHAR EXTERNAL NAME \"this\"\n" +
+                                ")\n" +
+                                "TYPE \"IMap\"\n" +
+                                "OPTIONS (\n" +
+                                "  'keyFormat' = 'java',\n" +
+                                "  'keyJavaClass' = 'int',\n" +
+                                "  'valueFormat' = 'java',\n" +
+                                "  'valueJavaClass' = 'java.lang.String'\n" +
+                                ")")));
     }
 }
