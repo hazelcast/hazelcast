@@ -113,7 +113,7 @@ SqlCreate SqlCreateType(Span span, boolean replace) :
     [
         <OPTIONS>
         sqlOptions = SqlOptions()
-    }
+    ]
     {
         return new SqlCreateType(
             name,

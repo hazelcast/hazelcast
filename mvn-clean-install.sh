@@ -1,1 +1,0 @@
-./mvnw -Dquick clean install

@@ -1,1 +1,0 @@
-./mvnw checkstyle:checkstyle
