@@ -33,13 +33,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.SerializationClassNameFilter;
-import com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.JavaSerializer;
+import com.hazelcast.internal.serialization.impl.defaultserializers.ArrayStreamSerializer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.nio.serialization.Serializer;
@@ -47,7 +44,7 @@ import com.hazelcast.nio.serialization.VersionedPortable;
 import com.hazelcast.nio.serialization.compatibility.CustomByteArraySerializer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;;
+import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -111,9 +108,8 @@ public class SerializationUtilTest {
 
     @Test
     public void testCreateSerializerAdapter() {
-        ClassNameFilter classNameFilter = new SerializationClassNameFilter(new JavaSerializationFilterConfig());
-        // JavaSerializer is instance of StreamSerializer, hence using it as parameter
-        SerializerAdapter streamSerializerAdapter = SerializationUtil.createSerializerAdapter(new JavaSerializer(true, true, classNameFilter));
+        // ArrayStreamSerializer is instance of StreamSerializer, hence using it as parameter
+        SerializerAdapter streamSerializerAdapter = SerializationUtil.createSerializerAdapter(new ArrayStreamSerializer());
         assertEquals(streamSerializerAdapter.getClass(), StreamSerializerAdapter.class);
         // CustomByteArraySerializer is instance of ByteArraySerializer, hence using it as parameter
         SerializerAdapter byteArraySerializerAdapter = SerializationUtil.createSerializerAdapter(new CustomByteArraySerializer());
