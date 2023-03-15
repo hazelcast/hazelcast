@@ -104,7 +104,6 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
         }
     }
 
-
     @Override
     public <T> boolean setIfSupported(Option<T> option, T value) {
         checkNotNull(option, "option");
