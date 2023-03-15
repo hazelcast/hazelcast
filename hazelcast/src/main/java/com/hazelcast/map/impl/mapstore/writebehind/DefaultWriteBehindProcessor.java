@@ -306,42 +306,32 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
     }
 
     private List<DelayedEntry> retryCall(RetryTask task, boolean onShutDown) {
-        Exception exception = null;
+        Exception exception;
 
         if (onShutDown) {
             try {
-                if (task.run()) {
-                    // return empty failed operation list
-                    // since task run is succeeded.
-                    return Collections.emptyList();
-                }
-            } catch (InterruptedException ex) {
-                currentThread().interrupt();
+                task.run();
+                return Collections.emptyList();
             } catch (Exception ex) {
                 exception = ex;
             }
         } else {
             int tryCount = 0;
-            while (!stopped
-                    && !currentThread().isInterrupted()
-                    && tryCount < RETRY_TIMES_OF_A_FAILED_STORE_OPERATION) {
+            do {
+                if (stopped || currentThread().isInterrupted()) {
+                    return Collections.emptyList();
+                }
 
                 try {
-                    if (task.run()) {
-                        // return empty failed operation list
-                        // since task run is succeeded.
-                        return Collections.emptyList();
-                    }
-                } catch (InterruptedException ex) {
-                    currentThread().interrupt();
+                    task.run();
+                    return Collections.emptyList();
                 } catch (Exception ex) {
                     exception = ex;
-                } finally {
-                    tryCount++;
                 }
 
                 sleepSeconds(RETRY_STORE_AFTER_WAIT_SECONDS);
-            }
+
+            } while (++tryCount < RETRY_TIMES_OF_A_FAILED_STORE_OPERATION);
         }
 
         // List of entries which can not be stored for this round.
@@ -375,7 +365,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
          * @return {@code true} if this task has successfully run.
          * @throws Exception
          */
-        boolean run() throws Exception;
+        void run() throws Exception;
 
         /**
          * Returns failed store operations list.
@@ -391,35 +381,33 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
         private final StoreOperationType operationType;
         private final boolean withTtl;
 
-        StoreSingleEntryTask(DelayedEntry entry, StoreOperationType operationType, boolean withTtl) {
+        StoreSingleEntryTask(DelayedEntry entry,
+                             StoreOperationType operationType,
+                             boolean withTtl) {
             this.entry = entry;
             this.operationType = operationType;
             this.withTtl = withTtl;
         }
 
         @Override
-        public boolean run() throws Exception {
+        public void run() throws Exception {
             callBeforeStoreListeners(entry);
             final Object key = toObject(entry.getKey());
             final Object value = toObject(entry.getValue());
-            boolean result;
             // if value is null, then we have a DeletedDelayedEntry. We should not create
             // an EntryLoaderEntry for that
             if (withTtl && value != null) {
                 long expirationTime = entry.getExpirationTime();
-                result = operationType.processSingle(key, new MetadataAwareValue(value, expirationTime), mapStore);
+                operationType.processSingle(key, new MetadataAwareValue(value, expirationTime), mapStore);
             } else {
-                result = operationType.processSingle(key, value, mapStore);
+                operationType.processSingle(key, value, mapStore);
             }
             callAfterStoreListeners(entry);
-            return result;
         }
 
         @Override
         public List<DelayedEntry> failureList() {
-            List failedDelayedEntries = new ArrayList<DelayedEntry>(1);
-            failedDelayedEntries.add(entry);
-            return failedDelayedEntries;
+            return Collections.singletonList(entry);
         }
     }
 
@@ -428,34 +416,31 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
         private final Map<Object, DelayedEntry> batchMap;
         private final StoreOperationType operationType;
         private final boolean withTtl;
-        private List<DelayedEntry> failedDelayedEntries = Collections.emptyList();
 
-        StoreBatchTask(final Map<Object, DelayedEntry> batchMap, final StoreOperationType operationType, boolean withTtl) {
+        StoreBatchTask(final Map<Object, DelayedEntry> batchMap,
+                       final StoreOperationType operationType,
+                       boolean withTtl) {
             this.batchMap = batchMap;
             this.operationType = operationType;
             this.withTtl = withTtl;
         }
 
         @Override
-        public boolean run() throws Exception {
+        public void run() throws Exception {
             callBeforeStoreListeners(batchMap.values());
             final Map map = convertToObject(batchMap);
-            boolean result;
             try {
-                result = operationType.processBatch(map, mapStore);
+                operationType.processBatch(map, mapStore);
             } catch (Exception ex) {
                 batchMap.keySet().removeIf(o -> !map.containsKey(toObject(o)));
                 throw ex;
             }
             callAfterStoreListeners(batchMap.values());
-            return result;
         }
 
         @Override
         public List<DelayedEntry> failureList() {
-            failedDelayedEntries = new ArrayList<>(batchMap.values().size());
-            failedDelayedEntries.addAll(batchMap.values());
-            return failedDelayedEntries;
+            return new ArrayList<>(batchMap.values());
         }
 
         private Map convertToObject(Map<Object, DelayedEntry> batchMap) {

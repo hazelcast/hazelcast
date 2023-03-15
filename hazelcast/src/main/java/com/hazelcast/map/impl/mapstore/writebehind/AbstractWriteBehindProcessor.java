@@ -91,34 +91,30 @@ abstract class AbstractWriteBehindProcessor<T> implements WriteBehindProcessor<T
 
         DELETE {
             @Override
-            boolean processSingle(Object key, Object value, MapStore mapStore) {
+            void processSingle(Object key, Object value, MapStore mapStore) {
                 mapStore.delete(key);
-                return true;
             }
 
             @Override
-            boolean processBatch(Map map, MapStore mapStore) {
+            void processBatch(Map map, MapStore mapStore) {
                 mapStore.deleteAll(map.keySet());
-                return true;
             }
         },
 
         WRITE {
             @Override
-            boolean processSingle(Object key, Object value, MapStore mapStore) {
+            void processSingle(Object key, Object value, MapStore mapStore) {
                 mapStore.store(key, value);
-                return true;
             }
 
             @Override
-            boolean processBatch(Map map, MapStore mapStore) {
+            void processBatch(Map map, MapStore mapStore) {
                 mapStore.storeAll(map);
-                return true;
             }
         };
 
-        abstract boolean processSingle(Object key, Object value, MapStore mapStore);
+        abstract void processSingle(Object key, Object value, MapStore mapStore);
 
-        abstract boolean processBatch(Map map, MapStore mapStore);
+        abstract void processBatch(Map map, MapStore mapStore);
     }
 }
