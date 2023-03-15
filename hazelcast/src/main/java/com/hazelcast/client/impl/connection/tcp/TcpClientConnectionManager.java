@@ -438,7 +438,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             }
         });
 
-
         connectToClusterTaskSubmitted = true;
     }
 
