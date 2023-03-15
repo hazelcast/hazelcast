@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
