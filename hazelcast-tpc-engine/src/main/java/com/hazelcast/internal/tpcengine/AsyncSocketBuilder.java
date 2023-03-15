@@ -34,29 +34,34 @@ public interface AsyncSocketBuilder {
      * @param value  the value
      * @param <T>    the type of the option/value
      * @return this
-     * @throws NullPointerException         when option or value is null.
-     * @throws IllegalStateException        when build already has been called
+     * @throws NullPointerException          when option or value is null.
+     * @throws IllegalStateException         when build already has been called
      * @throws UnsupportedOperationException if the option isn't supported.
-     * @throws java.io.UncheckedIOException when something failed while configuring
-     *                                      the underlying socket.
+     * @throws java.io.UncheckedIOException  when something failed while configuring
+     *                                       the underlying socket.
      */
-    <T> AsyncSocketBuilder set(Option<T> option, T value);
+    default <T> AsyncSocketBuilder set(Option<T> option, T value) {
+        if (setIfSupported(option, value)) {
+            return this;
+        } else {
+            throw new UnsupportedOperationException("'" + option.name() + "' not supported");
+        }
+    }
 
     /**
      * Sets the option on the underlying if that option is supported.
-     * If the option isn't supported, the call is ignored.
      *
      * @param option the option
      * @param value  the value
      * @param <T>    the type of the option/value
-     * @return this
-     * @throws NullPointerException         when option or value is null.
-     * @throws IllegalStateException        when build already has been called
+     * @return true if the option was supported, false otherwise.
+     * @throws NullPointerException          when option or value is null.
+     * @throws IllegalStateException         when build already has been called
      * @throws UnsupportedOperationException if the option isn't supported.
-     * @throws java.io.UncheckedIOException when something failed while configuring
-     *                                      the underlying socket.
+     * @throws java.io.UncheckedIOException  when something failed while configuring
+     *                                       the underlying socket.
      */
-    <T> AsyncSocketBuilder setIfSupported(Option<T> option, T value);
+    <T> boolean setIfSupported(Option<T> option, T value);
 
     /**
      * Sets the ReadHandler.

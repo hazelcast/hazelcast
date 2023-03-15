@@ -32,36 +32,41 @@ public interface AsyncServerSocketBuilder {
      * Sets the option on the underlying socket.
      *
      * @param option the option
-     * @param value the value
+     * @param value  the value
+     * @param <T>    the type of the option/value
      * @return this
-     * @param <T> the type of the option/value
-     * @throws NullPointerException when option or value is <code>null</code>.
-     * @throws IllegalStateException when build already has been called
+     * @throws NullPointerException          when option or value is null.
+     * @throws IllegalStateException         when build already has been called
      * @throws UnsupportedOperationException if the option isn't supported.
-     * @throws java.io.UncheckedIOException when something failed while configuring the underlying socket.
+     * @throws java.io.UncheckedIOException  when something failed while configuring the underlying socket.
      */
-    <T> AsyncServerSocketBuilder set(Option<T> option, T value);
+    default <T> AsyncServerSocketBuilder set(Option<T> option, T value) {
+        if (setIfSupported(option, value)) {
+            return this;
+        } else {
+            throw new UnsupportedOperationException("'" + option.name() + "' not supported");
+        }
+    }
 
     /**
      * Sets the option on the underlying socket if that option is supported.
-     * If the option isn't supported, the call is ignored.
      *
      * @param option the option
-     * @param value the value
-     * @return this
-     * @param <T> the type of the option/value
-     * @throws NullPointerException when option or value is null.
-     * @throws IllegalStateException when build already has been called
+     * @param value  the value
+     * @param <T>    the type of the option/value
+     * @return true if the option was supported, false otherwise.
+     * @throws NullPointerException         when option or value is null.
+     * @throws IllegalStateException        when build already has been called
      * @throws java.io.UncheckedIOException when something failed while configuring the underlying socket.
      */
-    <T> AsyncServerSocketBuilder setIfSupported(Option<T> option, T value);
+    <T> boolean setIfSupported(Option<T> option, T value);
 
     /**
      * Sets the consumer for accept requests.
      *
      * @param consumer the consumer
      * @return this
-     * @throws NullPointerException if consumer is <code>null</code>.
+     * @throws NullPointerException  if consumer is null.
      * @throws IllegalStateException when build already has been called.
      */
     AsyncServerSocketBuilder setAcceptConsumer(Consumer<AcceptRequest> consumer);
@@ -70,8 +75,8 @@ public interface AsyncServerSocketBuilder {
      * Builds the AsyncServerSocket.
      *
      * @return the build AsyncServerSocket.
-     * @throws IllegalStateException when the build already has been called or when the builder
-     *                               has not been properly configured.
+     * @throws IllegalStateException        when the build already has been called or when the builder
+     *                                      has not been properly configured.
      * @throws java.io.UncheckedIOException when the socket could not be build.
      */
     AsyncServerSocket build();

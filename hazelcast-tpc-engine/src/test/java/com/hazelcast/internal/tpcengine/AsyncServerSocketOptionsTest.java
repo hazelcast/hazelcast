@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.tpcengine;
 
-import com.hazelcast.internal.tpcengine.nio.NioAsyncServerSocketConfigTest;
-import com.hazelcast.internal.tpcengine.util.JVM;
 import org.junit.After;
 import org.junit.Test;
 
@@ -30,8 +28,9 @@ import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_REUSEPORT;
 import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_SNDBUF;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assume.assumeTrue;
 
 public abstract class AsyncServerSocketOptionsTest {
 
@@ -80,6 +79,13 @@ public abstract class AsyncServerSocketOptionsTest {
         assertThrows(UnsupportedOperationException.class, () -> options.set(SO_SNDBUF, 64 * 1024));
     }
 
+    @Test
+    public void test_setIfUnsupported_unsupportedOption() {
+        AsyncServerSocket serverSocket = newServerSocket();
+        AsyncSocketOptions options = serverSocket.options();
+        // SO_SNDBUF is not supported for server sockets.
+        assertFalse(options.setIfSupported(SO_SNDBUF, 64 * 1024));
+    }
 
     @Test
     public void test_get_unsupportedOption() {
@@ -87,6 +93,14 @@ public abstract class AsyncServerSocketOptionsTest {
         AsyncSocketOptions options = serverSocket.options();
         // SO_SNDBUF is not supported for server sockets.
         assertThrows(UnsupportedOperationException.class, () -> options.get(SO_SNDBUF));
+    }
+
+    @Test
+    public void test_getIfUnsupported_unsupportedOption() {
+        AsyncServerSocket serverSocket = newServerSocket();
+        AsyncSocketOptions options = serverSocket.options();
+        // SO_SNDBUF is not supported for server sockets.
+        assertNull(options.getIfSupported(SO_SNDBUF));
     }
 
     @Test
@@ -114,22 +128,19 @@ public abstract class AsyncServerSocketOptionsTest {
         assertEquals(Boolean.FALSE, options.get(SO_REUSEADDR));
     }
 
-
-    private void assumeIfNioThenJava11Plus() {
-        if (this instanceof NioAsyncServerSocketConfigTest) {
-            assumeTrue(JVM.getMajorVersion() >= 11);
-        }
-    }
-
     @Test
     public void test_SO_REUSE_PORT() {
-        assumeIfNioThenJava11Plus();
-
         AsyncServerSocket serverSocket = newServerSocket();
         AsyncSocketOptions options = serverSocket.options();
-        options.set(SO_REUSEPORT, true);
-        assertEquals(Boolean.TRUE, options.get(SO_REUSEPORT));
-        options.set(SO_REUSEPORT, false);
-        assertEquals(Boolean.FALSE, options.get(SO_REUSEPORT));
+        if (options.isSupported(SO_REUSEPORT)) {
+
+            options.set(SO_REUSEPORT, true);
+            assertEquals(Boolean.TRUE, options.get(SO_REUSEPORT));
+            options.set(SO_REUSEPORT, false);
+            assertEquals(Boolean.FALSE, options.get(SO_REUSEPORT));
+        } else {
+            assertFalse(options.setIfSupported(SO_REUSEPORT, true));
+            assertNull(options.getIfSupported(SO_REUSEPORT));
+        }
     }
 }

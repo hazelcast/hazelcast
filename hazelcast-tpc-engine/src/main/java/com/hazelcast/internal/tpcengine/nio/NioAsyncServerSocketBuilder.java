@@ -61,19 +61,10 @@ public class NioAsyncServerSocketBuilder implements AsyncServerSocketBuilder {
     }
 
     @Override
-    public <T> NioAsyncServerSocketBuilder set(Option<T> option, T value) {
+    public <T> boolean setIfSupported(Option<T> option, T value) {
         verifyNotBuild();
 
-        options.set(option, value);
-        return this;
-    }
-
-    @Override
-    public <T> AsyncServerSocketBuilder setIfSupported(Option<T> option, T value) {
-        verifyNotBuild();
-
-        options.setIfSupported(option, value);
-        return this;
+        return options.setIfSupported(option, value);
     }
 
     @SuppressWarnings("java:S1181")

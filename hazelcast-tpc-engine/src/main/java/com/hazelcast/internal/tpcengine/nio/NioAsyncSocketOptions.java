@@ -69,6 +69,18 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
     }
 
     @Override
+    public boolean isSupported(Option option) {
+        checkNotNull(option, "option");
+
+        if (option.equals(SO_TIMEOUT)) {
+            return true;
+        } else {
+            SocketOption socketOption = toSocketOption(option);
+            return socketOption != null && socketChannel.supportedOptions().contains(socketOption);
+        }
+    }
+
+    @Override
     public <T> T getIfSupported(Option<T> option) {
         checkNotNull(option, "option");
 

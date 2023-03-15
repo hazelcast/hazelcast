@@ -16,9 +16,6 @@
 
 package com.hazelcast.internal.tpcengine;
 
-import com.hazelcast.internal.tpcengine.nio.NioAsyncSocketOptionsTest;
-import com.hazelcast.internal.tpcengine.util.JVM;
-import com.hazelcast.internal.tpcengine.util.OS;
 import org.junit.After;
 import org.junit.Test;
 
@@ -36,8 +33,9 @@ import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.TCP_KEEPINTERV
 import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.TCP_NODELAY;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assume.assumeTrue;
 
 public abstract class AsyncSocketOptionsTest {
 
@@ -85,10 +83,24 @@ public abstract class AsyncSocketOptionsTest {
     }
 
     @Test
+    public void test_setIfUnsupported_unsupportedOption() {
+        AsyncSocket socket = newSocket();
+        AsyncSocketOptions options = socket.options();
+        assertFalse(options.setIfSupported(UNKNOwN_OPTION, ""));
+    }
+
+    @Test
     public void test_get_unsupportedOption() {
         AsyncSocket socket = newSocket();
         AsyncSocketOptions options = socket.options();
         assertThrows(UnsupportedOperationException.class, () -> options.get(UNKNOwN_OPTION));
+    }
+
+    @Test
+    public void test_getIfUnsupported_unsupportedOption() {
+        AsyncSocket socket = newSocket();
+        AsyncSocketOptions options = socket.options();
+        assertNull(options.getIfSupported(UNKNOwN_OPTION));
     }
 
     @Test
@@ -144,13 +156,6 @@ public abstract class AsyncSocketOptionsTest {
         assertEquals(Boolean.FALSE, options.get(SO_KEEPALIVE));
     }
 
-    private void assumeIfNioThenJava11PlusAndLinux() {
-        if (this instanceof NioAsyncSocketOptionsTest) {
-            assumeTrue(JVM.getMajorVersion() >= 11);
-            assumeTrue(OS.isLinux());
-        }
-    }
-
     @Test
     public void test_SO_TIMEOUT() {
         AsyncSocket socket = newSocket();
@@ -161,31 +166,40 @@ public abstract class AsyncSocketOptionsTest {
 
     @Test
     public void test_TCP_KEEPCOUNT() {
-        assumeIfNioThenJava11PlusAndLinux();
-
         AsyncSocket socket = newSocket();
         AsyncSocketOptions options = socket.options();
-        options.set(TCP_KEEPCOUNT, 100);
-        assertEquals(Integer.valueOf(100), options.get(TCP_KEEPCOUNT));
+        if (options.isSupported(TCP_KEEPCOUNT)) {
+            options.set(TCP_KEEPCOUNT, 100);
+            assertEquals(Integer.valueOf(100), options.get(TCP_KEEPCOUNT));
+        } else {
+            assertFalse(options.setIfSupported(TCP_KEEPCOUNT, 100));
+            assertNull(options.getIfSupported(TCP_KEEPCOUNT));
+        }
     }
 
     @Test
     public void test_TCP_KEEPIDLE() {
-        assumeIfNioThenJava11PlusAndLinux();
-
         AsyncSocket socket = newSocket();
         AsyncSocketOptions options = socket.options();
-        options.set(TCP_KEEPIDLE, 100);
-        assertEquals(Integer.valueOf(100), options.get(TCP_KEEPIDLE));
+        if (options.isSupported(TCP_KEEPIDLE)) {
+            options.set(TCP_KEEPIDLE, 100);
+            assertEquals(Integer.valueOf(100), options.get(TCP_KEEPIDLE));
+        } else {
+            assertFalse(options.setIfSupported(TCP_KEEPIDLE, 100));
+            assertNull(options.getIfSupported(TCP_KEEPIDLE));
+        }
     }
 
     @Test
     public void test_TCP_KEEPINTERVAL() {
-        assumeIfNioThenJava11PlusAndLinux();
-
         AsyncSocket socket = newSocket();
         AsyncSocketOptions options = socket.options();
-        options.set(TCP_KEEPINTERVAL, 100);
-        assertEquals(Integer.valueOf(100), options.get(TCP_KEEPINTERVAL));
+        if (options.isSupported(TCP_KEEPINTERVAL)) {
+            options.set(TCP_KEEPINTERVAL, 100);
+            assertEquals(Integer.valueOf(100), options.get(TCP_KEEPINTERVAL));
+        } else {
+            assertFalse(options.setIfSupported(TCP_KEEPINTERVAL, 100));
+            assertNull(options.getIfSupported(TCP_KEEPINTERVAL));
+        }
     }
 }

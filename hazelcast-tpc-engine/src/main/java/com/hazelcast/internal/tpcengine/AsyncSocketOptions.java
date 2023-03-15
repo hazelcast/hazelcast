@@ -73,6 +73,16 @@ public interface AsyncSocketOptions {
      */
     Option<Integer> TCP_KEEPCOUNT = new Option<>("TCP_KEEPCOUNT", Integer.class);
 
+
+    /**
+     * Checks if the option is supported.
+     *
+     * @param option the option
+     * @return true if supported, false otherwise
+     * @throws NullPointerException if option or value is null.
+     */
+    boolean isSupported(Option option);
+
     /**
      * Sets an option value.
      *
@@ -100,7 +110,6 @@ public interface AsyncSocketOptions {
      * @throws java.io.UncheckedIOException if the value could not be set.
      */
     <T> boolean setIfSupported(Option<T> option, T value);
-
 
     /**
      * Gets an option value if that option is supported. If option not supported,
