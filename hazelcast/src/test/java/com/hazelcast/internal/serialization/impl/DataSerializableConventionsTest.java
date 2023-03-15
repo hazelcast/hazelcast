@@ -24,7 +24,6 @@ import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.jet.impl.MasterJobContext;
-import com.hazelcast.sql.impl.expression.SymbolExpression;
 import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -386,7 +385,6 @@ public class DataSerializableConventionsTest {
         whiteList.add(CachedQueryEntry.class);
         whiteList.add(LocalLockCleanupOperation.class);
         whiteList.add(FinalizeMigrationOperation.class);
-        whiteList.add(SymbolExpression.class);
         whiteList.add(MasterJobContext.SnapshotRestoreEdge.class);
         try {
             // these can't be accessed through the meta class since they are private

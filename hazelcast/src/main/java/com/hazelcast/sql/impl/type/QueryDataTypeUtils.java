@@ -28,6 +28,9 @@ import com.hazelcast.sql.impl.type.converter.OffsetDateTimeConverter;
 import com.hazelcast.sql.impl.type.converter.StringConverter;
 import com.hazelcast.sql.impl.type.converter.ZonedDateTimeConverter;
 
+import java.math.MathContext;
+import java.math.RoundingMode;
+
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.DATE;
@@ -36,6 +39,7 @@ import static com.hazelcast.sql.impl.type.QueryDataType.DECIMAL_BIG_INTEGER;
 import static com.hazelcast.sql.impl.type.QueryDataType.DOUBLE;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.JSON;
+import static com.hazelcast.sql.impl.type.QueryDataType.MAX_DECIMAL_PRECISION;
 import static com.hazelcast.sql.impl.type.QueryDataType.NULL;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataType.REAL;
@@ -182,6 +186,15 @@ public final class QueryDataTypeUtils {
     public static final int PRECEDENCE_MAP = 30;
     public static final int PRECEDENCE_JSON = 40;
     public static final int PRECEDENCE_ROW = 50;
+
+    /**
+     * Math context used by expressions while doing math on BigDecimal values.
+     * <p>
+     * The context uses {@link RoundingMode#HALF_UP HALF_UP} rounding mode, with
+     * which most users should be familiar from school, and limits the precision
+     * to {@link QueryDataType#MAX_DECIMAL_PRECISION}.
+     */
+    public static final MathContext DECIMAL_MATH_CONTEXT = new MathContext(MAX_DECIMAL_PRECISION, RoundingMode.HALF_UP);
 
     private QueryDataTypeUtils() {
         // No-op.

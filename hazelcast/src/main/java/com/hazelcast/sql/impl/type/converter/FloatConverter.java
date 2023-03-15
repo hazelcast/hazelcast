@@ -20,8 +20,8 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
 
-import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.REAL;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.DECIMAL_MATH_CONTEXT;
 
 /**
  * Converter for {@link java.lang.Float} type.

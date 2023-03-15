@@ -32,7 +32,6 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOperationResult;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MissingPartitionException;
-import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -440,8 +439,7 @@ final class MapIndexScanP extends AbstractProcessor {
                 IndexIterationPointer[] pointers
         ) {
             MapProxyImpl<?, ?> mapProxyImpl = (MapProxyImpl<?, ?>) hazelcastInstance.getMap(objectName);
-            MapOperationProvider operationProvider = mapProxyImpl.getOperationProvider();
-            Operation op = operationProvider.createFetchIndexOperation(
+            Operation op = new MapFetchIndexOperation(
                     mapProxyImpl.getName(),
                     indexName,
                     pointers,

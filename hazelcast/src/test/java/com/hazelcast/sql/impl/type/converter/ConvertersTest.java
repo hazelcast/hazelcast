@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlCustomClass;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.expression.math.ExpressionMath;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -62,6 +61,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIM
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TINYINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.values;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.DECIMAL_MATH_CONTEXT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
@@ -357,7 +357,7 @@ public class ConvertersTest {
         checkDataException(() -> converter.asBigint(Float.NEGATIVE_INFINITY));
         checkDataException(() -> converter.asBigint(Float.NaN));
 
-        assertEquals(new BigDecimal(val, ExpressionMath.DECIMAL_MATH_CONTEXT), converter.asDecimal(val));
+        assertEquals(new BigDecimal(val, DECIMAL_MATH_CONTEXT), converter.asDecimal(val));
 
         assertEquals(1.1f, converter.asReal(val), 0);
         assertEquals(1.1f, converter.asDouble(val), 0);
@@ -407,7 +407,7 @@ public class ConvertersTest {
         checkDataException(() -> converter.asBigint(Double.NEGATIVE_INFINITY));
         checkDataException(() -> converter.asBigint(Double.NaN));
 
-        assertEquals(new BigDecimal(val, ExpressionMath.DECIMAL_MATH_CONTEXT), converter.asDecimal(val));
+        assertEquals(new BigDecimal(val, DECIMAL_MATH_CONTEXT), converter.asDecimal(val));
 
         assertEquals(1.1f, converter.asReal(val), 0);
         assertEquals(1.1d, converter.asDouble(val), 0);

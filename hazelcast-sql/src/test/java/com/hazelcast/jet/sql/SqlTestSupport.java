@@ -27,6 +27,7 @@ import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -41,7 +42,6 @@ import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.ResultIterator;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
@@ -471,7 +471,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
         IdentifiedDataSerializable original0 = (IdentifiedDataSerializable) original;
 
-        assertEquals(SqlDataSerializerHook.F_ID, original0.getFactoryId());
+        assertEquals(JetSqlSerializerHook.F_ID, original0.getFactoryId());
         assertEquals(expectedClassId, original0.getClassId());
 
         return serialize(original);
