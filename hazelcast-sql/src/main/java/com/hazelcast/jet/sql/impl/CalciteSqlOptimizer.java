@@ -234,7 +234,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 tableResolverImpl,
                 dataLinksResolver,
                 nodeEngine,
-                nodeEngine.getHazelcastInstance(),
                 resultRegistry
         );
 

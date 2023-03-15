@@ -34,6 +34,7 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.apache.calcite.rel.core.TableModify.Operation;
@@ -55,6 +56,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 @RunWith(JUnitParamsRunner.class)
@@ -76,9 +78,6 @@ public class PlanExecutorTest extends SimpleTestInClusterSupport {
     private JetService jet;
 
     @Mock
-    private Map<String, QueryResultProducer> resultConsumerRegistry;
-
-    @Mock
     private DAG dag;
 
     @Mock
@@ -88,6 +87,8 @@ public class PlanExecutorTest extends SimpleTestInClusterSupport {
     public void setUp() {
         MockitoAnnotations.openMocks(this);
         given(job.getFuture()).willReturn(new CompletableFuture<>());
+        given(nodeEngine.getHazelcastInstance()).willReturn(hazelcastInstance);
+        planExecutor = new PlanExecutor(catalog, null, nodeEngine, mock(QueryResultRegistry.class));
     }
 
     @Test

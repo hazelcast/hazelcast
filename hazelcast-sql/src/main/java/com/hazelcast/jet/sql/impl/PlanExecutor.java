@@ -148,13 +148,12 @@ public class PlanExecutor {
             TableResolverImpl catalog,
             DataLinksResolver dataLinksResolver,
             NodeEngine nodeEngine,
-            HazelcastInstance hazelcastInstance,
             QueryResultRegistry resultRegistry
     ) {
         this.catalog = catalog;
         this.dataLinksCatalog = dataLinksResolver;
         this.nodeEngine = nodeEngine;
-        this.hazelcastInstance = hazelcastInstance;
+        this.hazelcastInstance = nodeEngine.getHazelcastInstance();
         this.resultRegistry = resultRegistry;
 
         logger = nodeEngine.getLogger(getClass());
