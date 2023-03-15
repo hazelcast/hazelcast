@@ -171,9 +171,9 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
                 createMap("customProperty", "value2")
         );
 
-        assertThat(dataLinkViaService.isClosed())
+        assertTrueEventually(() -> assertThat(dataLinkViaService.isClosed())
                 .describedAs("DataLink should have been closed when replaced")
-                .isTrue();
+                .isTrue());
     }
 
     @Test

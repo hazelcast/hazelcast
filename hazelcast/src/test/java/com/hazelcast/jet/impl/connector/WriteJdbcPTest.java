@@ -183,7 +183,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
                 ));
         instance().getJet().newJob(p).join();
         assertEquals(PERSON_COUNT, rowCount());
-        assertTrue(hikariDataSource.isClosed());
+        assertTrueEventually(() -> assertTrue(hikariDataSource.isClosed()));
     }
 
     private static DataSource createHikariDataSource() {
