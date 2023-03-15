@@ -26,17 +26,16 @@ import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.tpcengine.AsyncServerSocket;
-import com.hazelcast.internal.tpcengine.AsyncSocket;
-import com.hazelcast.internal.tpcengine.TpcEngineBuilder;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReadHandler;
 import com.hazelcast.internal.tpcengine.TpcEngine;
+import com.hazelcast.internal.tpcengine.TpcEngineBuilder;
 import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.TpcOperationScheduler;
 import com.hazelcast.spi.impl.operationexecutor.impl.TpcPartitionOperationThread;
-import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.io.UncheckedIOException;
@@ -206,14 +205,14 @@ public class TpcServerBootstrap {
             AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
                     .set(SO_RCVBUF, clientSocketConfig.getReceiveBufferSizeKB() * KILO_BYTE)
                     .setAcceptConsumer(acceptRequest -> {
-                        AsyncSocket socket = reactor.newAsyncSocketBuilder(acceptRequest)
+                        reactor.newAsyncSocketBuilder(acceptRequest)
                                 .setReadHandler(readHandlerSuppliers.get(reactor).get())
                                 .set(SO_SNDBUF, clientSocketConfig.getSendBufferSizeKB() * KILO_BYTE)
                                 .set(SO_RCVBUF, clientSocketConfig.getReceiveBufferSizeKB() * KILO_BYTE)
                                 .set(TCP_NODELAY, tcpNoDelay)
                                 .set(SO_KEEPALIVE, true)
-                                .build();
-                        socket.start();
+                                .build()
+                                .start();
                     })
                     .build();
             serverSockets.add(serverSocket);
