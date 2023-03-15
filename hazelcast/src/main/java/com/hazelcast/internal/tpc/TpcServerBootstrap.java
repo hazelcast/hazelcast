@@ -58,6 +58,11 @@ import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_SNDBUF;
 import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.TCP_NODELAY;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+/**
+ * The TpcServerBootstrap is responsible for starting up the {@link TpcEngine},
+ * correct initialization of internal parts like the {@link  TpcPartitionOperationThread}
+ * and starting the appropriate server ports for each TPC thread.
+ */
 public class TpcServerBootstrap {
 
     /**
