@@ -79,7 +79,7 @@ public interface AsyncSocketOptions {
      *
      * @param option the option
      * @return true if supported, false otherwise
-     * @throws NullPointerException if option or value is null.
+     * @throws NullPointerException if option is <code>null</code>.
      */
     boolean isSupported(Option option);
 
