@@ -46,17 +46,17 @@ public class GetDdlFunction extends TriExpression<String> implements IdentifiedD
     public String eval(Row row, ExpressionEvalContext context) {
         String namespace = asVarchar(operand1, row, context);
         if (namespace == null) {
-            throw QueryException.error("Can't fetch DDL query for null namespace");
+            throw QueryException.error("Namespace must not be null for GET_DDL");
         }
 
         String objectName = asVarchar(operand2, row, context);
         if (objectName == null) {
-            throw QueryException.error("Can't fetch DDL query for null object_name");
+            throw QueryException.error("Object_name must not be null for GET_DDL");
         }
 
         // Ignore schema for now, the only supported schema at the moment is 'hazelcast.public'.
 
-        IMap sqlCatalog = context.getNodeEngine().getHazelcastInstance().getMap(SQL_CATALOG_MAP_NAME);
+        IMap<?, ?> sqlCatalog = context.getNodeEngine().getHazelcastInstance().getMap(SQL_CATALOG_MAP_NAME);
         final String ddl;
         if (!(namespace.equals(RELATION_NAMESPACE) || namespace.equals(DATALINK_NAMESPACE))) {
             throw QueryException.error(

@@ -46,7 +46,6 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
         this.nodeEngine = requireNonNull(nodeEngine);
     }
 
-
     /**
      * @param index argument index
      * @return the query argument

@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.schema.SqlCatalogObject;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
@@ -55,6 +56,7 @@ public class DataLink implements IdentifiedDataSerializable, SqlCatalogObject {
         return options;
     }
 
+    @Nonnull
     @Override
     public String unparse() {
         StringBuilder buffer = new StringBuilder();

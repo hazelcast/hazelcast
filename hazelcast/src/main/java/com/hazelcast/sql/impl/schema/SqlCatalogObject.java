@@ -19,12 +19,12 @@ package com.hazelcast.sql.impl.schema;
 import javax.annotation.Nonnull;
 
 /**
- * Interface for relation object which supports unparsing DDL query for itself.
+ * Interface for catalog objects which support unparsing to DDL.
  */
 public interface SqlCatalogObject {
 
     /**
-     * @return DDL query for current relation object.
+     * @return DDL statement to create this object.
      */
     @Nonnull
     String unparse();
