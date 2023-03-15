@@ -390,7 +390,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             startHeartbeat();
             startIcmpPing();
             connectionManager.connectToCluster();
-            sendStateToCluster();
+            ClientConnectionStrategyConfig connectionStrategyConfig = config.getConnectionStrategyConfig();
+            boolean asyncStart = connectionStrategyConfig.isAsyncStart();
+            if (!asyncStart) {
+                sendStateToCluster();
+            }
 
             diagnostics.start();
 
@@ -416,8 +420,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
             metricsRegistry.provideMetrics(listenerService);
 
-            ClientConnectionStrategyConfig connectionStrategyConfig = config.getConnectionStrategyConfig();
-            boolean asyncStart = connectionStrategyConfig.isAsyncStart();
             if (!asyncStart) {
                 waitForInitialMembershipEvents();
             }
