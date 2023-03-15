@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ForkJoinPool;
 
 import static com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource.CONFIG;
 import static com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource.SQL;
@@ -81,18 +82,21 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
                         if (current.source == CONFIG) {
                             throw new HazelcastException("Cannot replace a data link created from configuration");
                         }
-                        if (current.config.equals(config)) {
+                        if (current.instance.getConfig().equals(config)) {
                             return current;
                         }
                         // close the old DataLink
-                        try {
-                            current.instance.release();
-                        } catch (Exception e) {
-                            logger.severe("Error when closing data link '" + config.getName()
-                                    + "', ignoring it: " + e, e);
-                        }
+                        logger.fine("Asynchronously closing the old datalink: " + config.getName());
+                        ForkJoinPool.commonPool().execute(() -> {
+                            try {
+                                current.instance.release();
+                            } catch (Throwable e) {
+                                logger.severe("Error when closing data link '" + config.getName()
+                                        + "', ignoring it: " + e, e);
+                            }
+                        });
                     }
-                    return new DataLinkEntry(createDataLinkInstance(config), config, source);
+                    return new DataLinkEntry(createDataLinkInstance(config), source);
                 });
     }
 
@@ -210,12 +214,10 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
 
     static class DataLinkEntry {
         final DataLink instance;
-        final DataLinkConfig config;
         final DataLinkSource source;
 
-        DataLinkEntry(DataLink instance, DataLinkConfig config, DataLinkSource source) {
+        DataLinkEntry(DataLink instance, DataLinkSource source) {
             this.instance = instance;
-            this.config = config;
             this.source = source;
         }
     }

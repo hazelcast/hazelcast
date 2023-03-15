@@ -48,7 +48,7 @@ public interface InternalDataLinkService extends DataLinkService {
     void createConfigDataLink(DataLinkConfig config);
 
     /**
-     * Creates a new or replace existing DataLink with the given parameters.
+     * Creates a new or replaces an existing DataLink with the given parameters.
      *
      * @param name    name of the DataLink
      * @param type    type of the DataLink
