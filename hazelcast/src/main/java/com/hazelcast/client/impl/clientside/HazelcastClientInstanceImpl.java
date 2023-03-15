@@ -910,7 +910,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clusterService.waitInitialMemberListFetched();
     }
 
-    public void sendStateToCluster() {
+    public void sendStateToCluster() throws ExecutionException, InterruptedException {
         CompletionService<Void> completionService = new ExecutorCompletionService<>(getTaskScheduler());
         List<Callable<Void>> tasks = new ArrayList<>();
         tasks.add(() -> {
@@ -933,13 +933,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             completionService.submit(task);
         }
         for (int i = 0; i < tasks.size(); i++) {
-            try {
-                completionService.take().get();
-            } catch (InterruptedException e) {
-                throw rethrow(e);
-            } catch (ExecutionException e) {
-                throw rethrow(e.getCause());
-            }
+            completionService.take().get();
         }
     }
 
