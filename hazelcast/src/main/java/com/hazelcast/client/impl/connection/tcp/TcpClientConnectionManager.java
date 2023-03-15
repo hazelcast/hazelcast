@@ -95,7 +95,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -116,7 +115,6 @@ import static com.hazelcast.client.properties.ClientProperty.IO_WRITE_THROUGH_EN
 import static com.hazelcast.client.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CHANGED_CLUSTER;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
-import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ThreadAffinity.newSystemThreadAffinity;
 import static java.util.Objects.requireNonNull;
@@ -422,15 +420,17 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                             logger.warning("No connection to cluster: " + clusterId);
                         }
                         submitConnectToClusterTask();
-                    } else {
-                        executor.submit(() -> {
-                            try {
-                                client.sendStateToCluster();
-                            } catch (Throwable e) {
-                                logger.warning("Could not send state to cluster: " + e.getMessage());
-                            }
-                        });
                     }
+                }
+                if (!activeConnections.isEmpty()) {
+                    // Send state to cluster for async clients in async way.
+                    executor.submit(() -> {
+                        try {
+                            client.sendStateToCluster();
+                        } catch (Throwable e) {
+                            logger.warning("Could not send state to cluster: " + e.getMessage());
+                        }
+                    });
                 }
             } catch (Throwable e) {
                 logger.warning("Could not connect to any cluster, shutting down the client: " + e.getMessage());
