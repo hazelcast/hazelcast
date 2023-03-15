@@ -420,18 +420,18 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public void flushMaps() {
+        for (MapContainer mapContainer : mapContainers.values()) {
+            mapContainer.getMapStoreContext().stop();
+        }
+
         for (PartitionContainer partitionContainer : partitionContainers) {
             for (String mapName : mapContainers.keySet()) {
                 RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);
                 if (recordStore != null) {
                     MapDataStore mapDataStore = recordStore.getMapDataStore();
-                    mapDataStore.hardFlush();
+                    mapDataStore.hardFlushOnShutDown();
                 }
             }
-        }
-
-        for (MapContainer mapContainer : mapContainers.values()) {
-            mapContainer.getMapStoreContext().stop();
         }
     }
 

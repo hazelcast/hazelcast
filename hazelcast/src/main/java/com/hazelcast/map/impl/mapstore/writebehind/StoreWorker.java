@@ -27,6 +27,7 @@ import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -35,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.RejectedExecutionException;
 
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 import static java.lang.Thread.currentThread;
@@ -110,7 +112,15 @@ public class StoreWorker implements Runnable {
     }
 
     private void schedule() {
-        executionService.schedule(this, 1, SECONDS);
+        try {
+            executionService.schedule(this, 1, SECONDS);
+        } catch (RejectedExecutionException e) {
+            if (((NodeEngineImpl) mapServiceContext.getNodeEngine())
+                    .getNode().isRunning()) {
+                throw e;
+            }
+        }
+
     }
 
     private void runInternal() {
@@ -149,7 +159,8 @@ public class StoreWorker implements Runnable {
         }
 
         if (!isEmpty(ownersList)) {
-            Map<Integer, List<DelayedEntry>> failuresPerPartition = writeBehindProcessor.process(ownersList);
+            Map<Integer, List<DelayedEntry>> failuresPerPartition
+                    = writeBehindProcessor.process(ownersList, false);
             removeFinishedStoreOperationsFromQueues(mapName, ownersList);
             reAddFailedStoreOperationsToQueues(mapName, failuresPerPartition);
         }

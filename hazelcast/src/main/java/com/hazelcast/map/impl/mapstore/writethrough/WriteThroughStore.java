@@ -100,7 +100,7 @@ public class WriteThroughStore extends AbstractMapDataStore<Data, Object> {
     }
 
     @Override
-    public void hardFlush() {
+    public void hardFlushOnShutDown() {
         // Only write-behind configured map-stores are flushable.
     }
 

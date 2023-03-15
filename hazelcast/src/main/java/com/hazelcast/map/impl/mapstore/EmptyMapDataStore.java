@@ -85,7 +85,7 @@ class EmptyMapDataStore implements MapDataStore {
     }
 
     @Override
-    public void hardFlush() {
+    public void hardFlushOnShutDown() {
     }
 
     @Override

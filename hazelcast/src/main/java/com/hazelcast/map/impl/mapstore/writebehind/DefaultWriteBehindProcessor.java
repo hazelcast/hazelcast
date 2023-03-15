@@ -59,19 +59,20 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
     }
 
     @Override
-    public Map<Integer, List<DelayedEntry>> process(List<DelayedEntry> delayedEntries) {
+    public Map<Integer, List<DelayedEntry>> process(List<DelayedEntry> delayedEntries, boolean onShutDown) {
         Map<Integer, List<DelayedEntry>> failMap;
         sort(delayedEntries);
         if (writeBatchSize > 1) {
-            failMap = doStoreUsingBatchSize(delayedEntries);
+            failMap = doStoreUsingBatchSize(delayedEntries, onShutDown);
         } else {
-            failMap = processInternal(delayedEntries);
+            failMap = processInternal(delayedEntries, onShutDown);
         }
         return failMap;
     }
 
 
-    private Map<Integer, List<DelayedEntry>> processInternal(List<DelayedEntry> delayedEntries) {
+    private Map<Integer, List<DelayedEntry>> processInternal(List<DelayedEntry> delayedEntries,
+                                                             boolean onShutDown) {
         if (delayedEntries == null || delayedEntries.isEmpty()) {
             return Collections.emptyMap();
         }
@@ -88,13 +89,13 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
                 operationType = StoreOperationType.WRITE;
             }
             if (previousOperationType != null && !previousOperationType.equals(operationType)) {
-                final List<DelayedEntry> failures = callHandler(entriesToProcess, previousOperationType);
+                final List<DelayedEntry> failures = callHandler(entriesToProcess, previousOperationType, onShutDown);
                 addFailsTo(failuresByPartition, failures);
                 entriesToProcess.clear();
             }
             entriesToProcess.add(entry);
         }
-        final List<DelayedEntry> failures = callHandler(entriesToProcess, operationType);
+        final List<DelayedEntry> failures = callHandler(entriesToProcess, operationType, onShutDown);
         addFailsTo(failuresByPartition, failures);
         entriesToProcess.clear();
         return failuresByPartition;
@@ -118,10 +119,11 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
      * methods.
      *
      * @param delayedEntries sorted entries to be processed.
+     * @param onShutDown
      * @return failed entry list if any.
      */
     private List<DelayedEntry> callHandler(Collection<DelayedEntry> delayedEntries,
-                                           StoreOperationType operationType) {
+                                           StoreOperationType operationType, boolean onShutDown) {
         final int size = delayedEntries.size();
         if (size == 0) {
             return Collections.emptyList();
@@ -143,12 +145,12 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
         // if all batch is on same key, call single store.
         if (batchMap.size() == 1) {
             final DelayedEntry delayedEntry = delayedEntriesArray[delayedEntriesArray.length - 1];
-            return callSingleStoreWithListeners(delayedEntry, operationType);
+            return callSingleStoreWithListeners(delayedEntry, operationType, onShutDown);
         }
-        final List<DelayedEntry> failedEntryList = callBatchStoreWithListeners(batchMap, operationType);
+        final List<DelayedEntry> failedEntryList = callBatchStoreWithListeners(batchMap, operationType, onShutDown);
         final List<DelayedEntry> failedTries = new ArrayList<>();
         for (DelayedEntry entry : failedEntryList) {
-            final Collection<DelayedEntry> tmpFails = callSingleStoreWithListeners(entry, operationType);
+            final Collection<DelayedEntry> tmpFails = callSingleStoreWithListeners(entry, operationType, onShutDown);
             failedTries.addAll(tmpFails);
         }
         return failedTries;
@@ -158,7 +160,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
                                                       StoreOperationType operationType) {
         List<DelayedEntry> totalFailures = null;
         for (DelayedEntry delayedEntry : delayedEntries) {
-            List<DelayedEntry> failures = callSingleStoreWithListeners(delayedEntry, operationType);
+            List<DelayedEntry> failures = callSingleStoreWithListeners(delayedEntry, operationType, false);
             // this `if` is used to initialize totalFailures list, since we don't want unneeded object creation.
             if (isNotEmpty(failures)) {
                 if (totalFailures == null) {
@@ -187,21 +189,27 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
     }
 
     /**
-     * @param entry delayed entry to be stored.
+     * @param entry      delayed entry to be stored.
+     * @param onShutDown
      * @return failed entry list if any.
      */
     private List<DelayedEntry> callSingleStoreWithListeners(final DelayedEntry entry,
-                                                            final StoreOperationType operationType) {
-        return retryCall(new StoreSingleEntryTask(entry, operationType, mapStore.isWithExpirationTime()));
+                                                            final StoreOperationType operationType,
+                                                            boolean onShutDown) {
+        return retryCall(new StoreSingleEntryTask(entry, operationType, mapStore.isWithExpirationTime()),
+                onShutDown);
     }
 
     /**
-     * @param batchMap contains batched delayed entries.
+     * @param batchMap   contains batched delayed entries.
+     * @param onShutDown
      * @return failed entry list if any.
      */
     private List<DelayedEntry> callBatchStoreWithListeners(final Map<Object, DelayedEntry> batchMap,
-                                                           final StoreOperationType operationType) {
-        return retryCall(new StoreBatchTask(batchMap, operationType, mapStore.isWithExpirationTime()));
+                                                           final StoreOperationType operationType,
+                                                           boolean onShutDown) {
+        return retryCall(new StoreBatchTask(batchMap, operationType, mapStore.isWithExpirationTime()),
+                onShutDown);
     }
 
     private void callBeforeStoreListeners(DelayedEntry entry) {
@@ -229,7 +237,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
     }
 
     @Override
-    public void flush(WriteBehindQueue queue) {
+    public void hardFlushOnShutDown(WriteBehindQueue queue) {
         int size = queue.size();
 
         if (size == 0) {
@@ -238,19 +246,20 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
 
         List<DelayedEntry> delayedEntries = new ArrayList<>(size);
         queue.drainTo(delayedEntries);
-        flushInternal(delayedEntries);
+        flushInternal(delayedEntries, true);
     }
 
     @Override
     public void flush(DelayedEntry entry) {
         final List<DelayedEntry> entries = Collections.singletonList(entry);
-        flushInternal(entries);
+        flushInternal(entries, false);
     }
 
-    private void flushInternal(List<DelayedEntry> delayedEntries) {
+    private void flushInternal(List<DelayedEntry> delayedEntries, boolean onShutDown) {
         sort(delayedEntries);
 
-        Map<Integer, List<DelayedEntry>> failedStoreOpPerPartition = process(delayedEntries);
+        Map<Integer, List<DelayedEntry>> failedStoreOpPerPartition
+                = process(delayedEntries, onShutDown);
 
         if (failedStoreOpPerPartition.size() > 0) {
             printErrorLog(failedStoreOpPerPartition);
@@ -278,14 +287,16 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
      * Store chunk by chunk using write batch size {@link #writeBatchSize}
      *
      * @param sortedDelayedEntries entries to be stored.
+     * @param onShutDown
      * @return not-stored entries per partition.
      */
-    private Map<Integer, List<DelayedEntry>> doStoreUsingBatchSize(List<DelayedEntry> sortedDelayedEntries) {
+    private Map<Integer, List<DelayedEntry>> doStoreUsingBatchSize(List<DelayedEntry> sortedDelayedEntries,
+                                                                   boolean onShutDown) {
         Map<Integer, List<DelayedEntry>> failsPerPartition = new HashMap<>();
         int page = 0;
         List<DelayedEntry> delayedEntryList;
         while ((delayedEntryList = getBatchChunk(sortedDelayedEntries, writeBatchSize, page++)) != null) {
-            Map<Integer, List<DelayedEntry>> fails = processInternal(delayedEntryList);
+            Map<Integer, List<DelayedEntry>> fails = processInternal(delayedEntryList, onShutDown);
             Set<Map.Entry<Integer, List<DelayedEntry>>> entries = fails.entrySet();
             for (Map.Entry<Integer, List<DelayedEntry>> entry : entries) {
                 addFailsTo(failsPerPartition, entry.getValue());
@@ -294,13 +305,10 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
         return failsPerPartition;
     }
 
-    private List<DelayedEntry> retryCall(RetryTask task) {
+    private List<DelayedEntry> retryCall(RetryTask task, boolean onShutDown) {
         Exception exception = null;
-        int retryCount = 0;
-        while (!stopped
-                && !currentThread().isInterrupted()
-                && retryCount++ < RETRY_TIMES_OF_A_FAILED_STORE_OPERATION) {
 
+        if (onShutDown) {
             try {
                 if (task.run()) {
                     // return empty failed operation list
@@ -312,8 +320,28 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
             } catch (Exception ex) {
                 exception = ex;
             }
+        } else {
+            int tryCount = 0;
+            while (!stopped
+                    && !currentThread().isInterrupted()
+                    && tryCount < RETRY_TIMES_OF_A_FAILED_STORE_OPERATION) {
 
-            sleepSeconds(RETRY_STORE_AFTER_WAIT_SECONDS);
+                try {
+                    if (task.run()) {
+                        // return empty failed operation list
+                        // since task run is succeeded.
+                        return Collections.emptyList();
+                    }
+                } catch (InterruptedException ex) {
+                    currentThread().interrupt();
+                } catch (Exception ex) {
+                    exception = ex;
+                } finally {
+                    tryCount++;
+                }
+
+                sleepSeconds(RETRY_STORE_AFTER_WAIT_SECONDS);
+            }
         }
 
         // List of entries which can not be stored for this round.

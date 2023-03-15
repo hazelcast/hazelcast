@@ -347,12 +347,12 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     }
 
     @Override
-    public void hardFlush() {
+    public void hardFlushOnShutDown() {
         if (writeBehindQueue.size() == 0) {
             return;
         }
 
-        writeBehindProcessor.flush(writeBehindQueue);
+        writeBehindProcessor.hardFlushOnShutDown(writeBehindQueue);
     }
 
     public WriteBehindQueue<DelayedEntry> getWriteBehindQueue() {

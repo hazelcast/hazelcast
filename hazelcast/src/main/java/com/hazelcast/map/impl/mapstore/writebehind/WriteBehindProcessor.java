@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -32,9 +34,10 @@ public interface WriteBehindProcessor<E> {
      * Process store operations and returns failed operation per partition map.
      *
      * @param delayedEntries to be written to store.
+     * @param onShutDown
      * @return failed store operations per partition.
      */
-    Map<Integer, List<E>> process(List<E> delayedEntries);
+    Map<Integer, List<E>> process(List<DelayedEntry> delayedEntries, boolean onShutDown);
 
     void callAfterStoreListeners(Collection<E> entries);
 
@@ -47,7 +50,7 @@ public interface WriteBehindProcessor<E> {
      *
      * @param queue supplied {@link WriteBehindQueue} for flush.
      */
-    void flush(WriteBehindQueue queue);
+    void hardFlushOnShutDown(WriteBehindQueue queue);
 
     /**
      * Flushes a key directly to map store.

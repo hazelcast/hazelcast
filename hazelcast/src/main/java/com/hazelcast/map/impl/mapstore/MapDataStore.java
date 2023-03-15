@@ -127,7 +127,7 @@ public interface MapDataStore<K, V> {
      *
      * @see com.hazelcast.map.impl.MapManagedService#shutdown(boolean)
      */
-    void hardFlush();
+    void hardFlushOnShutDown();
 
     /**
      * Flushes the supplied key to the map-store.
