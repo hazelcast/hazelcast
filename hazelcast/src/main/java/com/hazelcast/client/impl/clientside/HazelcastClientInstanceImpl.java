@@ -390,6 +390,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             startHeartbeat();
             startIcmpPing();
             connectionManager.connectToCluster();
+            sendStateToCluster();
 
             diagnostics.start();
 
@@ -430,7 +431,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             clientExtension.afterStart(this);
             cpSubsystem.init(clientContext);
             addClientConfigAddedListeners(configuredListeners);
-            sendStateToCluster();
         } catch (Throwable e) {
             try {
                 lifecycleService.terminate();
