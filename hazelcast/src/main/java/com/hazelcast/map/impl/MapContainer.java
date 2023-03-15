@@ -113,13 +113,13 @@ public class MapContainer {
     protected final AtomicInteger invalidationListenerCounter;
     protected final AtomicLong lastInvalidMergePolicyCheckTime = new AtomicLong();
 
-    protected SplitBrainMergePolicy wanMergePolicy;
-    protected DelegatingWanScheme wanReplicationDelegate;
+    protected volatile SplitBrainMergePolicy wanMergePolicy;
+    protected volatile DelegatingWanScheme wanReplicationDelegate;
 
     protected volatile MapConfig mapConfig;
     private volatile Evictor evictor;
 
-    private boolean persistWanReplicatedData;
+    private volatile boolean persistWanReplicatedData;
 
     private volatile boolean destroyed;
 
@@ -150,7 +150,7 @@ public class MapContainer {
         this.mapStoreContext = createMapStoreContext(this);
         this.invalidationListenerCounter = mapServiceContext.getEventListenerCounter()
                 .getOrCreateCounter(name);
-        initWanReplication(mapServiceContext.getNodeEngine());
+        initWanReplication();
     }
 
     public void init() {
@@ -271,7 +271,8 @@ public class MapContainer {
         };
     }
 
-    public void initWanReplication(NodeEngine nodeEngine) {
+    public void initWanReplication() {
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
         if (wanReplicationRef == null) {
             return;
@@ -326,7 +327,11 @@ public class MapContainer {
     }
 
     private PartitioningStrategy createPartitioningStrategy() {
-        return mapServiceContext.getPartitioningStrategy(mapConfig.getName(), mapConfig.getPartitioningStrategyConfig());
+        return mapServiceContext.getPartitioningStrategy(
+                mapConfig.getName(),
+                mapConfig.getPartitioningStrategyConfig(),
+                mapConfig.getPartitioningAttributeConfigs()
+        );
     }
 
     /**

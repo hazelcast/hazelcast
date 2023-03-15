@@ -315,8 +315,18 @@ public final class ClientProperty {
      * The default size of multipart job upload
      */
     public static final HazelcastProperty JOB_UPLOAD_PART_SIZE
-            = new HazelcastProperty("hazelcast.jobupload.partsize", 10_000_000);
+            = new HazelcastProperty("hazelcast.client.jobupload.partsize", 10_000_000);
 
+    /**
+     * Parametrized SQL queries touching only a single partition benefit from
+     * using the partition owner as the query coordinator, if the partition
+     * owner can be determined from one of the query parameters. When such a
+     * query is executed, the cluster sends the index of such argument to the
+     * client. This parameter configures the size of the cache the client uses
+     * for storing this information.
+     */
+    public static final HazelcastProperty PARTITION_ARGUMENT_CACHE_SIZE
+            = new HazelcastProperty("hazelcast.client.sql.partition.argument.cache.size", 1024);
 
     private ClientProperty() {
     }

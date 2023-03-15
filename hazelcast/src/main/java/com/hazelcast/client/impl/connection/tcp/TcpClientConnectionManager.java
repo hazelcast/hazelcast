@@ -55,8 +55,8 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.nio.NioNetworking;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -123,9 +123,10 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 /**
  * Implementation of {@link ClientConnectionManager}.
  */
+@SuppressWarnings({"checkstyle:MethodLength", "checkstyle:NPathComplexity"})
 public class TcpClientConnectionManager implements ClientConnectionManager, MembershipListener {
 
-    private static final int DEFAULT_SMART_CLIENT_THREAD_COUNT = 3;
+    private static final int DEFAULT_IO_THREAD_COUNT = 3;
     private static final int EXECUTOR_CORE_POOL_SIZE = 10;
     private static final int SMALL_MACHINE_PROCESSOR_COUNT = 8;
     private static final int SQL_CONNECTION_RANDOM_ATTEMPTS = 10;
@@ -156,7 +157,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     private final boolean asyncStart;
     private final ReconnectMode reconnectMode;
     private final LoadBalancer loadBalancer;
-    private final boolean isSmartRoutingEnabled;
+    private final boolean isUnisocketClient;
+    private final boolean isAltoAwareClient;
     private volatile Credentials currentCredentials;
 
     // following fields are updated inside synchronized(clientStateMutex)
@@ -211,10 +213,12 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         SWITCHING_CLUSTER
     }
 
+    @SuppressWarnings("ExecutableStatementCount")
     public TcpClientConnectionManager(HazelcastClientInstanceImpl client) {
         this.client = client;
+        ClientConfig config = client.getClientConfig();
         this.loadBalancer = client.getLoadBalancer();
-        this.labels = Collections.unmodifiableSet(client.getClientConfig().getLabels());
+        this.labels = Collections.unmodifiableSet(config.getLabels());
         this.logger = client.getLoggingService().getLogger(ClientConnectionManager.class);
         this.connectionType = client.getProperties().getBoolean(MC_CLIENT_MODE_PROP)
                 ? ConnectionType.MC_JAVA_CLIENT : ConnectionType.JAVA_CLIENT;
@@ -226,12 +230,21 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         this.failoverConfigProvided = client.getFailoverConfig() != null;
         this.executor = createExecutorService();
         this.clusterDiscoveryService = client.getClusterDiscoveryService();
-        this.waitStrategy = initializeWaitStrategy(client.getClientConfig());
+        this.waitStrategy = initializeWaitStrategy(config);
         this.shuffleMemberList = client.getProperties().getBoolean(SHUFFLE_MEMBER_LIST);
-        this.isSmartRoutingEnabled = client.getClientConfig().getNetworkConfig().isSmartRouting();
-        this.asyncStart = client.getClientConfig().getConnectionStrategyConfig().isAsyncStart();
-        this.reconnectMode = client.getClientConfig().getConnectionStrategyConfig().getReconnectMode();
+        this.isUnisocketClient = unisocketModeConfigured(config);
+        this.isAltoAwareClient = config.getAltoConfig().isEnabled();
+        this.asyncStart = config.getConnectionStrategyConfig().isAsyncStart();
+        this.reconnectMode = config.getConnectionStrategyConfig().getReconnectMode();
         this.connectionProcessListenerRunner = new ClientConnectionProcessListenerRunner(client);
+    }
+
+    private boolean unisocketModeConfigured(ClientConfig config) {
+        if (config.getAltoConfig().isEnabled()) {
+            return false;
+        }
+
+        return !config.getNetworkConfig().isSmartRouting();
     }
 
     private int initConnectionTimeoutMillis() {
@@ -270,8 +283,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
         int inputThreads;
         if (configuredInputThreads == -1) {
-            if (isSmartRoutingEnabled && RuntimeAvailableProcessors.get() > SMALL_MACHINE_PROCESSOR_COUNT) {
-                inputThreads = DEFAULT_SMART_CLIENT_THREAD_COUNT;
+            if (!isUnisocketClient && RuntimeAvailableProcessors.get() > SMALL_MACHINE_PROCESSOR_COUNT) {
+                inputThreads = DEFAULT_IO_THREAD_COUNT;
             } else {
                 inputThreads = 1;
             }
@@ -281,8 +294,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
         int outputThreads;
         if (configuredOutputThreads == -1) {
-            if (isSmartRoutingEnabled && RuntimeAvailableProcessors.get() > SMALL_MACHINE_PROCESSOR_COUNT) {
-                outputThreads = DEFAULT_SMART_CLIENT_THREAD_COUNT;
+            if (!isUnisocketClient && RuntimeAvailableProcessors.get() > SMALL_MACHINE_PROCESSOR_COUNT) {
+                outputThreads = DEFAULT_IO_THREAD_COUNT;
             } else {
                 outputThreads = 1;
             }
@@ -339,7 +352,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     }
 
     public void tryConnectToAllClusterMembers(boolean sync) {
-        if (!isSmartRoutingEnabled) {
+        if (isUnisocketClient) {
             return;
         }
 
@@ -366,7 +379,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
         executor.shutdownNow();
         ClientExecutionServiceImpl.awaitExecutorTermination("cluster", executor, logger);
-        for (Connection connection : activeConnections.values()) {
+        for (ClientConnection connection : activeConnections.values()) {
             connection.close("Hazelcast client is shutting down", null);
         }
 
@@ -471,23 +484,23 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         return false;
     }
 
-    <A> Connection connect(A target, Function<A, Connection> getOrConnectFunction,
+    <A> ClientConnection connect(A target, Function<A, ClientConnection> getOrConnectFunction,
                            Function<A, Address> addressTranslator) {
         try {
             logger.info("Trying to connect to " + target);
             return getOrConnectFunction.apply(target);
         } catch (InvalidConfigurationException e) {
-            logger.warning("Exception during initial connection to " + target + ": " + e);
+            logger.warning("Exception during initial connection to " + target + ": " + e, e);
             throw rethrow(e);
         } catch (ClientNotAllowedInClusterException e) {
-            logger.warning("Exception during initial connection to " + target + ": " + e);
+            logger.warning("Exception during initial connection to " + target + ": " + e, e);
             throw e;
         } catch (TargetDisconnectedException e) {
             logger.warning("Exception during initial connection to " + target + ": " + e);
             connectionProcessListenerRunner.onRemoteClosedConnection(addressTranslator, target);
             return null;
         } catch (Exception e) {
-            logger.warning("Exception during initial connection to " + target + ": " + e);
+            logger.warning("Exception during initial connection to " + target + ": " + e, e);
             connectionProcessListenerRunner.onConnectionAttemptFailed(addressTranslator, target);
             return null;
         }
@@ -514,7 +527,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                     checkClientActive();
                     triedAddressesPerAttempt.add(member.getAddress());
                     connectionProcessListenerRunner.onAttemptingToConnectToTarget(this::translate, member);
-                    Connection connection = connect(member,
+                    ClientConnection connection = connect(member,
                             o -> getOrConnectToMember(o, switchingToNextCluster),
                             this::translate);
                     if (connection != null) {
@@ -529,7 +542,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         continue;
                     }
                     connectionProcessListenerRunner.onAttemptingToConnectToTarget(this::translate, address);
-                    Connection connection = connect(address,
+                    ClientConnection connection = connect(address,
                             o -> getOrConnectToAddress(o, switchingToNextCluster),
                             this::translate);
                     if (connection != null) {
@@ -618,7 +631,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     }
 
     @Override
-    public Collection<Connection> getActiveConnections() {
+    public Collection<ClientConnection> getActiveConnections() {
         return (Collection) activeConnections.values();
     }
 
@@ -728,6 +741,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
     }
 
+
     @SuppressWarnings("unchecked")
     protected TcpClientConnection createSocketConnection(Address target) {
         CandidateClusterContext currentClusterContext = clusterDiscoveryService.current();
@@ -737,14 +751,17 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             Socket socket = socketChannel.socket();
 
             bindSocketToPort(socket);
-
-            Channel channel = networking.register(currentClusterContext.getChannelInitializer(), socketChannel, true);
+            ChannelInitializer channelInitializer = currentClusterContext.getChannelInitializer();
+            Channel channel = networking.register(channelInitializer, socketChannel, true);
             channel.attributeMap().put(Address.class, target);
 
             InetSocketAddress inetSocketAddress = new InetSocketAddress(target.getInetAddress(), target.getPort());
             channel.connect(inetSocketAddress, connectionTimeoutMillis);
 
-            TcpClientConnection connection = new TcpClientConnection(client, connectionIdGen.incrementAndGet(), channel);
+            TcpClientConnection connection = new TcpClientConnection(client,
+                    connectionIdGen.incrementAndGet(),
+                    channel,
+                    channelInitializer);
 
             socketChannel.configureBlocking(true);
             SocketInterceptor socketInterceptor = currentClusterContext.getSocketInterceptor();
@@ -754,6 +771,36 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
             channel.start();
             return connection;
+        } catch (Exception e) {
+            closeResource(socketChannel);
+            logger.finest(e);
+            throw rethrow(e);
+        }
+    }
+
+    private Channel createAltoChannel(Address address, TcpClientConnection connection, ChannelInitializer channelInitializer) {
+        SocketChannel socketChannel = null;
+        try {
+            socketChannel = SocketChannel.open();
+            Socket socket = socketChannel.socket();
+
+            // TODO: Outbound ports for Alto?
+            bindSocketToPort(socket);
+            Channel channel = networking.register(channelInitializer, socketChannel, true);
+
+            channel.addCloseListener(new AltoChannelCloseListener(client));
+
+            ConcurrentMap attributeMap = channel.attributeMap();
+            attributeMap.put(Address.class, address);
+            attributeMap.put(TcpClientConnection.class, connection);
+            attributeMap.put(AltoChannelClientConnectionAdapter.class, new AltoChannelClientConnectionAdapter(channel));
+
+            InetSocketAddress socketAddress = new InetSocketAddress(address.getHost(), address.getPort());
+            channel.connect(socketAddress, connectionTimeoutMillis);
+
+            // TODO: Socket interceptor for Alto?
+            channel.start();
+            return channel;
         } catch (Exception e) {
             closeResource(socketChannel);
             logger.finest(e);
@@ -843,6 +890,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         connectionProcessListenerRunner.addListener(listener);
     }
 
+    @Override
+    public boolean isUnisocketClient() {
+        return isUnisocketClient;
+    }
+
     public Credentials getCurrentCredentials() {
         return currentCredentials;
     }
@@ -855,8 +907,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
     @Override
     public ClientConnection getRandomConnection() {
-        // Try getting the connection from the load balancer, if smart routing is enabled
-        if (isSmartRoutingEnabled) {
+        // Try getting the connection from the load balancer, if the client is not unisocket
+        if (!isUnisocketClient) {
             Member member = loadBalancer.next();
 
             // Failed to get a member
@@ -877,7 +929,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
     @Override
     public ClientConnection getConnectionForSql() {
-        if (isSmartRoutingEnabled) {
+        if (!isUnisocketClient) {
             // There might be a race - the chosen member might be just connected or disconnected - try a
             // couple of times, the memberOfLargerSameVersionGroup returns a random connection,
             // we might be lucky...
@@ -924,6 +976,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
     }
 
+
     /**
      * The returned connection could be different than the one passed to this method if there is already an existing
      * connection to the given member.
@@ -959,6 +1012,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 client.onConnectionToNewCluster();
             }
             checkClientState(connection, switchingToNextCluster);
+
+            List<Integer> altoPorts = response.altoPorts;
+            if (isAltoAwareClient && altoPorts != null && !altoPorts.isEmpty()) {
+                connectAltoPorts(connection, altoPorts);
+            }
 
             boolean connectionsEmpty = activeConnections.isEmpty();
             activeConnections.put(response.memberUuid, connection);
@@ -1191,6 +1249,17 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
     }
 
+    private void connectAltoPorts(TcpClientConnection connection, List<Integer> altoPorts) {
+        AltoChannelConnector connector = new AltoChannelConnector(clientUuid,
+                connection,
+                altoPorts,
+                executor,
+                connection.getChannelInitializer(),
+                this::createAltoChannel,
+                client.getLoggingService());
+        connector.initiate();
+    }
+
     private class ClientConnectionChannelErrorHandler implements ChannelErrorHandler {
         @Override
         public void onError(Channel channel, Throwable cause) {
@@ -1201,7 +1270,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                     logger.severe(cause);
                 }
 
-                Connection connection = (Connection) channel.attributeMap().get(TcpClientConnection.class);
+                ClientConnection connection = (ClientConnection) channel.attributeMap().get(TcpClientConnection.class);
                 if (cause instanceof EOFException) {
                     connection.close("Connection closed by the other side", cause);
                 } else {
@@ -1274,7 +1343,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     @Override
     public void memberRemoved(MembershipEvent membershipEvent) {
         Member member = membershipEvent.getMember();
-        Connection connection = getConnection(member.getUuid());
+        ClientConnection connection = getConnection(member.getUuid());
         if (connection != null) {
             connection.close(null,
                     new TargetDisconnectedException("The client has closed the connection to this member,"

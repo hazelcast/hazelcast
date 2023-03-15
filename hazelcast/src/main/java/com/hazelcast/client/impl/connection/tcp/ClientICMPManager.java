@@ -17,9 +17,9 @@
 package com.hazelcast.client.impl.connection.tcp;
 
 import com.hazelcast.client.config.ClientIcmpPingConfig;
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.fd.PingFailureDetector;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.ICMPHelper;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
@@ -49,7 +49,7 @@ public final class ClientICMPManager {
     public static void start(ClientIcmpPingConfig clientIcmpPingConfig,
                              TaskScheduler taskScheduler,
                              ILogger logger,
-                             Collection<Connection> unmodifiableActiveConnections) {
+                             Collection<ClientConnection> connectionsView) {
         if (!clientIcmpPingConfig.isEnabled()) {
             return;
         }
@@ -73,10 +73,10 @@ public final class ClientICMPManager {
                     + MIN_ICMP_INTERVAL_MILLIS + "ms");
         }
 
-        PingFailureDetector<Connection> failureDetector = new PingFailureDetector<>(icmpMaxAttempts);
+        PingFailureDetector<ClientConnection> failureDetector = new PingFailureDetector<>(icmpMaxAttempts);
         taskScheduler.scheduleWithRepetition(() -> {
-            failureDetector.retainAttemptsForAliveEndpoints(unmodifiableActiveConnections);
-            for (Connection connection : unmodifiableActiveConnections) {
+            failureDetector.retainAttemptsForAliveEndpoints(connectionsView);
+            for (ClientConnection connection : connectionsView) {
                 // we don't want an isReachable call to an address stopping us to check other addresses.
                 // so we run each check in its own thread
                 taskScheduler.execute(() -> ping(logger, failureDetector, connection, icmpTtl, icmpTimeoutMillis));
@@ -108,7 +108,7 @@ public final class ClientICMPManager {
         return false;
     }
 
-    private static void ping(ILogger logger, PingFailureDetector<Connection> failureDetector, Connection connection,
+    private static void ping(ILogger logger, PingFailureDetector<ClientConnection> failureDetector, ClientConnection connection,
                              int icmpTtl, int icmpTimeoutMillis) {
         Address address = connection.getRemoteAddress();
         logger.fine(format("will ping %s", address));

@@ -52,7 +52,7 @@ public final class SelectorOptimizer {
      * @return the created Selector.
      * @throws NullPointerException if logger is null.
      */
-    static Selector newSelector(ILogger logger) {
+    public static Selector newSelector(ILogger logger) {
         checkNotNull(logger, "logger");
 
         Selector selector;
@@ -76,6 +76,7 @@ public final class SelectorOptimizer {
      * @return an FastSelectionKeySet if the optimization was a success, null otherwise.
      * @throws NullPointerException if selector or logger is null.
      */
+    @SuppressWarnings("java:S1181")
     static SelectionKeysSet optimize(Selector selector, ILogger logger) {
         checkNotNull(selector, "selector");
         checkNotNull(logger, "logger");
@@ -100,9 +101,11 @@ public final class SelectorOptimizer {
             logger.finest("Optimized Selector: " + selector.getClass().getName());
             return set;
         } catch (Throwable t) {
-            // we don't want to print at warning level because it could very well be that the target JVM doesn't
-            // support this optimization. That is why we print on finest
-            logger.finest("Failed to optimize Selector: " + selector.getClass().getName(), t);
+            if (logger.isFinestEnabled()) {
+                // we don't want to print at warning level because it could very well be that the target JVM doesn't
+                // support this optimization. That is why we print on finest
+                logger.finest("Failed to optimize Selector: " + selector.getClass().getName(), t);
+            }
             return null;
         }
     }

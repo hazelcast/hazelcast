@@ -54,6 +54,13 @@ public final class MetricTags {
     public static final String JOB = "job";
 
     /**
+     * Job name, or {@linkplain #JOB job ID} if no name is specified.
+     *
+     * @since 5.3
+     */
+    public static final String JOB_NAME = "jobName";
+
+    /**
      * Unique ID of a particular execution of a job (sourcing the metric),
      * example value would be a numerical (long) ID encoded in a human
      * readable form, like {@code "2f7f-d88a-4669-6195"}, see {@link

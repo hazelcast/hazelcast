@@ -79,6 +79,7 @@
                 <xs:element name="dynamic-configuration" type="dynamic-configuration" minOccurs="0"/>
                 <xs:element name="integrity-checker" type="integrity-checker" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="data-link" type="data-link" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="alto" type="alto" minOccurs="0"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" default="default"/>
         </xs:complexType>
@@ -298,6 +299,20 @@
             </xs:element>
             <xs:element name="query-caches" type="query-caches" minOccurs="0"/>
             <xs:element name="tiered-store" type="tiered-store" minOccurs="0"/>
+            <xs:element name="partition-attributes" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        List of key attributes to use for partitioning the data in the maps. Providing this list automatically sets the
+                        strategy to `com.hazelcast.partition.strategy.AttributePartitioningStrategy` regardless
+                        of the class name provided in the `partition-strategy` property.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="attribute" type="partition-attribute" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:annotation>
@@ -1356,6 +1371,7 @@
             <xs:element name="failure-detector" type="failure-detector" minOccurs="0"/>
             <xs:element name="rest-api" type="rest-api" minOccurs="0"/>
             <xs:element name="memcache-protocol" type="memcache-protocol" minOccurs="0"/>
+            <xs:element name="alto-socket" type="alto-socket" minOccurs="0"/>
         </xs:all>
     </xs:complexType>
     <xs:complexType name="tcp-ip">
@@ -4885,6 +4901,7 @@
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0"/>
             <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0"/>
             <xs:element name="socket-options" type="socket-options" minOccurs="0"/>
+            <xs:element name="alto-socket" type="alto-socket" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" default="">
             <xs:annotation>
@@ -4954,6 +4971,7 @@
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0"/>
             <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0"/>
             <xs:element name="socket-options" type="socket-options" minOccurs="0"/>
+            <xs:element name="alto-socket" type="alto-socket" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" default="">
             <xs:annotation>
@@ -4972,6 +4990,9 @@
             <xs:element name="send-buffer-size-kb" type="xs:positiveInteger" minOccurs="0"/>
             <xs:element name="receive-buffer-size-kb" type="xs:positiveInteger" minOccurs="0"/>
             <xs:element name="linger-seconds" type="xs:nonNegativeInteger" minOccurs="0"/>
+            <xs:element name="keep-idle-seconds" type="xs:nonNegativeInteger" minOccurs="0" default="7200"/>
+            <xs:element name="keep-interval-seconds" type="xs:nonNegativeInteger" minOccurs="0" default="75"/>
+            <xs:element name="keep-count" type="xs:nonNegativeInteger" minOccurs="0" default="8"/>
         </xs:all>
     </xs:complexType>
     <xs:complexType name="rest-server-socket-endpoint-config">
@@ -5049,6 +5070,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="alto-socket" type="alto-socket" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" default="">
             <xs:annotation>
@@ -6002,6 +6024,16 @@
     <xs:complexType name="realm-reference">
         <xs:attribute name="realm" type="xs:string" use="required"/>
     </xs:complexType>
+    <xs:complexType name="partition-attribute">
+        <xs:annotation>
+            <xs:documentation>
+                The name of the attribute.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:string"/>
+        </xs:simpleContent>
+    </xs:complexType>
 
     <!-- SIMPLE TYPES -->
 
@@ -6031,7 +6063,7 @@
             <xs:element name="class-name" type="xs:string">
                 <xs:annotation>
                     <xs:documentation>
-                        The name of the class implementing DataLinkFactory.
+                        The name of the class implementing DataLink.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -6052,5 +6084,61 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="alto">
+        <xs:annotation>
+            <xs:documentation>
+                Hazelcast Alto is the next generation of Hazelcast built with thread per core architecture. It's still
+                being developed and everything is subject to change. Alto is disabled by default.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="eventloop-count" type="xs:integer" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Configures the number of eventloops. It's equal to available processor count by default.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Enables Hazelcast Alto. Disabled by default.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="alto-socket">
+        <xs:annotation>
+            <xs:documentation>
+                Socket configuration for Alto. In Alto, each eventloop has its own socket.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="port-range" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Configures the port range available for Alto sockets.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="receive-buffer-size-kb" type="xs:integer" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Configures SO_RCVBUF socket option for Alto sockets.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="send-buffer-size-kb" type="xs:integer" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Configures SO_SNDBUF socket option for Alto sockets.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
     </xs:complexType>
 </xs:schema>

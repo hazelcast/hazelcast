@@ -18,6 +18,8 @@ package com.hazelcast.config;
 
 import com.google.common.collect.ImmutableSet;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
+import com.hazelcast.config.alto.AltoConfig;
+import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -4067,6 +4069,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        send-buffer-size-kb: 34\n"
                 + "        receive-buffer-size-kb: 67\n"
                 + "        linger-seconds: 11\n"
+                + "        keep-count: 12\n"
+                + "        keep-interval-seconds: 13\n"
+                + "        keep-idle-seconds: 14\n"
                 + "      symmetric-encryption:\n"
                 + "        enabled: true\n"
                 + "        algorithm: Algorithm\n"
@@ -4569,6 +4574,24 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
+    public void testPartitioningAttributeConfigs() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    test:\n"
+                + "      partition-attributes:\n"
+                + "        - name: attr1\n"
+                + "        - name: attr2\n";
+
+        final MapConfig mapConfig = buildConfig(yaml).getMapConfig("test");
+        assertThat(mapConfig.getPartitioningAttributeConfigs()).containsExactly(
+                new PartitioningAttributeConfig("attr1"),
+                new PartitioningAttributeConfig("attr2")
+        );
+    }
+
+    @Override
     public void testMapExpiryConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -4582,5 +4605,93 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertEquals(Integer.MAX_VALUE, mapConfig.getTimeToLiveSeconds());
         assertEquals(Integer.MAX_VALUE, mapConfig.getMaxIdleSeconds());
+    }
+
+    @Override
+    @Test
+    public void testAltoConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  alto:\n"
+                + "    enabled: true\n"
+                + "    eventloop-count: 12\n";
+
+        AltoConfig altoConfig = buildConfig(yaml).getAltoConfig();
+
+        assertThat(altoConfig.isEnabled()).isTrue();
+        assertThat(altoConfig.getEventloopCount()).isEqualTo(12);
+    }
+
+    @Override
+    @Test
+    public void testAltoSocketConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  network:\n"
+                + "    alto-socket:\n"
+                + "      port-range: 14000-16000\n"
+                + "      receive-buffer-size-kb: 256\n"
+                + "      send-buffer-size-kb: 256\n";
+
+        AltoSocketConfig altoConfig = buildConfig(yaml).getNetworkConfig().getAltoSocketConfig();
+
+        assertThat(altoConfig.getPortRange()).isEqualTo("14000-16000");
+        assertThat(altoConfig.getReceiveBufferSizeKB()).isEqualTo(256);
+        assertThat(altoConfig.getSendBufferSizeKB()).isEqualTo(256);
+    }
+
+    @Override
+    @Test
+    public void testAltoSocketConfigAdvanced() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  advanced-network:\n"
+                + "    enabled: true\n"
+                + "    member-server-socket-endpoint-config: \n"
+                + "      alto-socket: \n"
+                + "        port-range: 14000-16000\n"
+                + "        receive-buffer-size-kb: 256\n"
+                + "        send-buffer-size-kb: 256\n"
+                + "    client-server-socket-endpoint-config:\n"
+                + "      alto-socket:\n"
+                + "        port-range: 14000-16000\n"
+                + "        receive-buffer-size-kb: 256\n"
+                + "        send-buffer-size-kb: 256\n"
+                + "    memcache-server-socket-endpoint-config:\n"
+                + "      alto-socket:\n"
+                + "        port-range: 14000-16000\n"
+                + "        receive-buffer-size-kb: 256\n"
+                + "        send-buffer-size-kb: 256\n"
+                + "    rest-server-socket-endpoint-config:\n"
+                + "      alto-socket:\n"
+                + "        port-range: 14000-16000\n"
+                + "        receive-buffer-size-kb: 256\n"
+                + "        send-buffer-size-kb: 256\n"
+                + "    wan-endpoint-config: \n"
+                + "      tokyo:\n"
+                + "        alto-socket:\n"
+                + "          port-range: 14000-16000\n"
+                + "          receive-buffer-size-kb: 256\n"
+                + "          send-buffer-size-kb: 256\n"
+                + "    wan-server-socket-endpoint-config: \n"
+                + "      london:\n"
+                + "        alto-socket:\n"
+                + "          port-range: 14000-16000\n"
+                + "          receive-buffer-size-kb: 256\n"
+                + "          send-buffer-size-kb: 256\n";
+
+        Map<EndpointQualifier, EndpointConfig> endpointConfigs = buildConfig(yaml)
+                .getAdvancedNetworkConfig()
+                .getEndpointConfigs();
+
+        assertThat(endpointConfigs).hasSize(6);
+
+        endpointConfigs.forEach((endpointQualifier, endpointConfig) -> {
+            AltoSocketConfig altoSocketConfig = endpointConfig.getAltoSocketConfig();
+
+            assertThat(altoSocketConfig.getPortRange()).isEqualTo("14000-16000");
+            assertThat(altoSocketConfig.getReceiveBufferSizeKB()).isEqualTo(256);
+            assertThat(altoSocketConfig.getSendBufferSizeKB()).isEqualTo(256);
+        });
     }
 }

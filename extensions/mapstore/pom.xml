@@ -113,7 +113,7 @@
         <dependency>
             <groupId>com.microsoft.sqlserver</groupId>
             <artifactId>mssql-jdbc</artifactId>
-            <version>11.2.2.jre8</version>
+            <version>12.2.0.jre8</version>
             <scope>test</scope>
         </dependency>
         <!--MariaDB-->
@@ -127,6 +127,20 @@
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
             <version>3.1.2</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- MongoDB -->
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-mongodb</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mongodb</artifactId>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

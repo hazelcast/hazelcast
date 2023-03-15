@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.jet.JobStatusEvent;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobExecutionRecord.SnapshotStats;
 import com.hazelcast.jet.impl.JobRecord;
@@ -52,8 +53,9 @@ import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
 import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
 import com.hazelcast.jet.impl.operation.TerminateJobOperation;
-import com.hazelcast.jet.impl.operation.UploadJobMultiPartOperation;
+import com.hazelcast.jet.impl.operation.UpdateJobConfigOperation;
 import com.hazelcast.jet.impl.operation.UploadJobMetaDataOperation;
+import com.hazelcast.jet.impl.operation.UploadJobMultiPartOperation;
 import com.hazelcast.jet.impl.processor.NoopP;
 import com.hazelcast.jet.impl.processor.ProcessorSupplierFromSimpleSupplier;
 import com.hazelcast.jet.impl.processor.SessionWindowP;
@@ -76,6 +78,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int JOB_RESULT = 4;
     public static final int INIT_EXECUTION_OP = 5;
     public static final int START_EXECUTION_OP = 6;
+    public static final int JOB_STATUS_EVENT = 7;
     public static final int SUBMIT_JOB_OP = 8;
     public static final int GET_JOB_STATUS_OP = 9;
     public static final int SNAPSHOT_PHASE1_OPERATION = 10;
@@ -101,8 +104,6 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int SNAPSHOT_STATS = 30;
     public static final int PREPARE_FOR_PASSIVE_CLUSTER_OP = 31;
     public static final int SNAPSHOT_VALIDATION_RECORD = 32;
-    // Moved to AggregateDataSerializerHook
-    // public static final int AGGREGATE_OP_AGGREGATOR = 33;
     public static final int GET_JOB_METRICS_OP = 34;
     public static final int GET_LOCAL_JOB_METRICS_OP = 35;
     public static final int SNAPSHOT_PHASE2_OPERATION = 36;
@@ -113,12 +114,12 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int NOOP_PROCESSOR_SUPPLIER = 46;
     public static final int CHECK_LIGHT_JOBS_OP = 47;
     public static final int GET_JOB_AND_SQL_SUMMARY_LIST_OP = 48;
-    public static final int SQL_SUMMARY = 48;
     public static final int WRAPPING_PROCESSOR_META_SUPPLIER = 49;
     public static final int WRAPPING_PROCESSOR_SUPPLIER = 50;
     public static final int GET_JOB_USER_CANCELLED_OP = 51;
     public static final int UPLOAD_JOB_METADATA_OP = 52;
     public static final int UPLOAD_JOB_MULTIPART_OP = 53;
+    public static final int UPDATE_JOB_CONFIG_OP = 54;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
@@ -151,6 +152,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new InitExecutionOperation();
                 case START_EXECUTION_OP:
                     return new StartExecutionOperation();
+                case JOB_STATUS_EVENT:
+                    return new JobStatusEvent();
                 case SUBMIT_JOB_OP:
                     return new SubmitJobOperation();
                 case GET_JOB_STATUS_OP:
@@ -201,6 +204,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new PrepareForPassiveClusterOperation();
                 case SNAPSHOT_VALIDATION_RECORD:
                     return new SnapshotValidationRecord();
+                case UPDATE_JOB_CONFIG_OP:
+                    return new UpdateJobConfigOperation();
                 case GET_JOB_METRICS_OP:
                     return new GetJobMetricsOperation();
                 case GET_LOCAL_JOB_METRICS_OP:

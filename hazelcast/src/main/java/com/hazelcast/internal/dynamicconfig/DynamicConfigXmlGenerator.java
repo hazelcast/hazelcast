@@ -48,6 +48,7 @@ import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PNCounterConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -127,6 +128,7 @@ public final class DynamicConfigXmlGenerator {
             mapPartitionStrategyConfigXmlGenerator(gen, m);
             mapQueryCachesConfigXmlGenerator(gen, m);
             tieredStoreConfigXmlGenerator(gen, m.getTieredStoreConfig());
+            mapPartitionAttributesConfigXmlGenerator(gen, m);
             gen.close();
         }
     }
@@ -532,6 +534,19 @@ public final class DynamicConfigXmlGenerator {
         gen.open("disk-tier", "enabled", diskTierConfig.isEnabled(),
                         "device-name", diskTierConfig.getDeviceName())
                 .close();
+    }
+
+    private static void mapPartitionAttributesConfigXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, MapConfig mapConfig) {
+        final List<PartitioningAttributeConfig> attributeConfigs = mapConfig.getPartitioningAttributeConfigs();
+        if (attributeConfigs == null || attributeConfigs.isEmpty()) {
+            return;
+        }
+
+        gen.open("partition-attributes");
+        for (final PartitioningAttributeConfig attributeConfig : attributeConfigs) {
+            gen.node("attribute", attributeConfig.getAttributeName());
+        }
+        gen.close();
     }
 
     private static void checkAndFillCacheWriterFactoryConfigXml(ConfigXmlGenerator.XmlGenerator gen, String cacheWriter) {

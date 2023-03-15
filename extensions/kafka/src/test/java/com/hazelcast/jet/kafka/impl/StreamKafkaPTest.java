@@ -17,11 +17,11 @@
 package com.hazelcast.jet.kafka.impl;
 
 import com.hazelcast.collection.IList;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
@@ -36,9 +36,11 @@ import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobRepository;
+import com.hazelcast.jet.kafka.KafkaDataLink;
 import com.hazelcast.jet.kafka.KafkaSources;
 import com.hazelcast.jet.kafka.TopicsConfig;
 import com.hazelcast.jet.kafka.TopicsConfig.TopicConfig;
+import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -149,8 +151,8 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         int messageCount = 20;
         Pipeline p = Pipeline.create();
         p.readFrom(KafkaSources.<Integer, String, String>kafka(properties(), rec -> rec.value() + "-x", topic1Name))
-         .withoutTimestamps()
-         .writeTo(Sinks.list("sink"));
+                .withoutTimestamps()
+                .writeTo(Sinks.list("sink"));
 
         instance().getJet().newJob(p);
         sleepAtLeastSeconds(3);
@@ -337,8 +339,8 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
         Pipeline p = Pipeline.create();
         p.readFrom(KafkaSources.kafka(properties(), topic1Name, topic2Name))
-         .withoutTimestamps()
-         .writeTo(Sinks.list("sink"));
+                .withoutTimestamps()
+                .writeTo(Sinks.list("sink"));
 
         JobConfig config = new JobConfig();
         config.setProcessingGuarantee(guarantee);
@@ -507,9 +509,9 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         Pipeline p = Pipeline.create();
         // Pass the same topic twice
         p.readFrom(KafkaSources.kafka(properties(), topic, topic))
-         .withoutTimestamps()
-         .setLocalParallelism(1)
-         .writeTo(Sinks.list("sink"));
+                .withoutTimestamps()
+                .setLocalParallelism(1)
+                .writeTo(Sinks.list("sink"));
 
         JobConfig config = new JobConfig();
         Job job = instances[0].getJet().newJob(p, config);
@@ -558,7 +560,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
                         : System.currentTimeMillis();
         EventTimePolicy<T> eventTimePolicy = eventTimePolicy(
                 timestampFn, limitingLag(LAG), 1, 0, idleTimeoutMillis);
-        return new StreamKafkaP<>(properties, topicsConfig, projectionFn, eventTimePolicy);
+        return new StreamKafkaP<>((c) -> new KafkaConsumer<>(properties), topicsConfig, projectionFn, eventTimePolicy);
     }
 
     @Test
@@ -648,8 +650,8 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         Properties properties = properties();
         properties.setProperty("auto.offset.reset", "latest");
         p.readFrom(KafkaSources.<Integer, String>kafka(properties, topic1Name))
-         .withoutTimestamps()
-         .writeTo(Sinks.list(sinkList));
+                .withoutTimestamps()
+                .writeTo(Sinks.list(sinkList));
 
         Job job = instance().getJet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE));
         assertTrueEventually(() -> {
@@ -682,8 +684,8 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         Properties properties = properties();
         properties.setProperty("auto.offset.reset", "latest");
         p.readFrom(KafkaSources.<Integer, String>kafka(properties, topic1Name))
-         .withoutTimestamps()
-         .writeTo(Sinks.list(sinkList));
+                .withoutTimestamps()
+                .writeTo(Sinks.list(sinkList));
 
         kafkaTestSupport.produce(topic1Name, 0, "0").get();
         instance().getJet().newJob(p);
@@ -772,7 +774,10 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
                 0
         );
         StreamKafkaP processor = new StreamKafkaP<Integer, String, String>(
-                properties(), singletonList(topic1Name), r -> "0".equals(r.value()) ? null : r.value(), eventTimePolicy
+                (c) -> new KafkaConsumer<>(properties()),
+                singletonList(topic1Name),
+                r -> "0".equals(r.value()) ? null : r.value(),
+                eventTimePolicy
         );
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         processor.init(outbox, new TestProcessorContext());
@@ -804,6 +809,28 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         KafkaConsumer<Integer, String> c = new KafkaConsumer<>(properties);
         assertThatThrownBy(() -> c.partitionsFor("t", Duration.ofMillis(100)))
                 .isInstanceOf(TimeoutException.class);
+    }
+
+    @Test
+    public void when_dataLinkRef_then_readMessages() throws Exception {
+        instance().getConfig().addDataLinkConfig(
+                new DataLinkConfig("kafka-config")
+                        .setClassName(KafkaDataLink.class.getName())
+                        .setShared(false) // shared would eagerly create a producer, which needs serializer properties
+                        .setProperties(properties())
+        );
+
+        IList<Entry<Integer, String>> sinkList = instance().getList("sinkList");
+        Pipeline p = Pipeline.create();
+        Properties properties = properties();
+        properties.setProperty("auto.offset.reset", "latest");
+        p.readFrom(KafkaSources.<Integer, String>kafka(new DataLinkRef("kafka-config"), topic1Name))
+                .withoutTimestamps()
+                .writeTo(Sinks.list(sinkList));
+
+        kafkaTestSupport.produce(topic1Name, 0, "0").get();
+        instance().getJet().newJob(p);
+        assertTrueEventually(() -> assertThat(sinkList).contains(entry(0, "0")), 2);
     }
 
     @SuppressWarnings("unchecked")

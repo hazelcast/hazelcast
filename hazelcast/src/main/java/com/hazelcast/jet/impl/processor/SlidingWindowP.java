@@ -32,6 +32,7 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -121,6 +122,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
     private final long earlyResultsPeriod;
     private long lastTimeEarlyResultsEmitted;
     private Traverser<? extends OUT> earlyWinTraverser;
+    private long maxEntries;
 
     private Traverser<Object> flushTraverser;
     private Traverser<Entry> snapshotTraverser;
@@ -170,7 +172,10 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
             return new HashMap<>();
         };
         this.createAccFunction = k -> {
-            totalKeysInFrames.inc();
+            long newCount = totalKeysInFrames.inc();
+            if (newCount == maxEntries) {
+                throw new AccumulationLimitExceededException();
+            }
             return aggrOp.createFn().get();
         };
         this.windowWatermarkKey = windowWatermarkKey;
@@ -180,6 +185,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
     protected void init(@Nonnull Context context) {
         processingGuarantee = context.processingGuarantee();
         lastTimeEarlyResultsEmitted = NANOSECONDS.toMillis(System.nanoTime());
+        maxEntries = context.maxProcessorAccumulatedRecords();
     }
 
     @Override

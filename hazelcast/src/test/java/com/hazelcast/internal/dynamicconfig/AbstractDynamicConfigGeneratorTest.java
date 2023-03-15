@@ -30,6 +30,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigCompatibilityChecker;
 import com.hazelcast.config.ConsistencyCheckStrategy;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -40,7 +41,6 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
@@ -59,6 +59,7 @@ import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PNCounterConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -281,6 +282,25 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
         assertEquals(23, actualConfig.getEvictionConfig().getSize());
         assertEquals("LRU", actualConfig.getEvictionConfig().getEvictionPolicy().name());
         assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testMapPartitioningAttributes() {
+        final List<PartitioningAttributeConfig> attributes = asList(
+                new PartitioningAttributeConfig("attr1"),
+                new PartitioningAttributeConfig("attr2")
+        );
+
+        MapConfig mapConfig = newMapConfig()
+                .setName("partitioningAttributesTest")
+                .setPartitioningAttributeConfigs(attributes);
+
+        Config config = new Config()
+                .addMapConfig(mapConfig);
+
+        Config decConfig = getNewConfigViaGenerator(config);
+        assertEquals(attributes,
+                decConfig.getMapConfig("partitioningAttributesTest").getPartitioningAttributeConfigs());
     }
 
     // CACHE

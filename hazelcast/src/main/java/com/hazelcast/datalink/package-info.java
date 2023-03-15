@@ -17,6 +17,9 @@
 /**
  * <p>This package contains code handling data links.<br>
  *
- * @since 5.2
+ * @since 5.3
  */
+@Beta
 package com.hazelcast.datalink;
+
+import com.hazelcast.spi.annotation.Beta;
