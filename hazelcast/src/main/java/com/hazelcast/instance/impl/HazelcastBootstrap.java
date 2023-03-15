@@ -107,8 +107,10 @@ public final class HazelcastBootstrap {
                                           @Nonnull List<String> args)
             throws IOException, ClassNotFoundException, InvocationTargetException, IllegalAccessException {
         // Set the singleton, so that it can be accessed within the jar
+        // Do not allow the singleton to be shutdown. Otherwise, the member will shut down
         BootstrappedInstanceProxy hazelcastInstance =
-                SINGLETON.get(() -> BootstrappedInstanceProxy.createWithJetProxy(supplierOfInstance.get()));
+                SINGLETON.get(() -> BootstrappedInstanceProxy.createWithJetProxy(supplierOfInstance.get())
+                        .setShutDownAllowed(false));
 
         ExecuteJobParameters executeJobParameters = new ExecuteJobParameters(jarPath, snapshotName, jobName);
 

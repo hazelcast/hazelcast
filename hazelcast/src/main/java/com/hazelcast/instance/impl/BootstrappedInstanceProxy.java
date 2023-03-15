@@ -36,6 +36,8 @@ import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.executejar.ExecuteJobParameters;
 import com.hazelcast.jet.Job;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
@@ -61,8 +63,13 @@ import java.util.concurrent.ConcurrentMap;
 // A special HazelcastInstance that has a BootstrappedJetProxy
 @SuppressWarnings({"checkstyle:methodcount"})
 public final class BootstrappedInstanceProxy implements HazelcastInstance {
+
+    private static final ILogger LOGGER = Logger.getLogger(BootstrappedInstanceProxy.class);
+
     private HazelcastInstance instance;
     private BootstrappedJetProxy jetProxy;
+
+    private boolean shutDownAllowed = true;
 
     private BootstrappedInstanceProxy() {
     }
@@ -72,6 +79,24 @@ public final class BootstrappedInstanceProxy implements HazelcastInstance {
         proxy.instance = instance;
         proxy.jetProxy = new BootstrappedJetProxy(instance.getJet());
         return proxy;
+    }
+
+    public void setThreadLocalParameters(ExecuteJobParameters executeJobParameters) {
+        jetProxy.setThreadLocalParameters(executeJobParameters);
+    }
+
+    public void removeThreadLocalParameters() {
+        jetProxy.removeThreadLocalParameters();
+    }
+
+    public List<Job> getSubmittedJobs() {
+        ExecuteJobParameters executeJobParameters = jetProxy.getThreadLocalParameters();
+        return executeJobParameters.getSubmittedJobs();
+    }
+
+    public BootstrappedInstanceProxy setShutDownAllowed(boolean shutDownAllowed) {
+        this.shutDownAllowed = shutDownAllowed;
+        return this;
     }
 
     @Nonnull
@@ -297,19 +322,11 @@ public final class BootstrappedInstanceProxy implements HazelcastInstance {
 
     @Override
     public void shutdown() {
-        getLifecycleService().shutdown();
+        if (shutDownAllowed) {
+            getLifecycleService().shutdown();
+        } else {
+            LOGGER.severe("Shutdown of BootstrappedInstanceProxy is not allowed");
+        }
     }
 
-    public void setThreadLocalParameters(ExecuteJobParameters executeJobParameters) {
-        jetProxy.setThreadLocalParameters(executeJobParameters);
-    }
-
-    public void removeThreadLocalParameters() {
-        jetProxy.removeThreadLocalParameters();
-    }
-
-    public List<Job> getSubmittedJobs() {
-        ExecuteJobParameters executeJobParameters = jetProxy.getThreadLocalParameters();
-        return executeJobParameters.getSubmittedJobs();
-    }
 }
