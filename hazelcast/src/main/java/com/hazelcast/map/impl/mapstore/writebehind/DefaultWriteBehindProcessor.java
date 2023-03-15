@@ -294,38 +294,39 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
     }
 
     private List<DelayedEntry> retryCall(RetryTask task) {
-        boolean result = false;
+        boolean taskRunSucceeded = false;
         Exception exception = null;
-        int k = 0;
-        for (; k < RETRY_TIMES_OF_A_FAILED_STORE_OPERATION; k++) {
+        int retryCount = 0;
+        for (; retryCount < RETRY_TIMES_OF_A_FAILED_STORE_OPERATION; retryCount++) {
             try {
-                result = task.run();
+                taskRunSucceeded = task.run();
             } catch (InterruptedException ex) {
                 currentThread().interrupt();
                 break;
             } catch (Exception ex) {
                 exception = ex;
             }
-            if (!result) {
-                sleepSeconds(RETRY_STORE_AFTER_WAIT_SECONDS);
-            } else {
+
+            if (taskRunSucceeded || stopped) {
                 break;
+            } else {
+                sleepSeconds(RETRY_STORE_AFTER_WAIT_SECONDS);
             }
         }
-        // retry occurred.
-        if (k > 0) {
-            if (!result) {
-                // List of entries which can not be stored for this round.
-                // We will re-add these failed entries to the front of the
-                // partition-write-behind-queues and will try to re-process
-                // them. This fail and retry cycle will be repeated indefinitely.
-                List failureList = task.failureList();
-                logger.severe("Number of entries which could not be stored is = [" + failureList.size() + "]"
-                        + ", Hazelcast will indefinitely retry to store them", exception);
-                return failureList;
-            }
+
+        if (taskRunSucceeded) {
+            return Collections.emptyList();
+        } else {
+            // List of entries which can not be stored for this round.
+            // We will re-add these failed entries to the front of the
+            // partition-write-behind-queues and will try to re-process
+            // them. This fail and retry cycle will be repeated indefinitely.
+            List failureList = task.failureList();
+            logger.severe(String.format("Number of entries which could not be stored is = [%d]"
+                    + ", Hazelcast will indefinitely retry to store them", failureList.size()), exception);
+            return failureList;
         }
-        return Collections.emptyList();
+
     }
 
     private void sort(List<DelayedEntry> entries) {

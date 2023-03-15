@@ -17,19 +17,19 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.partition.IPartition;
-import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.internal.util.Clock;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,13 +41,15 @@ import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * When write-behind is enabled the work is offloaded to another thread than partition-operation-thread.
- * That thread uses this runnable task to process write-behind-queues. This task collects entries from
- * write behind queues and passes them to {@link #writeBehindProcessor}.
+ * When write-behind is enabled the work is offloaded to another thread
+ * than partition-operation-thread. That thread uses this runnable task
+ * to process write-behind-queues. This task collects entries from write
+ * behind queues and passes them to {@link #writeBehindProcessor}.
  * <p>
  * Only one {@link StoreWorker} task is created for a map on a member.
  */
 public class StoreWorker implements Runnable {
+
     private final String mapName;
     private final MapServiceContext mapServiceContext;
     private final IPartitionService partitionService;
@@ -60,8 +62,9 @@ public class StoreWorker implements Runnable {
     private final long writeDelayMillis;
     private final int partitionCount;
     /**
-     * Entries are fetched from write-behind-queues according to highestStoreTime. If an entry
-     * has a store-time which is smaller than or equal to the highestStoreTime, it will be processed.
+     * Entries are fetched from write-behind-queues according to
+     * highestStoreTime. If an entry has a store-time which is smaller
+     * than or equal to the highestStoreTime, it will be processed.
      *
      * @see #calculateHighestStoreTime
      */
@@ -112,9 +115,11 @@ public class StoreWorker implements Runnable {
 
     private void runInternal() {
         final long now = Clock.currentTimeMillis();
-        // if this node is the owner of a partition, we use this criteria time.
+        // if this node is the owner of a
+        // partition, we use this criteria time.
         final long ownerHighestStoreTime = calculateHighestStoreTime(lastHighestStoreTime, now);
-        // if this node is the backup of a partition, we use this criteria time because backups are processed after delay.
+        // if this node is the backup of a partition, we use this
+        // criteria time because backups are processed after delay.
         final long backupHighestStoreTime = ownerHighestStoreTime - backupDelayMillis;
 
         lastHighestStoreTime = ownerHighestStoreTime;
@@ -123,7 +128,7 @@ public class StoreWorker implements Runnable {
         List<DelayedEntry> backupsList = null;
 
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            if (currentThread().isInterrupted()) {
+            if (currentThread().isInterrupted() || !running) {
                 break;
             }
 
@@ -165,8 +170,9 @@ public class StoreWorker implements Runnable {
     }
 
     /**
-     * Calculates highestStoreTime which is used to select processable entries from write-behind-queues.
-     * Entries which have smaller storeTimes than highestStoreTime will be processed.
+     * Calculates highestStoreTime which is used to select processable
+     * entries from write-behind-queues. Entries which have
+     * smaller storeTimes than highestStoreTime will be processed.
      *
      * @param lastHighestStoreTime last calculated highest store time.
      * @param now                  now in millis

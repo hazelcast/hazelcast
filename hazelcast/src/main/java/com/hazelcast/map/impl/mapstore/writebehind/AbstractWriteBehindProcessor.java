@@ -17,11 +17,11 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.map.MapStore;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.MapStore;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.List;
 import java.util.Map;
@@ -33,15 +33,17 @@ import java.util.Map;
  */
 abstract class AbstractWriteBehindProcessor<T> implements WriteBehindProcessor<T> {
 
+    protected final boolean writeCoalescing;
     protected final int writeBatchSize;
 
-    protected final boolean writeCoalescing;
-
     protected final ILogger logger;
-
     protected final MapStoreWrapper mapStore;
+    protected final SerializationService serializationService;
 
-    private final SerializationService serializationService;
+    /**
+     * Flag to indicate this processor must be stopped.
+     */
+    protected volatile boolean stopped;
 
     AbstractWriteBehindProcessor(MapStoreContext mapStoreContext) {
         this.serializationService = mapStoreContext.getSerializationService();
@@ -50,6 +52,11 @@ abstract class AbstractWriteBehindProcessor<T> implements WriteBehindProcessor<T
         MapStoreConfig mapStoreConfig = mapStoreContext.getMapStoreConfig();
         this.writeBatchSize = mapStoreConfig.getWriteBatchSize();
         this.writeCoalescing = mapStoreConfig.isWriteCoalescing();
+    }
+
+    @Override
+    public void stop() {
+        stopped = true;
     }
 
     protected Object toObject(Object obj) {

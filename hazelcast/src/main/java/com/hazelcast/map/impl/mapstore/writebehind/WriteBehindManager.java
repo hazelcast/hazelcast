@@ -50,6 +50,7 @@ public class WriteBehindManager implements MapStoreManager {
     @Override
     public void stop() {
         storeWorker.stop();
+        writeBehindProcessor.stop();
     }
 
     //todo get this via constructor function.

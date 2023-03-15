@@ -55,4 +55,9 @@ public interface WriteBehindProcessor<E> {
      * @param key to be flushed.
      */
     void flush(E key);
+
+    /**
+     * Contains stopping logic for this processor like stopping retries.
+     */
+    void stop();
 }
