@@ -100,7 +100,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
         return failuresByPartition;
     }
 
-    private void addFailsTo(Map<Integer, List<DelayedEntry>> failsPerPartition, List<DelayedEntry> fails) {
+    private static void addFailsTo(Map<Integer, List<DelayedEntry>> failsPerPartition, List<DelayedEntry> fails) {
         if (fails == null || fails.isEmpty()) {
             return;
         }
