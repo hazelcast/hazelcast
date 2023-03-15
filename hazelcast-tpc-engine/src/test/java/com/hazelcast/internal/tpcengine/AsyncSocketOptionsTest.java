@@ -39,7 +39,7 @@ import static org.junit.Assert.assertThrows;
 
 public abstract class AsyncSocketOptionsTest {
 
-    public static final Option<String> UNKNOwN_OPTION = new Option<>("banana", String.class);
+    private static final Option<String> UNKNOwN_OPTION = new Option<>("banana", String.class);
 
     private final List<Reactor> reactors = new ArrayList<>();
 

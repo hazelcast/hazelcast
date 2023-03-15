@@ -58,7 +58,7 @@ public abstract class AsyncServerSocketOptionsTest {
     }
 
     @Test
-    public void test_set_nullOption() {
+    public void set_nullOption() {
         AsyncServerSocket serverSocket = newServerSocket();
         AsyncSocketOptions options = serverSocket.options();
         assertThrows(NullPointerException.class, () -> options.set(null, 1));

@@ -22,9 +22,12 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 public abstract class AsyncSocketBuilderTest {
+    private static final Option<String> UNKNOwN_OPTION = new Option<>("banana", String.class);
 
     private final List<Reactor> reactors = new ArrayList<>();
 
@@ -40,6 +43,41 @@ public abstract class AsyncSocketBuilderTest {
     @After
     public void after() {
         TpcTestSupport.terminateAll(reactors);
+    }
+
+    @Test
+    public void test_setIfSupported_whenNullOption() {
+        Reactor reactor = newReactor();
+        AsyncServerSocketBuilder builder = reactor.newAsyncServerSocketBuilder();
+        assertThrows(NullPointerException.class, () -> builder.setIfSupported(null, 1));
+    }
+
+    @Test
+    public void test_setIfSupported_whenNullValue() {
+        Reactor reactor = newReactor();
+        AsyncServerSocketBuilder builder = reactor.newAsyncServerSocketBuilder();
+        assertThrows(NullPointerException.class, () -> builder.setIfSupported(AsyncSocketOptions.SO_RCVBUF, null));
+    }
+
+    @Test
+    public void test_setIfSupported_whenNotSupported() {
+        Reactor reactor = newReactor();
+        AsyncServerSocketBuilder builder = reactor.newAsyncServerSocketBuilder();
+        assertFalse(builder.setIfSupported(UNKNOwN_OPTION, "banana"));
+    }
+
+    @Test
+    public void test_test_setIfSupported_whenSuccess() {
+        Reactor reactor = newReactor();
+        AsyncServerSocketBuilder builder = reactor.newAsyncServerSocketBuilder();
+        assertTrue(builder.setIfSupported(AsyncSocketOptions.SO_RCVBUF, 10));
+    }
+
+    @Test
+    public void test_set_whenNotSupported() {
+        Reactor reactor = newReactor();
+        AsyncServerSocketBuilder builder = reactor.newAsyncServerSocketBuilder();
+        assertThrows(UnsupportedOperationException.class, () -> builder.set(UNKNOwN_OPTION, "banana"));
     }
 
     @Test
