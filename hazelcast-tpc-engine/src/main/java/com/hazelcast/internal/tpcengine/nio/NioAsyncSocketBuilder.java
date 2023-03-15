@@ -74,6 +74,14 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
         return this;
     }
 
+    @Override
+    public <T> AsyncSocketBuilder setIfSupported(Option<T> option, T value) {
+        verifyNotBuild();
+
+        options.setIfSupported(option, value);
+        return this;
+    }
+
     public NioAsyncSocketBuilder setReceiveBufferIsDirect(boolean receiveBufferIsDirect) {
         verifyNotBuild();
 
