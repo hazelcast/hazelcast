@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql;
 
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
@@ -30,11 +29,10 @@ import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -80,6 +78,7 @@ import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode;
 import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode.IDENTIFIED_DATA_SERIALIZABLE;
 import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode.SERIALIZABLE;
 import static com.hazelcast.jet.sql.SqlBasicTest.serializationConfig;
+import static com.hazelcast.jet.sql.SqlTestSupport.createMapping;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -94,7 +93,7 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 @SuppressWarnings("checkstyle:RedundantModifier")
-public class SqlOrderByTest extends SqlTestSupport {
+public class SqlOrderByTest extends HazelcastTestSupport {
 
     private static final String MAP_OBJECT = "map_object";
     private static final String MAP_BINARY = "map_binary";
@@ -102,9 +101,7 @@ public class SqlOrderByTest extends SqlTestSupport {
     private static final int DATA_SET_SIZE = 4096;
     private static final int DATA_SET_MAX_POSITIVE = DATA_SET_SIZE / 2;
 
-    private static final TestHazelcastFactory FACTORY = new TestHazelcastFactory();
-
-    private static List<HazelcastInstance> members;
+    private HazelcastInstance[] members;
 
     @Parameter
     public SerializationMode serializationMode;
@@ -136,18 +133,12 @@ public class SqlOrderByTest extends SqlTestSupport {
 
     @Before
     public void before() {
-        // Start members if needed
-        if (members == null) {
-            members = new ArrayList<>(membersCount);
-            for (int i = 0; i < membersCount; ++i) {
-                members.add(FACTORY.newHazelcastInstance(memberConfig()));
-            }
-        }
+        members = createHazelcastInstances(memberConfig(), membersCount);
 
         if (isPortable()) {
-            createMapping(members.get(0), mapName(), PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0, PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0);
+            createMapping(members[0], mapName(), PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0, PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0);
         } else {
-            createMapping(members.get(0), mapName(), keyClass(), valueClass());
+            createMapping(members[0], mapName(), keyClass(), valueClass());
         }
 
         // Get proper map
@@ -190,19 +181,13 @@ public class SqlOrderByTest extends SqlTestSupport {
         }
 
         if (isPortable()) {
-            createMapping(members.get(0), stableMapName(), PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0, PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0);
+            createMapping(members[0], stableMapName(), PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0, PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0);
         } else {
-            createMapping(members.get(0), stableMapName(), keyClass(), valueClass());
+            createMapping(members[0], stableMapName(), keyClass(), valueClass());
         }
 
         IMap<Object, AbstractPojo> stableMap = getTarget().getMap(stableMapName());
         stableMap.putAll(stableData);
-    }
-
-    @After
-    public void after() {
-        FACTORY.shutdownAll();
-        members = null;
     }
 
     protected Config memberConfig() {
@@ -218,7 +203,7 @@ public class SqlOrderByTest extends SqlTestSupport {
 
 
     protected HazelcastInstance getTarget() {
-        return members.get(0);
+        return members[0];
     }
 
     protected String stableMapName() {
@@ -611,7 +596,6 @@ public class SqlOrderByTest extends SqlTestSupport {
                 .hasMessageContaining("FETCH/OFFSET is only supported for the top-level SELECT");
     }
 
-    @Ignore
     @Test
     public void testConcurrentPutAndOrderbyQueries() {
         IMap<Object, AbstractPojo> map = getTarget().getMap(stableMapName());
@@ -660,12 +644,11 @@ public class SqlOrderByTest extends SqlTestSupport {
             });
         }
 
-        assertOpenEventually(latch);
+        assertOpenEventually(latch, 240000);
         assertNull(exception.get());
         executor.shutdown();
     }
 
-    @Ignore
     @Test
     public void testConcurrentUpdateAndOrderbyQueries() {
         IMap<Object, AbstractPojo> map = getTarget().getMap(stableMapName());
@@ -680,7 +663,7 @@ public class SqlOrderByTest extends SqlTestSupport {
         ExecutorService executor = Executors.newFixedThreadPool(10);
 
         int threadsCount = 10;
-        int keysPerThread = 5000;
+        int keysPerThread = 2500;
         CountDownLatch latch = new CountDownLatch(threadsCount);
         AtomicReference<Throwable> exception = new AtomicReference<>();
 
@@ -722,12 +705,12 @@ public class SqlOrderByTest extends SqlTestSupport {
             });
         }
 
-        assertOpenEventually(latch);
+        assertOpenEventually(latch, 240000);
         assertNull(exception.get());
         executor.shutdown();
     }
 
-        private void addIndex(List<String> fieldNames, IndexType type) {
+    private void addIndex(List<String> fieldNames, IndexType type) {
         addIndex(fieldNames, type, mapName());
     }
 

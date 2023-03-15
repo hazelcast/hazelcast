@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Makes an authentication request to the cluster using custom credentials.
  */
-@Generated("fd3635054bfac0fbdc66e80e0fd83a64")
+@Generated("c708e20ce06a690b1951b1017e22086e")
 public final class ClientAuthenticationCustomCodec {
     //hex: 0x000200
     public static final int REQUEST_MESSAGE_TYPE = 512;
@@ -177,9 +177,20 @@ public final class ClientAuthenticationCustomCodec {
          * Returns true if server supports clients with failover feature.
          */
         public boolean failoverSupported;
+
+        /**
+         * Returns the list of Alto ports or null if Alto is disabled.
+         */
+        public @Nullable java.util.List<java.lang.Integer> altoPorts;
+
+        /**
+         * True if the altoPorts is received from the member, false otherwise.
+         * If this is false, altoPorts has the default value for its type.
+         */
+        public boolean isAltoPortsExists;
     }
 
-    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported) {
+    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported, @Nullable java.util.Collection<java.lang.Integer> altoPorts) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
@@ -193,6 +204,7 @@ public final class ClientAuthenticationCustomCodec {
 
         CodecUtil.encodeNullable(clientMessage, address, AddressCodec::encode);
         StringCodec.encode(clientMessage, serverHazelcastVersion);
+        CodecUtil.encodeNullable(clientMessage, altoPorts, ListIntegerCodec::encode);
         return clientMessage;
     }
 
@@ -208,6 +220,12 @@ public final class ClientAuthenticationCustomCodec {
         response.failoverSupported = decodeBoolean(initialFrame.content, RESPONSE_FAILOVER_SUPPORTED_FIELD_OFFSET);
         response.address = CodecUtil.decodeNullable(iterator, AddressCodec::decode);
         response.serverHazelcastVersion = StringCodec.decode(iterator);
+        if (iterator.hasNext()) {
+            response.altoPorts = CodecUtil.decodeNullable(iterator, ListIntegerCodec::decode);
+            response.isAltoPortsExists = true;
+        } else {
+            response.isAltoPortsExists = false;
+        }
         return response;
     }
 }

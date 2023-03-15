@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.cp.internal.raft.impl.state;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.completingCallback;
 
 /**
@@ -55,7 +56,7 @@ public class LeadershipTransferState {
 
     public void notify(RaftEndpoint targetEndpoint, final InternalCompletableFuture otherFuture) {
         if (this.endpoint.equals(targetEndpoint)) {
-            resultFuture.whenCompleteAsync(completingCallback(otherFuture));
+            resultFuture.whenCompleteAsync(completingCallback(otherFuture), CALLER_RUNS);
         } else {
             otherFuture.completeExceptionally(
                     new IllegalStateException("There is an ongoing leadership transfer process to " + endpoint));

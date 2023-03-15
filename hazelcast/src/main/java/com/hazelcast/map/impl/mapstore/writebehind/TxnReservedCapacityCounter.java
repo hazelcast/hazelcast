@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,12 @@ import java.util.UUID;
  * Each record-store has its own reserved capacity counter instance.
  */
 public interface TxnReservedCapacityCounter {
+
+    /**
+     * Represents a null uuid. This is used in situations
+     * where passing vanilla null reference is not allowed.
+     */
+    UUID NULL_UUID = new UUID(0, 0);
 
     /**
      * Used when {@link

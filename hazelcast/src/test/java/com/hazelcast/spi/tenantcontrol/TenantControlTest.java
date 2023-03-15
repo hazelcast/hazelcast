@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,7 +143,7 @@ public class TenantControlTest extends TenantControlTestSupport {
         // AddCacheConfigOperation
         // TenantControlReplicationOperation
         assertEquals(4, setTenantCount.get());
-        assertEquals(4, closeTenantCount.get());
+        assertEqualsEventually(4, closeTenantCount);
         assertEquals(1, registerTenantCount.get());
         assertEqualsEventually(1, unregisterTenantCount);
         // thread context should be cleared at least twice.

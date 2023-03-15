@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.datalink.HazelcastDataLink;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.function.SupplierEx;
@@ -656,7 +657,75 @@ public final class Sources {
         String clientXml = asXmlString(clientConfig);
         return streamFromProcessorWithWatermarks("remoteMapJournalSource(" + mapName + ')',
                 false, w -> StreamEventJournalP.streamRemoteMapSupplier(
-                        mapName, clientXml, predicateFn, projectionFn, initialPos, w));
+                        mapName, null, clientXml, predicateFn, projectionFn, initialPos, w));
+    }
+
+    /**
+     * The same as the {@link #remoteMapJournal(String, ClientConfig, JournalInitialPosition, FunctionEx, PredicateEx)}
+     * method. The only difference is instead of a ClientConfig parameter that
+     * is used to connect to remote cluster, this method receives a
+     * DataLinkConfig.
+     * <p>
+     * The DataLinkConfig caches the connection to remote cluster, so that it
+     * can be re-used
+     * <p>
+     * (Prerequisite) External dataLink configuration:
+     * Use {@link HazelcastDataLink#CLIENT_XML} for XML or
+     * use {@link HazelcastDataLink#CLIENT_YML} for YAML string.
+     * <pre>{@code
+     * Config config = ...;
+     * String xmlString = ...;
+     * DataLinkConfig dataLinkConfig = new DataLinkConfig()
+     *     .setName("my-hzclient-datalink")
+     *     .setClassName(HzClientDataLinkFactory.class.getName())
+     *     .setProperty(HzClientDataLinkFactory.CLIENT_XML, xmlString);
+     * config.addDataLinkConfig(dataLinkConfig);
+     *  }</pre>
+     * <p>
+     * Pipeline configuration
+     * <pre>{@code
+     * PredicateEx<EventJournalMapEvent<String, Integer>> predicate = ...;
+     * p.readFrom(Sources.remoteMapJournal(
+     *     mapName,
+     *     DataLinkRef.dataLinkRef("my-hzclient-datalink"),
+     *     JournalInitialPosition.START_FROM_OLDEST,
+     *     EventJournalMapEvent::getNewValue,
+     *     predicate
+     *  ));
+     *  }</pre>
+     *
+     * @param mapName the name of the map
+     * @param dataLinkRef the reference to DataLinkConfig
+     * @param initialPos describes which event to start receiving from
+     * @param projectionFn the projection to map the events. If the projection returns a {@code
+     *                      null} for an item, that item will be filtered out. You may use {@link
+     *                      Util#mapEventToEntry()} to extract just the key and
+     *                      the new value. It must be stateless and {@linkplain
+     *                      Processor#isCooperative() cooperative}.
+     * @param predicateFn the predicate to filter the events. If you want to specify just the
+     *                      projection, use {@link Util#mapPutEvents} to pass
+     *                      only {@link EntryEventType#ADDED ADDED} and
+     *                      {@link EntryEventType#UPDATED UPDATED} events. It must be stateless and
+     *                      {@linkplain Processor#isCooperative() cooperative}.
+     * @param <T> is the return type of the stream
+     * @param <K> is the key type of EventJournalMapEvent
+     * @param <V> is the vale type of EventJournalMapEvent
+     * @return a stream that can be used as a source
+     * @since 5.3
+     */
+    @Nonnull
+    @Beta
+    public static <T, K, V> StreamSource<T> remoteMapJournal(
+            @Nonnull String mapName,
+            @Nonnull DataLinkRef dataLinkRef,
+            @Nonnull JournalInitialPosition initialPos,
+            @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends T> projectionFn,
+            @Nonnull PredicateEx<? super EventJournalMapEvent<K, V>> predicateFn
+    ) {
+        return streamFromProcessorWithWatermarks("remoteMapJournalSource(" + mapName + ')',
+                false,
+                w -> StreamEventJournalP.streamRemoteMapSupplier(
+                        mapName, dataLinkRef.getName(), null, predicateFn, projectionFn, initialPos, w));
     }
 
     /**
@@ -672,6 +741,23 @@ public final class Sources {
             @Nonnull JournalInitialPosition initialPos
     ) {
         return remoteMapJournal(mapName, clientConfig, initialPos, mapEventToEntry(), mapPutEvents());
+    }
+
+    /**
+     * Convenience for {@link #remoteMapJournal(String, DataLinkRef, JournalInitialPosition, FunctionEx, PredicateEx)}
+     * which will pass only {@link EntryEventType#ADDED ADDED}
+     * and {@link EntryEventType#UPDATED UPDATED} events and will
+     * project the event's key and new value into a {@code Map.Entry}.
+     * @since 5.3
+     */
+    @Nonnull
+    @Beta
+    public static <K, V> StreamSource<Entry<K, V>> remoteMapJournal(
+            @Nonnull String mapName,
+            @Nonnull DataLinkRef dataLinkRef,
+            @Nonnull JournalInitialPosition initialPos
+    ) {
+        return remoteMapJournal(mapName, dataLinkRef, initialPos, mapEventToEntry(), mapPutEvents());
     }
 
     /**
@@ -1330,31 +1416,31 @@ public final class Sources {
 
     /**
      * Returns a source which connects to the specified database using the given
-     * {@code externalDataStoreRef}, queries the database and creates a result set
+     * {@code dataLinkRef}, queries the database and creates a result set
      * using the given {@code resultSetFn}. It creates output objects from the
      * {@link ResultSet} using given {@code mapOutputFn} and emits them to
      * downstream.
      * <p>
      * Example:
      * <p>
-     * (Prerequisite) External dataStore configuration:
+     * (Prerequisite) Data link configuration:
      * <pre>{@code
      *      Config config = smallInstanceConfig();
      *      Properties properties = new Properties();
      *      properties.put("jdbcUrl", jdbcUrl);
      *      properties.put("username", username);
      *      properties.put("password", password);
-     *      ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
-     *              .setName("my-jdbc-data-store")
-     *              .setClassName(JdbcDataStoreFactory.class.getName())
+     *      DataLinkConfig dataLinkConfig = new DataLinkConfig()
+     *              .setName("my-jdbc-data-link")
+     *              .setClassName(JdbcDataLink.class.getName())
      *              .setProperties(properties);
-     *      config.getExternalDataStoreConfigs().put(name, externalDataStoreConfig);
+     *      config.getDataLinkConfigs().put(name, dataLinkConfig);
      * }</pre>
      * </p>
      * <p>Pipeline configuration
      * <pre>{@code
      *     p.readFrom(Sources.jdbc(
-     *         ExternalDataStoreRef.externalDataStoreRef("my-jdbc-data-store"),
+     *         DataLinkRef.dataLinkRef("my-jdbc-data-link"),
      *         (con, parallelism, index) -> {
      *              PreparedStatement stmt = con.prepareStatement("SELECT * FROM TABLE WHERE MOD(id, ?) = ?)");
      *              stmt.setInt(1, parallelism);
@@ -1369,16 +1455,16 @@ public final class Sources {
      * See also {@link Sources#jdbc(SupplierEx, ToResultSetFunction, FunctionEx)}.
      *</p>
      *
-     * @since 5.2
+     * @since 5.3
      */
     @Beta
     public static <T> BatchSource<T> jdbc(
-            @Nonnull ExternalDataStoreRef externalDataStoreRef,
+            @Nonnull DataLinkRef dataLinkRef,
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> createOutputFn
     ) {
         return batchFromProcessor("jdbcSource",
-                SourceProcessors.readJdbcP(externalDataStoreRef, resultSetFn, createOutputFn));
+                SourceProcessors.readJdbcP(dataLinkRef, resultSetFn, createOutputFn));
     }
 
     /**

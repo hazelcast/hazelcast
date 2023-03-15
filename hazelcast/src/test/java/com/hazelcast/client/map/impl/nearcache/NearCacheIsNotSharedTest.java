@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,6 +64,6 @@ public class NearCacheIsNotSharedTest {
         replicatedMap.put("key", "replicated-map-value");
         map.put("key", "map-value");
         map.get("key");
-        assertEquals(replicatedMap.get("key"), "replicated-map-value");
+        assertEquals("replicated-map-value", replicatedMap.get("key"));
     }
 }

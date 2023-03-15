@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Discovery service that discover nodes via hazelcast.cloud
- * https://coordinator.hazelcast.cloud/cluster/discovery?token=<TOKEN>
+ * https://api.viridian.hazelcast.com/cluster/discovery?token=<TOKEN>
  */
 public class HazelcastCloudDiscovery {
 
@@ -52,7 +52,7 @@ public class HazelcastCloudDiscovery {
      * Used for testing cloud discovery.
      */
     public static final HazelcastProperty CLOUD_URL_BASE_PROPERTY =
-            new HazelcastProperty("hazelcast.client.cloud.url", "https://coordinator.hazelcast.cloud");
+            new HazelcastProperty("hazelcast.client.cloud.url", "https://api.viridian.hazelcast.com");
     private static final String CLOUD_URL_PATH = "/cluster/discovery?token=";
     private static final String PRIVATE_ADDRESS_PROPERTY = "private-address";
     private static final String PUBLIC_ADDRESS_PROPERTY = "public-address";

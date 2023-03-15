@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
@@ -55,8 +54,8 @@ class MapInfoCollector
                 String.valueOf(countMapWithAtleastOneQueryCache()));
         metricsConsumer.accept(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_INDEX,
                 String.valueOf(countMapWithAtleastOneIndex()));
-        metricsConsumer.accept(PhoneHomeMetrics.MAP_COUNT_WITH_HOT_RESTART_ENABLED,
-                String.valueOf(countMapWithHotRestartEnabled()));
+        metricsConsumer.accept(PhoneHomeMetrics.MAP_COUNT_WITH_HOT_RESTART_OR_PERSISTENCE_ENABLED,
+                String.valueOf(countMapWithHotRestartOrPersistenceEnabled()));
         metricsConsumer.accept(PhoneHomeMetrics.MAP_COUNT_WITH_WAN_REPLICATION,
                 String.valueOf(countMapWithWANReplication()));
         metricsConsumer.accept(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_ATTRIBUTE,
@@ -112,9 +111,11 @@ class MapInfoCollector
                 .filter(indexConfigs -> !(indexConfigs.isEmpty())).count();
     }
 
-    private long countMapWithHotRestartEnabled() {
-        return mapConfigs.values().stream().map(MapConfig::getHotRestartConfig)
-                .filter(HotRestartConfig::isEnabled).count();
+    private long countMapWithHotRestartOrPersistenceEnabled() {
+        return mapConfigs.values().stream()
+                .filter(mapConfig ->
+                        mapConfig.getDataPersistenceConfig().isEnabled() || mapConfig.getHotRestartConfig().isEnabled())
+                .count();
     }
 
     private long countMapWithWANReplication() {

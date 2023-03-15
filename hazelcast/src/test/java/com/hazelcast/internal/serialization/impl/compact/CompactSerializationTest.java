@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
@@ -46,6 +45,7 @@ import org.junit.runner.RunWith;
 import javax.annotation.Nonnull;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -58,11 +58,13 @@ import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createSerializationService;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -72,34 +74,11 @@ import static org.mockito.Mockito.verify;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CompactSerializationTest {
 
-    private final SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
-
     @Test
     public void testOverridingDefaultSerializers() {
-        SerializationConfig config = new SerializationConfig();
-        config.getCompactSerializationConfig()
-                .addSerializer(new IntegerSerializer());
-
-        assertThatThrownBy(() -> createSerializationService(config))
+        assertThatThrownBy(() -> createSerializationService(IntegerSerializer::new))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("allowOverrideDefaultSerializers");
-    }
-
-    @Test
-    public void testOverridingDefaultSerializers_withAllowOverrideDefaultSerializers() {
-        SerializationConfig config = new SerializationConfig();
-        config.setAllowOverrideDefaultSerializers(true);
-        config.getCompactSerializationConfig()
-                .addSerializer(new IntegerSerializer());
-
-        SerializationService service = createSerializationService(config);
-        Data data = service.toData(42);
-
-        assertTrue(data.isCompact());
-
-        int i = service.toObject(data);
-
-        assertEquals(42, i);
+                .hasMessageContaining("overrides the default serializer");
     }
 
     @Test
@@ -120,6 +99,17 @@ public class CompactSerializationTest {
     }
 
     @Test
+    public void testReadWhenFieldDoesNotExist() {
+        SerializationService service = createSerializationService(NonExistingFieldReadingSerializer::new);
+
+        Foo foo = new Foo(42);
+        Data data = service.toData(foo);
+
+        assertThatThrownBy(() -> service.toObject(data))
+                .isInstanceOf(HazelcastSerializationException.class)
+                .hasMessageContaining("Invalid field name");
+    }
+
     public void testSerializerRegistration_withDuplicateClasses() {
         SerializationConfig config = new SerializationConfig();
         assertThatThrownBy(() -> {
@@ -291,10 +281,50 @@ public class CompactSerializationTest {
     }
 
     @Test
+    public void testSerializingClassReflectively_withUnsupportedField_whenTheFieldHasExplicitSerializer() {
+        SerializationService service = createSerializationService(InstantSerializer::new);
+        ClassWithInstantField object = new ClassWithInstantField(Instant.ofEpochSecond(123, 456));
+        Data data = service.toData(object);
+        ClassWithInstantField deserialized = service.toObject(data);
+        assertEquals(object, deserialized);
+    }
+
+    @Test
+    public void testSerializingClassReflectively_withArrayOfUnsupportedField_whenTheComponentTypeHasExplicitSerializer() {
+        SerializationService service = createSerializationService(InstantSerializer::new);
+        ClassWithInstantArrayField object = new ClassWithInstantArrayField(new Instant[]{
+                Instant.ofEpochSecond(123, 456), Instant.ofEpochSecond(789123, 2112356)
+        });
+        Data data = service.toData(object);
+        ClassWithInstantArrayField deserialized = service.toObject(data);
+        assertEquals(object, deserialized);
+    }
+
+    @Test
     public void testSerializingClassReflectively_withUnsupportedArrayItemType() {
         SerializationService service = createSerializationService(new SerializationConfig());
         assertThatThrownBy(() -> {
             service.toData(new ClassWithUnsupportedArrayField());
+        }).isInstanceOf(HazelcastSerializationException.class)
+                .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
+                .hasStackTraceContaining("which uses this class in its fields");
+    }
+
+    @Test
+    public void testSerializingClassReflectively_withArrayOfArrayField() {
+        SerializationService service = createSerializationService(new SerializationConfig());
+        assertThatThrownBy(() -> {
+                service.toData(new ClassWithArrayOfArrayField());
+        }).isInstanceOf(HazelcastSerializationException.class)
+                .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
+                .hasStackTraceContaining("which uses this class in its fields");
+    }
+
+    @Test
+    public void testSerializingClassReflectively_withVoidField() {
+        SerializationService service = createSerializationService(new SerializationConfig());
+        assertThatThrownBy(() -> {
+            service.toData(new ClassWithVoidField());
         }).isInstanceOf(HazelcastSerializationException.class)
                 .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
                 .hasStackTraceContaining("which uses this class in its fields");
@@ -383,6 +413,24 @@ public class CompactSerializationTest {
     }
 
     @Test
+    public void testSerializingClassReflectively_withCollectionTypes_whenTheyAreNull() {
+        SerializationConfig config = new SerializationConfig();
+        SerializationService service = createSerializationService(config);
+        ClassWithCollectionFields object = new ClassWithCollectionFields(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+
+        Data data = service.toData(object);
+        ClassWithCollectionFields deserialized = service.toObject(data);
+        assertEquals(object, deserialized);
+    }
+
+    @Test
     public void testReflectiveSerializer_withFieldsWithOtherSerializationMechanisms() {
         SerializationConfig config = new SerializationConfig();
         SerializationService service = createSerializationService(config);
@@ -404,11 +452,99 @@ public class CompactSerializationTest {
         assertTrue(data.isCompact());
     }
 
-    private SerializationService createSerializationService(SerializationConfig config) {
-        return new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setConfig(config)
-                .build();
+    @Test
+    public void testCompactWriterThrowsExceptionWhileWritingWhenSchemaDoesNotHaveThatField() {
+        FooBarSerializer serializer = spy(new FooBarSerializer());
+        FooBar fooBar = new FooBar("foo", 42L);
+
+        SerializationService serializationService = createSerializationService(() -> serializer);
+        // Add correct schema to classToSchemaMap
+        serializationService.toData(fooBar);
+        // Change serializer's write method
+        doAnswer(invocation -> {
+            CompactWriter writer = invocation.getArgument(0);
+            FooBar value = invocation.getArgument(1);
+            writer.writeString("foo", value.getFoo());
+            writer.writeInt64("bar", value.getBar());
+            writer.writeString("baz", "a");
+            return null;
+        }).when(serializer).write(any(), any());
+        // This should throw because schema does not have a baz field.
+        assertThatThrownBy(() -> {
+            serializationService.toData(fooBar);
+        }).isInstanceOf(HazelcastSerializationException.class)
+          .hasCauseInstanceOf(HazelcastSerializationException.class)
+          .hasStackTraceContaining("Invalid field name");
+    }
+
+    @Test
+    public void testCompactWriterThrowsExceptionWhileWritingWhenFieldTypeDoesNotMatch() {
+        FooBar fooBar = new FooBar("foo", 42L);
+        FooBarSerializer serializer = spy(new FooBarSerializer());
+
+        SerializationService serializationService = createSerializationService(() -> serializer);
+        // Add correct schema to classToSchemaMap
+        serializationService.toData(fooBar);
+        // Change serializer's write method
+        doAnswer(invocation -> {
+            CompactWriter writer = invocation.getArgument(0);
+            FooBar value = invocation.getArgument(1);
+            writer.writeInt32("foo", 123);
+            writer.writeInt64("bar", value.getBar());
+            return null;
+        }).when(serializer).write(any(), any());
+        // This should throw because in the schema type of foo is not int32.
+        assertThatThrownBy(() -> {
+                serializationService.toData(fooBar);
+        }).isInstanceOf(HazelcastSerializationException.class)
+          .hasCauseInstanceOf(HazelcastSerializationException.class)
+          .hasStackTraceContaining("Invalid field type");
+    }
+
+    private static class FooBar {
+        private final String foo;
+        private final long bar;
+
+        FooBar(String foo, long bar) {
+            this.foo = foo;
+            this.bar = bar;
+        }
+
+        public String getFoo() {
+            return foo;
+        }
+
+        public long getBar() {
+            return bar;
+        }
+    }
+
+    private static class FooBarSerializer implements CompactSerializer<FooBar> {
+        @Nonnull
+        @Override
+        public FooBar read(@Nonnull CompactReader reader) {
+            String foo = reader.readString("foo");
+            long bar = reader.readInt64("bar");
+            return new FooBar(foo, bar);
+        }
+
+        @Override
+        public void write(@Nonnull CompactWriter writer, @Nonnull FooBar object) {
+            writer.writeString("foo", object.foo);
+            writer.writeInt64("bar", object.bar);
+        }
+
+        @Nonnull
+        @Override
+        public String getTypeName() {
+            return "foobar";
+        }
+
+        @Nonnull
+        @Override
+        public Class getCompactClass() {
+            return FooBar.class;
+        }
     }
 
     private static class IntegerSerializer implements CompactSerializer<Integer> {
@@ -440,8 +576,72 @@ public class CompactSerializationTest {
         private LinkedList<String> list;
     }
 
+    private static class ClassWithInstantField {
+        private final Instant instant;
+        ClassWithInstantField(Instant instant) {
+            this.instant = instant;
+        }
+
+        public Instant getInstant() {
+            return instant;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            ClassWithInstantField that = (ClassWithInstantField) o;
+            return Objects.equals(instant, that.instant);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(instant);
+        }
+    }
+
+    private static class ClassWithInstantArrayField {
+        private final Instant[] instants;
+        ClassWithInstantArrayField(Instant[] instants) {
+            this.instants = instants;
+        }
+
+        public Instant[] getInstants() {
+            return instants;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            ClassWithInstantArrayField that = (ClassWithInstantArrayField) o;
+            return Arrays.equals(instants, that.getInstants());
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(instants);
+        }
+    }
+
     private static class ClassWithUnsupportedArrayField {
         private LinkedList<String>[] lists;
+    }
+
+    private static class ClassWithArrayOfArrayField {
+        private int[][] arrays;
+    }
+
+    private static class ClassWithVoidField {
+        private Void aVoid;
     }
 
     private static class ClassWithCollectionFields {
@@ -558,6 +758,59 @@ public class CompactSerializationTest {
 
         private UsesSerializableClassAsField(SerializableEmployeeDTO serializableClass) {
             this.serializableClass = serializableClass;
+        }
+    }
+
+    private static class NonExistingFieldReadingSerializer implements CompactSerializer<Foo> {
+        @Nonnull
+        @Override
+        public Foo read(@Nonnull CompactReader in) {
+            return new Foo(in.readInt32("nonExistingField"));
+        }
+
+        @Override
+        public void write(@Nonnull CompactWriter out, @Nonnull Foo object) {
+            out.writeInt32("bar", object.bar);
+        }
+
+        @Nonnull
+        @Override
+        public String getTypeName() {
+            return "foo";
+        }
+
+        @Nonnull
+        @Override
+        public Class<Foo> getCompactClass() {
+            return Foo.class;
+        }
+    }
+
+    private static class InstantSerializer implements CompactSerializer<Instant> {
+        @Nonnull
+        @Override
+        public Instant read(@Nonnull CompactReader reader) {
+            long epoch = reader.readInt64("epoch");
+            int nano = reader.readInt32("nano");
+            return Instant.ofEpochSecond(epoch, nano);
+        }
+
+        @Override
+        public void write(@Nonnull CompactWriter writer, @Nonnull Instant object) {
+            writer.writeInt64("epoch", object.getEpochSecond());
+            writer.writeInt32("nano", object.getNano());
+        }
+
+        @Nonnull
+        @Override
+        public String getTypeName() {
+            return "instant";
+        }
+
+        @Nonnull
+        @Override
+        public Class<Instant> getCompactClass() {
+            return Instant.class;
         }
     }
 }

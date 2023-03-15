@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,13 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
+import java.util.Objects;
 
 import static com.hazelcast.internal.nio.IOUtil.readData;
 import static com.hazelcast.internal.nio.IOUtil.writeData;
@@ -41,6 +47,11 @@ public class APortable implements Portable {
     private int i;
     private long l;
     private String str;
+    private BigDecimal bd;
+    private LocalDate ld;
+    private LocalTime lt;
+    private LocalDateTime ldt;
+    private OffsetDateTime odt;
     private Portable p;
 
     private boolean[] booleans;
@@ -52,6 +63,11 @@ public class APortable implements Portable {
     private int[] ints;
     private long[] longs;
     private String[] strings;
+    private BigDecimal[] decimals;
+    private LocalDate[] dates;
+    private LocalTime[] times;
+    private LocalDateTime[] dateTimes;
+    private OffsetDateTime[] offsetDateTimes;
     private Portable[] portables;
 
     private boolean[] booleansNull;
@@ -80,10 +96,12 @@ public class APortable implements Portable {
 
     @SuppressWarnings({"checkstyle:parameternumber", "checkstyle:executablestatementcount"})
     public APortable(boolean bool, byte b, char c, double d, short s,
-                     float f, int i, long l, String str, Portable p,
+                     float f, int i, long l, String str, BigDecimal bd,
+                     LocalDate ld, LocalTime lt, LocalDateTime ldt, OffsetDateTime odt, Portable p,
                      boolean[] booleans, byte[] bytes, char[] chars, double[] doubles, short[] shorts,
-                     float[] floats, int[] ints, long[] longs, String[] strings, Portable[] portables,
-                     IdentifiedDataSerializable identifiedDataSerializable,
+                     float[] floats, int[] ints, long[] longs, String[] strings, BigDecimal[] decimals,
+                     LocalDate[] dates, LocalTime[] times, LocalDateTime[] dateTimes, OffsetDateTime[] offsetDateTimes,
+                     Portable[] portables, IdentifiedDataSerializable identifiedDataSerializable,
                      CustomStreamSerializable customStreamSerializableObject,
                      CustomByteArraySerializable customByteArraySerializableObject, Data data) {
         this.bool = bool;
@@ -95,6 +113,11 @@ public class APortable implements Portable {
         this.i = i;
         this.l = l;
         this.str = str;
+        this.bd = bd;
+        this.ld = ld;
+        this.lt = lt;
+        this.ldt = ldt;
+        this.odt = odt;
         this.p = p;
 
         this.booleans = booleans;
@@ -106,6 +129,11 @@ public class APortable implements Portable {
         this.ints = ints;
         this.longs = longs;
         this.strings = strings;
+        this.decimals = decimals;
+        this.dates = dates;
+        this.times = times;
+        this.dateTimes = dateTimes;
+        this.offsetDateTimes = offsetDateTimes;
         this.portables = portables;
 
         this.byteSize = (byte) bytes.length;
@@ -148,6 +176,11 @@ public class APortable implements Portable {
         writer.writeInt("i", i);
         writer.writeLong("l", l);
         writer.writeString("str", str);
+        writer.writeDecimal("bd", bd);
+        writer.writeDate("ld", ld);
+        writer.writeTime("lt", lt);
+        writer.writeTimestamp("ldt", ldt);
+        writer.writeTimestampWithTimezone("odt", odt);
         if (p != null) {
             writer.writePortable("p", p);
         } else {
@@ -162,6 +195,11 @@ public class APortable implements Portable {
         writer.writeIntArray("is", ints);
         writer.writeLongArray("ls", longs);
         writer.writeStringArray("strs", strings);
+        writer.writeDecimalArray("decimals", decimals);
+        writer.writeDateArray("dates", dates);
+        writer.writeTimeArray("times", times);
+        writer.writeTimestampArray("dateTimes", dateTimes);
+        writer.writeTimestampWithTimezoneArray("offsetDateTimes", offsetDateTimes);
         writer.writePortableArray("ps", portables);
 
         writer.writeBooleanArray("booleansNull", booleansNull);
@@ -234,6 +272,11 @@ public class APortable implements Portable {
         i = reader.readInt("i");
         l = reader.readLong("l");
         str = reader.readString("str");
+        bd = reader.readDecimal("bd");
+        ld = reader.readDate("ld");
+        lt = reader.readTime("lt");
+        ldt = reader.readTimestamp("ldt");
+        odt = reader.readTimestampWithTimezone("odt");
         p = reader.readPortable("p");
 
         booleans = reader.readBooleanArray("booleans");
@@ -245,6 +288,11 @@ public class APortable implements Portable {
         ints = reader.readIntArray("is");
         longs = reader.readLongArray("ls");
         strings = reader.readStringArray("strs");
+        decimals = reader.readDecimalArray("decimals");
+        dates = reader.readDateArray("dates");
+        times = reader.readTimeArray("times");
+        dateTimes = reader.readTimestampArray("dateTimes");
+        offsetDateTimes = reader.readTimestampWithTimezoneArray("offsetDateTimes");
         portables = reader.readPortableArray("ps");
 
         booleansNull = reader.readBooleanArray("booleansNull");
@@ -358,6 +406,21 @@ public class APortable implements Portable {
         if (str != null ? !str.equals(that.str) : that.str != null) {
             return false;
         }
+        if (!Objects.equals(bd, that.bd)) {
+            return false;
+        }
+        if (!Objects.equals(ld, that.ld)) {
+            return false;
+        }
+        if (!Objects.equals(lt, that.lt)) {
+            return false;
+        }
+        if (!Objects.equals(ldt, that.ldt)) {
+            return false;
+        }
+        if (!Objects.equals(odt, that.odt)) {
+            return false;
+        }
         if (p != null ? !p.equals(that.p) : that.p != null) {
             return false;
         }
@@ -386,6 +449,21 @@ public class APortable implements Portable {
             return false;
         }
         if (!Arrays.equals(strings, that.strings)) {
+            return false;
+        }
+        if (!Arrays.equals(decimals, that.decimals)) {
+            return false;
+        }
+        if (!Arrays.equals(dates, that.dates)) {
+            return false;
+        }
+        if (!Arrays.equals(times, that.times)) {
+            return false;
+        }
+        if (!Arrays.equals(dateTimes, that.dateTimes)) {
+            return false;
+        }
+        if (!Arrays.equals(offsetDateTimes, that.offsetDateTimes)) {
             return false;
         }
         if (!Arrays.equals(portables, that.portables)) {

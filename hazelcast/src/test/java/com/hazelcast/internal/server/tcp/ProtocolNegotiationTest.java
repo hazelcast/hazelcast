@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import static com.hazelcast.internal.nio.IOUtil.close;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.lang.Math.max;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,11 +59,12 @@ import com.hazelcast.test.annotation.QuickTest;
 @Category({ QuickTest.class })
 public class ProtocolNegotiationTest {
 
-    private final BytesCountingServer bcServer = new BytesCountingServer(createServerSocket());
+    private volatile BytesCountingServer bcServer;
     private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
 
     @Before
     public void before() {
+        bcServer = new BytesCountingServer(createServerSocket());
         new Thread(bcServer).start();
     }
 
@@ -89,7 +89,14 @@ public class ProtocolNegotiationTest {
     @Test
     public void verifyOnlyTheProtocolHeaderIsSent() {
         Config config = createConfig();
-        assertThrows(IllegalStateException.class, () -> factory.newHazelcastInstance(config));
+        try {
+            factory.newHazelcastInstance(config);
+        } catch (IllegalStateException e) {
+            // just ignore it. Usually the exception happens here, but not always (due to the tight 2s timing).
+            // The result of the newHazelcastInstance operation is not important as this test is focused on bytes sent to the
+            // BytesCountingServer.
+            e.printStackTrace();
+        }
         bcServer.stop();
         assertEquals(3, bcServer.maxBytesReceived.get());
     }

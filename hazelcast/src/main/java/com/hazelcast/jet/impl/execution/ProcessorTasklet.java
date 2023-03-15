@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,6 +86,7 @@ import static com.hazelcast.jet.impl.execution.ProcessorState.SNAPSHOT_COMMIT_FI
 import static com.hazelcast.jet.impl.execution.ProcessorState.SNAPSHOT_COMMIT_FINISH__PROCESS;
 import static com.hazelcast.jet.impl.execution.ProcessorState.SNAPSHOT_COMMIT_PREPARE;
 import static com.hazelcast.jet.impl.execution.ProcessorState.WAITING_FOR_SNAPSHOT_COMPLETED;
+import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE_TIME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
@@ -460,7 +461,7 @@ public class ProcessorTasklet implements Tasklet {
 
     private boolean tryProcessGlobalWatermark(Watermark wm) {
         // A watermark is handled by the processor, while the IDLE message is passed directly to the outbox.
-        if (wm.timestamp() == IDLE_MESSAGE_TIME) {
+        if (wm.equals(IDLE_MESSAGE)) {
             return outbox.offer(wm);
         } else {
             return doWithClassLoader(context.classLoader(), () -> processor.tryProcessWatermark(wm));
@@ -583,7 +584,7 @@ public class ProcessorTasklet implements Tasklet {
                 Object item = inbox.queue().poll();
                 if (item instanceof Watermark) {
                     Watermark wm = ((Watermark) item);
-                    if (wm.timestamp() != IDLE_MESSAGE_TIME) {
+                    if (!wm.equals(IDLE_MESSAGE)) {
                         pendingEdgeWatermark.add(wm);
                     }
                     pendingGlobalWatermarks.addAll(coalescers.observeWm(currInstream.ordinal(), wm));

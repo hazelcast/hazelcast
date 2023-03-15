@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,8 +80,8 @@ public class ByteArraySerializerAdapterTest {
 
         assertEquals(adapter, adapter);
         assertEquals(adapter, theOther);
-        assertNotEquals(adapter, null);
-        assertNotEquals(adapter, "Not An Adaptor");
+        assertNotEquals(null, adapter);
+        assertNotEquals("Not An Adaptor", adapter);
         assertNotEquals(adapter, theEmptyOne);
 
         assertEquals(adapter.hashCode(), serializer.hashCode());

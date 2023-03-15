@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,15 @@ import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.validate.SqlValidator;
+import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.util.ImmutableNullableList;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 
+import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
+import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.isCatalogObjectNameValid;
 import static java.util.Objects.requireNonNull;
 
 public class SqlDropView extends SqlDrop {
@@ -47,7 +51,7 @@ public class SqlDropView extends SqlDrop {
     }
 
     public String viewName() {
-        return viewName.toString();
+        return viewName.names.get(viewName.names.size() - 1);
     }
 
     @Nonnull
@@ -69,5 +73,12 @@ public class SqlDropView extends SqlDrop {
             writer.keyword("IF EXISTS");
         }
         viewName.unparse(writer, leftPrec, rightPrec);
+    }
+
+    @Override
+    public void validate(final SqlValidator validator, final SqlValidatorScope scope) {
+        if (!isCatalogObjectNameValid(viewName)) {
+            throw validator.newValidationError(viewName, RESOURCE.droppedViewDoesNotExist(viewName.toString()));
+        }
     }
 }

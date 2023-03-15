@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -443,15 +443,15 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     public void testAfterLoadAllNearCacheIsInvalidated() {
         int mapSize = 1000;
         String mapName = randomMapName();
-        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         SimpleMapStore store = new SimpleMapStore();
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setEnabled(true)
                 .setImplementation(store);
-        Config config = server.getConfig();
+        Config config = newConfig();
         config.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
+        hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
 
@@ -471,15 +471,15 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     public void testMemberLoadAll_invalidates_clientNearCache() {
         int mapSize = 1000;
         String mapName = randomMapName();
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationOnChangeEnabledNearCacheConfig(mapName));
-
         SimpleMapStore store = new SimpleMapStore();
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setEnabled(true)
                 .setImplementation(store);
-        Config config = member.getConfig();
+        Config config = newConfig();
         config.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
+
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
 
@@ -500,15 +500,15 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     public void testAfterLoadAllWithDefinedKeysNearCacheIsInvalidated() {
         int mapSize = 1000;
         String mapName = randomMapName();
-        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         SimpleMapStore store = new SimpleMapStore();
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setEnabled(true)
                 .setImplementation(store);
-        Config config = server.getConfig();
+        Config config = newConfig();
         config.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
+        hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationOnChangeEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
 

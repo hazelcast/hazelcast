@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,14 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 
-public enum ContainsKeyOpSteps implements Step<State> {
+public enum ContainsKeyOpSteps implements IMapOpStep {
 
     READ() {
         @Override
         public void runStep(State state) {
             RecordStore recordStore = state.getRecordStore();
             Record record = recordStore.getRecordOrNull(state.getKey());
+
             if (record != null) {
                 state.setOldValue(record.getValue());
                 recordStore.accessRecord(state.getKey(), record, state.getNow());
@@ -44,7 +45,7 @@ public enum ContainsKeyOpSteps implements Step<State> {
 
     LOAD() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isLoadStep() {
             return true;
         }
 
@@ -68,6 +69,10 @@ public enum ContainsKeyOpSteps implements Step<State> {
                     state.getOldValue(), false, state.getCallerAddress());
             record = recordStore.evictIfExpired(state.getKey(), state.getNow(), false) ? null : record;
             state.setOldValue(record == null ? null : record.getValue());
+
+            if (record != null) {
+                recordStore.accessRecord(state.getKey(), record, state.getNow());
+            }
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationservice.Notifier;
@@ -41,10 +42,12 @@ public final class StepResponseUtil {
     }
 
     /**
+     * This method:
      * <lu>
-     *     <li>Applies final state to operation to extract response</li>
-     *     <li>Sends response to caller</li>
-     *     <li>Sends backup operation if there is backup</li>
+     * <li>Applies final state to operation to extract response</li>
+     * <li>Sends response to caller</li>
+     * <li>Sends backup operation if there is backup</li>
+     * <li>Notifies parked operations</li>
      * </lu>
      *
      * @param state
@@ -61,7 +64,12 @@ public final class StepResponseUtil {
             response = new NormalResponse(response, operation.getCallId(),
                     backupAcks, operation.isUrgent());
         }
-        operation.sendResponse(response);
+
+        try {
+            operation.sendResponse(response);
+        } catch (ResponseAlreadySentException e) {
+            logOperationError(operation, e);
+        }
 
         try {
             if (operation instanceof Notifier) {

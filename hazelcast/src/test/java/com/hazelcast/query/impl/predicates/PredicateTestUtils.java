@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,18 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.internal.util.UuidUtil;
 import org.mockito.internal.stubbing.answers.ReturnsArgumentAt;
 
 import java.util.Map;
 
 import static com.hazelcast.instance.impl.TestUtil.toData;
 import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
@@ -57,30 +57,30 @@ public final class PredicateTestUtils {
 
     static Predicate createMockVisitablePredicate() {
         VisitablePredicate visitablePredicate = mock(VisitablePredicate.class, withSettings().extraInterfaces(Predicate.class));
-        when(visitablePredicate.accept((Visitor) anyObject(), (Indexes) anyObject())).thenReturn((Predicate) visitablePredicate);
+        when(visitablePredicate.accept((Visitor) any(), (Indexes) any())).thenReturn((Predicate) visitablePredicate);
         return (Predicate) visitablePredicate;
     }
 
     static Predicate createMockVisitablePredicate(Predicate transformed) {
         VisitablePredicate visitablePredicate = mock(VisitablePredicate.class, withSettings().extraInterfaces(Predicate.class));
-        when(visitablePredicate.accept((Visitor) anyObject(), (Indexes) anyObject())).thenReturn(transformed);
+        when(visitablePredicate.accept((Visitor) any(), (Indexes) any())).thenReturn(transformed);
         return (Predicate) visitablePredicate;
     }
 
     static Visitor createPassthroughVisitor() {
         Visitor visitor = mock(Visitor.class);
-        when(visitor.visit((AndPredicate) anyObject(), (Indexes) anyObject())).thenAnswer(new ReturnsArgumentAt(0));
-        when(visitor.visit((OrPredicate) anyObject(), (Indexes) anyObject())).thenAnswer(new ReturnsArgumentAt(0));
-        when(visitor.visit((NotPredicate) anyObject(), (Indexes) anyObject())).thenAnswer(new ReturnsArgumentAt(0));
+        when(visitor.visit((AndPredicate) any(), (Indexes) any())).thenAnswer(new ReturnsArgumentAt(0));
+        when(visitor.visit((OrPredicate) any(), (Indexes) any())).thenAnswer(new ReturnsArgumentAt(0));
+        when(visitor.visit((NotPredicate) any(), (Indexes) any())).thenAnswer(new ReturnsArgumentAt(0));
 
         return visitor;
     }
 
     static Visitor createDelegatingVisitor(Predicate delegate) {
         Visitor visitor = mock(Visitor.class);
-        when(visitor.visit((AndPredicate) anyObject(), (Indexes) anyObject())).thenReturn(delegate);
-        when(visitor.visit((OrPredicate) anyObject(), (Indexes) anyObject())).thenReturn(delegate);
-        when(visitor.visit((NotPredicate) anyObject(), (Indexes) anyObject())).thenReturn(delegate);
+        when(visitor.visit((AndPredicate) any(), (Indexes) any())).thenReturn(delegate);
+        when(visitor.visit((OrPredicate) any(), (Indexes) any())).thenReturn(delegate);
+        when(visitor.visit((NotPredicate) any(), (Indexes) any())).thenReturn(delegate);
 
         return visitor;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateSnapshotPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateTypePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateViewPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropDataLinkPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropSnapshotPlan;
@@ -44,26 +45,36 @@ import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.WatermarkKeysAssigner;
+import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
-import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
+import com.hazelcast.jet.sql.impl.opt.logical.SelectByKeyMapLogicalRule;
+import com.hazelcast.jet.sql.impl.opt.physical.AssignDiscriminatorToScansRule;
+import com.hazelcast.jet.sql.impl.opt.physical.CalcLimitTransposeRule;
+import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.CreateTopLevelDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.LimitPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.MustNotExecutePhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.RootRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SelectByKeyMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.ShouldNotExecuteRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SinkMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.UpdateByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateDataLink;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateIndex;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateSnapshot;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateType;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateView;
+import com.hazelcast.jet.sql.impl.parse.SqlDropDataLink;
 import com.hazelcast.jet.sql.impl.parse.SqlDropIndex;
 import com.hazelcast.jet.sql.impl.parse.SqlDropJob;
 import com.hazelcast.jet.sql.impl.parse.SqlDropMapping;
@@ -72,9 +83,11 @@ import com.hazelcast.jet.sql.impl.parse.SqlDropType;
 import com.hazelcast.jet.sql.impl.parse.SqlDropView;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
+import com.hazelcast.jet.sql.impl.schema.DataLinkStorage;
+import com.hazelcast.jet.sql.impl.schema.DataLinksResolver;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
-import com.hazelcast.jet.sql.impl.schema.TablesStorage;
 import com.hazelcast.jet.sql.impl.schema.TypeDefinitionColumn;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.permission.ActionConstants;
@@ -97,13 +110,18 @@ import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.Convention;
+import org.apache.calcite.plan.RelOptCostImpl;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.plan.hep.HepPlanner;
+import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelShuttleImpl;
+import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 import org.apache.calcite.rel.core.TableScan;
@@ -111,19 +129,21 @@ import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
 import org.apache.calcite.sql.util.SqlString;
+import org.apache.calcite.tools.RuleSets;
 
 import javax.annotation.Nullable;
 import java.security.Permission;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataLinkPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.DropIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.ExplainStatementPlan;
-import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -195,7 +215,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private final IMapResolver iMapResolver;
     private final List<TableResolver> tableResolvers;
     private final PlanExecutor planExecutor;
-    private final TablesStorage tablesStorage;
+    private final RelationsStorage relationsStorage;
+    private final DataLinkStorage dataLinkStorage;
 
     private final ILogger logger;
 
@@ -203,18 +224,31 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         this.nodeEngine = nodeEngine;
 
         this.iMapResolver = new MetadataResolver(nodeEngine);
-        this.tablesStorage = new TablesStorage(nodeEngine);
+        this.relationsStorage = new RelationsStorage(nodeEngine);
+        this.dataLinkStorage = new DataLinkStorage(nodeEngine);
 
-        TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine, this.tablesStorage);
-        this.tableResolvers = singletonList(tableResolverImpl);
-        this.planExecutor = new PlanExecutor(tableResolverImpl, nodeEngine.getHazelcastInstance(), resultRegistry);
+        TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine, this.relationsStorage);
+        DataLinksResolver dataLinksResolver = dataLinkCatalog(this.dataLinkStorage);
+        this.tableResolvers = Arrays.asList(tableResolverImpl, dataLinksResolver);
+        this.planExecutor = new PlanExecutor(
+                tableResolverImpl,
+                dataLinksResolver,
+                nodeEngine.getHazelcastInstance(),
+                resultRegistry
+        );
 
         this.logger = nodeEngine.getLogger(getClass());
     }
 
-    private static TableResolverImpl mappingCatalog(NodeEngine nodeEngine, TablesStorage tablesStorage) {
+    private static TableResolverImpl mappingCatalog(
+            NodeEngine nodeEngine,
+            RelationsStorage relationsStorage) {
         SqlConnectorCache connectorCache = new SqlConnectorCache(nodeEngine);
-        return new TableResolverImpl(nodeEngine, tablesStorage, connectorCache);
+        return new TableResolverImpl(nodeEngine, relationsStorage, connectorCache);
+    }
+
+    private static DataLinksResolver dataLinkCatalog(DataLinkStorage storage) {
+        return new DataLinksResolver(storage);
     }
 
     @Nullable
@@ -229,8 +263,13 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return tableResolvers;
     }
 
-    public TablesStorage tablesStorage() {
-        return tablesStorage;
+    public RelationsStorage relationsStorage() {
+        return relationsStorage;
+    }
+
+    // for tests
+    public PlanExecutor getPlanExecutor() {
+        return planExecutor;
     }
 
     @Override
@@ -276,6 +315,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             return toCreateIndexPlan(planKey, (SqlCreateIndex) node);
         } else if (node instanceof SqlDropIndex) {
             return toDropIndexPlan(planKey, (SqlDropIndex) node);
+        } else if (node instanceof SqlCreateDataLink) {
+            return toCreateDataLinkPlan(planKey, (SqlCreateDataLink) node);
+        } else if (node instanceof SqlDropDataLink) {
+            return toDropDataLinkPlan(planKey, (SqlDropDataLink) node);
         } else if (node instanceof SqlCreateJob) {
             return toCreateJobPlan(planKey, parseResult, context, task.getSql());
         } else if (node instanceof SqlAlterJob) {
@@ -332,6 +375,27 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         );
     }
 
+    private SqlPlan toCreateDataLinkPlan(PlanKey planKey, SqlCreateDataLink sqlCreateDataLink) {
+        return new CreateDataLinkPlan(
+                planKey,
+                sqlCreateDataLink.getReplace(),
+                sqlCreateDataLink.ifNotExists,
+                sqlCreateDataLink.name(),
+                sqlCreateDataLink.type(),
+                sqlCreateDataLink.options(),
+                planExecutor
+        );
+    }
+
+    private SqlPlan toDropDataLinkPlan(PlanKey planKey, SqlDropDataLink sqlDropDataLink) {
+        return new DropDataLinkPlan(
+                planKey,
+                sqlDropDataLink.name(),
+                sqlDropDataLink.ifExists(),
+                planExecutor
+        );
+    }
+
     private SqlPlan toDropMappingPlan(PlanKey planKey, SqlDropMapping sqlDropMapping) {
         return new DropMappingPlan(planKey, sqlDropMapping.nameWithoutSchema(), sqlDropMapping.ifExists(), planExecutor);
     }
@@ -359,7 +423,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         QueryParseResult dmlParseResult = new QueryParseResult(source, parseResult.getParameterMetadata());
         QueryConvertResult dmlConvertedResult = context.convert(dmlParseResult.getNode());
-        boolean infiniteRows = OptUtils.isUnbounded(dmlConvertedResult.getRel());
         SqlPlanImpl dmlPlan = toPlan(
                 null,
                 parseResult.getParameterMetadata(),
@@ -376,13 +439,19 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 sqlCreateJob.ifNotExists(),
                 (DmlPlan) dmlPlan,
                 query,
-                infiniteRows,
+                ((DmlPlan) dmlPlan).isInfiniteRows(),
                 planExecutor
         );
     }
 
     private SqlPlan toAlterJobPlan(PlanKey planKey, SqlAlterJob sqlAlterJob) {
-        return new AlterJobPlan(planKey, sqlAlterJob.name(), sqlAlterJob.getOperation(), planExecutor);
+        return new AlterJobPlan(
+                planKey,
+                sqlAlterJob.name(),
+                sqlAlterJob.getDeltaConfig(),
+                sqlAlterJob.getOperation(),
+                planExecutor
+        );
     }
 
     private SqlPlan toDropJobPlan(PlanKey planKey, SqlDropJob sqlDropJob) {
@@ -456,7 +525,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 .collect(toList());
         return new CreateTypePlan(
                 planKey,
-                sqlNode.getName(),
+                sqlNode.typeName(),
                 sqlNode.getReplace(),
                 sqlNode.ifNotExists(),
                 columns,
@@ -506,7 +575,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     insert.mapName(),
                     insert.entriesFn(),
                     planExecutor,
-                    permissions
+                    permissions,
+                    insert.keyParamIndex()
             );
         } else if (physicalRel instanceof SinkMapPhysicalRel) {
             assert !isCreateJob;
@@ -548,7 +618,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         } else if (physicalRel instanceof TableModify) {
             checkDmlOperationWithView(physicalRel);
             Operation operation = ((TableModify) physicalRel).getOperation();
-            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(physicalRel, parameterMetadata);
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(physicalRel, parameterMetadata, context.getUsedViews());
             return new DmlPlan(
                     operation,
                     planKey,
@@ -561,7 +631,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     permissions
             );
         } else {
-            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(new RootRel(physicalRel), parameterMetadata);
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(new RootRel(physicalRel), parameterMetadata,
+                    context.getUsedViews());
             SqlRowMetadata rowMetadata = createRowMetadata(
                     fieldNames,
                     physicalRel.schema(parameterMetadata).getTypes(),
@@ -630,7 +701,15 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             logger.fine("After logical opt:\n" + RelOptUtil.toString(logicalRel));
         }
 
-        PhysicalRel physicalRel = optimizePhysical(context, logicalRel);
+        LogicalRel logicalRel2 = optimizeIMapKeyedAccess(context, logicalRel);
+        if (fineLogOn && logicalRel != logicalRel2) {
+            logger.fine("After IMap keyed access opt:\n" + RelOptUtil.toString(logicalRel2));
+        }
+
+        PhysicalRel physicalRel = optimizePhysical(context, logicalRel2);
+
+        physicalRel = postOptimizationRewrites(physicalRel);
+
         if (fineLogOn) {
             logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
         }
@@ -651,6 +730,17 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         );
     }
 
+    private LogicalRel optimizeIMapKeyedAccess(OptimizerContext context, LogicalRel rel) {
+        if (!(rel instanceof FullScanLogicalRel)) {
+            return rel;
+        }
+        return (LogicalRel) context.optimize(
+                rel,
+                RuleSets.ofList(SelectByKeyMapLogicalRule.INSTANCE),
+                OptUtils.toLogicalConvention(rel.getTraitSet())
+        );
+    }
+
     /**
      * Perform physical optimization.
      * This is where proper access methods and algorithms for joins and aggregations are chosen.
@@ -665,6 +755,44 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 OptUtils.toPhysicalConvention(rel.getTraitSet())
         );
     }
+
+    /**
+     * Assign a discriminator to each scan in the plan. This is essentially hack
+     * to make the scans unique. We need this because in the MEMO structure, the
+     * plan can contain the same instance of a RelNode multiple times, if it's
+     * identical. This happens if the query, for example, reads the same table
+     * twice. The {@link WatermarkKeysAssigner} might need to assign a different
+     * key to two identical scans, and it can't do it if they are the same
+     * instance.
+     * <p>
+     * Also, it executes {@link CalcLimitTransposeRule}, which pushes the
+     * {@link LimitPhysicalRel} up before a {@link CalcPhysicalRel}.
+     * We rely on this in {@link CreateTopLevelDagVisitor} when handling
+     * {@link LimitPhysicalRel} - it must be a direct input of
+     * the RootRel, there cannot be a {@link CalcPhysicalRel} in between.
+     */
+    public static PhysicalRel postOptimizationRewrites(PhysicalRel rel) {
+        HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
+
+        // Note that we must create a new instance of the rule for each optimization, because
+        // the rule has a state that is used during the "optimization".
+        AssignDiscriminatorToScansRule assignDiscriminatorRule = new AssignDiscriminatorToScansRule();
+
+        hepProgramBuilder.addRuleInstance(assignDiscriminatorRule);
+        hepProgramBuilder.addRuleInstance(CalcLimitTransposeRule.INSTANCE);
+
+        HepPlanner planner = new HepPlanner(
+                hepProgramBuilder.build(),
+                Contexts.empty(),
+                true,
+                null,
+                RelOptCostImpl.FACTORY
+        );
+
+        planner.setRoot(rel);
+        return (PhysicalRel) planner.findBestExp();
+    }
+
 
     private SqlRowMetadata createRowMetadata(
             List<String> columnNames,
@@ -688,18 +816,19 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private Tuple2<DAG, Set<PlanObjectKey>> createDag(
             PhysicalRel physicalRel,
-            QueryParameterMetadata parameterMetadata
+            QueryParameterMetadata parameterMetadata,
+            Set<PlanObjectKey> usedViews
     ) {
-        WatermarkKeysAssigner wmKeysAssigner = new WatermarkKeysAssigner(physicalRel);
-        // we should assign watermark keys also for bounded jobs, but due to the
-        // issue in key assigner we only do it for unbounded
-        // See https://github.com/hazelcast/hazelcast/issues/21984
-        if (OptUtils.isUnbounded(physicalRel)) {
-            wmKeysAssigner.assignWatermarkKeys();
-            logger.finest("Watermark keys assigned");
+        String exceptionMessage = new ExecutionStopperFinder(physicalRel).find();
+        if (exceptionMessage != null) {
+            throw QueryException.error(exceptionMessage);
         }
 
-        CreateDagVisitor visitor = new CreateDagVisitor(nodeEngine, parameterMetadata, wmKeysAssigner);
+        WatermarkKeysAssigner wmKeysAssigner = new WatermarkKeysAssigner(physicalRel);
+        wmKeysAssigner.assignWatermarkKeys();
+        logger.finest("Watermark keys assigned");
+
+        CreateTopLevelDagVisitor visitor = new CreateTopLevelDagVisitor(nodeEngine, parameterMetadata, wmKeysAssigner, usedViews);
         physicalRel.accept(visitor);
         visitor.optimizeFinishedDag();
         return tuple2(visitor.getDag(), visitor.getObjectKeys());
@@ -709,6 +838,33 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         HazelcastTable table = Objects.requireNonNull(rel.getTable()).unwrap(HazelcastTable.class);
         if (table.getTarget() instanceof ViewTable) {
             throw QueryException.error("DML operations not supported for views");
+        }
+    }
+
+    /**
+     * Tries to find {@link ShouldNotExecuteRel} or {@link MustNotExecutePhysicalRel}
+     * in optimizer relational tree to throw exception before DAG construction phase.
+     */
+    static class ExecutionStopperFinder extends RelVisitor {
+        private final RelNode rootRel;
+        private String message;
+
+        ExecutionStopperFinder(RelNode rootRel) {
+            this.rootRel = rootRel;
+        }
+
+        @Override
+        public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
+            if (node instanceof ShouldNotExecuteRel) {
+                message = ((ShouldNotExecuteRel) node).message();
+                return;
+            }
+            super.visit(node, ordinal, parent);
+        }
+
+        private String find() {
+            go(rootRel);
+            return message;
         }
     }
 }

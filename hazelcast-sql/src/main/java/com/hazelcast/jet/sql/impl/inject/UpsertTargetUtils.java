@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -322,10 +322,14 @@ public final class UpsertTargetUtils {
                     recordBuilder.setTimestampWithTimezone(field.getName(), (OffsetDateTime) fieldValue);
                     break;
                 case OBJECT:
-                    final GenericRecordBuilder nestedRecordBuilder = GenericRecordBuilder
-                            .compact(field.getDataType().getObjectTypeMetadata());
-                    setCompactFields((RowValue) fieldValue, field.getDataType(), nestedRecordBuilder);
-                    recordBuilder.setGenericRecord(field.getName(), nestedRecordBuilder.build());
+                    if (fieldValue == null) {
+                        recordBuilder.setGenericRecord(field.getName(), null);
+                    } else {
+                        final GenericRecordBuilder nestedRecordBuilder = GenericRecordBuilder
+                                .compact(field.getDataType().getObjectTypeMetadata());
+                        setCompactFields((RowValue) fieldValue, field.getDataType(), nestedRecordBuilder);
+                        recordBuilder.setGenericRecord(field.getName(), nestedRecordBuilder.build());
+                    }
                     break;
                 case INTERVAL_YEAR_MONTH:
                 case INTERVAL_DAY_SECOND:

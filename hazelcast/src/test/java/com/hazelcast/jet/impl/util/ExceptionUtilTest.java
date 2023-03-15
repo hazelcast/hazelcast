@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.spi.exception.TargetNotMemberException;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
@@ -42,7 +42,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ExceptionUtilTest extends JetTestSupport {
 
@@ -81,7 +81,7 @@ public class ExceptionUtilTest extends JetTestSupport {
         RuntimeException exc = new RuntimeException("myException");
         try {
             DAG dag = new DAG();
-            dag.newVertex("source", () -> new MockP().setCompleteError(exc)).localParallelism(1);
+            dag.newVertex("source", () -> new MockP().setCompleteError(() -> exc)).localParallelism(1);
             client.getJet().newJob(dag).join();
         } catch (Exception caught) {
             assertContains(caught.toString(), exc.toString());
@@ -97,7 +97,7 @@ public class ExceptionUtilTest extends JetTestSupport {
         RuntimeException exc = new RuntimeException("myException");
         try {
             DAG dag = new DAG();
-            dag.newVertex("source", () -> new MockP().setCompleteError(exc)).localParallelism(1);
+            dag.newVertex("source", () -> new MockP().setCompleteError(() -> exc)).localParallelism(1);
             client.getJet().newJob(dag).join();
         } catch (Exception caught) {
             assertThat(caught.toString(), containsString(exc.toString()));

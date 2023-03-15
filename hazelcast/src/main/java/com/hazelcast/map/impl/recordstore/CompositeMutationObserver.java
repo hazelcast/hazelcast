@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,11 +118,11 @@ class CompositeMutationObserver<R extends Record> implements MutationObserver<R>
     }
 
     @Override
-    public void onRemoveRecord(Data key, R record) {
+    public void onRemoveRecord(Data key, R record, boolean backup) {
         Throwable throwable = null;
         for (int i = 0; i < mutationObservers.size(); i++) {
             try {
-                mutationObservers.get(i).onRemoveRecord(key, record);
+                mutationObservers.get(i).onRemoveRecord(key, record, backup);
             } catch (Throwable t) {
                 if (throwable == null) {
                     throwable = t;
@@ -136,11 +136,11 @@ class CompositeMutationObserver<R extends Record> implements MutationObserver<R>
     }
 
     @Override
-    public void onEvictRecord(Data key, R record) {
+    public void onEvictRecord(Data key, R record, boolean backup) {
         Throwable throwable = null;
         for (int i = 0; i < mutationObservers.size(); i++) {
             try {
-                mutationObservers.get(i).onEvictRecord(key, record);
+                mutationObservers.get(i).onEvictRecord(key, record, backup);
             } catch (Throwable t) {
                 if (throwable == null) {
                     throwable = t;

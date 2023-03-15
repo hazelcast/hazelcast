@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -523,6 +523,9 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     @Test(expected = InvalidConfigurationException.class)
     public abstract void testPersistentMemoryConfiguration_NotExistingModeThrows();
 
+    @Test
+    public abstract void testNativeMemoryConfiguration_isBackwardCompatible();
+
     @Test(expected = InvalidConfigurationException.class)
     public abstract void testPersistentMemoryDirectoryConfiguration_SystemMemoryModeThrows();
 
@@ -552,4 +555,13 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
 
     @Test
     public abstract void testCompactSerialization_withInvalidCompactSerializableClass();
+
+    @Test
+    public void testAlto() {
+        ClientAltoConfig altoConfig = fullClientConfig.getAltoConfig();
+        assertTrue(altoConfig.isEnabled());
+
+        ClientAltoConfig defaultAltoConfig = defaultClientConfig.getAltoConfig();
+        assertFalse(defaultAltoConfig.isEnabled());
+    }
 }

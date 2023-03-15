@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -41,15 +40,8 @@ import static org.junit.Assert.fail;
 @Category({NightlyTest.class})
 public class MemberReconnectionStressTest extends JetTestSupport {
 
-    private final AtomicBoolean terminated = new AtomicBoolean();
-
-    @After
-    public void after() {
-        terminated.set(true);
-    }
-
     @Test
-    public void test() {
+    public void test() throws InterruptedException {
         /*
         The test will start 2 thread:
         - one will submit short batch jobs, serially, after joining the previous job
@@ -71,10 +63,12 @@ public class MemberReconnectionStressTest extends JetTestSupport {
         HazelcastInstance inst2 = createHazelcastInstance(config);
         logger.info("Instances started");
 
-        new Thread(() -> {
+        final AtomicBoolean terminated = new AtomicBoolean();
+
+        Thread connectionThread = new Thread(() -> {
             while (!terminated.get()) {
                 Connection connection = null;
-                while (connection == null) {
+                while (connection == null || !terminated.get()) {
                     connection = ImdgUtil.getMemberConnection(getNodeEngineImpl(inst1),
                             getNodeEngineImpl(inst2).getThisAddress());
                 }
@@ -82,15 +76,18 @@ public class MemberReconnectionStressTest extends JetTestSupport {
                 logger.info("connection closed");
                 sleepMillis(300);
             }
-        }).start();
+        });
+        connectionThread.setName("connectionThread");
+        connectionThread.start();
 
         DAG dag = new DAG();
-        Vertex v1 = dag.newVertex("v1", () -> new MockP()).localParallelism(2);
-        Vertex v2 = dag.newVertex("v2", () -> new MockP()).localParallelism(2);
+        Vertex v1 = dag.newVertex("v1", MockP::new).localParallelism(2);
+        Vertex v2 = dag.newVertex("v2", MockP::new).localParallelism(2);
         dag.edge(between(v1, v2).distributed());
 
         AtomicInteger jobCount = new AtomicInteger();
-        new Thread(() -> {
+        Thread newJobThread = new Thread(() -> {
+            // Continuously submit a new job and wait for it to complete
             while (!terminated.get()) {
                 try {
                     inst1.getJet().newJob(dag).getFuture().join();
@@ -100,7 +97,9 @@ public class MemberReconnectionStressTest extends JetTestSupport {
                     logger.info("Job failed, ignoring it", e);
                 }
             }
-        }).start();
+        });
+        newJobThread.setName("newJobThread");
+        newJobThread.start();
 
         // in a loop check that the `jobCount` is incremented at least every N seconds
         long lastIncrement = System.nanoTime();
@@ -116,5 +115,11 @@ public class MemberReconnectionStressTest extends JetTestSupport {
             }
             sleepMillis(100);
         }
+        //Test finished, close the threads
+        terminated.set(true);
+
+        connectionThread.join();
+        newJobThread.join();
+
     }
 }

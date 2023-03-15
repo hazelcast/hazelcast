@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,19 @@
 
 package com.hazelcast.sql.impl.expression;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
-import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
-import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.query.impl.getters.CompactGetter;
-import com.hazelcast.query.impl.getters.PortableGetter;
+import com.hazelcast.query.impl.getters.EvictableGetterCache;
+import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.query.impl.getters.GetterCache;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * An expression backing the DOT operator for extracting field from a struct type.
@@ -38,6 +36,14 @@ import java.io.IOException;
  * {@code ref.field} - extracts `field` from `ref`.
  */
 public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSerializable {
+    // FAE can be potentially used for many sub-classes of the base class, but it will always use same getter
+    private static final int MAX_CLASS_COUNT = 10;
+    private static final int MAX_GETTER_PER_CLASS_COUNT = 1;
+
+    // single instance for all calls to eval, used only during execution on particular node
+    // atomic reference due to serialization constraints
+    private final AtomicReference<GetterCache> getterCache = new AtomicReference<>();
+
     private QueryDataType type;
     private String name;
     private Expression<?> ref;
@@ -64,8 +70,14 @@ public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSe
 
 
     @Override
-    public T eval(final Row row, final ExpressionEvalContext context) {
-        Object res = ref.eval(row, context);
+    public T eval(Row row, ExpressionEvalContext context) {
+        return eval(row, context, false);
+    }
+
+    @Override
+    public T eval(final Row row, final ExpressionEvalContext context, boolean useLazyDeserialization) {
+        // Use lazy deserialization for nested queries. Only the last access should be eager.
+        final Object res = ref.eval(row, context, true);
         if (res == null) {
             return null;
         }
@@ -74,42 +86,26 @@ public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSe
             throw QueryException.error("Field Access expression can not be applied to primitive types");
         }
 
+        if (getterCache.get() == null) {
+            getterCache.compareAndSet(null, new EvictableGetterCache(
+                    MAX_CLASS_COUNT,
+                    MAX_GETTER_PER_CLASS_COUNT,
+                    GetterCache.EVICTABLE_CACHE_EVICTION_PERCENTAGE,
+                    false
+            ));
+        }
+
+        // defensive check, should never happen
+        final GetterCache cache = getterCache.get();
+        assert cache != null : "GetterCache should never be null";
+
+        final Extractors extractors = Extractors.newBuilder(context.getSerializationService())
+                .setGetterCacheSupplier(() -> cache)
+                .build();
         try {
-            if (res instanceof PortableGenericRecord) {
-                return (T) type.convert(extractPortableField(
-                        (PortableGenericRecord) res,
-                        name,
-                        context.getSerializationService()
-                ));
-            } else if (res instanceof CompactGenericRecord) {
-                return (T) type.convert(extractCompactField(
-                        (CompactGenericRecord) res,
-                        name,
-                        context.getSerializationService()
-                ));
-            } else {
-                return (T) type.convert(ReflectionUtils.getFieldValue(name, res));
-            }
+            return (T) type.convert(extractors.extract(res, name, useLazyDeserialization));
         } catch (Exception e) {
             throw QueryException.error("Failed to extract field");
-        }
-    }
-
-    private Object extractPortableField(PortableGenericRecord portable, String name, InternalSerializationService ss) {
-        final PortableGetter getter = new PortableGetter(ss);
-        try {
-            return getter.getValue(portable, name);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private Object extractCompactField(CompactGenericRecord compact, String name, InternalSerializationService ss) {
-        final CompactGetter getter = new CompactGetter(ss);
-        try {
-            return getter.getValue(compact, name);
-        } catch (Exception e) {
-            return null;
         }
     }
 

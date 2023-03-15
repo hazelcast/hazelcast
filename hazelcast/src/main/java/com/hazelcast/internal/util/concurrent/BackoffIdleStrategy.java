@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ package com.hazelcast.internal.util.concurrent;
 import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.ThreadUtil.hintOnSpinWait;
 import static java.lang.Long.numberOfLeadingZeros;
 import static java.lang.Long.parseLong;
 import static java.lang.Math.min;
@@ -73,6 +74,7 @@ public class BackoffIdleStrategy implements IdleStrategy {
     @Override
     public boolean idle(long n) {
         if (n < yieldThreshold) {
+            hintOnSpinWait();
             return false;
         }
         if (n < parkThreshold) {

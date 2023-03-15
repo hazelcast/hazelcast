@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ public class AccumulationLimitExceededException extends RuntimeException {
     public AccumulationLimitExceededException() {
         super("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance."
                 + " An OOME might occur when a job accumulates large data sets in one of the processors,"
-                + " e.g. grouping, sorting, hash join."
+                + " e.g. grouping, sorting, join."
                 + "See InstanceConfig.setMaxProcessorAccumulatedRecords() for further details.");
     }
 }

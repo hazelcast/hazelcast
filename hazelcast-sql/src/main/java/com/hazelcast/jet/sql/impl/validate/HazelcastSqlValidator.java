@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,16 @@
 
 package com.hazelcast.jet.sql.impl.validate;
 
-import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateDataLink;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
-import com.hazelcast.jet.sql.impl.parse.SqlDropView;
+import com.hazelcast.jet.sql.impl.parse.SqlDropDataLink;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
+import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastCastFunction;
 import com.hazelcast.jet.sql.impl.validate.param.AbstractParameterConverter;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeCoercion;
@@ -45,6 +46,7 @@ import org.apache.calcite.runtime.Resources;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlDynamicParam;
+import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlIntervalLiteral;
@@ -53,11 +55,11 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
-import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUpdate;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.validate.SelectScope;
 import org.apache.calcite.sql.validate.SqlQualified;
@@ -132,11 +134,13 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     @Override
     public SqlNode validate(SqlNode topNode) {
-        if (topNode instanceof SqlDropView) {
+        if (topNode.getKind().belongsTo(SqlKind.DDL)) {
+            topNode.validate(this, getEmptyScope());
             return topNode;
         }
 
-        if (topNode.getKind().belongsTo(SqlKind.DDL)) {
+        // CREATE or DROP DATA LINK
+        if (topNode instanceof SqlCreateDataLink || topNode instanceof SqlDropDataLink) {
             topNode.validate(this, getEmptyScope());
             return topNode;
         }
@@ -144,6 +148,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         if (topNode instanceof SqlShowStatement) {
             return topNode;
         }
+
 
         if (topNode instanceof SqlExplainStatement) {
             /*
@@ -184,6 +189,29 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     public void validateInsert(final SqlInsert insert) {
         super.validateInsert(insert);
         validateUpsertRowType((SqlIdentifier) insert.getTargetTable());
+    }
+
+    @Override
+    public void validateColumnListParams(
+            final SqlFunction function,
+            final List<RelDataType> argTypes,
+            final List<SqlNode> operands
+    ) {
+        if (!(function instanceof HazelcastCastFunction)) {
+            super.validateColumnListParams(function, argTypes, operands);
+        }
+
+        if (!argTypes.get(0).getSqlTypeName().equals(SqlTypeName.COLUMN_LIST)) {
+            throw QueryException.error("Cannot convert " + argTypes.get(0).getSqlTypeName()
+                    + " to " + argTypes.get(1).getSqlTypeName());
+        }
+
+        final SqlCall call = (SqlCall) operands.get(0);
+
+        assert call.getOperator().getKind().equals(SqlKind.ROW)
+                : "CAST column list argument is not a RowExpression call";
+
+        throw QueryException.error("Cannot convert ROW to JSON");
     }
 
     private boolean containsCycles(final HazelcastObjectType type, final Set<String> discovered) {
@@ -233,34 +261,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         }
 
         super.addToSelectList(list, aliases, fieldList, exp, scope, includeSystemVars);
-    }
-
-    @Override
-    protected void validateFrom(SqlNode node, RelDataType targetRowType, SqlValidatorScope scope) {
-        super.validateFrom(node, targetRowType, scope);
-
-        if (countOrderingFunctions(node) > 1) {
-            throw newValidationError(node, RESOURCE.multipleOrderingFunctionsNotSupported());
-        }
-    }
-
-    private static int countOrderingFunctions(SqlNode node) {
-        class OrderingFunctionCounter extends SqlBasicVisitor<Void> {
-            int count;
-
-            @Override
-            public Void visit(SqlCall call) {
-                SqlOperator operator = call.getOperator();
-                if (operator instanceof ImposeOrderFunction) {
-                    count++;
-                }
-                return super.visit(call);
-            }
-        }
-
-        OrderingFunctionCounter counter = new OrderingFunctionCounter();
-        node.accept(counter);
-        return counter.count;
     }
 
     @Override

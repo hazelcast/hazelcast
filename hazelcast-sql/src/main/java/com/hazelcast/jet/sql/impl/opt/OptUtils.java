@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
-import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTrait;
 import com.hazelcast.jet.sql.impl.opt.metadata.Boundedness;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
@@ -274,10 +273,6 @@ public final class OptUtils {
         return (HazelcastRelOptCluster) rel.getCluster();
     }
 
-    public static DistributionTrait getDistribution(RelNode rel) {
-        return rel.getTraitSet().getTrait(getCluster(rel).getDistributionTraitDef());
-    }
-
     /**
      * If the {@code node} is a {@link RelSubset}, finds the subset matching
      * the {@code operandPredicate}.
@@ -467,7 +462,7 @@ public final class OptUtils {
         }
     }
 
-    private static int findKeyIndex(Table table) {
+    public static int findKeyIndex(Table table) {
         List<String> primaryKey = SqlConnectorUtil.getJetSqlConnector(table).getPrimaryKey(table);
         // just single field keys supported at the moment
         assert primaryKey.size() == 1;

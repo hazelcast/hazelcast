@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public class Hazelcast3Proxy {
 
     public HazelcastInstance newHazelcastInstance(String xmlConfig) {
         try {
-            File hazelcastJar = locateVersion("3.12.12", new File("target"), false).get(OS_JAR);
+            File hazelcastJar = locateVersion("3.12.13", false).get(OS_JAR);
             URLClassLoader classLoader = new ChildFirstClassLoader(
                     new URL[]{hazelcastJar.toURI().toURL()},
                     Hazelcast3Proxy.class.getClassLoader()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import java.util.Properties;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -123,5 +124,28 @@ public class TxnReservedCapacityCounterImplTest {
         Map<UUID, Long> countPerTxnId = counter.getReservedCapacityCountPerTxnId();
         assertNull(countPerTxnId.get(txnId));
         assertEquals(0L, nodeWideUsedCapacityCounter.currentValue());
+    }
+
+    @Test
+    public void null_uuid_does_not_increment_counter() {
+        long valueBefore = nodeWideUsedCapacityCounter.currentValue();
+        counter.increment(TxnReservedCapacityCounter.NULL_UUID, false);
+        long valueAfter = nodeWideUsedCapacityCounter.currentValue();
+
+        assertEquals(valueBefore, valueAfter);
+    }
+
+    @Test
+    public void null_uuid_does_not_decrement_counter() {
+        long valueBefore = nodeWideUsedCapacityCounter.currentValue();
+        counter.decrement(TxnReservedCapacityCounter.NULL_UUID);
+        long valueAfter = nodeWideUsedCapacityCounter.currentValue();
+
+        assertEquals(valueBefore, valueAfter);
+    }
+
+    @Test
+    public void null_uuid_has_no_reserved_capacity() {
+        assertFalse(counter.hasReservedCapacity(TxnReservedCapacityCounter.NULL_UUID));
     }
 }

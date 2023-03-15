@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,6 +83,7 @@ public class SqlServiceImpl implements SqlService {
     private SqlInternalService internalService;
 
     private final Counter sqlQueriesSubmitted = MwCounter.newMwCounter();
+    private final Counter sqlStreamingQueriesExecuted = MwCounter.newMwCounter();
 
     public SqlServiceImpl(NodeEngineImpl nodeEngine) {
         this.logger = nodeEngine.getLogger(getClass());
@@ -142,6 +143,10 @@ public class SqlServiceImpl implements SqlService {
         return sqlQueriesSubmitted.get();
     }
 
+    public long getSqlStreamingQueriesExecutedCount() {
+        return sqlStreamingQueriesExecuted.get();
+    }
+
     /**
      * For testing only.
      */
@@ -199,7 +204,7 @@ public class SqlServiceImpl implements SqlService {
                 queryId = QueryId.create(nodeServiceProvider.getLocalMemberId());
             }
 
-            return query0(
+            SqlResult sqlResult = query0(
                     queryId,
                     statement.getSchema(),
                     statement.getSql(),
@@ -209,10 +214,22 @@ public class SqlServiceImpl implements SqlService {
                     statement.getExpectedResultType(),
                     securityContext
             );
+            if (!skipStats) {
+                updateSqlStreamingQueriesExecuted(sqlResult);
+            }
+            return sqlResult;
         } catch (AccessControlException e) {
             throw e;
         } catch (Exception e) {
             throw QueryUtils.toPublicException(e, nodeServiceProvider.getLocalMemberId());
+        }
+    }
+
+    private void updateSqlStreamingQueriesExecuted(SqlResult sqlResult) {
+        if (sqlResult instanceof AbstractSqlResult) {
+            if (((AbstractSqlResult) sqlResult).isInfiniteRows()) {
+                sqlStreamingQueriesExecuted.inc();
+            }
         }
     }
 

@@ -1,0 +1,5 @@
+name: "CodeQL code scanning custom configuration"
+disable-default-queries: true
+queries:
+  - name: Java custom query suite file
+    uses: ./.github/codeql/java-custom-queries.qls

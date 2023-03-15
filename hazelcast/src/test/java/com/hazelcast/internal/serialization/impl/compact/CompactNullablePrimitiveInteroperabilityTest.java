@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,8 @@
  */
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.config.CompactSerializationConfig;
-import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -34,6 +31,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createArrayOfFixedSizeFieldsDTO;
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createArrayOfFixedSizeFieldsDTOAsNullValues;
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createFixedSizeFieldsDTO;
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createSerializationService;
 import static com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder.compact;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -87,24 +88,6 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         }
     }
 
-    SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
-
-    private SerializationService createSerializationServiceWithASerializer() {
-        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.addSerializer(new ASerializer());
-        return new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
-                .build();
-    }
-
-    private SerializationService createSerializationService() {
-        return new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig())
-                .build();
-    }
-
     @Test
     public void testWritePrimitiveReadNullable() {
         GenericRecordBuilder builder = compact("test");
@@ -133,6 +116,62 @@ public class CompactNullablePrimitiveInteroperabilityTest {
 
         assertTrue(serializedRecord instanceof DeserializedGenericRecord);
         assertReadAsNullable(serializedRecord);
+    }
+
+    @Test
+    public void testWritePrimitiveReadNullableCustomSerializer() {
+        FixedSizeFieldsDTO fixedSizeFieldsDTO = createFixedSizeFieldsDTO();
+        SerializationService serializationService = createSerializationService(FixedSizeFieldsDTOSerializerReadingNullable::new);
+
+        Data data = serializationService.toData(fixedSizeFieldsDTO);
+        FixedSizeFieldsDTO obj = serializationService.toObject(data);
+
+        assertEquals(obj, fixedSizeFieldsDTO);
+    }
+
+    @Test
+    public void testWriteArraysOfPrimitiveReadNullableCustomSerializer() {
+        ArrayOfFixedSizeFieldsDTO arrayOfFixedSizeFieldsDTO = createArrayOfFixedSizeFieldsDTO();
+        SerializationService serializationService = createSerializationService(ArrayOfFixedSizeFieldsDTOSerializerReadingNullable::new);
+
+        Data data = serializationService.toData(arrayOfFixedSizeFieldsDTO);
+        ArrayOfFixedSizeFieldsDTO obj = serializationService.toObject(data);
+
+        assertEquals(obj, arrayOfFixedSizeFieldsDTO);
+    }
+
+    @Test
+    public void testWriteArraysOfPrimitiveAsNullReadNullableCustomSerializer() {
+        ArrayOfFixedSizeFieldsDTO arrayOfFixedSizeFieldsDTO = createArrayOfFixedSizeFieldsDTOAsNullValues();
+        SerializationService serializationService = createSerializationService(ArrayOfFixedSizeFieldsDTOSerializerReadingNullable::new);
+
+        Data data = serializationService.toData(arrayOfFixedSizeFieldsDTO);
+        ArrayOfFixedSizeFieldsDTO obj = serializationService.toObject(data);
+
+        assertEquals(obj, arrayOfFixedSizeFieldsDTO);
+    }
+
+    @Test
+    public void testWriteNullableReadPrimitiveCustomSerializer() {
+        FixedSizeFieldsDTO fixedSizeFieldsDTO = createFixedSizeFieldsDTO();
+        SerializationService serializationService = createSerializationService(FixedSizeFieldsDTOSerializerWritingNullable::new);
+
+        Data data = serializationService.toData(fixedSizeFieldsDTO);
+        FixedSizeFieldsDTO obj = serializationService.toObject(data);
+
+        assertEquals(obj, fixedSizeFieldsDTO);
+    }
+
+    @Test
+    public void testWriteNullableReadArraysOfPrimitiveCustomSerializer() {
+        ArrayOfFixedSizeFieldsDTO arrayOfFixedSizeFieldsDTO = createArrayOfFixedSizeFieldsDTO();
+        SerializationService serializationService =
+                createSerializationService(ArrayOfFixedSizeFieldsDTOSerializerWritingNullable::new);
+
+        Data data = serializationService.toData(arrayOfFixedSizeFieldsDTO);
+        ArrayOfFixedSizeFieldsDTO obj = serializationService.toObject(data);
+
+        assertEquals(obj, arrayOfFixedSizeFieldsDTO);
     }
 
     void assertReadAsNullable(GenericRecord record) {
@@ -231,7 +270,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
 
     @Test
     public void testWriteNullReadPrimitiveThrowsExceptionWithCorrectMethodPrefixCompactReader() {
-        SerializationService serializationService = createSerializationServiceWithASerializer();
+        SerializationService serializationService = createSerializationService(ASerializer::new);
         // Reading null value with non-nullable reader method
         A a1 = new A(null, new Integer[]{1, 2, 3});
         Data data = serializationService.toData(a1);

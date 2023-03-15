@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -607,7 +607,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             assertEquals(SampleTestObjects.State.STATE1, map.get(i).getState());
         }
         for (int i = 0; i < 5; i++) {
-            assertEquals(res.get(i).getState(), SampleTestObjects.State.STATE2);
+            assertEquals(SampleTestObjects.State.STATE2, res.get(i).getState());
         }
     }
 
@@ -1247,7 +1247,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         // the index has been queried.
         final int expectedApplyCount = globalIndex() ? 2 : 0;
         assertTrueEventually(() -> assertEquals("Expecting two predicate#apply method call one on owner, other one on backup",
-                expectedApplyCount, PREDICATE_APPLY_COUNT.get()));
+                PREDICATE_APPLY_COUNT.get(), expectedApplyCount));
     }
 
     @Test

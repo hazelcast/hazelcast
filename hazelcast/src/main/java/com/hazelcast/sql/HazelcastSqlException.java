@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,13 @@ public class HazelcastSqlException extends HazelcastException {
     private final int code;
     private final String suggestion;
 
+    public HazelcastSqlException(String message, Throwable cause) {
+        super(message, cause);
+        originatingMemberId = null;
+        code = 0;
+        suggestion = null;
+    }
+
     @PrivateApi
     public HazelcastSqlException(
             @Nonnull UUID originatingMemberId,
@@ -49,7 +56,6 @@ public class HazelcastSqlException extends HazelcastException {
     /**
      * Gets ID of the member that caused or initiated an error condition.
      */
-    @Nonnull
     public UUID getOriginatingMemberId() {
         return originatingMemberId;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,8 +60,6 @@ public interface RecordStore<R extends Record> {
 
     ExpirySystem getExpirySystem();
 
-    LocalRecordStoreStats getLocalRecordStoreStats();
-
     String getName();
 
     /**
@@ -89,8 +87,8 @@ public interface RecordStore<R extends Record> {
      * @param provenance origin of call to this method.
      * @return current record after put.
      */
-    R putBackup(Data key, Object value, long ttl, long maxIdle,
-                long nowOrExpiryTime, CallerProvenance provenance);
+    R putBackup(Data key, Object value, boolean changeExpiryOnUpdate,
+                long ttl, long maxIdle, long nowOrExpiryTime, CallerProvenance provenance);
 
     /**
      * @return current record after put.
@@ -111,7 +109,8 @@ public interface RecordStore<R extends Record> {
      * Does exactly the same thing as {@link #set(Data, Object, long, long)} except the invocation is not counted as
      * a read access while updating the access statics.
      */
-    boolean setWithUncountedAccess(Data dataKey, Object value, long ttl, long maxIdle);
+    boolean setWithUncountedAccess(Data dataKey, Object value,
+                                   boolean changeExpiryOnUpdate, long ttl, long maxIdle);
 
     /**
      * @param key        the key to be removed
@@ -312,8 +311,9 @@ public interface RecordStore<R extends Record> {
      * does not intercept.
      *
      * @param dataKey key to remove
+     * @param backup {@code true} if a backup partition, otherwise {@code false}.
      */
-    void removeReplicatedRecord(Data dataKey);
+    void removeReplicatedRecord(Data dataKey, boolean backup);
 
     void forEach(BiConsumer<Data, R> consumer, boolean backup);
 
@@ -632,9 +632,10 @@ public interface RecordStore<R extends Record> {
      * <p>
      * Clears data in this record store.
      *
+     * @param backup  {@code true} if a backup partition, otherwise {@code false}.
      * @return number of cleared entries.
      */
-    int clear();
+    int clear(boolean backup);
 
     /**
      * Resets the record store to it's initial state.
@@ -656,9 +657,9 @@ public interface RecordStore<R extends Record> {
 
     EvictionPolicy getEvictionPolicy();
 
-    LocalRecordStoreStatsImpl getStats();
+    LocalRecordStoreStatsImpl getLocalRecordStoreStats();
 
-    void setStats(LocalRecordStoreStats stats);
+    void setLocalRecordStoreStats(LocalRecordStoreStats stats);
 
     default void beforeOperation() {
         // no-op

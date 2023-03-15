@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,12 +68,14 @@ class JmxMetricsChecker {
     }
 
     private static String getName(String instance, Job job, String... extraTags) {
-        String jobId = job.getIdString();
-        String execId = job.getMetrics().get(MetricNames.RECEIVED_COUNT).get(0).tag("exec");
+        Measurement m = job.getMetrics().get(MetricNames.RECEIVED_COUNT).get(0);
+        String jobId = m.tag("job");
+        String jobName = m.tag("jobName");
+        String execId = m.tag("exec");
 
         StringBuilder sb = new StringBuilder();
-        sb.append(getName(instance, "job=" + jobId, "exec=" + execId));
-        return appendTags(sb, 2, extraTags).toString();
+        sb.append(getName(instance, "job=" + jobId, "jobName=" + jobName, "exec=" + execId));
+        return appendTags(sb, 3, extraTags).toString();
     }
 
     private static String getName(String instance, String... extraTags) {

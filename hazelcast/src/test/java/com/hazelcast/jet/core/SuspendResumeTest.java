@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.JobResult;
+import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -35,7 +36,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.core.JobStatus.FAILED;
@@ -226,13 +226,14 @@ public class SuspendResumeTest extends JetTestSupport {
         // When-Then
         cancelAndJoin(job);
         assertJobStatusEventually(job, FAILED);
+        assertTrue(job.isUserCancelled());
 
         // check that job resources are deleted
         JobRepository jobRepository = new JobRepository(instances[0]);
         assertTrueEventually(() -> {
             assertNull("JobRecord", jobRepository.getJobRecord(job.getId()));
             JobResult jobResult = jobRepository.getJobResult(job.getId());
-            assertContains(jobResult.getFailureText(), CancellationException.class.getName());
+            assertContains(jobResult.getFailureText(), CancellationByUserException.class.getName());
             assertFalse("Job result successful", jobResult.isSuccessful());
         });
     }

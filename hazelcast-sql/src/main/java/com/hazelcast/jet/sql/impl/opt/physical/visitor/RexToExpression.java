@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,9 @@
 package com.hazelcast.jet.sql.impl.opt.physical.visitor;
 
 import com.google.common.collect.RangeSet;
-import com.hazelcast.jet.sql.impl.expression.Range;
-import com.hazelcast.jet.sql.impl.expression.ToRowFunction;
+import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.sql.impl.expression.Sarg;
+import com.hazelcast.jet.sql.impl.expression.UdtObjectToJsonFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonArrayFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonObjectFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
@@ -26,6 +27,7 @@ import com.hazelcast.jet.sql.impl.expression.json.JsonQueryFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonParseFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastUdtObjectToJsonFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastLikeOperator;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.SqlColumnType;
@@ -35,10 +37,11 @@ import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.RowExpression;
-import com.hazelcast.sql.impl.expression.SearchableExpression;
+import com.hazelcast.sql.impl.expression.SargExpression;
 import com.hazelcast.sql.impl.expression.SymbolExpression;
 import com.hazelcast.sql.impl.expression.datetime.ExtractField;
 import com.hazelcast.sql.impl.expression.datetime.ExtractFunction;
+import com.hazelcast.sql.impl.expression.datetime.ToCharFunction;
 import com.hazelcast.sql.impl.expression.datetime.ToEpochMillisFunction;
 import com.hazelcast.sql.impl.expression.datetime.ToTimestampTzFunction;
 import com.hazelcast.sql.impl.expression.math.AbsFunction;
@@ -85,6 +88,7 @@ import org.apache.calcite.avatica.util.TimeUnitRange;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexLiteral;
+import org.apache.calcite.rex.RexUnknownAs;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlJsonConstructorNullClause;
 import org.apache.calcite.sql.SqlJsonQueryEmptyOrErrorBehavior;
@@ -97,7 +101,6 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.DateString;
 import org.apache.calcite.util.NlsString;
 import org.apache.calcite.util.RangeSets;
-import org.apache.calcite.util.Sarg;
 import org.apache.calcite.util.TimeString;
 import org.apache.calcite.util.TimestampString;
 
@@ -450,6 +453,12 @@ public final class RexToExpression {
                     return ToTimestampTzFunction.create(operands[0]);
                 } else if (function == HazelcastSqlOperatorTable.TO_EPOCH_MILLIS) {
                     return ToEpochMillisFunction.create(operands[0]);
+                } else if (function == HazelcastSqlOperatorTable.TO_CHAR) {
+                    Expression<?> input = operands[0];
+                    Expression<?> format = operands[1];
+                    Expression<?> locale = operands.length > 2 ? operands[2] : null;
+
+                    return ToCharFunction.create(input, format, locale);
                 } else if (function == HazelcastSqlOperatorTable.CONCAT_WS) {
                     return ConcatWSFunction.create(operands);
                 } else if (function == HazelcastSqlOperatorTable.JSON_QUERY) {
@@ -488,8 +497,8 @@ public final class RexToExpression {
                     final Expression<?>[] fields = Arrays.copyOfRange(operands, 1, operands.length);
 
                     return JsonArrayFunction.create(fields, nullClause);
-                } else if (function == HazelcastSqlOperatorTable.TO_ROW) {
-                    return ToRowFunction.create(operands[0]);
+                } else if (function == HazelcastUdtObjectToJsonFunction.INSTANCE) {
+                    return UdtObjectToJsonFunction.create(operands[0]);
                 }
 
                 break;
@@ -503,15 +512,15 @@ public final class RexToExpression {
     }
 
     @SuppressWarnings({"unchecked", "UnstableApiUsage"})
-    public static RangeSet extractRangeFromSearch(RexLiteral literal) {
-        Sarg<?> sarg = literal.getValueAs(Sarg.class);
+    public static Tuple2<RangeSet<?>, Boolean> extractRangeSetAndNullAsFromSearch(RexLiteral literal) {
+        org.apache.calcite.util.Sarg<?> sarg = literal.getValueAs(org.apache.calcite.util.Sarg.class);
         if (sarg == null) {
             return null;
         }
 
         RelDataType literalType = literal.getType();
         SqlTypeName sqlType = literalType.getSqlTypeName();
-        return RangeSets.copy(sarg.rangeSet, value -> convertSargValue(value, sqlType));
+        return Tuple2.tuple2(RangeSets.copy(sarg.rangeSet, value -> convertSargValue(value, sqlType)), convertNullAs(sarg));
     }
 
     @SuppressWarnings({"unchecked", "UnstableApiUsage"})
@@ -519,9 +528,13 @@ public final class RexToExpression {
             RexLiteral literal,
             RelDataType type
     ) {
-        Sarg<CI> sarg = literal.getValueAs(Sarg.class);
+        org.apache.calcite.util.Sarg<CI> sarg = literal.getValueAs(org.apache.calcite.util.Sarg.class);
         RangeSet<CO> mapped = RangeSets.copy(sarg.rangeSet, value -> (CO) convertSargValue(value, type.getSqlTypeName()));
-        return SearchableExpression.create(HazelcastTypeUtils.toHazelcastType(type), new Range<>(mapped));
+        return SargExpression.create(HazelcastTypeUtils.toHazelcastType(type), new Sarg<>(mapped, convertNullAs(sarg)));
+    }
+
+    private static Boolean convertNullAs(org.apache.calcite.util.Sarg<?> sarg) {
+        return sarg.nullAs == RexUnknownAs.UNKNOWN ? null : sarg.nullAs.toBoolean();
     }
 
     @SuppressWarnings({"rawtypes", "checkstyle:ReturnCount"})

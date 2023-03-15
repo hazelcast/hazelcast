@@ -1,4 +1,4 @@
-# SQL Network Protocol
+# SQL Network Protocol (Outdated since Hazelcast 5.0)
 
 ## Overview
 

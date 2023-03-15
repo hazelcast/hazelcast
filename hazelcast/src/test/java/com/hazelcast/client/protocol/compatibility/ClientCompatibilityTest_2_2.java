@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,6 +86,7 @@ public class ClientCompatibilityTest_2_2 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
+        assertFalse(parameters.isAltoPortsExists);
     }
 
     @Test
@@ -109,6 +110,7 @@ public class ClientCompatibilityTest_2_2 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
+        assertFalse(parameters.isAltoPortsExists);
     }
 
     @Test
@@ -6287,6 +6289,7 @@ public class ClientCompatibilityTest_2_2 {
         assertTrue(isEqual(aString, parameters.memberVersion));
         assertTrue(isEqual(aString, parameters.jetVersion));
         assertTrue(isEqual(aLong, parameters.clusterTime));
+        assertFalse(parameters.isClusterIdExists);
     }
 
     @Test
@@ -6613,6 +6616,7 @@ public class ClientCompatibilityTest_2_2 {
         assertTrue(isEqual(aLong, parameters.updateCount));
         assertTrue(isEqual(anSqlError, parameters.error));
         assertFalse(parameters.isIsInfiniteRowsExists);
+        assertFalse(parameters.isPartitionArgumentIndexExists);
     }
 
     @Test

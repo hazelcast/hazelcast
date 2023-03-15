@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,16 +70,18 @@ public interface MutationObserver<R extends Record> {
      *
      * @param key    The key of the record
      * @param record The record
+     * @param backup  {@code true} if a backup partition, otherwise {@code false}.
      */
-    void onRemoveRecord(@Nonnull Data key, R record);
+    void onRemoveRecord(@Nonnull Data key, R record, boolean backup);
 
     /**
      * Called when a record is evicted from the observed {@link RecordStore}
      *
      * @param key    The key of the record
      * @param record The record
+     * @param backup  {@code true} if a backup partition, otherwise {@code false}.*
      */
-    void onEvictRecord(@Nonnull Data key, @Nonnull R record);
+    void onEvictRecord(@Nonnull Data key, @Nonnull R record, boolean backup);
 
     /**
      * Called when a record is loaded into the observed {@link RecordStore}

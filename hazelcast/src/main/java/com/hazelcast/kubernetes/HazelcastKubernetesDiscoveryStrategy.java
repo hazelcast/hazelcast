@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.kubernetes;
 
+import com.hazelcast.instance.impl.ClusterTopologyIntentTracker;
 import com.hazelcast.kubernetes.KubernetesConfig.DiscoveryMode;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
@@ -28,6 +29,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.internal.util.HostnameUtil.getLocalHostname;
+
 final class HazelcastKubernetesDiscoveryStrategy
         extends AbstractDiscoveryStrategy {
     private final KubernetesClient client;
@@ -36,13 +39,14 @@ final class HazelcastKubernetesDiscoveryStrategy
 
     private final Map<String, String> memberMetadata = new HashMap<>();
 
-    HazelcastKubernetesDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
+    HazelcastKubernetesDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties,
+                                         ClusterTopologyIntentTracker clusterTopologyIntentTracker) {
         super(logger, properties);
 
         config = new KubernetesConfig(properties);
         logger.info(config.toString());
 
-        client = buildKubernetesClient(config);
+        client = buildKubernetesClient(config, clusterTopologyIntentTracker);
 
         if (DiscoveryMode.DNS_LOOKUP.equals(config.getMode())) {
             endpointResolver = new DnsEndpointResolver(logger, config.getServiceDns(), config.getServicePort(),
@@ -57,13 +61,16 @@ final class HazelcastKubernetesDiscoveryStrategy
         logger.info("Kubernetes Discovery activated with mode: " + config.getMode().name());
     }
 
-    private static KubernetesClient buildKubernetesClient(KubernetesConfig config) {
+    private static KubernetesClient buildKubernetesClient(KubernetesConfig config,
+                                                          ClusterTopologyIntentTracker tracker) {
         return new KubernetesClient(config.getNamespace(), config.getKubernetesMasterUrl(), config.getTokenProvider(),
                 config.getKubernetesCaCertificate(), config.getKubernetesApiRetries(), config.getExposeExternallyMode(),
-                config.isUseNodeNameAsExternalAddress(), config.getServicePerPodLabelName(), config.getServicePerPodLabelValue());
+                config.isUseNodeNameAsExternalAddress(), config.getServicePerPodLabelName(),
+                config.getServicePerPodLabelValue(), tracker);
     }
 
     public void start() {
+        client.start();
         endpointResolver.start();
     }
 
@@ -120,13 +127,10 @@ final class HazelcastKubernetesDiscoveryStrategy
         return "unknown";
     }
 
-    private String podName() throws UnknownHostException {
+    private String podName() {
         String podName = System.getenv("POD_NAME");
         if (podName == null) {
-            podName = System.getenv("HOSTNAME");
-        }
-        if (podName == null) {
-            podName = InetAddress.getLocalHost().getHostName();
+            podName = getLocalHostname();
         }
         return podName;
     }
@@ -138,6 +142,7 @@ final class HazelcastKubernetesDiscoveryStrategy
 
     public void destroy() {
         endpointResolver.destroy();
+        client.destroy();
     }
 
     abstract static class EndpointResolver {

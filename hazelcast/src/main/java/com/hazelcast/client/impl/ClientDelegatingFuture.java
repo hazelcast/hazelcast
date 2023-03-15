@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.util.Objects.requireNonNull;
 
@@ -64,7 +65,7 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
         this.decodedResponse = VOID;
         this.clientMessageDecoder = clientMessageDecoder;
         this.deserializeResponse = deserializeResponse;
-        this.future.whenComplete((v, t) -> completeSuper(v, (Throwable) t));
+        this.future.whenCompleteAsync((v, t) -> completeSuper(v, (Throwable) t), CALLER_RUNS);
     }
 
     public ClientDelegatingFuture(ClientInvocationFuture clientInvocationFuture,

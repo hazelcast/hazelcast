@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,16 +66,12 @@ public class HazelcastKubernetesDiscoveryStrategyFactoryTest {
 
     @Test
     public void createDiscoveryStrategy() {
-        HashMap<String, Comparable> properties = new HashMap<>();
-        properties.put(KubernetesProperties.KUBERNETES_API_TOKEN.key(), API_TOKEN);
-        properties.put(KubernetesProperties.KUBERNETES_CA_CERTIFICATE.key(), CA_CERTIFICATE);
-        properties.put(String.valueOf(KubernetesProperties.SERVICE_PORT), 333);
-        properties.put(KubernetesProperties.NAMESPACE.key(), "default");
-        HazelcastKubernetesDiscoveryStrategyFactory factory = new HazelcastKubernetesDiscoveryStrategyFactory();
-        DiscoveryStrategy strategy = factory.newDiscoveryStrategy(mock(DiscoveryNode.class), LOGGER, properties);
-        assertTrue(strategy instanceof HazelcastKubernetesDiscoveryStrategy);
-        strategy.start();
-        strategy.destroy();
+        testCreateDiscoveryStrategy(mock(DiscoveryNode.class));
+    }
+
+    @Test
+    public void createDiscoveryStrategy_whenDiscoveryNodeIsNull() {
+        testCreateDiscoveryStrategy(null);
     }
 
     @Test
@@ -87,5 +83,18 @@ public class HazelcastKubernetesDiscoveryStrategyFactoryTest {
         // when & then
         assertTrue(factory.tokenFileExists());
         assertEquals(DiscoveryStrategyLevel.PLATFORM, factory.discoveryStrategyLevel());
+    }
+
+    private void testCreateDiscoveryStrategy(DiscoveryNode node) {
+        HashMap<String, Comparable> properties = new HashMap<>();
+        properties.put(KubernetesProperties.KUBERNETES_API_TOKEN.key(), API_TOKEN);
+        properties.put(KubernetesProperties.KUBERNETES_CA_CERTIFICATE.key(), CA_CERTIFICATE);
+        properties.put(String.valueOf(KubernetesProperties.SERVICE_PORT), 333);
+        properties.put(KubernetesProperties.NAMESPACE.key(), "default");
+        HazelcastKubernetesDiscoveryStrategyFactory factory = new HazelcastKubernetesDiscoveryStrategyFactory();
+        DiscoveryStrategy strategy = factory.newDiscoveryStrategy(node, LOGGER, properties);
+        assertTrue(strategy instanceof HazelcastKubernetesDiscoveryStrategy);
+        strategy.start();
+        strategy.destroy();
     }
 }

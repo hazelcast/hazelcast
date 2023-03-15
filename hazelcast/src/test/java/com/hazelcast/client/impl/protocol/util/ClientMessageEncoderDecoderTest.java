@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -192,7 +192,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         UUID clusterId = UUID.randomUUID();
 
         ClientMessage message = ClientAuthenticationCodec.encodeResponse((byte) 2, new Address("127.0.0.1", 5701),
-                uuid, (byte) 1, "3.12", 271, clusterId, true);
+                uuid, (byte) 1, "3.12", 271, clusterId, true, null);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
 

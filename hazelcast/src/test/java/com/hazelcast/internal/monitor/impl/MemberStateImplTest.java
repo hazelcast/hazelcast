@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,6 +84,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         client.uuid = clientUuid;
         client.address = "localhost";
         client.clientType = "undefined";
+        client.clientVersion = "5.2";
         client.name = "aClient";
         client.labels = new HashSet<>(Collections.singletonList("label"));
         client.ipAddress = "10.176.167.34";

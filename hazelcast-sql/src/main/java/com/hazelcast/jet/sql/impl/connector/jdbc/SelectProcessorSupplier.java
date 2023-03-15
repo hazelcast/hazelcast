@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,10 +57,10 @@ public class SelectProcessorSupplier
     public SelectProcessorSupplier() {
     }
 
-    public SelectProcessorSupplier(@Nonnull String externalDataStoreRef,
+    public SelectProcessorSupplier(@Nonnull String dataLinkName,
                                    @Nonnull String query,
                                    @Nonnull int[] parameterPositions) {
-        super(externalDataStoreRef);
+        super(dataLinkName);
         this.query = requireNonNull(query, "query must not be null");
         this.parameterPositions = requireNonNull(parameterPositions, "parameterPositions must not be null");
     }
@@ -77,7 +77,7 @@ public class SelectProcessorSupplier
         List<Processor> processors = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             Processor processor = new ReadJdbcP<>(
-                    () -> dataSource.getConnection(),
+                    () -> dataLink.getConnection(),
                     (connection, parallelism, index) -> {
                         PreparedStatement statement = connection.prepareStatement(query);
                         List<Object> arguments = evalContext.getArguments();
@@ -122,19 +122,19 @@ public class SelectProcessorSupplier
     @Nullable
     @Override
     public List<Permission> permissions() {
-        return singletonList(ConnectorPermission.jdbc(externalDataStoreRef, ACTION_READ));
+        return singletonList(ConnectorPermission.jdbc(dataLinkName, ACTION_READ));
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeString(externalDataStoreRef);
+        out.writeString(dataLinkName);
         out.writeString(query);
         out.writeIntArray(parameterPositions);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        externalDataStoreRef = in.readString();
+        dataLinkName = in.readString();
         query = in.readString();
         parameterPositions = in.readIntArray();
     }

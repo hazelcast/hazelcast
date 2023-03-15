@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.sql.impl.validate.operators.predicate;
 
-import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
-import com.hazelcast.jet.sql.impl.validate.operators.typeinference.BetweenOperatorOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastInfixOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.typeinference.BetweenOperatorOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.param.NumericPrecedenceParameterConverter;
+import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeComparability;

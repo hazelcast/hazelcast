@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,7 +120,7 @@ public class ReliableTopicCreateTest extends HazelcastTestSupport {
         topic.publish("foo");
 
         ReliableTopicProxy proxy = assertInstanceOf(ReliableTopicProxy.class, topic);
-        assertEquals(proxy.overloadPolicy, TopicOverloadPolicy.DISCARD_NEWEST);
+        assertEquals(TopicOverloadPolicy.DISCARD_NEWEST, proxy.overloadPolicy);
 
         final ConcurrentMap<Integer, Map<ObjectNamespace, RingbufferContainer>> containers = ringbufferService.getContainers();
         assertEquals(1, containers.size());

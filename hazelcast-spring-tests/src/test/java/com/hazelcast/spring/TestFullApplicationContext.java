@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
@@ -84,6 +84,7 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PersistenceConfig;
@@ -118,6 +119,8 @@ import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
+import com.hazelcast.config.alto.AltoConfig;
+import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -143,7 +146,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.MapStoreFactory;
 import com.hazelcast.memory.Capacity;
-import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.nio.SocketInterceptor;
@@ -196,6 +198,7 @@ import java.util.concurrent.ExecutorService;
 import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.PersistenceClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_COMPLETE;
 import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
+import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
 import static com.hazelcast.memory.MemoryUnit.GIGABYTES;
 import static com.hazelcast.spi.properties.ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
@@ -353,8 +356,11 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testMapConfig() {
         assertNotNull(config);
         long mapConfigSize = config.getMapConfigs()
-                .keySet().stream().filter(name -> !name.startsWith(INTERNAL_JET_OBJECTS_PREFIX)).count();
-        assertEquals(27, mapConfigSize);
+                .keySet().stream()
+                .filter(name -> !name.startsWith(INTERNAL_JET_OBJECTS_PREFIX))
+                .filter(name -> !name.equals(SQL_CATALOG_MAP_NAME))
+                .count();
+        assertEquals(28, mapConfigSize);
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -471,7 +477,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         MapConfig testMapConfig3 = config.getMapConfig("testMap3");
         assertEquals("com.hazelcast.spring.DummyStoreFactory", testMapConfig3.getMapStoreConfig().getFactoryClassName());
         assertFalse(testMapConfig3.getMapStoreConfig().getProperties().isEmpty());
-        assertEquals(testMapConfig3.getMapStoreConfig().getProperty("dummy.property"), "value");
+        assertEquals("value", testMapConfig3.getMapStoreConfig().getProperty("dummy.property"));
 
         MapConfig testMapConfig4 = config.getMapConfig("testMap4");
         assertEquals(dummyMapStoreFactory, testMapConfig4.getMapStoreConfig().getFactoryImplementation());
@@ -505,6 +511,13 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         DiskTierConfig diskTierConfig = tieredStoreConfig.getDiskTierConfig();
         assertTrue(diskTierConfig.isEnabled());
         assertEquals("the-local0751", diskTierConfig.getDeviceName());
+
+        final List<PartitioningAttributeConfig> attributeConfigs = Arrays.asList(
+                new PartitioningAttributeConfig("attr1"),
+                new PartitioningAttributeConfig("attr2")
+        );
+        MapConfig testMapWithPartitionAttributes = config.getMapConfig("mapWithPartitionAttributes");
+        assertEquals(attributeConfigs, testMapWithPartitionAttributes.getPartitioningAttributeConfigs());
     }
 
     @Test
@@ -827,8 +840,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("36000,36100", portIter.next());
         assertFalse(networkConfig.getJoin().getAutoDetectionConfig().isEnabled());
         assertFalse(networkConfig.getJoin().getMulticastConfig().isEnabled());
-        assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds(), 8);
-        assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeToLive(), 16);
+        assertEquals(8, networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds());
+        assertEquals(16, networkConfig.getJoin().getMulticastConfig().getMulticastTimeToLive());
         assertEquals(Boolean.FALSE, networkConfig.getJoin().getMulticastConfig().getLoopbackModeEnabled());
         Set<String> tis = networkConfig.getJoin().getMulticastConfig().getTrustedInterfaces();
         assertEquals(1, tis.size());
@@ -868,6 +881,11 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(1002, icmpFailureDetectorConfig.getIntervalMilliseconds());
         assertEquals(2, icmpFailureDetectorConfig.getMaxAttempts());
         assertEquals(1, icmpFailureDetectorConfig.getTtl());
+
+        AltoSocketConfig altoSocketConfig = networkConfig.getAltoSocketConfig();
+        assertEquals("14000-16000", altoSocketConfig.getPortRange());
+        assertEquals(256, altoSocketConfig.getReceiveBufferSizeKB());
+        assertEquals(256, altoSocketConfig.getSendBufferSizeKB());
     }
 
     private void assertAwsConfig(AwsConfig aws) {
@@ -1429,7 +1447,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(blockSize, localDeviceConfig.getBlockSize());
         assertEquals(readIOThreadCount, localDeviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount0, localDeviceConfig.getWriteIOThreadCount());
-        assertEquals(new MemorySize(9321, MemoryUnit.MEGABYTES), localDeviceConfig.getCapacity());
+        assertEquals(new Capacity(9321, MemoryUnit.MEGABYTES), localDeviceConfig.getCapacity());
 
         localDeviceConfig = config.getDeviceConfig(deviceName1);
         assertEquals(deviceName1, localDeviceConfig.getName());
@@ -1634,12 +1652,20 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExternalDataStoreConfig() {
-        ExternalDataStoreConfig externalDataStoreConfig = config.getExternalDataStoreConfig("my-data-store");
-        assertNotNull(externalDataStoreConfig);
-        assertEquals("my-data-store", externalDataStoreConfig.getName());
-        assertEquals("com.hazelcast.datastore.JdbcDataStoreFactory", externalDataStoreConfig.getClassName());
-        assertFalse(externalDataStoreConfig.isShared());
-        assertEquals("jdbc:mysql://dummy:3306", externalDataStoreConfig.getProperty("jdbcUrl"));
+    public void testDataLinkConfig() {
+        DataLinkConfig dataLinkConfig = config.getDataLinkConfig("my-data-link");
+        assertNotNull(dataLinkConfig);
+        assertEquals("my-data-link", dataLinkConfig.getName());
+        assertEquals("com.hazelcast.datalink.impl.DataLinkTestUtil$DummyDataLink", dataLinkConfig.getClassName());
+        assertFalse(dataLinkConfig.isShared());
+        assertEquals("jdbc:mysql://dummy:3306", dataLinkConfig.getProperty("jdbcUrl"));
+    }
+
+    @Test
+    public void testAltoConfig() {
+        AltoConfig altoConfig = config.getAltoConfig();
+
+        assertTrue(altoConfig.isEnabled());
+        assertEquals(12, altoConfig.getEventloopCount());
     }
 }

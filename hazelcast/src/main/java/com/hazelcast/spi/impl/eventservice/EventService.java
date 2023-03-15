@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package com.hazelcast.spi.impl.eventservice;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.PreJoinAwareService;
+import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperation;
+import com.hazelcast.spi.impl.eventservice.impl.operations.OnJoinRegistrationOperation;
 import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.annotation.Nonnull;
@@ -29,7 +31,7 @@ import java.util.function.Consumer;
 /**
  * Component responsible for handling events like topic events or map.listener events. The events are divided into topics.
  */
-public interface EventService extends Consumer<Packet>, PreJoinAwareService, PostJoinAwareService {
+public interface EventService extends Consumer<Packet>, PreJoinAwareService<OnJoinRegistrationOperation>, PostJoinAwareService {
 
     /**
      * Returns the event thread count.
@@ -134,9 +136,9 @@ public interface EventService extends Consumer<Packet>, PreJoinAwareService, Pos
      * @throws IllegalArgumentException if the listener or filter is {@code null}
      */
     CompletableFuture<EventRegistration> registerListenerAsync(@Nonnull String serviceName,
-                                       @Nonnull String topic,
-                                       @Nonnull EventFilter filter,
-                                       @Nonnull Object listener);
+                                                               @Nonnull String topic,
+                                                               @Nonnull EventFilter filter,
+                                                               @Nonnull Object listener);
 
     /**
      * Deregisters a listener with the given registration ID.
@@ -166,16 +168,27 @@ public interface EventService extends Consumer<Packet>, PreJoinAwareService, Pos
      * @see #registerLocalListener(String, String, Object)
      */
     CompletableFuture<Boolean> deregisterListenerAsync(@Nonnull String serviceName,
-                               @Nonnull String topic,
-                               @Nonnull Object id);
+                                                       @Nonnull String topic,
+                                                       @Nonnull Object id);
+
+    /**
+     * Deregisters all local listeners belonging to the given service and topic.
+     *
+     * @param serviceName service name
+     * @param topic       topic name
+     */
+    void deregisterAllLocalListeners(@Nonnull String serviceName, @Nonnull String topic);
 
     /**
      * Deregisters all listeners belonging to the given service and topic.
      *
      * @param serviceName service name
      * @param topic       topic name
+     * @param orderKey    The {@link DeregistrationOperation} will be synchronized with
+     *                    events having the same {@code orderKey}, so that all events sent
+     *                    before the deregistration can be received by subscribers.
      */
-    void deregisterAllListeners(@Nonnull String serviceName, @Nonnull String topic);
+    void deregisterAllListeners(@Nonnull String serviceName, @Nonnull String topic, int orderKey);
 
     /**
      * Returns all registrations belonging to the given service and topic.

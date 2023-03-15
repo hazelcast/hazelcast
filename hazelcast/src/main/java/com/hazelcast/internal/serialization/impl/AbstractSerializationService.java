@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -164,17 +164,17 @@ public abstract class AbstractSerializationService implements InternalSerializat
         }
         if (obj instanceof Data) {
             Data data = (Data) obj;
-            if (data.getType() == SerializationConstants.TYPE_COMPACT) {
-                // we need to deserialize and serialize back completely because the root schema
-                // is not enough to deserialize an data. Because nested levels, there could be multiple schemas
-                // accompanying the single data
-                obj = toObject(data);
-            } else {
-                // for other types data and data with schema is same
+            if (data.getType() == SerializationConstants.TYPE_COMPACT_WITH_SCHEMA) {
                 return (B) data;
             }
+
+            // we need to deserialize and serialize back completely to include
+            // all the schemas, even if the top level class is not Compact, in
+            // case the Compact is used with other serialization mechanisms
+            // (like array list of Compact serialized objects).
+            obj = toObject(data);
         }
-        byte[] bytes = toBytes(obj, 0, true, globalPartitioningStrategy, getByteOrder(), true);
+        byte[] bytes = toBytes(obj, 0, true, globalPartitioningStrategy, BIG_ENDIAN, true);
         return (B) new HeapData(bytes);
     }
 
@@ -339,9 +339,14 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     @Override
-    public final <T> T readObject(final ObjectDataInput in) {
+    public final <T> T readObject(final ObjectDataInput in, boolean useBigEndianForReadingTypeId) {
         try {
-            final int typeId = in.readInt();
+            final int typeId;
+            if (useBigEndianForReadingTypeId && in instanceof BufferObjectDataInput) {
+                typeId = ((BufferObjectDataInput) in).readInt(BIG_ENDIAN);
+            } else {
+                typeId = in.readInt();
+            }
             final SerializerAdapter serializer = serializerFor(typeId);
             if (serializer == null) {
                 if (active) {
@@ -695,21 +700,12 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     /**
      * Makes sure that the classes registered as Compact serializable are not
-     * overriding the default serializers, if the
-     * {@link #allowOverrideDefaultSerializers} configuration option is set to
-     * {@code false}.
+     * overriding the default serializers.
      * <p>
      * Must be called in the constructor of the child classes after they
      * complete registering default serializers.
      */
     protected void verifyDefaultSerializersNotOverriddenWithCompact() {
-        // If the user explicitly set to override default serializers, we should
-        // respect that and allow it to register Compact serializers for such
-        // types. No need to perform further checks.
-        if (allowOverrideDefaultSerializers) {
-            return;
-        }
-
         for (Class clazz : compactStreamSerializer.getCompactSerializableClasses()) {
             if (!constantTypesMap.containsKey(clazz)) {
                 continue;
@@ -718,10 +714,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
             throw new IllegalArgumentException("Compact serializer for the "
                     + "class '" + clazz + " can not be registered as it "
                     + "overrides the default serializer for that class "
-                    + "provided by Hazelcast. If you want to override the "
-                    + "default serializer, set the "
-                    + "'allowOverrideDefaultSerializers' to 'true' in the "
-                    + "serialization configuration."
+                    + "provided by Hazelcast."
             );
         }
     }

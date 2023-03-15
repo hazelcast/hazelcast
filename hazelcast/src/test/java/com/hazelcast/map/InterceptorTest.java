@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.listener.EntryAddedListener;
@@ -46,7 +47,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.internal.util.StringUtil.LOCALE_INTERNAL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -113,24 +113,24 @@ public class InterceptorTest extends HazelcastTestSupport {
 
         assertEquals(6, map.size());
         assertNull(map.get(1));
-        assertEquals(map.get(2), "ISTANBUL:");
-        assertEquals(map.get(3), "TOKYO:");
-        assertEquals(map.get(4), "LONDON:");
-        assertEquals(map.get(5), "PARIS:");
-        assertEquals(map.get(6), "CAIRO:");
-        assertEquals(map.get(7), "HONG KONG:");
+        assertEquals("ISTANBUL:", map.get(2));
+        assertEquals("TOKYO:", map.get(3));
+        assertEquals("LONDON:", map.get(4));
+        assertEquals("PARIS:", map.get(5));
+        assertEquals("CAIRO:", map.get(6));
+        assertEquals("HONG KONG:", map.get(7));
 
         map.removeInterceptor(id);
         map.put(8, "Moscow");
 
         assertNull(map.get(1));
-        assertEquals(map.get(2), "ISTANBUL");
-        assertEquals(map.get(3), "TOKYO");
-        assertEquals(map.get(4), "LONDON");
-        assertEquals(map.get(5), "PARIS");
-        assertEquals(map.get(6), "CAIRO");
-        assertEquals(map.get(7), "HONG KONG");
-        assertEquals(map.get(8), "Moscow");
+        assertEquals("ISTANBUL", map.get(2));
+        assertEquals("TOKYO", map.get(3));
+        assertEquals("LONDON", map.get(4));
+        assertEquals("PARIS", map.get(5));
+        assertEquals("CAIRO", map.get(6));
+        assertEquals("HONG KONG", map.get(7));
+        assertEquals("Moscow", map.get(8));
     }
 
     @Test
@@ -163,7 +163,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         IMap<Integer, String> map = instance.getMap(randomString());
         map.addInterceptor(new SimpleInterceptor());
 
-        Set<Integer> set = new HashSet<Integer>();
+        Set<Integer> set = new HashSet<>();
         for (int i = 0; i < 100; i++) {
             map.put(i, String.valueOf(i));
             set.add(i);
@@ -171,7 +171,7 @@ public class InterceptorTest extends HazelcastTestSupport {
 
         Map<Integer, String> allValues = map.getAll(set);
         for (int i = 0; i < 100; i++) {
-            assertEquals("Expected intercepted value on map.getAll()", String.valueOf(i) + ":", allValues.get(i));
+            assertEquals("Expected intercepted value on map.getAll()", i + ":", allValues.get(i));
         }
     }
 
@@ -186,7 +186,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         String value = "foo";
         map.put(1, value);
 
-        final String expectedValue = value.toUpperCase(LOCALE_INTERNAL);
+        final String expectedValue = StringUtil.upperCaseInternal(value);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
@@ -204,11 +204,11 @@ public class InterceptorTest extends HazelcastTestSupport {
         map.addEntryListener(listener, true);
 
         String value = "foo";
-        Set<Integer> keys = new HashSet<Integer>();
+        Set<Integer> keys = new HashSet<>();
         keys.add(1);
         map.executeOnKeys(keys, new EntryPutProcessor("foo"));
 
-        final String expectedValue = value.toUpperCase(LOCALE_INTERNAL);
+        final String expectedValue = StringUtil.upperCaseInternal(value);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
@@ -228,7 +228,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         String value = "foo";
         map.executeOnKey(1, new EntryPutProcessor("foo"));
 
-        final String expectedValue = value.toUpperCase(LOCALE_INTERNAL);
+        final String expectedValue = StringUtil.upperCaseInternal(value);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
@@ -252,7 +252,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         final EntryLoadedLatch listener = new EntryLoadedLatch();
         map.addEntryListener(listener, true);
 
-        Set<Integer> keys = new HashSet<Integer>();
+        Set<Integer> keys = new HashSet<>();
         keys.add(1);
         map.loadAll(keys, false);
 
@@ -330,7 +330,7 @@ public class InterceptorTest extends HazelcastTestSupport {
 
         @Override
         public Map<Integer, String> loadAll(Collection<Integer> keys) {
-            Map<Integer, String> map = new HashMap<Integer, String>(keys.size());
+            Map<Integer, String> map = new HashMap<>(keys.size());
             for (Integer key : keys) {
                 map.put(key, load(key));
             }
@@ -359,7 +359,7 @@ public class InterceptorTest extends HazelcastTestSupport {
 
     static class EntryAddedLatch implements EntryAddedListener<Integer, String> {
 
-        AtomicReference<String> value = new AtomicReference<String>();
+        AtomicReference<String> value = new AtomicReference<>();
 
         @Override
         public void entryAdded(EntryEvent<Integer, String> event) {
@@ -373,7 +373,7 @@ public class InterceptorTest extends HazelcastTestSupport {
 
     static class EntryLoadedLatch implements EntryLoadedListener<Integer, String> {
 
-        AtomicReference<String> value = new AtomicReference<String>();
+        AtomicReference<String> value = new AtomicReference<>();
 
         @Override
         public void entryLoaded(EntryEvent<Integer, String> event) {
@@ -427,7 +427,7 @@ public class InterceptorTest extends HazelcastTestSupport {
 
         @Override
         public Object interceptPut(Object oldValue, Object newValue) {
-            return newValue.toString().toUpperCase(LOCALE_INTERNAL);
+            return StringUtil.upperCaseInternal(newValue.toString());
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
 import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
 import com.hazelcast.internal.serialization.impl.portable.PortableInternalGenericRecord;
@@ -60,8 +62,15 @@ public final class GenericRecordQueryReader implements ValueReader {
 
     private final InternalGenericRecord rootRecord;
 
+    private final boolean useLazyDeserialization;
+
     public GenericRecordQueryReader(InternalGenericRecord rootRecord) {
+        this(rootRecord, false);
+    }
+
+    public GenericRecordQueryReader(InternalGenericRecord rootRecord, boolean useLazyDeserialization) {
         this.rootRecord = rootRecord;
+        this.useLazyDeserialization = useLazyDeserialization;
     }
 
     @SuppressWarnings("unchecked")
@@ -249,12 +258,16 @@ public final class GenericRecordQueryReader implements ValueReader {
     }
 
     private Object readLeaf(InternalGenericRecord record, String path) {
+        FieldKind kind = record.getFieldKind(path);
+        if ((kind == FieldKind.COMPACT || kind == FieldKind.PORTABLE) && useLazyDeserialization) {
+            // Use lazy deserialization for the queries that will read a nested compact or portable field
+            return record.getInternalGenericRecord(path);
+        }
         if (record instanceof CompactGenericRecord) {
             FieldDescriptor fd = ((CompactGenericRecord) record).getFieldDescriptor(path);
-            return fieldOperations(fd.getKind()).readAsLeafObjectOnQuery(record, path, fd);
+            return fieldOperations(kind).readAsLeafObjectOnQuery(record, path, fd);
         } else {
             // Getting field descriptor is not possible in portable.
-            FieldKind kind = record.getFieldKind(path);
             return fieldOperations(kind).readAsLeafObjectOnQuery(record, path, null);
         }
     }

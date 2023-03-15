@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import com.hazelcast.transaction.TransactionException;
 
 import java.util.UUID;
 
-public enum TxnLockAndGetOpSteps implements Step<State> {
+public enum TxnLockAndGetOpSteps implements IMapOpStep {
 
     READ() {
         @Override
@@ -38,7 +38,6 @@ public enum TxnLockAndGetOpSteps implements Step<State> {
             boolean blockReads = state.isBlockReads();
             long callId = state.getOperation().getCallId();
 
-            recordStore.unlock(dataKey, ownerUuid, threadId, callId);
             if (!recordStore.txnLock(dataKey, ownerUuid, threadId, callId, ttl, blockReads)) {
                 throw new TransactionException("Transaction couldn't obtain lock.");
             }

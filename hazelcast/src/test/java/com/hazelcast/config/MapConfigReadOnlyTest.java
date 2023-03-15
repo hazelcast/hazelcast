@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertNull;
 
@@ -155,6 +156,16 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
+    public void getPartitioningAttributeConfigsOfReadOnlyMapConfigShouldReturnUnmodifiable() {
+        MapConfig config = new MapConfig()
+                .setPartitioningAttributeConfigs(singletonList(new PartitioningAttributeConfig()));
+
+        final List<PartitioningAttributeConfig> attributeConfigs = new MapConfigReadOnly(config)
+                .getPartitioningAttributeConfigs();
+        attributeConfigs.add(new PartitioningAttributeConfig());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
     public void setHotRestartConfigOfReadOnlyMapConfigShouldFail() {
         getReadOnlyConfig().setHotRestartConfig(new HotRestartConfig());
     }
@@ -272,5 +283,10 @@ public class MapConfigReadOnlyTest {
     @Test(expected = UnsupportedOperationException.class)
     public void setSplitBrainProtectionNameOfReadOnlyMapConfigShouldFail() {
         getReadOnlyConfig().setSplitBrainProtectionName("mySplitBrainProtection");
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void getPartitioningAttributeConfigsOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setPartitioningAttributeConfigs(emptyList());
     }
 }

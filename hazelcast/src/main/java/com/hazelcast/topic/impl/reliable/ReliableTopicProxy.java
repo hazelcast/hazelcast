@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -349,7 +350,7 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
             } else {
                 returnFuture.complete(null);
             }
-        });
+        }, CALLER_RUNS);
     }
 
     private InternalCompletableFuture<Void> addAsync(List<ReliableTopicMessage> messages, OverflowPolicy overflowPolicy) {
@@ -360,7 +361,7 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
             } else {
                 returnFuture.complete(null);
             }
-        });
+        }, CALLER_RUNS);
         return returnFuture;
     }
 
@@ -378,6 +379,6 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
             } else {
                 returnFuture.complete(null);
             }
-        });
+        }, CALLER_RUNS);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -389,6 +389,17 @@ public class ClientQueueTest extends HazelcastTestSupport {
         actual.addAll(q);
 
         assertEquals(coll, actual);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testAddAll_whenExceedingMaximumCapacity() {
+        IQueue<Integer> q = client.getQueue(QUEUE_WITH_MAX_SIZE + randomString());
+        for (int i = 0; i < MAX_SIZE_FOR_QUEUE; i++) {
+            q.add(1);
+        }
+        Collection<Integer> coll = new ArrayList<>();
+        coll.add(1);
+        q.addAll(coll);
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,19 +18,27 @@ package com.hazelcast.internal.util;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.impl.ClusterTopologyChangedException;
 import com.hazelcast.internal.util.futures.ChainingFuture;
 import com.hazelcast.internal.util.iterator.RestartingMemberIterator;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.properties.ClusterProperty;
 
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.IterableUtil.map;
@@ -40,6 +48,8 @@ import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFutur
  * Utility methods for invocations.
  */
 public final class InvocationUtil {
+    private static final Predicate<Member> ALL_MEMBERS_MATCH = member -> true;
+    private static final Predicate<Member> ALL_BUT_LOCAL_MEMBERS_MATCH = member -> !member.localMember();
 
     private InvocationUtil() {
     }
@@ -47,13 +57,20 @@ public final class InvocationUtil {
     /**
      * Invoke operation on all cluster members.
      *
+     * <p>
      * The invocation is serial: It iterates over all members starting from the oldest member to the youngest one.
      * If there is a cluster membership change while invoking then it will restart invocations on all members. This
      * implies the operation should be idempotent.
      *
-     * If there is an exception - other than {@link com.hazelcast.core.MemberLeftException} or
-     * {@link com.hazelcast.spi.exception.TargetNotMemberException} while invoking then the iteration
+     * <p>
+     * If there is an exception - other than {@link MemberLeftException},
+     * {@link TargetNotMemberException} or
+     * {@link HazelcastInstanceNotActiveException} while invoking then the iteration
      * is interrupted and the exception is propagated to the caller.
+     * <p>
+     * When invocations fail with <b>only</b> {@link ClusterTopologyChangedException}, the invocations are retried.
+     * When invocations fail {@link MemberLeftException}, {@link TargetNotMemberException} or
+     * {@link HazelcastInstanceNotActiveException} the exceptions are ignored.
      */
     public static <V> InternalCompletableFuture<V> invokeOnStableClusterSerial(
             NodeEngine nodeEngine,
@@ -110,6 +127,63 @@ public final class InvocationUtil {
         return execution;
     }
 
+    public static InternalCompletableFuture<Collection<UUID>> invokeOnStableClusterParallel(
+            NodeEngine nodeEngine,
+            Supplier<Operation> operationSupplier,
+            int maxRetries
+    ) {
+        return invokeOnStableClusterParallel(nodeEngine, operationSupplier, maxRetries, ALL_MEMBERS_MATCH);
+    }
+
+    public static InternalCompletableFuture<Collection<UUID>> invokeOnStableClusterParallelExcludeLocal(
+            NodeEngine nodeEngine,
+            Supplier<Operation> operationSupplier,
+            int maxRetries
+    ) {
+        return invokeOnStableClusterParallel(nodeEngine, operationSupplier, maxRetries, ALL_BUT_LOCAL_MEMBERS_MATCH);
+    }
+
+    /**
+     * Invokes the given operation on all cluster members that
+     * {@code memberFilter} returns {@code true} in parallel.
+     *
+     * <p>
+     * The operation is retried until the cluster is stable between the start
+     * and the end of the invocations.
+     *
+     * <p>
+     * The operations invoked with this method should be idempotent.
+     *
+     * <p>
+     * If one of the invocations throw any exception other than the
+     * {@link ClusterTopologyChangedException}, {@link MemberLeftException},
+     * {@link TargetNotMemberException}, or
+     * {@link HazelcastInstanceNotActiveException} the method fails with that
+     * exception. When invocations fail with <b>only</b>
+     * {@code ClusterTopologyChangedException}, the invocations are retried.
+     * When invocations fail with <b>only</b> {@code MemberLeftException},
+     * {@code TargetNotMemberException}, or
+     * {@code HazelcastInstanceNotActiveException} the exceptions are ignored
+     * and the method returns the current member UUIDs, in a similar manner to
+     * {@link #invokeOnStableClusterSerial(NodeEngine, Supplier, int)}.
+     *
+     * <p>
+     * Between each retry, the parallel invocations are delayed for
+     * {@link ClusterProperty#INVOCATION_RETRY_PAUSE} milliseconds.
+     *
+     * @return the UUID collection of the members in stable cluster
+     */
+    public static InternalCompletableFuture<Collection<UUID>> invokeOnStableClusterParallel(
+            NodeEngine nodeEngine,
+            Supplier<Operation> operationSupplier,
+            int maxRetries,
+            Predicate<Member> memberFilter
+    ) {
+        ParallelOperationInvoker invoker
+                = new ParallelOperationInvoker(nodeEngine, operationSupplier, maxRetries, memberFilter);
+        return invoker.invoke();
+    }
+
     private static class InvokeOnMemberFunction implements Function<Member, InternalCompletableFuture<Object>> {
         private final transient Supplier<? extends Operation> operationSupplier;
         private final transient NodeEngine nodeEngine;
@@ -117,8 +191,9 @@ public final class InvocationUtil {
         private final long retryDelayMillis;
         private volatile int lastRetryCount;
 
-        InvokeOnMemberFunction(Supplier<? extends Operation> operationSupplier, NodeEngine nodeEngine,
-                RestartingMemberIterator memberIterator) {
+        InvokeOnMemberFunction(Supplier<? extends Operation> operationSupplier,
+                               NodeEngine nodeEngine,
+                               RestartingMemberIterator memberIterator) {
             this.operationSupplier = operationSupplier;
             this.nodeEngine = nodeEngine;
             this.memberIterator = memberIterator;
@@ -173,7 +248,7 @@ public final class InvocationUtil {
                     } else {
                         future.completeExceptionally(t);
                     }
-                });
+                }, nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR));
             }
         }
     }

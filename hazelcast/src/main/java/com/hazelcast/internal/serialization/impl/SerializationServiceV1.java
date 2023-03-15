@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -169,7 +169,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
 
         // Called here so that we can make sure that we are not overriding
         // any of the default serializers registered above with the Compact
-        // serialization, unless the user configured to do so explicitly.
+        // serialization.
         verifyDefaultSerializersNotOverriddenWithCompact();
     }
 

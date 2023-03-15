@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -147,7 +147,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         MigrationEventsPack secondEventsPack = eventsPackList.get(1);
 
         if (secondEventsPack.migrationProcessCompleted.getCompletedMigrations() == 1
-            && !secondEventsPack.migrationsCompleted.get(0).isSuccess()) {
+                && !secondEventsPack.migrationsCompleted.get(0).isSuccess()) {
             // There is a failed migration process
             // because migrations restarted before 3rd member is ready.
             // This migration process is failed immediately
@@ -371,24 +371,43 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
     private static class CountingMigrationListener implements MigrationListener {
 
+        final int numberOfPartitions;
         final AtomicInteger migrationStarted;
         final AtomicInteger migrationCompleted;
         final AtomicInteger[] replicaMigrationCompleted;
         final AtomicInteger[] replicaMigrationFailed;
 
         CountingMigrationListener(int partitionCount) {
+            numberOfPartitions = partitionCount;
             migrationStarted = new AtomicInteger();
             migrationCompleted = new AtomicInteger();
-            replicaMigrationCompleted = new AtomicInteger[partitionCount];
-            replicaMigrationFailed = new AtomicInteger[partitionCount];
-            for (int i = 0; i < partitionCount; i++) {
+            replicaMigrationCompleted = new AtomicInteger[numberOfPartitions];
+            replicaMigrationFailed = new AtomicInteger[numberOfPartitions];
+            for (int i = 0; i < numberOfPartitions; i++) {
                 replicaMigrationCompleted[i] = new AtomicInteger();
                 replicaMigrationFailed[i] = new AtomicInteger();
             }
         }
 
+        /**
+         * Migration can be re-started due to some issues,
+         * this reset is used to track whether we have expected
+         * number of migration started and completed events.
+         * Per each start we expect one matching completion.
+         */
+        public void reset() {
+            migrationStarted.set(0);
+            migrationCompleted.set(0);
+            for (int i = 0; i < numberOfPartitions; i++) {
+                replicaMigrationCompleted[i].set(0);
+                replicaMigrationFailed[i].set(0);
+            }
+        }
+
         @Override
         public void migrationStarted(MigrationState state) {
+            // reset counter in every start
+            reset();
             migrationStarted.incrementAndGet();
         }
 

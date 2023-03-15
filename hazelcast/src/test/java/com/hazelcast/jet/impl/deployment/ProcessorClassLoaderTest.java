@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,8 +131,9 @@ public class ProcessorClassLoaderTest extends JetTestSupport {
 
         // Create a member in a separate classloader without the test classes loaded
         URL classesUrl = new File("target/classes/").toURI().toURL();
+        URL tpcClassesUrl = new File("../hazelcast-tpc-engine/target/classes/").toURI().toURL();
         HazelcastAPIDelegatingClassloader classloader = new HazelcastAPIDelegatingClassloader(
-                new URL[]{classesUrl},
+                new URL[]{classesUrl, tpcClassesUrl},
                 // Need to delegate to system classloader, which has maven dependencies like Jackson
                 ClassLoader.getSystemClassLoader()
         );

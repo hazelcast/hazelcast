@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.client;
 
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
@@ -48,7 +48,7 @@ public class SqlClientResult implements SqlResult {
     private final Function<QueryId, ClientMessage> sqlExecuteMessageSupplier;
     private final boolean selectQuery;
     private volatile QueryId queryId;
-    private Connection connection;
+    private ClientConnection connection;
     private int resubmissionCount;
 
     /** Mutex to synchronize access between operations. */
@@ -72,9 +72,12 @@ public class SqlClientResult implements SqlResult {
     /** Fetch descriptor. Available when the fetch operation is in progress. */
     private SqlFetchResult fetch;
 
+    /** Whether the last fetch() invoked resubmission. */
+    private boolean lastFetchResubmitted;
+
     public SqlClientResult(
             SqlClientService service,
-            Connection connection,
+            ClientConnection connection,
             QueryId queryId,
             int cursorBufferSize,
             Function<QueryId, ClientMessage> sqlExecuteMessageSupplier,
@@ -249,6 +252,7 @@ public class SqlClientResult implements SqlResult {
      * Fetches the next page.
      */
     private SqlPage fetch(long timeoutNanos) {
+        lastFetchResubmitted = false;
         synchronized (mux) {
             if (fetch != null) {
                 if (fetch.getError() != null) {
@@ -283,6 +287,7 @@ public class SqlClientResult implements SqlResult {
                 if (resubmissionResult == null) {
                     throw wrap(fetch.getError());
                 }
+                lastFetchResubmitted = true;
                 onResubmissionResponse(resubmissionResult);
 
                 // In onResubmissionResponse we change currentPage on iterator, so we now need to return it.
@@ -379,11 +384,15 @@ public class SqlClientResult implements SqlResult {
             if (currentPosition == currentRowCount) {
                 // Reached end of the page. Try fetching the next one if possible.
                 if (!last) {
-                    SqlPage page = fetch(timeUnit.toNanos(timeout));
-                    if (page == null) {
-                        return HasNextResult.TIMEOUT;
-                    }
-                    onNextPage(page);
+                    do {
+                        SqlPage page = fetch(timeUnit.toNanos(timeout));
+                        if (page == null) {
+                            return HasNextResult.TIMEOUT;
+                        }
+                        onNextPage(page);
+                        // The fetch() method may invoke resubmission that invokes SqlExecute operation. The SqlExecute may end
+                        // without any results in the buffer. In that case we need to invoke fetch() again.
+                    } while (lastFetchResubmitted && (!last && currentPosition == currentRowCount));
                 } else {
                     // No more pages expected, so return false.
                     return HasNextResult.DONE;

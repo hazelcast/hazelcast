@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.internal.bootstrap.AltoServerBootstrap;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
@@ -57,8 +58,8 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_EXECUTOR_RUNNING_PARTITION_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.internal.util.ThreadAffinity.newSystemThreadAffinity;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ThreadAffinity.newSystemThreadAffinity;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier.getIdleStrategy;
 import static com.hazelcast.spi.properties.ClusterProperty.GENERIC_OPERATION_THREAD_COUNT;
@@ -110,25 +111,36 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     private final Address thisAddress;
     private final OperationRunner adHocOperationRunner;
     private final int priorityThreadCount;
+    private final AltoServerBootstrap altoServerBootstrap;
 
+    @SuppressWarnings("java:S107")
     public OperationExecutorImpl(HazelcastProperties properties,
                                  LoggingService loggerService,
                                  Address thisAddress,
                                  OperationRunnerFactory runnerFactory,
                                  NodeExtension nodeExtension,
                                  String hzName,
-                                 ClassLoader configClassLoader) {
+                                 ClassLoader configClassLoader,
+                                 AltoServerBootstrap altoServerBootstrap) {
+        this.altoServerBootstrap = altoServerBootstrap;
         this.thisAddress = thisAddress;
         this.logger = loggerService.getLogger(OperationExecutorImpl.class);
 
         this.adHocOperationRunner = runnerFactory.createAdHocRunner();
 
         this.partitionOperationRunners = initPartitionOperationRunners(properties, runnerFactory);
-        this.partitionThreads = initPartitionThreads(properties, hzName, nodeExtension, configClassLoader);
-
+        if (!altoServerBootstrap.isEnabled()) {
+            this.partitionThreads = initClassicPartitionThreads(properties, hzName, nodeExtension, configClassLoader);
+        } else {
+            this.partitionThreads = initAltoPartitionThreads(this.altoServerBootstrap, hzName, nodeExtension, configClassLoader);
+        }
         this.priorityThreadCount = properties.getInteger(PRIORITY_GENERIC_OPERATION_THREAD_COUNT);
         this.genericOperationRunners = initGenericOperationRunners(properties, runnerFactory);
         this.genericThreads = initGenericThreads(hzName, nodeExtension, configClassLoader);
+    }
+
+    public PartitionOperationThread[] getPartitionThreads() {
+        return partitionThreads;
     }
 
     private OperationRunner[] initPartitionOperationRunners(HazelcastProperties properties,
@@ -150,8 +162,8 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         return operationRunners;
     }
 
-    private PartitionOperationThread[] initPartitionThreads(HazelcastProperties properties, String hzName,
-                                                            NodeExtension nodeExtension, ClassLoader configClassLoader) {
+    private PartitionOperationThread[] initClassicPartitionThreads(HazelcastProperties properties, String hzName,
+                                                                   NodeExtension nodeExtension, ClassLoader configClassLoader) {
 
         int threadCount = properties.getInteger(PARTITION_OPERATION_THREAD_COUNT);
         if (threadAffinity.isEnabled()) {
@@ -167,8 +179,8 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
 
             OperationQueue operationQueue = new OperationQueueImpl(normalQueue, new ConcurrentLinkedQueue<>());
 
-            PartitionOperationThread partitionThread = new PartitionOperationThread(threadName, threadId, operationQueue, logger,
-                    nodeExtension, partitionOperationRunners, configClassLoader);
+            PartitionOperationThread partitionThread = new PartitionOperationThread(threadName, threadId,
+                    operationQueue, logger, nodeExtension, partitionOperationRunners, configClassLoader);
             partitionThread.setThreadAffinity(threadAffinity);
             threads[threadId] = partitionThread;
             normalQueue.setConsumerThread(partitionThread);
@@ -180,6 +192,37 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
             Thread thread = threads[threadId];
             OperationRunner runner = partitionOperationRunners[partitionId];
             runner.setCurrentThread(thread);
+        }
+
+        return threads;
+    }
+
+    private PartitionOperationThread[] initAltoPartitionThreads(AltoServerBootstrap altoServerBootstrap,
+                                                                String hzName,
+                                                                NodeExtension nodeExtension,
+                                                                ClassLoader configClassLoader) {
+        int threadCount = altoServerBootstrap.eventloopCount();
+
+        PartitionOperationThread[] threads = new PartitionOperationThread[threadCount];
+        for (int threadId = 0; threadId < threads.length; threadId++) {
+            String threadName = createThreadPoolName(hzName, "partition-operation") + threadId;
+            MPSCQueue<Object> normalQueue = new MPSCQueue<>(null);
+
+            AltoOperationQueue operationQueue = new AltoOperationQueue(normalQueue, new ConcurrentLinkedQueue<>());
+
+            // the AltoOperationQueue is unbound just like HZ classic. Since we do not have any
+            // back pressure mechanism between members, there is no proper way to prevent overload.
+            // So we keep the same bad bad behavior for now.
+            PartitionOperationThread partitionThread = new AltoPartitionOperationThread(threadName, threadId,
+                    operationQueue, logger, nodeExtension, partitionOperationRunners, configClassLoader);
+            threads[threadId] = partitionThread;
+        }
+
+        // we need to assign the PartitionOperationThreads to all OperationRunners they own
+        for (int partitionId = 0; partitionId < partitionOperationRunners.length; partitionId++) {
+            int threadId = getPartitionThreadId(partitionId, threadCount);
+            OperationRunner runner = partitionOperationRunners[partitionId];
+            runner.setCurrentThread(threads[threadId]);
         }
 
         return threads;
@@ -432,15 +475,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         return operationThread.currentRunner;
     }
 
-    @Override
-    public void runOrExecute(Operation op) {
-        if (isRunAllowed(op)) {
-            run(op);
-        } else {
-            execute(op);
-        }
-    }
-
+    @SuppressWarnings("java:S1135")
     @Override
     public boolean isRunAllowed(Operation op) {
         checkNotNull(op, "op can't be null");
@@ -459,7 +494,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         }
 
         // we are only allowed to execute partition aware actions on an OperationThread
-        if (currentThread.getClass() != PartitionOperationThread.class) {
+        if (!(currentThread instanceof PartitionOperationThread)) {
             return false;
         }
 
@@ -468,6 +503,15 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         // so it's a partition operation thread, now we need to make sure that this operation thread is allowed
         // to execute operations for this particular partitionId
         return toPartitionThreadIndex(partitionId) == partitionThread.threadId;
+    }
+
+    @Override
+    public void runOrExecute(Operation op) {
+        if (isRunAllowed(op)) {
+            run(op);
+        } else {
+            execute(op);
+        }
     }
 
     @Override
@@ -492,7 +536,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         }
 
         // allowed to invoke from non PartitionOperationThreads (including GenericOperationThread)
-        if (currentThread.getClass() != PartitionOperationThread.class) {
+        if (!(currentThread instanceof PartitionOperationThread)) {
             return true;
         }
 
@@ -516,9 +560,13 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     public void start() {
         if (logger.isFineEnabled()) {
             logger.fine("Starting " + partitionThreads.length + " partition threads and "
-                  + genericThreads.length + " generic threads (" + priorityThreadCount + " dedicated for priority tasks)");
+                    + genericThreads.length + " generic threads (" + priorityThreadCount + " dedicated for priority tasks)");
         }
-        startAll(partitionThreads);
+
+        // When tpc is enabled, the partitionThread are manged bu the tpcEngine.
+        if (!altoServerBootstrap.isEnabled()) {
+            startAll(partitionThreads);
+        }
         startAll(genericThreads);
     }
 
@@ -530,9 +578,14 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
 
     @Override
     public void shutdown() {
-        shutdownAll(partitionThreads);
+        // when tpc is enabled, the partitionThread are manged bu the tpcEngine.
+        if (!altoServerBootstrap.isEnabled()) {
+            shutdownAll(partitionThreads);
+        }
         shutdownAll(genericThreads);
-        awaitTermination(partitionThreads);
+        if (!altoServerBootstrap.isEnabled()) {
+            awaitTermination(partitionThreads);
+        }
         awaitTermination(genericThreads);
     }
 

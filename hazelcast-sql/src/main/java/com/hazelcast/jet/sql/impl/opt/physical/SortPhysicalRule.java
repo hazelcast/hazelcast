@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,26 +20,39 @@ import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.SortLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
+import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
+import org.immutables.value.Value;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
+@Value.Enclosing
+final class SortPhysicalRule extends RelRule<RelRule.Config> {
 
-final class SortPhysicalRule extends RelOptRule {
+    @Value.Immutable
+    public interface Config extends RelRule.Config {
+        SortPhysicalRule.Config DEFAULT = ImmutableSortPhysicalRule.Config.builder()
+                .description(SortPhysicalRule.class.getSimpleName())
+                .operandSupplier(b0 -> b0
+                        .operand(SortLogicalRel.class)
+                        .anyInputs())
+                .build();
 
-    static final RelOptRule INSTANCE = new SortPhysicalRule();
+        @Override
+        default RelOptRule toRule() {
+            return new SortPhysicalRule(this);
+        }
+    }
 
-    private SortPhysicalRule() {
-        super(
-                operand(SortLogicalRel.class, LOGICAL, some(operand(RelNode.class, any()))),
-                SortPhysicalRule.class.getSimpleName()
-        );
+    static final SortPhysicalRule INSTANCE = new SortPhysicalRule(Config.DEFAULT);
+
+    private SortPhysicalRule(SortPhysicalRule.Config config) {
+        super(config);
     }
 
     @Override
@@ -52,19 +65,25 @@ final class SortPhysicalRule extends RelOptRule {
         }
     }
 
-    private static List<RelNode> toTransforms(SortLogicalRel logicalSort) {
+    private static List<RelNode> toTransforms(SortLogicalRel sort) {
+        // Scan + Sort [+ Limit]
         List<RelNode> sortTransforms = new ArrayList<>(1);
+        // Scan [+ Limit]
         List<RelNode> nonSortTransforms = new ArrayList<>(1);
-        for (RelNode physicalInput : OptUtils.extractPhysicalRelsFromSubset(logicalSort.getInput())) {
+
+        for (RelNode physicalInput : OptUtils.extractPhysicalRelsFromSubset(sort.getInput())) {
             boolean requiresSort = requiresSort(
-                    logicalSort.getCollation(),
+                    sort.getCollation(),
                     physicalInput.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE)
             );
-            if (requiresSort || logicalSort.offset != null || logicalSort.fetch != null) {
-                sortTransforms.add(createSort(logicalSort, physicalInput, requiresSort));
-            } else {
-                nonSortTransforms.add(physicalInput);
+            RelNode input = physicalInput;
+            if (requiresSort) {
+                input = createSort(sort, input);
             }
+            if (sort.offset != null || sort.fetch != null) {
+                input = createLimit(sort, input);
+            }
+            (requiresSort ? sortTransforms : nonSortTransforms).add(input);
         }
         return !nonSortTransforms.isEmpty() ? nonSortTransforms : sortTransforms;
     }
@@ -97,11 +116,7 @@ final class SortPhysicalRule extends RelOptRule {
         }
     }
 
-    private static SortPhysicalRel createSort(
-            SortLogicalRel logicalSort,
-            RelNode physicalInput,
-            boolean requiresSort
-    ) {
+    private static SortPhysicalRel createSort(SortLogicalRel logicalSort, RelNode physicalInput) {
         // Input traits are propagated, but new collation is used.
         RelTraitSet traitSet = OptUtils.traitPlus(physicalInput.getTraitSet(), logicalSort.getCollation());
 
@@ -110,10 +125,16 @@ final class SortPhysicalRule extends RelOptRule {
                 traitSet,
                 physicalInput,
                 logicalSort.getCollation(),
+                logicalSort.getRowType()
+        );
+    }
+
+    private static LimitPhysicalRel createLimit(SortLogicalRel logicalSort, RelNode physicalInput) {
+        return new LimitPhysicalRel(
                 logicalSort.offset,
                 logicalSort.fetch,
-                logicalSort.getRowType(),
-                requiresSort
-        );
+                logicalSort.getCluster(),
+                physicalInput.getTraitSet(),  // We inherit input traits.
+                physicalInput);
     }
 }

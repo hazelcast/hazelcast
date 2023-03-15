@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,6 +64,10 @@ class CloudInfoCollector implements MetricsCollector {
         dockerFilePath = dockerFilepath;
     }
 
+    String getCloudEnvironment() {
+        return System.getenv("HZ_CLOUD_ENVIRONMENT");
+    }
+
     @Override
     public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
         if (environmentInfo != null) {
@@ -77,6 +81,8 @@ class CloudInfoCollector implements MetricsCollector {
             info.put(PhoneHomeMetrics.CLOUD, "Z");
         } else if (MetricsCollector.fetchWebService(gcpEndpoint)) {
             info.put(PhoneHomeMetrics.CLOUD, "G");
+        } else if (MetricsCollector.fetchWebService(awsEndpoint, MetricsCollector.RESPONSE_UNAUTHORIZED)) {
+            info.put(PhoneHomeMetrics.CLOUD, "A");
         } else {
             info.put(PhoneHomeMetrics.CLOUD, "N");
         }
@@ -91,6 +97,12 @@ class CloudInfoCollector implements MetricsCollector {
         } catch (IOException e) {
             info.put(PhoneHomeMetrics.DOCKER, "N");
         }
+
+        String cloudEnv = getCloudEnvironment();
+        if (cloudEnv != null) {
+            info.put(PhoneHomeMetrics.VIRIDIAN, cloudEnv);
+        }
+
         environmentInfo = info;
         environmentInfo.forEach(metricsConsumer);
     }

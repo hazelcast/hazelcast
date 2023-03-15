@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
@@ -45,6 +46,7 @@ import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         implements BackupAwareOperation, Notifier, Versioned {
 
+    protected boolean changeExpiryOnUpdate;
     protected long begin;
     protected long newTtl;
     protected UUID caller;
@@ -56,8 +58,10 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
     public EntryOffloadableSetUnlockOperation() {
     }
 
-    public EntryOffloadableSetUnlockOperation(String name, EntryEventType modificationType, long newTtl,
-                                              Data key, Data oldValue, Data newValue, UUID caller,
+    @SuppressWarnings("checkstyle:parameternumber")
+    public EntryOffloadableSetUnlockOperation(String name, EntryEventType modificationType,
+                                              boolean changeExpiryOnUpdate,
+                                              long newTtl, Data key, Data oldValue, Data newValue, UUID caller,
                                               long threadId, long begin, EntryProcessor entryBackupProcessor) {
         super(name, key, newValue);
         this.newValue = newValue;
@@ -67,6 +71,7 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         this.modificationType = modificationType;
         this.entryBackupProcessor = entryBackupProcessor;
         this.setThreadId(threadId);
+        this.changeExpiryOnUpdate = changeExpiryOnUpdate;
         this.newTtl = newTtl;
     }
 
@@ -76,8 +81,9 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         try {
             verifyLock();
             try {
-                operator(this).init(dataKey, oldValue, newValue, null, modificationType, null, newTtl)
-                    .doPostOperateOps();
+                operator(this).init(dataKey, oldValue, newValue,
+                                null, modificationType, null, changeExpiryOnUpdate, newTtl)
+                        .doPostOperateOps();
             } finally {
                 unlockKey();
             }
@@ -88,14 +94,14 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
 
     private void verifyLock() {
         if (!recordStore.isLockedBy(dataKey, caller, threadId)) {
-            // we can't send a RetryableHazelcastException explicitly since it would retry this opertation and we want to retry
+            // we can't send a RetryableHazelcastException explicitly since it would retry this operation, and we want to retry
             // the preceding EntryOperation that this operation is part of.
             throw new EntryOffloadableLockMismatchException(
                     String.format("The key is not locked by the caller=%s and threadId=%d", caller, threadId));
         }
     }
 
-    private void unlockKey() {
+    public void unlockKey() {
         boolean unlocked = recordStore.unlock(dataKey, caller, threadId, getCallId());
         if (!unlocked) {
             throw new IllegalStateException(
@@ -118,7 +124,8 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
 
     @Override
     public boolean returnsResponse() {
-        // this has to be true, otherwise the calling side won't be notified about the exception thrown by this operation
+        // this has to be true, otherwise the calling side won't be
+        // notified about the exception thrown by this operation
         return true;
     }
 
@@ -173,6 +180,11 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         out.writeLong(begin);
         out.writeObject(entryBackupProcessor);
         out.writeLong(newTtl);
+
+        // RU_COMPAT 5.1
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_2)) {
+            out.writeBoolean(changeExpiryOnUpdate);
+        }
     }
 
     @Override
@@ -187,6 +199,10 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         begin = in.readLong();
         entryBackupProcessor = in.readObject();
         newTtl = in.readLong();
-    }
 
+        // RU_COMPAT 5.1
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_2)) {
+            changeExpiryOnUpdate = in.readBoolean();
+        }
+    }
 }

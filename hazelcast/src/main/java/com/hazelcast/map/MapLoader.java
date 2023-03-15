@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,23 +25,23 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * Hazelcast distributed map implementation is an in-memory data store but
+ * Hazelcast distributed map implementation is an in-memory data store, but
  * it can be backed by any type of data store such as RDBMS, OODBMS, or simply
- * a file based data store.
+ * a file-based data store.
  * <p>
  * {@link IMap#get(Object)} normally returns the value that
- * is available in-memory. If the entry doesn't exist in-memory, Hazelcast
- * returns {@code null}. If a Loader implementation is provided then, instead
+ * is available in memory. If the entry doesn't exist in memory, Hazelcast
+ * returns {@code null}. If a MapLoader implementation is provided, then instead
  * of returning {@code null}, Hazelcast will attempt to load the unknown entry
  * by calling the implementation's {@link #load(Object)} or
- * {@link #loadAll(Collection)}  methods. Loaded entries will be placed into
- * the distributed map and they will stay in-memory until they are explicitly
+ * {@link #loadAll(Collection)} methods. Loaded entries will be placed into
+ * the distributed map, and they will stay in memory until they are explicitly
  * removed or implicitly evicted (if eviction is configured).
  * <p>
  * MapLoader implementations are executed by a partition thread, therefore care
  * should be taken not to block the thread with an expensive operation or an
  * operation that may potentially never return, the partition thread does not
- * time out the operation. Whilst the partition thread is executing the
+ * time out the operation. While the partition thread is executing the
  * MapLoader it is unable to respond to requests for data on any other
  * structure that may reside in the same partition, or to respond to other
  * partitions mapped to the same partition thread. For example a very slow
@@ -61,7 +61,7 @@ import java.util.Map;
  * If a blocked partition thread is called from a Hazelcast Client the caller
  * will also block indefinitely, for example
  * {@link IMap#get(Object)}. If the same call is made from
- * another cluster member the operation will eventually timeout with a
+ * another cluster member the operation will eventually time out with an
  * {@link OperationTimeoutException}.
  *
  * @param <K> type of the MapLoader key

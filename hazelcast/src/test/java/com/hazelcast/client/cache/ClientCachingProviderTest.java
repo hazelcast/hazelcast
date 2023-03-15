@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,8 @@ import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import javax.cache.spi.CachingProvider;
 import java.io.IOException;
@@ -42,8 +38,6 @@ import static com.hazelcast.cache.jsr.JsrTestUtil.clearCachingProviderRegistry;
 import static com.hazelcast.cache.jsr.JsrTestUtil.clearSystemProperties;
 import static org.junit.Assert.assertNotNull;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class ClientCachingProviderTest extends CachingProviderTest {
 
     private static final String CONFIG_CLASSPATH_LOCATION = "test-hazelcast-client-jcache.xml";

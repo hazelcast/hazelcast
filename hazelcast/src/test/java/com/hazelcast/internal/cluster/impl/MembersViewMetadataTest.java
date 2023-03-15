@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,8 @@ public class MembersViewMetadataTest {
                 = new MembersViewMetadata(new Address("localhost", 1234), memberUUID, new Address("localhost", 4321), 0);
 
         assertEqualAndHashCode(metadata, metadata);
-        assertNotEquals(metadata, null);
-        assertNotEquals(metadata, "");
+        assertNotEquals(null, metadata);
+        assertNotEquals("", metadata);
         assertEqualAndHashCode(
                 metadata,
                 new MembersViewMetadata(new Address("localhost", 1234), memberUUID, new Address("localhost", 4321), 0));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1163,7 +1163,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     private HazelcastSerializationException throwUnknownFieldException(@Nonnull String fieldName) {
-        return new HazelcastSerializationException("Unknown field name: '" + fieldName
+        return new HazelcastSerializationException("Invalid field name: '" + fieldName
                 + "' for " + schema);
     }
 
@@ -1390,7 +1390,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     private HazelcastSerializationException unexpectedFieldKind(FieldKind actualFieldKind,
                                                                 String fieldName) {
-        throw new HazelcastSerializationException("Unexpected field kind '" + actualFieldKind + "' for the field: " + fieldName);
+        throw new HazelcastSerializationException("Invalid field kind '" + actualFieldKind + "' for the field: " + fieldName);
     }
 
 

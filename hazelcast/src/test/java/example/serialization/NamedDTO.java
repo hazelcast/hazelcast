@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ public class NamedDTO {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("NamedPortable{");
+        final StringBuilder sb = new StringBuilder("NamedDTO{");
         sb.append("name='").append(name).append('\'');
         sb.append(", k=").append(myint);
         sb.append('}');

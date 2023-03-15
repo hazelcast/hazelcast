@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,12 @@
 
 package com.hazelcast.test.jdbc;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+import static com.hazelcast.internal.util.Preconditions.checkState;
+
 /**
  * Database provider allows changing database used in a test by providing
  * a different implementation.
@@ -28,6 +34,20 @@ public interface TestDatabaseProvider {
      * be used to connect to the database
      */
     String createDatabase(String dbName);
+
+    /**
+     * Waits for a connection to the database.
+     * @param jdbcUrl JDBC url returned by {@link #createDatabase(String)}.
+     * @param timeout wait timeout in seconds
+     */
+    default void waitForDb(String jdbcUrl, int timeout) {
+        DriverManager.setLoginTimeout(timeout);
+        try (Connection conn = DriverManager.getConnection(jdbcUrl)) {
+            checkState(!conn.isClosed(), "at this point the connection should be open");
+        } catch (SQLException e) {
+            throw new RuntimeException("error while starting database", e);
+        }
+    }
 
     /**
      * Stops the database

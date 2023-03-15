@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.experimental.categories.Category;
 
+import javax.annotation.Nonnull;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -94,6 +95,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+@SuppressWarnings("resource")
 @Category({QuickTest.class, ParallelJVMTest.class})
 public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
@@ -111,6 +113,52 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
             SUPPORT_LOGGER.info("Removing " + planCache.size() + " cached plans in SqlTestSupport.@After");
             planCache.clear();
         }
+    }
+
+    public static void setupCompactTypesForNestedQuery(HazelcastInstance instance) {
+        instance.getSql().execute("CREATE TYPE Office ("
+                + "id BIGINT, "
+                + "name VARCHAR "
+                + ") OPTIONS ('format'='compact', 'compactTypeName'='OfficeCompactType')");
+
+        instance.getSql().execute("CREATE TYPE Organization ("
+                + "id BIGINT, "
+                + "name VARCHAR, "
+                + "office Office"
+                + ") OPTIONS ('format'='compact', 'compactTypeName'='OrganizationCompactType')");
+
+        instance.getSql().execute(
+                "CREATE MAPPING test ("
+                        + "__key BIGINT,"
+                        + "id BIGINT, "
+                        + "name VARCHAR, "
+                        + "organization Organization"
+                        + ")"
+                        + "TYPE IMap "
+                        + "OPTIONS ("
+                        + "'keyFormat'='bigint',"
+                        + "'valueFormat'='compact',"
+                        + "'valueCompactTypeName'='UserCompactType'"
+                        + ")");
+    }
+
+    public static void setupPortableTypesForNestedQuery(HazelcastInstance instance) {
+        instance.getSql().execute("CREATE TYPE Office OPTIONS "
+                + "('format'='portable', 'portableFactoryId'='1', 'portableClassId'='3', 'portableClassVersion'='0')");
+        instance.getSql().execute("CREATE TYPE Organization OPTIONS "
+                + "('format'='portable', 'portableFactoryId'='1', 'portableClassId'='2', 'portableClassVersion'='0')");
+
+        instance.getSql().execute("CREATE MAPPING test ("
+                + "__key BIGINT, "
+                + "id BIGINT, "
+                + "name VARCHAR, "
+                + "organization Organization "
+                + ") TYPE IMap "
+                + "OPTIONS ("
+                + "'keyFormat'='bigint', "
+                + "'valueFormat'='portable', "
+                + "'valuePortableFactoryId'='1', "
+                + "'valuePortableClassId'='1')");
     }
 
     /**
@@ -162,6 +210,43 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      * @param expectedRows Expected rows
      */
     public static void assertRowsEventuallyInAnyOrder(String sql, List<Object> arguments, Collection<Row> expectedRows) {
+        assertRowsEventuallyInAnyOrder(sql, arguments, expectedRows, 50);
+    }
+
+    /**
+     * Assert the contents of a given table via Hazelcast SQL engine
+     */
+    public static void assertRowsAnyOrder(String sql, Row... rows) {
+        assertRowsAnyOrder(sql, Arrays.asList(rows));
+    }
+
+    /**
+     * Assert the contents of a given table via Hazelcast SQL engine
+     */
+    public static void assertRowsAnyOrder(String sql, List<Object> arguments, Row... rows) {
+        assertRowsAnyOrder(sql, arguments, Arrays.asList(rows));
+    }
+
+    /**
+     * Execute a query and wait for the results to contain all the {@code
+     * expectedRows}. Suitable for streaming queries that don't terminate, but
+     * return a deterministic set of rows. Rows can arrive in any order.
+     * <p>
+     * After all expected rows are received, the method further waits a little
+     * more if any extra rows are received, and fails, if they are.
+     *
+     * @param sql          The query
+     * @param arguments    The query arguments
+     * @param expectedRows Expected rows
+     * @param timeoutForNextMs The number of ms to wait for more rows after all the
+     *                         expected rows were received
+     */
+    public static void assertRowsEventuallyInAnyOrder(
+            String sql,
+            List<Object> arguments,
+            Collection<Row> expectedRows,
+            long timeoutForNextMs
+    ) {
         SqlService sqlService = instance().getSql();
         CompletableFuture<Void> future = new CompletableFuture<>();
         Deque<Row> rows = new ArrayDeque<>();
@@ -174,8 +259,8 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
                 ResultIterator<SqlRow> iterator = (ResultIterator<SqlRow>) result.iterator();
                 for (
                         int i = 0;
-                        i < expectedRows.size() && iterator.hasNext()
-                                || iterator.hasNext(50, TimeUnit.MILLISECONDS) == YES;
+                        i < expectedRows.size() && (iterator.hasNext()
+                                || iterator.hasNext(timeoutForNextMs, TimeUnit.MILLISECONDS) == YES);
                         i++
                 ) {
                     rows.add(new Row(iterator.next()));
@@ -286,6 +371,22 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     /**
      * Execute a query and wait until it completes. Assert that the returned
+     * rows does not contain the expected rows, in any order.
+     *
+     * @param instance     Hazelcast Instance to be used
+     * @param sql          The query
+     * @param expectedRows Expected rows
+     */
+    public static void assertDoesNotContainRow(HazelcastInstance instance, String sql, Collection<Row> expectedRows) {
+        SqlStatement statement = new SqlStatement(sql);
+
+        SqlService sqlService = instance.getSql();
+        List<Row> actualRows = allRows(statement, sqlService);
+        assertThat(actualRows).doesNotContainAnyElementsOf(expectedRows);
+    }
+
+    /**
+     * Execute a query and wait until it completes. Assert that the returned
      * rows contain the expected rows, in any order.
      *
      * @param sql          The query
@@ -315,11 +416,25 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         arguments.forEach(statement::addParameter);
 
         SqlService sqlService = instance.getSql();
+        List<Row> actualRows = allRows(statement, sqlService);
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
+    }
+
+    @Nonnull
+    protected static List<Row> allRows(SqlStatement statement, SqlService sqlService) {
         List<Row> actualRows = new ArrayList<>();
         try (SqlResult result = sqlService.execute(statement)) {
             result.iterator().forEachRemaining(row -> actualRows.add(new Row(row)));
         }
-        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
+        return actualRows;
+    }
+    @Nonnull
+    protected static List<Row> allRows(String statement, SqlService sqlService) {
+        List<Row> actualRows = new ArrayList<>();
+        try (SqlResult result = sqlService.execute(statement)) {
+            result.iterator().forEachRemaining(row -> actualRows.add(new Row(row)));
+        }
+        return actualRows;
     }
 
     /**
@@ -583,7 +698,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         return Accessors.getNodeEngineImpl(instance);
     }
 
-    public List<Row> rows(final int rowLength, final Object... values) {
+    public static List<Row> rows(final int rowLength, final Object... values) {
         if ((values.length % rowLength) != 0) {
             throw new HazelcastException("Number of row value args is not divisible by row length");
         }

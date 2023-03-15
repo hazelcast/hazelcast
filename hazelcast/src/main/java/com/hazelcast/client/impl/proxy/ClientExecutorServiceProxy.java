@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.executor.impl.ExecutionCallbackAdapter;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -55,6 +54,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.getDefaultAsyncExecutor;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
@@ -453,12 +453,12 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
                 (T) null);
 
         if (callback != null) {
-            delegatingFuture.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback))
+            delegatingFuture.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback), getDefaultAsyncExecutor())
                     .whenCompleteAsync((v, t) -> {
                         if (t instanceof RejectedExecutionException) {
                             callback.onFailure(t);
                         }
-                    }, ConcurrencyUtil.getDefaultAsyncExecutor());
+                    }, getDefaultAsyncExecutor());
         }
         return delegatingFuture;
     }
@@ -484,12 +484,12 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         InternalCompletableFuture<T> delegatingFuture = (InternalCompletableFuture<T>) delegatingFuture(f, uuid, partitionId,
                 (T) null);
         if (callback != null) {
-            delegatingFuture.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback))
+            delegatingFuture.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback), getDefaultAsyncExecutor())
                     .whenCompleteAsync((v, t) -> {
                         if (t instanceof RejectedExecutionException) {
                             callback.onFailure(t);
                         }
-                    }, ConcurrencyUtil.getDefaultAsyncExecutor());
+                    }, getDefaultAsyncExecutor());
         }
     }
 
@@ -515,12 +515,12 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         InternalCompletableFuture<T> delegatingFuture = (InternalCompletableFuture<T>) delegatingFuture(f, uuid, member,
                 (T) null);
         if (callback != null) {
-            delegatingFuture.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback))
+            delegatingFuture.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback), getDefaultAsyncExecutor())
                     .whenCompleteAsync((v, t) -> {
                         if (t instanceof RejectedExecutionException) {
                             callback.onFailure(t);
                         }
-                    }, ConcurrencyUtil.getDefaultAsyncExecutor());
+                    }, getDefaultAsyncExecutor());
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import com.hazelcast.client.impl.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.logging.ILogger;
 
 import java.util.Collection;
@@ -62,7 +63,8 @@ public class ClientClusterViewListenerService implements ConnectionListener {
         connectionManager.addConnectionListener(this);
     }
 
-    private final class ClusterViewListenerHandler extends ClientAddClusterViewListenerCodec.AbstractEventHandler
+    // public for tests
+    public final class ClusterViewListenerHandler extends ClientAddClusterViewListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
         private final ClientConnection connection;
@@ -135,7 +137,7 @@ public class ClientClusterViewListenerService implements ConnectionListener {
             }
             //completes with exception, listener needs to be reregistered
             tryReregisterToRandomConnection(connection);
-        });
+        }, ConcurrencyUtil.getDefaultAsyncExecutor());
     }
 
 }

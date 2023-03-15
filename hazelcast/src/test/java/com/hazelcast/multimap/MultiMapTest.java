@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -553,28 +553,28 @@ public class MultiMapTest extends HazelcastTestSupport {
         assertTrue(getMultiMap(instances, name).put("key2", "key2_value1"));
         assertFalse(getMultiMap(instances, name).put("key2", "key2_value1"));
 
-        assertEquals(getMultiMap(instances, name).valueCount("key1"), 2);
-        assertEquals(getMultiMap(instances, name).valueCount("key2"), 1);
-        assertEquals(getMultiMap(instances, name).size(), 3);
+        assertEquals(2, getMultiMap(instances, name).valueCount("key1"));
+        assertEquals(1, getMultiMap(instances, name).valueCount("key2"));
+        assertEquals(3, getMultiMap(instances, name).size());
 
         Collection collection = getMultiMap(instances, name).get("key2");
-        assertEquals(collection.size(), 1);
+        assertEquals(1, collection.size());
         Iterator iterator = collection.iterator();
         Object value = iterator.next();
-        assertEquals(value, "key2_value1");
+        assertEquals("key2_value1", value);
 
         assertTrue(getMultiMap(instances, name).remove("key1", "key1_value1"));
         assertFalse(getMultiMap(instances, name).remove("key1", "key1_value1"));
         assertTrue(getMultiMap(instances, name).remove("key1", "key1_value2"));
 
         collection = getMultiMap(instances, name).get("key1");
-        assertEquals(collection.size(), 0);
+        assertEquals(0, collection.size());
 
         collection = getMultiMap(instances, name).remove("key2");
-        assertEquals(collection.size(), 1);
+        assertEquals(1, collection.size());
         iterator = collection.iterator();
         value = iterator.next();
-        assertEquals(value, "key2_value1");
+        assertEquals("key2_value1", value);
     }
 
     @Test
@@ -664,28 +664,28 @@ public class MultiMapTest extends HazelcastTestSupport {
         assertTrue(getMultiMap(instances, name).put("key2", "key2_value1"));
         assertTrue(getMultiMap(instances, name).put("key2", "key2_value1"));
 
-        assertEquals(getMultiMap(instances, name).valueCount("key1"), 2);
-        assertEquals(getMultiMap(instances, name).valueCount("key2"), 2);
-        assertEquals(getMultiMap(instances, name).size(), 4);
+        assertEquals(2, getMultiMap(instances, name).valueCount("key1"));
+        assertEquals(2, getMultiMap(instances, name).valueCount("key2"));
+        assertEquals(4, getMultiMap(instances, name).size());
 
         Collection<Object> collection = getMultiMap(instances, name).get("key1");
-        assertEquals(collection.size(), 2);
+        assertEquals(2, collection.size());
         Iterator iterator = collection.iterator();
-        assertEquals(iterator.next(), "key1_value1");
-        assertEquals(iterator.next(), "key1_value2");
+        assertEquals("key1_value1", iterator.next());
+        assertEquals("key1_value2", iterator.next());
 
         assertTrue(getMultiMap(instances, name).remove("key1", "key1_value1"));
         assertFalse(getMultiMap(instances, name).remove("key1", "key1_value1"));
         assertTrue(getMultiMap(instances, name).remove("key1", "key1_value2"));
 
         collection = getMultiMap(instances, name).get("key1");
-        assertEquals(collection.size(), 0);
+        assertEquals(0, collection.size());
 
         collection = getMultiMap(instances, name).remove("key2");
-        assertEquals(collection.size(), 2);
+        assertEquals(2, collection.size());
         iterator = collection.iterator();
-        assertEquals(iterator.next(), "key2_value1");
-        assertEquals(iterator.next(), "key2_value1");
+        assertEquals("key2_value1", iterator.next());
+        assertEquals("key2_value1", iterator.next());
     }
 
     /**
@@ -731,14 +731,14 @@ public class MultiMapTest extends HazelcastTestSupport {
         assertEquals(3, totalKeySet.size());
 
         Set keySet = getMultiMap(instances, name).keySet();
-        assertEquals(keySet.size(), 3);
+        assertEquals(3, keySet.size());
 
         for (Object key : keySet) {
             assertContains(totalKeySet, key);
         }
 
         Set<Map.Entry<Object, Object>> entrySet = getMultiMap(instances, name).entrySet();
-        assertEquals(entrySet.size(), 9);
+        assertEquals(9, entrySet.size());
         for (Map.Entry entry : entrySet) {
             String key = (String) entry.getKey();
             String val = (String) entry.getValue();
@@ -746,7 +746,7 @@ public class MultiMapTest extends HazelcastTestSupport {
         }
 
         Collection values = getMultiMap(instances, name).values();
-        assertEquals(values.size(), 9);
+        assertEquals(9, values.size());
 
         assertTrue(getMultiMap(instances, name).containsKey("key2"));
         assertFalse(getMultiMap(instances, name).containsKey("key4"));

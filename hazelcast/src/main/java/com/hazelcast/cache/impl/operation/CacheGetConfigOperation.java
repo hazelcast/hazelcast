@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.io.IOException;
+
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 
 /**
  * Gets a cache configuration or creates one, if a matching cache config is found in this member's config.
@@ -75,7 +77,7 @@ public class CacheGetConfigOperation extends AbstractNamedOperation implements I
                 } else {
                     CacheGetConfigOperation.this.sendResponse(t);
                 }
-            });
+            }, CALLER_RUNS);
         }
     }
 

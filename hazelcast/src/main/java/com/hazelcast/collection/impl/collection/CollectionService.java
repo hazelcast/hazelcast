@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,7 +95,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
         if (container != null) {
             container.destroy();
         }
-        nodeEngine.getEventService().deregisterAllListeners(getServiceName(), name);
+        nodeEngine.getEventService().deregisterAllLocalListeners(getServiceName(), name);
     }
 
     public abstract CollectionContainer getOrCreateContainer(String name, boolean backup);

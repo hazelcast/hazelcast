@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.expression;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import java.io.IOException;
@@ -31,7 +32,9 @@ import java.util.Objects;
  * A value of a ROW type (ROW is a SQL struct). It contains values, but not the
  * field names - names are part of the type, the value doesn't reference the
  * type.
+ * This class is likely to change in the future release.
  */
+@Beta
 public class RowValue implements Serializable, IdentifiedDataSerializable {
     private List<Object> values;
 

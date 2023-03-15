@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.jet.kafka.impl;
 
 import com.hazelcast.collection.IList;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.ToLongFunctionEx;
@@ -35,7 +36,9 @@ import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobRepository;
+import com.hazelcast.jet.kafka.KafkaDataLink;
 import com.hazelcast.jet.kafka.KafkaSources;
+import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -74,6 +77,7 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
+import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -224,8 +228,8 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
                 for (int i = 0; i < 2 * messageCount; i++) {
                     Entry<Integer, String> entry1 = createEntry(i);
                     Entry<Integer, String> entry2 = createEntry(i - messageCount);
-                    assertTrue("missing entry: " + entry1.toString(), list.contains(entry1));
-                    assertTrue("missing entry: " + entry2.toString(), list.contains(entry2));
+                    assertTrue("missing entry: " + entry1, list.contains(entry1));
+                    assertTrue("missing entry: " + entry2, list.contains(entry2));
                 }
             }, 10);
         }
@@ -246,7 +250,8 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         for (int i = 0; i < INITIAL_PARTITION_COUNT; i++) {
             Entry<Integer, String> event = entry(i + 100, Integer.toString(i));
             System.out.println("produced event " + event);
-            kafkaTestSupport.produce(topic1Name, i, null, event.getKey(), event.getValue());
+            //Wait for the event to be published to Kafka, the processor can access Kafka metadata
+            kafkaTestSupport.produce(topic1Name, i, null, event.getKey(), event.getValue()).get();
             if (i == INITIAL_PARTITION_COUNT - 1) {
                 assertEquals(new Watermark(100 - LAG), consumeEventually(processor, outbox));
             }
@@ -384,7 +389,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
                 singletonList(topic1Name)
                 :
                 asList(topic1Name, topic2Name);
-        return new StreamKafkaP<>(properties, topics, projectionFn, eventTimePolicy);
+        return new StreamKafkaP<>((c) -> new KafkaConsumer<>(properties), topics, projectionFn, eventTimePolicy);
     }
 
     @Test
@@ -506,7 +511,10 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
                 0
         );
         StreamKafkaP processor = new StreamKafkaP<Integer, String, String>(
-                properties(), singletonList(topic1Name), r -> "0".equals(r.value()) ? null : r.value(), eventTimePolicy
+                (c) -> new KafkaConsumer<>(properties()),
+                singletonList(topic1Name),
+                r -> "0".equals(r.value()) ? null : r.value(),
+                eventTimePolicy
         );
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         processor.init(outbox, new TestProcessorContext());
@@ -538,6 +546,28 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         KafkaConsumer<Integer, String> c = new KafkaConsumer<>(properties);
         assertThatThrownBy(() -> c.partitionsFor("t", Duration.ofMillis(100)))
                 .isInstanceOf(TimeoutException.class);
+    }
+
+    @Test
+    public void when_dataLinkRef_then_readMessages() throws Exception {
+        instance().getConfig().addDataLinkConfig(
+                new DataLinkConfig("kafka-config")
+                        .setClassName(KafkaDataLink.class.getName())
+                        .setShared(false) // shared would eagerly create a producer, which needs serializer properties
+                        .setProperties(properties())
+        );
+
+        IList<Entry<Integer, String>> sinkList = instance().getList("sinkList");
+        Pipeline p = Pipeline.create();
+        Properties properties = properties();
+        properties.setProperty("auto.offset.reset", "latest");
+        p.readFrom(KafkaSources.<Integer, String>kafka(new DataLinkRef("kafka-config"), topic1Name))
+         .withoutTimestamps()
+         .writeTo(Sinks.list(sinkList));
+
+        kafkaTestSupport.produce(topic1Name, 0, "0").get();
+        instance().getJet().newJob(p);
+        assertTrueEventually(() -> assertThat(sinkList).contains(entry(0, "0")), 2);
     }
 
     @SuppressWarnings("unchecked")

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,14 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         AbstractSqlResult result = (AbstractSqlResult) response;
 
         if (result.updateCount() >= 0) {
-            return SqlExecuteCodec.encodeResponse(null, null, result.updateCount(), null, false);
+            return SqlExecuteCodec.encodeResponse(
+                    null,
+                    null,
+                    result.updateCount(),
+                    null,
+                    false,
+                    result.getPartitionArgumentIndex()
+            );
         } else {
             SqlServiceImpl sqlService = nodeEngine.getSqlService();
 
@@ -90,7 +97,8 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
                     page,
                     -1,
                     null,
-                    result.isInfiniteRows()
+                    result.isInfiniteRows(),
+                    result.getPartitionArgumentIndex()
             );
         }
     }
@@ -117,7 +125,8 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
                 null,
                 -1,
                 error,
-                false
+                false,
+                -1
         );
     }
 

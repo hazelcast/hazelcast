@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExp
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DiskTierConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -38,7 +39,6 @@ import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
@@ -77,6 +77,7 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
@@ -116,6 +117,8 @@ import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
+import com.hazelcast.config.alto.AltoConfig;
+import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -141,7 +144,7 @@ import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.spring.config.ConfigFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -247,7 +250,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap<String, AbstractBeanDefinition> pnCounterManagedMap;
         private ManagedMap<EndpointQualifier, AbstractBeanDefinition> endpointConfigsMap;
         private ManagedMap<String, AbstractBeanDefinition> deviceConfigManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> externalDataStoreConfigMap;
+        private ManagedMap<String, AbstractBeanDefinition> dataLinkConfigMap;
 
         private boolean hasNetwork;
         private boolean hasAdvancedNetworkEnabled;
@@ -275,7 +278,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.pnCounterManagedMap = createManagedMap("PNCounterConfigs");
             this.endpointConfigsMap = new ManagedMap<>();
             this.deviceConfigManagedMap = createManagedMap("deviceConfigs");
-            this.externalDataStoreConfigMap = createManagedMap("externalDataStoreConfigs");
+            this.dataLinkConfigMap = createManagedMap("dataLinkConfigs");
         }
 
         private ManagedMap<String, AbstractBeanDefinition> createManagedMap(String configName) {
@@ -383,8 +386,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleDynamicConfiguration(node);
                     } else if ("integrity-checker".equals(nodeName)) {
                         handleIntegrityChecker(node);
-                    } else if ("external-data-store".equals(nodeName)) {
-                        handleExternalDataStore(node);
+                    } else if ("data-link".equals(nodeName)) {
+                        handleDataLink(node);
+                    } else if ("alto".equals(nodeName)) {
+                        handleAlto(node);
                     }
                 }
             }
@@ -761,9 +766,30 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleRestApi(child, networkConfigBuilder);
                 } else if ("memcache-protocol".equals(nodeName)) {
                     handleMemcacheProtocol(child, networkConfigBuilder);
+                } else if ("alto-socket".equals(nodeName)) {
+                    handleAltoSocketConfig(child, networkConfigBuilder);
                 }
             }
             configBuilder.addPropertyValue("networkConfig", beanDefinition);
+        }
+
+        private void handleAltoSocketConfig(Node node, BeanDefinitionBuilder beanDefinitionBuilder) {
+            BeanDefinitionBuilder altoSocketConfigBuilder = createBeanBuilder(AltoSocketConfig.class);
+            AbstractBeanDefinition beanDefinition = altoSocketConfigBuilder.getBeanDefinition();
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("port-range".equals(nodeName)) {
+                    altoSocketConfigBuilder.addPropertyValue("portRange", getTextContent(child));
+                } else if ("receive-buffer-size-kb".equals(nodeName)) {
+                    altoSocketConfigBuilder.addPropertyValue("receiveBufferSizeKB",
+                            getIntegerValue("receive-buffer-size-kb", getTextContent(child)));
+                } else if ("send-buffer-size-kb".equals(nodeName)) {
+                    altoSocketConfigBuilder.addPropertyValue("sendBufferSizeKB",
+                            getIntegerValue("send-buffer-size-kb", getTextContent(child)));
+                }
+            }
+
+            beanDefinitionBuilder.addPropertyValue("altoSocketConfig", beanDefinition);
         }
 
         void handleAdvancedNetwork(Node node) {
@@ -828,6 +854,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 handleSocketInterceptorConfig(node, endpointConfigBuilder);
             } else if ("socket-options".equals(nodeName)) {
                 handleEndpointSocketOptions(node, endpointConfigBuilder);
+            } else if ("alto-socket".equals(nodeName)) {
+                handleAltoSocketConfig(node, endpointConfigBuilder);
             }
         }
 
@@ -899,19 +927,25 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     endpointConfigBuilder.addPropertyValue("socketKeepAlive",
                             getBooleanValue(textContent));
                 } else if ("connect-timeout-seconds".equals(nodeName)) {
-                    endpointConfigBuilder.addPropertyValue("socketConnectTimeoutSeconds",
-                            getIntegerValue("socketConnectTimeoutSeconds", textContent));
+                    addIntegerPropertyValue(endpointConfigBuilder, "socketConnectTimeoutSeconds", textContent);
                 } else if ("send-buffer-size-kb".equals(nodeName)) {
-                    endpointConfigBuilder.addPropertyValue("socketSendBufferSizeKb",
-                            getIntegerValue("socketSendBufferSizeKb", textContent));
+                    addIntegerPropertyValue(endpointConfigBuilder, "socketSendBufferSizeKb", textContent);
                 } else if ("receive-buffer-size-kb".equals(nodeName)) {
-                    endpointConfigBuilder.addPropertyValue("socketRcvBufferSizeKb",
-                            getIntegerValue("socketRcvBufferSizeKb", textContent));
+                    addIntegerPropertyValue(endpointConfigBuilder, "socketRcvBufferSizeKb", textContent);
                 } else if ("linger-seconds".equals(nodeName)) {
-                    endpointConfigBuilder.addPropertyValue("socketLingerSeconds",
-                            getIntegerValue("socketLingerSeconds", textContent));
+                    addIntegerPropertyValue(endpointConfigBuilder, "socketLingerSeconds", textContent);
+                } else if ("keep-idle-seconds".equals(nodeName)) {
+                    addIntegerPropertyValue(endpointConfigBuilder, "socketKeepIdleSeconds", textContent);
+                } else if ("keep-interval-seconds".equals(nodeName)) {
+                    addIntegerPropertyValue(endpointConfigBuilder, "socketKeepIntervalSeconds", textContent);
+                } else if ("keep-count".equals(nodeName)) {
+                    addIntegerPropertyValue(endpointConfigBuilder, "socketKeepCount", textContent);
                 }
             }
+        }
+
+        private void addIntegerPropertyValue(BeanDefinitionBuilder bdb, String parameterName, String textContent) {
+            bdb.addPropertyValue(parameterName, getIntegerValue(parameterName, textContent));
         }
 
         public void handleProperties(Node node) {
@@ -1333,6 +1367,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     mapConfigBuilder.addPropertyValue("partitioningStrategyConfig", psConfig);
                 } else if ("tiered-store".equals(nodeName)) {
                     handleTieredStoreConfig(mapConfigBuilder, childNode);
+                } else if ("partition-attributes".equals(nodeName)) {
+                    handlePartitionAttributes(mapConfigBuilder, childNode);
                 }
             }
             mapConfigManagedMap.put(name, beanDefinition);
@@ -1387,13 +1423,13 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private void handleCapacity(Node node, BeanDefinitionBuilder nativeMemoryConfigBuilder) {
-            BeanDefinitionBuilder memorySizeConfigBuilder = createBeanBuilder(MemorySize.class);
+            BeanDefinitionBuilder capacityConfigBuilder = createBeanBuilder(Capacity.class);
             NamedNodeMap attributes = node.getAttributes();
             Node value = attributes.getNamedItem("value");
             Node unit = attributes.getNamedItem("unit");
-            memorySizeConfigBuilder.addConstructorArgValue(getTextContent(value));
-            memorySizeConfigBuilder.addConstructorArgValue(getTextContent(unit));
-            nativeMemoryConfigBuilder.addPropertyValue("capacity", memorySizeConfigBuilder.getBeanDefinition());
+            capacityConfigBuilder.addConstructorArgValue(getTextContent(value));
+            capacityConfigBuilder.addConstructorArgValue(getTextContent(unit));
+            nativeMemoryConfigBuilder.addPropertyValue("capacity", capacityConfigBuilder.getBeanDefinition());
         }
 
         @SuppressWarnings("checkstyle:magicnumber")
@@ -2320,8 +2356,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("integrityCheckerConfig", builder.getBeanDefinition());
         }
 
-        private void handleExternalDataStore(Node node) {
-            BeanDefinitionBuilder builder = createBeanBuilder(ExternalDataStoreConfig.class);
+        private void handleDataLink(Node node) {
+            BeanDefinitionBuilder builder = createBeanBuilder(DataLinkConfig.class);
             builder.addPropertyValue("name", getAttribute(node, "name"));
             fillValues(node, builder, "properties");
             for (Node child : childElements(node)) {
@@ -2331,7 +2367,29 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     break;
                 }
             }
-            externalDataStoreConfigMap.put(getAttribute(node, "name"), builder.getBeanDefinition());
+            dataLinkConfigMap.put(getAttribute(node, "name"), builder.getBeanDefinition());
+        }
+
+        private void handleAlto(Node node) {
+            BeanDefinitionBuilder builder = createBeanBuilder(AltoConfig.class);
+            builder.addPropertyValue("enabled", getAttribute(node, "enabled"));
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("eventloop-count".equals(nodeName)) {
+                    builder.addPropertyValue("eventloopCount",
+                            getIntegerValue("eventloop-count", getTextContent(child)));
+                }
+            }
+            configBuilder.addPropertyValue("altoConfig", builder.getBeanDefinition());
+        }
+        private void handlePartitionAttributes(final BeanDefinitionBuilder mapConfigBuilder, Node node) {
+            final ManagedList<BeanDefinition> partitioningAttributeConfigs = new ManagedList<>();
+            for (Node attributeNode : childElements(node)) {
+                BeanDefinitionBuilder attributeConfBuilder = createBeanBuilder(PartitioningAttributeConfig.class);
+                attributeConfBuilder.addPropertyValue("attributeName", getTextContent(attributeNode));
+                partitioningAttributeConfigs.add(attributeConfBuilder.getBeanDefinition());
+            }
+            mapConfigBuilder.addPropertyValue("partitioningAttributeConfigs", partitioningAttributeConfigs);
         }
     }
 }

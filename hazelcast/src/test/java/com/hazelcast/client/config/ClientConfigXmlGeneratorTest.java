@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.map.listener.MapListener;
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -499,7 +499,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setMetadataSpacePercentage(70)
                 .setMinBlockSize(randomInt())
                 .setPageSize(randomInt())
-                .setSize(new MemorySize(randomInt(), MemoryUnit.BYTES));
+                .setCapacity(new Capacity(randomInt(), MemoryUnit.BYTES));
         clientConfig.setNativeMemoryConfig(expected);
 
         NativeMemoryConfig actual = newConfigViaGenerator().getNativeMemoryConfig();
@@ -514,7 +514,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setMetadataSpacePercentage(70)
                 .setMinBlockSize(randomInt())
                 .setPageSize(randomInt())
-                .setSize(new MemorySize(randomInt(), MemoryUnit.BYTES))
+                .setCapacity(new Capacity(randomInt(), MemoryUnit.BYTES))
                 .getPersistentMemoryConfig()
                 .setEnabled(true)
                 .addDirectoryConfig(new PersistentMemoryDirectoryConfig("/mnt/pmem0", 0))
@@ -533,7 +533,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setMetadataSpacePercentage(70)
                 .setMinBlockSize(randomInt())
                 .setPageSize(randomInt())
-                .setSize(new MemorySize(randomInt(), MemoryUnit.BYTES))
+                .setCapacity(new Capacity(randomInt(), MemoryUnit.BYTES))
                 .getPersistentMemoryConfig()
                 .setMode(PersistentMemoryMode.SYSTEM_MEMORY);
         clientConfig.setNativeMemoryConfig(expected);
@@ -775,6 +775,14 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         clientConfig.setSqlConfig(originalConfig);
         ClientSqlConfig generatedConfig = newConfigViaGenerator().getSqlConfig();
         assertEquals(originalConfig.getResubmissionMode(), generatedConfig.getResubmissionMode());
+    }
+
+    @Test
+    public void testAltoConfig() {
+        ClientAltoConfig originalConfig = new ClientAltoConfig().setEnabled(true);
+        clientConfig.setAltoConfig(originalConfig);
+        ClientAltoConfig generatedConfig = newConfigViaGenerator().getAltoConfig();
+        assertEquals(originalConfig, generatedConfig);
     }
 
     private ClientConfig newConfigViaGenerator() {

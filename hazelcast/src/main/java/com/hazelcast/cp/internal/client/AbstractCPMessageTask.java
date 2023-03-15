@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.function.BiConsumer;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+
 public abstract class AbstractCPMessageTask<P> extends AbstractMessageTask<P> implements BiConsumer<Object, Throwable> {
 
     protected AbstractCPMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -38,13 +40,13 @@ public abstract class AbstractCPMessageTask<P> extends AbstractMessageTask<P> im
     protected void query(CPGroupId groupId, RaftOp op, QueryPolicy policy) {
         RaftInvocationManager invocationManager = getInvocationManager();
         InternalCompletableFuture<Object> future = invocationManager.query(groupId, op, policy, false);
-        future.whenCompleteAsync(this);
+        future.whenCompleteAsync(this, CALLER_RUNS);
     }
 
     protected void invoke(CPGroupId groupId, RaftOp op) {
         RaftInvocationManager invocationManager = getInvocationManager();
         InternalCompletableFuture<Object> future = invocationManager.invoke(groupId, op, false);
-        future.whenCompleteAsync(this);
+        future.whenCompleteAsync(this, CALLER_RUNS);
     }
 
     private RaftInvocationManager getInvocationManager() {

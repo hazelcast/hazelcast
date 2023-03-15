@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -40,6 +41,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
+
+import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,6 +53,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InvalidClassException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
@@ -69,6 +73,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -490,7 +495,7 @@ public class SerializationIssueTest extends HazelcastTestSupport {
         Data data = ss.toData(obj);
         Object obj2 = ss.toObject(data);
 
-        assertEquals(obj2.getClass(), TheClassThatExtendArrayList.class);
+        assertEquals(TheClassThatExtendArrayList.class, obj2.getClass());
     }
 
     static class TheClassThatExtendArrayList<E> extends ArrayList<E> implements DataSerializable {
@@ -562,12 +567,13 @@ public class SerializationIssueTest extends HazelcastTestSupport {
         Object ocd
                 = Proxy.newProxyInstance(current, new Class[]{IPrivateObjectB.class, IPrivateObjectC.class}, DummyInvocationHandler.INSTANCE);
         Data data = ss.toData(ocd);
-        try {
-            ss.toObject(data);
-            Assert.fail("the object should not be deserializable");
-        } catch (IllegalAccessError expected) {
-            // expected
-        }
+        // when
+        Throwable thrown = Assertions.catchThrowable(() -> ss.toObject(data));
+        // https://bugs.openjdk.org/browse/JDK-8280642
+        assertThat(thrown).satisfiesAnyOf(
+                t -> assertThat(t).isInstanceOf(IllegalAccessError.class),
+                t -> assertThat(t).isInstanceOf(HazelcastSerializationException.class).hasCauseInstanceOf(InvalidClassException.class)
+        );
     }
 
     @Test

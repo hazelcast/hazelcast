@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ import org.apache.calcite.sql.SqlNode;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
 
@@ -46,9 +48,7 @@ public class ViewTable extends Table {
 
     @Override
     public PlanObjectKey getObjectKey() {
-        // Views never participate in plans, they are expanded. We return non-cacheable - if
-        // for any reason a plan contains a view, the plan wouldn't be cached.
-        return PlanObjectKey.NON_CACHEABLE_OBJECT_KEY;
+        return new ViewPlanObjectKey(getSchemaName(), getSqlName(), viewQuery, getConflictingSchemas());
     }
 
     @Override
@@ -68,6 +68,7 @@ public class ViewTable extends Table {
         for (RelDataTypeField f : fieldList) {
             res.add(new TableField(f.getName(), toHazelcastType(f.getType()), false));
         }
+        context.getUsedViews().add(getObjectKey());
         return res;
     }
 
@@ -75,5 +76,44 @@ public class ViewTable extends Table {
         getFields(); // called for the side effect of calling initFields()
         assert viewRel != null;
         return viewRel;
+    }
+
+    static class ViewPlanObjectKey implements PlanObjectKey {
+        private final String schemaName;
+        private final String viewName;
+        private final String query;
+        private final Set<String> conflictingSchemas;
+
+        ViewPlanObjectKey(
+                String schemaName,
+                String viewName,
+                String query,
+                Set<String> conflictingSchemas
+        ) {
+            this.schemaName = schemaName;
+            this.viewName = viewName;
+            this.query = query;
+            this.conflictingSchemas = conflictingSchemas;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            ViewPlanObjectKey that = (ViewPlanObjectKey) o;
+            return Objects.equals(schemaName, that.schemaName)
+                    && Objects.equals(viewName, that.viewName)
+                    && Objects.equals(query, that.query)
+                    && Objects.equals(conflictingSchemas, that.conflictingSchemas);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(schemaName, viewName, query, conflictingSchemas);
+        }
     }
 }

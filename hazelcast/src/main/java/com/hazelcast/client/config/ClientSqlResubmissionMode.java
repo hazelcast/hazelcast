@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ package com.hazelcast.client.config;
  *     <li>{@link com.hazelcast.sql.impl.SqlErrorCode#CONNECTION_PROBLEM}</li>
  *     <li>{@link com.hazelcast.sql.impl.SqlErrorCode#PARTITION_DISTRIBUTION}</li>
  *     <li>{@link com.hazelcast.sql.impl.SqlErrorCode#TOPOLOGY_CHANGE}</li>
+ *     <li>{@link com.hazelcast.sql.impl.SqlErrorCode#RESTARTABLE_ERROR}</li>
  * </ul>
  *
  * @since 5.2

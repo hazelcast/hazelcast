@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ public class SampleableConcurrentHashMapTest extends HazelcastTestSupport {
         final SampleableConcurrentHashMap<String, String> map =
                 new SampleableConcurrentHashMap<String, String>(10);
 
-        assertEquals(map.applyIfAbsent("key", input -> "value"), "value");
+        assertEquals("value", map.applyIfAbsent("key", input -> "value"));
 
         final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
         final CountDownLatch latch = new CountDownLatch(COUNT);
@@ -73,7 +73,7 @@ public class SampleableConcurrentHashMapTest extends HazelcastTestSupport {
         for (int i = 0; i < COUNT; i++) {
             new Thread(() -> {
                 try {
-                    assertEquals(map.applyIfAbsent("key", input -> "value1"), "value");
+                    assertEquals("value", map.applyIfAbsent("key", input -> "value1"));
                 } catch (Throwable e) {
                     error.set(e);
                 } finally {
@@ -92,7 +92,7 @@ public class SampleableConcurrentHashMapTest extends HazelcastTestSupport {
 
         map.applyIfAbsent("key", input -> null);
 
-        assertEquals(map.size(), 0);
+        assertEquals(0, map.size());
     }
 
     @Test

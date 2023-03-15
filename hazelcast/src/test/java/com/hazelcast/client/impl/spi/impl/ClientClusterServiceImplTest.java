@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -212,7 +212,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
         });
 
         //called on cluster change
-        clusterService.onClusterChange();
+        clusterService.onTryToConnectNextCluster();
 
         clusterService.handleMembersViewEvent(1, asList(member("127.0.0.1")), UUID.randomUUID());
         assertEquals(1, clusterService.getMemberList().size());
@@ -369,7 +369,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
         clusterService.handleMembersViewEvent(1, asList(member("127.0.0.1")), UUID.randomUUID());
         assertEquals(1, clusterService.getMemberList().size());
         //called on cluster change
-        clusterService.onClusterChange();
+        clusterService.onTryToConnectNextCluster();
         assertEquals(1, clusterService.getMemberList().size());
         assertEquals(ClientClusterServiceImpl.INITIAL_MEMBER_LIST_VERSION, clusterService.getMemberListVersion());
         clusterService.handleMembersViewEvent(1, asList(member("127.0.0.2")), UUID.randomUUID());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,6 @@ package com.hazelcast.internal.serialization.impl.compact.reader;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
-import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
@@ -37,13 +34,12 @@ import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createSerializationService;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CompactReaderTest {
-
-    private final SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
 
     @Test
     public void testGetFieldKind() {
@@ -82,13 +78,6 @@ public class CompactReaderTest {
         data = service.toData(record);
         deserialized = service.toObject(data);
         assertEquals(42, deserialized.i);
-    }
-
-    private SerializationService createSerializationService(SerializationConfig config) {
-        return new DefaultSerializationServiceBuilder()
-                .setConfig(config)
-                .setSchemaService(schemaService)
-                .build();
     }
 
     private static final class Foo {

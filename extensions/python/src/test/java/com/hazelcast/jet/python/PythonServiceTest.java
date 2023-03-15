@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package com.hazelcast.jet.python;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -26,6 +27,7 @@ import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -46,6 +48,7 @@ import static com.hazelcast.jet.python.PythonTransforms.mapUsingPythonBatch;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -65,7 +68,7 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
     @BeforeClass
     public static void beforeClass() {
         Config config = smallInstanceWithResourceUploadConfig();
-        initialize(1, config);
+        initialize(2, config);
         assumeThatNoWindowsOS();
     }
 
@@ -344,6 +347,34 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
         } catch (CompletionException ex) {
             // expected
         }
+    }
+
+    @Test
+    public void test_channelFn() {
+        // We'll set a small max message size and assert that the job fails due to that, a signal
+        // that the channel builder was used.
+
+        // Given
+        PythonServiceConfig cfg = new PythonServiceConfig()
+                .setBaseDir(baseDir.toString())
+                .setHandlerModule("echo")
+                .setHandlerFunction("handle")
+                // When
+                .setChannelFn((host, port) -> NettyChannelBuilder.forAddress(host, port)
+                        .maxInboundMessageSize(1));
+        List<String> items = IntStream.range(0, ITEM_COUNT).mapToObj(Integer::toString).collect(toList());
+        Pipeline p = Pipeline.create();
+
+        p.readFrom(TestSources.items(items))
+                .apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
+                .writeTo(AssertionSinks.assertAnyOrder(
+                        "Python didn't map the items correctly", items.stream().map(i -> "echo-" + i).collect(toList())
+                ));
+        Job job = instance().getJet().newJob(p);
+
+        // Then
+        assertThatThrownBy(job::join)
+                .hasMessageContaining("gRPC message exceeds maximum size 1");
     }
 
     private void installFileToBaseDir(String contents, String filename) throws IOException {

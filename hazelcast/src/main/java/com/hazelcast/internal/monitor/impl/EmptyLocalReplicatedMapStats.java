@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,6 +77,16 @@ public class EmptyLocalReplicatedMapStats implements LocalReplicatedMapStats {
 
     @Override
     public long getHits() {
+        return 0;
+    }
+
+    @Override
+    public long getEvictionCount() {
+        return 0;
+    }
+
+    @Override
+    public long getExpirationCount() {
         return 0;
     }
 

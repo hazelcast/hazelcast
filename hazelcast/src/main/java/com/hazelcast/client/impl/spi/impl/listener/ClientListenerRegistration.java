@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.impl.spi.impl.listener;
 
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
-import com.hazelcast.internal.nio.Connection;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,7 +27,7 @@ public class ClientListenerRegistration {
 
     private final ListenerMessageCodec codec;
     private final EventHandler handler;
-    private final Map<Connection, ClientConnectionRegistration> registrations = new ConcurrentHashMap<>();
+    private final Map<ClientConnection, ClientConnectionRegistration> registrations = new ConcurrentHashMap<>();
 
     ClientListenerRegistration(EventHandler handler, ListenerMessageCodec codec) {
         this.handler = handler;
@@ -42,7 +42,7 @@ public class ClientListenerRegistration {
         return handler;
     }
 
-    Map<Connection, ClientConnectionRegistration> getConnectionRegistrations() {
+    Map<ClientConnection, ClientConnectionRegistration> getConnectionRegistrations() {
         return registrations;
     }
 

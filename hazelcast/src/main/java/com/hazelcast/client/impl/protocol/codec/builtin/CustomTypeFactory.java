@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,9 +53,7 @@ import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
 
 import javax.annotation.Nonnull;
-import java.util.Comparator;
 import java.util.List;
-import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
@@ -300,9 +298,14 @@ public final class CustomTypeFactory {
             long submissionTime,
             long completionTime,
             String failureText,
-            SqlSummary sqlSummary
+            SqlSummary sqlSummary,
+            boolean isSuspensionCauseExists,
+            String suspensionCause,
+            boolean isUserCancelledExists,
+            boolean userCancelled
     ) {
         return new JobAndSqlSummary(lightJob, jobId, executionId, nameOrId, JobStatus.getById(jobStatus), submissionTime,
-                completionTime, failureText, sqlSummary);
+                completionTime, failureText, sqlSummary, isSuspensionCauseExists ? suspensionCause : null,
+                isUserCancelledExists ? userCancelled : false);
     }
 }

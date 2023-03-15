@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -29,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.BiConsumer;
@@ -60,6 +62,7 @@ final class InvokeOnPartitions {
     private final AtomicReferenceArray<Object> partitionResults;
     private final AtomicInteger latch;
     private final CompletableFuture future;
+    private final Executor internalAsyncExecutor;
     private boolean invoked;
 
     InvokeOnPartitions(OperationServiceImpl operationService, String serviceName, OperationFactory operationFactory,
@@ -78,6 +81,8 @@ final class InvokeOnPartitions {
         this.partitionResults = new AtomicReferenceArray<Object>(partitionCount);
         this.latch = new AtomicInteger(actualPartitionCount);
         this.future = new CompletableFuture();
+        this.internalAsyncExecutor = operationService.nodeEngine.getExecutionService()
+                .getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
     /**
@@ -118,7 +123,7 @@ final class InvokeOnPartitions {
                     .setTryCount(TRY_COUNT)
                     .setTryPauseMillis(TRY_PAUSE_MILLIS)
                     .invoke()
-                    .whenCompleteAsync(new FirstAttemptExecutionCallback(partitions));
+                    .whenCompleteAsync(new FirstAttemptExecutionCallback(partitions), internalAsyncExecutor);
         }
     }
 
@@ -141,7 +146,7 @@ final class InvokeOnPartitions {
                                 setPartitionResult(partitionId, throwable);
                                 decrementLatchAndHandle(1);
                             }
-                        });
+                        }, internalAsyncExecutor);
     }
 
     private void decrementLatchAndHandle(int count) {

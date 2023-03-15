@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
-import com.hazelcast.function.BiFunctionEx;
-import com.hazelcast.jet.core.EventTimePolicy;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.expression.Expression;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
@@ -33,25 +30,24 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import java.util.List;
 
 public class WatermarkLogicalRel extends SingleRel implements LogicalRel {
-
-    private final BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
+    private final Expression<?> lagExpression;
     private final int watermarkedColumnIndex;
 
     WatermarkLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traits,
             RelNode input,
-            BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
+            Expression<?> lagExpression,
             int watermarkedColumnIndex
     ) {
         super(cluster, traits, input);
 
-        this.eventTimePolicyProvider = eventTimePolicyProvider;
+        this.lagExpression = lagExpression;
         this.watermarkedColumnIndex = watermarkedColumnIndex;
     }
 
-    public BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider() {
-        return eventTimePolicyProvider;
+    public Expression<?> lagExpression() {
+        return lagExpression;
     }
 
     public int watermarkedColumnIndex() {
@@ -61,7 +57,6 @@ public class WatermarkLogicalRel extends SingleRel implements LogicalRel {
     @Override
     public RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw)
-                .item("eventTimePolicyProvider", eventTimePolicyProvider)
                 .item("watermarkedColumnIndex", watermarkedColumnIndex);
     }
 
@@ -77,7 +72,7 @@ public class WatermarkLogicalRel extends SingleRel implements LogicalRel {
                 getCluster(),
                 traitSet,
                 sole(inputs),
-                eventTimePolicyProvider,
+                lagExpression,
                 watermarkedColumnIndex
         );
     }

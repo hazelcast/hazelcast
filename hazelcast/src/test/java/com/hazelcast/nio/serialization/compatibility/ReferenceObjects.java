@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,14 @@ import com.hazelcast.aggregation.Aggregators;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects;
+import example.serialization.MainDTO;
+import example.serialization.AllFieldsDTO;
+
 import java.io.Externalizable;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -144,12 +148,6 @@ class ReferenceObjects {
             anInnerPortable, null,
             aCustomStreamSerializable,
             aCustomByteArraySerializable, aData);
-    static APortable aPortable = new APortable(
-            aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aSmallString, anInnerPortable,
-            booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings, portables,
-            anIdentifiedDataSerializable,
-            aCustomStreamSerializable,
-            aCustomByteArraySerializable, aData);
 
     static Date aDate;
 
@@ -157,6 +155,10 @@ class ReferenceObjects {
     static LocalTime aLocalTime;
     static LocalDateTime aLocalDateTime;
     static OffsetDateTime aOffsetDateTime;
+    static LocalDate[] localDates;
+    static LocalTime[] localTimes;
+    static LocalDateTime[] localDateTimes;
+    static OffsetDateTime[] offsetDateTimes;
 
     static {
         Calendar calendar = Calendar.getInstance();
@@ -169,10 +171,38 @@ class ReferenceObjects {
         aLocalTime = LocalTime.of(11, 22, 41, 123456789);
         aLocalDateTime = LocalDateTime.of(aLocalDate, aLocalTime);
         aOffsetDateTime = OffsetDateTime.of(aLocalDateTime, ZoneOffset.ofHours(18));
+        localDates= new LocalDate[]{
+                LocalDate.of(2021, 6, 28),
+                LocalDate.of(1923, 4, 23),
+                LocalDate.of(1938, 11, 10)};
+        localTimes = new LocalTime[]{
+                LocalTime.of(9, 5, 10, 123456789),
+                LocalTime.of(18, 30, 55, 567891234),
+                LocalTime.of(15, 44, 39, 192837465)};
+        localDateTimes= new LocalDateTime[]{
+                LocalDateTime.of(LocalDate.of(1938, 11, 10), LocalTime.of(9, 5, 10, 123456789)),
+                LocalDateTime.of(LocalDate.of(1923, 4, 23), LocalTime.of(15, 44, 39, 192837465)),
+                LocalDateTime.of(LocalDate.of(2021, 6, 28), LocalTime.of(18, 30, 55, 567891234))};
+        offsetDateTimes= new OffsetDateTime[]{
+                OffsetDateTime.of(LocalDate.of(1938, 11, 10), LocalTime.of(9, 5, 10, 123456789),
+                        ZoneOffset.ofHours(18)),
+                OffsetDateTime.of(LocalDateTime.of(LocalDate.of(1923, 4, 23), LocalTime.of(15, 44, 39, 192837465)),
+                        ZoneOffset.ofHours(5)),
+                OffsetDateTime.of(LocalDateTime.of(LocalDate.of(2021, 6, 28), LocalTime.of(18, 30, 55, 567891234)),
+                        ZoneOffset.ofHours(-10))};
     }
 
     static BigInteger aBigInteger = new BigInteger("1314432323232411");
     static BigDecimal aBigDecimal = new BigDecimal(31231);
+    static BigDecimal[] decimals = {aBigDecimal, aBigDecimal ,aBigDecimal};
+    static APortable aPortable = new APortable(
+            aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, anSqlString, aBigDecimal,
+            aLocalDate, aLocalTime, aLocalDateTime, aOffsetDateTime, anInnerPortable,
+            booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings, decimals,
+            localDates, localTimes, localDateTimes, offsetDateTimes, portables,
+            anIdentifiedDataSerializable,
+            aCustomStreamSerializable,
+            aCustomByteArraySerializable, aData);
     static Class aClass = BigDecimal.class;
     static Optional<String> aFullOptional = Optional.of("SERIALIZEDSTRING");
     static Optional<String> anEmptyOptional = Optional.empty();
@@ -237,11 +267,22 @@ class ReferenceObjects {
     static SynchronousQueue synchronousQueue = new SynchronousQueue();
     static LinkedTransferQueue linkedTransferQueue = new LinkedTransferQueue(nonNullList);
 
+    static MainDTO aCompact;
+    static {
+        aCompact = CompactTestUtil.createMainDTO();
+        aCompact.localDate = aLocalDate;
+        aCompact.localTime = aLocalTime;
+        aCompact.localDateTime = aLocalDateTime;
+        aCompact.offsetDateTime = aOffsetDateTime;
+    }
+
+    static AllFieldsDTO aReflectiveCompact = CompactTestUtil.createAllFieldsDTO();
+
     static Object[] allTestObjects = {
             aNullObject, aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString, aUUID, anInnerPortable,
             aSimpleMapEntry, aSimpleImmutableMapEntry, booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
             aCustomStreamSerializable, aCustomByteArraySerializable,
-            anIdentifiedDataSerializable, aPortable,
+            anIdentifiedDataSerializable, aPortable, aCompact, aReflectiveCompact,
             aDate, aLocalDate, aLocalTime, aLocalDateTime, aOffsetDateTime, aBigInteger, aBigDecimal, aClass,
             aFullOptional, anEnum, serializable, externalizable,
             arrayList, linkedList, copyOnWriteArrayList, concurrentSkipListMap, concurrentHashMap, linkedHashMap, treeMap,

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,6 @@ final class WatermarkPhysicalRule extends RelOptRule implements TransformationRu
                         rel.getCluster(),
                         toPhysicalConvention(rel.getTraitSet()),
                         rel.getRowType(),
-                        "Ordering function cannot be applied to input table"));
+                        "IMPOSE_ORDER call is not supported in this configuration"));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,10 +86,10 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import static com.hazelcast.query.impl.predicates.PredicateUtils.checkDoesNotContainPagingPredicate;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
-import static com.hazelcast.internal.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
@@ -285,6 +285,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public void removeAll(@Nonnull Predicate<K, V> predicate) {
         checkNotNull(predicate, "predicate cannot be null");
+        checkDoesNotContainPagingPredicate(predicate, "removeAll");
         handleHazelcastInstanceAwareParams(predicate);
 
         removeAllInternal(predicate);
@@ -577,6 +578,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                                       boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        checkDoesNotContainPagingPredicate(predicate, "addLocalEntryListener");
         handleHazelcastInstanceAwareParams(listener, predicate);
 
         return addLocalEntryListenerInternal(listener, predicate, null, includeValue);
@@ -589,6 +591,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                                       boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        checkDoesNotContainPagingPredicate(predicate, "addLocalEntryListener");
         handleHazelcastInstanceAwareParams(listener, predicate);
 
         return addLocalEntryListenerInternal(listener, predicate, toDataWithStrategy(key), includeValue);
@@ -618,6 +621,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                                  boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        checkDoesNotContainPagingPredicate(predicate, "addEntryListener");
         handleHazelcastInstanceAwareParams(listener, predicate);
 
         return addEntryListenerInternal(listener, predicate, toDataWithStrategy(key), includeValue);
@@ -629,6 +633,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                                  boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        checkDoesNotContainPagingPredicate(predicate, "addEntryListener");
         handleHazelcastInstanceAwareParams(listener, predicate);
 
         return addEntryListenerInternal(listener, predicate, null, includeValue);
@@ -863,6 +868,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<K, V, R> entryProcessor,
                                           @Nonnull Predicate<K, V> predicate) {
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        checkDoesNotContainPagingPredicate(predicate, "executeOnEntries");
         handleHazelcastInstanceAwareParams(entryProcessor, predicate);
         List<Data> result = new ArrayList<>();
 
@@ -892,7 +899,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                            @Nonnull Predicate<K, V> predicate) {
         checkNotNull(aggregator, NULL_AGGREGATOR_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        checkNotPagingPredicate(predicate, "aggregate");
+        checkDoesNotContainPagingPredicate(predicate, "aggregate");
 
         // HazelcastInstanceAware handled by cloning
         aggregator = serializationService.toObject(serializationService.toData(aggregator));
@@ -933,7 +940,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                                       @Nonnull Predicate<K, V> predicate, Target target) {
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        checkNotPagingPredicate(predicate, "project");
+        checkDoesNotContainPagingPredicate(predicate, "project");
 
         // HazelcastInstanceAware handled by cloning
         projection = serializationService.toObject(serializationService.toData(projection));
@@ -1024,7 +1031,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      *                    allowed
      * @param <R>         the return type
      * @return an iterator for the projected entries
-     * @throws IllegalArgumentException if the predicate is of type {@link PagingPredicate}
+     * @throws IllegalArgumentException if the predicate is a {@link com.hazelcast.query.PagingPredicate} or is a
+     *                                  {@link com.hazelcast.query.PartitionPredicate} that includes a
+     *                                  {@link com.hazelcast.query.PagingPredicate}
      * @since 3.9
      */
     @Nonnull
@@ -1034,9 +1043,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
             @Nonnull Projection<? super Map.Entry<K, V>, R> projection,
             @Nonnull Predicate<K, V> predicate
     ) {
-        if (predicate instanceof PagingPredicate) {
-            throw new IllegalArgumentException("Paging predicate is not allowed when iterating map by query");
-        }
+        checkDoesNotContainPagingPredicate(predicate, "iterator");
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         // HazelcastInstanceAware handled by cloning
@@ -1196,7 +1203,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                                           boolean includeValue) {
         checkNotNull(name, "name cannot be null");
         checkNotNull(predicate, "predicate cannot be null");
-        checkNotInstanceOf(PagingPredicate.class, predicate, "predicate");
+        checkDoesNotContainPagingPredicate(predicate, "getQueryCache");
         handleHazelcastInstanceAwareParams(predicate);
 
         return getQueryCacheInternal(name, null, predicate, includeValue, this);
@@ -1210,7 +1217,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(name, "name cannot be null");
         checkNotNull(listener, "listener cannot be null");
         checkNotNull(predicate, "predicate cannot be null");
-        checkNotInstanceOf(PagingPredicate.class, predicate, "predicate");
+        checkDoesNotContainPagingPredicate(predicate, "getQueryCache");
         handleHazelcastInstanceAwareParams(listener, predicate);
 
         return getQueryCacheInternal(name, listener, predicate, includeValue, this);
@@ -1240,12 +1247,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         QueryCacheEndToEndProvider queryCacheEndToEndProvider = subscriberContext.getEndToEndQueryCacheProvider();
         return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(), request.getCacheName(),
                 subscriberContext.newEndToEndConstructor(request));
-    }
-
-    private static void checkNotPagingPredicate(Predicate predicate, String method) {
-        if (predicate instanceof PagingPredicate) {
-            throw new IllegalArgumentException("PagingPredicate not supported in " + method + " method");
-        }
     }
 
     @Override

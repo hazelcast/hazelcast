@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package com.hazelcast.instance.impl;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -129,6 +129,7 @@ final class ServerSocketHelper {
             serverSocket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
 
             if (endpointConfig != null) {
+                IOUtil.setKeepAliveOptionsIfNotDefault(serverSocketChannel, endpointConfig, logger);
                 serverSocket.setReceiveBufferSize(endpointConfig.getSocketRcvBufferSizeKb() * KILO_BYTE);
             }
 
@@ -144,6 +145,4 @@ final class ServerSocketHelper {
             throw e;
         }
     }
-
-
 }

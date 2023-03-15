@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,12 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.accumulator.LongAccumulator;
-import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
@@ -33,7 +31,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -43,7 +40,6 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -67,7 +63,7 @@ import static com.hazelcast.jet.core.test.JetAssert.fail;
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(QuickTest.class)
-public class OrderedProcessingMultipleMemberTest extends JetTestSupport implements Serializable {
+public class OrderedProcessingMultipleMemberTest extends SimpleTestInClusterSupport {
 
     // Used to set the LP of the stage with the higher value than upstream parallelism
     private static final int HIGH_LOCAL_PARALLELISM = 11;
@@ -77,7 +73,6 @@ public class OrderedProcessingMultipleMemberTest extends JetTestSupport implemen
     private static final String JOURNALED_MAP_PREFIX = "test-map-";
 
     private static Pipeline p;
-    private static JetInstance[] instances;
 
     @Parameter(value = 0)
     public int idx;
@@ -96,22 +91,13 @@ public class OrderedProcessingMultipleMemberTest extends JetTestSupport implemen
                 .getEventJournalConfig();
         eventJournalConfig.setEnabled(true);
         eventJournalConfig.setCapacity(30000); // 30000/271 ~= 111 item per partition
-        instances = new JetInstance[INSTANCE_COUNT];
-        for (int i = 0; i < INSTANCE_COUNT; i++) {
-            instances[i] = (JetInstance) Hazelcast.newHazelcastInstance(config).getJet();
-        }
+
+        initialize(INSTANCE_COUNT, config);
     }
 
     @Before
     public void setup() {
         p = Pipeline.create().setPreserveOrder(true);
-    }
-
-    @AfterClass
-    public static void cleanup() {
-        for (int i = 0; i < INSTANCE_COUNT; i++) {
-            instances[i].shutdown();
-        }
     }
 
     @Parameters(name = "{index}: transform={2}")
@@ -257,7 +243,7 @@ public class OrderedProcessingMultipleMemberTest extends JetTestSupport implemen
         StreamStage<Map.Entry<Long, Long>> applied = srcStage.apply(transform);
 
         applied.groupingKey(Map.Entry::getKey)
-                .mapStateful(() -> create(keyCount), this::orderValidator)
+                .mapStateful(() -> create(keyCount), OrderedProcessingMultipleMemberTest::orderValidator)
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
                         list -> {
                             assertTrue("when", itemCount <= list.size());
@@ -265,12 +251,12 @@ public class OrderedProcessingMultipleMemberTest extends JetTestSupport implemen
                         }
                 ));
 
-        IMap<Long, Long> testMap = instances[0].getMap(mapName);
+        IMap<Long, Long> testMap = instance().getMap(mapName);
         LongStream.range(0, itemCount)
                 .boxed()
                 .forEachOrdered(i -> testMap.put(i % keyCount, i));
 
-        Job job = instances[0].newJob(p);
+        Job job = instance().getJet().newJob(p);
         try {
             job.join();
             fail("Job should have completed with an AssertionCompletedException, but completed normally");
@@ -290,7 +276,7 @@ public class OrderedProcessingMultipleMemberTest extends JetTestSupport implemen
         return state;
     }
 
-    private boolean orderValidator(LongAccumulator[] s, Long key, Map.Entry<Long, Long> entry) {
+    private static boolean orderValidator(LongAccumulator[] s, Long key, Map.Entry<Long, Long> entry) {
         LongAccumulator acc = s[key.intValue()];
         long value = entry.getValue();
         if (acc.get() >= value) {

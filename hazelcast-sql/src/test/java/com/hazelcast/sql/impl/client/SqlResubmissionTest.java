@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -208,6 +208,8 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
             assertEquals(COMMON_MAP_SIZE, expectedValue);
             assertTrue("resubmission didn't happen", resubmitted);
         } catch (HazelcastSqlException e) {
+            // This may be expected (for example: when resubmissionMode == NEVER), so we need to check if in current
+            // resubmissionMode an exception should be thrown.
            if (!shouldFailAfterSomeDataIsFetched(resubmissionMode)) {
                throw e;
            } // else the error is expected

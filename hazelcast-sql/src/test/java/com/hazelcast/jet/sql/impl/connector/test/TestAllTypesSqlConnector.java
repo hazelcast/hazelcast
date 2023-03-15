@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.connector.test;
 
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
@@ -27,6 +26,7 @@ import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -146,20 +146,21 @@ public class TestAllTypesSqlConnector implements SqlConnector {
 
     @Nonnull @Override
     public Vertex fullScanReader(
-            @Nonnull DAG dag,
-            @Nonnull Table table,
-            @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projection,
+            @Nonnull DagBuildContext context,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
             throw QueryException.error("Ordering function are not supported for " + TYPE_NAME + " mappings");
         }
+        Expression<Boolean> convertedPredicate = context.convertFilter(predicate);
+        List<Expression<?>> convertedProjection = context.convertProjection(projection);
 
         BatchSource<JetSqlRow> source = SourceBuilder
                 .batch("batch", ExpressionEvalContext::from)
                 .<JetSqlRow>fillBufferFn((ctx, buf) -> {
-                    JetSqlRow row = ExpressionUtil.evaluate(predicate, projection, VALUES, ctx);
+                    JetSqlRow row = ExpressionUtil.evaluate(convertedPredicate, convertedProjection, VALUES, ctx);
                     if (row != null) {
                         buf.add(row);
                     }
@@ -167,7 +168,7 @@ public class TestAllTypesSqlConnector implements SqlConnector {
                 })
                 .build();
         ProcessorMetaSupplier pms = ((BatchSourceTransform<JetSqlRow>) source).metaSupplier;
-        return dag.newUniqueVertex(table.toString(), pms);
+        return context.getDag().newUniqueVertex(context.getTable().toString(), pms);
     }
 
     private static final class TestAllTypesTable extends JetTable {

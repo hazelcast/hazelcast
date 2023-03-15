@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.readMa
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeMap;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
+// RU_COMPAT 5.2 No need to implement Versioned after 5.3 release
 public class MemberInfo implements IdentifiedDataSerializable, Versioned {
 
     private Address address;
@@ -156,10 +157,7 @@ public class MemberInfo implements IdentifiedDataSerializable, Versioned {
         version = in.readObject();
         memberListJoinVersion = in.readInt();
         addressMap = readMap(in);
-        // RU_COMPAT 5.1
-        if (in.getVersion().isGreaterOrEqual(Versions.CURRENT_CLUSTER_VERSION)) {
-            cpMemberUUID = UUIDSerializationUtil.readUUID(in);
-        }
+        cpMemberUUID = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override
@@ -177,10 +175,7 @@ public class MemberInfo implements IdentifiedDataSerializable, Versioned {
         out.writeObject(version);
         out.writeInt(memberListJoinVersion);
         writeMap(addressMap, out);
-        // RU_COMPAT 5.1
-        if (out.getVersion().isGreaterOrEqual(Versions.CURRENT_CLUSTER_VERSION)) {
-            UUIDSerializationUtil.writeUUID(out, cpMemberUUID);
-        }
+        UUIDSerializationUtil.writeUUID(out, cpMemberUUID);
     }
 
     @Override

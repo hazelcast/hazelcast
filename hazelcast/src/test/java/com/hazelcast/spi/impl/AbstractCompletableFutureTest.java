@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -373,7 +373,7 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
 
         future.whenCompleteAsync(callback, executor);
 
-        verifyZeroInteractions(callback);
+        verifyNoInteractions(callback);
     }
 
     @Test
@@ -396,8 +396,8 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
         future.whenCompleteAsync(callback1, executor);
         future.whenCompleteAsync(callback2, executor);
 
-        verifyZeroInteractions(callback1);
-        verifyZeroInteractions(callback2);
+        verifyNoInteractions(callback1);
+        verifyNoInteractions(callback2);
     }
 
     @Test

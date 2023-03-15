@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.query.impl.predicates.PredicateUtils.checkDoesNotContainPagingPredicate;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
@@ -394,6 +395,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     public UUID addEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue) {
         checkNotNull(listener, "listener cannot be null");
         checkNotNull(predicate, "predicate cannot be null");
+        checkDoesNotContainPagingPredicate(predicate, "addEntryListener");
 
         QueryCacheEventService eventService = getEventService();
         EventFilter filter = new QueryEventFilter(null, predicate, includeValue);
@@ -407,6 +409,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         checkNotNull(listener, "listener cannot be null");
         checkNotNull(predicate, "predicate cannot be null");
         checkNotNull(key, "key cannot be null");
+        checkDoesNotContainPagingPredicate(predicate, "addEntryListener");
 
         QueryCacheEventService eventService = getEventService();
         EventFilter filter = new QueryEventFilter(toData(key), predicate, includeValue);

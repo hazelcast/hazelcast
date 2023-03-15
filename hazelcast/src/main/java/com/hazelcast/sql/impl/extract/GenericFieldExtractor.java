@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,11 +42,10 @@ public class GenericFieldExtractor extends AbstractGenericExtractor {
         this.path = path;
     }
 
-    @Override
-    public Object get() {
+    private Object getInternal(boolean useLazyDeserialization) {
         try {
             Object target = targetAccessor.getTargetForFieldAccess();
-            Object value = extractors.extract(target, path, null, false);
+            Object value = extractors.extract(target, path, useLazyDeserialization, false);
             return type.normalize(value);
         } catch (QueryDataTypeMismatchException e) {
             throw QueryException.dataException("Failed to extract map entry " + (key ? "key" : "value") + " field \""
@@ -56,5 +55,15 @@ public class GenericFieldExtractor extends AbstractGenericExtractor {
             throw QueryException.dataException("Failed to extract map entry " + (key ? "key" : "value") + " field \""
                 + path + "\": " + e.getMessage(), e);
         }
+    }
+
+    @Override
+    public Object get() {
+        return getInternal(false);
+    }
+
+    @Override
+    public Object get(boolean useLazyDeserialization) {
+        return getInternal(useLazyDeserialization);
     }
 }

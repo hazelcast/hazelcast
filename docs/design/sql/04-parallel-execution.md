@@ -1,4 +1,4 @@
-# SQL Parallel Execution
+# SQL Parallel Execution (Outdated since Hazelcast 5.0)
 
 ## Overview
 
