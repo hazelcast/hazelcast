@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2023 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -138,43 +138,43 @@ public class QueryUtilsTest extends CoreSqlTestSupport {
         when(mv3.getVersion()).thenReturn(v3);
 
         // failing cases
-        assertNull(QueryUtils.memberOfLargerSameVersionGroup(emptyList(), null));
-        assertNull(QueryUtils.memberOfLargerSameVersionGroup(singletonList(mv1_lite), null));
-        assertNull(QueryUtils.memberOfLargerSameVersionGroup(singletonList(mv1_lite), mv1_lite));
-        assertThatThrownBy(() -> QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv2, mv3), null))
+        assertNull(CoreQueryUtils.memberOfLargerSameVersionGroup(emptyList(), null));
+        assertNull(CoreQueryUtils.memberOfLargerSameVersionGroup(singletonList(mv1_lite), null));
+        assertNull(CoreQueryUtils.memberOfLargerSameVersionGroup(singletonList(mv1_lite), mv1_lite));
+        assertThatThrownBy(() -> CoreQueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv2, mv3), null))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("More than 2 distinct member versions found: 0.1, 0.2, 0.3");
 
         // one member in the cluster
-        assertSame(mv1, QueryUtils.memberOfLargerSameVersionGroup(singletonList(mv1), mv1));
+        assertSame(mv1, CoreQueryUtils.memberOfLargerSameVersionGroup(singletonList(mv1), mv1));
 
         // two members with same ver - must choose the local one
-        assertSame(mv1, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1), mv1));
-        assertSame(mv1, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1_1, mv1), mv1));
+        assertSame(mv1, CoreQueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1), mv1));
+        assertSame(mv1, CoreQueryUtils.memberOfLargerSameVersionGroup(asList(mv1_1, mv1), mv1));
 
         // lite and non-lite same ver, must choose non-lite
-        assertSame(mv1, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_lite), mv1));
-        assertSame(mv1, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_lite), mv1_lite));
+        assertSame(mv1, CoreQueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_lite), mv1));
+        assertSame(mv1, CoreQueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_lite), mv1_lite));
 
         // two versions, same count - must choose newer even if not local
-        assertSame(mv2, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv2), mv1));
-        assertSame(mv2, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv2), mv2));
+        assertSame(mv2, CoreQueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv2), mv1));
+        assertSame(mv2, CoreQueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv2), mv2));
 
         // older version has bigger group - must use local
-        assertSame(mv1, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1, mv2), mv1));
+        assertSame(mv1, CoreQueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1, mv2), mv1));
 
         // older group bigger, but all lite - choose newer
-        assertSame(mv2, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1_lite, mv1_lite, mv2), null));
+        assertSame(mv2, CoreQueryUtils.memberOfLargerSameVersionGroup(asList(mv1_lite, mv1_lite, mv2), null));
 
         // test cases with random result
-        assertTrueEventuallyFast(() -> assertSame(mv1, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1), null)));
-        assertTrueEventuallyFast(() -> assertSame(mv1_1, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1), null)));
-        assertTrueEventuallyFast(() -> assertSame(mv1, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1), mv2)));
-        assertTrueEventuallyFast(() -> assertSame(mv1_1, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1), mv2)));
+        assertTrueEventuallyFast(() -> assertSame(mv1, CoreQueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1), null)));
+        assertTrueEventuallyFast(() -> assertSame(mv1_1, CoreQueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1), null)));
+        assertTrueEventuallyFast(() -> assertSame(mv1, CoreQueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1), mv2)));
+        assertTrueEventuallyFast(() -> assertSame(mv1_1, CoreQueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1), mv2)));
 
         // older version group larger - must choose one of the older
-        assertTrueEventuallyFast(() -> assertSame(mv1, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1, mv2), mv2)));
-        assertTrueEventuallyFast(() -> assertSame(mv1_1, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1, mv2), mv2)));
+        assertTrueEventuallyFast(() -> assertSame(mv1, CoreQueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1, mv2), mv2)));
+        assertTrueEventuallyFast(() -> assertSame(mv1_1, CoreQueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1, mv2), mv2)));
     }
 
     private static void assertTrueEventuallyFast(Runnable r) {

@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2023 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.extract;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -26,7 +27,6 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.CoreSqlTestSupport;
 import com.hazelcast.sql.impl.LazyTarget;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -47,7 +47,7 @@ import static org.junit.Assert.assertTrue;
 public class GenericQueryTargetTest extends CoreSqlTestSupport {
     @Test
     public void testTargetDescriptor() {
-        serializeAndCheck(new GenericQueryTargetDescriptor(), SqlDataSerializerHook.TARGET_DESCRIPTOR_GENERIC);
+        serializeAndCheck(new GenericQueryTargetDescriptor(), JetSqlSerializerHook.TARGET_DESCRIPTOR_GENERIC);
     }
 
     @Test

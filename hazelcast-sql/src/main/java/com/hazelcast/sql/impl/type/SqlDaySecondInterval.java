@@ -1,91 +1,91 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2023 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
 package com.hazelcast.sql.impl.type;
 
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import java.io.IOException;
 import java.io.Serializable;
 
 /**
- * Year-month interval.
+ * Day-second interval.
  */
-public class SqlYearMonthInterval implements IdentifiedDataSerializable, Comparable<SqlYearMonthInterval>, Serializable {
+public class SqlDaySecondInterval implements IdentifiedDataSerializable, Comparable<SqlDaySecondInterval>, Serializable {
 
-    private int months;
+    private long millis;
 
-    public SqlYearMonthInterval() {
+    public SqlDaySecondInterval() {
         // No-op.
     }
 
-    public SqlYearMonthInterval(int months) {
-        this.months = months;
+    public SqlDaySecondInterval(long millis) {
+        this.millis = millis;
     }
 
-    public int getMonths() {
-        return months;
+    public long getMillis() {
+        return millis;
     }
 
     @Override
     public int getFactoryId() {
-        return SqlDataSerializerHook.F_ID;
+        return JetSqlSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.INTERVAL_YEAR_MONTH;
+        return JetSqlSerializerHook.INTERVAL_DAY_SECOND;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(months);
+        out.writeLong(millis);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        months = in.readInt();
+        millis = in.readLong();
     }
 
     @Override
     public int hashCode() {
-        return months;
+        return Long.hashCode(millis);
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof SqlYearMonthInterval) {
-            SqlYearMonthInterval other = ((SqlYearMonthInterval) obj);
+        if (obj instanceof SqlDaySecondInterval) {
+            SqlDaySecondInterval other = ((SqlDaySecondInterval) obj);
 
-            return months == other.months;
+            return millis == other.millis;
         }
 
         return false;
     }
 
     @Override
-    public int compareTo(SqlYearMonthInterval other) {
-        return Integer.compare(months, other.months);
+    public int compareTo(SqlDaySecondInterval other) {
+        return Long.compare(millis, other.millis);
     }
 
     @Override
     public String toString() {
-        return "SqlYearMonthInterval{months=" + months + "}";
+        return "SqlDaySecondInterval{millis=" + millis + "}";
     }
 }
