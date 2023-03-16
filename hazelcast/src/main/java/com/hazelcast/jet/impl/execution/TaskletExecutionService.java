@@ -506,7 +506,7 @@ public class TaskletExecutionService {
     }
 
     private static final class CooperativeWorkerThread extends Thread implements CooperativeThread {
-        public CooperativeWorkerThread( Runnable target, String name) {
+        CooperativeWorkerThread(Runnable target, String name) {
             super(target, name);
         }
     }
