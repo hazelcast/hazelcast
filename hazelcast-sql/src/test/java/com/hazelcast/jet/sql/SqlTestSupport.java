@@ -43,6 +43,7 @@ import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.SqlInternalService;
+import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.plan.cache.PlanCache;
@@ -686,12 +687,16 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
                 : "/non/existing/path";
     }
 
+    public static SqlServiceImpl sqlServiceImpl(HazelcastInstance instance) {
+        return (SqlServiceImpl) instance.getSql();
+    }
+
     public static SqlInternalService sqlInternalService(HazelcastInstance instance) {
-        return nodeEngine(instance).getSqlService().getInternalService();
+        return sqlServiceImpl(instance).getInternalService();
     }
 
     public static PlanCache planCache(HazelcastInstance instance) {
-        return nodeEngine(instance).getSqlService().getPlanCache();
+        return sqlServiceImpl(instance).getPlanCache();
     }
 
     public static MapContainer mapContainer(IMap<?, ?> map) {

@@ -39,9 +39,9 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlStatement;
+import com.hazelcast.sql.impl.CoreQueryUtils;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.QueryUtils;
 
 import javax.annotation.Nonnull;
 import java.security.AccessControlException;
@@ -484,7 +484,7 @@ public class SqlClientService implements SqlService {
 
     private RuntimeException rethrow(Throwable cause, ClientConnection connection) {
         if (!connection.isAlive()) {
-            return QueryUtils.toPublicException(
+            return CoreQueryUtils.toPublicException(
                     QueryException.memberConnection(connection.getRemoteAddress()),
                     getClientId()
             );
@@ -499,7 +499,7 @@ public class SqlClientService implements SqlService {
             return (AccessControlException) cause.getCause();
         }
 
-        return QueryUtils.toPublicException(cause, getClientId());
+        return CoreQueryUtils.toPublicException(cause, getClientId());
     }
 
     /**

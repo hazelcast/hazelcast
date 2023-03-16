@@ -17,18 +17,20 @@
 package com.hazelcast.sql.impl.schema.datalink;
 
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateDataLink;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.schema.SqlCatalogObject;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
 /**
- * SQL schema POJO class.
+ * The value in catalog map for data links.
  */
-public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
+public class DataLinkCatalogEntry implements SqlCatalogObject {
     private String name;
     private String type;
     private Map<String, String> options;
@@ -105,5 +107,11 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
     @Override
     public int hashCode() {
         return Objects.hash(name, type, options);
+    }
+
+    @Nonnull
+    @Override
+    public String unparse() {
+        return SqlCreateDataLink.unparse(this);
     }
 }

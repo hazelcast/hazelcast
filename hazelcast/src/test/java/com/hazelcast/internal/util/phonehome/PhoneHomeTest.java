@@ -36,7 +36,7 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.impl.SqlServiceImpl;
+import com.hazelcast.sql.impl.InternalSqlService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -551,7 +551,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         Map<String, String> parameters = phoneHome.phoneHome(true);
         assertEquals("0", parameters.get(PhoneHomeMetrics.SQL_QUERIES_SUBMITTED.getRequestParameterName()));
 
-        SqlServiceImpl sqlService = node.getNodeEngine().getSqlService();
+        InternalSqlService sqlService = node.getNodeEngine().getSqlService();
         try {
             sqlService.execute("SELECT * FROM map");
         } catch (Exception e) {

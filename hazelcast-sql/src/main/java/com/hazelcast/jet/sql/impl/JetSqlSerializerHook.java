@@ -32,11 +32,13 @@ import com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.jet.sql.impl.opt.physical.AggregateAbstractPhysicalRule;
 import com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink;
+import com.hazelcast.jet.sql.impl.validate.UpdateDataLinkOperation;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOperationResult;
-import com.hazelcast.jet.sql.impl.validate.UpdateDataLinkOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.LazyTarget;
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.exec.scan.index.IndexCompositeFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
@@ -91,11 +93,18 @@ import com.hazelcast.sql.impl.expression.string.ReplaceFunction;
 import com.hazelcast.sql.impl.expression.string.SubstringFunction;
 import com.hazelcast.sql.impl.expression.string.TrimFunction;
 import com.hazelcast.sql.impl.expression.string.UpperFunction;
+import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
+import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.row.EmptyRow;
+import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.datalink.DataLinkCatalogEntry;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
+import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.JET_SQL_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.JET_SQL_DS_FACTORY_ID;
@@ -206,7 +215,26 @@ public class JetSqlSerializerHook implements DataSerializerHook {
 
     public static final int UPDATE_DATA_LINK_OPERATION = 89;
 
-    public static final int LEN = UPDATE_DATA_LINK_OPERATION + 1;
+    public static final int QUERY_DATA_TYPE = 90;
+
+    public static final int QUERY_ID = 91;
+
+    public static final int ROW_HEAP = 92;
+    public static final int ROW_EMPTY = 93;
+
+    public static final int LAZY_TARGET = 94;
+
+    public static final int TARGET_DESCRIPTOR_GENERIC = 95;
+
+    public static final int QUERY_PATH = 96;
+
+    public static final int INTERVAL_YEAR_MONTH = 97;
+    public static final int INTERVAL_DAY_SECOND = 98;
+
+    public static final int QUERY_DATA_TYPE_FIELD = 99;
+
+
+    public static final int LEN = QUERY_DATA_TYPE_FIELD + 1;
 
     @Override
     public int getFactoryId() {
@@ -319,6 +347,26 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[TYPE] = arg -> new Type();
         constructors[TYPE_FIELD] = arg -> new Type.TypeField();
         constructors[DATA_LINK] = arg -> new DataLinkCatalogEntry();
+
+
+        constructors[QUERY_DATA_TYPE] = arg -> new QueryDataType();
+
+        constructors[QUERY_ID] = arg -> new QueryId();
+
+        constructors[ROW_HEAP] = arg -> new HeapRow();
+        constructors[ROW_EMPTY] = arg -> EmptyRow.INSTANCE;
+
+        constructors[LAZY_TARGET] = arg -> new LazyTarget();
+
+        constructors[TARGET_DESCRIPTOR_GENERIC] = arg -> GenericQueryTargetDescriptor.DEFAULT;
+
+        constructors[QUERY_PATH] = arg -> new QueryPath();
+
+        constructors[INTERVAL_YEAR_MONTH] = arg -> new SqlYearMonthInterval();
+        constructors[INTERVAL_DAY_SECOND] = arg -> new SqlDaySecondInterval();
+
+        constructors[QUERY_DATA_TYPE_FIELD] = arg -> new QueryDataType.QueryDataTypeField();
+
 
         return new ArrayDataSerializableFactory(constructors);
     }
