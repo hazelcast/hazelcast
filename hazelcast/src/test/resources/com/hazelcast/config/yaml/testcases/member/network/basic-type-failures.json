@@ -15,7 +15,7 @@
         "failure-detector": [],
         "rest-api": null,
         "memcache-protocol": false,
-        "alto-socket": {
+        "tpc-socket": {
           "port-range": 14000,
           "receive-buffer-size-kb": "256",
           "send-buffer-size-kb": "256"
@@ -28,26 +28,26 @@
     "pointerToViolation": "#/hazelcast/network",
     "causingExceptions": [
       {
-        "schemaLocation": "#/definitions/AltoSocketConfig",
-        "pointerToViolation": "#/hazelcast/network/alto-socket",
+        "schemaLocation": "#/definitions/TpcSocketConfig",
+        "pointerToViolation": "#/hazelcast/network/tpc-socket",
         "causingExceptions": [
           {
-            "schemaLocation": "#/definitions/AltoSocketConfig/properties/port-range",
-            "pointerToViolation": "#/hazelcast/network/alto-socket/port-range",
+            "schemaLocation": "#/definitions/TpcSocketConfig/properties/port-range",
+            "pointerToViolation": "#/hazelcast/network/tpc-socket/port-range",
             "causingExceptions": [],
             "keyword": "type",
             "message": "expected type: String, found: Integer"
           },
           {
-            "schemaLocation": "#/definitions/AltoSocketConfig/properties/receive-buffer-size-kb",
-            "pointerToViolation": "#/hazelcast/network/alto-socket/receive-buffer-size-kb",
+            "schemaLocation": "#/definitions/TpcSocketConfig/properties/receive-buffer-size-kb",
+            "pointerToViolation": "#/hazelcast/network/tpc-socket/receive-buffer-size-kb",
             "causingExceptions": [],
             "keyword": "type",
             "message": "expected type: Integer, found: String"
           },
           {
-            "schemaLocation": "#/definitions/AltoSocketConfig/properties/send-buffer-size-kb",
-            "pointerToViolation": "#/hazelcast/network/alto-socket/send-buffer-size-kb",
+            "schemaLocation": "#/definitions/TpcSocketConfig/properties/send-buffer-size-kb",
+            "pointerToViolation": "#/hazelcast/network/tpc-socket/send-buffer-size-kb",
             "causingExceptions": [],
             "keyword": "type",
             "message": "expected type: Integer, found: String"

@@ -84,11 +84,11 @@ public final class HeartbeatManager {
             for (ClientConnection connection : connectionsView) {
                 check(connection, now);
 
-                // Check Alto channels as well, if they exist
-                Channel[] altoChannels = connection.getAltoChannels();
-                if (altoChannels != null) {
-                    for (Channel altoChannel : altoChannels) {
-                        check(altoChannel, connection, now);
+                // Check TPC channels as well, if they exist
+                Channel[] tpcChannels = connection.getTpcChannels();
+                if (tpcChannels != null) {
+                    for (Channel tpcChannel : tpcChannels) {
+                        check(tpcChannel, connection, now);
                     }
                 }
             }
@@ -111,26 +111,26 @@ public final class HeartbeatManager {
             }
         }
 
-        private void check(Channel altoChannel, ClientConnection connection, long now) {
-            if (altoChannel.isClosed() || !connection.isAlive()) {
+        private void check(Channel tpcChannel, ClientConnection connection, long now) {
+            if (tpcChannel.isClosed() || !connection.isAlive()) {
                 return;
             }
 
-            long lastReadTime = altoChannel.lastReadTimeMillis();
+            long lastReadTime = tpcChannel.lastReadTimeMillis();
             // TODO: remove the lastReadTime > 0 check while doing the
             //  auth changes. Right now, it is needed because we are
             //  not reading anything during the initial connection, hence
             //  it is returning -1, which fails the check immediately
             if (lastReadTime > 0 && now - lastReadTime > heartbeatTimeoutMillis) {
-                String message = "Heartbeat failed over the Alto channel: " + altoChannel + " for connection: " + connection;
+                String message = "Heartbeat failed over the TPC channel: " + tpcChannel + " for connection: " + connection;
                 logger.warning(message);
                 connection.close("Heartbeat timed out", new TargetDisconnectedException(message));
                 return;
             }
 
-            if (now - altoChannel.lastWriteTimeMillis() > heartbeatIntervalMillis) {
-                ConcurrentMap attributeMap = altoChannel.attributeMap();
-                ClientConnection adapter = (ClientConnection) attributeMap.get(AltoChannelClientConnectionAdapter.class);
+            if (now - tpcChannel.lastWriteTimeMillis() > heartbeatIntervalMillis) {
+                ConcurrentMap attributeMap = tpcChannel.attributeMap();
+                ClientConnection adapter = (ClientConnection) attributeMap.get(TpcChannelClientConnectionAdapter.class);
                 sendPing(adapter);
             }
         }

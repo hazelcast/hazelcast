@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.mongodb.impl;
 
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
@@ -367,7 +368,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
     }
 
     private final class StreamMongoReader extends MongoChunkedReader {
-        private final FunctionEx<ChangeStreamDocument<Document>, I> mapFn;
+        private final BiFunctionEx<ChangeStreamDocument<Document>, Long, I> mapFn;
         private final BsonTimestamp startTimestamp;
         private final List<Bson> aggregates;
         private final EventTimeMapper<I> eventTimeMapper;
@@ -377,7 +378,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
         private StreamMongoReader(
                 String databaseName,
                 String collectionName,
-                FunctionEx<ChangeStreamDocument<Document>, I> mapFn,
+                BiFunctionEx<ChangeStreamDocument<Document>, Long, I> mapFn,
                 BsonTimestamp startTimestamp,
                 List<Bson> aggregates,
                 EventTimeMapper<I> eventTimeMapper
@@ -430,7 +431,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
                             ChangeStreamDocument<Document> doc = (ChangeStreamDocument<Document>) input;
                             resumeToken = doc.getResumeToken();
                             long eventTime = clusterTime(doc);
-                            I item = mapFn.apply(doc);
+                            I item = mapFn.apply(doc, eventTime);
                             return eventTimeMapper.flatMapEvent(item, 0, eventTime);
                         });
             } catch (MongoException e) {

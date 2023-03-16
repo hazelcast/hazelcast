@@ -65,7 +65,7 @@ public final class DataLinkTestUtil {
 
     public static class DummyDataLink extends DataLinkBase {
 
-        private boolean closed;
+        private volatile boolean closed;
 
         public DummyDataLink(DataLinkConfig config) {
             super(config);
