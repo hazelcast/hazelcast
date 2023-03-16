@@ -508,7 +508,7 @@
         <dependency>
             <groupId>com.github.erosb</groupId>
             <artifactId>everit-json-schema</artifactId>
-            <version>1.14.1</version>
+            <version>1.14.2</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.re2j</groupId>
@@ -575,8 +575,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
+            <groupId>ch.qos.reload4j</groupId>
+            <artifactId>reload4j</artifactId>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
