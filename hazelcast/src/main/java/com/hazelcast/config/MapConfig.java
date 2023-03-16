@@ -828,7 +828,6 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
     }
 
     public MapConfig setPartitioningAttributeConfigs(final List<PartitioningAttributeConfig> partitioningAttributeConfigs) {
-        checkNotNull(partitioningAttributeConfigs, "PartitioningAttributeConfigs cannot be null");
         checkNoNullInside(partitioningAttributeConfigs,
                 "PartitioningAttributeConfig elements can not be null");
         this.partitioningAttributeConfigs = partitioningAttributeConfigs;
