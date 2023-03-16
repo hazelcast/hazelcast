@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpcengine;
 
-import com.hazelcast.internal.tpcengine.nio.NioReactor;
+import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,13 +35,12 @@ import static org.junit.Assert.assertTrue;
 
 public class PromiseTest {
 
-    private NioReactor reactor;
+    private Reactor reactor;
     private PromiseAllocator promiseAllocator;
 
     @Before
     public void before() {
-        reactor = new NioReactor();
-        reactor.start();
+        reactor = new NioReactorBuilder().build().start();
 
         promiseAllocator = new PromiseAllocator(reactor.eventloop, 1024);
     }
