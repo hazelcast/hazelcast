@@ -36,7 +36,7 @@ public class DataLinkConsistencyChecker {
     // sqlCatalog supposed to be initialized lazily
     private IMap<Object, Object> sqlCatalog;
 
-    private boolean initialized = false;
+    private boolean initialized;
 
     public DataLinkConsistencyChecker(HazelcastInstance instance, NodeEngine nodeEngine) {
         this.hazelcastInstance = instance;
