@@ -35,6 +35,7 @@ import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.executejar.ExecuteJobParameters;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -66,19 +67,20 @@ public final class BootstrappedInstanceProxy implements HazelcastInstance {
 
     private static final ILogger LOGGER = Logger.getLogger(BootstrappedInstanceProxy.class);
 
-    private HazelcastInstance instance;
-    private BootstrappedJetProxy jetProxy;
+    private final HazelcastInstance instance;
+
+    private final BootstrappedJetProxy jetProxy;
 
     private boolean shutDownAllowed = true;
 
-    private BootstrappedInstanceProxy() {
+    private BootstrappedInstanceProxy(HazelcastInstance instance, JetService jetService) {
+        this.instance = instance;
+        this.jetProxy = new BootstrappedJetProxy(jetService);
     }
 
     public static BootstrappedInstanceProxy createWithJetProxy(@Nonnull HazelcastInstance instance) {
-        BootstrappedInstanceProxy proxy = new BootstrappedInstanceProxy();
-        proxy.instance = instance;
-        proxy.jetProxy = new BootstrappedJetProxy(instance.getJet());
-        return proxy;
+        JetService jetService = instance.getJet();
+        return new BootstrappedInstanceProxy(instance, jetService);
     }
 
     public void setThreadLocalParameters(ExecuteJobParameters executeJobParameters) {
