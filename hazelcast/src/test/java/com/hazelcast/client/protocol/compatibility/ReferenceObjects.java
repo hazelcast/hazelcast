@@ -928,9 +928,8 @@ public class ReferenceObjects {
     public static SqlError anSqlError = new SqlError(anInt, aString, aUUID, aBoolean, aString);
     public static SqlPage aSqlPage = SqlPage.fromColumns(Collections.singletonList(SqlColumnType.INTEGER), Collections.singletonList(Arrays.asList(1, 2, 3, 4)), true);
     public static HazelcastJsonValue aHazelcastJsonValue = new HazelcastJsonValue("{'value': ''}");
-    public static List<PartitioningAttributeConfig> aListOfPartitioningAttributeConfigs = Arrays.asList(
-            new PartitioningAttributeConfig("attr1"),
-            new PartitioningAttributeConfig("attr2")
+    public static List<PartitioningAttributeConfig> aListOfPartitioningAttributeConfigs = Collections.singletonList(
+            new PartitioningAttributeConfig(aString)
     );
     public static PartitioningAttributeConfig aPartitioningAttributeConfig = new PartitioningAttributeConfig("attr1");
 }

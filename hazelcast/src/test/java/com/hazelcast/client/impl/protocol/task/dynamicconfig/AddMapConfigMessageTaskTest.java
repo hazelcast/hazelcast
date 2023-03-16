@@ -26,6 +26,7 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMapConfigCodec;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
@@ -50,6 +51,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+
+import java.util.Arrays;
 
 import static com.hazelcast.cluster.Address.createUnresolvedAddress;
 import static org.junit.Assert.assertEquals;
@@ -188,6 +191,53 @@ public class AddMapConfigMessageTaskTest {
                 mapConfig.getDataPersistenceConfig(),
                 mapConfig.getTieredStoreConfig(),
                 null
+        );
+        AddMapConfigMessageTask addMapConfigMessageTask = new AddMapConfigMessageTask(addMapConfigClientMessage, mockNode, mockConnection);
+        addMapConfigMessageTask.run();
+        MapConfig transmittedMapConfig = (MapConfig) addMapConfigMessageTask.getConfig();
+        assertEquals(mapConfig, transmittedMapConfig);
+    }
+
+    @Test
+    public void testPartitioningAttributeConfigsTransmittedCorrectly() {
+        MapConfig mapConfig = new MapConfig("my-map");
+        mapConfig.setPartitioningAttributeConfigs(Arrays.asList(
+                new PartitioningAttributeConfig("attr1"),
+                new PartitioningAttributeConfig("attr2")
+        ));
+
+        ClientMessage addMapConfigClientMessage = DynamicConfigAddMapConfigCodec.encodeRequest(
+                mapConfig.getName(),
+                mapConfig.getBackupCount(),
+                mapConfig.getAsyncBackupCount(),
+                mapConfig.getTimeToLiveSeconds(),
+                mapConfig.getMaxIdleSeconds(),
+                null,
+                mapConfig.isReadBackupData(),
+                mapConfig.getCacheDeserializedValues().name(),
+                mapConfig.getMergePolicyConfig().getPolicy(),
+                mapConfig.getMergePolicyConfig().getBatchSize(),
+                mapConfig.getInMemoryFormat().name(),
+                null,
+                null,
+                mapConfig.isStatisticsEnabled(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                mapConfig.getMetadataPolicy().getId(),
+                mapConfig.isPerEntryStatsEnabled(),
+                mapConfig.getDataPersistenceConfig(),
+                mapConfig.getTieredStoreConfig(),
+                mapConfig.getPartitioningAttributeConfigs()
         );
         AddMapConfigMessageTask addMapConfigMessageTask = new AddMapConfigMessageTask(addMapConfigClientMessage, mockNode, mockConnection);
         addMapConfigMessageTask.run();
