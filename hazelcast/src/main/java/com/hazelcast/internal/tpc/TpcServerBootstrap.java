@@ -151,14 +151,12 @@ public class TpcServerBootstrap {
     }
 
     private int loadEventloopCount() {
-        int eventloopCount;
         String eventloopCountString = nodeEngine.getProperties().getString(TPC_EVENTLOOP_COUNT);
         if (eventloopCountString != null) {
-            eventloopCount = Integer.parseInt(eventloopCountString);
+            return Integer.parseInt(eventloopCountString);
         } else {
-            eventloopCount = config.getTpcConfig().getEventloopCount();
+            return config.getTpcConfig().getEventloopCount();
         }
-        return eventloopCount;
     }
 
     public void start() {
