@@ -28,6 +28,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,9 +37,9 @@ import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.unset;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 public final class MongoUtilities {
+    private static final int MILLIS_TO_NANOS = 1000 * 1000;
 
     private MongoUtilities() {
     }
@@ -118,7 +119,8 @@ public final class MongoUtilities {
         if (time == null) {
             return null;
         }
-        Instant instant = Instant.ofEpochMilli(SECONDS.toMillis(time.getTime()));
-        return LocalDateTime.from(instant);
+        long v = time.getValue();
+        int nanoOfSecond = (int) (v % 1000) * MILLIS_TO_NANOS;
+        return LocalDateTime.ofEpochSecond(v / 1000, nanoOfSecond, ZoneOffset.UTC);
     }
 }

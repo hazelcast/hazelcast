@@ -40,7 +40,6 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Date;
@@ -50,6 +49,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.bsonTimestampToLocalDateTime;
 import static java.util.Locale.ROOT;
 import static java.util.stream.Collectors.toList;
 
@@ -60,8 +60,6 @@ final class BsonTypes {
 
     private static final Map<String, BsonType> BSON_NAME_TO_TYPE = generateBsonNameToBsonTypeMapping();
     private static final Map<Class<?>, BsonType> JAVA_TYPE_TO_BSON_TYPE = generateJavaClassToBsonTypeMapping();
-
-    private static final int MILLIS_TO_NANOS = 1000 * 1000;
 
     private BsonTypes() {
     }
@@ -176,7 +174,7 @@ final class BsonTypes {
             return LocalDateTime.from(new Date(v.getValue()).toInstant());
         }
         if (value instanceof BsonTimestamp) {
-            return timestampToLocalDateTime((BsonTimestamp) value);
+            return bsonTimestampToLocalDateTime((BsonTimestamp) value);
         }
         if (value instanceof BsonJavaScript) {
             return ((BsonJavaScript) value).getCode();
@@ -209,13 +207,6 @@ final class BsonTypes {
             return Document.parse(((HazelcastJsonValue) value).getValue());
         }
         return orElse.apply(value);
-    }
-
-    @SuppressWarnings("checkstyle:MagicNumber")
-    private static LocalDateTime timestampToLocalDateTime(BsonTimestamp value) {
-        long v = value.getValue();
-        int nanoOfSecond = (int) (v % 1000) * MILLIS_TO_NANOS;
-        return LocalDateTime.ofEpochSecond(v / 1000, nanoOfSecond, ZoneOffset.UTC);
     }
 
 
