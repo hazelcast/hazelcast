@@ -16,7 +16,6 @@
 
 package com.hazelcast.datalink.impl;
 
-import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkEntry;
 import com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource;
@@ -68,8 +67,11 @@ public class DataLinkConsistencyChecker {
                 .filter(en -> en.getValue().source == DataLinkSource.SQL)
                 .collect(Collectors.toList());
 
-        for (Map.Entry<Object, Object> entry : sqlCatalog.entrySet()) {
-            DataLinkCatalogEntry dl = (DataLinkCatalogEntry) entry.getValue();
+        for (Object catalogItem : sqlCatalog.values()) {
+            if (!(catalogItem instanceof DataLinkCatalogEntry)) {
+                continue;
+            }
+            DataLinkCatalogEntry dl = (DataLinkCatalogEntry) catalogItem;
             dataLinkService.replaceSqlDataLink(dl.getName(), dl.getType(), dl.getOptions());
         }
 
@@ -87,12 +89,4 @@ public class DataLinkConsistencyChecker {
         return initialized;
     }
 
-    private boolean dataLinksAreEqual(DataLinkEntry pair, DataLinkCatalogEntry catalogDataLink) {
-        DataLinkConfig catalogDLConfig = dataLinkService.toConfig(
-                catalogDataLink.getName(),
-                catalogDataLink.getType(),
-                catalogDataLink.getOptions());
-
-        return pair.instance.getConfig().equals(catalogDLConfig);
-    }
 }
