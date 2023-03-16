@@ -18,8 +18,8 @@ package com.hazelcast.datalink.impl;
 
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource;
 import com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkEntry;
+import com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -68,29 +68,17 @@ public class DataLinkConsistencyChecker {
                 .filter(en -> en.getValue().source == DataLinkSource.SQL)
                 .collect(Collectors.toList());
 
+        for (Map.Entry<Object, Object> entry : sqlCatalog.entrySet()) {
+            DataLinkCatalogEntry dl = (DataLinkCatalogEntry) entry.getValue();
+            dataLinkService.replaceSqlDataLink(dl.getName(), dl.getType(), dl.getOptions());
+        }
+
         for (Map.Entry<String, DataLinkEntry> entry : sqlEntries) {
             Object catalogValue = sqlCatalog.get(QueryUtils.wrapDataLinkKey(entry.getKey()));
 
             // Data link is absent in sql catalog -> remove it from data link service.
             if (catalogValue == null) {
                 dataLinkService.removeDataLink(entry.getKey());
-            } else {
-                // Try to alter outdated data links
-                DataLinkCatalogEntry dl = (DataLinkCatalogEntry) catalogValue;
-                if (!dataLinksAreEqual(entry.getValue(), dl)) {
-                    dataLinkService.replaceSqlDataLink(dl.getName(), dl.getType(), dl.getOptions());
-                }
-            }
-        }
-
-        // Data link is not present in service -> add it
-        for (Map.Entry<Object, Object> entry : sqlCatalog.entrySet()) {
-            if (!(entry.getValue() instanceof DataLinkCatalogEntry)) {
-                continue;
-            }
-            DataLinkCatalogEntry dl = (DataLinkCatalogEntry) entry.getValue();
-            if (!dataLinkService.existsSqlDataLink(dl.getName())) {
-                dataLinkService.replaceSqlDataLink(dl.getName(), dl.getType(), dl.getOptions());
             }
         }
     }
