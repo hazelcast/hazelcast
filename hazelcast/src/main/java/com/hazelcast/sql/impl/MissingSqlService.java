@@ -24,7 +24,7 @@ import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
 
 import javax.annotation.Nonnull;
 
-public class DisabledSqlService implements InternalSqlService {
+public class MissingSqlService implements InternalSqlService {
 
     @Nonnull
     @Override
@@ -83,7 +83,7 @@ public class DisabledSqlService implements InternalSqlService {
     }
 
     private RuntimeException throwDisabled() {
-        throw new HazelcastSqlException("Cannot execute SQL query because \"hazelcast-sql\" module is not in the classpath.",
+        throw new HazelcastSqlException("Cannot execute SQL query because \"hazelcast-sql\" module is not in the classpath",
                 null);
     }
 }

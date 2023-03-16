@@ -77,8 +77,8 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
-import com.hazelcast.sql.impl.DisabledSqlService;
 import com.hazelcast.sql.impl.InternalSqlService;
+import com.hazelcast.sql.impl.MissingSqlService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.version.MemberVersion;
@@ -204,7 +204,7 @@ public class NodeEngineImpl implements NodeEngine {
             clz = Class.forName("com.hazelcast.sql.impl.SqlServiceImpl");
         } catch (ClassNotFoundException e) {
             // this is normal if the hazelcast-sql module isn't present - return disabled service
-            return new DisabledSqlService();
+            return new MissingSqlService();
         }
 
         try {
