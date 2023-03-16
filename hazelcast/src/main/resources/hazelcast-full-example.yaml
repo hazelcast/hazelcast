@@ -3884,7 +3884,7 @@ hazelcast:
   #
   #    Hazelcast TPC is the next generation of Hazelcast built with thread per core architecture.
   #    It's still being developed and everything is subject to change. TPC is disabled by default.
-  apc:
+  tpc:
     enabled: true
     # Configures the number of eventloops. It's equal to available processor count by default.
     eventloop-count: 12
