@@ -15,8 +15,6 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-import com.hazelcast.internal.util.StringUtil;
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.mongodb.datalink.MongoDataLink;
 import com.hazelcast.jet.mongodb.impl.MongoUtilities;
 import com.hazelcast.spi.impl.NodeEngine;

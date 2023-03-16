@@ -39,6 +39,10 @@ import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public final class MongoUtilities {
+    /**
+     * 1 millisecond converted to nanoseconds.
+     */
+    @SuppressWarnings("checkstyle:MagicNumber")
     private static final int MILLIS_TO_NANOS = 1000 * 1000;
 
     private MongoUtilities() {
@@ -115,12 +119,16 @@ public final class MongoUtilities {
      * Converts given bson timest1amp to unix epoch.
      */
     @Nullable
+    @SuppressWarnings("checkstyle:MagicNumber")
     public static LocalDateTime bsonTimestampToLocalDateTime(@Nullable BsonTimestamp time) {
         if (time == null) {
             return null;
         }
         long v = time.getValue();
-        int nanoOfSecond = (int) (v % 1000) * MILLIS_TO_NANOS;
+        // gets last 3 digits - millisecond in the epoch timestamp - and converts it to nanoseconds
+        int millisOfSecond = (int) (v % 1000);
+        int nanoOfSecond = millisOfSecond * MILLIS_TO_NANOS;
         return LocalDateTime.ofEpochSecond(v / 1000, nanoOfSecond, ZoneOffset.UTC);
     }
+
 }
