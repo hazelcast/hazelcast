@@ -24,34 +24,34 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.sql.impl.QueryUtils.wrapDataLinkKey;
+
 public class DataLinkStorage extends AbstractSchemaStorage {
-    // This is an arbitrarily-chosen prefix so that datalink names don't clash with other object names
-    private static final String KEY_PREFIX = "57ae1d3a-d379-44cb-bb60-86b1d2dcd744-";
 
     public DataLinkStorage(NodeEngine nodeEngine) {
         super(nodeEngine);
     }
 
     public DataLinkCatalogEntry get(@Nonnull String name) {
-        return (DataLinkCatalogEntry) storage().get(wrap(name));
+        return (DataLinkCatalogEntry) storage().get(wrapDataLinkKey(name));
     }
 
     void put(@Nonnull String name, @Nonnull DataLinkCatalogEntry dataLinkCatalogEntry) {
-        storage().put(wrap(name), dataLinkCatalogEntry);
+        storage().put(wrapDataLinkKey(name), dataLinkCatalogEntry);
     }
 
     /**
      * @return true, if the datalink was added
      */
     boolean putIfAbsent(@Nonnull String name, @Nonnull DataLinkCatalogEntry dataLinkCatalogEntry) {
-        return storage().putIfAbsent(wrap(name), dataLinkCatalogEntry) == null;
+        return storage().putIfAbsent(wrapDataLinkKey(name), dataLinkCatalogEntry) == null;
     }
 
     /**
      * @return true, if the datalink was removed
      */
     boolean removeDataLink(@Nonnull String name) {
-        return storage().remove(wrap(name)) != null;
+        return storage().remove(wrapDataLinkKey(name)) != null;
     }
 
     @Nonnull
@@ -70,10 +70,5 @@ public class DataLinkStorage extends AbstractSchemaStorage {
                 .filter(obj -> obj instanceof DataLinkCatalogEntry)
                 .map(obj -> (DataLinkCatalogEntry) obj)
                 .collect(Collectors.toList());
-    }
-
-    @Nonnull
-    private static String wrap(@Nonnull String dataLinkKey) {
-        return KEY_PREFIX + dataLinkKey;
     }
 }

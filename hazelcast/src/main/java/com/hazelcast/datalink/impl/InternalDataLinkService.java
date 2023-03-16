@@ -57,12 +57,21 @@ public interface InternalDataLinkService extends DataLinkService {
     void replaceSqlDataLink(String name, String type, Map<String, String> options);
 
     /**
-     * Returns if a DataLink with given name exists in the config
+     * Returns if a {@link DataLink} with given name exists in the config
      *
      * @param name name of the DataLink
-     * @return true if a DataLink exists in the config, false otherwise
+     * @return true if a {@link DataLink} exists in the config, false otherwise
      */
     boolean existsConfigDataLink(String name);
+
+    /**
+     * Returns if a {@link DataLink} with given name exists, created by SQL.
+     *
+     * @param name name of the DataLink
+     * @return true if a {@link DataLink} exists, created by SQL; false otherwise
+     */
+    boolean existsSqlDataLink(String name);
+
 
     /**
      * Removes a DataLink.

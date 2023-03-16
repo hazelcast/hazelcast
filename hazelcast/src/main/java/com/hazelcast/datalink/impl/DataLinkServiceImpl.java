@@ -111,6 +111,12 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
         return dl != null && dl.source == CONFIG;
     }
 
+    @Override
+    public boolean existsSqlDataLink(String name) {
+        DataLinkEntry dl = dataLinks.get(name);
+        return dl != null && dl.source == SQL;
+    }
+
     // package-private for testing purposes
     DataLinkConfig toConfig(String name, String type, Map<String, String> options) {
         Properties properties = new Properties();
@@ -196,7 +202,7 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
         });
     }
 
-    public Map<String, DataLinkSourcePair> getDataLinks() {
+    public Map<String, DataLinkEntry> getDataLinks() {
         return dataLinks;
     }
 

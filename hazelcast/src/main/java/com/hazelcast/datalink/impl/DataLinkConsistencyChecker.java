@@ -19,12 +19,12 @@ package com.hazelcast.datalink.impl;
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource;
-import com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSourcePair;
+import com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkEntry;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.schema.datalink.DataLink;
+import com.hazelcast.sql.impl.schema.datalink.DataLinkCatalogEntry;
 
 import java.util.List;
 import java.util.Map;
@@ -62,13 +62,13 @@ public class DataLinkConsistencyChecker {
             return;
         }
 
-        List<Map.Entry<String, DataLinkSourcePair>> sqlEntries = dataLinkService.getDataLinks()
+        List<Map.Entry<String, DataLinkEntry>> sqlEntries = dataLinkService.getDataLinks()
                 .entrySet()
                 .stream()
                 .filter(en -> en.getValue().source == DataLinkSource.SQL)
                 .collect(Collectors.toList());
 
-        for (Map.Entry<String, DataLinkSourcePair> entry : sqlEntries) {
+        for (Map.Entry<String, DataLinkEntry> entry : sqlEntries) {
             Object catalogValue = sqlCatalog.get(QueryUtils.wrapDataLinkKey(entry.getKey()));
 
             // Data link is absent in sql catalog -> remove it from data link service.
@@ -76,22 +76,21 @@ public class DataLinkConsistencyChecker {
                 dataLinkService.removeDataLink(entry.getKey());
             } else {
                 // Try to alter outdated data links
-                DataLink dl = (DataLink) catalogValue;
+                DataLinkCatalogEntry dl = (DataLinkCatalogEntry) catalogValue;
                 if (!dataLinksAreEqual(entry.getValue(), dl)) {
-                    dataLinkService.removeDataLink(entry.getKey());
-                    dataLinkService.createSqlDataLink(dl.getName(), dl.getType(), dl.getOptions(), dl.isReplace());
+                    dataLinkService.replaceSqlDataLink(dl.getName(), dl.getType(), dl.getOptions());
                 }
             }
         }
 
         // Data link is not present in service -> add it
         for (Map.Entry<Object, Object> entry : sqlCatalog.entrySet()) {
-            if (!(entry.getValue() instanceof DataLink)) {
+            if (!(entry.getValue() instanceof DataLinkCatalogEntry)) {
                 continue;
             }
-            DataLink dl = (DataLink) entry.getValue();
-            if (!dataLinkService.existsDataLink(dl.getName())) {
-                dataLinkService.createSqlDataLink(dl.getName(), dl.getType(), dl.getOptions(), dl.isReplace());
+            DataLinkCatalogEntry dl = (DataLinkCatalogEntry) entry.getValue();
+            if (!dataLinkService.existsSqlDataLink(dl.getName())) {
+                dataLinkService.replaceSqlDataLink(dl.getName(), dl.getType(), dl.getOptions());
             }
         }
     }
@@ -100,7 +99,7 @@ public class DataLinkConsistencyChecker {
         return initialized;
     }
 
-    private boolean dataLinksAreEqual(DataLinkSourcePair pair, DataLink catalogDataLink) {
+    private boolean dataLinksAreEqual(DataLinkEntry pair, DataLinkCatalogEntry catalogDataLink) {
         DataLinkConfig catalogDLConfig = dataLinkService.toConfig(
                 catalogDataLink.getName(),
                 catalogDataLink.getType(),
