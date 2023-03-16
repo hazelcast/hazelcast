@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.mongodb;
 
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -355,7 +356,8 @@ public final class MongoSourceBuilder {
             this.name = name;
             this.params = new ReadMongoParams<>(true);
             this.params.setClientSupplier(clientSupplier);
-            this.params.setMapStreamFn((FunctionEx<ChangeStreamDocument<Document>, T>) streamToClass(Document.class));
+            this.params.setMapStreamFn(
+                    (BiFunctionEx<ChangeStreamDocument<Document>, Long, T>) streamToClass(Document.class));
         }
         @SuppressWarnings("unchecked")
         private Stream(
@@ -366,7 +368,8 @@ public final class MongoSourceBuilder {
             this.name = name;
             this.params = new ReadMongoParams<>(true);
             this.params.setDataLinkRef(dataLinkRef);
-            this.params.setMapStreamFn((FunctionEx<ChangeStreamDocument<Document>, T>) streamToClass(Document.class));
+            this.params.setMapStreamFn(
+                    (BiFunctionEx<ChangeStreamDocument<Document>, Long, T>) streamToClass(Document.class));
         }
 
         /**
@@ -476,13 +479,13 @@ public final class MongoSourceBuilder {
 
         /**
          * @param mapFn   transforms the queried document to the desired output
-         *                object
+         *                object. Second parameter will be the event timestamp.
          * @param <T_NEW> type of the emitted object
          * @return this builder
          */
         @Nonnull
         @SuppressWarnings("unchecked")
-        public <T_NEW> Stream<T_NEW> mapFn(@Nonnull FunctionEx<ChangeStreamDocument<Document>, T_NEW> mapFn) {
+        public <T_NEW> Stream<T_NEW> mapFn(@Nonnull BiFunctionEx<ChangeStreamDocument<Document>, Long, T_NEW> mapFn) {
             checkSerializable(mapFn, "mapFn");
             Stream<T_NEW> newThis = (Stream<T_NEW>) this;
             newThis.params.setMapStreamFn(mapFn);
