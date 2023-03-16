@@ -7,7 +7,7 @@ for each member's pod. The discovery plugin now matches only the private IP per 
 * Introduced the `hazelcast.discovery.public.address.fallback` property to enable smart client
 connectivity to Hazelcast clusters deployed on Kubernetes, and having advanced network configuration enabled.[#23920]
 
-== Fixes
+## Fixes
 
 * Fixed an issue where a ECS Fargate cluster was failing to start due to the `Failed to configure discovery strategies` error. [#23939]
 * Fixed an issue where the Hazelcast configuration was modified by the Jet engine, if the wildcard configuration is used and Jet is enabled; meaning the configurations made by the user was not being reflected. [#23877]
