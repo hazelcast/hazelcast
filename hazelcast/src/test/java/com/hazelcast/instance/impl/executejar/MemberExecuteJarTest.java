@@ -23,7 +23,6 @@ import com.hazelcast.jet.impl.AbstractJetInstance;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,6 +31,10 @@ import static org.mockito.Mockito.when;
 
 public class MemberExecuteJarTest {
 
+    // Empty method for testing because Method.class can not be mocked
+    public static void main(String[] args) {
+    }
+
     @Test
     public void testInvokeMain() throws InvocationTargetException, IllegalAccessException {
         HazelcastInstance hazelcastInstance = mock(HazelcastInstance.class);
@@ -39,13 +42,14 @@ public class MemberExecuteJarTest {
         when(hazelcastInstance.getJet()).thenReturn(abstractJetInstance);
         when(abstractJetInstance.getHazelcastInstance()).thenReturn(hazelcastInstance);
 
-        // Mock main method
-        Method method = mock(Method.class);
-
+        // Parameter for test
         BootstrappedInstanceProxy instanceProxy = BootstrappedInstanceProxy.createWithJetProxy(hazelcastInstance);
 
-        MemberExecuteJar memberExecuteJar = new MemberExecuteJar();
+        // Parameter for test. Empty main method
+        MainMethodFinder mainMethodFinder = new MainMethodFinder();
+        mainMethodFinder.getMainMethodOfClass(MemberExecuteJarTest.class);
 
+        // Parameter for test
         String jarPath = "jarPath";
         String snapshotName = "snapshotName";
         String jobName = "jobName";
@@ -53,9 +57,10 @@ public class MemberExecuteJarTest {
         ExecuteJobParameters executeJobParameters = new ExecuteJobParameters(jarPath, snapshotName, jobName);
 
         // Test that invokeMain sets thread local values in BootstrappedInstanceProxy
+        MemberExecuteJar memberExecuteJar = new MemberExecuteJar();
         memberExecuteJar.invokeMain(instanceProxy,
                 executeJobParameters,
-                method,
+                mainMethodFinder.mainMethod,
                 Collections.singletonList("jobArgs")
         );
 
