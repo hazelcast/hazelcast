@@ -146,7 +146,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
             assertThat(dataLink).isNotNull();
         }
     }
-    
+
     @Test
     public void when_dropDataLink_then_success() {
         String dlName1 = randomName();

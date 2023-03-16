@@ -110,10 +110,9 @@ SqlCreate SqlCreateType(Span span, boolean replace) :
     ]
     name = CompoundIdentifier()
     columns = TypeColumns()
-    [
-        <OPTIONS>
-        sqlOptions = SqlOptions()
-    ]
+
+    <OPTIONS>
+    sqlOptions = SqlOptions()
     {
         return new SqlCreateType(
             name,
