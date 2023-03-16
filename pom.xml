@@ -1167,7 +1167,8 @@
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.10</version>
+                        <!-- do not update to 1.6.10, it blocks release process -->
+                        <version>1.6.8</version>
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>release-repository</serverId>
