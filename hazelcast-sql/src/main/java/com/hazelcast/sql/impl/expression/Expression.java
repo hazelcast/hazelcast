@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.expression;
 
+import com.hazelcast.jet.impl.execution.CooperativeThread;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -74,7 +75,12 @@ public interface Expression<T> extends IdentifiedDataSerializable, Serializable 
     QueryDataType getType();
 
     /**
-     * @return boolean flag if expression is allowed to be used in cooperative processor.
+     * Returns a boolean flag whether this expression is allowed to be evaluated
+     * in cooperative processor.
+     * <p>
+     * Expressions returning false directly (i.e. not because their operands
+     * return false) should call {@link
+     * CooperativeThread#checkNonCooperative()}.
      */
     boolean isCooperative();
 

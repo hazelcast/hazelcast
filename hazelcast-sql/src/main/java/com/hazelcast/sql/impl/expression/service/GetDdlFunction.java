@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.service;
 
+import com.hazelcast.jet.impl.execution.CooperativeThread;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.QueryException;
@@ -86,6 +87,7 @@ public class GetDdlFunction extends TriExpression<String> {
 
     @Override
     public boolean isCooperative() {
+        CooperativeThread.checkNonCooperative();
         return false;
     }
 
