@@ -268,10 +268,11 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         Vertex vertex;
         if (program.getCondition() != null) {
             Expression<Boolean> filterExpr = dagBuildContext.convertFilter(wrap(rel.filter()));
+            assert filterExpr != null;
             vertex = dag.newUniqueVertex("Calc", mapUsingServiceP(
                     ServiceFactories.nonSharedService(ctx ->
                                     ExpressionUtil.calcFn(projection, filterExpr, ExpressionEvalContext.from(ctx)))
-                            .setCooperative(projection.stream().allMatch(Expression::isCooperative)),
+                            .setCooperative(projection.stream().allMatch(Expression::isCooperative) && filterExpr.isCooperative()),
                     (Function<JetSqlRow, JetSqlRow> calcFn, JetSqlRow row) -> calcFn.apply(row)));
         } else {
             vertex = dag.newUniqueVertex("Project", mapUsingServiceP(

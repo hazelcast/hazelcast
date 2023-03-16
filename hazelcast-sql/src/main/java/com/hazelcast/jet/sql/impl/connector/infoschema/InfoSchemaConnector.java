@@ -130,6 +130,11 @@ final class InfoSchemaConnector implements SqlConnector {
         }
 
         @Override
+        public boolean isCooperative() {
+            return predicate.isCooperative() && projection.stream().allMatch(Expression::isCooperative);
+        }
+
+        @Override
         public boolean complete() {
             return emitFromTraverser(traverser);
         }

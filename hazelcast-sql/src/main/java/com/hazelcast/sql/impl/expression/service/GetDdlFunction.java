@@ -90,11 +90,6 @@ public class GetDdlFunction extends TriExpression<String> {
     }
 
     @Override
-    public int getFactoryId() {
-        return JetSqlSerializerHook.F_ID;
-    }
-
-    @Override
     public int getClassId() {
         return JetSqlSerializerHook.EXPRESSION_GET_DDL;
     }
