@@ -81,6 +81,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
         collection.insertOne(new Document("firstName", "Han").append("lastName", "Solo").append("jedi", false));
         collection.insertOne(new Document("firstName", "Anakin").append("lastName", "Skywalker").append("jedi", true));
+        collection.insertOne(new Document("firstName", "Rey").append("jedi", true));
 
         execute("CREATE MAPPING " + collectionName
                 + " ("
@@ -97,11 +98,12 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
 
         String force = forceTwoSteps ? " and cast(jedi as varchar) = 'true' " : "";
         assertRowsAnyOrder("select firstName, lastName from " + collectionName
-                        + " where lastName = ? and jedi=true" + force,
+                        + " where (lastName = ? or lastName is null) and jedi=true" + force,
                 singletonList("Skywalker"),
                 asList(
                         new Row("Luke", "Skywalker"),
-                        new Row("Anakin", "Skywalker")
+                        new Row("Anakin", "Skywalker"),
+                        new Row("Rey", null)
                 )
         );
         assertEquals(forceTwoSteps, projectAndFilterFound.get());

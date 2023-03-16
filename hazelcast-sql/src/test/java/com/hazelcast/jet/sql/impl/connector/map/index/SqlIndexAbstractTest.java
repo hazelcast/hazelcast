@@ -657,7 +657,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         return keys;
     }
 
-    private IndexConfig getIndexConfig() {
+    protected IndexConfig getIndexConfig() {
         IndexConfig config = new IndexConfig().setName(INDEX_NAME).setType(indexType);
 
         config.addAttribute("field1");

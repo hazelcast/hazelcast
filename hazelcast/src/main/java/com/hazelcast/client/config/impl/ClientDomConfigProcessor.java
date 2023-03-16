@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.config.impl;
 
-import com.hazelcast.client.config.ClientAltoConfig;
+import com.hazelcast.client.config.ClientTpcConfig;
 import com.hazelcast.client.config.ClientCloudConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
@@ -65,7 +65,7 @@ import org.w3c.dom.Node;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.client.config.impl.ClientConfigSections.ALTO;
+import static com.hazelcast.client.config.impl.ClientConfigSections.TPC;
 import static com.hazelcast.client.config.impl.ClientConfigSections.BACKUP_ACK_TO_CLIENT;
 import static com.hazelcast.client.config.impl.ClientConfigSections.CLUSTER_NAME;
 import static com.hazelcast.client.config.impl.ClientConfigSections.CONNECTION_STRATEGY;
@@ -191,8 +191,8 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             handleInstanceTracking(node, clientConfig.getInstanceTrackingConfig());
         } else if (matches(SQL.getName(), nodeName)) {
             handleSql(node, clientConfig.getSqlConfig());
-        } else if (matches(ALTO.getName(), nodeName)) {
-            handleAlto(node, clientConfig.getAltoConfig());
+        } else if (matches(TPC.getName(), nodeName)) {
+            handleTpc(node, clientConfig.getTpcConfig());
         }
     }
 
@@ -799,9 +799,9 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleAlto(Node node, ClientAltoConfig altoConfig) {
+    private void handleTpc(Node node, ClientTpcConfig tpcConfig) {
         // enabled is a required attribute
         Node enabledNode = getNamedItemNode(node, "enabled");
-        altoConfig.setEnabled(getBooleanValue(getTextContent(enabledNode)));
+        tpcConfig.setEnabled(getBooleanValue(getTextContent(enabledNode)));
     }
 }

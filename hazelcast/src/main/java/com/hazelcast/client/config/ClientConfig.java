@@ -118,7 +118,7 @@ public class ClientConfig {
     private ClientMetricsConfig metricsConfig = new ClientMetricsConfig();
     private InstanceTrackingConfig instanceTrackingConfig = new InstanceTrackingConfig();
     private ClientSqlConfig sqlConfig = new ClientSqlConfig();
-    private ClientAltoConfig altoConfig = new ClientAltoConfig();
+    private ClientTpcConfig tpcConfig = new ClientTpcConfig();
 
     public ClientConfig() {
         listenerConfigs = new LinkedList<>();
@@ -184,7 +184,7 @@ public class ClientConfig {
         metricsConfig = new ClientMetricsConfig(config.metricsConfig);
         instanceTrackingConfig = new InstanceTrackingConfig(config.instanceTrackingConfig);
         sqlConfig = new ClientSqlConfig(config.sqlConfig);
-        altoConfig = new ClientAltoConfig(config.altoConfig);
+        tpcConfig = new ClientTpcConfig(config.tpcConfig);
     }
 
     /**
@@ -1009,29 +1009,29 @@ public class ClientConfig {
     }
 
     /**
-     * Returns the Alto configuration.
+     * Returns the ClientTpcConfig
      *
-     * @return the Alto configuration
+     * @return the ClientTpcConfig
      * @since 5.3
      */
     @Beta
     @Nonnull
-    public ClientAltoConfig getAltoConfig() {
-        return altoConfig;
+    public ClientTpcConfig getTpcConfig() {
+        return tpcConfig;
     }
 
     /**
-     * Sets the Alto configuration.
+     * Sets the TpcConfig
      *
-     * @param altoConfig Alto config to set
+     * @param tpcConfig TpcConfig to set
      * @return configured {@link ClientConfig} for chaining
-     * @throws IllegalArgumentException if the {@code altoConfig} is {@code null}
+     * @throws IllegalArgumentException if the {@code tpcConfig} is {@code null}
      * @since 5.3
      */
     @Beta
     @Nonnull
-    public ClientConfig setAltoConfig(@Nonnull ClientAltoConfig altoConfig) {
-        this.altoConfig = isNotNull(altoConfig, "altoConfig");
+    public ClientConfig setTpcConfig(@Nonnull ClientTpcConfig tpcConfig) {
+        this.tpcConfig = isNotNull(tpcConfig, "tpcConfig");
         return this;
     }
 
@@ -1041,7 +1041,7 @@ public class ClientConfig {
                 flakeIdGeneratorConfigMap, instanceName, labels, listenerConfigs, loadBalancer, loadBalancerClassName,
                 managedContext, metricsConfig, nativeMemoryConfig, nearCacheConfigMap, networkConfig, properties,
                 proxyFactoryConfigs, queryCacheConfigs, reliableTopicConfigMap, securityConfig, serializationConfig,
-                userCodeDeploymentConfig, userContext, instanceTrackingConfig, sqlConfig, altoConfig);
+                userCodeDeploymentConfig, userContext, instanceTrackingConfig, sqlConfig, tpcConfig);
     }
 
     @Override
@@ -1078,7 +1078,7 @@ public class ClientConfig {
                 && Objects.equals(userContext, other.userContext)
                 && Objects.equals(instanceTrackingConfig, other.instanceTrackingConfig)
                 && Objects.equals(sqlConfig, other.sqlConfig)
-                && Objects.equals(altoConfig, other.altoConfig);
+                && Objects.equals(tpcConfig, other.tpcConfig);
     }
 
     @Override
@@ -1107,7 +1107,7 @@ public class ClientConfig {
                 + ", metricsConfig=" + metricsConfig
                 + ", instanceTrackingConfig=" + instanceTrackingConfig
                 + ", sqlConfig=" + sqlConfig
-                + ", altoConfig=" + altoConfig
+                + ", tpcConfig=" + tpcConfig
                 + '}';
     }
 }

@@ -160,7 +160,7 @@ hazelcast:
       public-address: dummy
       # If the address should be reused. See NetworkConfig.setReuseAddress for more information.
       reuse-address: true
-      alto-socket:
+      tpc-socket:
         port-range: 14000-16000
         receive-buffer-size-kb: 256
         send-buffer-size-kb: 256
@@ -187,7 +187,7 @@ hazelcast:
         port: 9999
       public-address: 10.10.0.10
       reuse-address: true
-      alto-socket:
+      tpc-socket:
         port-range: 14000-16000
         receive-buffer-size-kb: 256
         send-buffer-size-kb: 256
@@ -211,7 +211,7 @@ hazelcast:
           enabled: false
         HEALTH_CHECK:
           enabled: true
-      alto-socket:
+      tpc-socket:
         port-range: 14000-16000
         receive-buffer-size-kb: 256
         send-buffer-size-kb: 256
@@ -222,7 +222,7 @@ hazelcast:
           factory-class-name: com.hazelcast.examples.MySSLContextFactory
           properties:
             foo: bar
-        alto-socket:
+        tpc-socket:
           port-range: 14000-16000
           receive-buffer-size-kb: 256
           send-buffer-size-kb: 256
@@ -240,7 +240,7 @@ hazelcast:
           interfaces:
             - 192.168.8.101
             - 10.20.10.100
-        alto-socket:
+        tpc-socket:
           port-range: 14000-16000
           receive-buffer-size-kb: 256
           send-buffer-size-kb: 256
@@ -250,7 +250,7 @@ hazelcast:
         auto-increment: false
         port-count: 10
         port: 6000
-      alto-socket:
+      tpc-socket:
         port-range: 14000-16000
         receive-buffer-size-kb: 256
         send-buffer-size-kb: 256
