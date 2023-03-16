@@ -68,10 +68,12 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         instance().getSql().execute("CREATE DATA LINK hazelcast.public." + dlName
                 + " TYPE \"" + DummyDataLink.class.getName() + "\" "
                 + " OPTIONS ('b' = 'c')");
-        DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
-        assertThat(dataLink).isNotNull();
-        assertThat(dataLink.getConfig().getClassName()).isEqualTo(DummyDataLink.class.getName());
-        assertThat(dataLink.getConfig().getProperties().get("b")).isEqualTo("c");
+        for (InternalDataLinkService dataLinkService : dataLinkServices) {
+            DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
+            assertThat(dataLink).isNotNull();
+            assertThat(dataLink.getConfig().getClassName()).isEqualTo(DummyDataLink.class.getName());
+            assertThat(dataLink.getConfig().getProperties().get("b")).isEqualTo("c");
+        }
     }
 
     @Test
@@ -144,17 +146,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
             assertThat(dataLink).isNotNull();
         }
     }
-
-    @Test
-    public void when_createDataLinkWithoutOptions_then_throws() {
-        String dlName = randomName();
-        assertThatThrownBy(() ->
-                instance().getSql().execute("CREATE DATA LINK " + dlName
-                        + " TYPE \"" + DummyDataLink.class.getName() + "\" "))
-                .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Was expecting:\n    \"OPTIONS\" ...");
-    }
-
+    
     @Test
     public void when_dropDataLink_then_success() {
         String dlName1 = randomName();

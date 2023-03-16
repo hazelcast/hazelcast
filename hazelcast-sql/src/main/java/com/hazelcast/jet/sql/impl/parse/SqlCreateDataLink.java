@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql.impl.parse;
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.impl.validate.ValidationUtil;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastCreateDataLinkOperator;
-import com.hazelcast.sql.impl.schema.datalink.DataLink;
+import com.hazelcast.sql.impl.schema.datalink.DataLinkCatalogEntry;
 import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlLiteral;
@@ -118,14 +118,14 @@ public class SqlCreateDataLink extends SqlCreate {
         unparseOptions(writer, options);
     }
 
-    public static String unparse(DataLink dataLink) {
+    public static String unparse(DataLinkCatalogEntry dataLink) {
         SqlPrettyWriter writer = new SqlPrettyWriter(SqlPrettyWriter.config());
 
         SqlCreateDataLink d = new SqlCreateDataLink(
                 SqlParserPos.ZERO, true, false,
-                identifier(CATALOG, SCHEMA_NAME_PUBLIC, dataLink.name()),
-                identifier(dataLink.type()),
-                nodeList(dataLink.options().entrySet(), o -> new SqlOption(
+                identifier(CATALOG, SCHEMA_NAME_PUBLIC, dataLink.getName()),
+                identifier(dataLink.getType()),
+                nodeList(dataLink.getOptions().entrySet(), o -> new SqlOption(
                         SqlLiteral.createCharString(o.getKey(), SqlParserPos.ZERO),
                         SqlLiteral.createCharString(o.getValue(), SqlParserPos.ZERO),
                         SqlParserPos.ZERO

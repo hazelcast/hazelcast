@@ -16,10 +16,10 @@
 
 package com.hazelcast.sql.impl.schema.datalink;
 
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import java.io.IOException;
 import java.util.Map;
@@ -82,12 +82,12 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return SqlDataSerializerHook.F_ID;
+        return JetSqlSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.DATA_LINK_CATALOG_ENTRY;
+        return JetSqlSerializerHook.DATA_LINK;
     }
 
     @Override

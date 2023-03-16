@@ -93,7 +93,7 @@ import com.hazelcast.sql.impl.expression.string.TrimFunction;
 import com.hazelcast.sql.impl.expression.string.UpperFunction;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
-import com.hazelcast.sql.impl.schema.datalink.DataLink;
+import com.hazelcast.sql.impl.schema.datalink.DataLinkCatalogEntry;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 
@@ -318,7 +318,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[VIEW] = arg -> new View();
         constructors[TYPE] = arg -> new Type();
         constructors[TYPE_FIELD] = arg -> new Type.TypeField();
-        constructors[DATA_LINK] = arg -> new DataLink();
+        constructors[DATA_LINK] = arg -> new DataLinkCatalogEntry();
 
         return new ArrayDataSerializableFactory(constructors);
     }
