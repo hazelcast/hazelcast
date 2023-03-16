@@ -58,9 +58,12 @@ import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.TCP_NODELAY;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * The TpcServerBootstrap is responsible for starting up the {@link TpcEngine},
- * correct initialization of internal parts like the {@link  TpcPartitionOperationThread}
- * and starting the appropriate server ports for each TPC thread.
+ * The TpcServerBootstrap is responsible for:
+ * <ol>
+ *     <li>starting up the {@link TpcEngine}</li>
+ *     <li>correct initialization of internal parts like the {@link  TpcPartitionOperationThread}</li>
+ *     <li>starting the appropriate server ports for each TPC thread.</li>
+ * </ol>
  */
 public class TpcServerBootstrap {
 
@@ -152,10 +155,10 @@ public class TpcServerBootstrap {
 
     private int loadEventloopCount() {
         String eventloopCountString = nodeEngine.getProperties().getString(TPC_EVENTLOOP_COUNT);
-        if (eventloopCountString != null) {
-            return Integer.parseInt(eventloopCountString);
-        } else {
+        if (eventloopCountString == null) {
             return config.getTpcConfig().getEventloopCount();
+        } else {
+            return Integer.parseInt(eventloopCountString);
         }
     }
 
@@ -163,6 +166,8 @@ public class TpcServerBootstrap {
         if (!enabled) {
             return;
         }
+        logger.info("Starting TpcServerBootstrap");
+
         this.tpcEngine = newTpcEngine();
 
         // The TpcPartitionOperationThread are created with the right TpcOperationQueue, but
@@ -180,7 +185,6 @@ public class TpcServerBootstrap {
             partitionThread.getQueue().setReactor(reactor);
         }
 
-        logger.info("Starting TpcServerBootstrap");
         tpcEngine.start();
         openServerSockets();
         clientPorts = serverSockets.stream().map(AsyncServerSocket::getLocalPort).collect(Collectors.toList());
@@ -193,6 +197,8 @@ public class TpcServerBootstrap {
         int port = Integer.parseInt(range[0]);
         int limit = Integer.parseInt(range[1]);
 
+        // Currently we only open the sockets for clients. But in the future we also need to
+        // open sockets for members, WAN replication etc.
         for (int k = 0; k < tpcEngine.reactorCount(); k++) {
             Reactor reactor = tpcEngine.reactor(k);
 
