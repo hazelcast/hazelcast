@@ -17,32 +17,28 @@
 package com.hazelcast.instance.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import org.junit.Before;
+import com.hazelcast.jet.impl.AbstractJetInstance;
 import org.junit.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.Mockito;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 public class BootstrappedInstanceProxyTest {
-    @Mock
-    HazelcastInstance instance;
-
-    @InjectMocks
-    BootstrappedInstanceProxy bootstrappedInstanceProxy;
-
-    @Before
-    public void setUp() {
-        MockitoAnnotations.openMocks(this);
-    }
 
     @Test
     public void testShutdownNotAllowed() {
+        HazelcastInstance hazelcastInstance = Mockito.mock(HazelcastInstance.class);
+        AbstractJetInstance abstractJetInstance = Mockito.mock(AbstractJetInstance.class);
+        when(hazelcastInstance.getJet()).thenReturn(abstractJetInstance);
         // When shutdown is called throw exception
-        when(instance.getLifecycleService()).thenThrow(new IllegalStateException());
+        when(hazelcastInstance.getLifecycleService()).thenThrow(new IllegalStateException());
+
+        BootstrappedInstanceProxy bootstrappedInstanceProxy = BootstrappedInstanceProxy
+                .createWithJetProxy(hazelcastInstance);
+
+
         bootstrappedInstanceProxy.setShutDownAllowed(false);
         bootstrappedInstanceProxy.shutdown();
 
@@ -53,8 +49,14 @@ public class BootstrappedInstanceProxyTest {
 
     @Test
     public void testShutdownAllowed() {
+        HazelcastInstance hazelcastInstance = Mockito.mock(HazelcastInstance.class);
+        AbstractJetInstance abstractJetInstance = Mockito.mock(AbstractJetInstance.class);
+        when(hazelcastInstance.getJet()).thenReturn(abstractJetInstance);
         // When shutdown is called throw exception
-        when(instance.getLifecycleService()).thenThrow(new IllegalStateException());
+        when(hazelcastInstance.getLifecycleService()).thenThrow(new IllegalStateException());
+
+        BootstrappedInstanceProxy bootstrappedInstanceProxy = BootstrappedInstanceProxy
+                .createWithJetProxy(hazelcastInstance);
         bootstrappedInstanceProxy.setShutDownAllowed(true);
 
         // Shutdown is allowed so exception should be thrown
