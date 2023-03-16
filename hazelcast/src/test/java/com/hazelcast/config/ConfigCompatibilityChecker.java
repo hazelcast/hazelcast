@@ -1014,7 +1014,9 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getPartitionLostListenerConfigs(), c2.getPartitionLostListenerConfigs())
                     && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
                     && nullSafeEqual(c1.getPartitioningStrategyConfig(), c2.getPartitioningStrategyConfig())
-                    && nullSafeEqual(c1.getTieredStoreConfig(), c2.getTieredStoreConfig());
+                    && nullSafeEqual(c1.getTieredStoreConfig(), c2.getTieredStoreConfig())
+                    && isCollectionCompatible(c1.getPartitioningAttributeConfigs(), c2.getPartitioningAttributeConfigs(),
+                    new PartitioningAttributesConfigChecker());
         }
 
         private static boolean isCompatible(WanReplicationRef c1, WanReplicationRef c2) {
@@ -1967,6 +1969,14 @@ public class ConfigCompatibilityChecker {
                 return false;
             }
             return (c1.isEnabled() == c2.isEnabled());
+        }
+    }
+
+    public static class PartitioningAttributesConfigChecker extends ConfigChecker<PartitioningAttributeConfig> {
+        @Override
+        boolean check(PartitioningAttributeConfig c1, PartitioningAttributeConfig c2) {
+            return c1 == c2 || !(c1 == null || c2 == null)
+                    && nullSafeEqual(c1.getAttributeName(), c2.getAttributeName());
         }
     }
 

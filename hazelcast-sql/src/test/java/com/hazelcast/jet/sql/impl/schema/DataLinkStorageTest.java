@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.jet.SimpleTestInClusterSupport;
-import com.hazelcast.sql.impl.schema.datalink.DataLink;
+import com.hazelcast.sql.impl.schema.datalink.DataLinkCatalogEntry;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -56,8 +56,8 @@ public class DataLinkStorageTest extends SimpleTestInClusterSupport {
     @Test
     public void when_put_then_overridesPrevious() {
         String name = randomName();
-        DataLink originalDL = dataLink(name, "type1");
-        DataLink updatedDL = dataLink(name, "type2");
+        DataLinkCatalogEntry originalDL = dataLink(name, "type1");
+        DataLinkCatalogEntry updatedDL = dataLink(name, "type2");
 
         storage.put(name, originalDL);
         storage.put(name, updatedDL);
@@ -73,9 +73,9 @@ public class DataLinkStorageTest extends SimpleTestInClusterSupport {
         assertThat(storage.putIfAbsent(name, dataLink(name, "type-1"))).isTrue();
         assertThat(storage.putIfAbsent(name, dataLink(name, "type-2"))).isFalse();
         assertTrue(storage.allObjects().stream()
-                .anyMatch(dl -> dl instanceof DataLink && ((DataLink) dl).getType().equals("type-1")));
+                .anyMatch(dl -> dl instanceof DataLinkCatalogEntry && ((DataLinkCatalogEntry) dl).getType().equals("type-1")));
         assertTrue(storage.allObjects().stream()
-                .noneMatch(dl -> dl instanceof DataLink && ((DataLink) dl).getType().equals("type-2")));
+                .noneMatch(dl -> dl instanceof DataLinkCatalogEntry && ((DataLinkCatalogEntry) dl).getType().equals("type-2")));
     }
 
     @Test
@@ -84,11 +84,11 @@ public class DataLinkStorageTest extends SimpleTestInClusterSupport {
 
         storage.put(name, dataLink(name, "type"));
 
-        assertThat(storage.removeDataLink(name)).isNotNull();
+        assertThat(storage.removeDataLink(name)).isTrue();
         assertTrue(storage.dataLinkNames().stream().noneMatch(dl -> dl.equals(name)));
     }
 
-    private static DataLink dataLink(String name, String type) {
-        return new DataLink(name, type, emptyMap(), false);
+    private static DataLinkCatalogEntry dataLink(String name, String type) {
+        return new DataLinkCatalogEntry(name, type, emptyMap());
     }
 }

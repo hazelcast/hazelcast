@@ -28,16 +28,15 @@ import java.util.Objects;
 /**
  * SQL schema POJO class.
  */
-public class DataLink implements IdentifiedDataSerializable {
+public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
     private String name;
     private String type;
-    private boolean isReplace;
     private Map<String, String> options;
 
-    public DataLink() {
+    public DataLinkCatalogEntry() {
     }
 
-    public DataLink(String name, String type, Map<String, String> options, boolean isReplace) {
+    public DataLinkCatalogEntry(String name, String type, Map<String, String> options) {
         this.name = name;
         this.type = type;
         this.options = options;
@@ -67,15 +66,10 @@ public class DataLink implements IdentifiedDataSerializable {
         this.options = options;
     }
 
-    public boolean isReplace() {
-        return isReplace;
-    }
-
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
         type = in.readString();
-        isReplace = in.readBoolean();
         options = in.readObject();
     }
 
@@ -83,7 +77,6 @@ public class DataLink implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
         out.writeString(type);
-        out.writeBoolean(isReplace);
         out.writeObject(options);
     }
 
@@ -94,7 +87,7 @@ public class DataLink implements IdentifiedDataSerializable {
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.DATA_LINK;
+        return SqlDataSerializerHook.DATA_LINK_CATALOG_ENTRY;
     }
 
     @Override
@@ -105,8 +98,8 @@ public class DataLink implements IdentifiedDataSerializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        DataLink dataLink = (DataLink) o;
-        return name.equals(dataLink.name) && type.equals(dataLink.type) && options.equals(dataLink.options);
+        DataLinkCatalogEntry e = (DataLinkCatalogEntry) o;
+        return name.equals(e.name) && type.equals(e.type) && options.equals(e.options);
     }
 
     @Override
