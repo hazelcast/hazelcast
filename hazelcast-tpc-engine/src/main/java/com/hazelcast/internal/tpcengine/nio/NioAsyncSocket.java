@@ -104,27 +104,9 @@ public final class NioAsyncSocket extends AsyncSocket {
         return options;
     }
 
-    /**
-     * Returns the SelectionKey. Only for testing purposes.
-     *
-     * @return the selection key.
-     */
-    public SelectionKey key() {
-        return key;
-    }
-
     @Override
     public NioReactor reactor() {
         return reactor;
-    }
-
-    /**
-     * Returns the underlying SocketChannel. Only for testing purposes.
-     *
-     * @return the SocketChannel.
-     */
-    public SocketChannel socketChannel() {
-        return socketChannel;
     }
 
     @Override
