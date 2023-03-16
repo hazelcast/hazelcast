@@ -46,12 +46,12 @@ public abstract class AsyncSocket_LargePayloadTest {
     private Reactor clientReactor;
     private Reactor serverReactor;
 
-    public abstract Reactor newReactor();
+    public abstract ReactorBuilder newReactorBuilder();
 
     @Before
     public void before() {
-        clientReactor = newReactor();
-        serverReactor = newReactor();
+        clientReactor = newReactorBuilder().build().start();
+        serverReactor = newReactorBuilder().build().start();
     }
 
     @After

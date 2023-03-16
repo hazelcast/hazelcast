@@ -31,11 +31,7 @@ public final class NioReactor extends Reactor {
 
     final Selector selector;
 
-    public NioReactor() {
-        this(new NioReactorBuilder());
-    }
-
-    public NioReactor(NioReactorBuilder builder) {
+    NioReactor(NioReactorBuilder builder) {
         super(builder);
         this.selector = ((NioEventloop) eventloop()).selector;
     }
