@@ -30,11 +30,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
-public class AltoChannelClientConnectionAdapter implements ClientConnection {
+public class TpcChannelClientConnectionAdapter implements ClientConnection {
 
     private final Channel channel;
 
-    public AltoChannelClientConnectionAdapter(Channel channel) {
+    public TpcChannelClientConnectionAdapter(Channel channel) {
         this.channel = channel;
     }
 
@@ -50,7 +50,7 @@ public class AltoChannelClientConnectionAdapter implements ClientConnection {
 
     @Override
     public String getCloseReason() {
-        return "The Alto channel " + channel + " is closed";
+        return "The TPC channel " + channel + " is closed";
     }
 
     @Override
@@ -60,95 +60,95 @@ public class AltoChannelClientConnectionAdapter implements ClientConnection {
 
     @Override
     public void handleClientMessage(ClientMessage message) {
-        throw new UnsupportedOperationException("Not supported for Alto channels");
+        throw new UnsupportedOperationException("Not supported for TPC channels");
     }
 
     @Override
     public EventHandler getEventHandler(long correlationId) {
-        throw new UnsupportedOperationException("Not supported for Alto channels");
+        throw new UnsupportedOperationException("Not supported for TPC channels");
     }
 
     @Override
     public void removeEventHandler(long correlationId) {
-        throw new UnsupportedOperationException("Not supported for Alto channels");
+        throw new UnsupportedOperationException("Not supported for TPC channels");
     }
 
     @Override
     public void addEventHandler(long correlationId, EventHandler handler) {
-        throw new UnsupportedOperationException("Not supported for Alto channels");
+        throw new UnsupportedOperationException("Not supported for TPC channels");
     }
 
     @Override
     public void setClusterUuid(UUID uuid) {
-        throw new UnsupportedOperationException("Not supported for Alto channels");
+        throw new UnsupportedOperationException("Not supported for TPC channels");
     }
 
     @Override
     public UUID getClusterUuid() {
-        throw new UnsupportedOperationException("Not supported for Alto channels");
+        throw new UnsupportedOperationException("Not supported for TPC channels");
     }
 
     @Override
     public Map<Long, EventHandler> getEventHandlers() {
-        throw new UnsupportedOperationException("Not supported for Alto channels");
+        throw new UnsupportedOperationException("Not supported for TPC channels");
     }
 
     @Nullable
     @Override
-    public Channel[] getAltoChannels() {
-        throw new UnsupportedOperationException("Not supported for Alto channels");
+    public Channel[] getTpcChannels() {
+        throw new UnsupportedOperationException("Not supported for TPC channels");
     }
 
     @Override
     public ConcurrentMap attributeMap() {
-        throw new UnsupportedOperationException("Not supported for Alto channels");
+        throw new UnsupportedOperationException("Not supported for TPC channels");
     }
 
     @Override
     public boolean isAlive() {
-        throw new UnsupportedOperationException("Not supported for Alto channels");
+        throw new UnsupportedOperationException("Not supported for TPC channels");
     }
 
     @Override
     public long lastReadTimeMillis() {
-        throw new UnsupportedOperationException("Not supported for Alto channels");
+        throw new UnsupportedOperationException("Not supported for TPC channels");
     }
 
     @Override
     public long lastWriteTimeMillis() {
-        throw new UnsupportedOperationException("Not supported for Alto channels");
+        throw new UnsupportedOperationException("Not supported for TPC channels");
     }
 
     @Nullable
     @Override
     public InetSocketAddress getRemoteSocketAddress() {
-        throw new UnsupportedOperationException("Not supported for Alto channels");
+        throw new UnsupportedOperationException("Not supported for TPC channels");
     }
 
     @Override
     public void setRemoteAddress(Address remoteAddress) {
-        throw new UnsupportedOperationException("Not supported for Alto channels");
+        throw new UnsupportedOperationException("Not supported for TPC channels");
     }
 
     @Nullable
     @Override
     public UUID getRemoteUuid() {
-        throw new UnsupportedOperationException("Not supported for Alto channels");
+        throw new UnsupportedOperationException("Not supported for TPC channels");
     }
 
     @Override
     public void setRemoteUuid(UUID remoteUuid) {
-        throw new UnsupportedOperationException("Not supported for Alto channels");
+        throw new UnsupportedOperationException("Not supported for TPC channels");
     }
 
     @Nullable
     @Override
     public InetAddress getInetAddress() {
-        throw new UnsupportedOperationException("Not supported for Alto channels");
+        throw new UnsupportedOperationException("Not supported for TPC channels");
     }
 
     @Override
     public void close(String reason, Throwable cause) {
-        throw new UnsupportedOperationException("Not supported for Alto channels");
+        throw new UnsupportedOperationException("Not supported for TPC channels");
     }
 }

@@ -18,11 +18,11 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.NodeExtension;
-import com.hazelcast.internal.bootstrap.AltoServerBootstrap;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.tpc.TpcServerBootstrap;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
@@ -111,7 +111,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     private final Address thisAddress;
     private final OperationRunner adHocOperationRunner;
     private final int priorityThreadCount;
-    private final AltoServerBootstrap altoServerBootstrap;
+    private final TpcServerBootstrap tpcServerBootstrap;
 
     @SuppressWarnings("java:S107")
     public OperationExecutorImpl(HazelcastProperties properties,
@@ -121,18 +121,18 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
                                  NodeExtension nodeExtension,
                                  String hzName,
                                  ClassLoader configClassLoader,
-                                 AltoServerBootstrap altoServerBootstrap) {
-        this.altoServerBootstrap = altoServerBootstrap;
+                                 TpcServerBootstrap tpcServerBootstrap) {
+        this.tpcServerBootstrap = tpcServerBootstrap;
         this.thisAddress = thisAddress;
         this.logger = loggerService.getLogger(OperationExecutorImpl.class);
 
         this.adHocOperationRunner = runnerFactory.createAdHocRunner();
 
         this.partitionOperationRunners = initPartitionOperationRunners(properties, runnerFactory);
-        if (!altoServerBootstrap.isEnabled()) {
+        if (!tpcServerBootstrap.isEnabled()) {
             this.partitionThreads = initClassicPartitionThreads(properties, hzName, nodeExtension, configClassLoader);
         } else {
-            this.partitionThreads = initAltoPartitionThreads(this.altoServerBootstrap, hzName, nodeExtension, configClassLoader);
+            this.partitionThreads = initTpcPartitionThreads(tpcServerBootstrap, hzName, nodeExtension, configClassLoader);
         }
         this.priorityThreadCount = properties.getInteger(PRIORITY_GENERIC_OPERATION_THREAD_COUNT);
         this.genericOperationRunners = initGenericOperationRunners(properties, runnerFactory);
@@ -197,23 +197,23 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         return threads;
     }
 
-    private PartitionOperationThread[] initAltoPartitionThreads(AltoServerBootstrap altoServerBootstrap,
-                                                                String hzName,
-                                                                NodeExtension nodeExtension,
-                                                                ClassLoader configClassLoader) {
-        int threadCount = altoServerBootstrap.eventloopCount();
+    private PartitionOperationThread[] initTpcPartitionThreads(TpcServerBootstrap tpcServerBootstrap,
+                                                               String hzName,
+                                                               NodeExtension nodeExtension,
+                                                               ClassLoader configClassLoader) {
+        int threadCount = tpcServerBootstrap.eventloopCount();
 
         PartitionOperationThread[] threads = new PartitionOperationThread[threadCount];
         for (int threadId = 0; threadId < threads.length; threadId++) {
             String threadName = createThreadPoolName(hzName, "partition-operation") + threadId;
             MPSCQueue<Object> normalQueue = new MPSCQueue<>(null);
 
-            AltoOperationQueue operationQueue = new AltoOperationQueue(normalQueue, new ConcurrentLinkedQueue<>());
+            TpcOperationQueue operationQueue = new TpcOperationQueue(normalQueue, new ConcurrentLinkedQueue<>());
 
-            // the AltoOperationQueue is unbound just like HZ classic. Since we do not have any
+            // the TpcOperationQueue is unbound just like HZ classic. Since we do not have any
             // back pressure mechanism between members, there is no proper way to prevent overload.
             // So we keep the same bad bad behavior for now.
-            PartitionOperationThread partitionThread = new AltoPartitionOperationThread(threadName, threadId,
+            PartitionOperationThread partitionThread = new TpcPartitionOperationThread(threadName, threadId,
                     operationQueue, logger, nodeExtension, partitionOperationRunners, configClassLoader);
             threads[threadId] = partitionThread;
         }
@@ -564,7 +564,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         }
 
         // When tpc is enabled, the partitionThread are manged bu the tpcEngine.
-        if (!altoServerBootstrap.isEnabled()) {
+        if (!tpcServerBootstrap.isEnabled()) {
             startAll(partitionThreads);
         }
         startAll(genericThreads);
@@ -579,11 +579,11 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     @Override
     public void shutdown() {
         // when tpc is enabled, the partitionThread are manged bu the tpcEngine.
-        if (!altoServerBootstrap.isEnabled()) {
+        if (!tpcServerBootstrap.isEnabled()) {
             shutdownAll(partitionThreads);
         }
         shutdownAll(genericThreads);
-        if (!altoServerBootstrap.isEnabled()) {
+        if (!tpcServerBootstrap.isEnabled()) {
             awaitTermination(partitionThreads);
         }
         awaitTermination(genericThreads);

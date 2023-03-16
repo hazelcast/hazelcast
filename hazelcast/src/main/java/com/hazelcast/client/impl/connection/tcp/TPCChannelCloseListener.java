@@ -23,24 +23,24 @@ import com.hazelcast.internal.networking.ChannelCloseListener;
 
 /**
  * A listener to notify pending invocations that are sent
- * over the Alto channels with exception, in case the Alto
+ * over the TPC channels with exception, in case the TPC
  * channel is closed.
  * <p>
  * The invocations that will be notified with this listener
  * are the ones that are sent with the ClientConnection adapter
- * of the Alto channel, such as heartbeats.
+ * of the TPC channel, such as heartbeats.
  */
-public class AltoChannelCloseListener implements ChannelCloseListener {
+public class TPCChannelCloseListener implements ChannelCloseListener {
 
     private final HazelcastClientInstanceImpl client;
 
-    public AltoChannelCloseListener(HazelcastClientInstanceImpl client) {
+    public TPCChannelCloseListener(HazelcastClientInstanceImpl client) {
         this.client = client;
     }
 
     @Override
     public void onClose(Channel channel) {
-        ClientConnection adapter = (ClientConnection) channel.attributeMap().get(AltoChannelClientConnectionAdapter.class);
+        ClientConnection adapter = (ClientConnection) channel.attributeMap().get(TpcChannelClientConnectionAdapter.class);
         assert adapter != null;
 
         client.getInvocationService().onConnectionClose(adapter);

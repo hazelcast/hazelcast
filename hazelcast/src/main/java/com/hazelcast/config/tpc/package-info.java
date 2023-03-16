@@ -15,7 +15,6 @@
  */
 
 /**
- * This package contains configuration classes
- * for Alto.
+ * This package contains configuration classes for TPC.
  */
-package com.hazelcast.config.alto;
+package com.hazelcast.config.tpc;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config.alto;
+package com.hazelcast.config.tpc;
 
 import com.hazelcast.spi.annotation.Beta;
 
@@ -25,15 +25,15 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
- * Socket configuration for Alto. In Alto, each eventloop has its own
+ * Socket configuration for TPC. In TPC, each eventloop has its own
  * sockets.
  *
- * @see AltoConfig
+ * @see com.hazelcast.config.tpc.TpcConfig
  * @since 5.3
  */
 @SuppressWarnings("checkstyle:JavadocVariable")
 @Beta
-public class AltoSocketConfig {
+public class TpcSocketConfig {
     /**
      * @see java.net.SocketOptions#SO_RCVBUF
      */
@@ -48,7 +48,7 @@ public class AltoSocketConfig {
     private int sendBufferSizeKB = DEFAULT_SEND_BUFFER_SIZE_KB;
 
     /**
-     * Gets the possible port range for Alto sockets to bind. Can't return
+     * Gets the possible port range for TPC sockets to bind. Can't return
      * null.
      *
      * @return the port range string
@@ -59,17 +59,17 @@ public class AltoSocketConfig {
     }
 
     /**
-     * Sets the possible port range for Alto sockets to bind. Can't return
+     * Sets the possible port range for TPC sockets to bind. Can't return
      * null.
      *
      * @param portRange the port range to set
-     * @return this Alto socket config
+     * @return this TPC socket config
      * @throws IllegalArgumentException if portRange doesn't match {@code
      *                                  \d{1,5}-\d{1,5}} regular expression
      * @throws NullPointerException     if portRange is null
      */
     @Nonnull
-    public AltoSocketConfig setPortRange(@Nonnull String portRange) {
+    public TpcSocketConfig setPortRange(@Nonnull String portRange) {
         checkNotNull(portRange);
         if (!portRange.matches("\\d{1,5}-\\d{1,5}")) {
             throw new IllegalArgumentException("Invalid port range");
@@ -80,9 +80,9 @@ public class AltoSocketConfig {
     }
 
     /**
-     * Gets the receive-buffer size of the Alto sockets in kilobytes.
+     * Gets the receive-buffer size of the TPC sockets in kilobytes.
      *
-     * @return the receive-buffer size of the Alto sockets in kilobytes
+     * @return the receive-buffer size of the TPC sockets in kilobytes
      * @see java.net.SocketOptions#SO_RCVBUF
      */
     public int getReceiveBufferSizeKB() {
@@ -90,24 +90,24 @@ public class AltoSocketConfig {
     }
 
     /**
-     * Sets the receive-buffer size of the Alto sockets in kilobytes. Can't
+     * Sets the receive-buffer size of the TPC sockets in kilobytes. Can't
      * return null.
      *
-     * @param receiveBufferSizeKB the receive-buffer size of the Alto sockets in kilobytes
-     * @return this Alto socket config
+     * @param receiveBufferSizeKB the receive-buffer size of the TPC sockets in kilobytes
+     * @return this TPC socket config
      * @throws IllegalArgumentException if receiveBufferSizeKB isn't positive
      * @see java.net.SocketOptions#SO_RCVBUF
      */
     @Nonnull
-    public AltoSocketConfig setReceiveBufferSizeKB(int receiveBufferSizeKB) {
+    public TpcSocketConfig setReceiveBufferSizeKB(int receiveBufferSizeKB) {
         this.receiveBufferSizeKB = checkPositive("receiveBufferSizeKB", receiveBufferSizeKB);
         return this;
     }
 
     /**
-     * Gets the send-buffer size of the Alto sockets in kilobytes.
+     * Gets the send-buffer size of the TPC sockets in kilobytes.
      *
-     * @return the send-buffer size of the Alto sockets in kilobytes
+     * @return the send-buffer size of the TPC sockets in kilobytes
      * @see java.net.SocketOptions#SO_SNDBUF
      */
     public int getSendBufferSizeKB() {
@@ -115,16 +115,16 @@ public class AltoSocketConfig {
     }
 
     /**
-     * Sets the send-buffer size of the Alto sockets in kilobytes. Can't
+     * Sets the send-buffer size of the TPC sockets in kilobytes. Can't
      * return null.
      *
-     * @param sendBufferSizeKB the send-buffer size of the Alto sockets in kilobytes
-     * @return this Alto socket config
+     * @param sendBufferSizeKB the send-buffer size of the TPC sockets in kilobytes
+     * @return this TPC socket config
      * @throws IllegalArgumentException if sendBufferSizeKB isn't positive
      * @see java.net.SocketOptions#SO_SNDBUF
      */
     @Nonnull
-    public AltoSocketConfig setSendBufferSizeKB(int sendBufferSizeKB) {
+    public TpcSocketConfig setSendBufferSizeKB(int sendBufferSizeKB) {
         this.sendBufferSizeKB = checkPositive("sendBufferSizeKB", sendBufferSizeKB);
         return this;
     }
@@ -137,7 +137,7 @@ public class AltoSocketConfig {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        AltoSocketConfig that = (AltoSocketConfig) o;
+        TpcSocketConfig that = (TpcSocketConfig) o;
         return receiveBufferSizeKB == that.receiveBufferSizeKB
                 && sendBufferSizeKB == that.sendBufferSizeKB
                 && portRange.equals(that.portRange);
@@ -150,7 +150,7 @@ public class AltoSocketConfig {
 
     @Override
     public String toString() {
-        return "AltoSocketConfig{"
+        return "TpcSocketConfig{"
                 + "portRange='" + portRange + '\''
                 + ", receiveBufferSizeKB=" + receiveBufferSizeKB
                 + ", sendBufferSizeKB=" + sendBufferSizeKB

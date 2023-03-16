@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.bootstrap;
+package com.hazelcast.internal.tpc;
 
 import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.ClientEngine;

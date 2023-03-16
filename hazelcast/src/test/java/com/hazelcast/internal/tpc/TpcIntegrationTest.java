@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.bootstrap;
+package com.hazelcast.internal.tpc;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
@@ -31,13 +31,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.internal.bootstrap.AltoServerBootstrap.ALTO_ENABLED;
-import static com.hazelcast.internal.bootstrap.AltoServerBootstrap.ALTO_EVENTLOOP_COUNT;
+import static com.hazelcast.internal.tpc.TpcServerBootstrap.TPC_ENABLED;
+import static com.hazelcast.internal.tpc.TpcServerBootstrap.TPC_EVENTLOOP_COUNT;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
-public class AltoIntegrationTest extends HazelcastTestSupport {
+public class TpcIntegrationTest extends HazelcastTestSupport {
     private static final int COUNT = 100_000;
     private static final int PRINT_PROGRESS_TIMES = 100;
 
@@ -59,12 +59,12 @@ public class AltoIntegrationTest extends HazelcastTestSupport {
 
     @Test
     public void testMap() {
-        System.setProperty(ALTO_ENABLED.getName(), "true");
-        System.setProperty(ALTO_EVENTLOOP_COUNT.getName(), "" + Runtime.getRuntime().availableProcessors());
+        System.setProperty(TPC_ENABLED.getName(), "true");
+        System.setProperty(TPC_EVENTLOOP_COUNT.getName(), "" + Runtime.getRuntime().availableProcessors());
         server = Hazelcast.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getAltoConfig().setEnabled(true);
+        clientConfig.getTpcConfig().setEnabled(true);
         client = HazelcastClient.newHazelcastClient(clientConfig);
         logger.info(">> Client created");
         IMap<Integer, Integer> map = client.getMap("foo");

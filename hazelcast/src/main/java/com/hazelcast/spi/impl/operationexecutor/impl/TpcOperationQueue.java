@@ -22,14 +22,14 @@ import java.util.Queue;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
-public class AltoOperationQueue implements OperationQueue {
+public class TpcOperationQueue implements OperationQueue {
 
     // There is no data-race on this queue because the field is set before the thread is started.
     private Reactor reactor;
     private final Queue<Object> normalQueue;
     private final Queue<Object> priorityQueue;
 
-    public AltoOperationQueue(Queue<Object> normalQueue, Queue<Object> priorityQueue) {
+    public TpcOperationQueue(Queue<Object> normalQueue, Queue<Object> priorityQueue) {
         this.normalQueue = checkNotNull(normalQueue, "normalQueue");
         this.priorityQueue = checkNotNull(priorityQueue, "priorityQueue");
     }
@@ -47,7 +47,7 @@ public class AltoOperationQueue implements OperationQueue {
 
     @Override
     public Object take(boolean priorityOnly) throws InterruptedException {
-        // We never want to block on the AltoPartitionOperationThread.
+        // We never want to block on the TpcPartitionOperationThread.
         throw new UnsupportedOperationException();
     }
 

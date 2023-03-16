@@ -1,7 +1,7 @@
 {
   "instance": {
     "hazelcast-client": {
-      "alto": {
+      "tpc": {
         "enabled": true
       }
     }

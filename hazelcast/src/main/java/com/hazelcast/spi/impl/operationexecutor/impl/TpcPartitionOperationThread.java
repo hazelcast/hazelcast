@@ -23,30 +23,30 @@ import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 
 
 /**
- * The {@link AltoPartitionOperationThread} subclasses the {@link PartitionOperationThread} and
+ * The {@link TpcPartitionOperationThread} subclasses the {@link PartitionOperationThread} and
  * overrides the loop method. In the original PartitionOperationThread, there is a loop that
- * takes items from the operation queue and process them. With the AltoPartitionOperationThread
+ * takes items from the operation queue and process them. With the TpcPartitionOperationThread
  * the loop method forwards to the eventloopTask. The eventloopTask loops over even sources (like
- * Nio Selectors) and other queues including the OperationQueue. With the AltoPartitionOperationThread
- * the thread blocks on the OperationQueue with a take. With the alto version, it will only poll
+ * Nio Selectors) and other queues including the OperationQueue. With the TpcPartitionOperationThread
+ * the thread blocks on the OperationQueue with a take. With the TPC version, it will only poll
  * and block on the Reactor (which in Nio blocks on the selector.select).
  */
-public class AltoPartitionOperationThread extends PartitionOperationThread {
+public class TpcPartitionOperationThread extends PartitionOperationThread {
 
     private Runnable eventloopTask;
 
-    public AltoPartitionOperationThread(String name,
-                                        int threadId,
-                                        AltoOperationQueue queue,
-                                        ILogger logger,
-                                        NodeExtension nodeExtension,
-                                        OperationRunner[] partitionOperationRunners,
-                                        ClassLoader configClassLoader) {
+    public TpcPartitionOperationThread(String name,
+                                       int threadId,
+                                       TpcOperationQueue queue,
+                                       ILogger logger,
+                                       NodeExtension nodeExtension,
+                                       OperationRunner[] partitionOperationRunners,
+                                       ClassLoader configClassLoader) {
         super(name, threadId, queue, logger, nodeExtension, partitionOperationRunners, configClassLoader);
     }
 
-    public AltoOperationQueue getQueue() {
-        return (AltoOperationQueue) queue;
+    public TpcOperationQueue getQueue() {
+        return (TpcOperationQueue) queue;
     }
 
     public void setEventloopTask(Runnable eventloopTask) {

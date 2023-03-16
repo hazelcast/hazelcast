@@ -352,5 +352,5 @@
         <resubmission-mode>RETRY_SELECTS</resubmission-mode>
     </sql>
 
-    <alto enabled="true"/>
+    <tpc enabled="true"/>
 </hazelcast-client>

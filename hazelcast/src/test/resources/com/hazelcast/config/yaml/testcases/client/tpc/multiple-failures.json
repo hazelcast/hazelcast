@@ -1,26 +1,26 @@
 {
   "instance": {
     "hazelcast-client": {
-      "alto": {
+      "tpc": {
         "enabled": "true",
         "someProperty": true
       }
     }
   },
   "error": {
-    "schemaLocation": "#/definitions/ClientAlto",
-    "pointerToViolation": "#/hazelcast-client/alto",
+    "schemaLocation": "#/definitions/ClientTpc",
+    "pointerToViolation": "#/hazelcast-client/tpc",
     "causingExceptions": [
       {
-        "schemaLocation": "#/definitions/ClientAlto",
-        "pointerToViolation": "#/hazelcast-client/alto",
+        "schemaLocation": "#/definitions/ClientTpc",
+        "pointerToViolation": "#/hazelcast-client/tpc",
         "causingExceptions": [],
         "keyword": "additionalProperties",
         "message": "extraneous key [someProperty] is not permitted"
       },
       {
-        "schemaLocation": "#/definitions/ClientAlto/properties/enabled",
-        "pointerToViolation": "#/hazelcast-client/alto/enabled",
+        "schemaLocation": "#/definitions/ClientTpc/properties/enabled",
+        "pointerToViolation": "#/hazelcast-client/tpc/enabled",
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: Boolean, found: String"

@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.alto;
+package com.hazelcast.client.tpc;
 
-import com.hazelcast.client.impl.connection.tcp.AltoChannelConnector;
+import com.hazelcast.client.impl.connection.tcp.TpcChannelConnector;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.networking.Channel;
@@ -49,21 +49,21 @@ import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class AltoChannelConnectorTest {
+public class TpcChannelConnectorTest {
 
     private static final int CHANNEL_COUNT = 5;
 
-    private AltoChannelConnector connector;
+    private TpcChannelConnector connector;
     private TcpClientConnection mockConnection;
-    private Channel[] mockAltoChannels;
-    private AltoChannelConnector.ChannelCreator mockChannelCreator;
+    private Channel[] mockTpcChannels;
+    private TpcChannelConnector.ChannelCreator mockChannelCreator;
 
     @Before
     public void setup() {
         mockConnection = setupMockConnection();
-        mockAltoChannels = setupMockAltoChannels();
-        mockChannelCreator = setupMockChannelCreator(mockAltoChannels);
-        connector = new AltoChannelConnector(UuidUtil.newUnsecureUUID(),
+        mockTpcChannels = setupMockTpcChannels();
+        mockChannelCreator = setupMockChannelCreator(mockTpcChannels);
+        connector = new TpcChannelConnector(UuidUtil.newUnsecureUUID(),
                 mockConnection,
                 IntStream.range(0, CHANNEL_COUNT).boxed().collect(Collectors.toList()),
                 setupMockExecutorService(),
@@ -75,11 +75,11 @@ public class AltoChannelConnectorTest {
     @Test
     public void testConnector() throws IOException {
         connector.initiate();
-        verify(mockConnection, times(1)).setAltoChannels(any());
+        verify(mockConnection, times(1)).setTpcChannels(any());
 
         // We should write authentication bytes to every channel
         // and do not close them.
-        for (Channel channel : mockAltoChannels) {
+        for (Channel channel : mockTpcChannels) {
             verify(channel, times(1)).write(any());
             verify(channel, never()).close();
         }
@@ -93,9 +93,9 @@ public class AltoChannelConnectorTest {
 
         connector.initiate();
 
-        verify(mockConnection, never()).setAltoChannels(any());
+        verify(mockConnection, never()).setTpcChannels(any());
 
-        for (Channel channel : mockAltoChannels) {
+        for (Channel channel : mockTpcChannels) {
             verify(channel, never()).write(any());
             verify(channel, never()).close();
         }
@@ -107,13 +107,13 @@ public class AltoChannelConnectorTest {
 
         connector.initiate();
 
-        verify(mockConnection, never()).setAltoChannels(any());
+        verify(mockConnection, never()).setTpcChannels(any());
 
         verify(mockChannelCreator, never()).create(any(), any(), any());
 
         // We should not even attempt to write anything if the connection
         // is already closed
-        for (Channel channel : mockAltoChannels) {
+        for (Channel channel : mockTpcChannels) {
             verify(channel, never()).write(any());
         }
     }
@@ -121,21 +121,21 @@ public class AltoChannelConnectorTest {
     @Test
     public void testConnector_whenConnectionIsClosed_afterChannelsAreSet() throws IOException {
         doAnswer(invocation -> {
-            // While calling the setAltoChannels, simulate a closed
+            // While calling the setTpcChannels, simulate a closed
             // connection by returning false in the isAlive method
             when(mockConnection.isAlive()).thenReturn(false);
             return null;
-        }).when(mockConnection).setAltoChannels(any());
+        }).when(mockConnection).setTpcChannels(any());
 
         connector.initiate();
 
-        // We should set the Alto channels
-        verify(mockConnection, times(1)).setAltoChannels(any());
+        // We should set the TPC channels
+        verify(mockConnection, times(1)).setTpcChannels(any());
         assertFalse(mockConnection.isAlive());
 
         // But, the channels should be closed, as the connection is
         // no longer alive
-        for (Channel channel : mockAltoChannels) {
+        for (Channel channel : mockTpcChannels) {
             verify(channel, times(1)).write(any());
             verify(channel, times(1)).close();
         }
@@ -145,8 +145,8 @@ public class AltoChannelConnectorTest {
     public void testConnector_whenConnectionIsClosed_afterSomeChannelsAreEstablished() throws IOException {
         OngoingStubbing<Channel> stubbing = when(mockChannelCreator.create(any(), any(), any()));
         int count = 0;
-        for (Channel channel : mockAltoChannels) {
-            if (++count < mockAltoChannels.length) {
+        for (Channel channel : mockTpcChannels) {
+            if (++count < mockTpcChannels.length) {
                 // Return the channel successfully for any channel creation
                 // other than the last one
                 stubbing = stubbing.thenReturn(channel);
@@ -156,15 +156,15 @@ public class AltoChannelConnectorTest {
         // Simulate connection failure while creating the last channel
         stubbing.thenAnswer(invocation -> {
             when(mockConnection.isAlive()).thenReturn(false);
-            return mockAltoChannels[mockAltoChannels.length - 1];
+            return mockTpcChannels[mockTpcChannels.length - 1];
         });
 
         connector.initiate();
 
-        verify(mockConnection, never()).setAltoChannels(any());
+        verify(mockConnection, never()).setTpcChannels(any());
         assertFalse(mockConnection.isAlive());
 
-        for (Channel channel : mockAltoChannels) {
+        for (Channel channel : mockTpcChannels) {
             verify(channel, times(1)).write(any());
             verify(channel, times(1)).close();
         }
@@ -174,8 +174,8 @@ public class AltoChannelConnectorTest {
     public void testConnector_whenChannelCreationsFails_afterSomeChannelsAreEstablished() throws IOException {
         OngoingStubbing<Channel> stubbing = when(mockChannelCreator.create(any(), any(), any()));
         int count = 0;
-        for (Channel channel : mockAltoChannels) {
-            if (++count < mockAltoChannels.length) {
+        for (Channel channel : mockTpcChannels) {
+            if (++count < mockTpcChannels.length) {
                 // Return the channel successfully for any channel creation
                 // other than the last one
                 stubbing = stubbing.thenReturn(channel);
@@ -187,8 +187,8 @@ public class AltoChannelConnectorTest {
 
         connector.initiate();
 
-        verify(mockConnection, never()).setAltoChannels(any());
-        for (Channel channel : mockAltoChannels) {
+        verify(mockConnection, never()).setTpcChannels(any());
+        for (Channel channel : mockTpcChannels) {
             if (--count == 0) {
                 // The last channel is not even "created",
                 // we have thrown exception instead.
@@ -206,8 +206,8 @@ public class AltoChannelConnectorTest {
     @Test
     public void testConnector_whenAuthenticationMessageCannotBeSent() throws IOException {
         int count = 0;
-        for (Channel channel : mockAltoChannels) {
-            boolean isLast = ++count == mockAltoChannels.length;
+        for (Channel channel : mockTpcChannels) {
+            boolean isLast = ++count == mockTpcChannels.length;
             // Simulate writing auth message for any channel
             // other than the last one
             when(channel.write(any())).thenReturn(!isLast);
@@ -215,9 +215,9 @@ public class AltoChannelConnectorTest {
 
         connector.initiate();
 
-        verify(mockConnection, never()).setAltoChannels(any());
+        verify(mockConnection, never()).setTpcChannels(any());
 
-        for (Channel channel : mockAltoChannels) {
+        for (Channel channel : mockTpcChannels) {
             verify(channel, times(1)).write(any());
             verify(channel, times(1)).close();
         }
@@ -240,20 +240,20 @@ public class AltoChannelConnectorTest {
         return executorService;
     }
 
-    private Channel[] setupMockAltoChannels() {
-        Channel[] altoChannels = new Channel[CHANNEL_COUNT];
+    private Channel[] setupMockTpcChannels() {
+        Channel[] tpcChannels = new Channel[CHANNEL_COUNT];
         for (int i = 0; i < CHANNEL_COUNT; i++) {
             Channel mockChannel = mock(Channel.class);
             when(mockChannel.write(any())).thenReturn(true);
-            altoChannels[i] = mockChannel;
+            tpcChannels[i] = mockChannel;
         }
-        return altoChannels;
+        return tpcChannels;
     }
 
-    private AltoChannelConnector.ChannelCreator setupMockChannelCreator(Channel[] altoChannels) {
-        AltoChannelConnector.ChannelCreator channelCreator = mock(AltoChannelConnector.ChannelCreator.class);
+    private TpcChannelConnector.ChannelCreator setupMockChannelCreator(Channel[] tpcChannels) {
+        TpcChannelConnector.ChannelCreator channelCreator = mock(TpcChannelConnector.ChannelCreator.class);
         OngoingStubbing<Channel> stubbing = when(channelCreator.create(any(), any(), any()));
-        for (Channel channel : altoChannels) {
+        for (Channel channel : tpcChannels) {
             stubbing = stubbing.thenReturn(channel);
         }
         return channelCreator;

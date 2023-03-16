@@ -22,32 +22,32 @@ import javax.annotation.Nonnull;
 import java.util.Objects;
 
 /**
- * Contains client configurations for Alto.
+ * Contains client configurations for TPC.
  * <p>
- * Alto is the next generation Hazelcast that uses thread-per-core model.
+ * TPC is the next generation Hazelcast that uses thread-per-core model.
  * <p>
- * Alto-aware clients will maintain connections to all cores of all cluster
+ * TPC-aware clients will maintain connections to all cores of all cluster
  * members. The client will route partition-specific invocations to the
  * correct core of the correct member in the best effort basis.
  *
  * @since 5.3
  */
 @Beta
-public final class ClientAltoConfig {
+public final class ClientTpcConfig {
 
     private boolean enabled;
 
-    public ClientAltoConfig() {
+    public ClientTpcConfig() {
     }
 
-    public ClientAltoConfig(@Nonnull ClientAltoConfig altoConfig) {
-        this.enabled = altoConfig.enabled;
+    public ClientTpcConfig(@Nonnull ClientTpcConfig tpcConfig) {
+        this.enabled = tpcConfig.enabled;
     }
 
     /**
-     * Returns if the Alto-aware mode is enabled.
+     * Returns if the TPC-aware mode is enabled.
      *
-     * @return {@code true} if the Alto-aware mode is enabled, {@code false} otherwise.
+     * @return {@code true} if the TPC-aware mode is enabled, {@code false} otherwise.
      * @since 5.3
      */
     public boolean isEnabled() {
@@ -55,16 +55,16 @@ public final class ClientAltoConfig {
     }
 
     /**
-     * Enables or disables the Alto-aware mode.
+     * Enables or disables the TPC-aware mode.
      * <p>
      * When enabled, the configuration option set by the
      * {@link ClientNetworkConfig#setSmartRouting(boolean)} is ignored.
      *
-     * @param enabled flag to enable or disable Alto-aware mode
+     * @param enabled flag to enable or disable TPC-aware mode
      * @return this configuration for chaining.
      * @since 5.3
      */
-    public ClientAltoConfig setEnabled(boolean enabled) {
+    public ClientTpcConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
         return this;
     }
@@ -79,7 +79,7 @@ public final class ClientAltoConfig {
             return false;
         }
 
-        ClientAltoConfig that = (ClientAltoConfig) o;
+        ClientTpcConfig that = (ClientTpcConfig) o;
         return enabled == that.enabled;
     }
 
@@ -90,7 +90,7 @@ public final class ClientAltoConfig {
 
     @Override
     public String toString() {
-        return "ClientAltoConfig{"
+        return "ClientTpcConfig{"
                 + "enabled=" + enabled
                 + '}';
     }

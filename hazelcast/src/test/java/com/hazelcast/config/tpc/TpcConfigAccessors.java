@@ -14,33 +14,33 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config.alto;
+package com.hazelcast.config.tpc;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.bootstrap.AltoServerBootstrap;
+import com.hazelcast.internal.tpc.TpcServerBootstrap;
 
 import java.util.List;
 
 import static com.hazelcast.test.Accessors.getNode;
 
-public class AltoConfigAccessors {
-    public static AltoServerBootstrap getAltoServerBootstrap(HazelcastInstance hz) {
-        return getNode(hz).getNodeEngine().getAltoServerBootstrap();
+public class TpcConfigAccessors {
+    public static TpcServerBootstrap getTpcServerBootstrap(HazelcastInstance hz) {
+        return getNode(hz).getNodeEngine().getTpcServerBootstrap();
     }
 
     public static int getEventloopCount(HazelcastInstance hz) {
-        return getAltoServerBootstrap(hz).getTpcEngine().reactorCount();
+        return getTpcServerBootstrap(hz).getTpcEngine().reactorCount();
     }
 
     public static boolean isTpcEnabled(HazelcastInstance hz) {
-        return getAltoServerBootstrap(hz).isEnabled();
+        return getTpcServerBootstrap(hz).isEnabled();
     }
 
-    public static AltoSocketConfig getClientSocketConfig(HazelcastInstance hz) {
-        return getAltoServerBootstrap(hz).getClientSocketConfig();
+    public static TpcSocketConfig getClientSocketConfig(HazelcastInstance hz) {
+        return getTpcServerBootstrap(hz).getClientSocketConfig();
     }
 
     public static List<Integer> getClientPorts(HazelcastInstance hz) {
-        return getAltoServerBootstrap(hz).getClientPorts();
+        return getTpcServerBootstrap(hz).getClientPorts();
     }
 }

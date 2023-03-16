@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config.alto;
+package com.hazelcast.config.tpc;
 
 import com.hazelcast.spi.annotation.Beta;
 
@@ -24,35 +24,35 @@ import java.util.Objects;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
- * Hazelcast Alto is the next generation of Hazelcast built with thread
+ * Hazelcast TPC is the next generation of Hazelcast built with thread
  * per core architecture. It's still being developed and everything is
- * subject to change. Alto is disabled by default.
+ * subject to change. TPC is disabled by default.
  *
  * @since 5.3
  */
 @Beta
-public class AltoConfig {
+public class TpcConfig {
     private boolean enabled;
     private int eventloopCount = Runtime.getRuntime().availableProcessors();
 
     /**
-     * Gets the enabled flag which defines Alto is enabled or not.
+     * Gets the enabled flag which defines TPC is enabled or not.
      *
-     * @return true if Alto is enabled
+     * @return true if TPC is enabled
      */
     public boolean isEnabled() {
         return enabled;
     }
 
     /**
-     * Sets the enabled flag which defines Alto is enabled or not. Can't
+     * Sets the enabled flag which defines TPC is enabled or not. Can't
      * return null.
      *
-     * @param enabled a boolean to enable or disable alto
-     * @return this Alto configuration
+     * @param enabled a boolean to enable or disable TPC
+     * @return this
      */
     @Nonnull
-    public AltoConfig setEnabled(boolean enabled) {
+    public TpcConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
         return this;
     }
@@ -62,24 +62,24 @@ public class AltoConfig {
      *
      * @return the number of eventloops
      * @see Runtime#availableProcessors()
-     * @see AltoConfig#setEventloopCount(int)
+     * @see TpcConfig#setEventloopCount(int)
      */
     public int getEventloopCount() {
         return eventloopCount;
     }
 
     /**
-     * In Alto, everything is done in eventloops. This method sets the
+     * In TPC, everything is done in eventloops. This method sets the
      * number eventloops. By default, it's equal to the number of
      * available processors. Can't return null.
      *
      * @param eventloopCount the number of eventloops
-     * @return this Alto configuration
+     * @return this
      * @throws IllegalArgumentException if eventloopCount isn't positive
      * @see Runtime#availableProcessors()
      */
     @Nonnull
-    public AltoConfig setEventloopCount(int eventloopCount) {
+    public TpcConfig setEventloopCount(int eventloopCount) {
         this.eventloopCount = checkPositive("eventloopCount", eventloopCount);
         return this;
     }
@@ -92,7 +92,7 @@ public class AltoConfig {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        AltoConfig that = (AltoConfig) o;
+        TpcConfig that = (TpcConfig) o;
         return enabled == that.enabled
                 && eventloopCount == that.eventloopCount;
     }
@@ -104,7 +104,7 @@ public class AltoConfig {
 
     @Override
     public String toString() {
-        return "AltoConfig{"
+        return "TpcConfig{"
                 + "enabled=" + enabled
                 + ", eventloopCount=" + eventloopCount
                 + '}';

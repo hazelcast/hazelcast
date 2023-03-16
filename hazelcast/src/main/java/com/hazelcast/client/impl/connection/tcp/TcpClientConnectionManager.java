@@ -158,7 +158,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     private final ReconnectMode reconnectMode;
     private final LoadBalancer loadBalancer;
     private final boolean isUnisocketClient;
-    private final boolean isAltoAwareClient;
+    private final boolean isTpcAwareClient;
     private volatile Credentials currentCredentials;
 
     // following fields are updated inside synchronized(clientStateMutex)
@@ -233,14 +233,14 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         this.waitStrategy = initializeWaitStrategy(config);
         this.shuffleMemberList = client.getProperties().getBoolean(SHUFFLE_MEMBER_LIST);
         this.isUnisocketClient = unisocketModeConfigured(config);
-        this.isAltoAwareClient = config.getAltoConfig().isEnabled();
+        this.isTpcAwareClient = config.getTpcConfig().isEnabled();
         this.asyncStart = config.getConnectionStrategyConfig().isAsyncStart();
         this.reconnectMode = config.getConnectionStrategyConfig().getReconnectMode();
         this.connectionProcessListenerRunner = new ClientConnectionProcessListenerRunner(client);
     }
 
     private boolean unisocketModeConfigured(ClientConfig config) {
-        if (config.getAltoConfig().isEnabled()) {
+        if (config.getTpcConfig().isEnabled()) {
             return false;
         }
 
@@ -778,27 +778,27 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
     }
 
-    private Channel createAltoChannel(Address address, TcpClientConnection connection, ChannelInitializer channelInitializer) {
+    private Channel createTpcChannel(Address address, TcpClientConnection connection, ChannelInitializer channelInitializer) {
         SocketChannel socketChannel = null;
         try {
             socketChannel = SocketChannel.open();
             Socket socket = socketChannel.socket();
 
-            // TODO: Outbound ports for Alto?
+            // TODO: Outbound ports for TPC?
             bindSocketToPort(socket);
             Channel channel = networking.register(channelInitializer, socketChannel, true);
 
-            channel.addCloseListener(new AltoChannelCloseListener(client));
+            channel.addCloseListener(new TPCChannelCloseListener(client));
 
             ConcurrentMap attributeMap = channel.attributeMap();
             attributeMap.put(Address.class, address);
             attributeMap.put(TcpClientConnection.class, connection);
-            attributeMap.put(AltoChannelClientConnectionAdapter.class, new AltoChannelClientConnectionAdapter(channel));
+            attributeMap.put(TpcChannelClientConnectionAdapter.class, new TpcChannelClientConnectionAdapter(channel));
 
             InetSocketAddress socketAddress = new InetSocketAddress(address.getHost(), address.getPort());
             channel.connect(socketAddress, connectionTimeoutMillis);
 
-            // TODO: Socket interceptor for Alto?
+            // TODO: Socket interceptor for TPC?
             channel.start();
             return channel;
         } catch (Exception e) {
@@ -1013,9 +1013,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             }
             checkClientState(connection, switchingToNextCluster);
 
-            List<Integer> altoPorts = response.altoPorts;
-            if (isAltoAwareClient && altoPorts != null && !altoPorts.isEmpty()) {
-                connectAltoPorts(connection, altoPorts);
+            List<Integer> tpcPorts = response.altoPorts;
+            if (isTpcAwareClient && tpcPorts != null && !tpcPorts.isEmpty()) {
+                connectTpcPorts(connection, tpcPorts);
             }
 
             boolean connectionsEmpty = activeConnections.isEmpty();
@@ -1249,13 +1249,13 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
     }
 
-    private void connectAltoPorts(TcpClientConnection connection, List<Integer> altoPorts) {
-        AltoChannelConnector connector = new AltoChannelConnector(clientUuid,
+    private void connectTpcPorts(TcpClientConnection connection, List<Integer> tpcPorts) {
+        TpcChannelConnector connector = new TpcChannelConnector(clientUuid,
                 connection,
-                altoPorts,
+                tpcPorts,
                 executor,
                 connection.getChannelInitializer(),
-                this::createAltoChannel,
+                this::createTpcChannel,
                 client.getLoggingService());
         connector.initiate();
     }
