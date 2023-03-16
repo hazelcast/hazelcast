@@ -16,50 +16,52 @@
 
 package com.hazelcast.jet.sql.impl.connector.infoschema;
 
+import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.datalink.DataLink;
+import com.hazelcast.sql.impl.schema.datalink.DataLinkCatalogEntry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static java.util.Arrays.asList;
 
 public class DataLinksTable extends InfoSchemaTable {
     private static final String NAME = "datalinks";
 
     private static final List<TableField> FIELDS = asList(
-            new TableField("table_catalog", QueryDataType.VARCHAR, false),
-            new TableField("table_schema", QueryDataType.VARCHAR, false),
+            new TableField("datalink_catalog", QueryDataType.VARCHAR, false),
+            new TableField("datalink_schema", QueryDataType.VARCHAR, false),
             new TableField("datalink_name", QueryDataType.VARCHAR, false),
             new TableField("datalink_type", QueryDataType.VARCHAR, false),
             new TableField("datalink_options", QueryDataType.VARCHAR, false)
     );
 
     private final String dataLinkSchema;
-    private final Collection<DataLink> dataLinks;
+    private final Collection<DataLinkCatalogEntry> dataLinkCatalogEntries;
 
     public DataLinksTable(String catalog,
                           String schemaName,
                           String dataLinkSchema,
-                          Collection<DataLink> dataLinks) {
+                          Collection<DataLinkCatalogEntry> dataLinkCatalogEntries) {
         super(FIELDS, catalog, schemaName, NAME, new ConstantTableStatistics(0));
         this.dataLinkSchema = dataLinkSchema;
-        this.dataLinks = dataLinks;
+        this.dataLinkCatalogEntries = dataLinkCatalogEntries;
     }
 
     @Override
     protected List<Object[]> rows() {
-        List<Object[]> rows = new ArrayList<>(dataLinks.size());
-        for (DataLink dl : dataLinks) {
+        List<Object[]> rows = new ArrayList<>(dataLinkCatalogEntries.size());
+        for (DataLinkCatalogEntry dl : dataLinkCatalogEntries) {
             Object[] row = new Object[]{
                     catalog(),
                     dataLinkSchema,
-                    dl.name(),
-                    dl.type(),
-                    dl.options().toString()
+                    dl.getName(),
+                    dl.getType(),
+                    uncheckCall(() -> JsonUtil.toJson(dl.getOptions()))
             };
             rows.add(row);
         }

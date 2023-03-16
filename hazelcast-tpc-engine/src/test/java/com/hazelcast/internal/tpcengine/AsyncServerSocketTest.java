@@ -198,7 +198,6 @@ public abstract class AsyncServerSocketTest {
                                 .build();
                         clientSocket.start();
                     })
-                    .set(AsyncSocketOptions.SO_REUSEPORT, true)
                     .build();
             serverSocket.bind(local);
             serverSocket.start();
@@ -218,7 +217,6 @@ public abstract class AsyncServerSocketTest {
                                 .build();
                         clientSocket.start();
                     })
-                    .set(AsyncSocketOptions.SO_REUSEPORT, true)
                     .build();
             serverSocket.bind(local);
             serverSocket.start();

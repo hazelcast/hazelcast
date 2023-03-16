@@ -55,7 +55,6 @@ import java.util.stream.Collectors;
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
 import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_KEEPALIVE;
 import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_RCVBUF;
-import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_REUSEPORT;
 import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_SNDBUF;
 import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.TCP_NODELAY;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -200,7 +199,6 @@ public class AltoServerBootstrap {
 
             AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
                     .set(SO_RCVBUF, clientSocketConfig.getReceiveBufferSizeKB() * KILO_BYTE)
-                    .set(SO_REUSEPORT, true)
                     .setAcceptConsumer(acceptRequest -> {
                         AsyncSocket socket = reactor.newAsyncSocketBuilder(acceptRequest)
                                 .setReadHandler(readHandlerSuppliers.get(reactor).get())

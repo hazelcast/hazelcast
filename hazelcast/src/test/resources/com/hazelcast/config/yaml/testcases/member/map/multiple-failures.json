@@ -175,6 +175,19 @@
               "predicate": {}
             }
           }
+        },
+        "map-with-wrong-partition-strategy-class": {
+          "partition-strategy": 1
+        },
+        "map-with-empty-partition-attributes-list": {
+          "partition-attributes": []
+        },
+        "map-with-invalid-partition-attribute-names": {
+          "partition-attributes": [
+            {
+              "attributeName": "test"
+            }
+          ]
         }
       }
     }
@@ -1002,8 +1015,43 @@
         }],
         "keyword": "allOf",
         "message": "#: only 1 subschema matches out of 2"
+      },
+      {
+        "schemaLocation": "#/definitions/Map/additionalProperties/properties/partition-strategy",
+        "pointerToViolation": "#/hazelcast/map/map-with-wrong-partition-strategy-class/partition-strategy",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: Integer"
+      },
+      {
+        "schemaLocation": "#/definitions/Map/additionalProperties/properties/partition-attributes",
+        "pointerToViolation": "#/hazelcast/map/map-with-empty-partition-attributes-list/partition-attributes",
+        "causingExceptions": [],
+        "keyword": "minItems",
+        "message": "expected minimum item count: 1, found: 0"
+      },
+      {
+        "schemaLocation": "#/definitions/PartitionAttribute",
+        "pointerToViolation": "#/hazelcast/map/map-with-invalid-partition-attribute-names/partition-attributes/0",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/PartitionAttribute",
+            "pointerToViolation": "#/hazelcast/map/map-with-invalid-partition-attribute-names/partition-attributes/0",
+            "causingExceptions": [],
+            "keyword": "additionalProperties",
+            "message": "extraneous key [attributeName] is not permitted"
+          },
+          {
+            "schemaLocation": "#/definitions/PartitionAttribute",
+            "pointerToViolation": "#/hazelcast/map/map-with-invalid-partition-attribute-names/partition-attributes/0",
+            "causingExceptions": [],
+            "keyword": "required",
+            "message": "required key [name] not found"
+          }
+        ],
+        "message": "2 schema violations found"
       }
     ],
-    "message": "88 schema violations found"
+    "message": "92 schema violations found"
   }
 }

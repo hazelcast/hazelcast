@@ -34,6 +34,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.AggregateAbstractPhysicalRule;
 import com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOperationResult;
+import com.hazelcast.jet.sql.impl.validate.UpdateDataLinkOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
@@ -203,7 +204,9 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int TYPE_FIELD = 87;
     public static final int DATA_LINK = 88;
 
-    public static final int LEN = DATA_LINK + 1;
+    public static final int UPDATE_DATA_LINK_OPERATION = 89;
+
+    public static final int LEN = UPDATE_DATA_LINK_OPERATION + 1;
 
     @Override
     public int getFactoryId() {
@@ -244,6 +247,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[AGGREGATE_EXPORT_FUNCTION] = arg -> AggregateAbstractPhysicalRule.AggregateExportFunction.INSTANCE;
         constructors[AGGREGATE_JSON_OBJECT_AGG_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateObjectAggSupplier();
         constructors[UDT_OBJECT_TO_JSON] = arg -> new UdtObjectToJsonFunction();
+        constructors[UPDATE_DATA_LINK_OPERATION] = arg -> new UpdateDataLinkOperation();
 
         constructors[INDEX_FILTER_VALUE] = arg -> new IndexFilterValue();
         constructors[INDEX_FILTER_EQUALS] = arg -> new IndexEqualsFilter();

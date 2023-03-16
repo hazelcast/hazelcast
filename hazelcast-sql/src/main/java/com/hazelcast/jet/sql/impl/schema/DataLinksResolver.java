@@ -20,7 +20,7 @@ import com.hazelcast.jet.sql.impl.connector.infoschema.DataLinksTable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
-import com.hazelcast.sql.impl.schema.datalink.DataLink;
+import com.hazelcast.sql.impl.schema.datalink.DataLinkCatalogEntry;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -34,12 +34,12 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
 public class DataLinksResolver implements TableResolver {
-    // It will be in the separate schema, so separate resolver is implemented.
+    // It will be in a separate schema, so separate resolver is implemented.
     private static final List<List<String>> SEARCH_PATHS = singletonList(
             asList(CATALOG, SCHEMA_NAME_PUBLIC)
     );
 
-    private static final List<Function<List<DataLink>, Table>> ADDITIONAL_TABLE_PRODUCERS = singletonList(
+    private static final List<Function<List<DataLinkCatalogEntry>, Table>> ADDITIONAL_TABLE_PRODUCERS = singletonList(
             dl -> new DataLinksTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, dl)
     );
 
@@ -49,18 +49,24 @@ public class DataLinksResolver implements TableResolver {
         this.dataLinkStorage = dataLinkStorage;
     }
 
-    public void createDataLink(DataLink dl, boolean replace, boolean ifNotExists) {
-        if (ifNotExists) {
-            dataLinkStorage.putIfAbsent(dl.name(), dl);
-        } else if (replace) {
-            dataLinkStorage.put(dl.name(), dl);
-        } else if (!dataLinkStorage.putIfAbsent(dl.name(), dl)) {
-            throw QueryException.error("Data link already exists: " + dl.name());
+    /**
+     * @return true, if the datalink was created
+     */
+    public boolean createDataLink(DataLinkCatalogEntry dl, boolean replace, boolean ifNotExists) {
+        if (replace) {
+            dataLinkStorage.put(dl.getName(), dl);
+            return true;
+        } else {
+            boolean added = dataLinkStorage.putIfAbsent(dl.getName(), dl);
+            if (!added && !ifNotExists) {
+                throw QueryException.error("Data link already exists: " + dl.getName());
+            }
+            return added;
         }
     }
 
     public void removeDataLink(String name, boolean ifExists) {
-        if (dataLinkStorage.removeDataLink(name) == null && !ifExists) {
+        if (!dataLinkStorage.removeDataLink(name) && !ifExists) {
             throw QueryException.error("Data link does not exist: " + name);
         }
     }
