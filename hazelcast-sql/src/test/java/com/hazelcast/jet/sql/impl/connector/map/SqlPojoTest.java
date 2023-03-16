@@ -113,7 +113,7 @@ public class SqlPojoTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " + badName))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessage("Object '%s' not found, did you forget to CREATE MAPPING?", badName);
+                .hasMessage("Mapping '%s' references unknown class: java.lang.ClassNotFoundException: com.hazelcast.NoSuchClass", badName);
     }
 
     @Test
