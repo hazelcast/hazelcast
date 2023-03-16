@@ -25,6 +25,7 @@ import com.hazelcast.jet.sql.impl.connector.infoschema.MappingsTable;
 import com.hazelcast.jet.sql.impl.connector.infoschema.TablesTable;
 import com.hazelcast.jet.sql.impl.connector.infoschema.ViewsTable;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
@@ -73,6 +74,7 @@ public class TableResolverImpl implements TableResolver {
     private final TablesStorage tableStorage;
     private final SqlConnectorCache connectorCache;
     private final List<TableListener> listeners;
+    private final ILogger logger;
 
     // These fields should normally be volatile because we're accessing them from multiple threads. But we
     // don't care if some thread doesn't see a newer value written by another thread. Each thread will write
@@ -90,6 +92,7 @@ public class TableResolverImpl implements TableResolver {
         this.tableStorage = tableStorage;
         this.connectorCache = connectorCache;
         this.listeners = new CopyOnWriteArrayList<>();
+        this.logger = nodeEngine.getLogger(getClass());
 
         // because listeners are invoked asynchronously from the calling thread,
         // local changes are handled in createMapping() & removeMapping(), thus
@@ -243,7 +246,16 @@ public class TableResolverImpl implements TableResolver {
 
         for (Object o : objects) {
             if (o instanceof Mapping) {
-                tables.add(toTable((Mapping) o));
+                try {
+                    tables.add(toTable((Mapping) o));
+                } catch (QueryException e) {
+                    if (e.getCause() instanceof ClassNotFoundException) {
+                        logger.warning(String.format("Mapping %s references unknown class: %s", ((Mapping) o).name(),
+                                e.getCause()));
+                    } else {
+                        throw e;
+                    }
+                }
                 mappings.add((Mapping) o);
             } else if (o instanceof View) {
                 tables.add(toTable((View) o));
