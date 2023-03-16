@@ -154,4 +154,11 @@
         <packageUrl regex="true">^pkg:maven/org\.codehaus\.woodstox/stax2\-api@.*$</packageUrl>
         <cpe>cpe:/a:fasterxml:woodstox</cpe>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - google-http-client-gson incorrectly identified as json-java.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client\-gson@.*$</packageUrl>
+        <cpe>cpe:/a:json-java_project:json-java</cpe>
+    </suppress>
 </suppressions>
