@@ -35,6 +35,7 @@ import com.hazelcast.client.impl.protocol.codec.JetRemoveJobStatusListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.JetResumeJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetTerminateJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetUpdateJobConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.JetUploadJobMetaDataCodec;
 import com.hazelcast.client.impl.protocol.codec.JetUploadJobMultipartCodec;
 import com.hazelcast.instance.impl.Node;
@@ -70,6 +71,8 @@ public class JetMessageTaskFactoryProvider implements MessageTaskFactoryProvider
                 (cm, con) -> new JetGetJobSubmissionTimeMessageTask(cm, node, con));
         factories.put(JetGetJobConfigCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new JetGetJobConfigMessageTask(cm, node, con));
+        factories.put(JetUpdateJobConfigCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new JetUpdateJobConfigMessageTask(cm, node, con));
         factories.put(JetResumeJobCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new JetResumeJobMessageTask(cm, node, con));
         factories.put(JetExportSnapshotCodec.REQUEST_MESSAGE_TYPE,

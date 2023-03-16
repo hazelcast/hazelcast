@@ -17,6 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.config.MetricsConfig;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.DAG;
@@ -135,12 +136,7 @@ public interface Job {
      * submission. For light jobs it always returns {@code null}.
      */
     @Nullable
-    default String getName() {
-        if (isLightJob()) {
-            return null;
-        }
-        return getConfig().getName();
-    }
+    String getName();
 
     /**
      * Returns the current status of this job. Each invocation queries the
@@ -190,6 +186,16 @@ public interface Job {
      */
     @Nonnull
     JobConfig getConfig();
+
+    /**
+     * Applies the specified delta configuration to a {@link #suspend()
+     * suspended} job and returns the updated configuration.
+     *
+     * @throws IllegalStateException if this job is not suspended
+     * @throws UnsupportedOperationException if called for a light job
+     * @since 5.3
+     */
+    JobConfig updateConfig(@Nonnull DeltaJobConfig deltaConfig);
 
     /**
      * Return a {@link JobSuspensionCause description of the cause} that has

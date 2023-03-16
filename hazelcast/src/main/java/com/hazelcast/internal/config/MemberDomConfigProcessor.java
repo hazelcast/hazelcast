@@ -79,6 +79,7 @@ import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
@@ -1989,6 +1990,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 mapQueryCacheHandler(node, mapConfig);
             } else if (matches("tiered-store", nodeName)) {
                 mapConfig.setTieredStoreConfig(createTieredStoreConfig(node));
+            } else if (matches("partition-attributes", nodeName)) {
+                handlePartitionAttributes(node, mapConfig);
             }
         }
         config.addMapConfig(mapConfig);
@@ -3502,6 +3505,18 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
+    protected void handlePartitionAttributes(Node node, MapConfig mapConfig) {
+        for (final Node childElement : childElements(node)) {
+            final PartitioningAttributeConfig attributeConfig = new PartitioningAttributeConfig();
+            handlePartitioningAttributeConfig(childElement, attributeConfig);
+
+            mapConfig.getPartitioningAttributeConfigs().add(attributeConfig);
+        }
+    }
+
+    protected void handlePartitioningAttributeConfig(Node node, PartitioningAttributeConfig config) {
+        config.setAttributeName(getTextContent(node));
+    }
 
     protected void fillClusterLoginConfig(AbstractClusterLoginConfig<?> config, Node node) {
         for (Node child : childElements(node)) {

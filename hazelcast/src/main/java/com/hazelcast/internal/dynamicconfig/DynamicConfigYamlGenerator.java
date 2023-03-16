@@ -56,6 +56,7 @@ import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PNCounterConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -98,6 +99,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
@@ -231,6 +233,8 @@ public class DynamicConfigYamlGenerator {
                     getQueryCacheConfigsAsMap(subConfigAsObject.getQueryCacheConfigs()));
             addNonNullToMap(subConfigAsMap, "tiered-store",
                     getTieredStoreConfigAsMap(subConfigAsObject.getTieredStoreConfig()));
+            addNonNullToMap(subConfigAsMap, "partition-attributes",
+                    getPartitioningAttributesAsList(subConfigAsObject.getPartitioningAttributeConfigs()));
 
             child.put(subConfigAsObject.getName(), subConfigAsMap);
         }
@@ -1255,6 +1259,22 @@ public class DynamicConfigYamlGenerator {
 
         return classNameOrImplClass(partitioningStrategyConfig.getPartitioningStrategyClass(),
                 partitioningStrategyConfig.getPartitioningStrategy());
+    }
+
+    private static List<Map<String, Object>> getPartitioningAttributesAsList(List<PartitioningAttributeConfig> attributeConfigs) {
+        if (attributeConfigs == null || attributeConfigs.isEmpty()) {
+            return null;
+        }
+
+        return attributeConfigs.stream()
+                .map(DynamicConfigYamlGenerator::getPartitionAttributeAsMap)
+                .collect(Collectors.toList());
+    }
+
+    private static Map<String, Object> getPartitionAttributeAsMap(PartitioningAttributeConfig config) {
+        final Map<String, Object> configAsMap = new LinkedHashMap<>();
+        configAsMap.put("name", config.getAttributeName());
+        return configAsMap;
     }
 
     private static Map<String, Object> getPredicateConfigAsMap(PredicateConfig predicateConfig) {

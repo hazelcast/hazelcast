@@ -18,9 +18,15 @@ package com.hazelcast.client.alto;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.connection.tcp.AltoChannelClientConnectionAdapter;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
+import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
@@ -30,6 +36,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.OutboundFrame;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.partition.PartitionService;
@@ -46,7 +55,10 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.client.properties.ClientProperty.HEARTBEAT_INTERVAL;
+import static com.hazelcast.client.properties.ClientProperty.HEARTBEAT_TIMEOUT;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -73,7 +85,7 @@ public class ClientAltoTest extends ClientTestSupport {
         HazelcastInstance client = HazelcastClient.newHazelcastClient(getClientConfig());
 
         Collection<ClientConnection> connections = getConnectionManager(client).getActiveConnections();
-        assertEquals(2, connections.size());
+        assertTrueEventually(() -> assertEquals(2, connections.size()));
 
         assertClientConnectsAllAltoPortsEventually(connections, config.getAltoConfig().getEventloopCount());
     }
@@ -132,6 +144,7 @@ public class ClientAltoTest extends ClientTestSupport {
 
         ClientConnectionManager connectionManager = getConnectionManager(client);
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
+        assertTrueEventually(() -> assertEquals(2, connections.size()));
 
         assertClientConnectsAllAltoPortsEventually(connections, config.getAltoConfig().getEventloopCount());
 
@@ -271,19 +284,8 @@ public class ClientAltoTest extends ClientTestSupport {
 
     @Test
     public void testPartitionBoundPendingInvocations_whenConnectionCloses() {
-        Config config = getMemberConfig();
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true).setImplementation(new MapStoreAdapter<Integer, Integer>() {
-            @Override
-            public Integer load(Integer key) {
-                // Simulate a long-running operation
-                sleepSeconds(1000);
-                return super.load(key);
-            }
-        });
         String mapName = randomMapName();
-        config.addMapConfig(new MapConfig(mapName).setMapStoreConfig(mapStoreConfig));
-
+        Config config = getMemberWithMapStoreConfig(mapName);
         Hazelcast.newHazelcastInstance(config);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(getClientConfig());
@@ -304,6 +306,50 @@ public class ClientAltoTest extends ClientTestSupport {
     }
 
     @Test
+    public void testAltoChannelTargetedPendingInvocations_whenConnectionCloses() {
+        // We don't send invocations to Alto channels this way, but this is just
+        // to make sure that invocation directly to the Alto channels work, and
+        // closing the connection (hence the channel) cleanups the pending invocations
+        String mapName = randomMapName();
+        Config config = getMemberWithMapStoreConfig(mapName);
+        Hazelcast.newHazelcastInstance(config);
+
+        HazelcastClientInstanceImpl client
+                = getHazelcastClientInstanceImpl(HazelcastClient.newHazelcastClient(getClientConfig()));
+        ClientConnectionManager connectionManager = client.getConnectionManager();
+        Collection<ClientConnection> connections = connectionManager.getActiveConnections();
+
+        assertClientConnectsAllAltoPortsEventually(connections, config.getAltoConfig().getEventloopCount());
+
+        ClientConnection connection = connections.iterator().next();
+        Channel[] altoChannels = connection.getAltoChannels();
+
+        int key = 1;
+        int value = 1;
+
+        int partitionId = client.getPartitionService().getPartition(key).getPartitionId();
+        Channel targetChannel = altoChannels[partitionId % altoChannels.length];
+        ClientConnection adapter
+                = (ClientConnection) targetChannel.attributeMap().get(AltoChannelClientConnectionAdapter.class);
+
+        InternalSerializationService serializationService = client.getSerializationService();
+
+        Data keyData = serializationService.toData(key);
+        Data valueData = serializationService.toData(value);
+
+        ClientMessage request = MapPutCodec.encodeRequest(mapName, keyData, valueData, ThreadUtil.getThreadId(), -1);
+        ClientInvocationFuture future = new ClientInvocation(client, request, mapName, adapter).invoke();
+
+        connection.close("Expected", null);
+
+        // Should get TargetDisconnectedException and retried based on our rules,
+        // which bubbles the exception to the user for non-retryable messages
+        assertThatThrownBy(future::join)
+                .isInstanceOf(CompletionException.class)
+                .hasCauseInstanceOf(TargetDisconnectedException.class);
+    }
+
+    @Test
     public void testAltoEnabledClient_inAltoDisabledCluster() {
         Hazelcast.newHazelcastInstance();
         Hazelcast.newHazelcastInstance();
@@ -313,7 +359,8 @@ public class ClientAltoTest extends ClientTestSupport {
 
         ClientConnectionManager connectionManager = getConnectionManager(client);
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
-        assertEquals(2, connections.size());
+        assertTrueEventually(() -> assertEquals(2, connections.size()));
+
         assertNoConnectionToAltoPortsAllTheTime(connections);
 
         map.put("42", "42");
@@ -331,11 +378,77 @@ public class ClientAltoTest extends ClientTestSupport {
 
         ClientConnectionManager connectionManager = getConnectionManager(client);
         Collection<ClientConnection> connections = connectionManager.getActiveConnections();
-        assertEquals(2, connections.size());
+        assertTrueEventually(() -> assertEquals(2, connections.size()));
+
         assertNoConnectionToAltoPortsAllTheTime(connections);
 
         map.put("42", "42");
         assertEquals("42", map.get("42"));
+    }
+
+    @Test
+    public void testAltoClient_heartbeatsToIdleAltoChannels() {
+        Config config = getMemberConfig();
+        Hazelcast.newHazelcastInstance(config);
+
+        ClientConfig clientConfig = getClientConfig();
+        clientConfig.setProperty(HEARTBEAT_INTERVAL.getName(), "1000");
+
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        ClientConnectionManager connectionManager = getConnectionManager(client);
+        Collection<ClientConnection> connections = connectionManager.getActiveConnections();
+        assertClientConnectsAllAltoPortsEventually(connections, config.getAltoConfig().getEventloopCount());
+
+        ClientConnection connection = connectionManager.getRandomConnection();
+        assertTrue(connection.isAlive());
+
+        Channel[] altoChannels = connection.getAltoChannels();
+        assertNotNull(altoChannels);
+
+        long now = System.currentTimeMillis();
+        assertTrueEventually(() -> {
+            for (Channel channel : altoChannels) {
+                assertTrue(channel.lastWriteTimeMillis() > now);
+            }
+        });
+    }
+
+    @Test
+    public void testAltoClient_heartbeatsToNotRespondingAltoChannelsTimeouts() {
+        Config config = getMemberConfig();
+        Hazelcast.newHazelcastInstance(config);
+
+        ClientConfig clientConfig = getClientConfig();
+        clientConfig.setProperty(HEARTBEAT_INTERVAL.getName(), "1000");
+        clientConfig.setProperty(HEARTBEAT_TIMEOUT.getName(), "3000");
+
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        ClientConnectionManager connectionManager = getConnectionManager(client);
+        Collection<ClientConnection> connections = connectionManager.getActiveConnections();
+
+        assertClientConnectsAllAltoPortsEventually(connections, config.getAltoConfig().getEventloopCount());
+
+        ClientConnection connection = connections.iterator().next();
+        assertTrue(connection.isAlive());
+
+        // This is a long-running task that will block the Alto thread, and it
+        // should not be able to respond to ping requests
+        spawn(() -> {
+            String mapName = randomMapName();
+            IMap<Integer, Integer> map = client.getMap(mapName);
+            map.put(1, 1);
+            map.executeOnKey(1, entry -> {
+                try {
+                    Thread.sleep(TimeUnit.SECONDS.toMillis(1_000));
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                return null;
+            });
+        });
+
+        assertTrueEventually(() -> assertFalse(connection.isAlive()));
     }
 
     private void assertNoConnectionToAltoPortsAllTheTime(Collection<ClientConnection> connections) {
@@ -384,6 +497,21 @@ public class ClientAltoTest extends ClientTestSupport {
         config.getAltoConfig()
                 .setEnabled(true)
                 .setEventloopCount(loopCount);
+        return config;
+    }
+
+    private Config getMemberWithMapStoreConfig(String mapName) {
+        Config config = getMemberConfig();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true).setImplementation(new MapStoreAdapter<Integer, Integer>() {
+            @Override
+            public Integer load(Integer key) {
+                // Simulate a long-running operation
+                sleepSeconds(1000);
+                return super.load(key);
+            }
+        });
+        config.addMapConfig(new MapConfig(mapName).setMapStoreConfig(mapStoreConfig));
         return config;
     }
 }

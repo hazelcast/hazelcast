@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
@@ -48,6 +49,7 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
+import static com.hazelcast.jet.core.JobStatus.SUSPENDED_EXPORTING_SNAPSHOT;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.jobNameAndExecutionId;
@@ -164,6 +166,20 @@ public class MasterContext {
 
     public JobConfig jobConfig() {
         return jobRecord.getConfig();
+    }
+
+    public JobConfig updateJobConfig(DeltaJobConfig deltaConfig) {
+        lock();
+        try {
+            if (jobStatus != SUSPENDED && jobStatus != SUSPENDED_EXPORTING_SNAPSHOT) {
+                throw new IllegalStateException("Job not suspended, but " + jobStatus);
+            }
+            deltaConfig.applyTo(jobConfig());
+            jobRepository.updateJobRecord(jobRecord);
+            return jobConfig();
+        } finally {
+            unlock();
+        }
     }
 
     public JobRecord jobRecord() {

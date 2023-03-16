@@ -21,10 +21,12 @@ import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.exception.CancellationByUserException;
+import com.hazelcast.jet.impl.operation.UpdateJobConfigOperation;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -32,6 +34,7 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -56,10 +59,15 @@ public abstract class AbstractJobProxy<C, M> implements Job {
 
     private static final long TERMINATE_RETRY_DELAY_NS = MILLISECONDS.toNanos(100);
 
+    // we intentionally do a `new String` to not have an interned copy of the string
+    @SuppressWarnings("StringOperationCanBeSimplified")
+    private static final String NOT_LOADED = new String("NOT_LOADED");
+
     /** Null for normal jobs, non-null for light jobs  */
     protected final M lightJobCoordinator;
 
     private final long jobId;
+    private volatile String name = NOT_LOADED;
     private final ILogger logger;
     private final C container;
 
@@ -72,8 +80,6 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     // Flag which indicates if this proxy has sent a request to join the job result or not
     private final AtomicBoolean joinedJob = new AtomicBoolean();
     private final BiConsumer<Void, Throwable> joinJobCallback;
-
-    private volatile JobConfig jobConfig;
     private final Supplier<Long> submissionTimeSup = memoizeConcurrent(this::doGetJobSubmissionTime);
 
     /**
@@ -124,23 +130,37 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         return jobId;
     }
 
+    @Nullable @Override
+    @SuppressWarnings({"StringEquality", "java:S4973"})
+    public String getName() {
+        if (isLightJob()) {
+            return null;
+        }
+        if (name == NOT_LOADED) {
+            return getConfig().getName();
+        }
+        return name;
+    }
+
     @Nonnull @Override
     public JobConfig getConfig() {
-        // The common path will use a single volatile load
-        JobConfig loadResult = jobConfig;
-        if (loadResult != null) {
-            return loadResult;
-        }
         synchronized (this) {
-            // The uncommon path can use simpler code with multiple volatile loads
-            if (jobConfig != null) {
-                return jobConfig;
-            }
-            jobConfig = doGetJobConfig();
-            if (jobConfig == null) {
+            JobConfig config = doGetJobConfig();
+            if (config == null) {
                 throw new NullPointerException("Supplier returned null");
             }
-            return jobConfig;
+            name = config.getName();
+            return config;
+        }
+    }
+
+    @Override
+    public JobConfig updateConfig(@Nonnull DeltaJobConfig deltaConfig) {
+        checkNotLightJob("updateConfig");
+        synchronized (this) {
+            JobConfig config = doUpdateJobConfig(deltaConfig);
+            name = config.getName();
+            return config;
         }
     }
 
@@ -150,10 +170,10 @@ public abstract class AbstractJobProxy<C, M> implements Job {
      * say {@code name ??}. If we have it and it is null, it will say {@code
      * name ''}.
      */
+    @SuppressWarnings({"StringEquality", "java:S4973"})
     private String idAndName() {
-        JobConfig config = jobConfig;
         return getIdString() + " (name "
-                + (config != null ? "'" + (config.getName() != null ? config.getName() : "") + "'" : "??")
+                + (name != NOT_LOADED ? "'" + (name != null ? name : "") + "'" : "??")
                 + ')';
     }
 
@@ -307,6 +327,14 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     protected abstract long doGetJobSubmissionTime();
 
     protected abstract JobConfig doGetJobConfig();
+
+    /**
+     * Sends an {@link UpdateJobConfigOperation} to the master member. On the master member,
+     * if the job is SUSPENDED, the job record is updated both locally and {@linkplain
+     * JobRepository#JOB_RECORDS_MAP_NAME globally} (in order for {@link #getConfig()} to
+     * reflect the changes); otherwise, the operation fails.
+     */
+    protected abstract JobConfig doUpdateJobConfig(DeltaJobConfig deltaConfig);
 
     /**
      * Return the ID of the coordinator - the master member for normal jobs and

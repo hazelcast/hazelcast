@@ -8050,6 +8050,23 @@ public class MemberCompatibilityTest_2_6 {
         compareClientMessages(fromFile, encoded);
     }
 
+    @Test
+    public void test_JetUpdateJobConfigCodec_decodeRequest() {
+        int fileClientMessageIndex = 910;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        JetUpdateJobConfigCodec.RequestParameters parameters = JetUpdateJobConfigCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aLong, parameters.jobId));
+        assertTrue(isEqual(aData, parameters.deltaConfig));
+    }
+
+    @Test
+    public void test_JetUpdateJobConfigCodec_encodeResponse() {
+        int fileClientMessageIndex = 911;
+        ClientMessage encoded = JetUpdateJobConfigCodec.encodeResponse(aData);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 

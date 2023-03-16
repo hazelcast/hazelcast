@@ -533,6 +533,13 @@
                 <hz:partition-strategy>com.hazelcast.spring.DummyPartitionStrategy</hz:partition-strategy>
             </hz:map>
 
+            <hz:map name="mapWithPartitionAttributes">
+                <hz:partition-attributes>
+                    <hz:attribute>attr1</hz:attribute>
+                    <hz:attribute>attr2</hz:attribute>
+                </hz:partition-attributes>
+            </hz:map>
+
             <hz:map name="mapWithComparatorClassName">
                 <hz:eviction comparator-class-name="com.hazelcast.internal.eviction.impl.comparator.LRUEvictionPolicyComparator"/>
             </hz:map>
