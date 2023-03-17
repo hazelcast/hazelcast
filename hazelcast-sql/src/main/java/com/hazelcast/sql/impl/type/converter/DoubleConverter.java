@@ -142,7 +142,7 @@ public final class DoubleConverter extends Converter {
             throw nanValueError(DECIMAL);
         }
 
-        return new BigDecimal(val0, DECIMAL_MATH_CONTEXT);
+        return new BigDecimal(val0, DECIMAL_MATH_CONTEXT); //NOSONAR
     }
 
     @Override

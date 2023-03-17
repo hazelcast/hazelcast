@@ -143,7 +143,7 @@ public final class FloatConverter extends Converter {
             throw nanValueError(QueryDataTypeFamily.DECIMAL);
         }
 
-        return new BigDecimal(val0, DECIMAL_MATH_CONTEXT);
+        return new BigDecimal(val0, DECIMAL_MATH_CONTEXT); //NOSONAR
     }
 
     @Override

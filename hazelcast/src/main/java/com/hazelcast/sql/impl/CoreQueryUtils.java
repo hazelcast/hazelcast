@@ -30,7 +30,8 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public final class CoreQueryUtils {
 
-    private CoreQueryUtils() { }
+    private CoreQueryUtils() {
+    }
 
     public static HazelcastSqlException toPublicException(@Nonnull Throwable e, @Nonnull UUID localMemberId) {
         if (e instanceof HazelcastSqlException) {
@@ -58,8 +59,7 @@ public final class CoreQueryUtils {
                 copy = copy.getCause();
             }
 
-            String exMessage = e != null ? e.getMessage() : "";
-            return new HazelcastSqlException(localMemberId, SqlErrorCode.GENERIC, exMessage, e, null);
+            return new HazelcastSqlException(localMemberId, SqlErrorCode.GENERIC, e.getMessage(), e, null);
         }
     }
 
