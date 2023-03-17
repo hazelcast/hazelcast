@@ -131,7 +131,7 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
 
         MongoClient mongoClient = MongoClients.create(connectionString);
         MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
-        collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
+        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
 
         execute("CREATE MAPPING " + tableName
                 + " ("
@@ -150,24 +150,24 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
                 + ")");
 
         spawn(() -> {
+            assertTrueEventually(() -> assertEquals(1, instance().getJet().getJobs().size()));
+            collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
             sleep(200);
             collection.insertOne(new Document("firstName", "Han").append("lastName", "Solo").append("jedi", false));
             sleep(100);
             collection.insertOne(new Document("firstName", "Anakin").append("lastName", "Skywalker").append("jedi", true));
         });
-
         assertRowsEventuallyInAnyOrder("select firstName, lastName, operation from table(impose_order("
                         + "    table " + tableName + ", "
                         + "    descriptor(ts), "
                         + "    interval '0.002' second "
                         + "))"
-                        + " limit 2",
+                        + "where lastName = 'Skywalker' limit 2",
                 emptyList(),
                 asList(
                         new Row("Luke", "Skywalker", "insert"),
-                        new Row("Han", "Solo", "insert")
-                ),
-                TimeUnit.SECONDS.toMillis(10)
+                        new Row("Anakin", "Skywalker", "insert")
+                )
         );
     }
 
