@@ -22,6 +22,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,6 +39,7 @@ public class MappingField implements IdentifiedDataSerializable {
     private static final String NAME = "name";
     private static final String TYPE = "type";
     private static final String EXTERNAL_NAME = "externalName";
+    private static final String EXTERNAL_TYPE = "externalType";
     private static final String PRIMARY_KEY = "primaryKey";
 
     // This generic structure is used to have binary compatibility if more fields are added in
@@ -48,15 +51,21 @@ public class MappingField implements IdentifiedDataSerializable {
     }
 
     public MappingField(String name, QueryDataType type) {
-        this(name, type, null);
+        this(name, type, null, null);
+    }
+    public MappingField(String name, QueryDataType type, String externalName) {
+        this(name, type, externalName, null);
     }
 
-    public MappingField(String name, QueryDataType type, String externalName) {
+    public MappingField(String name, QueryDataType type, String externalName, String externalType) {
         this.properties = new HashMap<>();
         this.properties.put(NAME, requireNonNull(name));
         this.properties.put(TYPE, requireNonNull(type));
         if (externalName != null) {
             this.properties.put(EXTERNAL_NAME, externalName);
+        }
+        if (externalType != null) {
+            this.properties.put(EXTERNAL_TYPE, externalType);
         }
     }
 
@@ -95,6 +104,22 @@ public class MappingField implements IdentifiedDataSerializable {
 
     public MappingField setPrimaryKey(boolean primaryKey) {
         properties.put(PRIMARY_KEY, primaryKey);
+        return this;
+    }
+
+    /**
+     * External type - for example for MongoDB it will be the BsonType,
+     * for normal database it will be the SQL type, etc.
+     *
+     * @since 5.3
+     */
+    @Nullable
+    public String externalType() {
+        return (String) properties.get(EXTERNAL_TYPE);
+    }
+
+    public MappingField setExternalType(@Nonnull String externalType) {
+        properties.put(EXTERNAL_TYPE, externalType);
         return this;
     }
 

@@ -35,16 +35,19 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static java.time.ZoneId.systemDefault;
+import static java.time.ZoneOffset.UTC;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -61,16 +64,21 @@ public class AllTypesInsertMongoSqlConnectorTest extends MongoSqlTest {
     public String mappingType;
 
     @Parameterized.Parameter(2)
-    public String sqlValue;
+    public String sqlInsertValue;
 
     @Parameterized.Parameter(3)
-    public Object javaValue;
+    public Object valueFromSql;
 
     @Parameterized.Parameter(4)
-    public Object mongoValue;
+    public Object valueInMongo;
 
-    @Parameterized.Parameters(name = "type:{0}, mappingType:{1}, sqlValue:{2}, javaValue:{3}, mongoValue:{4}")
+    @Parameterized.Parameters(name = "type:{0}, mappingType:{1}, sqlInsertValue:{2}")
     public static Collection<Object[]> parameters() {
+        LocalDateTime comparedDateTime = LocalDateTime.of(2022, 12, 30, 23, 59, 59);
+        ZonedDateTime dateTimeUtc = comparedDateTime.atZone(UTC);
+
+        String dateTimeString = dateTimeUtc.withZoneSameInstant(systemDefault())
+                                           .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         return asList(new Object[][]{
                 {"string", "VARCHAR", "'dummy'", "dummy", "dummy"},
                 {"bool", "BOOLEAN", "TRUE", true, true},
@@ -83,9 +91,10 @@ public class AllTypesInsertMongoSqlConnectorTest extends MongoSqlTest {
                 {"double", "DOUBLE", "1.8", 1.8, 1.8d},
                 {"date", "DATE", "'2022-12-30'", LocalDate.of(2022, 12, 30),
                         new Date(LocalDate.parse("2022-12-30").atStartOfDay(ZoneId.of("UTC")).toEpochSecond() * 1000)},
-                {"date", "TIMESTAMP", "'2022-12-30 23:59:59'",
-                        LocalDateTime.of(2022, 12, 30, 23, 59, 59),
-                        new Date(Timestamp.valueOf("2022-12-30 23:59:59").getTime())},
+                {"date", "TIMESTAMP", "'" + dateTimeString + "'",
+                        dateTimeUtc.withZoneSameInstant(systemDefault()).toLocalDateTime(),
+                        new Date(dateTimeUtc.toInstant().toEpochMilli()),
+                        },
                 {"objectId", "OBJECT", null, EXAMPLE_OBJECT_ID, EXAMPLE_OBJECT_ID},
                 {"object", "JSON", "JSON_OBJECT('test':'abc')", new HazelcastJsonValue("{\"test\": \"abc\"}"), new Document("test", "abc")}
         });
@@ -122,10 +131,10 @@ public class AllTypesInsertMongoSqlConnectorTest extends MongoSqlTest {
                 + "TYPE MongoDB " + options()
         );
 
-        if (sqlValue != null) {
-            execute("INSERT INTO " + mappingName + " VALUES(0, " + sqlValue + ")");
+        if (sqlInsertValue != null) {
+            execute("INSERT INTO " + mappingName + " VALUES(0, " + sqlInsertValue + ")");
         }
-        execute("INSERT INTO " + mappingName + " VALUES(1, ?)", javaValue);
+        execute("INSERT INTO " + mappingName + " VALUES(1, ?)", valueFromSql);
 
         MongoCollection<Document> collection = database.getCollection(collectionName);
         ArrayList<Document> list = collection.find().into(new ArrayList<>());
@@ -133,17 +142,17 @@ public class AllTypesInsertMongoSqlConnectorTest extends MongoSqlTest {
                                .map(d -> new Row(d.getInteger("id"), d.get("table_column")))
                                .collect(Collectors.toList());
 
-        if (sqlValue == null) {
-            assertThat(fromMongo).containsExactlyInAnyOrder(new Row(1, mongoValue));
-            assertRowsAnyOrder("select * from " + mappingName, new Row(1, javaValue));
+        if (sqlInsertValue == null) {
+            assertThat(fromMongo).containsExactlyInAnyOrder(new Row(1, valueInMongo));
+            assertRowsAnyOrder("select * from " + mappingName, new Row(1, valueFromSql));
         } else {
             assertThat(fromMongo).containsExactlyInAnyOrder(
-                    new Row(0, mongoValue),
-                    new Row(1, mongoValue)
+                    new Row(0, valueInMongo),
+                    new Row(1, valueInMongo)
             );
             assertRowsAnyOrder("select * from " + mappingName,
-                    new Row(0, javaValue),
-                    new Row(1, javaValue)
+                    new Row(0, valueFromSql),
+                    new Row(1, valueFromSql)
             );
         }
     }

@@ -78,7 +78,8 @@ class FieldResolver {
                 MappingField mappingField = new MappingField(
                         documentField.columnName,
                         resolveType(documentField.columnType),
-                        documentField.columnName
+                        documentField.columnName,
+                        documentField.columnType.name()
                 );
                 mappingField.setPrimaryKey(pkColumnName.test(mappingField));
                 resolvedFields.add(mappingField);
@@ -92,7 +93,8 @@ class FieldResolver {
                 if (documentField == null) {
                     throw new IllegalArgumentException("Could not resolve field with name " + nameInMongo);
                 }
-                MappingField mappingField = new MappingField(f.name(), f.type(), nameInMongo);
+                MappingField mappingField = new MappingField(f.name(), f.type(), nameInMongo,
+                        documentField.columnType.name());
                 mappingField.setPrimaryKey(pkColumnName.test(mappingField));
                 validateType(f, documentField);
                 resolvedFields.add(mappingField);
@@ -116,9 +118,8 @@ class FieldResolver {
             case DOUBLE: return QueryDataType.DOUBLE;
             case BOOLEAN: return QueryDataType.BOOLEAN;
             case TIMESTAMP:
-                return QueryDataType.TIMESTAMP;
             case DATE_TIME:
-                return QueryDataType.DATE;
+                return QueryDataType.TIMESTAMP;
             case STRING:
             case JAVASCRIPT:
             case JAVASCRIPT_WITH_SCOPE:

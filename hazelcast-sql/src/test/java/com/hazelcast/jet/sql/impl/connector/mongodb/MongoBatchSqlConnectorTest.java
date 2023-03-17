@@ -224,7 +224,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
 
     public void testInsertsIntoMongo(boolean includeId, String sql, Object... args) {
         MongoCollection<Document> collection = database.getCollection(collectionName);
-        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", "true"));
+        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
 
         createMapping(includeId);
 

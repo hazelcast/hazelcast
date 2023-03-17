@@ -15,7 +15,6 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.EventTimePolicy;
@@ -41,7 +40,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.JSON;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.project;
 import static com.mongodb.client.model.Projections.excludeId;
@@ -147,19 +145,10 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
 
         for (Map.Entry<String, Object> value : doc.entrySet()) {
             int index = indexInProjection(value.getKey());
-            row[index] = convert(value.getValue(), index);
+            row[index] = ConversionsFromBson.convertFromBson(value.getValue(), types[index]);
         }
 
         return new JetSqlRow(evalContext.getSerializationService(), row);
-    }
-
-    private Object convert(Object value, int index) {
-        value = BsonTypes.unwrap(value);
-        if (value instanceof Document && types[index].getTypeFamily() == JSON) {
-            Document doc = (Document) value;
-            return new HazelcastJsonValue(doc.toJson());
-        }
-        return types[index].convert(value);
     }
 
     private JetSqlRow convertStreamDocToRow(ChangeStreamDocument<Document> changeStreamDocument) {
@@ -172,7 +161,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
             if (index == -1) {
                 continue;
             }
-            row[index] = convert(entry.getValue(), index);
+            row[index] = ConversionsFromBson.convertFromBson(entry.getValue(), types[index]);
         }
         addIfInProjection(changeStreamDocument.getOperationType().getValue(), "operationType", row);
         addIfInProjection(changeStreamDocument.getResumeToken().toString(), "resumeToken", row);

@@ -37,11 +37,13 @@ import org.bson.types.ObjectId;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -63,9 +65,19 @@ final class BsonTypes {
     }
 
     static BsonType resolveTypeFromJava(Object value) {
-        BsonType bsonType = JAVA_TYPE_TO_BSON_TYPE.get(value.getClass());
+        Class<?> valueClass = value.getClass();
+        BsonType bsonType = JAVA_TYPE_TO_BSON_TYPE.get(valueClass);
+
+        // allow coerced types
         if (bsonType == null) {
-            throw new IllegalArgumentException("BSON type " + value.getClass() + " is not known");
+            for (Class<?> candidate : JAVA_TYPE_TO_BSON_TYPE.keySet()) {
+                if (candidate.isAssignableFrom(valueClass)) {
+                    return JAVA_TYPE_TO_BSON_TYPE.get(candidate);
+                }
+            }
+        }
+        if (bsonType == null) {
+            throw new IllegalArgumentException("BSON type " + valueClass + " is not known");
         }
         return bsonType;
     }
@@ -122,6 +134,7 @@ final class BsonTypes {
         result.put(String.class, BsonType.STRING);
         result.put(Object[].class, BsonType.ARRAY);
         result.put(List.class, BsonType.ARRAY);
+        result.put(Collection.class, BsonType.ARRAY);
         result.put(BigDecimal.class, BsonType.DECIMAL128);
         result.put(BsonDecimal128.class, BsonType.DECIMAL128);
         result.put(BsonRegularExpression.class, BsonType.REGULAR_EXPRESSION);
@@ -132,7 +145,7 @@ final class BsonTypes {
     }
 
     @SuppressWarnings("checkstyle:ReturnCount")
-    static Object unwrap(Object value) {
+    static Object unwrapSimpleWrappers(Object value) {
         if (value instanceof BsonBoolean) {
             return ((BsonBoolean) value).getValue();
         }
@@ -161,7 +174,7 @@ final class BsonTypes {
         }
         if (value instanceof BsonDateTime) {
             BsonDateTime v = (BsonDateTime) value;
-            return LocalDateTime.from(new Date(v.getValue()).toInstant());
+            return LocalDateTime.from(Instant.ofEpochMilli(v.getValue()));
         }
         if (value instanceof BsonTimestamp) {
             return timestampToLocalDateTime((BsonTimestamp) value);

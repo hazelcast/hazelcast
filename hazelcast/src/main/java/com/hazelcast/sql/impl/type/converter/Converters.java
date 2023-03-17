@@ -17,6 +17,8 @@
 package com.hazelcast.sql.impl.type.converter;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.util.ServiceLoader;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.sql.impl.QueryException;
 
 import java.util.ArrayList;
@@ -139,6 +141,13 @@ public final class Converters {
         // ROW converter
         converters.add(RowConverter.INSTANCE);
 
+        try {
+            ServiceLoader.iterator(Converter.class, "com.hazelcast.sql.type.Converter",
+                    Converters.class.getClassLoader())
+                    .forEachRemaining(converters::add);
+        } catch (Exception e) {
+            Logger.getLogger(Converters.class).warning("Unable to load converters", e);
+        }
         return converters;
     }
 

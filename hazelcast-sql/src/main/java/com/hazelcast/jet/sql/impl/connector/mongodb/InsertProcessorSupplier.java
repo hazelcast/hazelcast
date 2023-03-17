@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import org.bson.BsonType;
 import org.bson.Document;
 
 import javax.annotation.Nonnull;
@@ -47,6 +48,7 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
     private final String[] paths;
     private final WriteMode writeMode;
     private final QueryDataType[] types;
+    private final BsonType[] externalTypes;
     private transient SupplierEx<MongoClient> clientSupplier;
     private final String dataLinkName;
     private final String idField;
@@ -58,6 +60,7 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
         this.collectionName = table.collectionName;
         this.paths = table.externalNames();
         this.types = table.fieldTypes();
+        this.externalTypes = table.externalTypes();
         this.writeMode = writeMode;
         this.idField = table.primaryKeyExternalName();
     }
@@ -108,8 +111,7 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
             if (fieldName.equals("_id") && value == null) {
                 continue;
             }
-            QueryDataType type = types[i];
-            value = wrap(value, type::convert);
+            value = ConversionsToBson.convertToBson(value, types[i], externalTypes[i]);
             doc = doc.append(fieldName, value);
         }
 

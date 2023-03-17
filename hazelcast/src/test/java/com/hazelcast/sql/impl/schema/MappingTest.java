@@ -46,7 +46,7 @@ public class MappingTest {
                 "mapping-name",
                 "mapping-name",
                 "mapping-type",
-                new ArrayList<>(singletonList(new MappingField("field-name", QueryDataType.INT, null))),
+                new ArrayList<>(singletonList(new MappingField("field-name", QueryDataType.INT, null, null))),
                 new HashMap<>(ImmutableMap.of("option.key", "option.value"))
         );
 
