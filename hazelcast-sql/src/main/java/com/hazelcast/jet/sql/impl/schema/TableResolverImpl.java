@@ -35,7 +35,7 @@ import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
-import com.hazelcast.sql.impl.schema.datalink.DataLink;
+import com.hazelcast.sql.impl.schema.datalink.DataLinkCatalogEntry;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 
@@ -251,9 +251,9 @@ public class TableResolverImpl implements TableResolver {
                 views.add((View) o);
             } else if (o instanceof Type) {
                 types.add((Type) o);
-            } else if (o instanceof DataLink) {
+            } else if (o instanceof DataLinkCatalogEntry) {
                 // Note: data link is not a 'table' or 'relation',
-                // it contains in a separate schema.
+                // It's stored in a separate namespace.
                 continue;
             } else {
                 throw new RuntimeException("Unexpected: " + o);

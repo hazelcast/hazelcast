@@ -168,16 +168,16 @@ public class ClientConfigTest {
     }
 
     @Test
-    public void testAltoConfig() {
+    public void testTpcConfig() {
         ClientConfig config = new ClientConfig();
-        ClientAltoConfig altoConfig = new ClientAltoConfig();
+        ClientTpcConfig tpcConfig = new ClientTpcConfig();
 
-        assertFalse(altoConfig.isEnabled());
+        assertFalse(tpcConfig.isEnabled());
 
-        altoConfig.setEnabled(true);
-        config.setAltoConfig(altoConfig);
+        tpcConfig.setEnabled(true);
+        config.setTpcConfig(tpcConfig);
 
-        assertTrue(config.getAltoConfig().isEnabled());
-        assertThrows(IllegalArgumentException.class, () -> config.setAltoConfig(null));
+        assertTrue(config.getTpcConfig().isEnabled());
+        assertThrows(IllegalArgumentException.class, () -> config.setTpcConfig(null));
     }
 }

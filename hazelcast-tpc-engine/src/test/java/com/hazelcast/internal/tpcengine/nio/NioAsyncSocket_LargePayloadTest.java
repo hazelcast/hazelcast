@@ -17,12 +17,12 @@
 package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.internal.tpcengine.AsyncSocket_LargePayloadTest;
-import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.ReactorBuilder;
 
 public class NioAsyncSocket_LargePayloadTest extends AsyncSocket_LargePayloadTest {
 
     @Override
-    public Reactor newReactor() {
-        return new NioReactor().start();
+    public ReactorBuilder newReactorBuilder() {
+        return new NioReactorBuilder();
     }
 }

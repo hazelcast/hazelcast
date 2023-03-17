@@ -21,10 +21,13 @@ import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.ReactorType;
 
 /**
- * A builder for a {@link NioReactor}.
+ * A {@link ReactorBuilder} that builds a {@link NioReactor}.
  */
 public class NioReactorBuilder extends ReactorBuilder {
 
+    /**
+     * Creates a new NioReactorBuilder.
+     */
     public NioReactorBuilder() {
         super(ReactorType.NIO);
     }

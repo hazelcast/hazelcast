@@ -71,6 +71,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         for (int i = 0; i < memberCount; i++) {
             instances[i] = factory.newHazelcastInstance(config);
         }
+        assertEqualsEventually(() -> instance().getLifecycleService().isRunning(), true);
     }
 
     protected static void initializeWithClient(

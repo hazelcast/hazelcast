@@ -382,4 +382,19 @@ public class JetConfig {
         result = 31 * result + (resourceUploadEnabled ? 1 : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "JetConfig{"
+                + "defaultEdgeConfig=" + defaultEdgeConfig
+                + ", enabled=" + enabled
+                + ", resourceUploadEnabled=" + resourceUploadEnabled
+                + ", cooperativeThreadCount=" + cooperativeThreadCount
+                + ", flowControlPeriodMs=" + flowControlPeriodMs
+                + ", backupCount=" + backupCount
+                + ", scaleUpDelayMillis=" + scaleUpDelayMillis
+                + ", losslessRestartEnabled=" + losslessRestartEnabled
+                + ", maxProcessorAccumulatedRecords=" + maxProcessorAccumulatedRecords
+                + '}';
+    }
 }

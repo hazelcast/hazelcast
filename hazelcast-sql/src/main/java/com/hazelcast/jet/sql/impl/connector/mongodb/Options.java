@@ -18,12 +18,15 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 import com.hazelcast.jet.mongodb.datalink.MongoDataLink;
 import com.hazelcast.jet.mongodb.impl.MongoUtilities;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.MappingField;
 import org.bson.BsonTimestamp;
 
 import java.time.Instant;
 import java.util.Map;
 import java.util.function.Predicate;
+
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 final class Options {
 
@@ -38,6 +41,9 @@ final class Options {
 
     static BsonTimestamp startAt(Map<String, String> options) {
         String startAtValue = options.get(START_AT_OPTION);
+        if (isNullOrEmpty(startAtValue)) {
+            throw QueryException.error("startAt property is required for MongoDB stream");
+        }
         if ("now".equalsIgnoreCase(startAtValue)) {
             return MongoUtilities.bsonTimestampFromTimeMillis(System.currentTimeMillis());
         } else {

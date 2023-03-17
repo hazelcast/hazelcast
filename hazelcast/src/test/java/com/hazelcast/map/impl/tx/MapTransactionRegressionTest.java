@@ -322,4 +322,7 @@ public class MapTransactionRegressionTest extends HazelcastTestSupport {
 
         inst.shutdown();
     }
+
+    public static final class DummyUncheckedHazelcastTestException extends RuntimeException {
+    }
 }

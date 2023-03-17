@@ -313,6 +313,17 @@ public interface Job {
      * If the terminal snapshot fails, Jet will suspend this job instead of
      * cancelling it.
      * <p>
+     * <strong>NOTE:</strong> if the cluster becomes unstable (a member leaves
+     * or similar) while the job is in the process of being cancelled, it may
+     * end up getting immediately restarted. Call {@link #getStatus()} to find
+     * out and possibly try to cancel again. Should this restart happen,
+     * created snapshot cannot be regarded as exported terminal snapshot. It
+     * shall be neither overwritten nor deleted until there is a new snapshot
+     * created, either automatic or via cancelAndExportSnapshot method,
+     * otherwise data can be lost. If cancelAndExportSnapshot is used again,
+     * ensure that there was a regular snapshot made or use different snapshot
+     * name.
+     * <p>
      * You can call this method for a suspended job, too: in that case it will
      * export the last successful snapshot and cancel the job.
      * <p>
@@ -339,7 +350,7 @@ public interface Job {
      * start a new job using the exported state using {@link
      * JobConfig#setInitialSnapshotName(String)}. Not supported for light jobs.
      * <p>
-     * The snapshot will be independent from the job that created it. Jet won't
+     * The snapshot will be independent of the job that created it. Jet won't
      * automatically delete the IMap it is exported into. You must manually
      * call {@linkplain JobStateSnapshot#destroy() snapshot.destroy()} to
      * delete it. If your state is large, make sure you have enough memory to

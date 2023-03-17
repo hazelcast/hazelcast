@@ -72,6 +72,9 @@ public class FieldResolverTest {
                             "        \"firstName\": { \"bsonType\": \"string\" }\n" +
                             "        \"lastName\": { \"bsonType\": \"string\" }\n" +
                             "        \"birthYear\": { \"bsonType\": \"int\" }\n" +
+                            "        \"title\": { \"enum\": [ \"Bsc\", \"Msc\", \"PhD\" ] }\n" +
+                            "        \"intOrString\": { \"enum\": [ \"String\", 1 ] }\n" +
+                            "        \"unionType\": { \"bsonType\": [ 'int', 'string' ] }\n" +
                             "      }\n" +
                             "    }\n" +
                             "  }\n"
@@ -85,11 +88,15 @@ public class FieldResolverTest {
             readOpts.put("connectionString", mongoContainer.getConnectionString());
             readOpts.put("database", databaseName);
             Map<String, DocumentField> fields = resolver.readFields(collectionName, readOpts, false);
-            assertThat(fields).containsOnlyKeys("firstName", "lastName", "birthYear");
+            assertThat(fields).containsOnlyKeys("firstName", "lastName", "birthYear", "title", "unionType", "intOrString");
             assertThat(fields.get("lastName").columnType).isEqualTo(BsonType.STRING);
             assertThat(fields.get("birthYear").columnType).isEqualTo(BsonType.INT32);
+            assertThat(fields.get("title").columnType).isEqualTo(BsonType.STRING);
+            assertThat(fields.get("intOrString").columnType).isEqualTo(BsonType.DOCUMENT);
+            assertThat(fields.get("unionType").columnType).isEqualTo(BsonType.DOCUMENT);
         }
     }
+
 
     @Test
     public void testResolvesFieldsViaSample() {

@@ -15,6 +15,7 @@
  */
 package com.hazelcast.jet.mongodb.impl;
 
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.EventTimePolicy;
@@ -47,7 +48,7 @@ public class ReadMongoParams<I> implements Serializable {
 
     Long startAtTimestamp;
     EventTimePolicy<? super I> eventTimePolicy;
-    FunctionEx<ChangeStreamDocument<Document>, I> mapStreamFn;
+    BiFunctionEx<ChangeStreamDocument<Document>, Long, I> mapStreamFn;
 
     public ReadMongoParams(boolean stream) {
         this.stream = stream;
@@ -151,11 +152,11 @@ public class ReadMongoParams<I> implements Serializable {
         return this;
     }
 
-    public FunctionEx<ChangeStreamDocument<Document>, I> getMapStreamFn() {
+    public BiFunctionEx<ChangeStreamDocument<Document>, Long, I> getMapStreamFn() {
         return mapStreamFn;
     }
 
-    public ReadMongoParams<I> setMapStreamFn(FunctionEx<ChangeStreamDocument<Document>, I> mapStreamFn) {
+    public ReadMongoParams<I> setMapStreamFn(BiFunctionEx<ChangeStreamDocument<Document>, Long, I> mapStreamFn) {
         this.mapStreamFn = mapStreamFn;
         return this;
     }

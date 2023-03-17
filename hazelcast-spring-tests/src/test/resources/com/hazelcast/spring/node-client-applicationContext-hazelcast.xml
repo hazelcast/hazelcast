@@ -707,7 +707,7 @@
         </hz:sql>
     </hz:client>
 
-    <hz:client id="client25-with-alto">
+    <hz:client id="client25-with-tpc">
         <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
         <hz:network>
             <hz:member>127.0.0.1:6150</hz:member>
@@ -722,6 +722,6 @@
             <hz:member>127.0.0.1:6159</hz:member>
         </hz:network>
 
-        <hz:alto enabled="true"/>
+        <hz:tpc enabled="true"/>
     </hz:client>
 </beans>
