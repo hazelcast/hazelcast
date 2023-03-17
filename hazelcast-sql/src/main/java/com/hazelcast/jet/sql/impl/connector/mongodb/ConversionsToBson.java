@@ -64,7 +64,6 @@ public final class ConversionsToBson {
      * In other words, converts for INSERT/UPDATE/SINK INTO statements.
      */
     public static Object convertToBson(Object value, QueryDataType sqlType, BsonType bsonType) {
-//        Map<Map<>>
         if (value == null) {
             return null;
         }

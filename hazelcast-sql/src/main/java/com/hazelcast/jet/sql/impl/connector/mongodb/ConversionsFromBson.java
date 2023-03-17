@@ -62,7 +62,6 @@ public final class ConversionsFromBson {
         }
         // common unwrapping to standard types
         Object value = BsonTypes.unwrapSimpleWrappers(toConvert);
-        // todo check if necessary
         if (sqlType.getTypeFamily() == JSON) {
             if (value instanceof String) {
                 return new HazelcastJsonValue((String) value);
@@ -76,7 +75,6 @@ public final class ConversionsFromBson {
                 return new HazelcastJsonValue(doc.toJson());
             }
         }
-
 
         if (value instanceof ObjectId) {
             value = convertObjectId((ObjectId) value, sqlType);
