@@ -44,7 +44,7 @@ public enum ClientConfigSections {
     METRICS("metrics", false),
     INSTANCE_TRACKING("instance-tracking", false),
     SQL("sql", false),
-    ALTO("alto", false);
+    TPC("tpc", false);
 
     final boolean multipleOccurrence;
     private final String name;

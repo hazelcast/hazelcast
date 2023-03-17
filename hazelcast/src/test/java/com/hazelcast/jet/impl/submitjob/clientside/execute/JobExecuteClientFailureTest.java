@@ -58,7 +58,7 @@ public class JobExecuteClientFailureTest extends JetTestSupport {
     @After
     public void resetSingleton() {
         // Reset the singleton after the test
-        HazelcastBootstrap.resetSupplier();
+        HazelcastBootstrap.resetRemembered();
     }
 
     @Test

@@ -97,6 +97,16 @@ public final class RexToMongo {
 
             case IS_NOT_FALSE:
                 return Filters.ne((String) operands[0], false);
+            case IS_NULL:
+                return Filters.or(
+                        Filters.exists((String) operands[0], false),
+                        Filters.eq((String) operands[0], null)
+                );
+            case IS_NOT_NULL:
+                return Filters.and(
+                        Filters.exists((String) operands[0]),
+                        Filters.ne((String) operands[0], null)
+                );
             default:
                 throw new UnsupportedOperationException();
         }

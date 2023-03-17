@@ -16,7 +16,8 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.alto.AltoSocketConfig;
+import com.hazelcast.config.tpc.TpcSocketConfig;
+import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.security.jsm.HazelcastRuntimePermission;
 import com.hazelcast.spi.annotation.Beta;
@@ -75,7 +76,7 @@ public class NetworkConfig {
 
     private MemcacheProtocolConfig memcacheProtocolConfig = new MemcacheProtocolConfig();
 
-    private AltoSocketConfig altoSocketConfig = new AltoSocketConfig();
+    private TpcSocketConfig tpcSocketConfig = new TpcSocketConfig();
 
     public NetworkConfig() {
         String os = StringUtil.lowerCaseInternal(System.getProperty("os.name"));
@@ -410,31 +411,31 @@ public class NetworkConfig {
     }
 
     /**
-     * Gets the Alto socket config.
+     * Gets the TpcSocketConfig.
      *
-     * @return the Alto socket config
-     * @see com.hazelcast.config.alto.AltoConfig
+     * @return the TpcSocketConfig
+     * @see TpcConfig
      * @since 5.3
      */
     @Beta
     @Nonnull
-    public AltoSocketConfig getAltoSocketConfig() {
-        return altoSocketConfig;
+    public TpcSocketConfig getTpcSocketConfig() {
+        return tpcSocketConfig;
     }
 
     /**
-     * Sets the Alto socket config.
+     * Sets the TpcSocketConfig
      *
-     * @param altoSocketConfig the Alto socket config to set
+     * @param tpcSocketConfig the TpcSocketConfig to set
      * @return this network config
-     * @throws IllegalArgumentException if altoSocketConfig is null
-     * @see com.hazelcast.config.alto.AltoConfig
+     * @throws IllegalArgumentException if tpcSocketConfig is null
+     * @see TpcConfig
      * @since 5.3
      */
     @Beta
     @Nonnull
-    public NetworkConfig setAltoSocketConfig(@Nonnull AltoSocketConfig altoSocketConfig) {
-        this.altoSocketConfig = checkNotNull(altoSocketConfig);
+    public NetworkConfig setTpcSocketConfig(@Nonnull TpcSocketConfig tpcSocketConfig) {
+        this.tpcSocketConfig = checkNotNull(tpcSocketConfig);
         return this;
     }
 
@@ -453,7 +454,7 @@ public class NetworkConfig {
                 + ", icmpFailureDetectorConfig=" + icmpFailureDetectorConfig
                 + ", restApiConfig=" + restApiConfig
                 + ", memcacheProtocolConfig=" + memcacheProtocolConfig
-                + ", altoSocketConfig=" + altoSocketConfig
+                + ", tpcSocketConfig=" + tpcSocketConfig
                 + '}';
     }
 
@@ -479,7 +480,7 @@ public class NetworkConfig {
                 && Objects.equals(icmpFailureDetectorConfig, that.icmpFailureDetectorConfig)
                 && Objects.equals(restApiConfig, that.restApiConfig)
                 && Objects.equals(memcacheProtocolConfig, that.memcacheProtocolConfig)
-                && Objects.equals(altoSocketConfig, that.altoSocketConfig);
+                && Objects.equals(tpcSocketConfig, that.tpcSocketConfig);
     }
 
     @Override
@@ -488,6 +489,6 @@ public class NetworkConfig {
                 .hash(port, portCount, portAutoIncrement, reuseAddress, publicAddress, outboundPortDefinitions, outboundPorts,
                         interfaces, join, symmetricEncryptionConfig, socketInterceptorConfig, sslConfig,
                         memberAddressProviderConfig,
-                        icmpFailureDetectorConfig, restApiConfig, memcacheProtocolConfig, altoSocketConfig);
+                        icmpFailureDetectorConfig, restApiConfig, memcacheProtocolConfig, tpcSocketConfig);
     }
 }

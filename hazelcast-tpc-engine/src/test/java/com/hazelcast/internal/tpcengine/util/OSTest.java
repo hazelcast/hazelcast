@@ -35,6 +35,30 @@ public class OSTest {
     }
 
     @Test
+    public void test_isWindows0() {
+        assertTrue(OS.isWindows0("Windows"));
+        assertTrue(OS.isWindows0("wInDoWs"));
+        assertTrue(OS.isWindows0("Windows 10"));
+        assertTrue(OS.isWindows0("Windows 11"));
+        assertFalse(OS.isWindows0("LINUX"));
+        assertFalse(OS.isWindows0("LiNuX"));
+        assertFalse(OS.isWindows0("linux"));
+        assertFalse(OS.isWindows0("Mac OS X"));
+    }
+
+    @Test
+    public void test_isMac() {
+        assertFalse(OS.isMac0("Windows"));
+        assertFalse(OS.isMac0("wInDoWs"));
+        assertFalse(OS.isMac0("Windows 10"));
+        assertFalse(OS.isMac0("Windows 11"));
+        assertFalse(OS.isMac0("LINUX"));
+        assertFalse(OS.isMac0("LiNuX"));
+        assertFalse(OS.isMac0("linux"));
+        assertTrue(OS.isMac0("Mac OS X"));
+    }
+
+    @Test
     public void test_linuxMajorVersion0_whenIsLinux() {
         assertEquals(5, OS.linuxMajorVersion0("5.16.12-200.fc35.x86_64", true));
     }

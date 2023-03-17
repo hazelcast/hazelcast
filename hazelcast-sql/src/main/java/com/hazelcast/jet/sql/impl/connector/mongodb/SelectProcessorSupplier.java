@@ -40,6 +40,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.bsonDateTimeToLocalDateTime;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.bsonTimestampToLocalDateTime;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.JSON;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.project;
 import static com.mongodb.client.model.Projections.excludeId;
@@ -141,17 +144,19 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
     }
 
     private JetSqlRow convertDocToRow(Document doc) {
-        Object[] row = new Object[doc.size()];
+        Object[] row = new Object[projection.size()];
 
         for (Map.Entry<String, Object> value : doc.entrySet()) {
             int index = indexInProjection(value.getKey());
-            row[index] = ConversionsFromBson.convertFromBson(value.getValue(), types[index]);
+            if (index != -1) {
+                row[index] = ConversionsFromBson.convertFromBson(value.getValue(), types[index]);
+            }
         }
 
         return new JetSqlRow(evalContext.getSerializationService(), row);
     }
 
-    private JetSqlRow convertStreamDocToRow(ChangeStreamDocument<Document> changeStreamDocument) {
+    private JetSqlRow convertStreamDocToRow(ChangeStreamDocument<Document> changeStreamDocument, Long ts) {
         Document doc = changeStreamDocument.getFullDocument();
         requireNonNull(doc, "Document is empty");
         Object[] row = new Object[projection.size()];
@@ -165,6 +170,9 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         }
         addIfInProjection(changeStreamDocument.getOperationType().getValue(), "operationType", row);
         addIfInProjection(changeStreamDocument.getResumeToken().toString(), "resumeToken", row);
+        addIfInProjection(ts, "ts", row);
+        addIfInProjection(bsonDateTimeToLocalDateTime(changeStreamDocument.getWallTime()), "wallTime", row);
+        addIfInProjection(bsonTimestampToLocalDateTime(changeStreamDocument.getClusterTime()), "clusterTime", row);
 
         return new JetSqlRow(evalContext.getSerializationService(), row);
     }

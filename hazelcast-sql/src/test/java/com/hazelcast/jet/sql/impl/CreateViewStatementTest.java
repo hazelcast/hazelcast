@@ -40,7 +40,6 @@ public class CreateViewStatementTest extends SqlTestSupport {
     private IMap<Integer, Integer> map;
     private IMap<String, Object> viewStorage;
 
-
     @BeforeClass
     public static void beforeClass() {
         initialize(1, null);

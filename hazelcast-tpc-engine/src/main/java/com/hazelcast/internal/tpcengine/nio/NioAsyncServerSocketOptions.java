@@ -18,15 +18,12 @@ package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.internal.tpcengine.AsyncSocketOptions;
 import com.hazelcast.internal.tpcengine.Option;
-import com.hazelcast.internal.tpcengine.logging.TpcLogger;
-import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketOption;
 import java.net.StandardSocketOptions;
 import java.nio.channels.ServerSocketChannel;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.ReflectionUtil.findStaticFieldValue;
@@ -36,13 +33,9 @@ import static com.hazelcast.internal.tpcengine.util.ReflectionUtil.findStaticFie
  */
 public class NioAsyncServerSocketOptions implements AsyncSocketOptions {
 
-    private static final AtomicBoolean SO_REUSE_PORT_PRINTED = new AtomicBoolean();
-
     // This option is available since Java 9, so we need to use reflection.
-    private static final SocketOption<Boolean> JAVA_NET_SO_REUSEPORT
+    private static final SocketOption<Boolean> STD_SOCK_OPT_SO_REUSEPORT
             = findStaticFieldValue(StandardSocketOptions.class, "SO_REUSEPORT");
-
-    private final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
 
     private final ServerSocketChannel serverSocketChannel;
 
@@ -50,27 +43,42 @@ public class NioAsyncServerSocketOptions implements AsyncSocketOptions {
         this.serverSocketChannel = serverSocketChannel;
     }
 
+    private static SocketOption toSocketOption(Option option) {
+        if (SO_RCVBUF.equals(option)) {
+            return StandardSocketOptions.SO_RCVBUF;
+        } else if (SO_REUSEADDR.equals(option)) {
+            return StandardSocketOptions.SO_REUSEADDR;
+        } else if (SO_REUSEPORT.equals(option)) {
+            return STD_SOCK_OPT_SO_REUSEPORT;
+        } else {
+            return null;
+        }
+    }
+
     @Override
-    public <T> void set(Option<T> option, T value) {
+    public boolean isSupported(Option option) {
+        checkNotNull(option, "option");
+
+        SocketOption socketOption = toSocketOption(option);
+        return isSupported(socketOption);
+    }
+
+    private boolean isSupported(SocketOption socketOption) {
+        return socketOption != null && serverSocketChannel.supportedOptions().contains(socketOption);
+    }
+
+    @Override
+    public <T> boolean setIfSupported(Option<T> option, T value) {
         checkNotNull(option, "option");
         checkNotNull(value, "value");
 
         try {
-            if (SO_RCVBUF.equals(option)) {
-                serverSocketChannel.setOption(StandardSocketOptions.SO_RCVBUF, (Integer) value);
-            } else if (SO_REUSEADDR.equals(option)) {
-                serverSocketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, (Boolean) value);
-            } else if (SO_REUSEPORT.equals(option)) {
-                if (JAVA_NET_SO_REUSEPORT == null) {
-                    if (SO_REUSE_PORT_PRINTED.compareAndSet(false, true)) {
-                        logger.warning("Ignoring SO_REUSEPORT."
-                                + "Please upgrade to Java 9+ to enable the SO_REUSEPORT option.");
-                    }
-                } else {
-                    serverSocketChannel.setOption(JAVA_NET_SO_REUSEPORT, (Boolean) value);
-                }
+            SocketOption socketOption = toSocketOption(option);
+            if (isSupported(socketOption)) {
+                serverSocketChannel.setOption(socketOption, value);
+                return true;
             } else {
-                throw new UnsupportedOperationException("Unrecognized option " + option);
+                return false;
             }
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to set " + option.name() + " with value [" + value + "]", e);
@@ -78,22 +86,15 @@ public class NioAsyncServerSocketOptions implements AsyncSocketOptions {
     }
 
     @Override
-    public <T> T get(Option<T> option) {
+    public <T> T getIfSupported(Option<T> option) {
         checkNotNull(option, "option");
 
         try {
-            if (SO_RCVBUF.equals(option)) {
-                return (T) serverSocketChannel.getOption(StandardSocketOptions.SO_RCVBUF);
-            } else if (SO_REUSEADDR.equals(option)) {
-                return (T) serverSocketChannel.getOption(StandardSocketOptions.SO_REUSEADDR);
-            } else if (SO_REUSEPORT.equals(option)) {
-                if (JAVA_NET_SO_REUSEPORT == null) {
-                    return (T) Boolean.FALSE;
-                } else {
-                    return (T) serverSocketChannel.getOption(JAVA_NET_SO_REUSEPORT);
-                }
+            SocketOption socketOption = toSocketOption(option);
+            if (isSupported(socketOption)) {
+                return (T) serverSocketChannel.getOption(socketOption);
             } else {
-                throw new UnsupportedOperationException("Unrecognized option:" + option);
+                return null;
             }
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to get option " + option.name(), e);

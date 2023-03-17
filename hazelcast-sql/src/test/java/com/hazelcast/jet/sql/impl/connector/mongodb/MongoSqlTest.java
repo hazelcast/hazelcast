@@ -51,7 +51,7 @@ public abstract class MongoSqlTest extends SqlTestSupport {
     public final TestName testName = new TestName();
 
     @BeforeClass
-    public static void beforeClass() {
+    public static void beforeClass() throws InterruptedException {
         initialize(2, null);
         sqlService = instance().getSql();
         mongoClient = MongoClients.create(mongoContainer.getConnectionString());

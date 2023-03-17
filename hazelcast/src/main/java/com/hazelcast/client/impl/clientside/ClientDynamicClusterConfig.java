@@ -86,7 +86,7 @@ import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.config.alto.AltoConfig;
+import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
@@ -1149,13 +1149,13 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Nonnull
     @Override
-    public AltoConfig getAltoConfig() {
+    public TpcConfig getTpcConfig() {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Nonnull
     @Override
-    public Config setAltoConfig(@Nonnull AltoConfig altoConfig) {
+    public Config setTpcConfig(@Nonnull TpcConfig tpcConfig) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

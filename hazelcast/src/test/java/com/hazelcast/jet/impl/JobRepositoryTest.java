@@ -188,6 +188,22 @@ public class JobRepositoryTest extends JetTestSupport {
     }
 
     @Test
+    public void test_getJobExecutionRecordFromClient() {
+        HazelcastInstance client = createHazelcastClient();
+        Pipeline p = Pipeline.create();
+        p.readFrom(Sources.streamFromProcessor("source", ProcessorMetaSupplier.of(() -> new NoOutputSourceP())))
+                .withoutTimestamps()
+                .writeTo(Sinks.logger());
+        Job job = instance.getJet().newJob(p, new JobConfig()
+                .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
+                .setSnapshotIntervalMillis(100));
+        JobRepository jobRepository = new JobRepository(client);
+        // This simulates operation executed by Management Center (see JobManager.getSnapshotDetails)
+        assertTrueEventually(() -> assertNotNull(jobRepository.getJobExecutionRecord(job.getId())));
+        client.shutdown();
+    }
+
+    @Test
     public void test_maxNumberOfJobResults() {
         DAG dag = new DAG();
         dag.newVertex("v", Processors.noopP());

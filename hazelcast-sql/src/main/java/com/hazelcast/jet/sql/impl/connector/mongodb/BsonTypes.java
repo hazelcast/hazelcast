@@ -27,6 +27,7 @@ import org.bson.BsonRegularExpression;
 import org.bson.BsonString;
 import org.bson.BsonTimestamp;
 import org.bson.BsonType;
+import org.bson.Document;
 import org.bson.types.Code;
 import org.bson.types.CodeWithScope;
 import org.bson.types.Decimal128;
@@ -38,12 +39,20 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collection;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.bsonTimestampToLocalDateTime;
 import static java.util.Locale.ROOT;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Utility class to help resolve BSON-Java types.
@@ -52,8 +61,6 @@ final class BsonTypes {
 
     private static final Map<String, BsonType> BSON_NAME_TO_TYPE = generateBsonNameToBsonTypeMapping();
     private static final Map<Class<?>, BsonType> JAVA_TYPE_TO_BSON_TYPE = generateJavaClassToBsonTypeMapping();
-
-    private static final int MILLIS_TO_NANOS = 1000 * 1000;
 
     private BsonTypes() {
     }
@@ -72,6 +79,14 @@ final class BsonTypes {
         }
         if (bsonType == null) {
             throw new IllegalArgumentException("BSON type " + valueClass + " is not known");
+        }
+        return bsonType;
+    }
+
+    static BsonType resolveTypeFromJavaClass(Class<?> clazz) {
+        BsonType bsonType = JAVA_TYPE_TO_BSON_TYPE.get(clazz);
+        if (bsonType == null) {
+            throw new IllegalArgumentException("BSON type " + clazz + " is not known");
         }
         return bsonType;
     }
@@ -171,7 +186,7 @@ final class BsonTypes {
             return LocalDateTime.from(Instant.ofEpochMilli(v.getValue()));
         }
         if (value instanceof BsonTimestamp) {
-            return timestampToLocalDateTime((BsonTimestamp) value);
+            return bsonTimestampToLocalDateTime((BsonTimestamp) value);
         }
         if (value instanceof BsonJavaScript) {
             return ((BsonJavaScript) value).getCode();
@@ -185,10 +200,44 @@ final class BsonTypes {
         return value;
     }
 
-    @SuppressWarnings("checkstyle:MagicNumber")
-    private static LocalDateTime timestampToLocalDateTime(BsonTimestamp value) {
-        long v = value.getValue();
-        int nanoOfSecond = (int) (v % 1000) * MILLIS_TO_NANOS;
-        return LocalDateTime.ofEpochSecond(v / 1000, nanoOfSecond, ZoneOffset.UTC);
+
+    /**
+     * Gets {@link BsonType} from given Document being property descriptor from {@code jsonSchema}.
+     */
+    @SuppressWarnings("unchecked")
+    static BsonType getBsonType(Document propertyDescription) {
+        Object bsonType = propertyDescription.get("bsonType");
+        if (bsonType instanceof String) {
+            String bsonTypeName = (String) bsonType;
+            return BsonTypes.resolveTypeByName(bsonTypeName);
+        }
+        if (bsonType instanceof Collection) {
+            List<String> classes = ((Collection<String>) bsonType).stream()
+                                                                  .filter(Objects::nonNull)
+                                                                  .distinct()
+                                                                  .collect(toList());
+            if (classes.size() == 1) {
+                return BsonTypes.resolveTypeByName(classes.get(0));
+            } else {
+                return BsonType.DOCUMENT;
+            }
+        } else if (bsonType == null) {
+            Object enumValues = propertyDescription.get("enum");
+            checkNotNull(enumValues, "either bsonType or enum should be provided");
+            Collection<?> col = (Collection<?>) enumValues;
+            List<? extends Class<?>> classes =
+                    col.stream()
+                       .filter(Objects::nonNull)
+                       .map(Object::getClass)
+                       .distinct()
+                       .collect(toList());
+
+            if (classes.size() != 1) {
+                return BsonType.DOCUMENT;
+            } else {
+                return BsonTypes.resolveTypeFromJavaClass(classes.get(0));
+            }
+        }
+        throw new UnsupportedOperationException("Cannot infer BSON type from schema");
     }
 }

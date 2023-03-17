@@ -15,6 +15,7 @@
  */
 package com.hazelcast.jet.mongodb.impl;
 
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
@@ -75,8 +76,8 @@ public final class Mappers {
     }
 
     @Nonnull
-    public static <T> FunctionEx<ChangeStreamDocument<Document>, T> streamToClass(Class<T> type) {
-        return doc -> {
+    public static <T> BiFunctionEx<ChangeStreamDocument<Document>, Long, T> streamToClass(Class<T> type) {
+        return (doc, ts) -> {
             assert doc.getFullDocument() != null;
             return map(doc.getFullDocument(), type);
         };

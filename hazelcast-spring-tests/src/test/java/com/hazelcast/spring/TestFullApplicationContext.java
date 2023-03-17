@@ -84,6 +84,7 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PersistenceConfig;
@@ -118,8 +119,8 @@ import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
-import com.hazelcast.config.alto.AltoConfig;
-import com.hazelcast.config.alto.AltoSocketConfig;
+import com.hazelcast.config.tpc.TpcConfig;
+import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -359,7 +360,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
                 .filter(name -> !name.startsWith(INTERNAL_JET_OBJECTS_PREFIX))
                 .filter(name -> !name.equals(SQL_CATALOG_MAP_NAME))
                 .count();
-        assertEquals(27, mapConfigSize);
+        assertEquals(28, mapConfigSize);
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -510,6 +511,13 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         DiskTierConfig diskTierConfig = tieredStoreConfig.getDiskTierConfig();
         assertTrue(diskTierConfig.isEnabled());
         assertEquals("the-local0751", diskTierConfig.getDeviceName());
+
+        final List<PartitioningAttributeConfig> attributeConfigs = Arrays.asList(
+                new PartitioningAttributeConfig("attr1"),
+                new PartitioningAttributeConfig("attr2")
+        );
+        MapConfig testMapWithPartitionAttributes = config.getMapConfig("mapWithPartitionAttributes");
+        assertEquals(attributeConfigs, testMapWithPartitionAttributes.getPartitioningAttributeConfigs());
     }
 
     @Test
@@ -874,10 +882,10 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(2, icmpFailureDetectorConfig.getMaxAttempts());
         assertEquals(1, icmpFailureDetectorConfig.getTtl());
 
-        AltoSocketConfig altoSocketConfig = networkConfig.getAltoSocketConfig();
-        assertEquals("14000-16000", altoSocketConfig.getPortRange());
-        assertEquals(256, altoSocketConfig.getReceiveBufferSizeKB());
-        assertEquals(256, altoSocketConfig.getSendBufferSizeKB());
+        TpcSocketConfig tpcSocketConfig = networkConfig.getTpcSocketConfig();
+        assertEquals("14000-16000", tpcSocketConfig.getPortRange());
+        assertEquals(256, tpcSocketConfig.getReceiveBufferSizeKB());
+        assertEquals(256, tpcSocketConfig.getSendBufferSizeKB());
     }
 
     private void assertAwsConfig(AwsConfig aws) {
@@ -1654,10 +1662,10 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAltoConfig() {
-        AltoConfig altoConfig = config.getAltoConfig();
+    public void testTpcConfig() {
+        TpcConfig tpcConfig = config.getTpcConfig();
 
-        assertTrue(altoConfig.isEnabled());
-        assertEquals(12, altoConfig.getEventloopCount());
+        assertTrue(tpcConfig.isEnabled());
+        assertEquals(12, tpcConfig.getEventloopCount());
     }
 }

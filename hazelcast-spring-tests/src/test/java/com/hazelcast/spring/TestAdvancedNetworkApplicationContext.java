@@ -25,7 +25,7 @@ import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.config.alto.AltoSocketConfig;
+import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
@@ -80,7 +80,7 @@ public class TestAdvancedNetworkApplicationContext {
         MemberAddressProviderConfig addressProviderConfig = advancedNetworkConfig.getMemberAddressProviderConfig();
         assertFalse(addressProviderConfig.isEnabled());
 
-        AltoSocketConfig expectedAltoSocketConfig = new AltoSocketConfig()
+        TpcSocketConfig expectedTpcSocketConfig = new TpcSocketConfig()
                 .setPortRange("14000-16000")
                 .setReceiveBufferSizeKB(256)
                 .setSendBufferSizeKB(256);
@@ -103,7 +103,7 @@ public class TestAdvancedNetworkApplicationContext {
         assertEquals(120, memberEndpointConfig.getSocketKeepIdleSeconds());
         assertEquals(5, memberEndpointConfig.getSocketKeepIntervalSeconds());
         assertFalse(memberEndpointConfig.isSocketTcpNoDelay());
-        assertEquals(expectedAltoSocketConfig, memberEndpointConfig.getAltoSocketConfig());
+        assertEquals(expectedTpcSocketConfig, memberEndpointConfig.getTpcSocketConfig());
 
         EndpointConfig wanConfig = advancedNetworkConfig.getEndpointConfigs().get(
                 EndpointQualifier.resolve(ProtocolType.WAN, "wan-tokyo"));
@@ -113,7 +113,7 @@ public class TestAdvancedNetworkApplicationContext {
         assertEquals("thesalt", wanConfig.getSymmetricEncryptionConfig().getSalt());
         assertEquals("thepass", wanConfig.getSymmetricEncryptionConfig().getPassword());
         assertEquals(19, wanConfig.getSymmetricEncryptionConfig().getIterationCount());
-        assertEquals(expectedAltoSocketConfig, wanConfig.getAltoSocketConfig());
+        assertEquals(expectedTpcSocketConfig, wanConfig.getTpcSocketConfig());
 
         ServerSocketEndpointConfig clientEndpointConfig = (ServerSocketEndpointConfig) advancedNetworkConfig
                 .getEndpointConfigs().get(EndpointQualifier.CLIENT);
@@ -121,24 +121,24 @@ public class TestAdvancedNetworkApplicationContext {
         assertEquals(10, clientEndpointConfig.getPortCount());
         assertFalse(clientEndpointConfig.isPortAutoIncrement());
         assertTrue(clientEndpointConfig.isReuseAddress());
-        assertEquals(expectedAltoSocketConfig, clientEndpointConfig.getAltoSocketConfig());
+        assertEquals(expectedTpcSocketConfig, clientEndpointConfig.getTpcSocketConfig());
 
         RestServerEndpointConfig restServerEndpointConfig = advancedNetworkConfig.getRestEndpointConfig();
         assertEquals(9999, restServerEndpointConfig.getPort());
         assertTrue(restServerEndpointConfig.isPortAutoIncrement());
         assertContainsAll(restServerEndpointConfig.getEnabledGroups(),
                 Arrays.asList(HEALTH_CHECK, CLUSTER_READ));
-        assertEquals(expectedAltoSocketConfig, restServerEndpointConfig.getAltoSocketConfig());
+        assertEquals(expectedTpcSocketConfig, restServerEndpointConfig.getTpcSocketConfig());
 
         ServerSocketEndpointConfig memcacheEndpointConfig = (ServerSocketEndpointConfig) advancedNetworkConfig
                 .getEndpointConfigs().get(EndpointQualifier.MEMCACHE);
         assertEquals(9989, memcacheEndpointConfig.getPort());
-        assertEquals(expectedAltoSocketConfig, memcacheEndpointConfig.getAltoSocketConfig());
+        assertEquals(expectedTpcSocketConfig, memcacheEndpointConfig.getTpcSocketConfig());
 
         ServerSocketEndpointConfig wanSSEndpointConfig = (ServerSocketEndpointConfig) advancedNetworkConfig
                 .getEndpointConfigs().get(EndpointQualifier.resolve(ProtocolType.WAN, "wan-server-socket-config"));
         assertEquals(9979, wanSSEndpointConfig.getPort());
-        assertEquals(expectedAltoSocketConfig, wanSSEndpointConfig.getAltoSocketConfig());
+        assertEquals(expectedTpcSocketConfig, wanSSEndpointConfig.getTpcSocketConfig());
 
         WanReplicationConfig testWan = config.getWanReplicationConfig("testWan");
         WanBatchPublisherConfig tokyoWanPublisherConfig =
