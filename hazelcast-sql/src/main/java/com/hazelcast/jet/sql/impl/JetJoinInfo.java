@@ -163,6 +163,7 @@ public class JetJoinInfo implements DataSerializable {
     }
 
     public boolean isCooperative() {
-        return condition.isCooperative() && nonEquiCondition.isCooperative();
+        return (condition == null || condition.isCooperative())
+                && (nonEquiCondition == null || nonEquiCondition.isCooperative());
     }
 }
