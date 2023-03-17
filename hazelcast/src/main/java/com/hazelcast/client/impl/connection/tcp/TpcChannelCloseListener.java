@@ -30,11 +30,11 @@ import com.hazelcast.internal.networking.ChannelCloseListener;
  * are the ones that are sent with the ClientConnection adapter
  * of the TPC channel, such as heartbeats.
  */
-public class TPCChannelCloseListener implements ChannelCloseListener {
+public class TpcChannelCloseListener implements ChannelCloseListener {
 
     private final HazelcastClientInstanceImpl client;
 
-    public TPCChannelCloseListener(HazelcastClientInstanceImpl client) {
+    public TpcChannelCloseListener(HazelcastClientInstanceImpl client) {
         this.client = client;
     }
 

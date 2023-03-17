@@ -17,11 +17,11 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
-import com.hazelcast.instance.impl.Node;
+import com.hazelcast.client.impl.protocol.codec.ExperimentalAuthenticationCustomCodec;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.security.SimpleTokenCredentials;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -29,21 +29,24 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Default Authentication with username password handling task
+ * Custom Authentication with custom credential impl
  */
-public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<ClientAuthenticationCodec.RequestParameters> {
+public class ExperimentalAuthenticationCustomCredentialsMessageTask
+        extends AuthenticationBaseMessageTask<ExperimentalAuthenticationCustomCodec.RequestParameters> {
 
-    public AuthenticationMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public ExperimentalAuthenticationCustomCredentialsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientAuthenticationCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        ClientAuthenticationCodec.RequestParameters parameters = ClientAuthenticationCodec.decodeRequest(clientMessage);
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    protected ExperimentalAuthenticationCustomCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        ExperimentalAuthenticationCustomCodec.RequestParameters parameters
+                = ExperimentalAuthenticationCustomCodec.decodeRequest(clientMessage);
         assert parameters.uuid != null;
         clientUuid = parameters.uuid;
         clusterName = parameters.clusterName;
-        credentials = new UsernamePasswordCredentials(parameters.username, parameters.password);
+        credentials = new SimpleTokenCredentials(parameters.credentials);
         clientSerializationVersion = parameters.serializationVersion;
         clientVersion = parameters.clientHazelcastVersion;
         clientName = parameters.clientName;
@@ -56,8 +59,8 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
     protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, byte serializationVersion,
                                        String serverVersion, int partitionCount, UUID clusterId,
                                        boolean clientFailoverSupported, List<Integer> tpcPorts) {
-        return ClientAuthenticationCodec.encodeResponse(status, thisAddress, uuid, serializationVersion,
-                serverVersion, partitionCount, clusterId, clientFailoverSupported);
+        return ExperimentalAuthenticationCustomCodec.encodeResponse(status, thisAddress, uuid, serializationVersion,
+                serverVersion, partitionCount, clusterId, clientFailoverSupported, tpcPorts);
     }
 
     @Override

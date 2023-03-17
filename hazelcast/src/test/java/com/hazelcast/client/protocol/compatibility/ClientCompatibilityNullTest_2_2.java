@@ -86,7 +86,6 @@ public class ClientCompatibilityNullTest_2_2 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
-        assertFalse(parameters.isAltoPortsExists);
     }
 
     @Test
@@ -110,7 +109,6 @@ public class ClientCompatibilityNullTest_2_2 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
-        assertFalse(parameters.isAltoPortsExists);
     }
 
     @Test
