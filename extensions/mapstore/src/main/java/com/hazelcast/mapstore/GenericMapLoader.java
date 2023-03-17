@@ -180,7 +180,8 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
                     genericMapStoreProperties.tableName,
                     mappingColumns,
                     deriveMappingType(),
-                    genericMapStoreProperties.dataLinkRef
+                    genericMapStoreProperties.dataLinkRef,
+                    genericMapStoreProperties.idColumn
             );
 
             if (!genericMapStoreProperties.hasColumns()) {
@@ -213,10 +214,13 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
     private String resolveMappingColumns() {
         // Create a temporary mapping
         String tempMapping = "temp_mapping_" + UuidUtil.newUnsecureUuidString();
-        mappingHelper.createMapping(tempMapping,
+        mappingHelper.createMapping(
+                tempMapping,
                 genericMapStoreProperties.tableName,
                 deriveMappingType(),
-                genericMapStoreProperties.dataLinkRef);
+                genericMapStoreProperties.dataLinkRef,
+                genericMapStoreProperties.idColumn
+        );
 
         SqlRowMetadata rowMetadata = mappingHelper.loadRowMetadataFromMapping(tempMapping);
         columnMetadataList = rowMetadata.getColumns();

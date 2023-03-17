@@ -16,14 +16,17 @@
 
 package com.hazelcast.jet.mongodb.impl;
 
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.mongodb.impl.CursorTraverser.EmptyItem;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.mongodb.MongoException;
 import com.mongodb.MongoServerException;
 import com.mongodb.MongoSocketException;
@@ -42,10 +45,12 @@ import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.Traversers.singleton;
@@ -101,7 +106,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
             this.reader = new BatchMongoReader(params.databaseName, params.collectionName, params.mapItemFn,
                     params.aggregates);
         }
-        this.connection = new MongoConnection(params.clientSupplier, client -> reader.connect(client,
+        this.connection = new MongoConnection(params.clientSupplier, params.dataLinkRef, client -> reader.connect(client,
                 snapshotsEnabled));
     }
 
@@ -111,6 +116,9 @@ public class ReadMongoP<I> extends AbstractProcessor {
         totalParallelism = context.totalParallelism();
         processorIndex = context.globalProcessorIndex();
         this.snapshotsEnabled = context.snapshottingEnabled();
+
+        NodeEngineImpl nodeEngine = Util.getNodeEngine(context.hazelcastInstance());
+        connection.assembleSupplier(nodeEngine);
 
         connection.reconnectIfNecessary();
     }
@@ -143,9 +151,8 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
     @Override
     public void close() {
-        if (reader != null) {
-            reader.close();
-        }
+        closeResource(reader);
+        closeResource(connection);
     }
 
     @Override
@@ -203,9 +210,8 @@ public class ReadMongoP<I> extends AbstractProcessor {
         }
     }
 
-    private abstract class MongoChunkedReader {
+    private abstract class MongoChunkedReader implements Closeable {
 
-        protected MongoClient mongoClient;
         protected MongoDatabase database;
         protected MongoCollection<Document> collection;
         private final String databaseName;
@@ -249,12 +255,6 @@ public class ReadMongoP<I> extends AbstractProcessor {
         abstract Object snapshot();
 
         abstract void restore(Object value);
-
-        void close() {
-            if (mongoClient != null) {
-                mongoClient.close();
-            }
-        }
 
         abstract boolean everCompletes();
 
@@ -361,10 +361,14 @@ public class ReadMongoP<I> extends AbstractProcessor {
         public void restore(Object value) {
             lastKey = value;
         }
+
+        @Override
+        public void close() {
+        }
     }
 
     private final class StreamMongoReader extends MongoChunkedReader {
-        private final FunctionEx<ChangeStreamDocument<Document>, I> mapFn;
+        private final BiFunctionEx<ChangeStreamDocument<Document>, Long, I> mapFn;
         private final BsonTimestamp startTimestamp;
         private final List<Bson> aggregates;
         private final EventTimeMapper<I> eventTimeMapper;
@@ -374,7 +378,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
         private StreamMongoReader(
                 String databaseName,
                 String collectionName,
-                FunctionEx<ChangeStreamDocument<Document>, I> mapFn,
+                BiFunctionEx<ChangeStreamDocument<Document>, Long, I> mapFn,
                 BsonTimestamp startTimestamp,
                 List<Bson> aggregates,
                 EventTimeMapper<I> eventTimeMapper
@@ -427,7 +431,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
                             ChangeStreamDocument<Document> doc = (ChangeStreamDocument<Document>) input;
                             resumeToken = doc.getResumeToken();
                             long eventTime = clusterTime(doc);
-                            I item = mapFn.apply(doc);
+                            I item = mapFn.apply(doc, eventTime);
                             return eventTimeMapper.flatMapEvent(item, 0, eventTime);
                         });
             } catch (MongoException e) {
@@ -472,7 +476,6 @@ public class ReadMongoP<I> extends AbstractProcessor {
                 cursor.close();
                 cursor = null;
             }
-            super.close();
         }
     }
 }

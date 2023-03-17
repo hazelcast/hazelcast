@@ -51,8 +51,8 @@ public final class QueryUtils {
 
     public static final String WORKER_TYPE_STATE_CHECKER = "query-state-checker";
 
-    // Random uuid to distinguish data links in sql.catalog among other catalog items
-    public static final String DATA_LINK_KEY_PREFIX = "8bb6ac12-bd07-11ed-afa1-0242ac120002.";
+    // This is an arbitrarily-chosen prefix so that datalink names don't clash with other object names
+    private static final String DATA_LINK_KEY_PREFIX = "57ae1d3a-d379-44cb-bb60-86b1d2dcd744-";
 
     private QueryUtils() {
         // No-op.
@@ -110,11 +110,11 @@ public final class QueryUtils {
      * Create map from member ID to owned partitions.
      *
      * @param nodeEngine                node engine
-     * @param localMemberVersion        version of the local member.
-     *                                  If any of partition owners have a different version, an exception is thrown.
-     *                                  The check is ignored if passed version is {@code null}
-     * @param failOnUnassignedPartition whether the call should fail in case an unassigned partition is found; when set to
-     *                                  {@code false} the missing partitions will not be included in the result
+     * @param localMemberVersion        version of the local member. If any of partition owners have a different version,
+     *                                  an exception is thrown. The check is ignored if passed version is {@code null}
+     * @param failOnUnassignedPartition whether the call should fail in case an unassigned partition is found;
+     *                                  when set to {@code false} the missing partitions will not be included
+     *                                  in the result
      * @return partition mapping
      */
     public static Map<UUID, PartitionIdSet> createPartitionMap(

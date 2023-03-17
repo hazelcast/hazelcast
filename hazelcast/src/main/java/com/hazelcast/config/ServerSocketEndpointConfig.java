@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.alto.AltoSocketConfig;
+import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.spi.annotation.Beta;
@@ -280,8 +280,8 @@ public class ServerSocketEndpointConfig
     @Beta
     @Nonnull
     @Override
-    public ServerSocketEndpointConfig setAltoSocketConfig(@Nonnull AltoSocketConfig altoSocketConfig) {
-        super.setAltoSocketConfig(altoSocketConfig);
+    public ServerSocketEndpointConfig setTpcSocketConfig(@Nonnull TpcSocketConfig tpcSocketConfig) {
+        super.setTpcSocketConfig(tpcSocketConfig);
         return this;
     }
 

@@ -6673,6 +6673,7 @@ public class ClientCompatibilityTest_2_4 {
         assertTrue(isEqual(aLong, parameters.updateCount));
         assertTrue(isEqual(anSqlError, parameters.error));
         assertFalse(parameters.isIsInfiniteRowsExists);
+        assertFalse(parameters.isPartitionArgumentIndexExists);
     }
 
     @Test

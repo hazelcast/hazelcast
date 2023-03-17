@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
@@ -59,6 +60,7 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.internal.cluster.Versions.V5_3;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_DISCRIMINATOR_SERVICE;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_METRIC_EVENT_SERVICE_EVENTS_PROCESSED;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_METRIC_EVENT_SERVICE_EVENT_QUEUE_SIZE;
@@ -265,8 +267,6 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
         return registerListener0(serviceName, topic, filter, listener, true);
     }
 
-    /**
-     *
      /**
      * Registers the listener for events matching the service name, topic and filter on local member.
      *
@@ -286,6 +286,8 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
         UUID id = UuidUtil.newUnsecureUUID();
         final Registration reg = new Registration(id, serviceName, topic, filter, nodeEngine.getThisAddress(), listener, isLocal);
         if (!segment.addRegistration(topic, reg)) {
+            // This can only happen if Registration#equals ignores the ID and in the current implementation,
+            // it only compares IDs. That's why we don't specify @Nonnull/@Nullable for the return value.
             return null;
         }
 
@@ -395,10 +397,29 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
     }
 
     @Override
-    public void deregisterAllListeners(@Nonnull String serviceName, @Nonnull String topic) {
+    public void deregisterAllLocalListeners(@Nonnull String serviceName, @Nonnull String topic) {
         EventServiceSegment segment = getSegment(serviceName, false);
         if (segment != null) {
             segment.removeRegistrations(topic);
+        }
+    }
+
+    @Override
+    public void deregisterAllListeners(@Nonnull String serviceName, @Nonnull String topic, int orderKey) {
+        EventServiceSegment segment = getSegment(serviceName, false);
+        Collection<Registration> registrations = segment == null ? null : segment.removeRegistrations(topic);
+        ClusterService clusterService = nodeEngine.getClusterService();
+
+        if (clusterService.getClusterVersion().isGreaterOrEqual(V5_3)) {
+            Supplier<Operation> op = new DeregistrationOperationSupplier(serviceName, topic, orderKey, clusterService);
+            invokeOnStableClusterSerial(nodeEngine, op, MAX_RETRIES);
+        } else if (registrations != null) {
+            for (Registration reg : registrations) {
+                if (!reg.isLocalOnly()) {
+                    Supplier<Operation> op = new DeregistrationOperationSupplier(reg, clusterService);
+                    invokeOnStableClusterSerial(nodeEngine, op, MAX_RETRIES);
+                }
+            }
         }
     }
 

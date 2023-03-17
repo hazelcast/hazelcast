@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.config.IndexType;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
@@ -35,6 +36,7 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.optimizer.PlanCheckContext;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
@@ -526,24 +528,31 @@ abstract class SqlPlanImpl extends SqlPlan {
 
     static class AlterJobPlan extends SqlPlanImpl {
         private final String jobName;
+        private final DeltaJobConfig deltaConfig;
         private final AlterJobOperation operation;
         private final PlanExecutor planExecutor;
 
         AlterJobPlan(
                 PlanKey planKey,
                 String jobName,
+                DeltaJobConfig deltaConfig,
                 AlterJobOperation operation,
                 PlanExecutor planExecutor
         ) {
             super(planKey);
 
             this.jobName = jobName;
+            this.deltaConfig = deltaConfig;
             this.operation = operation;
             this.planExecutor = planExecutor;
         }
 
         String getJobName() {
             return jobName;
+        }
+
+        DeltaJobConfig getDeltaConfig() {
+            return deltaConfig;
         }
 
         AlterJobOperation getOperation() {
@@ -1116,6 +1125,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final SqlRowMetadata rowMetadata;
         private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
+        private final int keyConditionParamIndex;
 
         IMapSelectPlan(
                 PlanKey planKey,
@@ -1138,6 +1148,9 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.rowMetadata = rowMetadata;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
+            this.keyConditionParamIndex = keyCondition instanceof ParameterExpression
+                    ? ((ParameterExpression<?>) keyCondition).getIndex()
+                    : -1;
         }
 
         QueryParameterMetadata parameterMetadata() {
@@ -1158,6 +1171,10 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         SqlRowMetadata rowMetadata() {
             return rowMetadata;
+        }
+
+        int keyConditionParamIndex() {
+            return keyConditionParamIndex;
         }
 
         @Override
@@ -1194,6 +1211,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn;
         private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
+        private final int keyParamIndex;
 
         IMapInsertPlan(
                 PlanKey planKey,
@@ -1202,16 +1220,19 @@ abstract class SqlPlanImpl extends SqlPlan {
                 String mapName,
                 Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn,
                 PlanExecutor planExecutor,
-                List<Permission> permissions
+                List<Permission> permissions,
+                int keyParamIndex
         ) {
             super(planKey);
 
+            // TODO: extract key index here
             this.objectKeys = Collections.singleton(objectKey);
             this.parameterMetadata = parameterMetadata;
             this.mapName = mapName;
             this.entriesFn = entriesFn;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
+            this.keyParamIndex = keyParamIndex;
         }
 
         QueryParameterMetadata parameterMetadata() {
@@ -1224,6 +1245,10 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn() {
             return entriesFn;
+        }
+
+        int keyParamIndex() {
+            return keyParamIndex;
         }
 
         @Override
@@ -1327,6 +1352,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final UpdatingEntryProcessor.Supplier updaterSupplier;
         private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
+        private final int keyConditionParamIndex;
 
         IMapUpdatePlan(
                 PlanKey planKey,
@@ -1347,6 +1373,9 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.updaterSupplier = updaterSupplier;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
+            this.keyConditionParamIndex = keyCondition instanceof ParameterExpression
+                    ? ((ParameterExpression<?>) keyCondition).getIndex()
+                    : -1;
         }
 
         QueryParameterMetadata parameterMetadata() {
@@ -1363,6 +1392,10 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         UpdatingEntryProcessor.Supplier updaterSupplier() {
             return updaterSupplier;
+        }
+
+        int keyConditionParamIndex() {
+            return keyConditionParamIndex;
         }
 
         @Override
@@ -1400,6 +1433,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final Expression<?> keyCondition;
         private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
+        private final int keyConditionParamIndex;
 
         IMapDeletePlan(
                 PlanKey planKey,
@@ -1418,6 +1452,9 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.keyCondition = keyCondition;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
+            this.keyConditionParamIndex = keyCondition instanceof ParameterExpression
+                    ? ((ParameterExpression<?>) keyCondition).getIndex()
+                    : -1;
         }
 
         QueryParameterMetadata parameterMetadata() {
@@ -1430,6 +1467,10 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         Expression<?> keyCondition() {
             return keyCondition;
+        }
+
+        int keyConditionParamIndex() {
+            return keyConditionParamIndex;
         }
 
         @Override

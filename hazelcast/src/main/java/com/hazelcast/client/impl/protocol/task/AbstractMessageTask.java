@@ -34,9 +34,9 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.server.ServerConnection;
-import com.hazelcast.internal.tpc.AsyncSocket;
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
-import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
+import com.hazelcast.internal.tpcengine.AsyncSocket;
+import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
@@ -55,7 +55,6 @@ import java.util.Set;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
-import static com.hazelcast.internal.tpc.util.BufferUtil.upcast;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 
 /**
@@ -282,7 +281,6 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
             connection.write(resultClientMessage);
         } else {
             ClientMessage.Frame frame = resultClientMessage.getStartFrame();
-            //IOBuffer buf = new IOBuffer(resultClientMessage.getBufferLength(), false);
             IOBuffer buf = responseBufAllocator.allocate(resultClientMessage.getBufferLength());
             while (frame != null) {
                 buf.writeIntL(frame.content.length + SIZE_OF_FRAME_LENGTH_AND_FLAGS);
@@ -296,9 +294,16 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
                 buf.writeBytes(frame.content);
                 frame = frame.next;
             }
-            //nasty
-            upcast(buf.byteBuffer()).flip();
-            asyncSocket.writeAndFlush(buf);
+
+            buf.flip();
+            if (!asyncSocket.writeAndFlush(buf)) {
+                // Unlike the 'classic' networking, the asyncSocket has a bound on the
+                // number of packets on the write-queue to prevent running into OOME.
+                // So if the response can't be send, we close the connection to indicate
+                // that the connection was congested.
+                connection.close("Response could not be send due to congested socket "
+                        + asyncSocket, null);
+            }
         }
         //TODO framing not implemented yet, should be split into frames before writing to connection
         // PETER: There is no point in chopping it up in frames and in 1 go write all these frames because it still will

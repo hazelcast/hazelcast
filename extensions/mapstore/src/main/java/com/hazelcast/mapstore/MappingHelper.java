@@ -33,26 +33,29 @@ final class MappingHelper {
         this.sqlService = sqlService;
     }
 
-    public void createMapping(String mappingName, String tableName, String mappingType, String dataLinkRef) {
+    public void createMapping(String mappingName, String tableName, String mappingType, String dataLinkRef,
+                              String idColumn) {
         sqlService.execute(
                 "CREATE MAPPING \"" + mappingName + "\""
                 + " EXTERNAL NAME \"" + tableName + "\" "
                 + " TYPE " + mappingType
                 + " OPTIONS ("
-                + "    '" + OPTION_DATA_LINK_NAME + "' = '" + dataLinkRef + "' "
+                + "    '" + OPTION_DATA_LINK_NAME + "' = '" + dataLinkRef + "', "
+                + "    'idColumn' = '" + idColumn + "' "
                 + ")"
         ).close();
     }
 
     public void createMappingWithColumns(String mappingName, String tableName, String mappingColumns,
-                                         String mappingType, String dataLinkRef) {
+                                         String mappingType, String dataLinkRef, String idColumn) {
         sqlService.execute(
                 "CREATE MAPPING \"" + mappingName + "\" "
                 + "EXTERNAL NAME \"" + tableName + "\" "
                 + (mappingColumns != null ? " ( " + mappingColumns + " ) " : "")
                 + "TYPE " + mappingType + " "
                 + "OPTIONS ("
-                + "    '" + OPTION_DATA_LINK_NAME + "' = '" + dataLinkRef + "' "
+                + "    '" + OPTION_DATA_LINK_NAME + "' = '" + dataLinkRef + "', "
+                + "    'idColumn' = '" + idColumn + "' "
                 + ")"
         ).close();
     }

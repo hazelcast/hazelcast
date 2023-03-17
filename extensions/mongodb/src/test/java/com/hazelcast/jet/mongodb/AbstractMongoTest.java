@@ -17,9 +17,11 @@
 package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.jet.mongodb.datalink.MongoDataLink;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
@@ -43,6 +45,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -70,11 +73,6 @@ public abstract class AbstractMongoTest extends SimpleTestInClusterSupport {
     @BeforeClass
     public static void setUp() {
         assumeDockerEnabled();
-        Config config = new Config();
-        config.addMapConfig(new MapConfig("*").setEventJournalConfig(new EventJournalConfig().setEnabled(true)));
-        config.getJetConfig().setEnabled(true);
-        initialize(2, config);
-
         mongoContainer.start();
         mongo = MongoClients.create(mongoContainer.getConnectionString());
 
@@ -85,6 +83,17 @@ public abstract class AbstractMongoTest extends SimpleTestInClusterSupport {
         collection.insertOne(new Document("test", 1));
         startAtOperationTime = cursor.next().getClusterTime();
         cursor.close();
+
+        Config config = new Config();
+        config.addMapConfig(new MapConfig("*").setEventJournalConfig(new EventJournalConfig().setEnabled(true)));
+        config.addDataLinkConfig(new DataLinkConfig("mongoDB")
+                .setClassName(MongoDataLink.class.getName())
+                .setName("mongoDB")
+                .setShared(true)
+                .setProperty("connectionString", mongoContainer.getConnectionString())
+        );
+        config.getJetConfig().setEnabled(true);
+        initialize(2, config);
     }
 
     @After
@@ -107,8 +116,8 @@ public abstract class AbstractMongoTest extends SimpleTestInClusterSupport {
 
     @AfterClass
     public static void tearDown() {
-        mongo.close();
-        mongoContainer.stop();
+        closeResource(mongo);
+        closeResource(mongoContainer);
     }
 
     MongoCollection<Document> collection() {

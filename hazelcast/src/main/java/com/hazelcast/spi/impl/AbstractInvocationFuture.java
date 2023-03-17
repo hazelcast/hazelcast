@@ -831,6 +831,11 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         return value;
     }
 
+    protected ExceptionalResult toExceptionalResult(Object object) {
+        assert object instanceof ExceptionalResult;
+        return (ExceptionalResult) object;
+    }
+
     protected V resolveAndThrowWithJoinConvention(Object state) {
         Object value = resolve(state);
         return returnOrThrowWithJoinConventions(value);
@@ -1240,8 +1245,8 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     protected void onComplete() {
-        if (state instanceof ExceptionalResult) {
-            super.completeExceptionally(((ExceptionalResult) state).getCause());
+        if (isCompletedExceptionally()) {
+            super.completeExceptionally(toExceptionalResult(state).getCause());
         } else {
             super.complete((V) state);
         }

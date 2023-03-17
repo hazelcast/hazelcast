@@ -21,6 +21,7 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.utils.RestClient;
+import com.hazelcast.spi.exception.RestClientException;
 
 import java.util.Optional;
 import java.time.Instant;
@@ -131,7 +132,7 @@ class AwsMetadataApi {
 
     private JsonObject getTaskMetadata() {
         String uri = ecsTaskMetadataEndpoint.concat("/task");
-        String response = metadataClient(uri, awsConfig).get().getBody();
+        String response = createRestClient(uri, awsConfig).get().getBody();
         return Json.parse(response).asObject();
     }
 
@@ -147,7 +148,7 @@ class AwsMetadataApi {
     }
 
     AwsCredentials credentialsEcs() {
-        String response = metadataClient(ecsIamRoleEndpoint, awsConfig).get().getBody();
+        String response = createRestClient(ecsIamRoleEndpoint, awsConfig).get().getBody();
         return parseCredentials(response);
     }
 
@@ -161,8 +162,13 @@ class AwsMetadataApi {
     }
 
     RestClient metadataClient(String url, AwsConfig awsConfig) {
-        return createRestClient(url, awsConfig)
-            .withHeader("X-aws-ec2-metadata-token", metadataToken());
+        try {
+            return createRestClient(url, awsConfig)
+                .withHeader("X-aws-ec2-metadata-token", metadataToken());
+        } catch (RestClientException ignored) {
+            // rest client without token
+            return createRestClient(url, awsConfig);
+        }
     }
 
     String metadataToken() {

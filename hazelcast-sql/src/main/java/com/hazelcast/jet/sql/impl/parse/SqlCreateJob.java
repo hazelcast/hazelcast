@@ -133,7 +133,7 @@ public class SqlCreateJob extends SqlCreate {
         }
 
         Set<String> optionNames = new HashSet<>();
-        for (SqlNode option0 : options.getList()) {
+        for (SqlNode option0 : options) {
             SqlOption option = (SqlOption) option0;
             String key = option.keyString();
             String value = option.valueString();
@@ -148,26 +148,19 @@ public class SqlCreateJob extends SqlCreate {
                         case "exactlyOnce":
                             jobConfig.setProcessingGuarantee(EXACTLY_ONCE);
                             break;
-
                         case "atLeastOnce":
                             jobConfig.setProcessingGuarantee(AT_LEAST_ONCE);
                             break;
-
                         case "none":
                             jobConfig.setProcessingGuarantee(NONE);
                             break;
-
                         default:
                             throw validator.newValidationError(option.value(),
                                     RESOURCE.processingGuaranteeBadValue(key, value));
                     }
                     break;
                 case "snapshotIntervalMillis":
-                    try {
-                        jobConfig.setSnapshotIntervalMillis(Long.parseLong(value));
-                    } catch (NumberFormatException e) {
-                        throw validator.newValidationError(option.value(), RESOURCE.jobOptionIncorrectNumber(key, value));
-                    }
+                    jobConfig.setSnapshotIntervalMillis(parseLong(validator, option));
                     break;
                 case "autoScaling":
                     jobConfig.setAutoScaling(Boolean.parseBoolean(value));
@@ -185,7 +178,10 @@ public class SqlCreateJob extends SqlCreate {
                     jobConfig.setInitialSnapshotName(value);
                     break;
                 case "maxProcessorAccumulatedRecords":
-                    jobConfig.setMaxProcessorAccumulatedRecords(Long.parseLong(value));
+                    jobConfig.setMaxProcessorAccumulatedRecords(parseLong(validator, option));
+                    break;
+                case "suspendOnFailure":
+                    jobConfig.setSuspendOnFailure(Boolean.parseBoolean(value));
                     break;
                 default:
                     throw validator.newValidationError(option.key(), RESOURCE.unknownJobOption(key));
@@ -193,5 +189,14 @@ public class SqlCreateJob extends SqlCreate {
         }
 
         validator.validate(sqlInsert);
+    }
+
+    private static long parseLong(SqlValidator validator, SqlOption option) {
+        try {
+            return Long.parseLong(option.valueString());
+        } catch (NumberFormatException e) {
+            throw validator.newValidationError(option.value(),
+                    RESOURCE.jobOptionIncorrectNumber(option.keyString(), option.valueString()));
+        }
     }
 }

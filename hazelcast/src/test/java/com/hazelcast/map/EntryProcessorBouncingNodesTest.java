@@ -65,7 +65,7 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
 
     private static final int ENTRIES = 50;
     private static final int ITERATIONS = 100;
-    private static final String MAP_NAME = "entryProcessorBouncingNodesTestMap";
+    protected static final String MAP_NAME = "entryProcessorBouncingNodesTestMap";
 
     @Parameters(name = "withPredicate={0}, withIndex={1}")
     public static Collection<Object[]> parameters() {
