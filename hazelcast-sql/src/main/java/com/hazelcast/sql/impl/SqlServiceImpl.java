@@ -132,8 +132,6 @@ public class SqlServiceImpl implements InternalSqlService {
         }
     }
 
-
-
     public SqlInternalService getInternalService() {
         return internalService;
     }
