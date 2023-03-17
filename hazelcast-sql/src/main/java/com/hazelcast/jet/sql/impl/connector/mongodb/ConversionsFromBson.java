@@ -38,6 +38,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Date;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.JSON;
@@ -103,8 +104,7 @@ public final class ConversionsFromBson {
             value = ((BsonJavaScript) value).getCode();
         }
         else if (toConvert instanceof Date) {
-            Date date = (Date) toConvert;
-            value = LocalDateTime.from(date.toInstant().atZone(ZoneId.systemDefault()));
+            value = convertJavaDate((Date) toConvert, sqlType);
         }
         return sqlType.convert(value);
     }
@@ -123,61 +123,84 @@ public final class ConversionsFromBson {
     }
     @SuppressWarnings("checkstyle:ReturnCount")
     private static Object convertDateTime(@Nonnull BsonDateTime value, QueryDataType resultType) {
-        LocalDateTime dateTime = LocalDateTime.from(Instant.ofEpochMilli(value.getValue()));
-        if (resultType.equals(QueryDataType.DATE)) {
-            return dateTime.toLocalDate();
+        ZonedDateTime dateTime = LocalDateTime.from(Instant.ofEpochMilli(value.getValue())).atZone(UTC);
+        Object fromDateTime = convertGivenTime(resultType, dateTime);
+
+        if (fromDateTime != null) {
+            return fromDateTime;
         }
-        if (resultType.equals(QueryDataType.TIME)) {
-            return dateTime.toLocalTime();
-        }
-        if (resultType.equals(QueryDataType.TIMESTAMP)) {
-            return dateTime;
-        }
-        if (resultType.equals(QueryDataType.TIMESTAMP_WITH_TZ_DATE)) {
-            return OffsetDateTime.from(dateTime);
-        }
-        if (resultType.equals(QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME)) {
-            return OffsetDateTime.from(dateTime).toZonedDateTime();
-        }
-        if (resultType.equals(QueryDataType.VARCHAR)) {
-        return dateTime.toString();
-        } else if (resultType.equals(QueryDataType.OBJECT)) {
+        if (resultType.equals(QueryDataType.OBJECT)) {
             return value;
-        } else if (resultType.equals(QueryDataType.INT)) {
+        }
+        if (resultType.equals(QueryDataType.INT)) {
             return value.getValue();
-        } else if (resultType.equals(QueryDataType.BIGINT)) {
+        }
+        if (resultType.equals(QueryDataType.BIGINT)) {
             return new BigDecimal(value.getValue());
+        }
+        return null;
+    }
+
+    private static Object convertJavaDate(Date value, QueryDataType resultType) {
+        ZonedDateTime dateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(value.getTime()), UTC).atZone(UTC);
+        Object fromDateTime = convertGivenTime(resultType, dateTime);
+
+        if (fromDateTime != null) {
+            return fromDateTime;
+        }
+        if (resultType.equals(QueryDataType.OBJECT)) {
+            return value;
+        }
+        if (resultType.equals(QueryDataType.INT)) {
+            return value.getTime();
+        }
+        if (resultType.equals(QueryDataType.BIGINT)) {
+            return new BigDecimal(value.getTime());
         }
         return null;
     }
 
     @SuppressWarnings("checkstyle:ReturnCount")
     private static Object convertTimestamp(BsonTimestamp value, QueryDataType resultType) {
-        LocalDateTime dateTime = LocalDateTime.ofEpochSecond(value.getTime(), 0, UTC).atZone(systemDefault())
-                .toLocalDateTime();
+        ZonedDateTime dateTime = LocalDateTime.ofEpochSecond(value.getTime(), 0, UTC).atZone(UTC);
+        Object fromDateTime = convertGivenTime(resultType, dateTime);
+
+        if (fromDateTime != null) {
+            return fromDateTime;
+        }
+        if (resultType.equals(QueryDataType.OBJECT)) {
+            return value;
+        }
+        if (resultType.equals(QueryDataType.INT)) {
+            return value.getValue();
+        }
+        if (resultType.equals(QueryDataType.BIGINT)) {
+            return new BigDecimal(value.getValue());
+        }
+        return null;
+    }
+
+    private static Object convertGivenTime(QueryDataType resultType, ZonedDateTime dateTime) {
         if (resultType.equals(QueryDataType.DATE)) {
-            return dateTime.toLocalDate();
+            return dateTime.withZoneSameInstant(systemDefault()).toLocalDate();
         }
         if (resultType.equals(QueryDataType.TIME)) {
-            return dateTime.toLocalTime();
+            return dateTime.withZoneSameInstant(systemDefault()).toLocalTime();
         }
         if (resultType.equals(QueryDataType.TIMESTAMP)) {
-            return dateTime;
+            return dateTime.withZoneSameInstant(systemDefault()).toLocalDateTime();
         }
         if (resultType.equals(QueryDataType.TIMESTAMP_WITH_TZ_DATE)) {
-            return OffsetDateTime.from(dateTime);
+            return dateTime.withZoneSameInstant(systemDefault());
         }
         if (resultType.equals(QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME)) {
-            return OffsetDateTime.from(dateTime).toZonedDateTime();
+            return dateTime.withZoneSameInstant(systemDefault());
+        }
+        if (resultType.equals(QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME)) {
+            return dateTime.withZoneSameInstant(systemDefault()).toOffsetDateTime();
         }
         if (resultType.equals(QueryDataType.VARCHAR)) {
             return dateTime.toString();
-        } else if (resultType.equals(QueryDataType.OBJECT)) {
-            return value;
-        } else if (resultType.equals(QueryDataType.INT)) {
-            return value.getValue();
-        } else if (resultType.equals(QueryDataType.BIGINT)) {
-            return new BigDecimal(value.getValue());
         }
         return null;
     }

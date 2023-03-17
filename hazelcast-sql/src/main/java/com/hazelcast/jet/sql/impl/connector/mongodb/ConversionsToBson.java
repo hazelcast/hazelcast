@@ -124,44 +124,12 @@ public final class ConversionsToBson {
                 break;
             default:
         }
-
-//        else if (value instanceof LocalDateTime) {
-//            converted = localDateTimeToBson((LocalDateTime) value, bsonType);
-//        } else if (value instanceof OffsetDateTime) {
-//            OffsetDateTime v = (OffsetDateTime) value;
-//            ZonedDateTime atUtc = v.atZoneSameInstant(ZoneId.of("UTC"));
-//            Timestamp jdbcTimestamp = Timestamp.valueOf(atUtc.toLocalDateTime());
-//            return new BsonDateTime(jdbcTimestamp.getTime());
-//        } else if (value instanceof HazelcastJsonValue) {
-//            return Document.parse(((HazelcastJsonValue) value).getValue());
-//        }
         if (converted == null) {
             converted = BsonTypes.wrap(value, sqlType::convert);
             return sqlType.convert(converted);
         } else {
             return converted;
         }
-    }
-
-    /**
-     * Wraps given value into BSON wrapper.
-     *
-     * Note, that most of the type coercions are done automatically by MongoDB client, so no need to e.g. transform
-     * int to BsonInt32.
-     */
-    static Object wrap(Object value, FunctionEx<Object, Object> orElse) {
-        if (value instanceof LocalDateTime) {
-            Timestamp jdbcTimestamp = Timestamp.valueOf((LocalDateTime) value);
-            return new BsonDateTime(jdbcTimestamp.getTime());
-        } else if (value instanceof OffsetDateTime) {
-            OffsetDateTime v = (OffsetDateTime) value;
-            ZonedDateTime atUtc = v.atZoneSameInstant(ZoneId.of("UTC"));
-            Timestamp jdbcTimestamp = Timestamp.valueOf(atUtc.toLocalDateTime());
-            return new BsonDateTime(jdbcTimestamp.getTime());
-        } else if (value instanceof HazelcastJsonValue) {
-            return Document.parse(((HazelcastJsonValue) value).getValue());
-        }
-        return orElse.apply(value);
     }
 
     private static Object convertToDateTime(Object value) {
@@ -182,7 +150,15 @@ public final class ConversionsToBson {
         }
         if (value instanceof LocalDateTime) {
             LocalDateTime v = (LocalDateTime) value;
-            return new BsonDateTime(v.atZone(systemDefault()).toInstant().toEpochMilli());
+            return new BsonDateTime(v.atZone(systemDefault()).withZoneSameInstant(UTC).toInstant().toEpochMilli());
+        }
+        if (value instanceof ZonedDateTime) {
+            ZonedDateTime v = (ZonedDateTime) value;
+            return new BsonDateTime(v.withZoneSameInstant(UTC).toInstant().toEpochMilli());
+        }
+        if (value instanceof OffsetDateTime) {
+            OffsetDateTime v = (OffsetDateTime) value;
+            return new BsonDateTime(v.atZoneSameInstant(UTC).toInstant().toEpochMilli());
         }
         return null;
     }
@@ -203,6 +179,14 @@ public final class ConversionsToBson {
         if (value instanceof LocalDateTime) {
             LocalDateTime v = (LocalDateTime) value;
             return new BsonTimestamp((int) v.atZone(systemDefault()).withZoneSameInstant(UTC).toEpochSecond(), 0);
+        }
+        if (value instanceof ZonedDateTime) {
+            ZonedDateTime v = (ZonedDateTime) value;
+            return new BsonTimestamp((int) v.withZoneSameInstant(UTC).toEpochSecond(), 0);
+        }
+        if (value instanceof OffsetDateTime) {
+            OffsetDateTime v = (OffsetDateTime) value;
+            return new BsonTimestamp((int) v.atZoneSameInstant(UTC).toEpochSecond(), 0);
         }
         return null;
     }
