@@ -23,6 +23,7 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.datalink.DataLink;
 import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
@@ -117,6 +118,7 @@ import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_QUERY_TEXT;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
+import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.impl.util.Util.getSerializationService;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataLinkPlan;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
@@ -404,8 +406,7 @@ public class PlanExecutor {
         final InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
         final InternalDataLinkService dataLinkService = getNodeEngine(hazelcastInstance).getDataLinkService();
 
-        final com.hazelcast.datalink.DataLink dataLink = dataLinkService
-                .getAndRetainDataLink(dataLinkName, com.hazelcast.datalink.DataLink.class);
+        final DataLink dataLink = dataLinkService.getAndRetainDataLink(dataLinkName, DataLink.class);
         final List<JetSqlRow> rows = dataLink.listResources().stream()
                 .map(resource -> new JetSqlRow(serializationService, new Object[]{resource.name(), resource.type()}))
                 .collect(Collectors.toList());
