@@ -130,6 +130,7 @@ public final class DoubleConverter extends Converter {
         return converted;
     }
 
+    @SuppressWarnings("checkstyle:TrailingComment")
     @Override
     public BigDecimal asDecimal(Object val) {
         double val0 = cast(val);

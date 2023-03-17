@@ -131,6 +131,7 @@ public final class FloatConverter extends Converter {
         return converted;
     }
 
+    @SuppressWarnings("checkstyle:TrailingComment")
     @Override
     public BigDecimal asDecimal(Object val) {
         float val0 = cast(val);
