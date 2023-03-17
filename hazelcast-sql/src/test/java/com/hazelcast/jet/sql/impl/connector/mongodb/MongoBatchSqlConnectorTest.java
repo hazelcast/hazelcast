@@ -20,7 +20,6 @@ import com.hazelcast.logging.LogListener;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.mongodb.MongoBulkWriteException;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import org.bson.Document;
@@ -268,7 +267,6 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         createMapping(true);
         assertThatThrownBy(() -> execute("insert into " + collectionName + " (id, firstName, jedi) values (?, ?, ?)",
                 insertedId, "yolo", false))
-                .hasRootCauseInstanceOf(MongoBulkWriteException.class)
                 .hasMessageContaining("E11000 duplicate key error collection");
     }
 

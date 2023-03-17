@@ -16,7 +16,6 @@
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.function.FunctionEx;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.bson.BsonDateTime;
 import org.bson.BsonDecimal128;
@@ -39,11 +38,9 @@ import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Map;
@@ -125,8 +122,7 @@ public final class ConversionsToBson {
             default:
         }
         if (converted == null) {
-            converted = BsonTypes.wrap(value, sqlType::convert);
-            return sqlType.convert(converted);
+            return sqlType.convert(value);
         } else {
             return converted;
         }

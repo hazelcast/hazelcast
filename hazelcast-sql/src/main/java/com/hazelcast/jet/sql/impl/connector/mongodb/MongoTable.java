@@ -108,6 +108,23 @@ class MongoTable extends JetTable {
         return fieldExternalTypes;
     }
 
+    QueryDataType pkType() {
+        List<QueryDataType> list = getFields().stream()
+                                       .filter(field -> ((MongoTableField) field).isPrimaryKey())
+                                       .map(TableField::getType)
+                                       .collect(toList());
+        checkState(list.size() == 1, "there should be exactly 1 primary key, got: " + list);
+        return list.get(0);
+    }
+    BsonType pkExternalType() {
+        List<BsonType> list = getFields().stream()
+                                       .filter(field -> ((MongoTableField) field).isPrimaryKey())
+                                       .map(field -> ((MongoTableField) field).getExternalType())
+                                       .collect(toList());
+        checkState(list.size() == 1, "there should be exactly 1 primary key, got: " + list);
+        return list.get(0);
+    }
+
     SupplierEx<QueryTarget> queryTargetSupplier() {
         List<String> fields = getFields().stream()
                                           .map(f -> ((MongoTableField) f).externalName)

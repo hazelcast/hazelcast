@@ -33,7 +33,6 @@ import java.util.Collection;
 
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_COMMIT_RETRY_STRATEGY;
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_TRANSACTION_OPTION;
-import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.wrap;
 import static java.util.Arrays.asList;
 
 /**
