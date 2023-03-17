@@ -28,22 +28,26 @@ import java.util.List;
  * for the user if the mapping is used in the query.
  */
 public final class BadTable extends Table {
-    private final QueryException cause;
+    private final Throwable cause;
 
     public BadTable(String schemaName, String sqlName, Throwable cause) {
         super(schemaName, sqlName, Collections.emptyList(), new ConstantTableStatistics(0));
-        this.cause = new QueryException(String.format("Mapping '%s' references unknown class: %s", sqlName, cause),
-                cause);
+        this.cause = cause;
     }
 
     // not all methods throw to allow some parsing to occur
     @Override
     public List<TableField> getFields() {
-        throw cause;
+        throw createException();
     }
 
     @Override
     public PlanObjectKey getObjectKey() {
-        throw cause;
+        throw createException();
+    }
+
+    private QueryException createException() {
+        return new QueryException(String.format("Mapping '%s' is invalid: %s", getSqlName(), cause),
+                cause);
     }
 }
