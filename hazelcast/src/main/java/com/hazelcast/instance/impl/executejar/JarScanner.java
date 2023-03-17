@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance.impl;
-
-import com.hazelcast.jet.impl.util.EnumerationUtil;
+package com.hazelcast.instance.impl.executejar;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -30,9 +28,9 @@ final class JarScanner {
     private JarScanner() {
     }
 
-    static List<String> findClassFiles(JarFile file, String className) {
+    static List<String> findClassFiles(JarFile jarFile, String className) {
         String filename = className + ".class";
-        return EnumerationUtil.stream(file.entries())
+        return jarFile.stream()
                 .map(ZipEntry::getName)
                 .map(Paths::get)
                 .filter(byFilename(filename))
@@ -41,6 +39,7 @@ final class JarScanner {
     }
 
     private static Predicate<Path> byFilename(String filename) {
+        // ignore the package name because the HZ classes could be shaded in the jar
         return path -> path.getFileName().toString().equals(filename);
     }
 }
