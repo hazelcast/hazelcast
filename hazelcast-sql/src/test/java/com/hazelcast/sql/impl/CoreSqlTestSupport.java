@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -25,7 +26,6 @@ import org.junit.ClassRule;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Helper test classes.
@@ -52,11 +52,10 @@ public class CoreSqlTestSupport extends HazelcastTestSupport {
     }
 
     public static <T> T serializeAndCheck(Object original, int expectedClassId) {
-        assertTrue(original instanceof IdentifiedDataSerializable);
-
+        assertInstanceOf(IdentifiedDataSerializable.class, original);
         IdentifiedDataSerializable original0 = (IdentifiedDataSerializable) original;
 
-        assertEquals(SqlDataSerializerHook.F_ID, original0.getFactoryId());
+        assertEquals(JetSqlSerializerHook.F_ID, original0.getFactoryId());
         assertEquals(expectedClassId, original0.getClassId());
 
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();

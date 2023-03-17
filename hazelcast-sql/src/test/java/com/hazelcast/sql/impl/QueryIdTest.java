@@ -16,6 +16,9 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -70,9 +73,14 @@ public class QueryIdTest extends CoreSqlTestSupport {
     @Test
     public void testSerialization() {
         QueryId original = QueryId.create(UUID.randomUUID());
-        QueryId restored = serializeAndCheck(original, SqlDataSerializerHook.QUERY_ID);
 
-        assertEquals(original, restored);
+        assertInstanceOf(IdentifiedDataSerializable.class, original);
+        IdentifiedDataSerializable original0 = (IdentifiedDataSerializable) original;
+
+        assertEquals(SqlDataSerializerHook.F_ID, original0.getFactoryId());
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
+
+        assertEquals(original, ss.toObject(ss.toData(original)));
     }
 
     @Test
@@ -108,6 +116,6 @@ public class QueryIdTest extends CoreSqlTestSupport {
 
     private static QueryId create(UUID memberId, UUID localId) {
         return new QueryId(memberId.getMostSignificantBits(), memberId.getLeastSignificantBits(),
-            localId.getMostSignificantBits(), localId.getLeastSignificantBits());
+                localId.getMostSignificantBits(), localId.getLeastSignificantBits());
     }
 }

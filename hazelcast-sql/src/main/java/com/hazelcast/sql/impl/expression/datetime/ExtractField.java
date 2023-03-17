@@ -27,6 +27,7 @@ import java.time.temporal.Temporal;
 import java.time.temporal.TemporalField;
 import java.time.temporal.WeekFields;
 
+@SuppressWarnings("DuplicatedCode")
 public enum ExtractField {
     CENTURY {
         @Override
@@ -52,7 +53,7 @@ public enum ExtractField {
         private double extractCentury(Temporal temporal) {
             int year = temporal.get(ChronoField.YEAR);
             int absYear = Math.abs(year);
-            int sign = year < 0 ? -1 : 1;
+            double sign = year < 0. ? -1. : 1.;
             int quotient = absYear / YEARS_IN_CENTURY;
             int remainder = absYear % YEARS_IN_CENTURY;
             int absCentury = quotient + (remainder == 0 ? -1 : 0) + FIRST_CENTURY;
@@ -103,8 +104,7 @@ public enum ExtractField {
 
         private double extractDecade(Temporal temporal) {
             int year = temporal.get(ChronoField.YEAR);
-            int decade = year / YEARS_IN_DECADE;
-            return decade;
+            return Math.floorDiv(year, YEARS_IN_DECADE);
         }
     },
     DOW {
@@ -157,7 +157,7 @@ public enum ExtractField {
     EPOCH {
         @Override
         public double extract(OffsetDateTime time) {
-            long secondsSince =  time.getLong(ChronoField.INSTANT_SECONDS);
+            long secondsSince = time.getLong(ChronoField.INSTANT_SECONDS);
             int carryNanoseconds = time.get(ChronoField.NANO_OF_SECOND);
             double carrySeconds = ((double) carryNanoseconds / (double) NANOSECONDS_IN_SECOND);
             return carrySeconds + secondsSince;
@@ -265,7 +265,7 @@ public enum ExtractField {
         private double extractMicrosecond(Temporal temporal) {
             int fractionMicroseconds = temporal.get(ChronoField.MICRO_OF_SECOND);
             int seconds = temporal.get(ChronoField.SECOND_OF_MINUTE);
-            return fractionMicroseconds + (seconds * MICROSECONDS_IN_SECOND);
+            return (double) fractionMicroseconds + (seconds * MICROSECONDS_IN_SECOND);
         }
     },
     MILLENNIUM {
@@ -292,7 +292,7 @@ public enum ExtractField {
         private double extractMillennium(Temporal temporal) {
             int year = temporal.get(ChronoField.YEAR);
             int absYear = Math.abs(year);
-            int sign = year < 0 ? -1 : 1;
+            double sign = year < 0. ? -1. : 1.;
             int quotient = absYear / YEARS_IN_MILLENNIUM;
             int remainder = absYear % YEARS_IN_MILLENNIUM;
             int absMillennium = quotient + (remainder == 0 ? -1 : 0) + FIRST_MILLENNIUM;
@@ -304,7 +304,7 @@ public enum ExtractField {
         public double extract(OffsetDateTime time) {
             int fractionMilliseconds = time.get(ChronoField.MILLI_OF_SECOND);
             int seconds = time.getSecond();
-            return fractionMilliseconds + (seconds * MILLISECONDS_IN_SECOND);
+            return (double) fractionMilliseconds + (seconds * MILLISECONDS_IN_SECOND);
         }
 
         @Override
@@ -465,7 +465,7 @@ public enum ExtractField {
 
     protected static final int FIRST_CENTURY = 1;
 
-    protected static final int FIRST_DAY_OF_WEEK = 1;
+    protected static final double FIRST_DAY_OF_WEEK = 1.;
 
     protected static final TemporalField WEEK_FIELD = WeekFields.ISO.weekOfWeekBasedYear();
 
@@ -476,7 +476,10 @@ public enum ExtractField {
     protected static final TemporalField ISODOW_FIELD = WeekFields.ISO.dayOfWeek();
 
     public abstract double extract(OffsetDateTime time);
+
     public abstract double extract(LocalDateTime time);
+
     public abstract double extract(LocalDate date);
+
     public abstract double extract(LocalTime time);
 }

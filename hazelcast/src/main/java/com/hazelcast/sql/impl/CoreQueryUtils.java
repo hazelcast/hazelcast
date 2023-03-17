@@ -58,7 +58,8 @@ public final class CoreQueryUtils {
                 copy = copy.getCause();
             }
 
-            return new HazelcastSqlException(localMemberId, SqlErrorCode.GENERIC, e.getMessage(), e, null);
+            String exMessage = e != null ? e.getMessage() : "";
+            return new HazelcastSqlException(localMemberId, SqlErrorCode.GENERIC, exMessage, e, null);
         }
     }
 
