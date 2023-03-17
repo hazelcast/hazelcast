@@ -16,12 +16,14 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 /**
  * Converter for {@link RowValue} type.
  */
+@SerializableByConvention
 public class RowConverter extends Converter {
     public static final RowConverter INSTANCE = new RowConverter();
 

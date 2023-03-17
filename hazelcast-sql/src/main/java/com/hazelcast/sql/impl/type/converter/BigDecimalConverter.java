@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
@@ -23,6 +24,7 @@ import java.math.BigDecimal;
 /**
  * Converter for {@link java.math.BigDecimal} type.
  */
+@SerializableByConvention
 public final class BigDecimalConverter extends AbstractDecimalConverter {
 
     public static final BigDecimalConverter INSTANCE = new BigDecimalConverter();

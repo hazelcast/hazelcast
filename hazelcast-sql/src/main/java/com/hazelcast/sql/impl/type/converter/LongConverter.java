@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
@@ -25,6 +26,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.DECIMAL_MATH_CONTEX
 /**
  * Converter for {@link java.lang.Long} type.
  */
+@SerializableByConvention
 public final class LongConverter extends Converter {
 
     public static final LongConverter INSTANCE = new LongConverter();

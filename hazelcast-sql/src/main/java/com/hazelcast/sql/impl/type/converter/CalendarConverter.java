@@ -16,12 +16,15 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
+
 import java.time.OffsetDateTime;
 import java.util.Calendar;
 
 /**
  * Converter for {@link java.util.Calendar} type.
  */
+@SerializableByConvention
 public final class CalendarConverter extends AbstractTimestampWithTimezoneConverter {
 
     public static final CalendarConverter INSTANCE = new CalendarConverter();

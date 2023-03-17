@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.type.converter;
 
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
@@ -28,6 +29,7 @@ import java.time.OffsetDateTime;
 /**
  * Converter for arbitrary objects which do not have a more specific converter.
  */
+@SerializableByConvention
 public final class ObjectConverter extends Converter {
 
     public static final ObjectConverter INSTANCE = new ObjectConverter();

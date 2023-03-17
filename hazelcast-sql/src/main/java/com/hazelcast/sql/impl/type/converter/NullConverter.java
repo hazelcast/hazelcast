@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
@@ -34,6 +35,7 @@ import java.time.OffsetDateTime;
  * allowed (see {@link NotConvertible}). But the semantics and implementation of
  * such conversions is defined by every expression itself.
  */
+@SerializableByConvention
 public final class NullConverter extends Converter {
 
     public static final NullConverter INSTANCE = new NullConverter();

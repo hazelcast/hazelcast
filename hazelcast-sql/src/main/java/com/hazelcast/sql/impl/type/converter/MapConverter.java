@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.util.Map;
@@ -23,6 +24,7 @@ import java.util.Map;
 /**
  * Converter for {@link java.util.Map} type.
  */
+@SerializableByConvention
 public class MapConverter extends Converter {
 
     public static final MapConverter INSTANCE = new MapConverter();

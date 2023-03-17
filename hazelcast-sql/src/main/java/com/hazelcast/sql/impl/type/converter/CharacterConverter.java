@@ -16,9 +16,12 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
+
 /**
  * Converter for {@link java.lang.Character} type.
  */
+@SerializableByConvention
 public final class CharacterConverter extends AbstractStringConverter {
 
     public static final CharacterConverter INSTANCE = new CharacterConverter();

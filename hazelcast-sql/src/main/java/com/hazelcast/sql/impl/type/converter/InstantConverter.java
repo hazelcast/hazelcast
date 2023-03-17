@@ -16,12 +16,15 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
+
 import java.time.Instant;
 import java.time.OffsetDateTime;
 
 /**
  * Converter for {@link Instant} type.
  */
+@SerializableByConvention
 public final class InstantConverter extends AbstractTimestampWithTimezoneConverter {
 
     public static final InstantConverter INSTANCE = new InstantConverter();

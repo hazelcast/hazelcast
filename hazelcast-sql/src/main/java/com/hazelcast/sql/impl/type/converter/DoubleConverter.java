@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
@@ -26,6 +27,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.DECIMAL_MATH_CONTEX
 /**
  * Converter for {@link java.lang.Double} type.
  */
+@SerializableByConvention
 public final class DoubleConverter extends Converter {
 
     public static final DoubleConverter INSTANCE = new DoubleConverter();

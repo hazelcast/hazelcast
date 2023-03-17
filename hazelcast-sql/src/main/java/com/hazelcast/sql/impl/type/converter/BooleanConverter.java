@@ -16,11 +16,13 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 /**
  * Converter for {@link java.lang.Boolean} type.
  */
+@SerializableByConvention
 public final class BooleanConverter extends Converter {
 
     public static final BooleanConverter INSTANCE = new BooleanConverter();

@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
@@ -23,7 +24,8 @@ import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_DAY_SECOND;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_YEAR_MONTH;
 
-public class IntervalConverter extends Converter {
+@SerializableByConvention
+    public class IntervalConverter extends Converter {
 
     public static final IntervalConverter YEAR_MONTH = new IntervalConverter(
         ID_INTERVAL_YEAR_MONTH,

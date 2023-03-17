@@ -17,10 +17,12 @@
 package com.hazelcast.sql.impl.type.converter;
 
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 
 /**
  * Converter for {@link java.lang.String} type.
  */
+@SerializableByConvention
 public final class StringConverter extends AbstractStringConverter {
 
     public static final StringConverter INSTANCE = new StringConverter();

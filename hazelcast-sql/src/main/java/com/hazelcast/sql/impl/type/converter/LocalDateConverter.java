@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.time.LocalDate;
@@ -25,6 +26,7 @@ import java.time.OffsetDateTime;
 /**
  * Converter for {@link LocalDate} type.
  */
+@SerializableByConvention
 public final class LocalDateConverter extends AbstractTemporalConverter {
 
     public static final LocalDateConverter INSTANCE = new LocalDateConverter();
