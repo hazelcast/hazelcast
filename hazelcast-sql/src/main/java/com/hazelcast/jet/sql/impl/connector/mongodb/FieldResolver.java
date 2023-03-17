@@ -93,7 +93,8 @@ class FieldResolver {
                 if (documentField == null) {
                     throw new IllegalArgumentException("Could not resolve field with name " + nameInMongo);
                 }
-                MappingField mappingField = new MappingField(f.name(), f.type(), documentField.columnName);
+                MappingField mappingField = new MappingField(f.name(), f.type(), documentField.columnName,
+                        documentField.columnType.name());
                 mappingField.setPrimaryKey(pkColumnName.test(mappingField));
                 validateType(f, documentField);
                 resolvedFields.add(mappingField);

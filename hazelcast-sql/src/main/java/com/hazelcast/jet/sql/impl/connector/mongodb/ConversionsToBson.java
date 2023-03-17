@@ -128,6 +128,7 @@ public final class ConversionsToBson {
         }
     }
 
+    @SuppressWarnings("checkstyle:ReturnCount")
     private static Object convertToDateTime(Object value) {
         if (value instanceof BsonDateTime) {
             return value;
