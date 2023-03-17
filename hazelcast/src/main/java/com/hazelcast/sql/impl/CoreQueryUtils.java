@@ -32,7 +32,7 @@ public final class CoreQueryUtils {
 
     private CoreQueryUtils() { }
 
-    public static HazelcastSqlException toPublicException(Throwable e, @Nonnull UUID localMemberId) {
+    public static HazelcastSqlException toPublicException(@Nonnull Throwable e, @Nonnull UUID localMemberId) {
         if (e instanceof HazelcastSqlException) {
             return (HazelcastSqlException) e;
         }
