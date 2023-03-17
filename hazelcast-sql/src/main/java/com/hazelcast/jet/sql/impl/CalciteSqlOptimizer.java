@@ -498,7 +498,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private SqlPlan toShowStatementPlan(PlanKey planKey, SqlShowStatement sqlNode) {
-        return new ShowStatementPlan(planKey, sqlNode.getTarget(), sqlNode.getDataLinkName(), planExecutor);
+        return new ShowStatementPlan(planKey, sqlNode.getTarget(), sqlNode.getDataLinkNameWithoutSchema(), planExecutor);
     }
 
     private SqlPlan toExplainStatementPlan(

@@ -35,12 +35,12 @@ import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -55,7 +55,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ShowStatementTest extends SqlTestSupport {
+
     private static final String DATA_LINK_NAME = "test-data-link";
+
     private final SqlService sqlService = instance().getSql();
 
     @BeforeClass
@@ -179,6 +181,20 @@ public class ShowStatementTest extends SqlTestSupport {
         ));
     }
 
+    @Test
+    public void test_showResources_nonExistent() {
+        assertThatThrownBy(() -> sqlService.execute("SHOW RESOURCES FOR non_existent_datalink"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Data link 'non_existent_datalink' not found");
+    }
+
+    @Test
+    public void test_showResources_nonExistent_wrongSchema() {
+        assertThatThrownBy(() -> sqlService.execute("SHOW RESOURCES FOR foo_schema.\"" + DATA_LINK_NAME + "\""))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Data links exist only in the 'public' schema");
+    }
+
     private void createJobInJava(String jobName) {
         DAG dag = new DAG();
         dag.newVertex("v", () -> new TestProcessors.MockP().streaming());
@@ -190,7 +206,7 @@ public class ShowStatementTest extends SqlTestSupport {
             super(config);
         }
 
-        @NotNull
+        @Nonnull
         @Override
         public Collection<DataLinkResource> listResources() {
             return Arrays.asList(
@@ -200,8 +216,6 @@ public class ShowStatementTest extends SqlTestSupport {
         }
 
         @Override
-        public void destroy() {
-
-        }
+        public void destroy() { }
     }
 }

@@ -27,8 +27,12 @@ import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.util.ImmutableNullableList;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
+
+import static com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget.RESOURCES;
+import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.isCatalogObjectNameValid;
 
 public class SqlShowStatement extends SqlCall {
 
@@ -41,24 +45,26 @@ public class SqlShowStatement extends SqlCall {
     private final ShowStatementTarget target;
     private final SqlIdentifier dataLinkName;
 
-    public SqlShowStatement(SqlParserPos pos, ShowStatementTarget target) {
-        super(pos);
-        this.target = target;
-        this.dataLinkName = null;
-    }
-
-    public SqlShowStatement(SqlParserPos pos, ShowStatementTarget target, SqlIdentifier dataLinkName) {
+    public SqlShowStatement(SqlParserPos pos, @Nonnull ShowStatementTarget target, @Nullable SqlIdentifier dataLinkName) {
         super(pos);
         this.target = target;
         this.dataLinkName = dataLinkName;
+        assert dataLinkName == null || target == RESOURCES;
     }
 
     public ShowStatementTarget getTarget() {
         return target;
     }
 
-    public String getDataLinkName() {
-        return dataLinkName != null ? dataLinkName.names.get(dataLinkName.names.size() - 1) : null;
+    /**
+     * For target=RESOURCES returns the datalink name. Returns null, if:<ul>
+     *     <li>target is other than RESOURCES
+     *     <li>the schema isn't "hazelcast.public"
+     * </ul>
+     */
+    @Nullable
+    public String getDataLinkNameWithoutSchema() {
+        return dataLinkName != null && isCatalogObjectNameValid(dataLinkName) ? dataLinkName.names.get(dataLinkName.names.size() - 1) : null;
     }
 
     @Nonnull
@@ -81,6 +87,7 @@ public class SqlShowStatement extends SqlCall {
     public void unparse(SqlWriter writer, int leftPrec, int rightPrec) {
         writer.keyword(target.operator.getName());
         if (target.operator.equals(SHOW_RESOURCES) && dataLinkName != null) {
+            writer.keyword("FOR");
             dataLinkName.unparse(writer, leftPrec, rightPrec);
         }
     }

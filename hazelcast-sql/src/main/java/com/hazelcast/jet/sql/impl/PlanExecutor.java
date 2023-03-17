@@ -97,6 +97,7 @@ import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -398,7 +399,11 @@ public class PlanExecutor {
         );
     }
 
-    private SqlResult executeShowResources(String dataLinkName) {
+    private SqlResult executeShowResources(@Nullable String dataLinkName) {
+        if (dataLinkName == null) {
+            throw QueryException.error("Data links exist only in the 'public' schema");
+        }
+
         final SqlRowMetadata metadata = new SqlRowMetadata(asList(
                 new SqlColumnMetadata("name", VARCHAR, false),
                 new SqlColumnMetadata("type", VARCHAR, false)
@@ -406,11 +411,15 @@ public class PlanExecutor {
         final InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
         final InternalDataLinkService dataLinkService = getNodeEngine(hazelcastInstance).getDataLinkService();
 
+        final List<JetSqlRow> rows;
         final DataLink dataLink = dataLinkService.getAndRetainDataLink(dataLinkName, DataLink.class);
-        final List<JetSqlRow> rows = dataLink.listResources().stream()
-                .map(resource -> new JetSqlRow(serializationService, new Object[]{resource.name(), resource.type()}))
-                .collect(Collectors.toList());
-        dataLink.release();
+        try {
+            rows = dataLink.listResources().stream()
+                    .map(resource -> new JetSqlRow(serializationService, new Object[]{resource.name(), resource.type()}))
+                    .collect(Collectors.toList());
+        } finally {
+            dataLink.release();
+        }
 
         return new SqlResultImpl(
                 QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
