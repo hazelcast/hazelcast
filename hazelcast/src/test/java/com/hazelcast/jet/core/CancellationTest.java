@@ -480,5 +480,10 @@ public class CancellationTest extends JetTestSupport {
                             ? () -> new FaultyProcessor(e)
                             : StuckSource::new);
         }
+
+        @Override
+        public boolean isStateful() {
+            return false;
+        }
     }
 }

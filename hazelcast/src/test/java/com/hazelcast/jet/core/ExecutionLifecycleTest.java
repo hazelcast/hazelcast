@@ -1092,6 +1092,11 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             throw new UnsupportedOperationException("should not get here");
         }
 
+        @Override
+        public boolean isStateful() {
+            return false;
+        }
+
         private void readObject(java.io.ObjectInputStream stream) throws ClassNotFoundException {
             // simulate deserialization failure
             throw new ClassNotFoundException("fake.Class");
@@ -1115,6 +1120,11 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                     throw new NotSerializableException(getClass().getName());
                 }
             };
+        }
+
+        @Override
+        public boolean isStateful() {
+            return false;
         }
     }
 }

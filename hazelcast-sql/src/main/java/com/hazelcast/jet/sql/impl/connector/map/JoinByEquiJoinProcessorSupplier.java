@@ -267,6 +267,11 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
         }
 
         @Override
+        public boolean isStateful() {
+            return false;
+        }
+
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeObject(joinInfo);
             out.writeObject(mapName);

@@ -75,6 +75,11 @@ public final class TestContextSupport {
         public void init(@Nonnull Context context) throws Exception {
             delegate.init(context);
         }
+
+        @Override
+        public boolean isStateful() {
+            return delegate.isStateful();
+        }
     }
 
     private static final class TestProcessorSupplierAdapter implements ProcessorSupplier {

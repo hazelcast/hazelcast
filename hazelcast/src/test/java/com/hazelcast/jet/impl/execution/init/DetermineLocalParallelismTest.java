@@ -115,5 +115,10 @@ public class DetermineLocalParallelismTest extends SimpleTestInClusterSupport {
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             return x -> null;
         }
+
+        @Override
+        public boolean isStateful() {
+            return false;
+        }
     }
 }
