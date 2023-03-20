@@ -32,6 +32,7 @@ import org.bson.types.ObjectId;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
@@ -39,6 +40,7 @@ import java.util.Date;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.JSON;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.OBJECT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static java.time.ZoneId.systemDefault;
 import static java.time.ZoneOffset.UTC;
 
@@ -100,6 +102,12 @@ public final class ConversionsFromBson {
         else if (toConvert instanceof Date) {
             value = convertJavaDate((Date) toConvert, sqlType);
         }
+        else if (toConvert instanceof Document && sqlType.getTypeFamily() == VARCHAR) {
+            value = ((Document) toConvert).toJson();
+        }
+        else if (toConvert instanceof BsonDocument && sqlType.getTypeFamily() == VARCHAR) {
+            value = ((BsonDocument) toConvert).toJson();
+        }
         return sqlType.convert(value);
     }
 
@@ -108,10 +116,10 @@ public final class ConversionsFromBson {
             return value.toHexString();
         } else if (resultType.equals(QueryDataType.OBJECT)) {
             return value;
-        } else if (resultType.equals(QueryDataType.INT)) {
-            return Long.parseLong(value.toHexString(), OCT_RADIX);
-        } else if (resultType.equals(QueryDataType.BIGINT)) {
-            return new BigDecimal(Long.parseLong(value.toHexString(), OCT_RADIX));
+        } else if (resultType.equals(QueryDataType.DECIMAL)) {
+            return new BigDecimal(new BigInteger(value.toHexString(), OCT_RADIX));
+        } else if (resultType.equals(QueryDataType.DECIMAL_BIG_INTEGER)) {
+            return new BigInteger(value.toHexString(), OCT_RADIX);
         }
         return null;
     }

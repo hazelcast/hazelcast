@@ -38,6 +38,7 @@ import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -53,6 +54,8 @@ import static java.util.Collections.singletonList;
  * Some type -> MongoDB type
  */
 public final class ConversionsToBson {
+
+    private static final int HEX_RADIX = 16;
 
     private ConversionsToBson() {
     }
@@ -201,17 +204,13 @@ public final class ConversionsToBson {
             return new ObjectId(Long.toHexString((Long) value));
         }
         if (value instanceof BigDecimal) {
-            return new ObjectId(Long.toHexString(((BigDecimal) value).longValue()));
+            BigDecimal v = (BigDecimal) value;
+            return new ObjectId(v.toBigInteger().toString(HEX_RADIX));
         }
-//        if (resultType.equals(QueryDataType.VARCHAR)) {
-//            return value.toHexString();
-//        } else if (resultType.equals(QueryDataType.OBJECT)) {
-//            return value;
-//        } else if (resultType.equals(QueryDataType.INT)) {
-//            return Long.parseLong(value.toHexString(), 16);
-//        } else if (resultType.equals(QueryDataType.BIGINT)) {
-//            return new BigDecimal(Long.parseLong(value.toHexString(), 16));
-//        }
+        if (value instanceof BigInteger) {
+            BigInteger v = (BigInteger) value;
+            return new ObjectId(v.toString(HEX_RADIX));
+        }
         return null;
     }
 
@@ -352,6 +351,12 @@ public final class ConversionsToBson {
         }
         if (value instanceof BsonJavaScript) {
             return ((BsonJavaScript) value).getCode();
+        }
+        if (value instanceof Document) {
+            return ((Document) value).toJson();
+        }
+        if (value instanceof BsonDocument) {
+            return ((BsonDocument) value).toJson();
         }
         if (value instanceof BsonJavaScriptWithScope) {
             BsonJavaScriptWithScope v = (BsonJavaScriptWithScope) value;
