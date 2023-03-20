@@ -23,7 +23,6 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.rabbitmq.jms.admin.RMQConnectionFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.junit.experimental.categories.Category;
 import org.testcontainers.containers.RabbitMQContainer;
 

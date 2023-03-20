@@ -57,7 +57,8 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
     public static final String USERNAME = "mysql";
     public static final String PASSWORD = "mysql";
 
-    public static final MySQLContainer<?> mysql = new MySQLContainer<>().withUsername(USERNAME).withPassword(PASSWORD);
+    public static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:5.7.34")
+            .withUsername(USERNAME).withPassword(PASSWORD);
 
     @ClassRule
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
