@@ -135,7 +135,7 @@ public class TestSpringManagedHazelcastTransaction {
      */
     @Test
     @DirtiesContext(methodMode = AFTER_METHOD)
-    public void TransactionTimedOutExceptionWhenTimeoutValueIsSetInTransactionManager() {
+    public void transactionTimedOutExceptionWhenTimeoutValueIsSetInTransactionManager() {
         // given
         transactionManager.setDefaultTimeout(TIMEOUT);
         expectedException.expect(TransactionSystemException.class);
