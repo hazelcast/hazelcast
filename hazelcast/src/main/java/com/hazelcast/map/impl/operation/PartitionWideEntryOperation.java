@@ -168,6 +168,9 @@ public class PartitionWideEntryOperation extends MapOperation
                 outComes.add(operator.getByPreferringDataNewValue());
                 outComes.add(eventType);
                 outComes.add(operator.getEntry().getNewTtl());
+            } else {
+                // when event type is null, it means that there was no modification
+                operator.doPostOperateOps();
             }
         }, false);
 
