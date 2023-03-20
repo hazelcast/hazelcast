@@ -362,8 +362,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 .collect(toList());
 
         Mapping mapping;
-        if (nodeEngine.getVersion().asVersion().isLessThan(V5_3) && (node.dataLinkNameWithoutSchema() != null || node.objectType() != null)) {
-            throw new HazelcastException("Cannot create a mapping with a data link or an object type until the cluster is upgraded to 5.3");
+        if (nodeEngine.getVersion().asVersion().isLessThan(V5_3)
+                && (node.dataLinkNameWithoutSchema() != null || node.objectType() != null)) {
+            throw new HazelcastException("Cannot create a mapping with a data link or an object type " +
+                    "until the cluster is upgraded to 5.3");
         }
         mapping = new Mapping(
                 node.nameWithoutSchema(),

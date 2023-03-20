@@ -281,7 +281,7 @@ public class SqlCreateMapping extends SqlCreate {
         }
 
         if (dataLink != null && !isCatalogObjectNameValid(dataLink)) {
-            throw validator.newValidationError(name, RESOURCE.dataLinkIncorrectSchema_use());
+            throw validator.newValidationError(name, RESOURCE.dataLinkIncorrectSchemaUse());
         }
 
         Set<String> columnNames = new HashSet<>();
