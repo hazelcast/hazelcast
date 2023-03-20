@@ -26,10 +26,12 @@ import com.hazelcast.logging.ILogger;
 
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinPool;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource.CONFIG;
 import static com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource.SQL;
@@ -206,6 +208,14 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
         return dataLinks;
     }
 
+    public List<DataLink> getConfigCreatedDataLinks() {
+        return dataLinks.values()
+                .stream()
+                .filter(dl -> dl.source == CONFIG)
+                .map(dl -> dl.instance)
+                .collect(Collectors.toList());
+    }
+
     @Override
     public void shutdown() {
         for (Map.Entry<String, DataLinkEntry> entry : dataLinks.entrySet()) {
@@ -219,7 +229,7 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
         }
     }
 
-    enum DataLinkSource {
+    public enum DataLinkSource {
         CONFIG, SQL
     }
 

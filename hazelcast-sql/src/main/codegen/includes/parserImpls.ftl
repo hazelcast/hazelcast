@@ -67,7 +67,7 @@ SqlCreate SqlCreateDataLink(Span span, boolean replace) :
     boolean ifNotExists = false;
     SqlIdentifier name;
     SqlIdentifier type;
-    SqlNodeList sqlOptions;
+    SqlNodeList sqlOptions = SqlNodeList.EMPTY;
 }
 {
     <DATA> <LINK>
@@ -79,8 +79,11 @@ SqlCreate SqlCreateDataLink(Span span, boolean replace) :
     <TYPE>
     type = SimpleIdentifier()
 
-    <OPTIONS>
-    sqlOptions = SqlOptions()
+    [
+        <OPTIONS>
+        sqlOptions = SqlOptions()
+    ]
+
     {
         return new SqlCreateDataLink(
             startPos.plus(getPos()),

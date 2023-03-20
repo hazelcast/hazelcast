@@ -127,4 +127,18 @@ public class DataLinkConsistencyCheckerTest extends SimpleTestInClusterSupport {
         // then
         assertFalse(linkService.existsSqlDataLink(name));
     }
+
+    @Test
+    public void test_configOriginatedDataLinkWasAddedToDataLinkService() {
+        // given
+        linkService.replaceSqlDataLink(name, type, Collections.emptyMap());
+        assertTrue(linkService.existsSqlDataLink(name));
+        assertFalse(sqlCatalog.containsKey(QueryUtils.wrapDataLinkKey(name)));
+
+        // when
+        dataLinkConsistencyChecker.check();
+
+        // then
+        assertFalse(linkService.existsSqlDataLink(name));
+    }
 }

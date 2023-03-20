@@ -25,10 +25,12 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.schema.datalink.DataLinkCatalogEntry;
 
+import javax.annotation.concurrent.NotThreadSafe;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@NotThreadSafe
 public class DataLinkConsistencyChecker {
     private final HazelcastInstance hazelcastInstance;
     private final DataLinkServiceImpl dataLinkService;
@@ -53,14 +55,15 @@ public class DataLinkConsistencyChecker {
     }
 
     /**
-     * Removes & alters all outdated data links in __sql.catalog
-     * and adds all missed data links to __sql.catalog
+     * Removes & alters all outdated data links and adds
+     * all missed data links to data link service
      */
     public void check() {
         if (!initialized) {
             return;
         }
 
+        // capture data links set before altering it.
         List<Map.Entry<String, DataLinkEntry>> sqlEntries = dataLinkService.getDataLinks()
                 .entrySet()
                 .stream()
@@ -72,7 +75,7 @@ public class DataLinkConsistencyChecker {
                 continue;
             }
             DataLinkCatalogEntry dl = (DataLinkCatalogEntry) catalogItem;
-            dataLinkService.replaceSqlDataLink(dl.getName(), dl.getType(), dl.getOptions());
+            dataLinkService.replaceSqlDataLink(dl.name(), dl.type(), dl.options());
         }
 
         for (Map.Entry<String, DataLinkEntry> entry : sqlEntries) {

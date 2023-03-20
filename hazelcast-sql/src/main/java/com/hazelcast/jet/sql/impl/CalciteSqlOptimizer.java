@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
+import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
@@ -228,7 +229,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         this.dataLinkStorage = new DataLinkStorage(nodeEngine);
 
         TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine, this.relationsStorage);
-        DataLinksResolver dataLinksResolver = dataLinkCatalog(this.dataLinkStorage);
+        DataLinksResolver dataLinksResolver = dataLinkCatalog(nodeEngine.getDataLinkService(), this.dataLinkStorage);
         this.tableResolvers = Arrays.asList(tableResolverImpl, dataLinksResolver);
         this.planExecutor = new PlanExecutor(
                 tableResolverImpl,
@@ -247,8 +248,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return new TableResolverImpl(nodeEngine, relationsStorage, connectorCache);
     }
 
-    private static DataLinksResolver dataLinkCatalog(DataLinkStorage storage) {
-        return new DataLinksResolver(storage);
+    private static DataLinksResolver dataLinkCatalog(InternalDataLinkService dataLinkService, DataLinkStorage storage) {
+        return new DataLinksResolver(dataLinkService, storage);
     }
 
     @Nullable
