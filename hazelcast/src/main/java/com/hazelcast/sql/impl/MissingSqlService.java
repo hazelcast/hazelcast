@@ -23,8 +23,15 @@ import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
 
 import javax.annotation.Nonnull;
+import java.util.UUID;
 
 public class MissingSqlService implements InternalSqlService {
+
+    private UUID localMemberId;
+
+    public MissingSqlService(UUID localMemberId) {
+        this.localMemberId = localMemberId;
+    }
 
     @Nonnull
     @Override
@@ -33,17 +40,20 @@ public class MissingSqlService implements InternalSqlService {
     }
 
     @Override
-    public void start() { }
+    public void start() {
+    }
 
     @Override
-    public void reset() { }
+    public void reset() {
+    }
 
     @Override
-    public void shutdown() { }
+    public void shutdown() {
+    }
 
     @Override
     public void closeOnError(QueryId queryId) {
-        throw throwDisabled();
+        // We still want to send an exception to the client, so, just leave method impl empty.
     }
 
     @Override
@@ -58,7 +68,7 @@ public class MissingSqlService implements InternalSqlService {
 
     @Override
     public SqlResult execute(@Nonnull SqlStatement statement, SqlSecurityContext securityContext, QueryId queryId,
-            boolean skipStats) {
+                             boolean skipStats) {
         throw throwDisabled();
     }
 
@@ -83,7 +93,11 @@ public class MissingSqlService implements InternalSqlService {
     }
 
     private RuntimeException throwDisabled() {
-        throw new HazelcastSqlException("Cannot execute SQL query because \"hazelcast-sql\" module is not in the classpath",
+        throw new HazelcastSqlException(
+                localMemberId,
+                SqlErrorCode.GENERIC,
+                "Cannot execute SQL query because \"hazelcast-sql\" module is not in the classpath",
+                null,
                 null);
     }
 }

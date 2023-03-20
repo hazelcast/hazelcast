@@ -204,7 +204,7 @@ public class NodeEngineImpl implements NodeEngine {
             clz = Class.forName("com.hazelcast.sql.impl.SqlServiceImpl");
         } catch (ClassNotFoundException e) {
             // this is normal if the hazelcast-sql module isn't present - return disabled service
-            return new MissingSqlService();
+            return new MissingSqlService(node.getThisUuid());
         }
 
         try {

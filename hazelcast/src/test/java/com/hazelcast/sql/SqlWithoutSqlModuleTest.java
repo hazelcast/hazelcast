@@ -18,6 +18,7 @@ package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -26,6 +27,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -37,5 +40,18 @@ public class SqlWithoutSqlModuleTest extends JetTestSupport {
         assertThatThrownBy(() -> inst.getSql().execute("SELECT 1"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessage("Cannot execute SQL query because \"hazelcast-sql\" module is not in the classpath");
+    }
+
+    @Test
+    public void clientTest() {
+        HazelcastInstance inst = createHazelcastInstance();
+        HazelcastInstance client = createHazelcastClient();
+
+        try {
+            SqlResult sqlResult = client.getSql().execute("SELECT 1");
+        } catch (HazelcastSqlException e) {
+            assertNotNull(e.getOriginatingMemberId());
+            assertEquals(Util.getNodeEngine(inst).getNode().getThisUuid(), e.getOriginatingMemberId());
+        }
     }
 }
