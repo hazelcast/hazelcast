@@ -148,15 +148,16 @@ public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInCl
     public void testDynamicPartitioningAttributesConfiguration() {
         final List<PartitioningAttributeConfig> attributeConfigs =
                 singletonList(new PartitioningAttributeConfig("name"));
-        final MapConfig mapConfig = new MapConfig("test2").setPartitioningAttributeConfigs(attributeConfigs);
+        String mapName = randomName();
+        final MapConfig mapConfig = new MapConfig(mapName).setPartitioningAttributeConfigs(attributeConfigs);
 
         client().getConfig().addMapConfig(mapConfig);
 
         for (final HazelcastInstance instance : instances()) {
-            assertTrueEventually(() -> assertEquals(mapConfig, instance.getConfig().getMapConfig("test2")));
+            assertTrueEventually(() -> assertEquals(mapConfig, instance.getConfig().getMapConfig(mapName)));
         }
 
-        final IMap<JavaKey, Long> map = instance().getMap("test2");
+        final IMap<JavaKey, Long> map = instance().getMap(mapName);
 
         for (long i = 0; i < 100; i++) {
             map.put(new JavaKey(i, PARTITION_ATTRIBUTE_VALUE, "org#" + i), i);
@@ -165,9 +166,9 @@ public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInCl
         final HazelcastInstance owner = getOwner(PARTITION_ATTRIBUTE_VALUE);
         final List<HazelcastInstance> nonOwners = getNonOwners(owner);
 
-        assertEquals(100, owner.getMap("test2").getLocalMapStats().getOwnedEntryCount());
-        assertEquals(0, nonOwners.get(0).getMap("test2").getLocalMapStats().getOwnedEntryCount());
-        assertEquals(0, nonOwners.get(1).getMap("test2").getLocalMapStats().getOwnedEntryCount());
+        assertEquals(100, owner.getMap(mapName).getLocalMapStats().getOwnedEntryCount());
+        assertEquals(0, nonOwners.get(0).getMap(mapName).getLocalMapStats().getOwnedEntryCount());
+        assertEquals(0, nonOwners.get(1).getMap(mapName).getLocalMapStats().getOwnedEntryCount());
     }
 
     private HazelcastInstance getOwner(Object partitionKey) {

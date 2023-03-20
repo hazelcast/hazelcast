@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMapConfigCodec;
-
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.MapConfig;
@@ -50,7 +49,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
 
 import java.util.Arrays;
 
@@ -190,7 +188,7 @@ public class AddMapConfigMessageTaskTest {
                 mapConfig.isPerEntryStatsEnabled(),
                 mapConfig.getDataPersistenceConfig(),
                 mapConfig.getTieredStoreConfig(),
-                null
+                mapConfig.getPartitioningAttributeConfigs()
         );
         AddMapConfigMessageTask addMapConfigMessageTask = new AddMapConfigMessageTask(addMapConfigClientMessage, mockNode, mockConnection);
         addMapConfigMessageTask.run();
