@@ -64,7 +64,9 @@ public class SqlShowStatement extends SqlCall {
      */
     @Nullable
     public String getDataLinkNameWithoutSchema() {
-        return dataLinkName != null && isCatalogObjectNameValid(dataLinkName) ? dataLinkName.names.get(dataLinkName.names.size() - 1) : null;
+        return dataLinkName != null && isCatalogObjectNameValid(dataLinkName)
+                ? dataLinkName.names.get(dataLinkName.names.size() - 1)
+                : null;
     }
 
     @Nonnull
