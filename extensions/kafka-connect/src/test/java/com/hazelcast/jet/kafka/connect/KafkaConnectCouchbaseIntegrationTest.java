@@ -38,11 +38,13 @@ import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.apache.kafka.connect.data.Values;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.testcontainers.couchbase.BucketDefinition;
 import org.testcontainers.couchbase.CouchbaseContainer;
+import org.testng.annotations.AfterClass;
 
 import java.net.URL;
 import java.time.Duration;
@@ -52,6 +54,7 @@ import java.util.Properties;
 import java.util.concurrent.CompletionException;
 
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -64,7 +67,6 @@ public class KafkaConnectCouchbaseIntegrationTest extends JetTestSupport {
     private static final ILogger LOGGER = Logger.getLogger(KafkaConnectCouchbaseIntegrationTest.class);
     private static final String BUCKET_NAME = "mybucket";
 
-    @ClassRule
     public static final CouchbaseContainer container = new CouchbaseContainer("couchbase/server:7.1.1")
             .withBucket(new BucketDefinition(BUCKET_NAME));
 
@@ -73,6 +75,19 @@ public class KafkaConnectCouchbaseIntegrationTest extends JetTestSupport {
 
     private static final String CONNECTOR_URL = "https://repository.hazelcast.com/download"
             + "/tests/couchbase-kafka-connect-couchbase-4.1.11.zip";
+
+    @BeforeClass
+    public static void setUpDocker() {
+        assumeDockerEnabled();
+        container.start();
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        if (container != null) {
+            container.stop();
+        }
+    }
 
     @Test
     public void testReading() throws Exception {

@@ -30,10 +30,12 @@ import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.apache.kafka.connect.data.Values;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.testcontainers.containers.MySQLContainer;
+import org.testng.annotations.AfterClass;
 
 import java.net.URL;
 import java.sql.Connection;
@@ -44,6 +46,7 @@ import java.util.Properties;
 import java.util.concurrent.CompletionException;
 
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -54,7 +57,6 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
     public static final String USERNAME = "mysql";
     public static final String PASSWORD = "mysql";
 
-    @ClassRule
     public static final MySQLContainer<?> mysql = new MySQLContainer<>().withUsername(USERNAME).withPassword(PASSWORD);
 
     @ClassRule
@@ -64,6 +66,19 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
 
     private static final String CONNECTOR_URL = "https://repository.hazelcast.com/download"
             + "/tests/confluentinc-kafka-connect-jdbc-10.6.3.zip";
+
+    @BeforeClass
+    public static void setUpDocker() {
+        assumeDockerEnabled();
+        mysql.start();
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        if (mysql != null) {
+            mysql.stop();
+        }
+    }
 
     @Test
     public void testReading() throws Exception {
