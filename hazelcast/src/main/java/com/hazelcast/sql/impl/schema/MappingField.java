@@ -72,14 +72,17 @@ public class MappingField implements IdentifiedDataSerializable {
     /**
      * Column name. This is the name that is seen in SQL queries.
      */
+    @Nonnull
     public String name() {
         return requireNonNull((String) properties.get(NAME), "missing name property");
     }
 
+    @Nonnull
     public QueryDataType type() {
         return requireNonNull((QueryDataType) properties.get(TYPE), "missing type property");
     }
 
+    @Nonnull
     public MappingField setType(QueryDataType type) {
         properties.put(TYPE, type);
         return this;
@@ -93,6 +96,7 @@ public class MappingField implements IdentifiedDataSerializable {
         return (String) properties.get(EXTERNAL_NAME);
     }
 
+    @Nonnull
     public MappingField setExternalName(String extName) {
         properties.put(EXTERNAL_NAME, extName);
         return this;
@@ -102,6 +106,7 @@ public class MappingField implements IdentifiedDataSerializable {
         return (Boolean) properties.getOrDefault(PRIMARY_KEY, Boolean.FALSE);
     }
 
+    @Nonnull
     public MappingField setPrimaryKey(boolean primaryKey) {
         properties.put(PRIMARY_KEY, primaryKey);
         return this;
@@ -118,6 +123,7 @@ public class MappingField implements IdentifiedDataSerializable {
         return (String) properties.get(EXTERNAL_TYPE);
     }
 
+    @Nonnull
     public MappingField setExternalType(@Nonnull String externalType) {
         properties.put(EXTERNAL_TYPE, externalType);
         return this;
