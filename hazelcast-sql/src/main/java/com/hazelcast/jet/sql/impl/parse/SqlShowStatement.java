@@ -34,6 +34,7 @@ public class SqlShowStatement extends SqlCall {
     public static final SqlSpecialOperator SHOW_VIEWS = new SqlSpecialOperator("SHOW VIEWS", SqlKind.OTHER);
     public static final SqlSpecialOperator SHOW_JOBS = new SqlSpecialOperator("SHOW JOBS", SqlKind.OTHER);
     public static final SqlSpecialOperator SHOW_TYPES = new SqlSpecialOperator("SHOW TYPES", SqlKind.OTHER);
+    public static final SqlSpecialOperator SHOW_DATALINKS = new SqlSpecialOperator("SHOW DATA LINKS", SqlKind.OTHER);
 
     private final ShowStatementTarget target;
 
@@ -70,7 +71,8 @@ public class SqlShowStatement extends SqlCall {
         MAPPINGS(SHOW_MAPPINGS),
         VIEWS(SHOW_VIEWS),
         JOBS(SHOW_JOBS),
-        TYPES(SHOW_TYPES);
+        TYPES(SHOW_TYPES),
+        DATALINKS(SHOW_DATALINKS);
 
         private final SqlSpecialOperator operator;
 

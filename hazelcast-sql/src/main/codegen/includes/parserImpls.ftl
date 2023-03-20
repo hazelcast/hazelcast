@@ -758,6 +758,8 @@ SqlShowStatement SqlShowStatement() :
         <JOBS> { target = ShowStatementTarget.JOBS; }
     |
         <TYPES> { target = ShowStatementTarget.TYPES; }
+    |
+        <DATA> <LINKS> { target = ShowStatementTarget.DATALINKS; }
     )
     {
         return new SqlShowStatement(getPos(), target);

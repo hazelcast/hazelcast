@@ -23,6 +23,7 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.datalink.impl.DataLinkServiceImpl;
 import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
@@ -377,6 +378,12 @@ public class PlanExecutor {
                 break;
             case TYPES:
                 rows = catalog.getTypeNames().stream();
+                break;
+            case DATALINKS:
+                InternalDataLinkService service = nodeEngine.getDataLinkService();
+                assert service instanceof DataLinkServiceImpl;
+                DataLinkServiceImpl dataLinkService = (DataLinkServiceImpl) service;
+                rows = dataLinkService.getDataLinks().keySet().stream();
                 break;
             default:
                 throw new AssertionError("Unsupported SHOW statement target");
