@@ -48,6 +48,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.mapstore.GenericMapStore.DATA_LINK_REF_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.TYPE_NAME_PROPERTY;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
@@ -59,6 +60,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
+        assumeDockerEnabled();
         initializeBeforeClass(new H2DatabaseProvider());
     }
 
