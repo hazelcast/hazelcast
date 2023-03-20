@@ -92,7 +92,6 @@ public class AllTypesSelectMongoSqlConnectorTest extends MongoSqlTest {
                 {"date", "DATE", atUtc().toLocalDate(), atLocal().toLocalDate()},
                 {"date", "TIMESTAMP", atUtc(), atLocal()},
                 {"timestamp", "TIMESTAMP", atLocalTimestamp(), atLocal()},
-//                {"timestamp", "DATE_TIME", atLocalTimestamp(), atUtc()},
                 {"minKey", "OBJECT", new MinKey(), new MinKey()},
                 {"maxKey", "OBJECT", new MaxKey(), new MaxKey()},
                 {"objectId", "OBJECT", EXAMPLE_OBJECT_ID, EXAMPLE_OBJECT_ID},

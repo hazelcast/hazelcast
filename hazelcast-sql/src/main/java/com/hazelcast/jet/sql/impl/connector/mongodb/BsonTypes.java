@@ -143,6 +143,7 @@ final class BsonTypes {
         result.put(Collection.class, BsonType.ARRAY);
         result.put(BigDecimal.class, BsonType.DECIMAL128);
         result.put(BsonDecimal128.class, BsonType.DECIMAL128);
+        result.put(Decimal128.class, BsonType.DECIMAL128);
         result.put(BsonRegularExpression.class, BsonType.REGULAR_EXPRESSION);
         result.put(Boolean.class, BsonType.BOOLEAN);
         result.put(ObjectId.class, BsonType.OBJECT_ID);
