@@ -74,8 +74,8 @@ public class RelationsStorageTest extends SimpleTestInClusterSupport {
 
         assertThat(storage.putIfAbsent(name, mapping(name, "type-1"))).isTrue();
         assertThat(storage.putIfAbsent(name, mapping(name, "type-2"))).isFalse();
-        assertTrue(storage.allObjects().stream().anyMatch(m -> m instanceof Mapping && ((Mapping) m).type().equals("type-1")));
-        assertTrue(storage.allObjects().stream().noneMatch(m -> m instanceof Mapping && ((Mapping) m).type().equals("type-2")));
+        assertTrue(storage.allObjects().stream().anyMatch(m -> m instanceof Mapping && ((Mapping) m).connectorType().equals("type-1")));
+        assertTrue(storage.allObjects().stream().noneMatch(m -> m instanceof Mapping && ((Mapping) m).connectorType().equals("type-2")));
     }
 
     @Test

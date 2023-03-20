@@ -41,7 +41,7 @@ public class Mapping implements IdentifiedDataSerializable, Versioned {
     private String name;
     private String externalName;
     private String dataLink;
-    private String type;
+    private String connectorType;
     private String objectType;
     private List<MappingField> mappingFields;
     private Map<String, String> options;
@@ -49,25 +49,31 @@ public class Mapping implements IdentifiedDataSerializable, Versioned {
     public Mapping() {
     }
 
+    /**
+     * Create a mapping based on a connector type.
+     */
     public Mapping(
             String name,
             String externalName,
-            String type,
+            String connectorType,
             List<MappingField> fields,
             Map<String, String> options
     ) {
         this.name = name;
         this.externalName = externalName;
-        this.type = type;
+        this.connectorType = connectorType;
         this.mappingFields = fields;
         this.options = options;
     }
 
+    /**
+     * Create a mapping based on a data link.
+     */
     public Mapping(
             String name,
             String externalName,
             String dataLink,
-            String type,
+            String connectorType,
             String objectType,
             List<MappingField> fields,
             Map<String, String> options
@@ -75,7 +81,7 @@ public class Mapping implements IdentifiedDataSerializable, Versioned {
         this.name = name;
         this.externalName = externalName;
         this.dataLink = dataLink;
-        this.type = type;
+        this.connectorType = connectorType;
         this.objectType = objectType;
         this.mappingFields = fields;
         this.options = options;
@@ -89,8 +95,8 @@ public class Mapping implements IdentifiedDataSerializable, Versioned {
         return externalName;
     }
 
-    public String type() {
-        return type;
+    public String connectorType() {
+        return connectorType;
     }
 
     public String dataLink() {
@@ -123,7 +129,7 @@ public class Mapping implements IdentifiedDataSerializable, Versioned {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
         out.writeString(externalName);
-        out.writeString(type);
+        out.writeString(connectorType);
         if (out.getVersion().isGreaterOrEqual(Versions.V5_3)) {
             out.writeString(dataLink);
             out.writeString(objectType);
@@ -136,7 +142,7 @@ public class Mapping implements IdentifiedDataSerializable, Versioned {
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
         externalName = in.readString();
-        type = in.readString();
+        connectorType = in.readString();
         if (in.getVersion().isGreaterOrEqual(Versions.V5_3)) {
             dataLink = in.readString();
             objectType = in.readString();
@@ -157,7 +163,7 @@ public class Mapping implements IdentifiedDataSerializable, Versioned {
         return Objects.equals(name, mapping.name)
                 && Objects.equals(externalName, mapping.externalName)
                 && Objects.equals(dataLink, mapping.dataLink)
-                && Objects.equals(type, mapping.type)
+                && Objects.equals(connectorType, mapping.connectorType)
                 && Objects.equals(objectType, mapping.objectType)
                 && Objects.equals(mappingFields, mapping.mappingFields)
                 && Objects.equals(options, mapping.options);
@@ -165,6 +171,6 @@ public class Mapping implements IdentifiedDataSerializable, Versioned {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, externalName, dataLink, type, objectType, mappingFields, options);
+        return Objects.hash(name, externalName, dataLink, connectorType, objectType, mappingFields, options);
     }
 }

@@ -230,10 +230,10 @@ public class SqlCreateMapping extends SqlCreate {
             writer.keyword("DATA LINK");
             writer.print(mapping.dataLink());
         } else {
-            assert mapping.type() != null;
+            assert mapping.connectorType() != null;
             writer.newlineAndIndent();
             writer.keyword("TYPE");
-            writer.print(mapping.type());
+            writer.print(mapping.connectorType());
         }
 
         if (mapping.objectType() != null) {

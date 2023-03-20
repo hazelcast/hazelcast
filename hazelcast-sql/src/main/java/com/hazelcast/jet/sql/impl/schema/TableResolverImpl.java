@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.datalink.DataLink;
 import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.jet.function.TriFunction;
@@ -138,15 +139,13 @@ public class TableResolverImpl implements TableResolver {
 
     private Mapping resolveMapping(Mapping mapping) {
         Map<String, String> options = mapping.options();
-        String name = mapping.name();
-        String type = mapping.type();
+        String type = mapping.connectorType();
         String dataLink = mapping.dataLink();
         List<MappingField> resolvedFields;
         SqlConnector connector;
 
         if (type == null) {
             connector = extractConnector(dataLink);
-
         } else {
             connector = connectorCache.forType(type);
         }
@@ -172,16 +171,12 @@ public class TableResolverImpl implements TableResolver {
         SqlConnector connector;
         assert dataLink != null;
         InternalDataLinkService dataLinkService = nodeEngine.getDataLinkService();
-        com.hazelcast.datalink.DataLink dl = dataLinkService.getAndRetainDataLink(dataLink,
-                com.hazelcast.datalink.DataLink.class);
-        if (dl == null) {
-            throw QueryException.error("Data link " + dataLink + " doesn't exists");
-        }
+        DataLink dl = dataLinkService.getAndRetainDataLink(dataLink, DataLink.class);
         try {
             if (dl instanceof JdbcDataLink) {
                 connector = connectorCache.forType("JDBC");
             } else {
-                throw QueryException.error("Unknown data link " + dl.getClass().getName());
+                throw QueryException.error("Unknown data link class: " + dl.getClass().getName());
             }
         } finally {
             dl.release();
@@ -307,10 +302,10 @@ public class TableResolverImpl implements TableResolver {
 
     private Table toTable(Mapping mapping) {
         SqlConnector connector;
-        if (mapping.type() == null) {
+        if (mapping.connectorType() == null) {
             connector = extractConnector(mapping.dataLink());
         } else {
-            connector = connectorCache.forType((mapping.type()));
+            connector = connectorCache.forType((mapping.connectorType()));
         }
         assert connector != null;
         return connector.createTable(
