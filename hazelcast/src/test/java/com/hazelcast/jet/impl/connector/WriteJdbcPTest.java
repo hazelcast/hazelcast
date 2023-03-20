@@ -87,9 +87,14 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     private String tableName;
 
     @BeforeClass
-    public static void beforeClassCheckDocker() {
+    public static void setupClass() {
         assumeDockerEnabled();
         container.start();
+
+        Config config = smallInstanceConfig();
+        configureJdbcDataLink(JDBC_DATA_LINK, container.getJdbcUrl(), container.getUsername(), container.getPassword(), config);
+        configureDummyDataLink(DUMMY_DATA_LINK, config);
+        initialize(2, config);
     }
 
     @AfterClass
@@ -97,14 +102,6 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
         if (container != null) {
             container.stop();
         }
-    }
-
-    @BeforeClass
-    public static void setupClass() {
-        Config config = smallInstanceConfig();
-        configureJdbcDataLink(JDBC_DATA_LINK, container.getJdbcUrl(), container.getUsername(), container.getPassword(), config);
-        configureDummyDataLink(DUMMY_DATA_LINK, config);
-        initialize(2, config);
     }
 
     @Before
