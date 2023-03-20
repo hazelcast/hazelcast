@@ -23,6 +23,7 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.datalink.DataLink;
 import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
@@ -96,6 +97,7 @@ import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -117,6 +119,7 @@ import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_QUERY_TEXT;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
+import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.impl.util.Util.getSerializationService;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataLinkPlan;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
@@ -125,6 +128,7 @@ import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHaz
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyIterator;
 import static java.util.Collections.singletonList;
 
@@ -378,6 +382,8 @@ public class PlanExecutor {
             case TYPES:
                 rows = catalog.getTypeNames().stream();
                 break;
+            case RESOURCES:
+                return executeShowResources(plan.getDataLinkName());
             default:
                 throw new AssertionError("Unsupported SHOW statement target");
         }
@@ -388,6 +394,36 @@ public class PlanExecutor {
                 QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
                 new StaticQueryResultProducerImpl(
                         rows.sorted().map(name -> new JetSqlRow(serializationService, new Object[]{name})).iterator()),
+                metadata,
+                false
+        );
+    }
+
+    private SqlResult executeShowResources(@Nullable String dataLinkName) {
+        if (dataLinkName == null) {
+            throw QueryException.error("Data links exist only in the 'public' schema");
+        }
+
+        final SqlRowMetadata metadata = new SqlRowMetadata(asList(
+                new SqlColumnMetadata("name", VARCHAR, false),
+                new SqlColumnMetadata("type", VARCHAR, false)
+        ));
+        final InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
+        final InternalDataLinkService dataLinkService = getNodeEngine(hazelcastInstance).getDataLinkService();
+
+        final List<JetSqlRow> rows;
+        final DataLink dataLink = dataLinkService.getAndRetainDataLink(dataLinkName, DataLink.class);
+        try {
+            rows = dataLink.listResources().stream()
+                    .map(resource -> new JetSqlRow(serializationService, new Object[]{resource.name(), resource.type()}))
+                    .collect(Collectors.toList());
+        } finally {
+            dataLink.release();
+        }
+
+        return new SqlResultImpl(
+                QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
+                new StaticQueryResultProducerImpl(rows.iterator()),
                 metadata,
                 false
         );
