@@ -214,8 +214,8 @@ public final class Contexts {
         }
 
         @Override
-        public void checkPermission(Permission permission) {
-            if (permission == null || subject == null) {
+        public void checkPermission(@Nonnull Permission permission) {
+            if (subject == null) {
                 return;
             }
             SecurityContext securityContext = nodeEngine.getNode().securityContext;
