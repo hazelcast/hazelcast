@@ -84,6 +84,8 @@ public class SqlCreateMapping extends SqlCreate {
                 externalName == null || externalName.isSimple(),
                 externalName == null ? null : externalName.toString()
         );
+
+        assert dataLink == null || connectorType == null; // the syntax doesn't allow this
     }
 
     public String nameWithoutSchema() {
@@ -98,8 +100,11 @@ public class SqlCreateMapping extends SqlCreate {
         return columns.getList().stream().map(node -> (SqlMappingColumn) node);
     }
 
-    public String dataLink() {
-        return dataLink != null ? dataLink.toString() : null;
+    public String dataLinkNameWithoutSchema() {
+        if (dataLink == null) {
+            return null;
+        }
+        return dataLink.names.get(dataLink.names.size() - 1);
     }
 
     public String connectorType() {
@@ -229,13 +234,12 @@ public class SqlCreateMapping extends SqlCreate {
             writer.newlineAndIndent();
             writer.keyword("DATA LINK");
             writer.print(mapping.dataLink());
-        } else {
-            assert mapping.connectorType() != null;
+        }
+        if (mapping.connectorType() != null) {
             writer.newlineAndIndent();
             writer.keyword("TYPE");
             writer.print(mapping.connectorType());
         }
-
         if (mapping.objectType() != null) {
             writer.newlineAndIndent();
             writer.keyword("OBJECT TYPE");
@@ -274,6 +278,10 @@ public class SqlCreateMapping extends SqlCreate {
 
         if (!isCatalogObjectNameValid(name)) {
             throw validator.newValidationError(name, RESOURCE.mappingIncorrectSchema());
+        }
+
+        if (dataLink != null && !isCatalogObjectNameValid(dataLink)) {
+            throw validator.newValidationError(name, RESOURCE.dataLinkIncorrectSchema_use());
         }
 
         Set<String> columnNames = new HashSet<>();

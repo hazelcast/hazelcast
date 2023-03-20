@@ -159,8 +159,7 @@ public class TableResolverImpl implements TableResolver {
         return new Mapping(
                 mapping.name(),
                 mapping.externalName(),
-                mapping.dataLink(),
-                type,
+                mapping.dataLink(), type,
                 mapping.objectType(),
                 new ArrayList<>(resolvedFields),
                 new LinkedHashMap<>(options)

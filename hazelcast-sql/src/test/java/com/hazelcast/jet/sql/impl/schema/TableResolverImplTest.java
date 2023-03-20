@@ -302,7 +302,7 @@ public class TableResolverImplTest {
     // endregion
 
     private static Mapping mapping() {
-        return new Mapping("name", "external_name", "type", emptyList(), emptyMap());
+        return new Mapping("name", "external_name", null, "type", null, emptyList(), emptyMap());
     }
 
     private static View view() {

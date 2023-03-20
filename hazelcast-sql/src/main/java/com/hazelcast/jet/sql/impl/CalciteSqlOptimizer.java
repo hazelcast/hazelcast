@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
@@ -355,37 +356,30 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         }
     }
 
-    private SqlPlan toCreateMappingPlan(PlanKey planKey, SqlCreateMapping sqlCreateMapping) {
-        List<MappingField> mappingFields = sqlCreateMapping.columns()
+    private SqlPlan toCreateMappingPlan(PlanKey planKey, SqlCreateMapping node) {
+        List<MappingField> mappingFields = node.columns()
                 .map(field -> new MappingField(field.name(), field.type(), field.externalName()))
                 .collect(toList());
 
         Mapping mapping;
-        if (nodeEngine.getVersion().asVersion().isLessThan(V5_3)) {
-            mapping = new Mapping(
-                    sqlCreateMapping.nameWithoutSchema(),
-                    sqlCreateMapping.externalName(),
-                    sqlCreateMapping.connectorType(),
-                    mappingFields,
-                    sqlCreateMapping.options()
-            );
-        } else {
-            mapping = new Mapping(
-                    sqlCreateMapping.nameWithoutSchema(),
-                    sqlCreateMapping.externalName(),
-                    sqlCreateMapping.dataLink(),
-                    sqlCreateMapping.connectorType(),
-                    sqlCreateMapping.objectType(),
-                    mappingFields,
-                    sqlCreateMapping.options()
-            );
+        if (nodeEngine.getVersion().asVersion().isLessThan(V5_3) && (node.dataLinkNameWithoutSchema() != null || node.objectType() != null)) {
+            throw new HazelcastException("Cannot create a mapping with a data link or an object type until the cluster is upgraded to 5.3");
         }
+        mapping = new Mapping(
+                node.nameWithoutSchema(),
+                node.externalName(),
+                node.dataLinkNameWithoutSchema(),
+                node.connectorType(),
+                node.objectType(),
+                mappingFields,
+                node.options()
+        );
 
         return new CreateMappingPlan(
                 planKey,
                 mapping,
-                sqlCreateMapping.getReplace(),
-                sqlCreateMapping.ifNotExists(),
+                node.getReplace(),
+                node.ifNotExists(),
                 planExecutor
         );
     }

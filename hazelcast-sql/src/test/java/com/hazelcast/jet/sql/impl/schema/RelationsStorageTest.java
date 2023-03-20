@@ -104,7 +104,7 @@ public class RelationsStorageTest extends SimpleTestInClusterSupport {
     }
 
     private static Mapping mapping(String name, String type) {
-        return new Mapping(name, name, type, emptyList(), emptyMap());
+        return new Mapping(name, name, null, type, null, emptyList(), emptyMap());
     }
 
     private static View view(String name, String query) {

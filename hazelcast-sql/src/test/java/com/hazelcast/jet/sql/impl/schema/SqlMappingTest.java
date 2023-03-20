@@ -75,7 +75,6 @@ public class SqlMappingTest extends SqlTestSupport {
             client().getSql().execute("SELECT * FROM map1").forEach(noop());
             fail();
         } catch (HazelcastSqlException e) {
-            System.err.println(e.getSuggestion());
             client().getSql().execute(e.getSuggestion());
             assertRowsAnyOrder("SELECT * FROM map1", singletonList(new Row(1, "value-1")));
         }

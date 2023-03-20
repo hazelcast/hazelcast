@@ -49,26 +49,6 @@ public class Mapping implements IdentifiedDataSerializable, Versioned {
     public Mapping() {
     }
 
-    /**
-     * Create a mapping based on a connector type.
-     */
-    public Mapping(
-            String name,
-            String externalName,
-            String connectorType,
-            List<MappingField> fields,
-            Map<String, String> options
-    ) {
-        this.name = name;
-        this.externalName = externalName;
-        this.connectorType = connectorType;
-        this.mappingFields = fields;
-        this.options = options;
-    }
-
-    /**
-     * Create a mapping based on a data link.
-     */
     public Mapping(
             String name,
             String externalName,
@@ -78,6 +58,7 @@ public class Mapping implements IdentifiedDataSerializable, Versioned {
             List<MappingField> fields,
             Map<String, String> options
     ) {
+        assert connectorType == null || dataLink == null;
         this.name = name;
         this.externalName = externalName;
         this.dataLink = dataLink;
