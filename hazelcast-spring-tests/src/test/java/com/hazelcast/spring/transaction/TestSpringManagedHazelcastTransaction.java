@@ -120,7 +120,7 @@ public class TestSpringManagedHazelcastTransaction {
      * Tests that transaction times out when its duration exceeds the value configured for the transaction
      */
     @Test
-    public void TransactionTimedOutExceptionWhenTimeoutValueIsSetForTransaction() {
+    public void transactionTimedOutExceptionWhenTimeoutValueIsSetForTransaction() {
         // given
         expectedException.expect(TransactionSystemException.class);
         expectedException.expectMessage("Transaction is timed-out!");
