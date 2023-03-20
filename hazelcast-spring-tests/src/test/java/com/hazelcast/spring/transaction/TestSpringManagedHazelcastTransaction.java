@@ -150,7 +150,7 @@ public class TestSpringManagedHazelcastTransaction {
      */
     @Test
     @DirtiesContext(methodMode = AFTER_METHOD)
-    public void TransactionTimeoutTakesPrecedenceOverTransactionManagerDefaultTimeout() {
+    public void transactionTimeoutTakesPrecedenceOverTransactionManagerDefaultTimeout() {
         // given
         transactionManager.setDefaultTimeout(TIMEOUT + 2);
         expectedException.expect(TransactionSystemException.class);
