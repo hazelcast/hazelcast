@@ -46,6 +46,7 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.JsonUtil.getArray;
 import static com.hazelcast.internal.util.JsonUtil.getObject;
 import static com.hazelcast.internal.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 
@@ -58,6 +59,7 @@ public class MemberStateImpl implements MemberState {
     private UUID uuid;
     private UUID cpMemberUuid;
     private String name;
+    private Long memberTime;
     private Map<EndpointQualifier, Address> endpoints = emptyMap();
     private Set<String> mapsWithStats = emptySet();
     private Set<String> multiMapsWithStats = emptySet();
@@ -264,6 +266,13 @@ public class MemberStateImpl implements MemberState {
         return clusterHotRestartStatus;
     }
 
+    public Long getMemberTime() {
+        return memberTime;
+    }
+    public void setMemberTime(Long memberTime) {
+        this.memberTime = memberTime;
+    }
+
     public void setClusterHotRestartStatus(ClusterHotRestartStatusDTO clusterHotRestartStatus) {
         this.clusterHotRestartStatus = clusterHotRestartStatus;
     }
@@ -285,6 +294,7 @@ public class MemberStateImpl implements MemberState {
         String cpMemberUuidString = cpMemberUuid != null ? cpMemberUuid.toString() : null;
         root.add("cpMemberUuid", cpMemberUuidString);
         root.add("name", name);
+        root.add("memberTime", getMemberTime());
 
         final JsonArray endpoints = new JsonArray();
         for (Entry<EndpointQualifier, Address> entry : this.endpoints.entrySet()) {
@@ -389,6 +399,7 @@ public class MemberStateImpl implements MemberState {
         String cpMemberUuidString = getString(json, "cpMemberUuid", null);
         cpMemberUuid = cpMemberUuidString != null ? UUID.fromString(cpMemberUuidString) : null;
         name = getString(json, "name", null);
+        memberTime = getLong(json, "memberTime", 0L);
 
         JsonArray jsonEndpoints = getArray(json, "endpoints");
         endpoints = new HashMap<>();
@@ -507,6 +518,7 @@ public class MemberStateImpl implements MemberState {
                 + ", uuid=" + uuid
                 + ", cpMemberUuid=" + cpMemberUuid
                 + ", name=" + name
+                + ", memberTime=" + memberTime
                 + ", mapsWithStats=" + mapsWithStats
                 + ", multiMapsWithStats=" + multiMapsWithStats
                 + ", replicatedMapsWithStats=" + replicatedMapsWithStats
