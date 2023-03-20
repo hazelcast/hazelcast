@@ -84,7 +84,6 @@ public class AllTypesInsertMongoSqlConnectorTest extends MongoSqlTest {
         ZonedDateTime dateTimeUtc = comparedDateTime.atZone(UTC);
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-//        DateTimeFormatter formatterWithTz = DateTimeFormatter.ofPattern("yyyy-MM-dd'THH:mm:ssZ");
         String dateTimeString = dateTimeUtc.withZoneSameInstant(systemDefault()).format(formatter);
 
         String dateTimeStringTz = "cast ('" + dateTimeUtc.withZoneSameInstant(systemDefault()).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
@@ -108,12 +107,12 @@ public class AllTypesInsertMongoSqlConnectorTest extends MongoSqlTest {
                         dateTimeUtc.withZoneSameInstant(systemDefault()).toLocalDateTime(),
                         new Date(dateTimeUtc.toInstant().toEpochMilli()),
                         dateTimeUtc.withZoneSameInstant(systemDefault()).toLocalDateTime()
-                        },
+                },
                 {12, "timestamp", "TIMESTAMP", "'" + dateTimeString + "'",
                         dateTimeUtc.withZoneSameInstant(systemDefault()).toLocalDateTime(),
                         new BsonTimestamp((int) dateTimeUtc.toEpochSecond(), 0),
                         dateTimeUtc.withZoneSameInstant(systemDefault()).toLocalDateTime(),
-                        },
+                },
                 {13, "date", "TIMESTAMP WITH TIME ZONE", dateTimeStringTz,
                         dateTimeUtc.withZoneSameInstant(systemDefault()),
                         new Date(dateTimeUtc.toInstant().toEpochMilli()),
