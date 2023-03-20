@@ -31,6 +31,8 @@ import org.bson.Document;
 import org.bson.types.Code;
 import org.bson.types.CodeWithScope;
 import org.bson.types.Decimal128;
+import org.bson.types.MaxKey;
+import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
 
 import java.math.BigDecimal;
@@ -144,6 +146,11 @@ final class BsonTypes {
         result.put(BsonRegularExpression.class, BsonType.REGULAR_EXPRESSION);
         result.put(Boolean.class, BsonType.BOOLEAN);
         result.put(ObjectId.class, BsonType.OBJECT_ID);
+        result.put(MinKey.class, BsonType.OBJECT_ID);
+        result.put(MaxKey.class, BsonType.OBJECT_ID);
+        result.put(Document.class, BsonType.DOCUMENT);
+        result.put(Code.class, BsonType.JAVASCRIPT);
+        result.put(CodeWithScope.class, BsonType.JAVASCRIPT_WITH_SCOPE);
 
         return result;
     }
