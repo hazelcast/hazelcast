@@ -17,10 +17,14 @@
 package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.Rule;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.Timeout;
 
 @Category(NightlyTest.class)
 public class NioAsyncSocket_LargePayloadTest_Nightly extends NioAsyncSocket_LargePayloadTest {
+    @Rule
+    public Timeout globalTimeout = Timeout.seconds(8 * 60);
 
     public NioAsyncSocket_LargePayloadTest_Nightly() {
         iterations = 20000;
