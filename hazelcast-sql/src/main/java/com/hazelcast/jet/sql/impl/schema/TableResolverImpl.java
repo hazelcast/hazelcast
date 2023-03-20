@@ -167,12 +167,12 @@ public class TableResolverImpl implements TableResolver {
         );
     }
 
-    private SqlConnector extractConnector(String dataLink) {
+    private SqlConnector extractConnector(@Nonnull String dataLink) {
         SqlConnector connector;
-        assert dataLink != null;
         InternalDataLinkService dataLinkService = nodeEngine.getDataLinkService();
         DataLink dl = dataLinkService.getAndRetainDataLink(dataLink, DataLink.class);
         try {
+            // TODO: support more
             if (dl instanceof JdbcDataLink) {
                 connector = connectorCache.forType("JDBC");
             } else {
