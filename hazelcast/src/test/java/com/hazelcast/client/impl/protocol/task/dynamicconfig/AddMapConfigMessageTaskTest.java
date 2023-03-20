@@ -188,7 +188,7 @@ public class AddMapConfigMessageTaskTest {
                 mapConfig.isPerEntryStatsEnabled(),
                 mapConfig.getDataPersistenceConfig(),
                 mapConfig.getTieredStoreConfig(),
-                mapConfig.getPartitioningAttributeConfigs()
+                null
         );
         AddMapConfigMessageTask addMapConfigMessageTask = new AddMapConfigMessageTask(addMapConfigClientMessage, mockNode, mockConnection);
         addMapConfigMessageTask.run();
