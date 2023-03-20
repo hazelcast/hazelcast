@@ -244,9 +244,9 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         Map<String, String> options = new HashMap<>();
         options.put("jdbcUrl", dbConnectionUrl);
 
-        createDataLink(instance(), dlName, wrapDataLinkTypeName(JdbcDataLink.class.getName()), options);
+        createDataLink(instance(), dlName, JdbcDataLink.class.getName(), options);
         InternalDataLinkService dlService = getNodeEngineImpl(instance()).getDataLinkService();
-        assertThat(dlService.existsDataLink(dlName)).isTrue();
+        assertThat(dlService.existsSqlDataLink(dlName)).isTrue();
 
         createJdbcMappingUsingDataLink(name, dlName);
         SqlResult mappings = sqlService.execute("SHOW MAPPINGS");

@@ -69,7 +69,7 @@ public class RelationsStorageTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_putIfAbsent_then_doesNotOverride() {
+    public void when_putIfAbsent_then_doesNotOverwrite() {
         String name = randomName();
 
         assertThat(storage.putIfAbsent(name, mapping(name, "type-1"))).isTrue();

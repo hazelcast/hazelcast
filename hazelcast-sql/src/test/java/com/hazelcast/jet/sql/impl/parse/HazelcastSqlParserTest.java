@@ -74,7 +74,7 @@ public class HazelcastSqlParserTest {
         // then
         assertThat(node.nameWithoutSchema()).isEqualTo("mapping_name");
         assertThat(node.externalName()).isEqualTo("mapping_name");
-        assertThat(node.type()).isEqualTo("mapping_type");
+        assertThat(node.connectorType()).isEqualTo("mapping_type");
         assertThat(node.columns().findFirst())
                 .isNotEmpty().get()
                 .extracting(column -> new Object[]{column.name(), column.type(), column.externalName()})

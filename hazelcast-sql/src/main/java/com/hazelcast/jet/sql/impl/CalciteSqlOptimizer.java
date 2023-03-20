@@ -365,7 +365,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             mapping = new Mapping(
                     sqlCreateMapping.nameWithoutSchema(),
                     sqlCreateMapping.externalName(),
-                    sqlCreateMapping.type(),
+                    sqlCreateMapping.connectorType(),
                     mappingFields,
                     sqlCreateMapping.options()
             );
@@ -374,7 +374,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     sqlCreateMapping.nameWithoutSchema(),
                     sqlCreateMapping.externalName(),
                     sqlCreateMapping.dataLink(),
-                    sqlCreateMapping.type(),
+                    sqlCreateMapping.connectorType(),
                     sqlCreateMapping.objectType(),
                     mappingFields,
                     sqlCreateMapping.options()

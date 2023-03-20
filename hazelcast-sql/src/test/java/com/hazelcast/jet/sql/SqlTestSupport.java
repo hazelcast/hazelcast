@@ -642,9 +642,9 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     public static void createDataLink(HazelcastInstance instance, String name, String type, Map<String, String> options) {
         StringBuilder queryBuilder = new StringBuilder()
                 .append("CREATE OR REPLACE DATA LINK ")
-                .append(name)
+                .append(quoteName(name))
                 .append(" TYPE ")
-                .append(type)
+                .append(quoteName(type))
                 .append(" OPTIONS (\n");
         for (Map.Entry<String, String> entry : options.entrySet()) {
             queryBuilder.append("'").append(entry.getKey()).append("'")
@@ -652,15 +652,15 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
                     .append("'").append(entry.getValue()).append("',");
         }
         queryBuilder.setLength(queryBuilder.length() - 1);
-        queryBuilder.append(")\n");
+        queryBuilder.append(")");
 
-        try (SqlResult result = instance.getSql().execute(new SqlStatement(queryBuilder.toString()))) {
+        try (SqlResult result = instance.getSql().execute(queryBuilder.toString())) {
             assertThat(result.updateCount()).isEqualTo(0);
         }
     }
 
-    public static String wrapDataLinkTypeName(String name) {
-        return "\"" + name + "\"";
+    public static String quoteName(String name) {
+        return "\"" + name.replace("\"", "\"\"") + "\"";
     }
 
     public static String randomName() {

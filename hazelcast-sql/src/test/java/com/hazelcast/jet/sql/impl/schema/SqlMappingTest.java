@@ -157,26 +157,26 @@ public class SqlMappingTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_dataLinkDoesntExist_then_fail() {
+    public void when_dataLinkDoesNotExist_then_fail() {
         String dlName = randomName();
         String mappingName = randomName();
         assertThatThrownBy(() ->
                 instance().getSql().execute("CREATE OR REPLACE MAPPING " + mappingName +
                         " DATA LINK " + dlName + "\nOPTIONS ()"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Data link " + dlName + " doesn't exists");
+                .hasMessageContaining("Data link '" + dlName + "' not found");
     }
 
     @Test
     public void when_dataLinkUnknown_then_fail() {
         String dlName = randomName();
         String mappingName = randomName();
-        createDataLink(instance(), dlName, wrapDataLinkTypeName(DummyDataLink.class.getName()), emptyMap());
+        createDataLink(instance(), dlName, DummyDataLink.class.getName(), emptyMap());
         assertThatThrownBy(() ->
                 instance().getSql().execute("CREATE OR REPLACE MAPPING " + mappingName +
                         " DATA LINK " + dlName + "\nOPTIONS ()"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Unknown data link");
+                .hasMessageContaining("Unknown data link class: ");
     }
 
     @Test

@@ -25,7 +25,7 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
     SqlIdentifier externalName = null;
     SqlNodeList columns = SqlNodeList.EMPTY;
     SqlIdentifier dataLink = null;
-    SqlIdentifier type = null;
+    SqlIdentifier connectorType = null;
     SqlIdentifier objectType = null;
     SqlNodeList sqlOptions = SqlNodeList.EMPTY;
     boolean ifNotExists = false;
@@ -46,7 +46,7 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
         dataLink = CompoundIdentifier()
         |
         [ <CONNECTOR> ] <TYPE>
-        type = SimpleIdentifier()
+        connectorType = SimpleIdentifier()
     )
 
     [
@@ -64,7 +64,7 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
             externalName,
             columns,
             dataLink,
-            type,
+            connectorType,
             objectType,
             sqlOptions,
             replace,

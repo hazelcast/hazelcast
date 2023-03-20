@@ -54,7 +54,7 @@ public class SqlCreateMapping extends SqlCreate {
     private final SqlIdentifier externalName;
     private final SqlNodeList columns;
     private final SqlIdentifier dataLink;
-    private final SqlIdentifier type;
+    private final SqlIdentifier connectorType;
     private final SqlIdentifier objectType;
     private final SqlNodeList options;
 
@@ -63,7 +63,7 @@ public class SqlCreateMapping extends SqlCreate {
             SqlIdentifier externalName,
             SqlNodeList columns,
             SqlIdentifier dataLink,
-            SqlIdentifier type,
+            SqlIdentifier connectorType,
             SqlIdentifier objectType,
             SqlNodeList options,
             boolean replace,
@@ -76,7 +76,7 @@ public class SqlCreateMapping extends SqlCreate {
         this.externalName = externalName;
         this.columns = requireNonNull(columns, "Columns should not be null");
         this.dataLink = dataLink;
-        this.type = type;
+        this.connectorType = connectorType;
         this.objectType = objectType;
         this.options = requireNonNull(options, "Options should not be null");
 
@@ -102,8 +102,8 @@ public class SqlCreateMapping extends SqlCreate {
         return dataLink != null ? dataLink.toString() : null;
     }
 
-    public String type() {
-        return type != null ? type.toString() : null;
+    public String connectorType() {
+        return connectorType != null ? connectorType.toString() : null;
     }
 
     public String objectType() {
@@ -133,7 +133,7 @@ public class SqlCreateMapping extends SqlCreate {
     @Nonnull
     @Override
     public List<SqlNode> getOperandList() {
-        return ImmutableNullableList.of(name, columns, type, options);
+        return ImmutableNullableList.of(name, columns, connectorType, options);
     }
 
     @Override
@@ -171,10 +171,10 @@ public class SqlCreateMapping extends SqlCreate {
             writer.keyword("DATA LINK");
             dataLink.unparse(writer, leftPrec, rightPrec);
         } else {
-            assert type != null;
+            assert connectorType != null;
             writer.newlineAndIndent();
             writer.keyword("TYPE");
-            type.unparse(writer, leftPrec, rightPrec);
+            connectorType.unparse(writer, leftPrec, rightPrec);
         }
 
         if (objectType != null) {
