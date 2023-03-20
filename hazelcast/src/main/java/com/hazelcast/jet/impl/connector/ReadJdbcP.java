@@ -25,6 +25,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.ToResultSetFunction;
+import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
 
@@ -57,8 +58,11 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
     private int parallelism;
     private int index;
 
-    public ReadJdbcP(@Nonnull SupplierEx<? extends Connection> newConnectionFn, @Nonnull ToResultSetFunction resultSetFn,
-                     @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn) {
+    public ReadJdbcP(
+            @Nonnull SupplierEx<? extends Connection> newConnectionFn,
+            @Nonnull ToResultSetFunction resultSetFn,
+            @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
+    ) {
         this.newConnectionFn = newConnectionFn;
         this.resultSetFn = resultSetFn;
         this.mapOutputFn = mapOutputFn;
@@ -77,18 +81,18 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return supplier(ctx -> newDataSourceFn.get(), resultSetFn, mapOutputFn);
+        return supplier(ctx -> newDataSourceFn.get().getConnection(), resultSetFn, mapOutputFn);
     }
 
     /**
      * Use {@link SourceProcessors#readJdbcP}.
      */
     public static <T> ProcessorMetaSupplier supplier(
-            @Nonnull FunctionEx<ProcessorSupplier.Context, ? extends DataSource> newDataSourceFn,
+            @Nonnull FunctionEx<ProcessorSupplier.Context, ? extends Connection> newConnectionFn,
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        checkSerializable(newDataSourceFn, "newDataSourceFn");
+        checkSerializable(newConnectionFn, "newConnectionFn");
         checkSerializable(resultSetFn, "resultSetFn");
         checkSerializable(mapOutputFn, "mapOutputFn");
 
@@ -96,7 +100,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
         // Additional permission check with URL retrieved from the JDBC connection metadata
         // is performed in #init(Context) method.
         return ProcessorMetaSupplier.preferLocalParallelismOne(ConnectorPermission.jdbc(null, ACTION_READ),
-                SecuredFunctions.readJdbcProcessorFn(null, newDataSourceFn, resultSetFn, mapOutputFn));
+                SecuredFunctions.readJdbcProcessorFn(null, newConnectionFn, resultSetFn, mapOutputFn));
     }
 
     public static <T> ProcessorMetaSupplier supplier(
@@ -108,7 +112,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
 
         return ProcessorMetaSupplier.forceTotalParallelismOne(
                 SecuredFunctions.readJdbcProcessorFn(connectionURL,
-                        (ctx) -> new DataSourceFromJdbcUrl(connectionURL),
+                        context -> DriverManager.getConnection(connectionURL),
                         (connection, parallelism, index) -> {
                             PreparedStatement statement = connection.prepareStatement(query);
                             try {
@@ -121,6 +125,15 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
                 newUnsecureUuidString(),
                 ConnectorPermission.jdbc(connectionURL, ACTION_READ)
         );
+    }
+
+    public static <T> ProcessorMetaSupplier supplier(
+            DataLinkRef dataLinkRef,
+            ToResultSetFunction resultSetFn,
+            FunctionEx<? super ResultSet, ? extends T> mapOutputFn) {
+
+        return ProcessorMetaSupplier.preferLocalParallelismOne(ConnectorPermission.jdbc(null, ACTION_READ),
+                SecuredFunctions.readJdbcProcessorFn(dataLinkRef.getName(), resultSetFn, mapOutputFn));
     }
 
     @Override

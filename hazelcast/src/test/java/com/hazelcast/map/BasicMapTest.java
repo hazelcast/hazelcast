@@ -138,6 +138,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         instances = factory.newInstances(config);
     }
 
+    @Override
     protected Config getConfig() {
         Config cfg = smallInstanceConfigWithoutJetAndMetrics();
         cfg.getMapConfig("default")
@@ -148,12 +149,12 @@ public class BasicMapTest extends HazelcastTestSupport {
         mapConfig.setTimeToLiveSeconds(1);
         mapConfig.setStatisticsEnabled(statisticsEnabled);
         mapConfig.setPerEntryStatsEnabled(perEntryStatsEnabled);
+        cfg.addMapConfig(mapConfig);
 
         cfg.getMapConfig("testEntryView")
-        .setStatisticsEnabled(statisticsEnabled)
-        .setPerEntryStatsEnabled(perEntryStatsEnabled);
+                .setStatisticsEnabled(statisticsEnabled)
+                .setPerEntryStatsEnabled(perEntryStatsEnabled);
 
-        cfg.addMapConfig(mapConfig);
         return cfg;
     }
 

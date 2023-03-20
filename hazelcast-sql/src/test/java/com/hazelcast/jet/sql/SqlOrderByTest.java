@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql;
 
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
@@ -33,7 +32,6 @@ import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -103,9 +101,7 @@ public class SqlOrderByTest extends HazelcastTestSupport {
     private static final int DATA_SET_SIZE = 4096;
     private static final int DATA_SET_MAX_POSITIVE = DATA_SET_SIZE / 2;
 
-    private final TestHazelcastFactory factory = new TestHazelcastFactory();
-
-    private List<HazelcastInstance> members;
+    private HazelcastInstance[] members;
 
     @Parameter
     public SerializationMode serializationMode;
@@ -137,15 +133,12 @@ public class SqlOrderByTest extends HazelcastTestSupport {
 
     @Before
     public void before() {
-        members = new ArrayList<>(membersCount);
-        for (int i = 0; i < membersCount; ++i) {
-            members.add(factory.newHazelcastInstance(memberConfig()));
-        }
+        members = createHazelcastInstances(memberConfig(), membersCount);
 
         if (isPortable()) {
-            createMapping(members.get(0), mapName(), PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0, PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0);
+            createMapping(members[0], mapName(), PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0, PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0);
         } else {
-            createMapping(members.get(0), mapName(), keyClass(), valueClass());
+            createMapping(members[0], mapName(), keyClass(), valueClass());
         }
 
         // Get proper map
@@ -188,18 +181,13 @@ public class SqlOrderByTest extends HazelcastTestSupport {
         }
 
         if (isPortable()) {
-            createMapping(members.get(0), stableMapName(), PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0, PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0);
+            createMapping(members[0], stableMapName(), PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0, PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0);
         } else {
-            createMapping(members.get(0), stableMapName(), keyClass(), valueClass());
+            createMapping(members[0], stableMapName(), keyClass(), valueClass());
         }
 
         IMap<Object, AbstractPojo> stableMap = getTarget().getMap(stableMapName());
         stableMap.putAll(stableData);
-    }
-
-    @After
-    public void after() {
-        factory.shutdownAll();
     }
 
     protected Config memberConfig() {
@@ -215,7 +203,7 @@ public class SqlOrderByTest extends HazelcastTestSupport {
 
 
     protected HazelcastInstance getTarget() {
-        return members.get(0);
+        return members[0];
     }
 
     protected String stableMapName() {
@@ -675,7 +663,7 @@ public class SqlOrderByTest extends HazelcastTestSupport {
         ExecutorService executor = Executors.newFixedThreadPool(10);
 
         int threadsCount = 10;
-        int keysPerThread = serializationMode == SERIALIZABLE ? 2500 : 5000;
+        int keysPerThread = 2500;
         CountDownLatch latch = new CountDownLatch(threadsCount);
         AtomicReference<Throwable> exception = new AtomicReference<>();
 

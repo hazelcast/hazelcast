@@ -555,4 +555,13 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
 
     @Test
     public abstract void testCompactSerialization_withInvalidCompactSerializableClass();
+
+    @Test
+    public void testTpc() {
+        ClientTpcConfig tpcConfig = fullClientConfig.getTpcConfig();
+        assertTrue(tpcConfig.isEnabled());
+
+        ClientTpcConfig defaultTpcConfig = defaultClientConfig.getTpcConfig();
+        assertFalse(defaultTpcConfig.isEnabled());
+    }
 }

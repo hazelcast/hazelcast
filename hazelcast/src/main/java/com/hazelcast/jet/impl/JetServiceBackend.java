@@ -41,13 +41,15 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;
-import com.hazelcast.jet.impl.jobupload.JobMetaDataParameterObject;
-import com.hazelcast.jet.impl.jobupload.JobMultiPartParameterObject;
-import com.hazelcast.jet.impl.jobupload.JobUploadStore;
 import com.hazelcast.jet.impl.metrics.JobMetricsPublisher;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.jet.impl.serialization.DelegatingSerializationService;
+import com.hazelcast.jet.impl.submitjob.memberside.JobMetaDataParameterObject;
+import com.hazelcast.jet.impl.submitjob.memberside.JobMultiPartParameterObject;
+import com.hazelcast.jet.impl.submitjob.memberside.JobUploadStatus;
+import com.hazelcast.jet.impl.submitjob.memberside.JobUploadStore;
+import com.hazelcast.jet.impl.submitjob.memberside.validator.JobMetaDataParameterObjectValidator;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -172,17 +174,14 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         config.addMapConfig(internalMapConfig)
                 .addMapConfig(resultsMapConfig)
                 .addMapConfig(metricsMapConfig)
-                .addMapConfig(initializeSqlCatalog(config.getMapConfig(SQL_CATALOG_MAP_NAME)));
+                .addMapConfig(createSqlCatalogConfig());
     }
 
-    static MapConfig initializeSqlCatalog(MapConfig config) {
+    // visible for tests
+    static MapConfig createSqlCatalogConfig() {
         // TODO HZ-1743 when implemented properly align this with the chosen
         //  approach that HZ-1743 follows
-        // disabling tiered store configuration for the __sql.catalog map to
-        // prevent unnecessarily increasing tstore's memory demand
-        config.getTieredStoreConfig().setEnabled(false);
-        return config
-                .setName(SQL_CATALOG_MAP_NAME)
+        return new MapConfig(SQL_CATALOG_MAP_NAME)
                 .setBackupCount(MapConfig.MAX_BACKUP_COUNT)
                 .setAsyncBackupCount(MapConfig.MIN_BACKUP_COUNT)
                 .setTimeToLiveSeconds(DISABLED_TTL_SECONDS)
@@ -398,28 +397,80 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     }
 
     /**
-     * Store the metadata about the job jar that is uploaded from client side
-     * @param parameterObject contains all the metadata about the upload operation
+     * Execute the given jar
      */
-    public void storeJobMetaData(JobMetaDataParameterObject parameterObject) {
-        checkResourceUploadEnabled();
-        jobUploadStore.processJobMetaData(parameterObject);
+    public void jarOnMember(JobMetaDataParameterObject jobMetaDataParameterObject) {
+        JobMetaDataParameterObjectValidator.validateJarOnMember(jobMetaDataParameterObject);
+        executeJar(jobMetaDataParameterObject);
     }
 
     /**
-     * Store a part of job jar that is uploaded
-     * @param parameterObject contains all the metadata about the upload operation
-     * @return the parameter object if upload is complete, null if upload is incomplete and more parts are expected,
+     * Store the metadata about the jar that is uploaded from client side
      */
-    public JobMetaDataParameterObject storeJobMultiPart(JobMultiPartParameterObject parameterObject) {
-        JobMetaDataParameterObject result = null;
+    public void storeJobMetaData(JobMetaDataParameterObject jobMetaDataParameterObject) {
+        checkResourceUploadEnabled();
         try {
-            result = jobUploadStore.processJobMultipart(parameterObject);
+            // Delegate processing to store
+            jobUploadStore.processJobMetaData(jobMetaDataParameterObject);
         } catch (Exception exception) {
-            jobUploadStore.remove(parameterObject.getSessionId());
+            // Upon exception, remove from the store
+            jobUploadStore.removeBadSession(jobMetaDataParameterObject.getSessionId());
+
+            throwJetExceptionFromJobMetaData(jobMetaDataParameterObject, exception);
+        }
+    }
+
+    /**
+     * Store a part of jar that is uploaded
+     */
+    public void storeJobMultiPart(JobMultiPartParameterObject jobMultiPartParameterObject) {
+        try {
+            JobMetaDataParameterObject partsComplete = jobUploadStore.processJobMultipart(jobMultiPartParameterObject);
+            // If parts are complete
+            if (partsComplete != null) {
+                // Execute the jar
+                executeJar(partsComplete);
+            }
+        } catch (Exception exception) {
+            // Upon exception, remove from the store
+            JobUploadStatus jobUploadStatus = jobUploadStore.removeBadSession(jobMultiPartParameterObject.getSessionId());
+
+            // Check null. Maybe  non-existing session id is given
+            if (jobUploadStatus != null) {
+
+                JobMetaDataParameterObject jobMetaDataParameterObject = jobUploadStatus.getJobMetaDataParameterObject();
+                if (jobMetaDataParameterObject != null) {
+                    throwJetExceptionFromJobMetaData(jobMetaDataParameterObject, exception);
+                }
+            } else {
+                // Only throw a JetException
+                wrapWithJetException(exception);
+            }
+        }
+    }
+
+    private void throwJetExceptionFromJobMetaData(JobMetaDataParameterObject jobMetaDataParameterObject, Exception exception) {
+        // Enrich exception with metadata
+        String exceptionString = jobMetaDataParameterObject.exceptionString();
+        JetException jetExceptionWithMetaData = new JetException(exceptionString, exception);
+
+        // Only throw a JetException
+        wrapWithJetException(jetExceptionWithMetaData);
+
+    }
+
+    /**
+     * If exception is not JetException e.g. IOException, FileSystemException etc., wrap it with JetException
+     */
+    static void wrapWithJetException(Exception exception) {
+        // Exception is not JetException
+        if (!(exception instanceof JetException)) {
+            // Get the root cause and wrap it with JetException
+            ExceptionUtil.rethrow(exception);
+        } else {
+            // Just throw the JetException as is
             sneakyThrow(exception);
         }
-        return result;
     }
 
     private void checkResourceUploadEnabled() {
@@ -428,38 +479,36 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         }
     }
 
-    // Run the given jar as Jet job. Triggered by both client and member side job uploads
-    public void executeJar(JobMetaDataParameterObject parameterObject) {
-
+    /**
+     * Run the given jar as Jet job. Triggered by both client and member side
+     */
+    public void executeJar(JobMetaDataParameterObject jobMetaDataParameterObject) {
         if (logger.isInfoEnabled()) {
-            String message = String.format("Try executing jar file %s for session %s", parameterObject.getJarPath(),
-                    parameterObject.getSessionId());
+            String message = String.format("Try executing jar file %s for session %s", jobMetaDataParameterObject.getJarPath(),
+                    jobMetaDataParameterObject.getSessionId());
             logger.info(message);
         }
 
         checkResourceUploadEnabled();
 
         try {
-            HazelcastBootstrap.executeJar(this::getHazelcastInstance,
-                    parameterObject.getJarPath().toString(),
-                    parameterObject.getSnapshotName(),
-                    parameterObject.getJobName(),
-                    parameterObject.getMainClass(),
-                    parameterObject.getJobParameters(),
-                    true
+            HazelcastBootstrap.executeJarOnMember(this::getHazelcastInstance,
+                    jobMetaDataParameterObject.getJarPath().toString(),
+                    jobMetaDataParameterObject.getSnapshotName(),
+                    jobMetaDataParameterObject.getJobName(),
+                    jobMetaDataParameterObject.getMainClass(),
+                    jobMetaDataParameterObject.getJobParameters()
             );
         } catch (Exception exception) {
-            logger.severe("executeJar caught exception when running the jar", exception);
-            // We can not delete the job jar because it is already loaded. If we try to delete it
-            // we will get "java.nio.file.FileSystemException"
-
-            // But rethrow the exception back to client to notify  that job did not run
-            sneakyThrow(exception);
+            logger.severe("caught exception when running the jar", exception);
+            // Rethrow the exception back to client to notify  that job did not run
+            throwJetExceptionFromJobMetaData(jobMetaDataParameterObject, exception);
+        } finally {
+            JobUploadStatus.cleanup(jobMetaDataParameterObject);
         }
     }
 
     private HazelcastInstance getHazelcastInstance() {
         return getNodeEngine().getHazelcastInstance();
     }
-
 }

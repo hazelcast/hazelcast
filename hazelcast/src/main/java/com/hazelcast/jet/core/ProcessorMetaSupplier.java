@@ -18,9 +18,12 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.datalink.DataLink;
+import com.hazelcast.datalink.DataLinkService;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.serialization.SerializableByConvention;
+import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetService;
@@ -35,6 +38,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.PermissionsUtil;
+import com.hazelcast.spi.annotation.Beta;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
@@ -51,6 +55,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
@@ -473,6 +479,23 @@ public interface ProcessorMetaSupplier extends Serializable {
         return new SpecificMemberPms(supplier, memberAddress);
     }
 
+
+    /**
+     * Wraps the provided {@code ProcessorSupplier} into a meta-supplier that
+     * will only use the given {@code ProcessorSupplier} on a random node
+     *
+     * @param supplier the supplier that will be wrapped
+     * @return the wrapped {@code ProcessorMetaSupplier}
+     * @since 5.3
+     */
+    @Nonnull
+    @Beta
+    static ProcessorMetaSupplier randomMember(
+            @Nonnull ProcessorSupplier supplier
+    ) {
+        return new RandomMemberPms(supplier);
+    }
+
     /**
      * A meta-supplier that will only use the given {@code ProcessorSupplier}
      * on a node with given {@link Address}.
@@ -538,11 +561,55 @@ public interface ProcessorMetaSupplier extends Serializable {
         }
     }
 
+    class RandomMemberPms implements ProcessorMetaSupplier, IdentifiedDataSerializable {
+
+        private ProcessorSupplier supplier;
+
+        RandomMemberPms() {
+        }
+
+        private RandomMemberPms(ProcessorSupplier supplier) {
+            this.supplier = supplier;
+        }
+
+        @Override
+        public void init(@Nonnull Context context) throws Exception {
+            PermissionsUtil.checkPermission(supplier, context);
+        }
+
+        @Nonnull
+        @Override
+        public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            Address memberAddress = addresses.get(RandomPicker.getInt(addresses.size()));
+            return addr -> addr.equals(memberAddress) ? supplier : new ExpectNothingProcessorSupplier();
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(supplier);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            supplier = in.readObject();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetDataSerializerHook.RANDOM_MEMBER_PROCESSOR_META_SUPPLIER;
+        }
+    }
+
     class ExpectNothingProcessorSupplier implements ProcessorSupplier, IdentifiedDataSerializable {
-        @Override @Nonnull
+        @Override
+        @Nonnull
         public Collection<? extends Processor> get(int count) {
-            assert count == 1;
-            return singletonList(new ExpectNothingP());
+            return IntStream.range(0, count).mapToObj(i -> new ExpectNothingP()).collect(Collectors.toList());
         }
 
         @Override
@@ -658,7 +725,7 @@ public interface ProcessorMetaSupplier extends Serializable {
 
         /**
          * Returns the maximum number of records that can be accumulated by any
-         * single {@link Processor}.
+         * single {@link Processor}. The returned value is strictly positive (>=1).
          */
         long maxProcessorAccumulatedRecords();
 
@@ -681,6 +748,13 @@ public interface ProcessorMetaSupplier extends Serializable {
          * @return processor classloader, null if no custom classpath elements are configured
          */
         ClassLoader classLoader();
+
+        /**
+         * A service to access {@link DataLink}s in processors.
+         *
+         * @since 5.3
+         */
+        DataLinkService dataLinkService();
 
         /**
          * Check if the current Subject has the given permission granted (or implied).

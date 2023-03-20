@@ -23,8 +23,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.DataLinkService;
 import com.hazelcast.datalink.impl.DataLinkServiceImpl;
+import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.diagnostics.Diagnostics;
@@ -48,6 +48,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.PreJoinAwareService;
+import com.hazelcast.internal.tpc.TpcServerBootstrap;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
 import com.hazelcast.internal.util.ConcurrencyDetection;
@@ -132,7 +133,8 @@ public class NodeEngineImpl implements NodeEngine {
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
     private final ConcurrencyDetection concurrencyDetection;
     private final TenantControlServiceImpl tenantControlService;
-    private final DataLinkService dataLinkService;
+    private final InternalDataLinkService dataLinkService;
+    private final TpcServerBootstrap tpcServerBootstrap;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     public NodeEngineImpl(Node node) {
@@ -147,6 +149,7 @@ public class NodeEngineImpl implements NodeEngine {
             this.proxyService = new ProxyServiceImpl(this);
             this.serviceManager = new ServiceManagerImpl(this);
             this.executionService = new ExecutionServiceImpl(this);
+            this.tpcServerBootstrap = new TpcServerBootstrap(this);
             this.operationService = new OperationServiceImpl(this);
             this.eventService = new EventServiceImpl(this);
             this.operationParker = new OperationParkerImpl(this);
@@ -190,6 +193,10 @@ public class NodeEngineImpl implements NodeEngine {
             }
             throw rethrow(e);
         }
+    }
+
+    public TpcServerBootstrap getTpcServerBootstrap() {
+        return tpcServerBootstrap;
     }
 
     private void checkMapMergePolicies(Node node) {
@@ -257,7 +264,7 @@ public class NodeEngineImpl implements NodeEngine {
         operationService.start();
         splitBrainProtectionService.start();
         sqlService.start();
-
+        tpcServerBootstrap.start();
         diagnostics.start();
         node.getNodeExtension().registerPlugins(diagnostics);
     }
@@ -376,7 +383,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public DataLinkService getDataLinkService() {
+    public InternalDataLinkService getDataLinkService() {
         return dataLinkService;
     }
 
@@ -575,6 +582,9 @@ public class NodeEngineImpl implements NodeEngine {
         if (executionService != null) {
             executionService.shutdown();
         }
+        if (tpcServerBootstrap != null) {
+            tpcServerBootstrap.shutdown();
+        }
         if (metricsRegistry != null) {
             metricsRegistry.shutdown();
         }
@@ -582,8 +592,9 @@ public class NodeEngineImpl implements NodeEngine {
             diagnostics.shutdown();
         }
         if (dataLinkService != null) {
-            dataLinkService.close();
+            dataLinkService.shutdown();
         }
+
     }
 
     @Override

@@ -35,6 +35,8 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.io.IOException;
 import java.util.function.BiConsumer;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+
 /**
  * Triggers the local CP member to transfer Raft group leadership to given CP
  * member for the given CP group
@@ -57,7 +59,7 @@ public class TransferLeadershipOp extends Operation implements RaftSystemOperati
     public CallStatus call() throws Exception {
         RaftService service = getService();
         InternalCompletableFuture future = service.transferLeadership(groupId, (CPMemberInfo) destination);
-        future.whenCompleteAsync(this);
+        future.whenCompleteAsync(this, CALLER_RUNS);
         return CallStatus.VOID;
     }
 

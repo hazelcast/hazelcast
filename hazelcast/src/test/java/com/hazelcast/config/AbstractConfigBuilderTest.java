@@ -567,6 +567,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(34, memberEndpointConfig.getSocketSendBufferSizeKb());
         assertEquals(67, memberEndpointConfig.getSocketRcvBufferSizeKb());
         assertEquals(11, memberEndpointConfig.getSocketLingerSeconds());
+        assertEquals(12, memberEndpointConfig.getSocketKeepCount());
+        assertEquals(13, memberEndpointConfig.getSocketKeepIntervalSeconds());
+        assertEquals(14, memberEndpointConfig.getSocketKeepIdleSeconds());
 
         RestServerEndpointConfig restServerEndpointConfig = advancedNetworkConfig.getRestEndpointConfig();
         assertEquals(8080, restServerEndpointConfig.getPort());
@@ -703,6 +706,18 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public abstract void testDataLinkConfigs();
+
+    @Test
+    public abstract void testTpcConfig();
+
+    @Test
+    public abstract void testTpcSocketConfig();
+
+    @Test
+    public abstract void testTpcSocketConfigAdvanced();
+
+    @Test
+    public abstract void testPartitioningAttributeConfigs();
 
     protected abstract Config buildAuditlogConfig();
 

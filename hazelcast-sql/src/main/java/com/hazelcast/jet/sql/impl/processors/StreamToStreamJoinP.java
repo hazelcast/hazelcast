@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.processors;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
+import com.hazelcast.internal.util.MutableInteger;
 import com.hazelcast.internal.util.collection.Object2LongHashMap;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
@@ -29,6 +30,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
@@ -56,10 +58,12 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static com.google.common.collect.Streams.mapWithIndex;
 import static com.hazelcast.internal.util.CollectionUtil.hasNonEmptyIntersection;
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
+import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
 import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.LAST_RECEIVED_WM_KEY;
 import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.WM_STATE_KEY;
@@ -80,6 +84,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     // package-visible for tests
     final StreamToStreamJoinBuffer[] buffer;
 
+    private int[] processorPartitionKeys;
     private final JetJoinInfo joinInfo;
     private final int outerJoinSide;
     private final List<Entry<Byte, ToLongFunctionEx<JetSqlRow>>> leftTimeExtractors;
@@ -89,6 +94,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private long maxProcessorAccumulatedRecords;
 
     private ExpressionEvalContext evalContext;
+    private int processorIndex;
     private Iterator<JetSqlRow> iterator;
     private JetSqlRow currItem;
 
@@ -162,11 +168,22 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
-        this.evalContext = ExpressionEvalContext.from(context);
+        evalContext = ExpressionEvalContext.from(context);
         SerializationService ss = evalContext.getSerializationService();
         emptyLeftRow = new JetSqlRow(ss, new Object[columnCounts.f0()]);
         emptyRightRow = new JetSqlRow(ss, new Object[columnCounts.f1()]);
         maxProcessorAccumulatedRecords = context.maxProcessorAccumulatedRecords();
+        processorIndex = context.globalProcessorIndex();
+
+        if (!joinInfo.isEquiJoin()) {
+            JetServiceBackend jsb = getNodeEngine(context.hazelcastInstance()).getService(JetServiceBackend.SERVICE_NAME);
+            int[] processorPartitionIds = context.processorPartitions();
+            int[] partitionKeys = jsb.getSharedPartitionKeys();
+            processorPartitionKeys = new int[processorPartitionIds.length];
+            for (int i = 0; i < processorPartitionKeys.length; i++) {
+                processorPartitionKeys[i] = partitionKeys[processorPartitionIds[i]];
+            }
+        }
     }
 
     @SuppressWarnings("checkstyle:NestedIfDepth")
@@ -222,7 +239,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             JetSqlRow preparedOutput = ExpressionUtil.join(
                     ordinal == 0 ? currItem : oppositeBufferItem,
                     ordinal == 0 ? oppositeBufferItem : currItem,
-                    joinInfo.isEquiJoin() ? joinInfo.condition() : joinInfo.nonEquiCondition(),
+                    joinInfo.condition(),
                     evalContext);
 
             if (preparedOutput == null) {
@@ -270,7 +287,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
         lastReceivedWm.put(receivedWmKey, watermark.timestamp());
 
-        // 5.1 : update wm state
+        // 5.1: update wm state
         boolean modified = applyToWmState(watermark);
         if (modified) {
             // TODO don't need to clean up particular edge, if nothing was changed for that edge
@@ -296,10 +313,13 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         return true;
     }
 
+    @SuppressWarnings("checkstyle:NestedIfDepth")
     @Override
     public boolean saveToSnapshot() {
         if (snapshotTraverser == null) {
             List<Entry<?, ?>> snapshotList = new ArrayList<>();
+            Stream<Entry<?, ?>> leftBufferStream;
+            Stream<Entry<?, ?>> rightBufferStream;
 
             for (Entry<Byte, Long> e : wmState.entrySet()) {
                 Long timestamp = e.getValue();
@@ -325,30 +345,91 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                 }
             }
 
-            Stream<Entry<?, ?>> leftBufferStream = buffer[0].content()
-                    .stream()
-                    .map(row -> entry(
-                            ObjectArrayKey.project(row, joinInfo.leftEquiJoinIndices()),
-                            new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 0)
-                    ));
+            if (joinInfo.isEquiJoin()) {
+                leftBufferStream = buffer[0].content()
+                        .stream()
+                        .map(row -> entry(
+                                ObjectArrayKey.project(row, joinInfo.leftEquiJoinIndices()),
+                                new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 0)
+                        ));
 
-            Stream<Entry<?, ?>> rightBufferStream = buffer[1].content()
-                    .stream()
-                    .map(row -> entry(
-                            ObjectArrayKey.project(row, joinInfo.rightEquiJoinIndices()),
-                            new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 1)
-                    ));
+                rightBufferStream = buffer[1].content()
+                        .stream()
+                        .map(row -> entry(
+                                ObjectArrayKey.project(row, joinInfo.rightEquiJoinIndices()),
+                                new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 1)
+                        ));
+
+            } else {
+                MutableInteger keyIndex = new MutableInteger();
+
+                // Note: details are described in TDD: docs/design/sql/15-stream-to-stream-join.md
+                if (joinInfo.isRightOuter()) {
+                    if (processorIndex == 0) {
+                        leftBufferStream = mapWithIndex(
+                                buffer[0].content().stream(),
+                                (row, index) -> entry(
+                                        broadcastKey(index),
+                                        new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 0)
+                                ));
+                    } else {
+                        leftBufferStream = Stream.empty();
+                    }
+                    rightBufferStream = buffer[1].content()
+                            .stream()
+                            .map(row -> entry(
+                                    processorPartitionKeys[cycle(keyIndex, processorPartitionKeys.length)],
+                                    new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 1)));
+                } else {
+                    if (processorIndex == 0) {
+                        rightBufferStream = mapWithIndex(
+                                buffer[1].content().stream(),
+                                (row, index) -> entry(
+                                        broadcastKey(index),
+                                        new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 1)
+                                ));
+                    } else {
+                        rightBufferStream = Stream.empty();
+                    }
+                    leftBufferStream = buffer[0].content()
+                            .stream()
+                            .map(row -> entry(
+                                    processorPartitionKeys[cycle(keyIndex, processorPartitionKeys.length)],
+                                    new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 0)));
+                }
+            }
 
             snapshotTraverser =
-                    traverseStream(Stream.of(snapshotList.stream(), leftBufferStream, rightBufferStream).flatMap(identity()))
+                    traverseStream(Stream.of(snapshotList.stream(), leftBufferStream, rightBufferStream)
+                            .flatMap(identity()))
                             .onFirstNull(() -> snapshotTraverser = null);
         }
 
         return emitFromTraverserToSnapshot(snapshotTraverser);
     }
 
+    /**
+     * Increment the `value`. If equal to `max`, set to 0. Returns the new value.
+     */
+    private static int cycle(MutableInteger val, int max) {
+        val.value++;
+        if (val.value == max) {
+            val.value = 0;
+        }
+        return val.value;
+    }
+
     @Override
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
+        if (value instanceof BufferSnapshotValue) {
+            BufferSnapshotValue bsv = (BufferSnapshotValue) value;
+            buffer[bsv.bufferOrdinal()].add(bsv.row());
+            if (bsv.unused()) {
+                unusedEventsTracker.add(bsv.row());
+            }
+            return;
+        }
+
         if (key instanceof BroadcastKey) {
             BroadcastKey<?> broadcastKey = (BroadcastKey<?>) key;
             WatermarkStateValue wmValue = (WatermarkStateValue) value;
@@ -368,17 +449,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             } else {
                 throw new JetException("Unexpected broadcast key: " + broadcastKey.key());
             }
-            return;
-        }
-
-        if (value instanceof BufferSnapshotValue) {
-            BufferSnapshotValue bsv = (BufferSnapshotValue) value;
-            buffer[bsv.bufferOrdinal()].add(bsv.row());
-            if (bsv.unused()) {
-                unusedEventsTracker.add(bsv.row());
-            }
-        } else {
-            throw new AssertionError("Unreachable");
         }
     }
 
@@ -429,7 +499,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
         buffer[ordinal].clearExpiredItems(limits, row -> {
             if (outerJoinSide == ordinal && unusedEventsTracker.remove(row)) {
-                // 5.4 : If doing an outer join, emit events removed from the buffer,
+                // 5.4: If doing an outer join, emit events removed from the buffer,
                 // with `null`s for the other side, if the event was never joined.
                 JetSqlRow joinedRow = composeRowWithNulls(row, ordinal);
                 if (joinedRow != null) {

@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
+import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.HazelcastInstance;
@@ -27,10 +28,10 @@ import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
 import com.hazelcast.internal.config.CardinalityEstimatorConfigReadOnly;
 import com.hazelcast.internal.config.ConfigUtils;
+import com.hazelcast.internal.config.DataLinkConfigReadOnly;
 import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.config.DurableExecutorConfigReadOnly;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
-import com.hazelcast.internal.config.DataLinkConfigReadOnly;
 import com.hazelcast.internal.config.ListConfigReadOnly;
 import com.hazelcast.internal.config.MapConfigReadOnly;
 import com.hazelcast.internal.config.MemberXmlConfigRootTagRecognizer;
@@ -219,8 +220,11 @@ public class Config {
     // @since 5.1
     private IntegrityCheckerConfig integrityCheckerConfig = new IntegrityCheckerConfig();
 
-    // @since 5.2
+    // @since 5.3
     private final Map<String, DataLinkConfig> dataLinkConfigs = new ConcurrentHashMap<>();
+
+    // @since 5.3
+    private TpcConfig tpcConfig = new TpcConfig();
 
     public Config() {
     }
@@ -3102,7 +3106,7 @@ public class Config {
     /**
      * Returns the map of data link configurations, mapped by config name.
      *
-     * @since 5.2
+     * @since 5.3
      */
     @Beta
     public Map<String, DataLinkConfig> getDataLinkConfigs() {
@@ -3112,10 +3116,9 @@ public class Config {
     /**
      * Sets the map of data link configurations, mapped by config name.
      * <p>
-     * <p>
      * Example configuration: see {@link #addDataLinkConfig(DataLinkConfig)}
      *
-     * @since 5.2
+     * @since 5.3
      */
     @Beta
     public Config setDataLinkConfigs(Map<String, DataLinkConfig> dataLinkConfigs) {
@@ -3140,12 +3143,12 @@ public class Config {
      *      properties.put("password", password);
      *      DataLinkConfig dataLinkConfig = new DataLinkConfig()
      *              .setName("my-jdbc-data-link")
-     *              .setClassName(JdbcDataLinkFactory.class.getName())
+     *              .setClassName(JdbcDataLink.class.getName())
      *              .setProperties(properties);
      *      config.addDataLinkConfig(dataLinkConfig);
      * }</pre>
      *
-     * @since 5.2
+     * @since 5.3
      */
     @Beta
     public Config addDataLinkConfig(DataLinkConfig dataLinkConfig) {
@@ -3182,7 +3185,7 @@ public class Config {
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
-     * @since 5.2
+     * @since 5.3
      */
     @Beta
     public DataLinkConfig getDataLinkConfig(String name) {
@@ -3206,7 +3209,7 @@ public class Config {
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
      * @see EvictionConfig#setSize(int)
-     * @since 5.2
+     * @since 5.3
      */
     @Beta
     public DataLinkConfig findDataLinkConfig(String name) {
@@ -3216,6 +3219,32 @@ public class Config {
             return new DataLinkConfigReadOnly(config);
         }
         return new DataLinkConfigReadOnly(getDataLinkConfig("default"));
+    }
+
+    /**
+     * Gets the TpcConfig. Can't return null.
+     *
+     * @return the TpcConfig.
+     * @since 5.3
+     */
+    @Beta
+    @Nonnull
+    public TpcConfig getTpcConfig() {
+        return tpcConfig;
+    }
+
+    /**
+     * Sets the TpcConfig.
+     *
+     * @param tpcConfig the TpcConfig.
+     * @return this config
+     * @throws NullPointerException if tpcConfig is null
+     * @since 5.3
+     */
+    @Beta
+    public @Nonnull Config setTpcConfig(@Nonnull TpcConfig tpcConfig) {
+        this.tpcConfig = checkNotNull(tpcConfig);
+        return this;
     }
 
     /**
@@ -3282,6 +3311,7 @@ public class Config {
                 + ", deviceConfigs=" + deviceConfigs
                 + ", integrityCheckerConfig=" + integrityCheckerConfig
                 + ", dataLinkConfigs=" + dataLinkConfigs
+                + ", tpcConfig=" + tpcConfig
                 + '}';
     }
 }

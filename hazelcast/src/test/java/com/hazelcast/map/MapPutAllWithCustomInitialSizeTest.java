@@ -24,7 +24,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -57,11 +56,6 @@ public class MapPutAllWithCustomInitialSizeTest extends HazelcastTestSupport {
         factory = createHazelcastInstanceFactory(1);
         instances = factory.newInstances(config);
         warmUpPartitions(instances);
-    }
-
-    @After
-    public void tearDown() {
-        factory.terminateAll();
     }
 
     @Test

@@ -343,6 +343,17 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testNetworkConfigTpcSocketConfig() {
+        Config expectedConfig = new Config();
+        expectedConfig.getNetworkConfig().getTpcSocketConfig()
+                .setPortRange("14000-16000")
+                .setReceiveBufferSizeKB(256)
+                .setSendBufferSizeKB(256);
+        Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
+        assertEquals(expectedConfig.getTpcConfig(), actualConfig.getTpcConfig());
+    }
+
+    @Test
     public void testListenerConfig() {
         Config expectedConfig = new Config();
 
@@ -1334,6 +1345,14 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         expected.setSocketKeepAlive(true);
         expected.setSocketTcpNoDelay(true);
         expected.setSocketBufferDirect(true);
+        expected.setSocketKeepCount(2);
+        expected.setSocketKeepIntervalSeconds(3);
+        expected.setSocketKeepIdleSeconds(83);
+
+        expected.getTpcSocketConfig()
+                .setPortRange("14000-16000")
+                .setReceiveBufferSizeKB(256)
+                .setSendBufferSizeKB(256);
 
         cfg.getAdvancedNetworkConfig().setEnabled(true);
         cfg.getAdvancedNetworkConfig().addWanEndpointConfig(expected);
@@ -1470,7 +1489,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         properties.put("jdbcUrl", "jdbc:h2:mem:" + DataLinkServiceImplTest.class.getSimpleName());
         DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName("test-data-link")
-                .setClassName("com.hazelcast.dtalink.JdbcDataLinkFactory")
+                .setClassName("com.hazelcast.dtalink.JdbcDataLink")
                 .setProperties(properties);
 
         expectedConfig.addDataLinkConfig(dataLinkConfig);
@@ -1478,6 +1497,16 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
 
         assertEquals(expectedConfig.getDataLinkConfigs(), actualConfig.getDataLinkConfigs());
+    }
+
+    @Test
+    public void testTpcConfig() {
+        Config expectedConfig = new Config();
+        expectedConfig.getTpcConfig()
+                .setEventloopCount(12)
+                .setEnabled(true);
+        Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
+        assertEquals(expectedConfig.getTpcConfig(), actualConfig.getTpcConfig());
     }
 
     private Config getNewConfigViaXMLGenerator(Config config) {

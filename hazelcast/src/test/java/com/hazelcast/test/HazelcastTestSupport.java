@@ -64,8 +64,8 @@ import org.junit.ClassRule;
 import org.junit.ComparisonFailure;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
+import org.junit.function.ThrowingRunnable;
 
-import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -124,6 +124,8 @@ public abstract class HazelcastTestSupport {
     public static final String JAVA_VERSION = System.getProperty("java.version");
     public static final String JVM_NAME = System.getProperty("java.vm.name");
     public static final String JAVA_VENDOR = System.getProperty("java.vendor");
+
+    public static final String OS_ARCHITECTURE = System.getProperty("os.arch");
 
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
     public static final int ASSERT_COMPLETES_STALL_TOLERANCE;
@@ -1464,7 +1466,7 @@ public abstract class HazelcastTestSupport {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends Throwable> T assertThrows(Class<T> expectedType, Runnable r) {
+    public static <T extends Throwable> T assertThrows(Class<T> expectedType, ThrowingRunnable r) {
         try {
             r.run();
         } catch (Throwable actualException) {
@@ -1549,17 +1551,6 @@ public abstract class HazelcastTestSupport {
     // ###################################
     // ########## inner classes ##########
     // ###################################
-
-    public static final class DummyUncheckedHazelcastTestException extends RuntimeException {
-    }
-
-    public static class DummySerializableCallable implements Callable, Serializable {
-
-        @Override
-        public Object call() throws Exception {
-            return null;
-        }
-    }
 
     private interface Latch {
 
@@ -1677,6 +1668,10 @@ public abstract class HazelcastTestSupport {
 
     public static void assumeThatLinuxOS() {
         Assume.assumeTrue("Only Linux platform supported", isLinux());
+    }
+
+    public static void assumeNoArm64Architecture() {
+        Assume.assumeFalse("Not supported on arm64 (aarch64) architecture", "aarch64".equals(OS_ARCHITECTURE));
     }
 
     /**

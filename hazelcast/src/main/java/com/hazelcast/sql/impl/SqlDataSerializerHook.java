@@ -81,6 +81,7 @@ import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.datalink.DataLinkCatalogEntry;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -182,7 +183,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int ROW_VALUE = 66;
     public static final int QUERY_DATA_TYPE_FIELD = 67;
 
-    public static final int LEN = QUERY_DATA_TYPE_FIELD + 1;
+    public static final int DATA_LINK_CATALOG_ENTRY = 68;
+
+    public static final int LEN = DATA_LINK_CATALOG_ENTRY + 1;
 
     @Override
     public int getFactoryId() {
@@ -276,6 +279,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_ROW] = arg -> new RowExpression();
         constructors[ROW_VALUE] = arg -> new RowValue();
         constructors[QUERY_DATA_TYPE_FIELD] = arg -> new QueryDataType.QueryDataTypeField();
+        constructors[DATA_LINK_CATALOG_ENTRY] = arg -> new DataLinkCatalogEntry();
 
         return new ArrayDataSerializableFactory(constructors);
     }

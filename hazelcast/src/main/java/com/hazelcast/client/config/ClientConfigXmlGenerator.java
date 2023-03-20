@@ -138,6 +138,8 @@ public final class ClientConfigXmlGenerator {
         metrics(gen, clientConfig.getMetricsConfig());
         instanceTrackingConfig(gen, clientConfig.getInstanceTrackingConfig());
         sql(gen, clientConfig.getSqlConfig());
+        // TPC
+        tpc(gen, clientConfig.getTpcConfig());
 
         //close HazelcastClient
         gen.close();
@@ -660,4 +662,7 @@ public final class ClientConfigXmlGenerator {
            .close();
     }
 
+    private static void tpc(XmlGenerator gen, ClientTpcConfig tpcConfig) {
+        gen.open("tpc", "enabled", tpcConfig.isEnabled()).close();
+    }
 }

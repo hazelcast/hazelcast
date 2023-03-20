@@ -24,6 +24,7 @@ import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.Identity;
 import com.hazelcast.jet.core.TestProcessors.ListSource;
@@ -31,6 +32,10 @@ import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.pipeline.test.AssertionSinks;
+import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
@@ -199,7 +204,7 @@ public class JobTest extends SimpleTestInClusterSupport {
     public void when_jobFailed_then_jobStatusIsCompletedEventually() throws InterruptedException {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS((SupplierEx<Processor>)
-                () -> new MockP().setCompleteError(new ExpectedRuntimeException()), NODE_COUNT)));
+                () -> new MockP().setCompleteError(() -> new ExpectedRuntimeException()), NODE_COUNT)));
 
         // When
         Job job = instance().getJet().newJob(dag);
@@ -324,7 +329,7 @@ public class JobTest extends SimpleTestInClusterSupport {
     public void when_jobFailed_then_trackedJobCanQueryResult() throws InterruptedException {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS((SupplierEx<Processor>)
-                () -> new MockP().setCompleteError(new ExpectedRuntimeException()), NODE_COUNT)));
+                () -> new MockP().setCompleteError(() -> new ExpectedRuntimeException()), NODE_COUNT)));
 
         // When
         Job submittedJob = instance().getJet().newJob(dag);
@@ -1028,7 +1033,87 @@ public class JobTest extends SimpleTestInClusterSupport {
                 ", status=" + job.getStatus();
     }
 
+    @Test
+    public void test_updateJobConfig_member() {
+        test_updateJobConfig(instances()[1]);
+    }
+
+    @Test
+    public void test_updateJobConfig_client() {
+        test_updateJobConfig(client());
+    }
+
+    private void test_updateJobConfig(HazelcastInstance instance) {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.items(asList(2, 3, 1)))
+                .sort()
+                .writeTo(AssertionSinks.assertOrdered(asList(1, 2, 3)));
+
+        JobConfig config = new JobConfig().setSuspendOnFailure(true).setMaxProcessorAccumulatedRecords(2);
+        Job job = instance.getJet().newJob(pipeline, config);
+        assertJobStatusEventually(job, SUSPENDED);
+        assertThat(job.getSuspensionCause().errorCause())
+                .contains("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
+
+        job.updateConfig(new DeltaJobConfig().setMaxProcessorAccumulatedRecords(3L));
+        Stream.of(instances()[0], instances()[1], client()).forEach(hz ->
+                assertEquals(3, hz.getJet().getJob(job.getId()).getConfig().getMaxProcessorAccumulatedRecords()));
+
+        job.resume();
+        job.join();
+
+        assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig())).hasMessage("Job not suspended, but COMPLETED");
+    }
+
+    @Test
+    public void test_tryUpdatingJobConfig_then_fail_member() {
+        test_tryUpdatingJobConfig_then_fail(instances()[1]);
+    }
+
+    @Test
+    public void test_tryUpdatingJobConfig_then_fail_client() {
+        test_tryUpdatingJobConfig_then_fail(client());
+    }
+
+    private void test_tryUpdatingJobConfig_then_fail(HazelcastInstance instance) {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.itemStream(1))
+                .withoutTimestamps()
+                .writeTo(Sinks.noop());
+
+        Job job = instance.getJet().newJob(pipeline);
+        assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig())).hasMessageStartingWith("Job not suspended, but");
+
+        assertJobStatusEventually(job, RUNNING);
+        assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig())).hasMessage("Job not suspended, but RUNNING");
+
+        cancelAndJoin(job);
+        assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig())).hasMessage("Job not suspended, but FAILED");
+    }
+
     // ### Tests for light jobs
+
+    @Test
+    public void test_tryUpdatingLightJobConfig_then_fail_member() {
+        test_tryUpdatingLightJobConfig_then_fail(instances()[1]);
+    }
+
+    @Test
+    public void test_tryUpdatingLightJobConfig_then_fail_client() {
+        test_tryUpdatingLightJobConfig_then_fail(client());
+    }
+
+    private void test_tryUpdatingLightJobConfig_then_fail(HazelcastInstance instance) {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.itemStream(1))
+                .withoutTimestamps()
+                .writeTo(Sinks.noop());
+
+        Job job = instance.getJet().newLightJob(pipeline);
+        assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig()))
+                .hasMessage("not supported for light jobs: updateConfig");
+        cancelAndJoin(job);
+    }
 
     @Test
     public void when_lightJob_then_unsupportedMethodsThrow() {

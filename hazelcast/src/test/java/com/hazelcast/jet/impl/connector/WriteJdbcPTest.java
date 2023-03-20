@@ -28,7 +28,7 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.annotation.QuickTest;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.After;
 import org.junit.Before;
@@ -57,20 +57,20 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.datalink.impl.DataLinkTestUtil.configureDummyDataLink;
+import static com.hazelcast.datalink.impl.DataLinkTestUtil.configureJdbcDataLink;
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.impl.connector.DataLinkTestUtil.configureDummyDataLink;
-import static com.hazelcast.jet.impl.connector.DataLinkTestUtil.configureJdbcDataLink;
 import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-@Category({SlowTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
+@Category({QuickTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public class WriteJdbcPTest extends SimpleTestInClusterSupport {
 
     private static final String JDBC_DATA_LINK = "jdbc-data-link";
@@ -169,7 +169,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_supplied_closeable_datasource_is_NOT_closed() throws SQLException {
+    public void test_supplied_closeable_datasource_is_closed() throws SQLException {
         Pipeline p = Pipeline.create();
 
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
@@ -183,7 +183,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
                 ));
         instance().getJet().newJob(p).join();
         assertEquals(PERSON_COUNT, rowCount());
-        assertFalse(hikariDataSource.isClosed());
+        assertTrueEventually(() -> assertTrue(hikariDataSource.isClosed()));
     }
 
     private static DataSource createHikariDataSource() {

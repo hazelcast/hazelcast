@@ -611,6 +611,14 @@ hazelcast:
   #       all Hazelcast cluster members would be within one network switch/router therefore
   #       default of 0 is usually sufficient.
   #
+  # - "tpc-socket":
+  #   Socket configuration for TPC. In TPC, each eventloop has its own socket.
+  #   - "port-range":
+  #       Configures the port range available for TPC sockets.
+  #   - "receive-buffer-size-kb":
+  #       Configures SO_RCVBUF socket option for TPC sockets.
+  #   - "send-buffer-size-kb":
+  #       Configures SO_SNDBUF socket option for TPC sockets.
   network:
     public-address: 11.22.33.44:5555
     port:
@@ -773,6 +781,12 @@ hazelcast:
     #
     memcache-protocol:
       enabled: false
+
+    tpc-socket:
+      port-range: 14000-16000
+      receive-buffer-size-kb: 256
+      send-buffer-size-kb: 256
+
   #
   # ===== PARTITION GROUPING CONFIGURATION =====
   #
@@ -1477,6 +1491,11 @@ hazelcast:
           indexes:
             - attributes:
               - "name"
+      # In an actual config, only one of {partition-strategy, partition-attributes} should be present
+      partition-strategy: "com.example.Strategy"
+      partition-attributes:
+        - name: "attributeName1"
+        - name: "attributeName2"
   #
   # ===== HAZELCAST MULTIMAP CONFIGURATION =====
   #
@@ -3089,6 +3108,24 @@ hazelcast:
   #              Specifies the size of the receive buffer. The default value is 128KB.
   #          * "linger-seconds":
   #              Specifies the TCP linger seconds. The default value is 0.
+  #          * "keep-count":
+  #              When keep-alive is true and supported by the platform, sets the number of unacknowledged TCP keep-alive probes
+  #              to be sent before declaring a connection dead.
+  #          * "keep-idle-seconds":
+  #              When keep-alive is true and supported by the platform, sets the number of seconds to wait after the last
+  #              packet was sent before sending a keep-alive probe.
+  #          * "keep-interval-seconds":
+  #              When keep-alive is true and supported by the platform, sets the number of seconds to wait between keep-alive
+  #              probes.
+  #
+  #      - "tpc-socket":
+  #        Socket configuration for TPC. In TPC, each eventloop has its own socket.
+  #        - "port-range":
+  #            Configures the port range available for TPC sockets.
+  #        - "receive-buffer-size-kb":
+  #            Configures SO_RCVBUF socket option for TPC sockets.
+  #        - "send-buffer-size-kb":
+  #            Configures SO_SNDBUF socket option for TPC sockets.
   #
   #  * "rest-server-socket-endpoint-config":
   #      Controls access to Hazelcast HTTP REST API.
@@ -3253,6 +3290,9 @@ hazelcast:
         send-buffer-size-kb: 25
         receive-buffer-size-kb: 33
         linger-seconds: 99
+        keep-idle-seconds: 600
+        keep-count: 10
+        keep-interval-seconds: 15
       port:
         port-count: 100
         auto-increment: true
@@ -3260,6 +3300,10 @@ hazelcast:
       public-address: dummy
       # If the address should be reused. See NetworkConfig.setReuseAddress for more information.
       reuse-address: true
+      tpc-socket:
+        port-range: 14000-16000
+        receive-buffer-size-kb: 256
+        send-buffer-size-kb: 256
     client-server-socket-endpoint-config:
       outbound-ports:
         - 38000,38500-38600
@@ -3283,12 +3327,20 @@ hazelcast:
         port: 9999
       public-address: 10.10.0.10
       reuse-address: true
+      tpc-socket:
+        port-range: 14000-16000
+        receive-buffer-size-kb: 256
+        send-buffer-size-kb: 256
     rest-server-socket-endpoint-config:
       name: internal-server-socket
       interfaces:
         enabled: false
         interfaces:
           - 10.10.1.*
+      tpc-socket:
+        port-range: 14000-16000
+        receive-buffer-size-kb: 256
+        send-buffer-size-kb: 256
       port:
         auto-increment: false
         port: 8080
@@ -3310,6 +3362,10 @@ hazelcast:
           factory-class-name: com.hazelcast.examples.MySSLContextFactory
           properties:
             foo: bar
+        tpc-socket:
+          port-range: 14000-16000
+          receive-buffer-size-kb: 256
+          send-buffer-size-kb: 256
       endpoint-london:
         symmetric-encryption:
           enabled: true
@@ -3324,12 +3380,20 @@ hazelcast:
           interfaces:
             - 192.168.8.101
             - 10.20.10.100
+        tpc-socket:
+          port-range: 14000-16000
+          receive-buffer-size-kb: 256
+          send-buffer-size-kb: 256
     memcache-server-socket-endpoint-config:
       name: memcache
       port:
         auto-increment: false
         port-count: 10
         port: 6000
+      tpc-socket:
+        port-range: 14000-16000
+        receive-buffer-size-kb: 256
+        send-buffer-size-kb: 256
 
   #
   # ===== HAZELCAST CP SUBSYSTEM CONFIGURATION =====
@@ -3809,9 +3873,18 @@ hazelcast:
   #      used by map stores and jdbc sinks and sources.
   data-link:
     mysql-database:
-      class-name: com.hazelcast.datalink.JdbcDataLinkFactory
+      class-name: com.hazelcast.datalink.JdbcDataLink
       properties:
         jdbcUrl: jdbc:mysql://dummy:3306
       shared: false
     other-database:
       class-name: com.hazelcast.datalink.OtherDataLink
+
+  #    ===== HAZELCAST TPC CONFIGURATION =====
+  #
+  #    Hazelcast TPC is the next generation of Hazelcast built with thread per core architecture.
+  #    It's still being developed and everything is subject to change. TPC is disabled by default.
+  tpc:
+    enabled: true
+    # Configures the number of eventloops. It's equal to available processor count by default.
+    eventloop-count: 12

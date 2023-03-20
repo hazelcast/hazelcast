@@ -351,10 +351,13 @@ see used in the comments on your PR:
   module
 * `run-cdc-postgres-tests` - run all tests in the
   `extensions/cdc-postgres` module
+* `run-mongodb-tests` - run all tests in the `extensions/mongodb` module
 * `run-s3-tests` - run all tests in the `extensions/s3` module
 * *`run-nightly-tests` - run nightly (slow) tests. WARNING: Use with care as this is a resource consuming task.*
+* *`run-ee-nightly-tests` - run nightly (slow) tests from hazelcast-enterprise. WARNING: Use with care as this is a resource consuming task.*
 * `run-sql-only` - run default tests in `hazelcast-sql`, `hazelcast-distribution`, and `extensions/mapstore` modules
 * `run-sonar` - run SonarCloud analysis
+* `run-arm64` - run the tests on arm64 machine
 
 Where not indicated, the builds run on a Linux machine with Oracle JDK 8.
 

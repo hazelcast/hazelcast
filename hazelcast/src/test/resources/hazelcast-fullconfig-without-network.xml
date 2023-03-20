@@ -446,6 +446,11 @@
             </memory-tier>
             <disk-tier enabled="true" device-name="default-tiered-store-device"/>
         </tiered-store>
+        <partition-strategy>com.example.Strategy</partition-strategy>
+        <partition-attributes>
+            <attribute>attributeName1</attribute>
+            <attribute>attributeName2</attribute>
+        </partition-attributes>
     </map>
 
     <multimap name="default">
@@ -1089,11 +1094,15 @@
     </sql>
 
     <data-link name="mysql-database">
-        <class-name>com.hazelcast.datalink.JdbcDataLinkFactory</class-name>
+        <class-name>com.hazelcast.datalink.JdbcDataLink</class-name>
         <properties>
             <property name="jdbcUrl">jdbc:mysql://dummy:3306</property>
         </properties>
         <shared>false</shared>
     </data-link>
+
+    <tpc enabled="true">
+        <eventloop-count>12</eventloop-count>
+    </tpc>
 
 </hazelcast>

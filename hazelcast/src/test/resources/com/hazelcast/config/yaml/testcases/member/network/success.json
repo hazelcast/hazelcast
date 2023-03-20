@@ -157,6 +157,11 @@
         },
         "memcache-protocol": {
           "enabled": false
+        },
+        "tpc-socket": {
+          "port-range": "14000-16000",
+          "receive-buffer-size-kb": 256,
+          "send-buffer-size-kb": 256
         }
       }
     }

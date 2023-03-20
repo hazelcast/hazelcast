@@ -34,8 +34,14 @@ public interface ParserResource {
     @BaseMessage("The mapping must be created in the \"public\" schema")
     ExInst<SqlValidatorException> mappingIncorrectSchema();
 
+    @BaseMessage("The data link must be created in the \"public\" schema")
+    ExInst<SqlValidatorException> dataLinkIncorrectSchema();
+
     @BaseMessage("The view must be created in the \"public\" schema")
     ExInst<SqlValidatorException> viewIncorrectSchema();
+
+    @BaseMessage("The type must be created in the \"public\" schema")
+    ExInst<SqlValidatorException> typeIncorrectSchema();
 
     @BaseMessage("Column ''{0}'' specified more than once")
     ExInst<SqlValidatorException> duplicateColumn(String columnName);
@@ -49,8 +55,17 @@ public interface ParserResource {
     @BaseMessage("Mapping does not exist: {0}")
     ExInst<SqlValidatorException> droppedMappingDoesNotExist(String mappingName);
 
+    @BaseMessage("Data Link does not exist: {0}")
+    ExInst<SqlValidatorException> droppedDataLinkDoesNotExist(String dataStoreName);
+
     @BaseMessage("Index does not exist: {0}")
     ExInst<SqlValidatorException> droppedIndexDoesNotExist(String indexName);
+
+    @BaseMessage("View does not exist: {0}")
+    ExInst<SqlValidatorException> droppedViewDoesNotExist(String viewName);
+
+    @BaseMessage("Type does not exist: {0}")
+    ExInst<SqlValidatorException> droppedTypeDoesNotExist(String typeName);
 
     @BaseMessage("Writing to top-level fields of type OBJECT not supported")
     ExInst<SqlValidatorException> insertToTopLevelObject();

@@ -38,6 +38,7 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -190,10 +191,25 @@ public class JobRepository {
 
         jobRecords = new ConcurrentMemoizingSupplier<>(() -> instance.getMap(JOB_RECORDS_MAP_NAME));
         jobResults = new ConcurrentMemoizingSupplier<>(() -> instance.getMap(JOB_RESULTS_MAP_NAME));
-        jobExecutionRecords = memoizeConcurrent(() -> instance.getMap(JOB_EXECUTION_RECORDS_MAP_NAME));
+        jobExecutionRecords = memoizeConcurrent(() -> safeImap(instance.getMap(JOB_EXECUTION_RECORDS_MAP_NAME)));
         jobMetrics = memoizeConcurrent(() -> instance.getMap(JOB_METRICS_MAP_NAME));
         exportedSnapshotDetailsCache = memoizeConcurrent(() -> instance.getMap(EXPORTED_SNAPSHOTS_DETAIL_CACHE));
         idGenerator = memoizeConcurrent(() -> instance.getFlakeIdGenerator(RANDOM_ID_GENERATOR_NAME));
+    }
+
+    /**
+     * Configures given IMap to fail on indeterminate operation state.
+     *
+     * @param map map to configure
+     * @return the same map with applied configuration
+     */
+    public static <K, V> IMap<K, V> safeImap(IMap<K, V> map) {
+        // On client side there is no setFailOnIndeterminateOperationState method.
+        // Client should only read Jet maps.
+        if (map instanceof MapProxyImpl) {
+            ((MapProxyImpl<K, V>) map).setFailOnIndeterminateOperationState(true);
+        }
+        return map;
     }
 
     // for tests
@@ -335,6 +351,13 @@ public class JobRepository {
             throw new IllegalStateException("Cannot put job record for job " + idToString(jobId)
                     + " because it already exists with a different DAG");
         }
+    }
+
+    /**
+     * Updates the job record of {@linkplain JobRecord#getJobId the corresponding job}.
+     */
+    void updateJobRecord(JobRecord jobRecord) {
+        jobRecords.get().set(jobRecord.getJobId(), jobRecord);
     }
 
     /**
@@ -612,20 +635,33 @@ public class JobRepository {
      * than the timestamp of the stored record. See {@link
      * UpdateJobExecutionRecordEntryProcessor#process}. It will also be ignored
      * if the key doesn't exist in the IMap.
+     *
+     * @return true if the record was written or ignored because canCreate=false
+     *         and there is no record in IMap to update.
      */
-    void writeJobExecutionRecord(long jobId, JobExecutionRecord record, boolean canCreate) {
+    boolean writeJobExecutionRecord(long jobId, JobExecutionRecord record, boolean canCreate) {
         record.updateTimestamp();
         String message = (String) jobExecutionRecords.get().executeOnKey(jobId,
                 new UpdateJobExecutionRecordEntryProcessor(jobId, record, canCreate));
         if (message != null) {
             logger.fine(message);
+            if (message.endsWith("oldValue == null")) {
+                // canCreate=false but there is no record in IMap to update.
+                // There is no point in repeating.
+                return true;
+            }
         }
+        return message == null;
     }
 
     /**
      * Returns map name in the form {@code "_jet.snapshot.<jobId>.<dataMapIndex>"}.
      */
     public static String snapshotDataMapName(long jobId, int dataMapIndex) {
+        if (dataMapIndex < 0) {
+            throw new IllegalStateException("Negative dataMapIndex - no successful snapshot");
+        }
+
         return SNAPSHOT_DATA_MAP_PREFIX + idToString(jobId) + '.' + dataMapIndex;
     }
 
@@ -651,7 +687,8 @@ public class JobRepository {
     }
 
     /**
-     * Returns map name in the form {@code "_jet.exportedSnapshot.<jobId>.<dataMapIndex>"}.
+     * Returns the map name in which an exported snapshot with the given `name`
+     * is stored. It's {@code "_jet.exportedSnapshot.<name>"}.
      */
     public static String exportedSnapshotMapName(String name) {
         return JobRepository.EXPORTED_SNAPSHOTS_PREFIX + name;

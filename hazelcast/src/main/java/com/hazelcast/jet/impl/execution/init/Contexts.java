@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.execution.init;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.datalink.DataLinkService;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.Preconditions;
@@ -205,6 +206,11 @@ public final class Contexts {
         @Override
         public ClassLoader classLoader() {
             return classLoader;
+        }
+
+        @Override
+        public DataLinkService dataLinkService() {
+            return nodeEngine().getDataLinkService();
         }
 
         @Override

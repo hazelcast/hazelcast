@@ -272,7 +272,7 @@ public class InsertWatermarksPTest {
     }
 
     private void createProcessor(long idleTimeoutMillis) throws Exception {
-        p = new InsertWatermarksP<>(eventTimePolicy(Item::getTimestamp, wmPolicy, watermarkThrottlingFrameSize, 0,
+        p = new InsertWatermarksP<>(ctx -> eventTimePolicy(Item::getTimestamp, wmPolicy, watermarkThrottlingFrameSize, 0,
                 idleTimeoutMillis));
         p.init(outbox, context);
     }

@@ -77,8 +77,8 @@ public class ChangeRecordCdcSourceP extends CdcSourceP<ChangeRecord> {
             oldValueJson = () -> Values.convertToString(valueSchema, value);
             newValueJson = () -> Values.convertToString(valueSchema, value);
         } else {
-            Object before = value.get("before");
-            Object after = value.get("after");
+            Object before = valueSchema.field("before") != null ? value.get("before") : null;
+            Object after = valueSchema.field("after") != null ? value.get("after") : null;
 
             timestamp = value.getInt64("ts_ms");
             oldValueJson = before == null

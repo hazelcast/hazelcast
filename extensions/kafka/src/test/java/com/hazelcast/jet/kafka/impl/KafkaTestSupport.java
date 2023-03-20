@@ -48,6 +48,7 @@ import java.util.concurrent.Future;
 import static com.hazelcast.test.DockerTestUtil.dockerEnabled;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -85,6 +86,14 @@ public abstract class KafkaTestSupport {
         CreateTopicsResult createTopicsResult = admin.createTopics(newTopics);
         try {
             createTopicsResult.all().get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void deleteTopic(String topicId) {
+        try {
+            admin.deleteTopics(singleton(topicId)).all().get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
