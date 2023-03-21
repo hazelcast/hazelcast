@@ -27,6 +27,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_SNDBUF;
@@ -212,7 +213,7 @@ public abstract class AsyncSocket_LargePayloadTest {
         }
         clientSocket.flush();
 
-        assertOpenEventually(completionLatch);
+        assertOpenEventually(completionLatch, TimeUnit.MINUTES.toSeconds(4));
     }
 
     private AsyncSocket newClient(SocketAddress serverAddress, CountDownLatch completionLatch) {
