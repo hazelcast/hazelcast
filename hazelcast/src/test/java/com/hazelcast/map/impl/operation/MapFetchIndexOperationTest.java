@@ -1,15 +1,15 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
- * Licensed under the Hazelcast Community License (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://hazelcast.com/hazelcast-community-license
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -31,6 +31,7 @@ import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.iteration.IndexIterationPointer;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
 import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
@@ -71,7 +72,10 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.Accessors.getOperationService;
+import static java.util.Collections.emptyList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -442,6 +446,22 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         } finally {
             instance.shutdown();
         }
+    }
+
+    @Test
+    public void test_MapFetchIndexOperation_serialization() {
+        MapFetchIndexOperation op = new MapFetchIndexOperation("m", "i", new IndexIterationPointer[0], new PartitionIdSet(271), 100);
+        SerializationService ss = getNodeEngineImpl(instance).getSerializationService();
+        MapFetchIndexOperation cloned = ss.toObject(ss.toData(op));
+        assertThat(op).usingRecursiveComparison().isEqualTo(cloned);
+    }
+
+    @Test
+    public void test_MapFetchIndexOperationResult_serialization() {
+        MapFetchIndexOperationResult op = new MapFetchIndexOperationResult(emptyList(), new IndexIterationPointer[0]);
+        SerializationService ss = getNodeEngineImpl(instance).getSerializationService();
+        MapFetchIndexOperationResult cloned = ss.toObject(ss.toData(op));
+        assertThat(op).usingRecursiveComparison().isEqualTo(cloned);
     }
 
     private static PartitionIdSet getLocalPartitions(HazelcastInstance member) {

@@ -46,7 +46,6 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.exec.scan.MapScanRow;
-import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
@@ -63,6 +62,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
+import static com.hazelcast.jet.sql.impl.connector.map.QueryUtil.indexFilterToPointers;
 import static com.hazelcast.query.impl.getters.GetterCache.SIMPLE_GETTER_CACHE_SUPPLIER;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
@@ -116,10 +116,11 @@ final class MapIndexScanP extends AbstractProcessor {
         reader = new LocalMapIndexReader(hazelcastInstance, evalContext.getSerializationService(), metadata);
 
         int[] memberPartitions = context.processorPartitions();
+        IndexIterationPointer[] pointers = indexFilterToPointers(metadata.getFilter(), metadata.isDescending(), evalContext);
         splits.add(new Split(
                 new PartitionIdSet(hazelcastInstance.getPartitionService().getPartitions().size(), memberPartitions),
                 hazelcastInstance.getCluster().getLocalMember().getAddress(),
-                filtersToPointers(metadata.getFilter(), metadata.isDescending(), evalContext)
+                pointers
         ));
 
         row = MapScanRow.create(
@@ -133,14 +134,6 @@ final class MapIndexScanP extends AbstractProcessor {
                 evalContext.getSerializationService()
         );
         isIndexSorted = metadata.getComparator() != null;
-    }
-
-    private static IndexIterationPointer[] filtersToPointers(
-            @Nonnull IndexFilter filter,
-            boolean descending,
-            ExpressionEvalContext evalContext
-    ) {
-        return IndexIterationPointer.createFromIndexFilter(filter, descending, evalContext);
     }
 
     @Override
