@@ -31,9 +31,9 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.postgresql.ds.PGSimpleDataSource;
@@ -76,7 +76,6 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     private static final String JDBC_DATA_LINK = "jdbc-data-link";
     private static final String DUMMY_DATA_LINK = "dummy-data-link";
 
-    @ClassRule
     @SuppressWarnings({"rawtypes", "resource"})
     public static PostgreSQLContainer container = new PostgreSQLContainer<>("postgres:12.1")
             .withCommand("postgres -c max_prepared_transactions=10 -c max_connections=500");
@@ -88,16 +87,21 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     private String tableName;
 
     @BeforeClass
-    public static void beforeClassCheckDocker() {
-        assumeDockerEnabled();
-    }
-
-    @BeforeClass
     public static void setupClass() {
+        assumeDockerEnabled();
+        container.start();
+
         Config config = smallInstanceConfig();
         configureJdbcDataLink(JDBC_DATA_LINK, container.getJdbcUrl(), container.getUsername(), container.getPassword(), config);
         configureDummyDataLink(DUMMY_DATA_LINK, config);
         initialize(2, config);
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        if (container != null) {
+            container.stop();
+        }
     }
 
     @Before
@@ -139,7 +143,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
             while (resultSet.next()) {
                 row = new StringBuilder();
                 for (int i = 1; i <= metaData.getColumnCount(); i++) {
-                    row.append(resultSet.getObject(i) + "\t|\t");
+                    row.append(resultSet.getObject(i)).append("\t|\t");
                 }
                 rows.add(row.toString());
 
@@ -183,7 +187,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
                 ));
         instance().getJet().newJob(p).join();
         assertEquals(PERSON_COUNT, rowCount());
-        assertTrue(hikariDataSource.isClosed());
+        assertTrueEventually(() -> assertTrue(hikariDataSource.isClosed()));
     }
 
     private static DataSource createHikariDataSource() {

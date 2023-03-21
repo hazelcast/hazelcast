@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.alto.AltoSocketConfig;
+import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.spi.annotation.Beta;
@@ -232,8 +232,8 @@ public class RestServerEndpointConfig
     @Beta
     @Nonnull
     @Override
-    public RestServerEndpointConfig setAltoSocketConfig(@Nonnull AltoSocketConfig altoSocketConfig) {
-        super.setAltoSocketConfig(altoSocketConfig);
+    public RestServerEndpointConfig setTpcSocketConfig(@Nonnull TpcSocketConfig tpcSocketConfig) {
+        super.setTpcSocketConfig(tpcSocketConfig);
         return this;
     }
 

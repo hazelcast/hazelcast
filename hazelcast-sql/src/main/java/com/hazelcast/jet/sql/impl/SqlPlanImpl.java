@@ -886,21 +886,28 @@ abstract class SqlPlanImpl extends SqlPlan {
 
     static class ShowStatementPlan extends SqlPlanImpl {
         private final ShowStatementTarget showTarget;
+        private final String dataLinkName;
         private final PlanExecutor planExecutor;
 
         ShowStatementPlan(
                 PlanKey planKey,
                 ShowStatementTarget showTarget,
+                String dataLinkName,
                 PlanExecutor planExecutor
         ) {
             super(planKey);
 
             this.showTarget = showTarget;
+            this.dataLinkName = dataLinkName;
             this.planExecutor = planExecutor;
         }
 
         ShowStatementTarget getShowTarget() {
             return showTarget;
+        }
+
+        String getDataLinkName() {
+            return dataLinkName;
         }
 
         @Override

@@ -75,7 +75,7 @@ public class MappingsTable extends InfoSchemaTable {
                     mappingsSchema,
                     mapping.name(),
                     mapping.externalName(),
-                    mapping.type(),
+                    mapping.connectorType(),
                     uncheckCall(() -> JsonUtil.toJson(mapping.options()))
             };
             rows.add(row);

@@ -329,5 +329,5 @@ hazelcast-client:
   sql:
     resubmission-mode: RETRY_SELECTS
 
-  alto:
+  tpc:
     enabled: true

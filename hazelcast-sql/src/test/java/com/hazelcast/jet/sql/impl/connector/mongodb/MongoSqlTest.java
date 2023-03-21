@@ -25,19 +25,19 @@ import com.mongodb.client.MongoDatabase;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.MongoDBContainer;
 
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public abstract class MongoSqlTest extends SqlTestSupport {
     private static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "6.0.3");
 
-    @ClassRule
     public static final MongoDBContainer mongoContainer
             = new MongoDBContainer("mongo:" + TEST_MONGO_VERSION);
 
@@ -51,7 +51,10 @@ public abstract class MongoSqlTest extends SqlTestSupport {
     public final TestName testName = new TestName();
 
     @BeforeClass
-    public static void beforeClass() {
+    public static void beforeClass() throws InterruptedException {
+        assumeDockerEnabled();
+        mongoContainer.start();
+
         initialize(1, null);
         sqlService = instance().getSql();
         mongoClient = MongoClients.create(mongoContainer.getConnectionString());
@@ -63,6 +66,9 @@ public abstract class MongoSqlTest extends SqlTestSupport {
     public static void close() {
         if (mongoClient != null) {
             mongoClient.close();
+        }
+        if (mongoContainer != null) {
+            mongoContainer.stop();
         }
     }
 

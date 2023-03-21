@@ -29,7 +29,8 @@ import com.mongodb.client.model.ValidationOptions;
 import org.bson.BsonDocument;
 import org.bson.BsonType;
 import org.bson.Document;
-import org.junit.ClassRule;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -44,14 +45,27 @@ import java.util.Map;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public class FieldResolverTest {
     static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "6.0.3");
-    @ClassRule
-    public static MongoDBContainer mongoContainer = new MongoDBContainer("mongo:" + TEST_MONGO_VERSION);
+    private static final MongoDBContainer mongoContainer = new MongoDBContainer("mongo:" + TEST_MONGO_VERSION);
+
+    @BeforeClass
+    public static void setUp() {
+        assumeDockerEnabled();
+        mongoContainer.start();
+    }
+
+    @AfterClass
+    public static void tearDown() {
+        if (mongoContainer != null) {
+            mongoContainer.stop();
+        }
+    }
 
     @Test
     public void testResolvesFieldsViaSchema() {
@@ -72,6 +86,9 @@ public class FieldResolverTest {
                             "        \"firstName\": { \"bsonType\": \"string\" }\n" +
                             "        \"lastName\": { \"bsonType\": \"string\" }\n" +
                             "        \"birthYear\": { \"bsonType\": \"int\" }\n" +
+                            "        \"title\": { \"enum\": [ \"Bsc\", \"Msc\", \"PhD\" ] }\n" +
+                            "        \"intOrString\": { \"enum\": [ \"String\", 1 ] }\n" +
+                            "        \"unionType\": { \"bsonType\": [ 'int', 'string' ] }\n" +
                             "      }\n" +
                             "    }\n" +
                             "  }\n"
@@ -85,11 +102,15 @@ public class FieldResolverTest {
             readOpts.put("connectionString", mongoContainer.getConnectionString());
             readOpts.put("database", databaseName);
             Map<String, DocumentField> fields = resolver.readFields(collectionName, readOpts, false);
-            assertThat(fields).containsOnlyKeys("firstName", "lastName", "birthYear");
+            assertThat(fields).containsOnlyKeys("firstName", "lastName", "birthYear", "title", "unionType", "intOrString");
             assertThat(fields.get("lastName").columnType).isEqualTo(BsonType.STRING);
             assertThat(fields.get("birthYear").columnType).isEqualTo(BsonType.INT32);
+            assertThat(fields.get("title").columnType).isEqualTo(BsonType.STRING);
+            assertThat(fields.get("intOrString").columnType).isEqualTo(BsonType.DOCUMENT);
+            assertThat(fields.get("unionType").columnType).isEqualTo(BsonType.DOCUMENT);
         }
     }
+
 
     @Test
     public void testResolvesFieldsViaSample() {

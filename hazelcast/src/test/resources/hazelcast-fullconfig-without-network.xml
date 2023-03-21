@@ -446,6 +446,11 @@
             </memory-tier>
             <disk-tier enabled="true" device-name="default-tiered-store-device"/>
         </tiered-store>
+        <partition-strategy>com.example.Strategy</partition-strategy>
+        <partition-attributes>
+            <attribute>attributeName1</attribute>
+            <attribute>attributeName2</attribute>
+        </partition-attributes>
     </map>
 
     <multimap name="default">
@@ -1096,8 +1101,8 @@
         <shared>false</shared>
     </data-link>
 
-    <alto enabled="true">
+    <tpc enabled="true">
         <eventloop-count>12</eventloop-count>
-    </alto>
+    </tpc>
 
 </hazelcast>
