@@ -117,9 +117,7 @@ public abstract class AsyncServerSocketTest {
                 })
                 .build();
 
-        SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
-
-        assertThrows(IllegalArgumentException.class, () -> socket.bind(local, -1));
+        assertThrows(IllegalArgumentException.class, () -> socket.bind(new InetSocketAddress("127.0.0.1", 0), -1));
     }
 
     @Test
@@ -149,9 +147,8 @@ public abstract class AsyncServerSocketTest {
                 })
                 .build();
 
-        SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
-        socket.bind(local);
-        assertThrows(UncheckedIOException.class, () -> socket.bind(local));
+        socket.bind(new InetSocketAddress("127.0.0.1", 0));
+        assertThrows(UncheckedIOException.class, () -> socket.bind(new InetSocketAddress("127.0.0.1", 0)));
 
         socket.close();
     }
@@ -168,8 +165,7 @@ public abstract class AsyncServerSocketTest {
                 })
                 .build();
 
-        SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
-        serverSocket.bind(serverAddress);
+        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
 
         int clients = 5;
@@ -179,7 +175,7 @@ public abstract class AsyncServerSocketTest {
                     .build();
             clientSocket.start();
 
-            CompletableFuture<Void> connect = clientSocket.connect(serverAddress);
+            CompletableFuture<Void> connect = clientSocket.connect(serverSocket.getLocalAddress());
             assertCompletesEventually(connect);
         }
 

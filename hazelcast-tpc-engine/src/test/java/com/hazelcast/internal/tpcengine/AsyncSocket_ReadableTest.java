@@ -22,7 +22,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 
@@ -58,7 +57,6 @@ public abstract class AsyncSocket_ReadableTest {
 
     @Test
     public void test() {
-        SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
         CompletableFuture<AsyncSocket> remoteSocketFuture = new CompletableFuture<>();
         AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
                 .setAcceptConsumer(acceptRequest -> {
@@ -69,14 +67,14 @@ public abstract class AsyncSocket_ReadableTest {
                     remoteSocketFuture.complete(asyncSocket);
                 })
                 .build();
-        serverSocket.bind(serverAddress);
+        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
 
         AsyncSocket localSocket = clientReactor.newAsyncSocketBuilder()
                 .setReadHandler(new NullReadHandler())
                 .build();
         localSocket.start();
-        localSocket.connect(serverAddress).join();
+        localSocket.connect(serverSocket.getLocalAddress()).join();
 
         AsyncSocket remoteSocket = remoteSocketFuture.join();
 

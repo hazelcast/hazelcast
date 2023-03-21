@@ -42,7 +42,7 @@ import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfigFromYaml;
  * @since 5.3
  */
 @Beta
-public class HazelcastDataLink extends DataLinkBase implements DataLink {
+public class HazelcastDataLink extends DataLinkBase {
 
     /**
      * The constant to be used as property key for XML

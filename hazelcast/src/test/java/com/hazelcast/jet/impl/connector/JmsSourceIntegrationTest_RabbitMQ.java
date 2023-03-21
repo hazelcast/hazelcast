@@ -21,8 +21,8 @@ import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.rabbitmq.jms.admin.RMQConnectionFactory;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.junit.experimental.categories.Category;
 import org.testcontainers.containers.RabbitMQContainer;
 
@@ -33,7 +33,6 @@ import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 @Category({NightlyTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public class JmsSourceIntegrationTest_RabbitMQ extends JmsSourceIntegrationTestBase {
 
-    @ClassRule
     public static RabbitMQContainer container = new RabbitMQContainer("rabbitmq:3.8");
 
     private static final SupplierEx<ConnectionFactory> FACTORY_SUPPLIER = () -> {
@@ -45,6 +44,14 @@ public class JmsSourceIntegrationTest_RabbitMQ extends JmsSourceIntegrationTestB
     @BeforeClass
     public static void beforeClassCheckDocker() {
         assumeDockerEnabled();
+        container.start();
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        if (container != null) {
+            container.stop();
+        }
     }
 
     @Override
