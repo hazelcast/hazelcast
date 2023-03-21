@@ -54,6 +54,7 @@ data: {
     # List of new keywords. Example: "DATABASES", "TABLES". If the keyword is
     # not a reserved keyword, add it to the 'nonReservedKeywords' section.
     keywords: [
+      "CONNECTOR"
       "IF"
       "INDEX"
       "JOB"
@@ -396,6 +397,7 @@ data: {
       "ZONE"
 
       # added by Hazelcast
+      "CONNECTOR"
       "EXTERNAL"
       "JOB"
       "JOBS"

@@ -155,6 +155,6 @@ public class PlanExecutorTest extends SimpleTestInClusterSupport {
     }
 
     private static Mapping mapping() {
-        return new Mapping("name", "name", "type", emptyList(), emptyMap());
+        return new Mapping("name", "name", null, "type", null, emptyList(), emptyMap());
     }
 }

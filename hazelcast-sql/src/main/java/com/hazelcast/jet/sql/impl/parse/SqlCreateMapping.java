@@ -53,14 +53,18 @@ public class SqlCreateMapping extends SqlCreate {
     private final SqlIdentifier name;
     private final SqlIdentifier externalName;
     private final SqlNodeList columns;
-    private final SqlIdentifier type;
+    private final SqlIdentifier dataLink;
+    private final SqlIdentifier connectorType;
+    private final SqlIdentifier objectType;
     private final SqlNodeList options;
 
     public SqlCreateMapping(
             SqlIdentifier name,
             SqlIdentifier externalName,
             SqlNodeList columns,
-            SqlIdentifier type,
+            SqlIdentifier dataLink,
+            SqlIdentifier connectorType,
+            SqlIdentifier objectType,
             SqlNodeList options,
             boolean replace,
             boolean ifNotExists,
@@ -71,13 +75,17 @@ public class SqlCreateMapping extends SqlCreate {
         this.name = requireNonNull(name, "Name should not be null");
         this.externalName = externalName;
         this.columns = requireNonNull(columns, "Columns should not be null");
-        this.type = requireNonNull(type, "Type should not be null");
+        this.dataLink = dataLink;
+        this.connectorType = connectorType;
+        this.objectType = objectType;
         this.options = requireNonNull(options, "Options should not be null");
 
         Preconditions.checkTrue(
                 externalName == null || externalName.isSimple(),
                 externalName == null ? null : externalName.toString()
         );
+
+        assert dataLink == null || connectorType == null; // the syntax doesn't allow this
     }
 
     public String nameWithoutSchema() {
@@ -92,8 +100,19 @@ public class SqlCreateMapping extends SqlCreate {
         return columns.getList().stream().map(node -> (SqlMappingColumn) node);
     }
 
-    public String type() {
-        return type.toString();
+    public String dataLinkNameWithoutSchema() {
+        if (dataLink == null) {
+            return null;
+        }
+        return dataLink.names.get(dataLink.names.size() - 1);
+    }
+
+    public String connectorType() {
+        return connectorType != null ? connectorType.toString() : null;
+    }
+
+    public String objectType() {
+        return objectType != null ? objectType.toString() : null;
     }
 
     public Map<String, String> options() {
@@ -119,7 +138,7 @@ public class SqlCreateMapping extends SqlCreate {
     @Nonnull
     @Override
     public List<SqlNode> getOperandList() {
-        return ImmutableNullableList.of(name, columns, type, options);
+        return ImmutableNullableList.of(name, columns, connectorType, options);
     }
 
     @Override
@@ -152,9 +171,22 @@ public class SqlCreateMapping extends SqlCreate {
             writer.endList(frame);
         }
 
-        writer.newlineAndIndent();
-        writer.keyword("TYPE");
-        type.unparse(writer, leftPrec, rightPrec);
+        if (dataLink != null) {
+            writer.newlineAndIndent();
+            writer.keyword("DATA LINK");
+            dataLink.unparse(writer, leftPrec, rightPrec);
+        } else {
+            assert connectorType != null;
+            writer.newlineAndIndent();
+            writer.keyword("TYPE");
+            connectorType.unparse(writer, leftPrec, rightPrec);
+        }
+
+        if (objectType != null) {
+            writer.newlineAndIndent();
+            writer.keyword("OBJECT TYPE");
+            objectType.unparse(writer, leftPrec, rightPrec);
+        }
 
         if (options.size() > 0) {
             writer.newlineAndIndent();
@@ -198,9 +230,21 @@ public class SqlCreateMapping extends SqlCreate {
             writer.endList(frame);
         }
 
-        writer.newlineAndIndent();
-        writer.keyword("TYPE");
-        writer.print(mapping.type());
+        if (mapping.dataLink() != null) {
+            writer.newlineAndIndent();
+            writer.keyword("DATA LINK");
+            writer.print(mapping.dataLink());
+        }
+        if (mapping.connectorType() != null) {
+            writer.newlineAndIndent();
+            writer.keyword("TYPE");
+            writer.print(mapping.connectorType());
+        }
+        if (mapping.objectType() != null) {
+            writer.newlineAndIndent();
+            writer.keyword("OBJECT TYPE");
+            writer.print(mapping.objectType());
+        }
 
         Map<String, String> options = mapping.options();
         if (options.size() > 0) {
@@ -234,6 +278,10 @@ public class SqlCreateMapping extends SqlCreate {
 
         if (!isCatalogObjectNameValid(name)) {
             throw validator.newValidationError(name, RESOURCE.mappingIncorrectSchema());
+        }
+
+        if (dataLink != null && !isCatalogObjectNameValid(dataLink)) {
+            throw validator.newValidationError(name, RESOURCE.dataLinkIncorrectSchemaUse());
         }
 
         Set<String> columnNames = new HashSet<>();
