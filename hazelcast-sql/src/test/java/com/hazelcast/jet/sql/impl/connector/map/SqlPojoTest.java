@@ -136,7 +136,14 @@ public class SqlPojoTest extends SqlTestSupport {
         Mapping m = catalog.get(name);
         HashMap<String, String> brokenOptions = new HashMap<>(m.options());
         brokenOptions.put(OPTION_VALUE_CLASS, "com.hazelcast.NoSuchClass");
-        catalog.put(name, new Mapping(m.name(), m.externalName(), m.type(), new ArrayList<>(m.fields()), brokenOptions));
+        catalog.put(name, new Mapping(
+                m.name(),
+                m.externalName(),
+                null,
+                m.connectorType(),
+                null,
+                new ArrayList<>(m.fields()),
+                brokenOptions));
     }
 
     @Test
@@ -547,7 +554,7 @@ public class SqlPojoTest extends SqlTestSupport {
         public ClassWithMapField() {
         }
 
-        public ClassWithMapField(final Long id, String ...values) {
+        public ClassWithMapField(final Long id, String... values) {
             this.id = id;
             this.props = new HashMap<>();
             for (int i = 0; i < values.length; i += 2) {

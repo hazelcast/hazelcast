@@ -127,7 +127,7 @@ public class SqlCreateDataLink extends SqlCreate {
         }
 
         if (!ValidationUtil.isCatalogObjectNameValid(name)) {
-            throw validator.newValidationError(this, RESOURCE.dataLinkIncorrectSchema());
+            throw validator.newValidationError(this, RESOURCE.dataLinkIncorrectSchemaCreate());
         }
     }
 
