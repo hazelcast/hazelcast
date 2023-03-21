@@ -18,11 +18,11 @@ package com.hazelcast.sql.impl.schema.view;
 
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
-import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateView;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.schema.SqlCatalogObject;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -97,7 +97,7 @@ public class View implements Versioned, SqlCatalogObject {
 
     @Override
     public int getClassId() {
-        return JetSqlSerializerHook.VIEW;
+        return SqlDataSerializerHook.VIEW;
     }
 
     @Override

@@ -35,6 +35,11 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int F_ID = FactoryIdHelper.getFactoryId(SQL_DS_FACTORY, SQL_DS_FACTORY_ID);
 
     public static final int QUERY_ID = 1;
+    public static final int MAPPING = 57;
+    public static final int MAPPING_FIELD = 58;
+    public static final int VIEW = 61;
+    public static final int TYPE = 63;
+    public static final int TYPE_FIELD = 64;
     public static final int ROW_VALUE = 66;
 
     public static final int LEN = ROW_VALUE + 1;
@@ -51,6 +56,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
         constructors[QUERY_ID] = arg -> new QueryId();
         constructors[ROW_VALUE] = arg -> new RowValue();
+
+        // other constructors are added in JetSqlSerializerHook.afterFactoriesCreated()
 
         return new ArrayDataSerializableFactory(constructors);
     }

@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.schema;
 
-import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import javax.annotation.Nonnull;
 
@@ -34,6 +34,6 @@ public interface SqlCatalogObject extends IdentifiedDataSerializable {
 
     @Override
     default int getFactoryId() {
-        return JetSqlSerializerHook.F_ID;
+        return SqlDataSerializerHook.F_ID;
     }
 }

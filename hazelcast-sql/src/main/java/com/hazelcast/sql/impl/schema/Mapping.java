@@ -16,10 +16,10 @@
 
 package com.hazelcast.sql.impl.schema;
 
-import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -81,7 +81,7 @@ public class Mapping implements SqlCatalogObject {
 
     @Override
     public int getClassId() {
-        return JetSqlSerializerHook.MAPPING;
+        return SqlDataSerializerHook.MAPPING;
     }
 
     @Override

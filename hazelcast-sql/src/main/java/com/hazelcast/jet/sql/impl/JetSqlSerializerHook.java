@@ -39,6 +39,7 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.LazyTarget;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.exec.scan.index.IndexCompositeFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
@@ -105,6 +106,8 @@ import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
+
+import java.util.Map;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.JET_SQL_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.JET_SQL_DS_FACTORY_ID;
@@ -205,12 +208,6 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int INDEX_ITERATION_POINTER = 81;
     public static final int MAP_FETCH_INDEX_OPERATION_RESULT = 82;
 
-    public static final int MAPPING = 83;
-    public static final int MAPPING_FIELD = 84;
-
-    public static final int VIEW = 85;
-    public static final int TYPE = 86;
-    public static final int TYPE_FIELD = 87;
     public static final int DATA_LINK = 88;
 
     public static final int UPDATE_DATA_LINK_OPERATION = 89;
@@ -340,14 +337,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[INDEX_ITERATION_POINTER] = arg -> new IndexIterationPointer();
         constructors[MAP_FETCH_INDEX_OPERATION_RESULT] = arg -> new MapFetchIndexOperationResult();
 
-        constructors[MAPPING] = arg -> new Mapping();
-        constructors[MAPPING_FIELD] = arg -> new MappingField();
-
-        constructors[VIEW] = arg -> new View();
-        constructors[TYPE] = arg -> new Type();
-        constructors[TYPE_FIELD] = arg -> new Type.TypeField();
         constructors[DATA_LINK] = arg -> new DataLinkCatalogEntry();
-
 
         constructors[QUERY_DATA_TYPE] = arg -> new QueryDataType();
 
@@ -367,7 +357,20 @@ public class JetSqlSerializerHook implements DataSerializerHook {
 
         constructors[QUERY_DATA_TYPE_FIELD] = arg -> new QueryDataType.QueryDataTypeField();
 
-
         return new ArrayDataSerializableFactory(constructors);
+    }
+
+    @Override
+    public void afterFactoriesCreated(Map<Integer, DataSerializableFactory> factories) {
+        ArrayDataSerializableFactory mapDataFactory = (ArrayDataSerializableFactory) factories.get(SqlDataSerializerHook.F_ID);
+
+        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[SqlDataSerializerHook.TYPE_FIELD + 1];
+        constructors[SqlDataSerializerHook.MAPPING] = arg -> new Mapping();
+        constructors[SqlDataSerializerHook.MAPPING_FIELD] = arg -> new MappingField();
+        constructors[SqlDataSerializerHook.VIEW] = arg -> new View();
+        constructors[SqlDataSerializerHook.TYPE] = arg -> new Type();
+        constructors[SqlDataSerializerHook.TYPE_FIELD] = arg -> new Type.TypeField();
+
+        mapDataFactory.mergeConstructors(constructors);
     }
 }

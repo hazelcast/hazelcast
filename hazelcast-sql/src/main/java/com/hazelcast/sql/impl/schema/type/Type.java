@@ -17,11 +17,11 @@
 package com.hazelcast.sql.impl.schema.type;
 
 import com.google.common.collect.ImmutableMap;
-import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.schema.SqlCatalogObject;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
@@ -204,7 +204,7 @@ public class Type implements Serializable, SqlCatalogObject {
 
     @Override
     public int getClassId() {
-        return JetSqlSerializerHook.TYPE;
+        return SqlDataSerializerHook.TYPE;
     }
 
     public static class TypeField implements IdentifiedDataSerializable, Serializable {
@@ -258,12 +258,12 @@ public class Type implements Serializable, SqlCatalogObject {
 
         @Override
         public int getFactoryId() {
-            return JetSqlSerializerHook.F_ID;
+            return SqlDataSerializerHook.F_ID;
         }
 
         @Override
         public int getClassId() {
-            return JetSqlSerializerHook.TYPE_FIELD;
+            return SqlDataSerializerHook.TYPE_FIELD;
         }
     }
 }

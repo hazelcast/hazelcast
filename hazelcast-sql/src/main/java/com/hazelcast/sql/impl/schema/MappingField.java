@@ -16,10 +16,10 @@
 
 package com.hazelcast.sql.impl.schema;
 
-import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
@@ -100,12 +100,12 @@ public class MappingField implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return JetSqlSerializerHook.F_ID;
+        return SqlDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return JetSqlSerializerHook.MAPPING_FIELD;
+        return SqlDataSerializerHook.MAPPING_FIELD;
     }
 
     @Override
