@@ -33,7 +33,6 @@ import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.jet.sql.impl.opt.physical.AggregateAbstractPhysicalRule;
 import com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink;
 import com.hazelcast.jet.sql.impl.validate.UpdateDataLinkOperation;
-import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOperationResult;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -106,8 +105,6 @@ import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
-
-import java.util.Map;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.JET_SQL_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.JET_SQL_DS_FACTORY_ID;
@@ -203,6 +200,10 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_FIELD_ACCESS = 77;
     public static final int EXPRESSION_ROW = 78;
     public static final int EXPRESSION_GET_DDL = 79;
+
+    public static final int MAP_FETCH_INDEX_OPERATION = 80;
+    public static final int INDEX_ITERATION_POINTER = 81;
+    public static final int MAP_FETCH_INDEX_OPERATION_RESULT = 82;
 
     public static final int MAPPING = 83;
     public static final int MAPPING_FIELD = 84;
@@ -335,6 +336,9 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_FIELD_ACCESS] = arg -> new FieldAccessExpression<>();
         constructors[EXPRESSION_ROW] = arg -> new RowExpression();
         constructors[EXPRESSION_GET_DDL] = arg -> new GetDdlFunction();
+        constructors[MAP_FETCH_INDEX_OPERATION] = arg -> new MapFetchIndexOperation();
+        constructors[INDEX_ITERATION_POINTER] = arg -> new IndexIterationPointer();
+        constructors[MAP_FETCH_INDEX_OPERATION_RESULT] = arg -> new MapFetchIndexOperationResult();
 
         constructors[MAPPING] = arg -> new Mapping();
         constructors[MAPPING_FIELD] = arg -> new MappingField();
@@ -363,18 +367,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
 
         constructors[QUERY_DATA_TYPE_FIELD] = arg -> new QueryDataType.QueryDataTypeField();
 
+
         return new ArrayDataSerializableFactory(constructors);
-    }
-
-    @Override
-    public void afterFactoriesCreated(Map<Integer, DataSerializableFactory> factories) {
-        ArrayDataSerializableFactory mapDataFactory = (ArrayDataSerializableFactory) factories.get(MapDataSerializerHook.F_ID);
-
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[MapDataSerializerHook.MAP_FETCH_INDEX_OPERATION_RESULT + 1];
-        constructors[MapDataSerializerHook.MAP_FETCH_INDEX_OPERATION] = arg -> new MapFetchIndexOperation();
-        constructors[MapDataSerializerHook.INDEX_ITERATION_POINTER] = arg -> new IndexIterationPointer();
-        constructors[MapDataSerializerHook.MAP_FETCH_INDEX_OPERATION_RESULT] = arg -> new MapFetchIndexOperationResult();
-
-        mapDataFactory.mergeConstructors(constructors);
     }
 }

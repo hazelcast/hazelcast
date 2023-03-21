@@ -22,7 +22,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -353,12 +353,12 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
     @Override
     public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
+        return JetSqlSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return MapDataSerializerHook.MAP_FETCH_INDEX_OPERATION;
+        return JetSqlSerializerHook.MAP_FETCH_INDEX_OPERATION;
     }
 
     public static final class MapFetchIndexOperationResult implements IdentifiedDataSerializable {
@@ -409,12 +409,12 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
         @Override
         public int getFactoryId() {
-            return MapDataSerializerHook.F_ID;
+            return JetSqlSerializerHook.F_ID;
         }
 
         @Override
         public int getClassId() {
-            return MapDataSerializerHook.MAP_FETCH_INDEX_OPERATION_RESULT;
+            return JetSqlSerializerHook.MAP_FETCH_INDEX_OPERATION_RESULT;
         }
     }
 
