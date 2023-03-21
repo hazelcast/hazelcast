@@ -17,8 +17,7 @@
 package com.hazelcast.datalink.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkEntry;
-import com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource;
+import com.hazelcast.datalink.DataLink;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -27,8 +26,6 @@ import com.hazelcast.sql.impl.schema.datalink.DataLinkCatalogEntry;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @NotThreadSafe
 public class DataLinkConsistencyChecker {
@@ -64,26 +61,30 @@ public class DataLinkConsistencyChecker {
         }
 
         // capture data links set before altering it.
-        List<Map.Entry<String, DataLinkEntry>> sqlEntries = dataLinkService.getDataLinks()
-                .entrySet()
-                .stream()
-                .filter(en -> en.getValue().source == DataLinkSource.SQL)
-                .collect(Collectors.toList());
+        List<DataLink> sqlDataLinks = dataLinkService.getSqlCreatedDataLinks();
 
         for (Object catalogItem : sqlCatalog.values()) {
             if (!(catalogItem instanceof DataLinkCatalogEntry)) {
                 continue;
             }
             DataLinkCatalogEntry dl = (DataLinkCatalogEntry) catalogItem;
+
+            // If a data link is found in the catalog that conflicts in name with one
+            // in the config, the one from the catalog should be deleted.
+            if (dataLinkService.existsConfigDataLink(dl.name())) {
+                sqlCatalog.remove(QueryUtils.wrapDataLinkKey(dl.name()));
+                continue;
+            }
+
             dataLinkService.replaceSqlDataLink(dl.name(), dl.type(), dl.options());
         }
 
-        for (Map.Entry<String, DataLinkEntry> entry : sqlEntries) {
-            Object catalogValue = sqlCatalog.get(QueryUtils.wrapDataLinkKey(entry.getKey()));
+        for (DataLink dataLink : sqlDataLinks) {
+            Object catalogValue = sqlCatalog.get(QueryUtils.wrapDataLinkKey(dataLink.getName()));
 
             // Data link is absent in sql catalog -> remove it from data link service.
             if (catalogValue == null) {
-                dataLinkService.removeDataLink(entry.getKey());
+                dataLinkService.removeDataLink(dataLink.getName());
             }
         }
     }

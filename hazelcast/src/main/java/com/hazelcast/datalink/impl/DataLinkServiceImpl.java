@@ -216,6 +216,14 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
                 .collect(Collectors.toList());
     }
 
+    public List<DataLink> getSqlCreatedDataLinks() {
+        return dataLinks.values()
+                .stream()
+                .filter(dl -> dl.source == SQL)
+                .map(dl -> dl.instance)
+                .collect(Collectors.toList());
+    }
+
     @Override
     public void shutdown() {
         for (Map.Entry<String, DataLinkEntry> entry : dataLinks.entrySet()) {

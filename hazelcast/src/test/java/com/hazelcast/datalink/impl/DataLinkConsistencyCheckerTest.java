@@ -70,7 +70,9 @@ public class DataLinkConsistencyCheckerTest extends SimpleTestInClusterSupport {
 
     @After
     public void tearDown() throws Exception {
-        linkService.removeDataLink(name);
+        if (linkService.existsSqlDataLink(name)) {
+            linkService.removeDataLink(name);
+        }
     }
 
     @Test
@@ -129,16 +131,17 @@ public class DataLinkConsistencyCheckerTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_configOriginatedDataLinkWasAddedToDataLinkService() {
-        // given
-        linkService.replaceSqlDataLink(name, type, Collections.emptyMap());
-        assertTrue(linkService.existsSqlDataLink(name));
-        assertFalse(sqlCatalog.containsKey(QueryUtils.wrapDataLinkKey(name)));
+    public void test_dynamicConfigOriginatedDataLinkWasAddedToDataLinkService() {
+        // given : data link was created by SQL
+        sqlCatalog.put(QueryUtils.wrapDataLinkKey(name), new DataLinkCatalogEntry(name, type, Collections.emptyMap()));
+        linkService.createConfigDataLink(new DataLinkConfig(name).setClassName(type));
+        assertTrueEventually(() -> linkService.existsConfigDataLink(name));
 
         // when
         dataLinkConsistencyChecker.check();
 
-        // then
+        // then-2 - dynamic config has higher priority, and __sql.catalog should NOT contain old version
         assertFalse(linkService.existsSqlDataLink(name));
+        assertFalse(sqlCatalog.containsKey(QueryUtils.wrapDataLinkKey(name)));
     }
 }
