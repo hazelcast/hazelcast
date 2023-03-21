@@ -214,9 +214,9 @@ public final class ConversionsToBson {
         return null;
     }
 
-    private static Object convertToArray(Object value) {
+    private static Collection<?> convertToArray(Object value) {
         if (value instanceof Collection) {
-            return value;
+            return (Collection<?>) value;
         }
 
         return singletonList(value);
