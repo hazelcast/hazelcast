@@ -18,7 +18,7 @@ package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
-import com.hazelcast.client.config.ClientAltoConfig;
+import com.hazelcast.client.config.ClientTpcConfig;
 import com.hazelcast.client.config.ClientCloudConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
@@ -175,8 +175,8 @@ public class TestClientApplicationContext {
     @Resource(name = "client24-with-sql")
     private HazelcastClientProxy clientWithSql;
 
-    @Resource(name = "client25-with-alto")
-    private HazelcastClientProxy clientWithAlto;
+    @Resource(name = "client25-with-tpc")
+    private HazelcastClientProxy clientWithTpc;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -647,8 +647,8 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testAlto() {
-        ClientAltoConfig altoConfig = clientWithAlto.getClientConfig().getAltoConfig();
-        assertTrue(altoConfig.isEnabled());
+    public void testTpc() {
+        ClientTpcConfig tpcConfig = clientWithTpc.getClientConfig().getTpcConfig();
+        assertTrue(tpcConfig.isEnabled());
     }
 }

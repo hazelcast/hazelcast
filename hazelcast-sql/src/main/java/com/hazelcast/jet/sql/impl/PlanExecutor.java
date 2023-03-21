@@ -16,17 +16,22 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.datalink.impl.DataLinkServiceImpl;
+import com.hazelcast.datalink.DataLink;
 import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
@@ -58,6 +63,8 @@ import com.hazelcast.jet.sql.impl.schema.DataLinksResolver;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.TypeDefinitionColumn;
 import com.hazelcast.jet.sql.impl.schema.TypesUtils;
+import com.hazelcast.jet.sql.impl.validate.UpdateDataLinkOperation;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryRemovingProcessor;
 import com.hazelcast.map.impl.MapContainer;
@@ -67,7 +74,7 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
@@ -80,7 +87,7 @@ import com.hazelcast.sql.impl.UpdateSqlResultImpl;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import com.hazelcast.sql.impl.schema.datalink.DataLink;
+import com.hazelcast.sql.impl.schema.datalink.DataLinkCatalogEntry;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.schema.view.View;
@@ -90,6 +97,8 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -105,9 +114,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_QUERY_TEXT;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.impl.util.Util.getSerializationService;
@@ -118,6 +129,7 @@ import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHaz
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyIterator;
 import static java.util.Collections.singletonList;
 
@@ -129,21 +141,27 @@ public class PlanExecutor {
     private final TableResolverImpl catalog;
     private final DataLinksResolver dataLinksCatalog;
     private final HazelcastInstance hazelcastInstance;
+    private final NodeEngine nodeEngine;
     private final QueryResultRegistry resultRegistry;
+
+    private final ILogger logger;
 
     // test-only
     private final AtomicLong directIMapQueriesExecuted = new AtomicLong();
 
     public PlanExecutor(
             TableResolverImpl catalog,
-            DataLinksResolver dataLinksCatalog,
-            HazelcastInstance hazelcastInstance,
+            DataLinksResolver dataLinksResolver,
+            NodeEngine nodeEngine,
             QueryResultRegistry resultRegistry
     ) {
         this.catalog = catalog;
-        this.dataLinksCatalog = dataLinksCatalog;
-        this.hazelcastInstance = hazelcastInstance;
+        this.dataLinksCatalog = dataLinksResolver;
+        this.nodeEngine = nodeEngine;
+        this.hazelcastInstance = nodeEngine.getHazelcastInstance();
         this.resultRegistry = resultRegistry;
+
+        logger = nodeEngine.getLogger(getClass());
     }
 
     SqlResult execute(CreateMappingPlan plan) {
@@ -157,28 +175,29 @@ public class PlanExecutor {
     }
 
     SqlResult execute(CreateDataLinkPlan plan) {
-        InternalDataLinkService dlService = getNodeEngine(hazelcastInstance).getDataLinkService();
-        if (plan.ifNotExists() && dlService.existsDataLink(plan.name())) {
-            throw new HazelcastException("Data link '" + plan.name() + "' already exists");
-        }
+        InternalDataLinkService dlService = nodeEngine.getDataLinkService();
+        assert !plan.ifNotExists() || !plan.isReplace();
 
-        dlService.createSqlDataLink(plan.name(), plan.type(), plan.options(), plan.isReplace());
-        dataLinksCatalog.createDataLink(
-                new DataLink(plan.name(), plan.type(), plan.options()),
+        if (dlService.existsConfigDataLink(plan.name())) {
+            throw new HazelcastException("Cannot replace a data link created from configuration");
+        }
+        boolean added = dataLinksCatalog.createDataLink(
+                new DataLinkCatalogEntry(plan.name(), plan.type(), plan.options()),
                 plan.isReplace(),
                 plan.ifNotExists());
+        if (added) {
+            broadcastUpdateDataLinkOperations(plan.name());
+        }
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     SqlResult execute(DropDataLinkPlan plan) {
-        InternalDataLinkService dlService = getNodeEngine(hazelcastInstance).getDataLinkService();
-        if (plan.ifExists()) {
-            if (!dlService.existsDataLink(plan.name())) {
-                throw new HazelcastException("Data link '" + plan.name() + "' not found");
-            }
+        InternalDataLinkService dlService = nodeEngine.getDataLinkService();
+        if (dlService.existsConfigDataLink(plan.name())) {
+            throw new HazelcastException("Data link '" + plan.name() + "' is configured via Config and can't be removed");
         }
-        dlService.removeDataLink(plan.name());
         dataLinksCatalog.removeDataLink(plan.name(), plan.ifExists());
+        broadcastUpdateDataLinkOperations(plan.name());
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
@@ -358,13 +377,19 @@ public class PlanExecutor {
                 rows = catalog.getViewNames().stream();
                 break;
             case JOBS:
-                NodeEngine nodeEngine = getNodeEngine(hazelcastInstance);
                 JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
                 rows = jetServiceBackend.getJobRepository().getActiveJobNames().stream();
                 break;
             case TYPES:
                 rows = catalog.getTypeNames().stream();
                 break;
+            case DATALINKS:
+                InternalDataLinkService service = nodeEngine.getDataLinkService();
+                DataLinkServiceImpl dataLinkService = (DataLinkServiceImpl) service;
+                rows = dataLinkService.getDataLinks().keySet().stream();
+                break;
+            case RESOURCES:
+                return executeShowResources(plan.getDataLinkName());
             default:
                 throw new AssertionError("Unsupported SHOW statement target");
         }
@@ -375,6 +400,36 @@ public class PlanExecutor {
                 QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
                 new StaticQueryResultProducerImpl(
                         rows.sorted().map(name -> new JetSqlRow(serializationService, new Object[]{name})).iterator()),
+                metadata,
+                false
+        );
+    }
+
+    private SqlResult executeShowResources(@Nullable String dataLinkName) {
+        if (dataLinkName == null) {
+            throw QueryException.error("Data links exist only in the 'public' schema");
+        }
+
+        final SqlRowMetadata metadata = new SqlRowMetadata(asList(
+                new SqlColumnMetadata("name", VARCHAR, false),
+                new SqlColumnMetadata("type", VARCHAR, false)
+        ));
+        final InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
+        final InternalDataLinkService dataLinkService = getNodeEngine(hazelcastInstance).getDataLinkService();
+
+        final List<JetSqlRow> rows;
+        final DataLink dataLink = dataLinkService.getAndRetainDataLink(dataLinkName, DataLink.class);
+        try {
+            rows = dataLink.listResources().stream()
+                    .map(resource -> new JetSqlRow(serializationService, new Object[]{resource.name(), resource.type()}))
+                    .collect(Collectors.toList());
+        } finally {
+            dataLink.release();
+        }
+
+        return new SqlResultImpl(
+                QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
+                new StaticQueryResultProducerImpl(rows.iterator()),
                 metadata,
                 false
         );
@@ -537,7 +592,6 @@ public class PlanExecutor {
     }
 
     SqlResult execute(CreateTypePlan plan) {
-        NodeEngineImpl nodeEngine = getNodeEngine(hazelcastInstance);
         if (!nodeEngine.getProperties().getBoolean(SQL_CUSTOM_TYPES_ENABLED)) {
             throw QueryException.error("Experimental feature of creating custom types isn't enabled. To enable, set "
                     + SQL_CUSTOM_TYPES_ENABLED + " to true");
@@ -689,6 +743,31 @@ public class PlanExecutor {
         MapService mapService = mapProxy.getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         return mapServiceContext.getMapContainer(map.getName());
+    }
+
+    private void broadcastUpdateDataLinkOperations(@Nonnull String dataLinkName) {
+        List<Tuple2<Address, CompletableFuture<?>>> futures = new ArrayList<>();
+        for (Member m : nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR)) {
+            UpdateDataLinkOperation op = new UpdateDataLinkOperation(dataLinkName);
+            Address target = m.getAddress();
+            InvocationFuture<Object> future = nodeEngine.getOperationService()
+                    .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, target)
+                    .invoke();
+            futures.add(tuple2(target, future));
+        }
+
+        for (Tuple2<Address, CompletableFuture<?>> tuple : futures) {
+            try {
+                assert tuple.f1() != null;
+                tuple.f1().get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            } catch (ExecutionException e) {
+                logger.warning("Failed to update datalink '" + dataLinkName + "' on member '" + tuple.f0()
+                        + "'. Background process should resolve this");
+            }
+        }
     }
 
     public long getDirectIMapQueriesExecuted() {

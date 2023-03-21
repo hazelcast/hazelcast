@@ -43,7 +43,9 @@ public class MappingColumnsTableTest {
         Mapping mapping = new Mapping(
                 "table-name",
                 "table-external-name",
+                null,
                 "table-type",
+                null,
                 singletonList(new MappingField("table-field-name", INT, "table-field-external-name")),
                 emptyMap());
         View view = new View("view-name", "select * from table-name", singletonList("col1"), singletonList(INT));

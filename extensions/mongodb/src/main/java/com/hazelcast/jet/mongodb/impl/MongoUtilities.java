@@ -18,12 +18,17 @@ package com.hazelcast.jet.mongodb.impl;
 import com.mongodb.client.model.Field;
 import com.mongodb.client.model.Filters;
 import org.bson.BsonArray;
+import org.bson.BsonDateTime;
 import org.bson.BsonString;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,6 +39,11 @@ import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public final class MongoUtilities {
+    /**
+     * 1 millisecond converted to nanoseconds.
+     */
+    @SuppressWarnings("checkstyle:MagicNumber")
+    private static final int MILLIS_TO_NANOS = 1000 * 1000;
 
     private MongoUtilities() {
     }
@@ -94,4 +104,31 @@ public final class MongoUtilities {
     public static BsonTimestamp bsonTimestampFromTimeMillis(long time) {
         return new BsonTimestamp((int) MILLISECONDS.toSeconds(time), 0);
     }
+    /**
+     * Converts given bson timestamp to unix epoch.
+     */
+    @Nullable
+    public static LocalDateTime bsonDateTimeToLocalDateTime(@Nullable BsonDateTime time) {
+        if (time == null) {
+            return null;
+        }
+        Instant instant = Instant.ofEpochMilli(time.getValue());
+        return LocalDateTime.from(instant);
+    }
+    /**
+     * Converts given bson timest1amp to unix epoch.
+     */
+    @Nullable
+    @SuppressWarnings("checkstyle:MagicNumber")
+    public static LocalDateTime bsonTimestampToLocalDateTime(@Nullable BsonTimestamp time) {
+        if (time == null) {
+            return null;
+        }
+        long v = time.getValue();
+        // gets last 3 digits - millisecond in the epoch timestamp - and converts it to nanoseconds
+        int millisOfSecond = (int) (v % 1000);
+        int nanoOfSecond = millisOfSecond * MILLIS_TO_NANOS;
+        return LocalDateTime.ofEpochSecond(v / 1000, nanoOfSecond, ZoneOffset.UTC);
+    }
+
 }

@@ -34,6 +34,7 @@ public final class Option<T> {
      *
      * @param name the name of the Option
      * @param type the type of the Option
+     * @throws NullPointerException if name of type is <code>null</code>.
      */
     public Option(String name, Class<T> type) {
         this.name = checkNotNull(name, "name");

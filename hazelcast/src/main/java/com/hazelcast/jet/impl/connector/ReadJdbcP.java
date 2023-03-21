@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Traverser;
@@ -95,6 +96,9 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
         checkSerializable(resultSetFn, "resultSetFn");
         checkSerializable(mapOutputFn, "mapOutputFn");
 
+        // We don't know the JDBC URL yet, so only the 'jdbc:' prefix is used as permission name.
+        // Additional permission check with URL retrieved from the JDBC connection metadata
+        // is performed in #init(Context) method.
         return ProcessorMetaSupplier.preferLocalParallelismOne(ConnectorPermission.jdbc(null, ACTION_READ),
                 SecuredFunctions.readJdbcProcessorFn(null, newConnectionFn, resultSetFn, mapOutputFn));
     }
@@ -137,6 +141,12 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
         // workaround for https://github.com/hazelcast/hazelcast-jet/issues/2603
         DriverManager.getDrivers();
         this.connection = newConnectionFn.get();
+        try {
+            String url = connection.getMetaData().getURL();
+            context.checkPermission(ConnectorPermission.jdbc(url, ACTION_READ));
+        } catch (SQLException e) {
+            throw new HazelcastException(e);
+        }
         this.parallelism = context.totalParallelism();
         this.index = context.globalProcessorIndex();
     }

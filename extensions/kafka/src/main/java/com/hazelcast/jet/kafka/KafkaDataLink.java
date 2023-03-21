@@ -57,7 +57,7 @@ import java.util.stream.Collectors;
  * @since 5.3
  */
 @Beta
-public class KafkaDataLink extends DataLinkBase implements DataLink {
+public class KafkaDataLink extends DataLinkBase {
 
     private volatile NonClosingKafkaProducer<?, ?> producer;
 

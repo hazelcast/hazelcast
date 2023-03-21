@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.datalink.impl.DataLinkConsistencyChecker;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
@@ -108,12 +109,17 @@ public class SqlServiceImpl implements SqlService {
                 planCache,
                 optimizer.tableResolvers()
         );
+        DataLinkConsistencyChecker dataLinkConsistencyChecker = new DataLinkConsistencyChecker(
+                nodeEngine.getHazelcastInstance(),
+                nodeEngine
+        );
         internalService = new SqlInternalService(
                 resultRegistry,
                 instanceName,
                 nodeServiceProvider,
                 STATE_CHECK_FREQUENCY,
-                planCacheChecker
+                planCacheChecker,
+                dataLinkConsistencyChecker
         );
         internalService.start();
     }

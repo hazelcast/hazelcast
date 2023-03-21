@@ -41,7 +41,9 @@ public class MappingsTableTest {
         Mapping mapping = new Mapping(
                 "table-name",
                 "table-external-name",
+                null,
                 "table-type",
+                null,
                 emptyList(),
                 singletonMap("key", "value")
         );

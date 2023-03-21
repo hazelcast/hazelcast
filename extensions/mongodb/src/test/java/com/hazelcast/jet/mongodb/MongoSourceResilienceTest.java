@@ -34,7 +34,6 @@ import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import eu.rekawek.toxiproxy.Proxy;
 import eu.rekawek.toxiproxy.ToxiproxyClient;
 import org.bson.BsonTimestamp;
@@ -237,7 +236,7 @@ public class MongoSourceResilienceTest extends SimpleTestInClusterSupport {
                         .stream("mongo source", () -> mongoClient(mongoContainerConnectionString))
                         .database(databaseName)
                         .collection(collectionName)
-                        .mapFn(ChangeStreamDocument::getFullDocument)
+                        .mapFn((d, t) -> d.getFullDocument())
                         .startAtOperationTime(new BsonTimestamp(System.currentTimeMillis()))
                         .build())
                 .withNativeTimestamps(0)

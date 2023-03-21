@@ -17,32 +17,48 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.test.bounce.BounceTestConfiguration;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.Collection;
 import java.util.HashMap;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(SlowTest.class)
 public class MapPutAllWithBouncingMemberTest extends HazelcastTestSupport {
 
     private static final int MAP_SIZE = 1000;
     private static final int DURATION_SECONDS = 30;
 
-    private TestHazelcastInstanceFactory factory;
-    private Config config;
+    @Parameterized.Parameter
+    public int putAllBatchSize;
+
+    @Parameterized.Parameters(name = "putAllBatchSize: {0}")
+    public static Collection<Object> data() {
+        return asList(new Integer[] {0, 2});
+    }
+
+    @Override
+    protected Config getConfig() {
+        Config cfg = super.getConfig();
+        if (putAllBatchSize > 0) {
+            cfg.setProperty("hazelcast.map.put.all.batch.size", String.valueOf(putAllBatchSize));
+        }
+        return cfg;
+    }
 
     @Rule
     public BounceMemberRule bounceMemberRule =
@@ -51,30 +67,8 @@ public class MapPutAllWithBouncingMemberTest extends HazelcastTestSupport {
                     .clusterSize(2)
                     .build();
 
-    @Before
-    public void setUp() {
-        factory = createHazelcastInstanceFactory();
-        config = getConfig();
-    }
-
-    @After
-    public void tearDown() {
-        factory.terminateAll();
-    }
-
     @Test
     public void testPutAll_whenAddingAndTerminatingMembers_thenPutAllShouldNotFail() {
-        testPutAll();
-    }
-
-    @Test
-    public void testPutAll_whenAddingAndTerminatingMembers_thenPutAllShouldNotFail_withBatching() {
-        config.setProperty("hazelcast.map.put.all.batch.size", "2");
-
-        testPutAll();
-    }
-
-    private void testPutAll() {
         final IMap<Integer, Integer> map = bounceMemberRule.getSteadyMember().getMap(randomMapName());
 
         HashMap<Integer, Integer> batch = new HashMap<>();
