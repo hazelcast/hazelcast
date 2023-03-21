@@ -404,6 +404,27 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         assertEquals(true, item.getBoolean("jedi"));
     }
 
+    @Test
+    public void deletes_inserted_item() {
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        ObjectId objectId = ObjectId.get();
+        collection.insertOne(new Document("_id", objectId).append("firstName", "temp").append("lastName", "temp")
+                                                          .append("jedi", true));
+        collection.insertOne(new Document("_id", ObjectId.get()).append("firstName", "temp2").append("lastName", "temp2")
+                                                          .append("jedi", true));
+        collection.insertOne(new Document("_id", ObjectId.get()).append("firstName", "temp3").append("lastName", "temp3")
+                                                          .append("jedi", true));
+
+        createMapping(true);
+
+        execute("delete from " + collectionName + " where id = ?", objectId);
+        ArrayList<Document> list = collection.find().into(new ArrayList<>());
+        assertThat(list).hasSize(2);
+        execute("delete from " + collectionName);
+        list = collection.find().into(new ArrayList<>());
+        assertThat(list).isEmpty();
+    }
+
     private void createMapping(boolean includeIdInMapping) {
         execute("CREATE MAPPING " + collectionName
                 + " ("
