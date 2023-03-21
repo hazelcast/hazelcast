@@ -41,7 +41,6 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 import java.io.UncheckedIOException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -270,7 +269,12 @@ public class TpcServerBootstrap {
     private int bind(AsyncServerSocket serverSocket, int port, int limit) {
         while (port < limit) {
             try {
-                serverSocket.bind(new InetSocketAddress(thisAddress.getInetAddress(), port));
+                // Currently we bind to all interfaces. In the future
+                // we need to have better support. The problem is that
+                // the StaticAddressPicker bindAddress functionality
+                // is broken and the only reliable way would be to find
+                // the serverSocketChannel and ask for the localAddress.
+                serverSocket.bind(new InetSocketAddress(port));
                 return port + 1;
             } catch (UncheckedIOException e) {
                 if (e.getCause() instanceof BindException) {
@@ -279,8 +283,6 @@ public class TpcServerBootstrap {
                 } else {
                     throw e;
                 }
-            } catch (UnknownHostException e) {
-                throw new UncheckedIOException(e);
             }
         }
 
