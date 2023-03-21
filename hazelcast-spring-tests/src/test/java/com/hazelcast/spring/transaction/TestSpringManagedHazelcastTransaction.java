@@ -49,7 +49,6 @@ import static org.springframework.test.annotation.DirtiesContext.MethodMode.AFTE
 @Category(QuickTest.class)
 public class TestSpringManagedHazelcastTransaction {
 
-
     @BeforeClass
     @AfterClass
     public static void cleanup() {

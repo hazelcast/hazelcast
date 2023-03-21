@@ -122,19 +122,13 @@ public class HazelcastTransactionManager extends AbstractPlatformTransactionMana
     }
 
     private TransactionContext getTransactionContext(TransactionDefinition definition) {
-        TransactionContext transactionContext;
-        if (definition.getTimeout() == TransactionDefinition.TIMEOUT_DEFAULT
-            && this.getDefaultTimeout() == TransactionDefinition.TIMEOUT_DEFAULT) {
-                transactionContext = hazelcastInstance.newTransactionContext();
-        } else {
-            TransactionOptions options = new TransactionOptions();
-            if (definition.getTimeout() != TransactionDefinition.TIMEOUT_DEFAULT) {
-                options.setTimeout(definition.getTimeout(), TimeUnit.SECONDS);
-            } else {
-                options.setTimeout(this.getDefaultTimeout(), TimeUnit.SECONDS);
-            }
-            transactionContext = hazelcastInstance.newTransactionContext(options);
+        TransactionOptions options = TransactionOptions.getDefault();
+        if (definition.getTimeout() != TransactionDefinition.TIMEOUT_DEFAULT) {
+            options.setTimeout(definition.getTimeout(), TimeUnit.SECONDS);
+        } else if (getDefaultTimeout() != TransactionDefinition.TIMEOUT_DEFAULT) {
+            options.setTimeout(getDefaultTimeout(), TimeUnit.SECONDS);
         }
+        TransactionContext transactionContext = hazelcastInstance.newTransactionContext(options);
         if (logger.isDebugEnabled()) {
             logger.debug("Opened new TransactionContext [" + transactionContext + "]");
         }
