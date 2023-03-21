@@ -120,7 +120,11 @@ public class ReadMongoP<I> extends AbstractProcessor {
         NodeEngineImpl nodeEngine = Util.getNodeEngine(context.hazelcastInstance());
         connection.assembleSupplier(nodeEngine);
 
-        connection.reconnectIfNecessary();
+        try {
+            connection.reconnectIfNecessary();
+        } catch (MongoException e) {
+            throw new JetException(e);
+        }
     }
 
     /**
@@ -230,7 +234,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
         void connect(MongoClient newClient, boolean snapshotsEnabled) {
             try {
-                logger.info("(Re)connecting to MongoDB");
+                logger.fine("(Re)connecting to MongoDB");
                 if (databaseName != null) {
                     this.database = newClient.getDatabase(databaseName);
                 }
@@ -329,7 +333,9 @@ public class ReadMongoP<I> extends AbstractProcessor {
         @Nonnull
         @Override
         public Traverser<I> nextChunkTraverser() {
-            return delegate
+            Traverser<Document> localDelegate = this.delegate;
+            checkNotNull(localDelegate, "unable to construct a connection to Mongo");
+            return localDelegate
                     .map(item -> {
                         lastKey = item.get("_id");
                         return mapItemFn.apply(item);
@@ -423,7 +429,9 @@ public class ReadMongoP<I> extends AbstractProcessor {
         @Override
         public Traverser<?> nextChunkTraverser() {
             try {
-                return new CursorTraverser(cursor)
+                MongoCursor<ChangeStreamDocument<Document>> localCursor = this.cursor;
+                checkNotNull(localCursor, "unable to connect to Mongo");
+                return new CursorTraverser(localCursor)
                         .flatMap(input -> {
                             if (input instanceof EmptyItem) {
                                 return eventTimeMapper.flatMapIdle();
