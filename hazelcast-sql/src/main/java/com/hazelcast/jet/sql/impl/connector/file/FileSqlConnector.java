@@ -138,7 +138,7 @@ public class FileSqlConnector implements SqlConnector {
             throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
         }
 
-        FileTable table = (FileTable) context.getTable();
+        FileTable table = context.getTable();
 
         Vertex vStart = context.getDag().newUniqueVertex(table.toString(), table.processorMetaSupplier());
 

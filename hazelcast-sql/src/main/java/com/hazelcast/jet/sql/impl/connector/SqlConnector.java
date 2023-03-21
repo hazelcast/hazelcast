@@ -357,8 +357,8 @@ public interface SqlConnector {
      * Returns the supplier for the update processor that will update the given
      * {@code table}.
      * <p>
-     * The processor works in 2 modes, depending on the  `hasInput`
-     * argument:<ol>
+     * The processor is expected to work in a different mode, depending on the
+     * `hasInput` argument:<ol>
      *
      *     <li><b>hasInput == false:</b> There will be no input to the
      *     processor. The processor is supposed to update all rows matching the
@@ -389,7 +389,8 @@ public interface SqlConnector {
      * Returns the supplier for the delete processor that will delete from the
      * given {@code table}.
      * <p>
-     * The processor works in 2 modes, depending on the  `hasInput` argument:<ol>
+     * The processor is expected to work in a different mode, depending on the
+     * `hasInput` argument:<ol>
      *
      *     <li><b>hasInput == false:</b> There will be no input to the
      *     processor. The processor is supposed to update all rows matching the

@@ -96,7 +96,7 @@ final class InfoSchemaConnector implements SqlConnector {
             throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
         }
 
-        InfoSchemaTable table = (InfoSchemaTable) context.getTable();
+        InfoSchemaTable table = context.getTable();
         List<Object[]> rows = table.rows();
         Expression<Boolean> convertedPredicate = context.convertFilter(predicate);
         List<Expression<?>> convertedProjection = context.convertProjection(projection);

@@ -258,7 +258,7 @@ public class JdbcSqlConnector implements SqlConnector {
         if (eventTimePolicyProvider != null) {
             throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
         }
-        JdbcTable table = (JdbcTable) context.getTable();
+        JdbcTable table = context.getTable();
 
         List<RexNode> projections = Util.toList(projection, n -> n.unwrap(RexNode.class));
         RexNode filter = predicate == null ? null : predicate.unwrap(RexNode.class);
@@ -277,7 +277,7 @@ public class JdbcSqlConnector implements SqlConnector {
     @Nonnull
     @Override
     public VertexWithInputConfig insertProcessor(@Nonnull DagBuildContext context) {
-        JdbcTable table = (JdbcTable) context.getTable();
+        JdbcTable table = context.getTable();
 
         InsertQueryBuilder builder = new InsertQueryBuilder(table.getExternalName(), table.dbFieldNames());
         return new VertexWithInputConfig(context.getDag().newUniqueVertex(
@@ -320,7 +320,7 @@ public class JdbcSqlConnector implements SqlConnector {
     ) {
         // TODO use the predicate
         assert predicate == null;
-        JdbcTable table = (JdbcTable) context.getTable();
+        JdbcTable table = context.getTable();
 
         List<String> pkFields = getPrimaryKey(context.getTable())
                 .stream()
@@ -346,7 +346,7 @@ public class JdbcSqlConnector implements SqlConnector {
     public Vertex deleteProcessor(@Nonnull DagBuildContext context, @Nullable HazelcastRexNode predicate, boolean hasInput) {
         // TODO use the predicate
         assert predicate == null;
-        JdbcTable table = (JdbcTable) context.getTable();
+        JdbcTable table = context.getTable();
 
         List<String> pkFields = getPrimaryKey(context.getTable())
                 .stream()
@@ -367,7 +367,7 @@ public class JdbcSqlConnector implements SqlConnector {
     @Nonnull
     @Override
     public Vertex sinkProcessor(@Nonnull DagBuildContext context) {
-        JdbcTable jdbcTable = (JdbcTable) context.getTable();
+        JdbcTable jdbcTable = context.getTable();
 
         // If dialect is supported
         if (SupportedDatabases.isDialectSupported(jdbcTable)) {
