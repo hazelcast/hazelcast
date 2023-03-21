@@ -95,7 +95,6 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                 + "    'database' = '" +  databaseName + "' "
                 + ")");
 
-        mongoContainer.stop();
         String force = forceTwoSteps ? " and cast(jedi as varchar) = 'true' " : "";
         assertRowsAnyOrder("select firstName, lastName from " + collectionName
                         + " where (lastName = ? or lastName is null) and jedi=true" + force,
