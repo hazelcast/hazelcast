@@ -14,16 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine.nio;
+package com.hazelcast.map.impl.nearcache;
 
-import com.hazelcast.internal.tpcengine.AsyncServerSocketOptionsTest;
-import com.hazelcast.internal.tpcengine.ReactorBuilder;
+import com.hazelcast.core.ReadOnly;
+import com.hazelcast.map.EntryProcessor;
+import javax.annotation.Nullable;
+import java.util.Map;
 
-public class NioAsyncServerSocketConfigTest extends AsyncServerSocketOptionsTest {
+public class TestReadOnlyProcessor implements EntryProcessor<Integer, Integer, Boolean>, ReadOnly {
 
     @Override
-    public ReactorBuilder newReactorBuilder() {
-        return new NioReactorBuilder();
+    public Boolean process(Map.Entry<Integer, Integer> entry) {
+        return true;
     }
 
+
+    @Override
+    @Nullable
+    public EntryProcessor<Integer, Integer, Boolean> getBackupProcessor() {
+        return null;
+    }
 }

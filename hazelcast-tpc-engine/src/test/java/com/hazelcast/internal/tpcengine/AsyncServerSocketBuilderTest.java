@@ -112,7 +112,7 @@ public abstract class AsyncServerSocketBuilderTest {
         });
 
         AsyncServerSocket serverSocket = builder.build();
-        SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
+        SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 0);
         serverSocket.bind(serverAddress);
         serverSocket.start();
 
