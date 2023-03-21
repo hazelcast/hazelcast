@@ -18,6 +18,9 @@ package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.datalink.DataLink;
+import com.hazelcast.datalink.JdbcDataLink;
+import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
@@ -136,23 +139,49 @@ public class TableResolverImpl implements TableResolver {
     }
 
     private Mapping resolveMapping(Mapping mapping) {
-        String type = mapping.type();
         Map<String, String> options = mapping.options();
+        String type = mapping.connectorType();
+        String dataLink = mapping.dataLink();
+        List<MappingField> resolvedFields;
+        SqlConnector connector;
 
-        SqlConnector connector = connectorCache.forType(type);
-        List<MappingField> resolvedFields = connector.resolveAndValidateFields(
+        if (type == null) {
+            connector = extractConnector(dataLink);
+        } else {
+            connector = connectorCache.forType(type);
+        }
+        resolvedFields = connector.resolveAndValidateFields(
                 nodeEngine,
                 options,
                 mapping.fields(),
                 mapping.externalName()
         );
+
         return new Mapping(
                 mapping.name(),
                 mapping.externalName(),
-                type,
+                mapping.dataLink(), type,
+                mapping.objectType(),
                 new ArrayList<>(resolvedFields),
                 new LinkedHashMap<>(options)
         );
+    }
+
+    private SqlConnector extractConnector(@Nonnull String dataLink) {
+        SqlConnector connector;
+        InternalDataLinkService dataLinkService = nodeEngine.getDataLinkService();
+        DataLink dl = dataLinkService.getAndRetainDataLink(dataLink, DataLink.class);
+        try {
+            // TODO: support more
+            if (dl instanceof JdbcDataLink) {
+                connector = connectorCache.forType("JDBC");
+            } else {
+                throw QueryException.error("Unknown data link class: " + dl.getClass().getName());
+            }
+        } finally {
+            dl.release();
+        }
+        return connector;
     }
 
     public void removeMapping(String name, boolean ifExists) {
@@ -272,7 +301,13 @@ public class TableResolverImpl implements TableResolver {
     }
 
     private Table toTable(Mapping mapping) {
-        SqlConnector connector = connectorCache.forType(mapping.type());
+        SqlConnector connector;
+        if (mapping.connectorType() == null) {
+            connector = extractConnector(mapping.dataLink());
+        } else {
+            connector = connectorCache.forType((mapping.connectorType()));
+        }
+        assert connector != null;
         try {
             return connector.createTable(
                     nodeEngine,
