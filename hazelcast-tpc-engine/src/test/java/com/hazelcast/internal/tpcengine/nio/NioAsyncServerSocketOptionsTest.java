@@ -19,7 +19,7 @@ package com.hazelcast.internal.tpcengine.nio;
 import com.hazelcast.internal.tpcengine.AsyncServerSocketOptionsTest;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 
-public class NioAsyncServerSocketConfigTest extends AsyncServerSocketOptionsTest {
+public class NioAsyncServerSocketOptionsTest extends AsyncServerSocketOptionsTest {
 
     @Override
     public ReactorBuilder newReactorBuilder() {
