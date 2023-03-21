@@ -385,7 +385,6 @@ public class PlanExecutor {
                 break;
             case DATALINKS:
                 InternalDataLinkService service = nodeEngine.getDataLinkService();
-                assert service instanceof DataLinkServiceImpl;
                 DataLinkServiceImpl dataLinkService = (DataLinkServiceImpl) service;
                 rows = dataLinkService.getDataLinks().keySet().stream();
                 break;
