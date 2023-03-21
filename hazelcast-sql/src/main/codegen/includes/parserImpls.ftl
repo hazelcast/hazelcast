@@ -747,6 +747,7 @@ SqlOption SqlOption() :
 SqlShowStatement SqlShowStatement() :
 {
     ShowStatementTarget target;
+    SqlIdentifier dataLinkName = null;
 }
 {
     <SHOW>
@@ -760,9 +761,11 @@ SqlShowStatement SqlShowStatement() :
         <TYPES> { target = ShowStatementTarget.TYPES; }
     |
         <DATA> <LINKS> { target = ShowStatementTarget.DATALINKS; }
+    |
+        <RESOURCES> <FOR> { dataLinkName = CompoundIdentifier(); target = ShowStatementTarget.RESOURCES; }
     )
     {
-        return new SqlShowStatement(getPos(), target);
+        return new SqlShowStatement(getPos(), target, dataLinkName);
     }
 }
 

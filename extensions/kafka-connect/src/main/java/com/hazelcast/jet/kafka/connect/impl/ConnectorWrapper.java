@@ -102,6 +102,9 @@ public class ConnectorWrapper {
 
     private void requestTaskReconfiguration() {
         LOGGER.fine("Updating tasks configuration");
+        if (taskRunners.isEmpty()) {
+            return;
+        }
         List<Map<String, String>> taskConfigs = connector.taskConfigs(Math.min(tasksMax, taskRunners.size()));
 
         for (int i = 0; i < taskRunners.size(); i++) {
