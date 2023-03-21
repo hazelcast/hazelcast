@@ -35,7 +35,9 @@ public class SqlCreateMappingTest {
         Mapping mapping = new Mapping(
                 "name",
                 "external-name",
+                null,
                 "Type",
+                null,
                 asList(
                         new MappingField("field1", QueryDataType.VARCHAR, "__key.field1"),
                         new MappingField("field2", QueryDataType.INT, "this.field2")
@@ -62,7 +64,9 @@ public class SqlCreateMappingTest {
         Mapping mapping = new Mapping(
                 "na\"me",
                 "external\"name",
+                null,
                 "Type",
+                null,
                 singletonList(new MappingField("fi\"eld", QueryDataType.VARCHAR, "__key\"field")),
                 ImmutableMap.of("ke'y", "val'ue")
         );

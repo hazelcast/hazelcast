@@ -644,6 +644,30 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         sqlService.execute(sb.toString());
     }
 
+    public static void createDataLink(HazelcastInstance instance, String name, String type, Map<String, String> options) {
+        StringBuilder queryBuilder = new StringBuilder()
+                .append("CREATE OR REPLACE DATA LINK ")
+                .append(quoteName(name))
+                .append(" TYPE ")
+                .append(quoteName(type))
+                .append(" OPTIONS (\n");
+        for (Map.Entry<String, String> entry : options.entrySet()) {
+            queryBuilder.append("'").append(entry.getKey()).append("'")
+                    .append(" = ")
+                    .append("'").append(entry.getValue()).append("',");
+        }
+        queryBuilder.setLength(queryBuilder.length() - 1);
+        queryBuilder.append(")");
+
+        try (SqlResult result = instance.getSql().execute(queryBuilder.toString())) {
+            assertThat(result.updateCount()).isEqualTo(0);
+        }
+    }
+
+    public static String quoteName(String name) {
+        return "\"" + name.replace("\"", "\"\"") + "\"";
+    }
+
     public static String randomName() {
         // Prefix the UUID with some letters and remove dashes so that it doesn't start with
         // a number and is a valid SQL identifier without quoting.
