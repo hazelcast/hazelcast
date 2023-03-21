@@ -364,7 +364,8 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public void afterFactoriesCreated(Map<Integer, DataSerializableFactory> factories) {
         ArrayDataSerializableFactory mapDataFactory = (ArrayDataSerializableFactory) factories.get(SqlDataSerializerHook.F_ID);
 
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[SqlDataSerializerHook.TYPE_FIELD + 1];
+        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors =
+                new ConstructorFunction[SqlDataSerializerHook.TYPE_FIELD + 1];
         constructors[SqlDataSerializerHook.MAPPING] = arg -> new Mapping();
         constructors[SqlDataSerializerHook.MAPPING_FIELD] = arg -> new MappingField();
         constructors[SqlDataSerializerHook.VIEW] = arg -> new View();
