@@ -16,11 +16,10 @@
 
 package com.hazelcast.sql.impl.schema;
 
-import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
@@ -37,7 +36,6 @@ import java.util.Objects;
  * the internal storage for mappings, and also used internally to
  * represent a mapping.
  */
-@SuppressWarnings("JavadocReference")
 public class Mapping implements SqlCatalogObject, Versioned {
 
     private String name;
