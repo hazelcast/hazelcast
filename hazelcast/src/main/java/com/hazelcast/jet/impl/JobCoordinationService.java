@@ -376,9 +376,10 @@ public class JobCoordinationService {
             return;
         }
         for (Vertex vertex : dag) {
-            Permission requiredPermission = vertex.getMetaSupplier().getRequiredPermission();
-            if (requiredPermission != null) {
-                securityContext.checkPermission(subject, requiredPermission);
+            Permission[] requiredPermissions = vertex.getMetaSupplier().getRequiredPermissions();
+            if (requiredPermissions != null) {
+                Arrays.stream(requiredPermissions)
+                        .forEach(requiredPermission -> securityContext.checkPermission(subject, requiredPermission));
             }
         }
     }

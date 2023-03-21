@@ -16,6 +16,9 @@
 
 package com.hazelcast.security.permission;
 
+import java.security.Permission;
+import java.util.Arrays;
+
 public class ReliableTopicPermission extends InstancePermission {
 
     private static final int PUBLISH = 4;
@@ -45,5 +48,9 @@ public class ReliableTopicPermission extends InstancePermission {
             }
         }
         return mask;
+    }
+
+    public static Permission[] create(String name, String... actions) {
+        return Arrays.stream(actions).map(a -> new ReliableTopicPermission(name, a)).toArray(Permission[]::new);
     }
 }

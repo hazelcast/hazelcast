@@ -98,6 +98,16 @@ public interface ProcessorMetaSupplier extends Serializable {
     }
 
     /**
+     * Returns the required permissions to execute the vertex which has
+     * this ProcessorMetaSupplier. This is an Enterprise feature.
+     */
+    @Nullable
+    default Permission[] getRequiredPermissions() {
+        Permission permission = getRequiredPermission();
+        return permission == null ? null : new Permission[] { permission };
+    }
+
+    /**
      * Returns the metadata on this supplier, a string-to-string map. There is
      * no predefined metadata; this facility exists to allow the DAG vertices
      * to contribute some information to the execution planning phase.

@@ -44,7 +44,7 @@ import java.util.List;
 import static com.hazelcast.jet.Traversers.singleton;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
-import static java.util.Collections.singletonList;
+import static java.util.Arrays.asList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 @SuppressFBWarnings(
@@ -141,7 +141,7 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
 
     @Override
     public List<Permission> permissions() {
-        return singletonList(new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
+        return asList(MapPermission.create(mapName, ACTION_CREATE, ACTION_READ));
     }
 
     @Override

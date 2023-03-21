@@ -71,6 +71,7 @@ import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_PUBLISH;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
 /**
@@ -91,7 +92,7 @@ public final class SecuredFunctions {
 
             @Override
             public List<Permission> permissions() {
-                return singletonList(new MapPermission(name, ACTION_CREATE, ACTION_READ));
+                return asList(MapPermission.create(name, ACTION_CREATE, ACTION_READ));
             }
         };
     }
@@ -107,7 +108,7 @@ public final class SecuredFunctions {
 
             @Override
             public List<Permission> permissions() {
-                return singletonList(new MapPermission(name, ACTION_CREATE, ACTION_READ));
+                return asList(MapPermission.create(name, ACTION_CREATE, ACTION_READ));
             }
         };
     }
@@ -123,7 +124,7 @@ public final class SecuredFunctions {
 
             @Override
             public List<Permission> permissions() {
-                return singletonList(new CachePermission(name, ACTION_CREATE, ACTION_READ));
+                return asList(CachePermission.create(name, ACTION_CREATE, ACTION_READ));
             }
         };
     }
@@ -137,7 +138,7 @@ public final class SecuredFunctions {
 
             @Override
             public List<Permission> permissions() {
-                return singletonList(new ReplicatedMapPermission(name, ACTION_CREATE, ACTION_READ));
+                return asList(ReplicatedMapPermission.create(name, ACTION_CREATE, ACTION_READ));
             }
         };
     }
@@ -165,7 +166,7 @@ public final class SecuredFunctions {
 
             @Override
             public List<Permission> permissions() {
-                return singletonList(new ReliableTopicPermission(name, ACTION_CREATE, ACTION_PUBLISH));
+                return asList(ReliableTopicPermission.create(name, ACTION_CREATE, ACTION_PUBLISH));
             }
         };
     }

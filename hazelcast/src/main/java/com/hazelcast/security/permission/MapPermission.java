@@ -66,6 +66,6 @@ public class MapPermission extends InstancePermission {
     }
 
     public static Permission[] create(String name, String... actions) {
-        return Arrays.stream(actions).map(a -> new MapPermission(name, a)).toArray(MapPermission[]::new);
+        return Arrays.stream(actions).map(a -> new MapPermission(name, a)).toArray(Permission[]::new);
     }
 }

@@ -16,6 +16,9 @@
 
 package com.hazelcast.security.permission;
 
+import java.security.Permission;
+import java.util.Arrays;
+
 public class CachePermission extends InstancePermission {
 
     private static final int PUT = 4;
@@ -52,4 +55,9 @@ public class CachePermission extends InstancePermission {
         }
         return mask;
     }
+
+    public static Permission[] create(String name, String... actions) {
+        return Arrays.stream(actions).map(a -> new CachePermission(name, a)).toArray(Permission[]::new);
+    }
+
 }

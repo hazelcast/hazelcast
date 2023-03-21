@@ -67,8 +67,8 @@ import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.query.impl.getters.GetterCache.SIMPLE_GETTER_CACHE_SUPPLIER;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
 
@@ -471,7 +471,7 @@ final class MapIndexScanP extends AbstractProcessor {
 
         @Override
         public List<Permission> permissions() {
-            return singletonList(new MapPermission(metadata.getMapName(), ACTION_CREATE, ACTION_READ));
+            return asList(MapPermission.create(metadata.getMapName(), ACTION_CREATE, ACTION_READ));
         }
 
         @Override

@@ -357,7 +357,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         private final FunctionEx<? super E, ? extends T> projection;
         private final JournalInitialPosition initialPos;
         private final EventTimePolicy<? super T> eventTimePolicy;
-        private final SupplierEx<Permission> permissionFn;
+        private final SupplierEx<Permission[]> permissionFn;
 
         private transient int remotePartitionCount;
 
@@ -374,7 +374,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
                 @Nonnull FunctionEx<? super E, ? extends T> projection,
                 @Nonnull JournalInitialPosition initialPos,
                 @Nonnull EventTimePolicy<? super T> eventTimePolicy,
-                @Nonnull SupplierEx<Permission> permissionFn
+                @Nonnull SupplierEx<Permission[]> permissionFn
         ) {
             if (dataLinkName != null && clientXml != null) {
                 throw new IllegalArgumentException("Only one of dataLinkName or clientXml should be provided");
@@ -438,7 +438,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         }
 
         @Override
-        public Permission getRequiredPermission() {
+        public Permission[] getRequiredPermissions() {
             if (isRemote(dataLinkName, clientXml)) {
                 return null;
             }
@@ -571,7 +571,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         return new ClusterMetaSupplier<>(null, null,
                 SecuredFunctions.mapEventJournalReaderFn(mapName),
                 predicate, projection, initialPos, eventTimePolicy,
-                () -> new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
+                () -> MapPermission.create(mapName, ACTION_CREATE, ACTION_READ));
     }
 
     public static <K, V, T> ProcessorMetaSupplier streamRemoteMapSupplier(
@@ -588,7 +588,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         return new ClusterMetaSupplier<>(dataLinkName, clientXml,
                 SecuredFunctions.mapEventJournalReaderFn(mapName),
                 predicate, projection, initialPos, eventTimePolicy,
-                () -> new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
+                () -> MapPermission.create(mapName, ACTION_CREATE, ACTION_READ));
     }
 
     public static <K, V, T> ProcessorMetaSupplier streamCacheSupplier(
@@ -603,7 +603,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         return new ClusterMetaSupplier<>(null, null,
                 SecuredFunctions.cacheEventJournalReaderFn(cacheName),
                 predicate, projection, initialPos, eventTimePolicy,
-                () -> new CachePermission(cacheName, ACTION_CREATE, ACTION_READ));
+                () -> CachePermission.create(cacheName, ACTION_CREATE, ACTION_READ));
     }
 
     /**
@@ -623,6 +623,6 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         return new ClusterMetaSupplier<>(null, clientXml,
                 SecuredFunctions.cacheEventJournalReaderFn(cacheName),
                 predicate, projection, initialPos, eventTimePolicy,
-                () -> new CachePermission(cacheName, ACTION_CREATE, ACTION_READ));
+                () -> CachePermission.create(cacheName, ACTION_CREATE, ACTION_READ));
     }
 }

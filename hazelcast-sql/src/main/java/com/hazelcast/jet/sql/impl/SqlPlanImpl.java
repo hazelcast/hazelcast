@@ -47,6 +47,7 @@ import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 
 import java.security.Permission;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -85,9 +86,9 @@ abstract class SqlPlanImpl extends SqlPlan {
             return;
         }
         for (Vertex vertex : dag) {
-            Permission permission = vertex.getMetaSupplier().getRequiredPermission();
-            if (permission != null) {
-                context.checkPermission(permission);
+            Permission[] permissions = vertex.getMetaSupplier().getRequiredPermissions();
+            if (permissions != null) {
+                Arrays.stream(permissions).forEach(context::checkPermission);
             }
         }
     }

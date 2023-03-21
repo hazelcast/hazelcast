@@ -96,6 +96,11 @@ public final class WrappingProcessorMetaSupplier implements ProcessorMetaSupplie
     }
 
     @Override
+    public Permission[] getRequiredPermissions() {
+        return wrapped.getRequiredPermissions();
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(wrapped);
         out.writeObject(wrapperSupplier);
