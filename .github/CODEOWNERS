@@ -7,3 +7,12 @@
 **/client/**           @hazelcast/apis
 **/hazelcast-client**  @hazelcast/apis
 **/serialization**     @hazelcast/apis
+
+# These owners will be the default owners for everything related to the Cloud-Native team in
+# the repo . @hazelcast/cloud-native team will be requested for
+# review when someone opens a pull request.
+
+**/aws/**           @hazelcast/cloud-native
+**/azure/**         @hazelcast/cloud-native
+**/gcp/**           @hazelcast/cloud-native
+**/kubernetes/**    @hazelcast/cloud-native
