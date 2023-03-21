@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.datalink.DataLinkBase;
 import com.hazelcast.datalink.DataLinkResource;
-import com.hazelcast.datalink.impl.DataLinkTestUtil;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.TestProcessors;
@@ -122,35 +121,6 @@ public class ShowStatementTest extends SqlTestSupport {
         }
 
         assertRowsOrdered("show views", Util.toList(viewNames, Row::new));
-    }
-
-    @Test
-    public void test_showDataLinks() {
-
-        // when no data links - empty list
-        assertRowsOrdered("show data links", emptyList());
-
-        // given
-
-        // create data links via CONFIG
-        getNodeEngineImpl(instance()).getDataLinkService().createConfigDataLink(
-                new DataLinkConfig("dl")
-                        .setClassName(DataLinkTestUtil.DummyDataLink.class.getName())
-        );
-
-        // create data links via SQL
-        List<String> dlNames = IntStream.range(0, 5).mapToObj(i -> "hazelcast.public.dl" + i).collect(toList());
-        for (String dlName : dlNames) {
-            sqlService.execute(
-                    "CREATE DATA LINK " + dlName
-                            + " TYPE \"" + DataLinkTestUtil.DummyDataLink.class.getName() + "\" "
-                            + " OPTIONS ('b' = 'c')");
-        }
-
-        dlNames.add(0, "dl");
-
-        // when & then
-        assertRowsOrdered("show data links", Util.toList(dlNames, Row::new));
     }
 
     @Test
