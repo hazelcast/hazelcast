@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.List;
 
@@ -56,9 +57,13 @@ public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
 
     @Nonnull
     @Override
-    public Vertex updateProcessor(@Nonnull DagBuildContext context,
-                                  @Nonnull List<String> fieldNames,
-                                  @Nonnull List<HazelcastRexNode> expressions) {
+    public Vertex updateProcessor(
+            @Nonnull DagBuildContext context,
+            @Nonnull List<String> fieldNames,
+            @Nonnull List<HazelcastRexNode> expressions,
+            @Nullable HazelcastRexNode predicate,
+            boolean hasInput
+    ) {
         MongoTable table = context.getTable();
         RexToMongoVisitor visitor = new RexToMongoVisitor(table.externalNames());
         List<? extends Serializable> updates = expressions.stream()
@@ -86,4 +91,15 @@ public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
         );
     }
 
+    @Override
+    public boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
+        // TODO return true for supported expressions
+        return false;
+    }
+
+    @Override
+    public boolean dmlSupportsPredicates() {
+        // TODO remove this method
+        return false;
+    }
 }
