@@ -16,12 +16,11 @@
 
 package com.hazelcast.jet.sql.impl;
 
-import com.hazelcast.config.DataLinkConfig;
-import com.hazelcast.datalink.impl.DataLinkTestUtil;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.datalink.DataLinkBase;
 import com.hazelcast.datalink.DataLinkResource;
+import com.hazelcast.datalink.impl.DataLinkTestUtil;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.TestProcessors;
