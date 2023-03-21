@@ -15,8 +15,6 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.function.FunctionEx;
 import org.bson.BsonArray;
 import org.bson.BsonBoolean;
 import org.bson.BsonDateTime;
@@ -33,14 +31,14 @@ import org.bson.Document;
 import org.bson.types.Code;
 import org.bson.types.CodeWithScope;
 import org.bson.types.Decimal128;
+import org.bson.types.MaxKey;
+import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -65,9 +63,19 @@ final class BsonTypes {
     }
 
     static BsonType resolveTypeFromJava(Object value) {
-        BsonType bsonType = JAVA_TYPE_TO_BSON_TYPE.get(value.getClass());
+        Class<?> valueClass = value.getClass();
+        BsonType bsonType = JAVA_TYPE_TO_BSON_TYPE.get(valueClass);
+
+        // allow coerced types
         if (bsonType == null) {
-            throw new IllegalArgumentException("BSON type " + value.getClass() + " is not known");
+            for (Class<?> candidate : JAVA_TYPE_TO_BSON_TYPE.keySet()) {
+                if (candidate.isAssignableFrom(valueClass)) {
+                    return JAVA_TYPE_TO_BSON_TYPE.get(candidate);
+                }
+            }
+        }
+        if (bsonType == null) {
+            throw new IllegalArgumentException("BSON type " + valueClass + " is not known");
         }
         return bsonType;
     }
@@ -132,17 +140,24 @@ final class BsonTypes {
         result.put(String.class, BsonType.STRING);
         result.put(Object[].class, BsonType.ARRAY);
         result.put(List.class, BsonType.ARRAY);
+        result.put(Collection.class, BsonType.ARRAY);
         result.put(BigDecimal.class, BsonType.DECIMAL128);
         result.put(BsonDecimal128.class, BsonType.DECIMAL128);
+        result.put(Decimal128.class, BsonType.DECIMAL128);
         result.put(BsonRegularExpression.class, BsonType.REGULAR_EXPRESSION);
         result.put(Boolean.class, BsonType.BOOLEAN);
         result.put(ObjectId.class, BsonType.OBJECT_ID);
+        result.put(MinKey.class, BsonType.OBJECT_ID);
+        result.put(MaxKey.class, BsonType.OBJECT_ID);
+        result.put(Document.class, BsonType.DOCUMENT);
+        result.put(Code.class, BsonType.JAVASCRIPT);
+        result.put(CodeWithScope.class, BsonType.JAVASCRIPT_WITH_SCOPE);
 
         return result;
     }
 
     @SuppressWarnings("checkstyle:ReturnCount")
-    static Object unwrap(Object value) {
+    static Object unwrapSimpleWrappers(Object value) {
         if (value instanceof BsonBoolean) {
             return ((BsonBoolean) value).getValue();
         }
@@ -171,7 +186,7 @@ final class BsonTypes {
         }
         if (value instanceof BsonDateTime) {
             BsonDateTime v = (BsonDateTime) value;
-            return LocalDateTime.from(new Date(v.getValue()).toInstant());
+            return LocalDateTime.from(Instant.ofEpochMilli(v.getValue()));
         }
         if (value instanceof BsonTimestamp) {
             return bsonTimestampToLocalDateTime((BsonTimestamp) value);
@@ -186,27 +201,6 @@ final class BsonTypes {
             return ((Code) value).getCode();
         }
         return value;
-    }
-
-    /**
-     * Wraps given value into BSON wrapper.
-     *
-     * Note, that most of the type coercions are done automatically by MongoDB client, so no need to e.g. transform
-     * int to BsonInt32.
-     */
-    static Object wrap(Object value, FunctionEx<Object, Object> orElse) {
-        if (value instanceof LocalDateTime) {
-            Timestamp jdbcTimestamp = Timestamp.valueOf((LocalDateTime) value);
-            return new BsonDateTime(jdbcTimestamp.getTime());
-        } else if (value instanceof OffsetDateTime) {
-            OffsetDateTime v = (OffsetDateTime) value;
-            ZonedDateTime atUtc = v.atZoneSameInstant(ZoneId.of("UTC"));
-            Timestamp jdbcTimestamp = Timestamp.valueOf(atUtc.toLocalDateTime());
-            return new BsonDateTime(jdbcTimestamp.getTime());
-        } else if (value instanceof HazelcastJsonValue) {
-            return Document.parse(((HazelcastJsonValue) value).getValue());
-        }
-        return orElse.apply(value);
     }
 
 

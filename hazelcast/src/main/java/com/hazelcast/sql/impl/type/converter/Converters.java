@@ -138,7 +138,6 @@ public final class Converters {
 
         // ROW converter
         converters.add(RowConverter.INSTANCE);
-
         return converters;
     }
 
