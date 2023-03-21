@@ -311,7 +311,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
                             return delegateForDb(db, aggregateList);
                         });
             }
-            checkNotNull(this.delegate, "unable to construct Mongo traverser");
+            checkNotNull(this.delegate, "unable to connect to Mongo");
         }
 
         private boolean hasSorts(List<Bson> aggregateList) {
@@ -334,7 +334,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
         @Override
         public Traverser<I> nextChunkTraverser() {
             Traverser<Document> localDelegate = this.delegate;
-            checkNotNull(localDelegate, "unable to construct a connection to Mongo");
+            checkNotNull(localDelegate, "unable to connect to Mongo");
             return localDelegate
                     .map(item -> {
                         lastKey = item.get("_id");
