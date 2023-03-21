@@ -29,7 +29,8 @@ import com.mongodb.client.model.ValidationOptions;
 import org.bson.BsonDocument;
 import org.bson.BsonType;
 import org.bson.Document;
-import org.junit.ClassRule;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -44,14 +45,27 @@ import java.util.Map;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public class FieldResolverTest {
     static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "6.0.3");
-    @ClassRule
-    public static MongoDBContainer mongoContainer = new MongoDBContainer("mongo:" + TEST_MONGO_VERSION);
+    private static final MongoDBContainer mongoContainer = new MongoDBContainer("mongo:" + TEST_MONGO_VERSION);
+
+    @BeforeClass
+    public static void setUp() {
+        assumeDockerEnabled();
+        mongoContainer.start();
+    }
+
+    @AfterClass
+    public static void tearDown() {
+        if (mongoContainer != null) {
+            mongoContainer.stop();
+        }
+    }
 
     @Test
     public void testResolvesFieldsViaSchema() {

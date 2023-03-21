@@ -23,8 +23,10 @@ import com.hazelcast.jet.sql.impl.connector.map.model.InsuredPerson;
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.jet.sql.impl.connector.map.model.PersonId;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
+import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.schema.Mapping;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -35,12 +37,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
 import static com.hazelcast.jet.core.TestUtil.createMap;
+import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
@@ -51,6 +55,7 @@ import static java.time.ZoneId.systemDefault;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
@@ -87,6 +92,51 @@ public class SqlPojoTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute("SINK INTO " + name + " VALUES (null, 'Alice')"))
                 .hasMessageContaining("Cannot pass NULL to a method with a primitive argument");
+    }
+
+    @Test
+    public void when_wrongClass_then_canDrop() {
+        String name = randomName();
+        createBrokenMapping(name);
+
+        IMap<String, Object> catalog = instance().getMap(SQL_CATALOG_MAP_NAME);
+        assertThat(catalog.containsKey(name)).isTrue();
+
+        sqlService.execute("DROP MAPPING " + name);
+        assertThat(catalog.containsKey(name)).isFalse();
+    }
+
+    @Test
+    public void when_wrongClass_then_canNotQueryTable() {
+        String badName = randomName();
+        createBrokenMapping(badName);
+
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " + badName))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessage("Mapping '%s' is invalid: java.lang.ClassNotFoundException: com.hazelcast.NoSuchClass", badName);
+    }
+
+    @Test
+    public void when_wrongClass_then_canQueryOtherTables() {
+        String badName = randomName();
+        String goodName = randomName();
+        createBrokenMapping(badName);
+        createMapping(goodName, PersonId.class, Person.class);
+
+        assertThat(sqlService.execute("SELECT * FROM " + goodName)).hasSize(0);
+    }
+
+    /**
+     * Simulates creation of a mapping for class that was later unloaded.
+     */
+    private static void createBrokenMapping(String name) {
+        createMapping(name, PersonId.class, Person.class);
+
+        IMap<String, Mapping> catalog = instance().getMap(SQL_CATALOG_MAP_NAME);
+        Mapping m = catalog.get(name);
+        HashMap<String, String> brokenOptions = new HashMap<>(m.options());
+        brokenOptions.put(OPTION_VALUE_CLASS, "com.hazelcast.NoSuchClass");
+        catalog.put(name, new Mapping(m.name(), m.externalName(), m.type(), new ArrayList<>(m.fields()), brokenOptions));
     }
 
     @Test
