@@ -106,11 +106,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setBoolean(@Nonnull String fieldName, boolean value);
@@ -134,11 +130,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setInt8(@Nonnull String fieldName, byte value);
@@ -165,11 +157,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setChar(@Nonnull String fieldName, char value);
@@ -193,11 +181,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setInt16(@Nonnull String fieldName, short value);
@@ -221,11 +205,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setInt32(@Nonnull String fieldName, int value);
@@ -249,11 +229,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setInt64(@Nonnull String fieldName, long value);
@@ -277,11 +253,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setFloat32(@Nonnull String fieldName, float value);
@@ -305,11 +277,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setFloat64(@Nonnull String fieldName, double value);
@@ -334,11 +302,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setNullableBoolean(@Nonnull String fieldName, @Nullable Boolean value);
@@ -363,11 +327,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setNullableInt8(@Nonnull String fieldName, @Nullable Byte value);
@@ -393,11 +353,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setNullableInt16(@Nonnull String fieldName, @Nullable Short value);
@@ -422,11 +378,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setNullableInt32(@Nonnull String fieldName, @Nullable Integer value);
@@ -451,11 +403,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setNullableInt64(@Nonnull String fieldName, @Nullable Long value);
@@ -480,11 +428,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setNullableFloat32(@Nonnull String fieldName, @Nullable Float value);
@@ -509,11 +453,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setNullableFloat64(@Nonnull String fieldName, @Nullable Double value);
@@ -537,11 +477,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setString(@Nonnull String fieldName, @Nullable String value);
@@ -570,11 +506,7 @@ public interface GenericRecordBuilder {
      *                                         being built. e.g using portable generic
      *                                         record in a compact generic record builder.
      *                                         5. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord value);
@@ -601,11 +533,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setDecimal(@Nonnull String fieldName, @Nullable BigDecimal value);
@@ -631,11 +559,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setTime(@Nonnull String fieldName, @Nullable LocalTime value);
@@ -662,11 +586,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setDate(@Nonnull String fieldName, @Nullable LocalDate value);
@@ -693,11 +613,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime value);
@@ -725,11 +641,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime value);
@@ -753,11 +665,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfBoolean(@Nonnull String fieldName, @Nullable boolean[] value);
@@ -781,11 +689,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfInt8(@Nonnull String fieldName, @Nullable byte[] value);
@@ -812,11 +716,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfChar(@Nonnull String fieldName, @Nullable char[] value);
@@ -840,11 +740,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfInt16(@Nonnull String fieldName, @Nullable short[] value);
@@ -868,11 +764,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfInt32(@Nonnull String fieldName, @Nullable int[] value);
@@ -896,11 +788,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfInt64(@Nonnull String fieldName, @Nullable long[] value);
@@ -924,11 +812,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfFloat32(@Nonnull String fieldName, @Nullable float[] value);
@@ -952,11 +836,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfFloat64(@Nonnull String fieldName, @Nullable double[] value);
@@ -981,11 +861,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfNullableBoolean(@Nonnull String fieldName, @Nullable Boolean[] value);
@@ -1010,11 +886,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfNullableInt8(@Nonnull String fieldName, @Nullable Byte[] value);
@@ -1039,11 +911,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfNullableInt16(@Nonnull String fieldName, @Nullable Short[] value);
@@ -1068,11 +936,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfNullableInt32(@Nonnull String fieldName, @Nullable Integer[] value);
@@ -1097,11 +961,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfNullableInt64(@Nonnull String fieldName, @Nullable Long[] value);
@@ -1126,11 +986,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfNullableFloat32(@Nonnull String fieldName, @Nullable Float[] value);
@@ -1155,11 +1011,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfNullableFloat64(@Nonnull String fieldName, @Nullable Double[] value);
@@ -1183,11 +1035,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfString(@Nonnull String fieldName, @Nullable String[] value);
@@ -1211,11 +1059,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      * @see #setDecimal(String, BigDecimal)
      */
     @Nonnull
@@ -1240,11 +1084,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      * @see #setTime(String, LocalTime)
      */
     @Nonnull
@@ -1269,11 +1109,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      * @see #setDate(String, LocalDate)
      */
     @Nonnull
@@ -1298,11 +1134,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      * @see #setTimestamp(String, LocalDateTime)
      */
     @Nonnull
@@ -1327,11 +1159,7 @@ public interface GenericRecordBuilder {
      *                                         {@link
      *                                         GenericRecord#newBuilderWithClone()}.
      *                                         2. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      * @see #setTimestampWithTimezone(String, OffsetDateTime)
      */
     @Nonnull
@@ -1367,11 +1195,7 @@ public interface GenericRecordBuilder {
      *                                         being built. e.g using portable generic
      *                                         record in a compact generic record builder.
      *                                         5. if the field is set after the
-     *                                         GenericRecord is built. This can only
-     *                                         happen with a Compact GenericRecord
-     *                                         because Portable GenericRecords have a
-     *                                         ClassDefinition and they check for
-     *                                         field overwrites.
+     *                                         GenericRecord is built.
      */
     @Nonnull
     GenericRecordBuilder setArrayOfGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord[] value);
