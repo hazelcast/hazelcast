@@ -18,7 +18,7 @@ package com.hazelcast.internal.iteration;
 
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -183,11 +183,11 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return JetSqlSerializerHook.F_ID;
+        return MapDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return JetSqlSerializerHook.INDEX_ITERATION_POINTER;
+        return MapDataSerializerHook.INDEX_ITERATION_POINTER;
     }
 }

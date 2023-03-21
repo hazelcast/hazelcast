@@ -62,13 +62,17 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
     DataSerializableSerializer(Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
                                ClassLoader classLoader) {
         try {
-            final Iterator<DataSerializerHook> hooks = ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID, classLoader);
+            Iterator<DataSerializerHook> hooks = ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID, classLoader);
             while (hooks.hasNext()) {
                 DataSerializerHook hook = hooks.next();
                 final DataSerializableFactory factory = hook.createFactory();
                 if (factory != null) {
                     register(hook.getFactoryId(), factory);
                 }
+            }
+            hooks = ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID, classLoader);
+            while (hooks.hasNext()) {
+                hooks.next().afterFactoriesCreated(factories);
             }
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
