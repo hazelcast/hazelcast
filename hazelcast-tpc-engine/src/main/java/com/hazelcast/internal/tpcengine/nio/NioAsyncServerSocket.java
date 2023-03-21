@@ -164,8 +164,13 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
                         + "->" + socketChannel.getLocalAddress());
             }
 
-            // todo: we need to think about rejection.
-            consumer.accept(new NioAcceptRequest(socketChannel));
+            NioAcceptRequest acceptRequest = new NioAcceptRequest(socketChannel);
+            try {
+                consumer.accept(acceptRequest);
+            } catch (Throwable t) {
+                closeQuietly(acceptRequest);
+                throw sneakyThrow(t);
+            }
         }
     }
 }
