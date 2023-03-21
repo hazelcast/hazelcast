@@ -222,9 +222,9 @@ public final class ConversionsToBson {
         return singletonList(value);
     }
 
-    private static Object convertToBoolean(Object value) {
+    private static Boolean convertToBoolean(Object value) {
         if (value instanceof Boolean) {
-            return value;
+            return (Boolean) value;
         }
         if (value instanceof String) {
             return Boolean.parseBoolean((String) value);
@@ -403,16 +403,4 @@ public final class ConversionsToBson {
         }
         return null;
     }
-//
-//    private static Object localDateTimeToBson(LocalDateTime value, BsonType bsonType) {
-//        switch (bsonType) {
-//            case DATE_TIME: return new BsonDateTime(value.toInstant(UTC).toEpochMilli());
-//            case TIMESTAMP: return new BsonTimestamp((int) value.toEpochSecond(UTC), 0);
-//            case STRING: return value.toString();
-//            case INT64: return value.toInstant(UTC).toEpochMilli();
-//            case INT32: return value.toEpochSecond(UTC);
-//        }
-//        return null;
-//    }
-
 }

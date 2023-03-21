@@ -78,48 +78,49 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
             instance.getLoggingService().addLogListener(Level.FINE, lookForProjectAndFilterStep);
         }
 
-        MongoClient mongoClient = MongoClients.create(connectionString);
-        MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
-        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
+        try (MongoClient mongoClient = MongoClients.create(connectionString)) {
+            MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
+            collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
 
-        execute("CREATE MAPPING " + tableName
-                + " ("
-                + (includeIdInMapping ? " id VARCHAR external name \"fullDocument._id\", " : "")
-                + " firstName VARCHAR, "
-                + " lastName VARCHAR, "
-                + " jedi BOOLEAN, "
-                + " operation VARCHAR external name operationType"
-                + ") "
-                + "TYPE MongoDBStream "
-                + "OPTIONS ("
-                + "    'connectionString' = '" + connectionString + "', "
-                + "    'database' = '" + databaseName + "', "
-                + "    'collection' = '" + collectionName + "', "
-                + "    'startAt' = 'now' "
-                + ")");
+            execute("CREATE MAPPING " + tableName
+                    + " ("
+                    + (includeIdInMapping ? " id VARCHAR external name \"fullDocument._id\", " : "")
+                    + " firstName VARCHAR, "
+                    + " lastName VARCHAR, "
+                    + " jedi BOOLEAN, "
+                    + " operation VARCHAR external name operationType"
+                    + ") "
+                    + "TYPE MongoDBStream "
+                    + "OPTIONS ("
+                    + "    'connectionString' = '" + connectionString + "', "
+                    + "    'database' = '" + databaseName + "', "
+                    + "    'collection' = '" + collectionName + "', "
+                    + "    'startAt' = 'now' "
+                    + ")");
 
-        String force = forceTwoSteps ? " and cast(jedi as varchar) = 'true' " : "";
-        spawn(() -> {
-            sleep(200);
-            collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
-            sleep(100);
-            collection.insertOne(new Document("firstName", "Han").append("lastName", "Solo").append("jedi", false));
-            sleep(100);
-            collection.insertOne(new Document("firstName", "Anakin").append("lastName", "Skywalker").append("jedi", true));
-        });
-        assertRowsEventuallyInAnyOrder("select firstName, lastName, operation from " + tableName
-                        + " where lastName = ? and jedi=true" + force,
-                singletonList("Skywalker"),
-                asList(
-                        new Row("Luke", "Skywalker", "insert"),
-                        new Row("Anakin", "Skywalker", "insert")
-                ),
-                TimeUnit.SECONDS.toMillis(10)
-        );
+            String force = forceTwoSteps ? " and cast(jedi as varchar) = 'true' " : "";
+            spawn(() -> {
+                sleep(200);
+                collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
+                sleep(100);
+                collection.insertOne(new Document("firstName", "Han").append("lastName", "Solo").append("jedi", false));
+                sleep(100);
+                collection.insertOne(new Document("firstName", "Anakin").append("lastName", "Skywalker").append("jedi", true));
+            });
+            assertRowsEventuallyInAnyOrder("select firstName, lastName, operation from " + tableName
+                            + " where lastName = ? and jedi=true" + force,
+                    singletonList("Skywalker"),
+                    asList(
+                            new Row("Luke", "Skywalker", "insert"),
+                            new Row("Anakin", "Skywalker", "insert")
+                    ),
+                    TimeUnit.SECONDS.toMillis(10)
+            );
 
-        assertEquals(forceTwoSteps, projectAndFilterFound.get());
-        for (HazelcastInstance instance : instances()) {
-            instance.getLoggingService().removeLogListener(lookForProjectAndFilterStep);
+            assertEquals(forceTwoSteps, projectAndFilterFound.get());
+            for (HazelcastInstance instance : instances()) {
+                instance.getLoggingService().removeLogListener(lookForProjectAndFilterStep);
+            }
         }
     }
 
