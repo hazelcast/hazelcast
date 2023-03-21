@@ -24,6 +24,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.logging.ILogger;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.List;
@@ -177,6 +178,7 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
     }
 
     @Override
+    @Nonnull
     public <T extends DataLink> T getAndRetainDataLink(String name, Class<T> clazz) {
         DataLinkEntry dataLink = dataLinks.computeIfPresent(name, (k, v) -> {
             if (!clazz.isInstance(v.instance)) {
