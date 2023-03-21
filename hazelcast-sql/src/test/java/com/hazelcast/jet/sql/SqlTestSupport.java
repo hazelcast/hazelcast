@@ -651,6 +651,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     /**
+     *
      * Compares two lists. The lists are expected to contain elements of type
      * {@link JetSqlRow} or {@link Watermark}.
      * Useful for {@link TestSupport#outputChecker(BiPredicate)}.

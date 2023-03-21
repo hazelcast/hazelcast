@@ -31,6 +31,8 @@ import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.apache.kafka.connect.data.Values;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -46,6 +48,7 @@ import java.util.Properties;
 import java.util.concurrent.CompletionException;
 
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -55,7 +58,6 @@ import static org.junit.Assert.fail;
 public class KafkaConnectNeo4jIntegrationTest extends JetTestSupport {
     @ClassRule
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
-    @ClassRule
     public static final Neo4jContainer<?> container = new Neo4jContainer<>(DockerImageName.parse("neo4j:5.5.0"))
             .withoutAuthentication();
     private static final ILogger LOGGER = Logger.getLogger(KafkaConnectNeo4jIntegrationTest.class);
@@ -64,6 +66,19 @@ public class KafkaConnectNeo4jIntegrationTest extends JetTestSupport {
     //This is the last JDK8-compatible version of the Neo4j connector
     private static final String CONNECTOR_URL = "https://repository.hazelcast.com/download"
             + "/tests/neo4j-kafka-connect-neo4j-2.0.1.zip";
+
+    @BeforeClass
+    public static void setUpDocker() {
+        assumeDockerEnabled();
+        container.start();
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        if (container != null) {
+            container.stop();
+        }
+    }
 
     @Test
     public void testReadFromNeo4jConnector() throws Exception {

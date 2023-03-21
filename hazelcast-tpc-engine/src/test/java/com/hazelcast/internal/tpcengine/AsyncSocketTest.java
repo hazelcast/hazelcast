@@ -103,8 +103,7 @@ public abstract class AsyncSocketTest {
                 })
                 .build();
 
-        SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
-        serverSocket.bind(serverAddress);
+        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
 
         AsyncSocket clientSocket = reactor.newAsyncSocketBuilder()
@@ -112,11 +111,11 @@ public abstract class AsyncSocketTest {
                 .build();
         clientSocket.start();
 
-        CompletableFuture<Void> connect = clientSocket.connect(serverAddress);
+        CompletableFuture<Void> connect = clientSocket.connect(serverSocket.getLocalAddress());
 
         assertCompletesEventually(connect);
         assertNull(connect.join());
-        assertEquals(serverAddress, clientSocket.getRemoteAddress());
+        assertEquals(serverSocket.getLocalAddress(), clientSocket.getRemoteAddress());
     }
 
 
@@ -128,11 +127,7 @@ public abstract class AsyncSocketTest {
                 .build();
         clientSocket.start();
 
-        SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
-        CompletableFuture<Void> connect = clientSocket.connect(serverAddress);
-
-
-        CompletableFuture<Void> future = clientSocket.connect(new InetSocketAddress(50000));
+        CompletableFuture<Void> future = clientSocket.connect(new InetSocketAddress("127.0.0.1", 5000));
 
         assertThrows(CompletionException.class, () -> future.join());
     }
@@ -185,8 +180,7 @@ public abstract class AsyncSocketTest {
                     socket.start();
                 }).build();
 
-        SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
-        serverSocket.bind(serverAddress);
+        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
 
         AsyncSocket clientSocket = reactor.newAsyncSocketBuilder()
@@ -194,11 +188,11 @@ public abstract class AsyncSocketTest {
                 .build();
         clientSocket.start();
 
-        CompletableFuture<Void> connect = clientSocket.connect(serverAddress);
+        CompletableFuture<Void> connect = clientSocket.connect(serverSocket.getLocalAddress());
 
         assertCompletesEventually(connect);
         assertNull(connect.join());
-        assertEquals(serverAddress, clientSocket.getRemoteAddress());
+        assertEquals(serverSocket.getLocalAddress(), clientSocket.getRemoteAddress());
 
         assertTrue(clientSocket.isReadable());
         clientSocket.setReadable(false);

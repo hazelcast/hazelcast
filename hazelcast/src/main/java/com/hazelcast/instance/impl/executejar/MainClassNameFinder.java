@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance.impl;
+package com.hazelcast.instance.impl.executejar;
 
+import com.hazelcast.instance.impl.HazelcastBootstrap;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -50,7 +51,7 @@ public class MainClassNameFinder {
     }
 
     // Find the mainClassName from the jar
-    public void findMainClass(String mainClassName, String jarPath)
+    public void findMainClass(String jarPath, String mainClassName)
             throws IOException {
         try (JarFile jarFile = new JarFile(jarPath)) {
             checkHazelcastCodebasePresence(jarFile);

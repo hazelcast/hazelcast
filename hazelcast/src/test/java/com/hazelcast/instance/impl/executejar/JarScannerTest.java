@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance.impl;
+package com.hazelcast.instance.impl.executejar;
 
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.JarUtil;
