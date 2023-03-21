@@ -123,6 +123,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.impl.util.Util.getSerializationService;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataLinkPlan;
+import static com.hazelcast.jet.sql.impl.connector.infoschema.DataLinksUtil.dataLinkConnectorTypeToClass;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
@@ -182,7 +183,10 @@ public class PlanExecutor {
             throw new HazelcastException("Cannot replace a data link created from configuration");
         }
         boolean added = dataLinksCatalog.createDataLink(
-                new DataLinkCatalogEntry(plan.name(), plan.type(), plan.options()),
+                new DataLinkCatalogEntry(
+                        plan.name(),
+                        dataLinkConnectorTypeToClass(plan.type()).getName(),
+                        plan.options()),
                 plan.isReplace(),
                 plan.ifNotExists());
         if (added) {
