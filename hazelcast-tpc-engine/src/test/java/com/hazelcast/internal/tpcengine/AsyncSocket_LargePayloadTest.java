@@ -215,7 +215,7 @@ public abstract class AsyncSocket_LargePayloadTest {
         }
         clientSocket.flush();
 
-        assertOpenEventually(completionLatch, TimeUnit.MINUTES.toSeconds(5));
+        assertOpenEventually(completionLatch, TimeUnit.MINUTES.toSeconds(4));
     }
 
     private AsyncSocket newClient(SocketAddress serverAddress, CountDownLatch completionLatch) {
