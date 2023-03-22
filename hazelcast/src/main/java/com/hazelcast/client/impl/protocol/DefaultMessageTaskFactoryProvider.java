@@ -134,6 +134,8 @@ import com.hazelcast.client.impl.protocol.codec.ExecutorServiceIsShutdownCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceShutdownCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToPartitionCodec;
+import com.hazelcast.client.impl.protocol.codec.ExperimentalAuthenticationCodec;
+import com.hazelcast.client.impl.protocol.codec.ExperimentalAuthenticationCustomCodec;
 import com.hazelcast.client.impl.protocol.codec.FencedLockGetLockOwnershipCodec;
 import com.hazelcast.client.impl.protocol.codec.FencedLockLockCodec;
 import com.hazelcast.client.impl.protocol.codec.FencedLockTryLockCodec;
@@ -439,6 +441,8 @@ import com.hazelcast.client.impl.protocol.task.CreateProxiesMessageTask;
 import com.hazelcast.client.impl.protocol.task.CreateProxyMessageTask;
 import com.hazelcast.client.impl.protocol.task.DeployClassesMessageTask;
 import com.hazelcast.client.impl.protocol.task.DestroyProxyMessageTask;
+import com.hazelcast.client.impl.protocol.task.ExperimentalAuthenticationCustomCredentialsMessageTask;
+import com.hazelcast.client.impl.protocol.task.ExperimentalAuthenticationMessageTask;
 import com.hazelcast.client.impl.protocol.task.GetDistributedObjectsMessageTask;
 import com.hazelcast.client.impl.protocol.task.PingMessageTask;
 import com.hazelcast.client.impl.protocol.task.RemoveDistributedObjectListenerMessageTask;
@@ -1521,6 +1525,10 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new AddBackupListenerMessageTask(cm, node, con));
         factories.put(ClientTriggerPartitionAssignmentCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TriggerPartitionAssignmentMessageTask(cm, node, con));
+        factories.put(ExperimentalAuthenticationCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ExperimentalAuthenticationMessageTask(cm, node, con));
+        factories.put(ExperimentalAuthenticationCustomCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ExperimentalAuthenticationCustomCredentialsMessageTask(cm, node, con));
     }
 
     private void initializeQueueTaskFactories() {
