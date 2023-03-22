@@ -285,12 +285,14 @@ public class ClientMapNearCacheInvalidationTest extends ClientTestSupport {
             map.get(i);
         }
 
-        long invalidationBefore = getInvalidationsFrom(map);
+        long invalidationsBefore = getInvalidationsFrom(map);
 
         operation.accept(map, size);
 
-        long invalidationsAfter = getInvalidationsFrom(map);
-        assertEquals(invalidationBefore, invalidationsAfter);
+        assertTrueAllTheTime(() -> {
+            long invalidationsAfter = getInvalidationsFrom(map);
+            assertEquals(invalidationsBefore, invalidationsAfter);
+        }, 3);
     }
 
     private static void configureBatching(Config config, int batchSize, int period) {

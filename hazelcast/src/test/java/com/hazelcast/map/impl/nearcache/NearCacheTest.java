@@ -984,7 +984,9 @@ public class NearCacheTest extends NearCacheTestSupport {
 
         operation.accept(map, entryCount);
 
-        long invalidationsAfter = stats.getInvalidations();
-        assertEquals(invalidationsBefore, invalidationsAfter);
+        assertTrueAllTheTime(() -> {
+            long invalidationsAfter = stats.getInvalidations();
+            assertEquals(invalidationsBefore, invalidationsAfter);
+        }, 3);
     }
 }
