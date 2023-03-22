@@ -24,7 +24,7 @@ import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
 
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.Function;
@@ -35,8 +35,11 @@ public final class UnparseUtil {
 
     private UnparseUtil() { }
 
-    @Nonnull
+    @Nullable
     public static SqlIdentifier identifier(String ... names) {
+        if (names == null || names.length == 1 && names[0] == null) {
+            return null;
+        }
         return new SqlIdentifier(asList(names), SqlParserPos.ZERO);
     }
 

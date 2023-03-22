@@ -45,7 +45,7 @@ public class GetDdlTest extends SqlTestSupport {
         createMapping("a", int.class, int.class);
 
         assertRowsAnyOrder("SELECT GET_DDL('relation', 'a')", ImmutableList.of(
-                new Row("CREATE OR REPLACE MAPPING \"hazelcast\".\"public\".\"a\" EXTERNAL NAME \"a\" (\n" +
+                new Row("CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"a\" EXTERNAL NAME \"a\" (\n" +
                         "  \"__key\" INTEGER EXTERNAL NAME \"__key\",\n" +
                         "  \"this\" INTEGER EXTERNAL NAME \"this\"\n" +
                         ")\n" +
@@ -162,7 +162,7 @@ public class GetDdlTest extends SqlTestSupport {
 
         assertRowsAnyOrder("SELECT GET_DDL('relation', this) FROM a",
                 ImmutableList.of(new Row(
-                        "CREATE OR REPLACE MAPPING \"hazelcast\".\"public\".\"a\" EXTERNAL NAME \"a\" (\n" +
+                        "CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"a\" EXTERNAL NAME \"a\" (\n" +
                                 "  \"__key\" INTEGER EXTERNAL NAME \"__key\",\n" +
                                 "  \"this\" VARCHAR EXTERNAL NAME \"this\"\n" +
                                 ")\n" +

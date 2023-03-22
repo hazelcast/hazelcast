@@ -48,7 +48,7 @@ public class IMapResolverTest extends SqlTestSupport {
 
         Member member = instance().getCluster().getLocalMember();
         String mappingDdl1 = ((SqlClientService) client().getSql()).mappingDdl(member, "m1").get();
-        assertEquals("CREATE OR REPLACE MAPPING \"hazelcast\".\"public\".\"m1\" EXTERNAL NAME \"m1\"" + LE
+        assertEquals("CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"m1\" EXTERNAL NAME \"m1\"" + LE
                         + "TYPE \"IMap\"" + LE
                         + "OPTIONS (" + LE
                         + "  'keyFormat'='java'," + LE
@@ -61,7 +61,7 @@ public class IMapResolverTest extends SqlTestSupport {
 
         instance().getMap("m2").put("foo", new Person("person name"));
         String mappingDdl2 = ((SqlClientService) client().getSql()).mappingDdl(member, "m2").get();
-        assertEquals("CREATE OR REPLACE MAPPING \"hazelcast\".\"public\".\"m2\" EXTERNAL NAME \"m2\"" + LE
+        assertEquals("CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"m2\" EXTERNAL NAME \"m2\"" + LE
                         + "TYPE \"IMap\"" + LE
                         + "OPTIONS (" + LE
                         + "  'keyFormat'='java'," + LE
