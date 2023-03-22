@@ -16,23 +16,32 @@
 
 package com.hazelcast.jet.kafka.connect.impl;
 
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import javax.annotation.Nonnull;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.KAFKA_CONNECT_PREFIX;
+import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
+import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 
-public class ReadKafkaConnectP extends AbstractProcessor {
+public class ReadKafkaConnectP extends AbstractProcessor implements DynamicMetricsProvider {
 
     private final ConnectorWrapper connectorWrapper;
     private final EventTimeMapper<SourceRecord> eventTimeMapper;
@@ -42,6 +51,7 @@ public class ReadKafkaConnectP extends AbstractProcessor {
     private boolean snapshotsEnabled;
     private int processorIndex;
     private Traverser<?> traverser;
+    private final LocalKafkaConnectStatsImpl localKafkaConnectStats = new LocalKafkaConnectStatsImpl();
 
     public ReadKafkaConnectP(ConnectorWrapper connectorWrapper, EventTimePolicy<? super SourceRecord> eventTimePolicy) {
         this.connectorWrapper = connectorWrapper;
@@ -54,6 +64,8 @@ public class ReadKafkaConnectP extends AbstractProcessor {
         taskRunner = connectorWrapper.createTaskRunner();
         snapshotsEnabled = context.snapshottingEnabled();
         processorIndex = context.globalProcessorIndex();
+        NodeEngineImpl nodeEngine = getNodeEngine(context.hazelcastInstance());
+        nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
     }
 
     @Override
@@ -68,6 +80,7 @@ public class ReadKafkaConnectP extends AbstractProcessor {
         }
         if (traverser == null) {
             List<SourceRecord> sourceRecords = taskRunner.poll();
+            localKafkaConnectStats.incrementSourceRecordPoll(sourceRecords.size());
             this.traverser = traverser(sourceRecords)
                     .map(rec -> {
                         taskRunner.commitRecord((SourceRecord) rec);
@@ -137,4 +150,21 @@ public class ReadKafkaConnectP extends AbstractProcessor {
             taskRunner.stop();
         }
     }
+
+    public Map<String, LocalKafkaConnectStats> getStats() {
+        Map<String, LocalKafkaConnectStats> connectStats = new HashMap<>();
+        if (taskRunner != null) {
+            connectStats.put(taskRunner.getName(), localKafkaConnectStats);
+        }
+        return connectStats;
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        if (taskRunner != null) {
+            descriptor.copy().withTag("task.runner", taskRunner.getName());
+        }
+        provide(descriptor, context, KAFKA_CONNECT_PREFIX, getStats());
+    }
+
 }

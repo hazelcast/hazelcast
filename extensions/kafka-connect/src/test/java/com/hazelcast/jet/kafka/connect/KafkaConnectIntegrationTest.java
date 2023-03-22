@@ -33,17 +33,27 @@ import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.connect.data.Values;
+import org.jetbrains.annotations.NotNull;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import javax.management.MBeanServer;
+import javax.management.ObjectInstance;
+import javax.management.ObjectName;
+import java.lang.management.ManagementFactory;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
+import java.util.stream.Collectors;
 
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.test.OverridePropertyRule.set;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -90,7 +100,30 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
             String errorMsg = e.getCause().getMessage();
             assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
                     + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
+            assertTrueEventually(() -> {
+                Long sourceRecordPollTotal = (Long) getSourceRecordPollTotalList().get(0);
+                assertThat(sourceRecordPollTotal).isGreaterThan(ITEM_COUNT);
+            });
         }
+    }
+
+
+    private static <T> List<T> getMBeanValues(ObjectName objectName, String attribute) throws Exception {
+        return (List<T>) getMBeans(objectName).stream().map(i -> getAttribute(i, attribute)).collect(Collectors.toList());
+    }
+
+    @NotNull
+    private static <T> T getAttribute(ObjectInstance objectInstance, String attribute) {
+        try {
+            return (T) ManagementFactory.getPlatformMBeanServer().getAttribute(objectInstance.getObjectName(), attribute);
+        } catch (Exception e) {
+            throw sneakyThrow(e);
+        }
+    }
+
+    private static List<ObjectInstance> getMBeans(ObjectName objectName) throws Exception {
+        MBeanServer platformMBeanServer = ManagementFactory.getPlatformMBeanServer();
+        return new ArrayList<>(platformMBeanServer.queryMBeans(objectName, null));
     }
 
     @Test
@@ -119,7 +152,8 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
-        Job job = createHazelcastInstances(config, 3)[0].getJet().newJob(pipeline, jobConfig);
+        HazelcastInstance hazelcastInstance = createHazelcastInstances(config, 3)[0];
+        Job job = hazelcastInstance.getJet().newJob(pipeline, jobConfig);
 
         try {
             job.join();
@@ -128,7 +162,18 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
             String errorMsg = e.getCause().getMessage();
             assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
                     + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
+            assertTrueEventually(() -> {
+                List<Long> sourceRecordPollTotalList = getSourceRecordPollTotalList();
+                assertThat(sourceRecordPollTotalList).hasSize(localParallelism);
+                assertThat(sourceRecordPollTotalList).allSatisfy(a -> assertThat(a).isGreaterThan(ITEM_COUNT));
+            });
+
         }
+    }
+
+    private static List<Long> getSourceRecordPollTotalList() throws Exception {
+        ObjectName objectName = new ObjectName("com.hazelcast:type=Metrics,prefix=kafka.connect,*");
+        return getMBeanValues(objectName, "sourceRecordPollTotal");
     }
 
 
