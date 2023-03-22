@@ -27,7 +27,7 @@ import org.immutables.value.Value;
 
 /**
  * A rule that matches a TableModify[operation=delete], _without_ a TableScan as
- * an input (that's handled by {@link DeleteWithScanLogicalRule}.
+ * an input (that's handled by {@link DeleteWithScanLogicalRule}).
  */
 @Value.Enclosing
 class DeleteNoScanLogicalRule extends RelRule<RelRule.Config> {

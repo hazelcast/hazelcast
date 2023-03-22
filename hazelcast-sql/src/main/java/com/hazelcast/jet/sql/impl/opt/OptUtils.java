@@ -434,7 +434,7 @@ public final class OptUtils {
             return null;
         }
 
-        int keyIndex = findKeyIndex(table.getTarget());
+        int keyIndex = findPrimaryKeyIndex(table.getTarget());
         switch (filter.getKind()) {
             // WHERE __key = true, calcite simplifies to just `WHERE __key`
             case INPUT_REF: {
@@ -463,11 +463,11 @@ public final class OptUtils {
     }
 
     /**
-     * Returns the index of the key field in the given `table`. If there's no
-     * primary key, or if there's more than ona primary key field, it returns
-     * -1.
+     * Returns the index of the primary key field in the given `table`. If
+     * there's no primary key, or if there's more than ona primary key field, it
+     * returns -1.
      */
-    public static int findKeyIndex(Table table) {
+    public static int findPrimaryKeyIndex(Table table) {
         List<String> primaryKey = SqlConnectorUtil.getJetSqlConnector(table).getPrimaryKey(table);
         if (primaryKey.size() != 1) {
             return -1;

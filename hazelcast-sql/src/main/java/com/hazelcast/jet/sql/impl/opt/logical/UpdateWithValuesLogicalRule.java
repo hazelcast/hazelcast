@@ -24,7 +24,7 @@ import org.apache.calcite.rel.core.TableModify;
 import org.immutables.value.Value;
 
 /**
- * A rule to match a TableModify[operation=update], with a Values as input
+ * A rule to match a TableModify[operation=update], with a Values as input.
  */
 @Value.Enclosing
 class UpdateWithValuesLogicalRule extends RelRule<RelRule.Config> {

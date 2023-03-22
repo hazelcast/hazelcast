@@ -41,7 +41,7 @@ import java.util.List;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 
 /**
- * A rule to match a TableModify[operation=update], with a TableScan as input
+ * A rule to match a TableModify[operation=update], with a TableScan as input.
  */
 @Value.Enclosing
 class UpdateWithScanLogicalRule extends RelRule<RelRule.Config> {
