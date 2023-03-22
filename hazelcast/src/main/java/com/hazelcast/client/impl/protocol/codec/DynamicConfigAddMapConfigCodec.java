@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a map configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("090759f20d20526f8e740c72d396e3e9")
+@Generated("e1e763ab3c72ca63eede2138ab1a43b1")
 public final class DynamicConfigAddMapConfigCodec {
     //hex: 0x1B0C00
     public static final int REQUEST_MESSAGE_TYPE = 1772544;
@@ -223,7 +223,7 @@ public final class DynamicConfigAddMapConfigCodec {
         public com.hazelcast.config.TieredStoreConfig tieredStoreConfig;
 
         /**
-         * List of Attributes used for creating AttributePartitioningStrategy.
+         * List of attributes used for creating AttributePartitioningStrategy.
          */
         public @Nullable java.util.List<com.hazelcast.config.PartitioningAttributeConfig> partitioningAttributeConfigs;
 
