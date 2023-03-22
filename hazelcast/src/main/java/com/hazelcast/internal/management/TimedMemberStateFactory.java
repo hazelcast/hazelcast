@@ -78,7 +78,6 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
-import static com.hazelcast.internal.util.Clock.currentTimeMillis;
 
 /**
  * A Factory for creating {@link TimedMemberState} instances.
@@ -157,7 +156,6 @@ public class TimedMemberStateFactory {
         }
         memberState.setClients(serializableClientEndPoints);
         memberState.setName(instance.getName());
-        memberState.setMemberTime(currentTimeMillis());
         memberState.setUuid(node.getThisUuid());
         if (instance.getConfig().getCPSubsystemConfig().getCPMemberCount() == 0) {
             memberState.setCpMemberUuid(null);

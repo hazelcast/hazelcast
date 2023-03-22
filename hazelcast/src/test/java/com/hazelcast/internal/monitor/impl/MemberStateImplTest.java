@@ -115,7 +115,6 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         UUID uuid = UUID.randomUUID();
         memberState.setUuid(uuid);
         UUID cpMemberUuid = UUID.randomUUID();
-        memberState.setMemberTime(123456L);
         memberState.setCpMemberUuid(cpMemberUuid);
         memberState.setEndpoints(endpoints);
         memberState.setMapsWithStats(singleton("map-1"));
@@ -144,7 +143,6 @@ public class MemberStateImplTest extends HazelcastTestSupport {
 
         assertNotNull(deserialized.getName());
         assertEquals(deserialized.getName(), memberState.getName());
-        assertEquals(deserialized.getMemberTime(), memberState.getMemberTime());
 
         assertEquals(singleton("map-1"), deserialized.getMapsWithStats());
         assertEquals(singleton("multiMap-1"), deserialized.getMultiMapsWithStats());
