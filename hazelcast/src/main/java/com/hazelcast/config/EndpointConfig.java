@@ -39,7 +39,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  *
  * @since 3.12
  */
-@SuppressWarnings({"checkstyle:methodcount", "checkstyle:linelength"})
+@SuppressWarnings("checkstyle:methodcount")
 public class EndpointConfig implements NamedConfig {
 
     /**
@@ -340,7 +340,7 @@ public class EndpointConfig implements NamedConfig {
      *
      * @return the configured value of Keep-Alive idle time.
      * @since 5.3.0
-     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPIDLE>
+     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPIDLE">
      *     jdk.net.ExtendedSocketOptions#TCP_KEEPIDLE</a>
      */
     public int getSocketKeepIdleSeconds() {
@@ -354,7 +354,7 @@ public class EndpointConfig implements NamedConfig {
      * <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.
      *
      * @since 5.3.0
-     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPIDLE>
+     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPIDLE">
      *      jdk.net.ExtendedSocketOptions#TCP_KEEPIDLE</a>
      */
     public EndpointConfig setSocketKeepIdleSeconds(int socketKeepIdleSeconds) {
@@ -370,7 +370,8 @@ public class EndpointConfig implements NamedConfig {
      *
      * @return the configured value of Keep-Alive interval time.
      * @since 5.3.0
-     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPINTERVAL>
+     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/
+     ExtendedSocketOptions.html#TCP_KEEPINTERVAL">
      *     jdk.net.ExtendedSocketOptions#TCP_KEEPINTERVAL</a>
      */
     public int getSocketKeepIntervalSeconds() {
@@ -385,7 +386,8 @@ public class EndpointConfig implements NamedConfig {
      * <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.
      *
      * @since 5.3.0
-     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPINTERVAL>
+     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/
+     ExtendedSocketOptions.html#TCP_KEEPINTERVAL">
      *     jdk.net.ExtendedSocketOptions#TCP_KEEPINTERVAL</a>
      */
     public EndpointConfig setSocketKeepIntervalSeconds(int socketKeepIntervalSeconds) {
@@ -402,7 +404,7 @@ public class EndpointConfig implements NamedConfig {
      *
      * @return the configured value of Keep-Alive probe count.
      * @since 5.3.0
-     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPCOUNT>
+     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPCOUNT">
      *     jdk.net.ExtendedSocketOptions#TCP_KEEPCOUNT</a>
      */
     public int getSocketKeepCount() {
@@ -417,7 +419,7 @@ public class EndpointConfig implements NamedConfig {
      * <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.
      *
      * @since 5.3.0
-     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPCOUNT>
+     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPCOUNT">
      *     jdk.net.ExtendedSocketOptions#TCP_KEEPCOUNT</a>
      */
     public EndpointConfig setSocketKeepCount(int socketKeepCount) {
