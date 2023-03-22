@@ -133,8 +133,8 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         randomProperties.setProperty("name", "datagen-connector");
         randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
         randomProperties.setProperty("max.interval", "1");
-        randomProperties.setProperty("kafka.topic", "users");
-        randomProperties.setProperty("quickstart", "users");
+        randomProperties.setProperty("kafka.topic", "orders");
+        randomProperties.setProperty("quickstart", "orders");
 
         Pipeline pipeline = Pipeline.create();
         StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties))
