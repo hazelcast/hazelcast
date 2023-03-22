@@ -28,22 +28,18 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.mongodb.client.model.Aggregates.addFields;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.unset;
+import static java.time.ZoneId.systemDefault;
+import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public final class MongoUtilities {
-    /**
-     * 1 millisecond converted to nanoseconds.
-     */
-    @SuppressWarnings("checkstyle:MagicNumber")
-    private static final int MILLIS_TO_NANOS = 1000 * 1000;
 
     private MongoUtilities() {
     }
@@ -104,6 +100,7 @@ public final class MongoUtilities {
     public static BsonTimestamp bsonTimestampFromTimeMillis(long time) {
         return new BsonTimestamp((int) MILLISECONDS.toSeconds(time), 0);
     }
+
     /**
      * Converts given bson timestamp to unix epoch.
      */
@@ -113,10 +110,11 @@ public final class MongoUtilities {
             return null;
         }
         Instant instant = Instant.ofEpochMilli(time.getValue());
-        return LocalDateTime.from(instant);
+        return instant.atZone(UTC).withZoneSameInstant(systemDefault()).toLocalDateTime();
     }
+
     /**
-     * Converts given bson timest1amp to unix epoch.
+     * Converts given bson timestamp to unix epoch.
      */
     @Nullable
     @SuppressWarnings("checkstyle:MagicNumber")
@@ -124,11 +122,10 @@ public final class MongoUtilities {
         if (time == null) {
             return null;
         }
-        long v = time.getValue();
-        // gets last 3 digits - millisecond in the epoch timestamp - and converts it to nanoseconds
-        int millisOfSecond = (int) (v % 1000);
-        int nanoOfSecond = millisOfSecond * MILLIS_TO_NANOS;
-        return LocalDateTime.ofEpochSecond(v / 1000, nanoOfSecond, ZoneOffset.UTC);
+        long v = time.getTime();
+        return LocalDateTime.ofEpochSecond(v, 0, UTC)
+                            .atZone(UTC)
+                            .withZoneSameInstant(systemDefault())
+                            .toLocalDateTime();
     }
-
 }
