@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Makes an authentication request to the cluster using custom credentials.
  */
-@Generated("e765e721fd54c74e1c677078d6e81038")
-public final class ClientAuthenticationCustomCodec {
-    //hex: 0x000200
-    public static final int REQUEST_MESSAGE_TYPE = 512;
-    //hex: 0x000201
-    public static final int RESPONSE_MESSAGE_TYPE = 513;
+@Generated("3e4757e36011a3bfa3693b679ac82169")
+public final class ExperimentalAuthenticationCustomCodec {
+    //hex: 0xFD0200
+    public static final int REQUEST_MESSAGE_TYPE = 16581120;
+    //hex: 0xFD0201
+    public static final int RESPONSE_MESSAGE_TYPE = 16581121;
     private static final int REQUEST_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET = REQUEST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
@@ -53,7 +53,7 @@ public final class ClientAuthenticationCustomCodec {
     private static final int RESPONSE_FAILOVER_SUPPORTED_FIELD_OFFSET = RESPONSE_CLUSTER_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_FAILOVER_SUPPORTED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
-    private ClientAuthenticationCustomCodec() {
+    private ExperimentalAuthenticationCustomCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -103,7 +103,7 @@ public final class ClientAuthenticationCustomCodec {
     public static ClientMessage encodeRequest(java.lang.String clusterName, byte[] credentials, @Nullable java.util.UUID uuid, java.lang.String clientType, byte serializationVersion, java.lang.String clientHazelcastVersion, java.lang.String clientName, java.util.Collection<java.lang.String> labels) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setOperationName("Client.AuthenticationCustom");
+        clientMessage.setOperationName("Experimental.AuthenticationCustom");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
@@ -119,7 +119,7 @@ public final class ClientAuthenticationCustomCodec {
         return clientMessage;
     }
 
-    public static ClientAuthenticationCustomCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static ExperimentalAuthenticationCustomCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -177,9 +177,14 @@ public final class ClientAuthenticationCustomCodec {
          * Returns true if server supports clients with failover feature.
          */
         public boolean failoverSupported;
+
+        /**
+         * Returns the list of TPC ports or null if TPC is disabled.
+         */
+        public @Nullable java.util.List<java.lang.Integer> tpcPorts;
     }
 
-    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported) {
+    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported, @Nullable java.util.Collection<java.lang.Integer> tpcPorts) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
@@ -193,10 +198,11 @@ public final class ClientAuthenticationCustomCodec {
 
         CodecUtil.encodeNullable(clientMessage, address, AddressCodec::encode);
         StringCodec.encode(clientMessage, serverHazelcastVersion);
+        CodecUtil.encodeNullable(clientMessage, tpcPorts, ListIntegerCodec::encode);
         return clientMessage;
     }
 
-    public static ClientAuthenticationCustomCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static ExperimentalAuthenticationCustomCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -208,6 +214,7 @@ public final class ClientAuthenticationCustomCodec {
         response.failoverSupported = decodeBoolean(initialFrame.content, RESPONSE_FAILOVER_SUPPORTED_FIELD_OFFSET);
         response.address = CodecUtil.decodeNullable(iterator, AddressCodec::decode);
         response.serverHazelcastVersion = StringCodec.decode(iterator);
+        response.tpcPorts = CodecUtil.decodeNullable(iterator, ListIntegerCodec::decode);
         return response;
     }
 }

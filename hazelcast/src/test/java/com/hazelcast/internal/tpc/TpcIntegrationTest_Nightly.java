@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine.nio;
+package com.hazelcast.internal.tpc;
 
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
-import static com.hazelcast.internal.tpcengine.TpcTestSupport.ASSERT_TRUE_EVENTUALLY_TIMEOUT_NIGHTLY;
-
+@RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
-public class NioAsyncSocket_LargePayloadTest_Nightly extends NioAsyncSocket_LargePayloadTest {
-
-    public NioAsyncSocket_LargePayloadTest_Nightly() {
-        iterations = 20000;
-        testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT_NIGHTLY;
+public class TpcIntegrationTest_Nightly extends TpcIntegrationTest {
+    public TpcIntegrationTest_Nightly() {
+        iterations = 10_000;
     }
 }

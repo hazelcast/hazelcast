@@ -28,6 +28,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -99,6 +101,30 @@ public final class MongoUtilities {
      */
     public static BsonTimestamp bsonTimestampFromTimeMillis(long time) {
         return new BsonTimestamp((int) MILLISECONDS.toSeconds(time), 0);
+    }
+
+    /**
+     * Converts given bson timest1amp to unix epoch.
+     */
+    @Nullable
+    public static BsonTimestamp localDateTimeToTimestamp(@Nullable LocalDateTime time) {
+        if (time == null) {
+            return null;
+        }
+
+        return new BsonTimestamp((int) time.toEpochSecond(ZoneOffset.UTC), 0);
+    }
+
+    /**
+     * Converts given bson timest1amp to unix epoch.
+     */
+    @Nullable
+    public static BsonDateTime localDateTimeToBsonDateTime(@Nullable LocalDateTime time) {
+        if (time == null) {
+            return null;
+        }
+
+        return new BsonDateTime(time.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
     }
 
     /**

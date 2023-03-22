@@ -17,9 +17,9 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
-import com.hazelcast.instance.impl.Node;
+import com.hazelcast.client.impl.protocol.codec.ExperimentalAuthenticationCodec;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.UsernamePasswordCredentials;
 
@@ -31,15 +31,17 @@ import java.util.UUID;
 /**
  * Default Authentication with username password handling task
  */
-public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<ClientAuthenticationCodec.RequestParameters> {
+public class ExperimentalAuthenticationMessageTask
+        extends AuthenticationBaseMessageTask<ExperimentalAuthenticationCodec.RequestParameters> {
 
-    public AuthenticationMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public ExperimentalAuthenticationMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientAuthenticationCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        ClientAuthenticationCodec.RequestParameters parameters = ClientAuthenticationCodec.decodeRequest(clientMessage);
+    protected ExperimentalAuthenticationCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        ExperimentalAuthenticationCodec.RequestParameters parameters
+                = ExperimentalAuthenticationCodec.decodeRequest(clientMessage);
         assert parameters.uuid != null;
         clientUuid = parameters.uuid;
         clusterName = parameters.clusterName;
@@ -56,8 +58,8 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
     protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, byte serializationVersion,
                                        String serverVersion, int partitionCount, UUID clusterId,
                                        boolean clientFailoverSupported, List<Integer> tpcPorts) {
-        return ClientAuthenticationCodec.encodeResponse(status, thisAddress, uuid, serializationVersion,
-                serverVersion, partitionCount, clusterId, clientFailoverSupported);
+        return ExperimentalAuthenticationCodec.encodeResponse(status, thisAddress, uuid, serializationVersion,
+                serverVersion, partitionCount, clusterId, clientFailoverSupported, tpcPorts);
     }
 
     @Override

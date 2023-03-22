@@ -26,8 +26,6 @@ import org.junit.Test;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -36,6 +34,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_SNDBUF;
 import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.TCP_NODELAY;
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.ASSERT_TRUE_EVENTUALLY_TIMEOUT;
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertJoinable;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
@@ -53,8 +53,9 @@ public abstract class AsyncSocket_RpcTest {
     // use small buffers to cause a lot of network scheduling overhead (and shake down problems)
     public static final int SOCKET_BUFFER_SIZE = 16 * 1024;
     public int iterations = 200;
-    public final ConcurrentMap<Long, CompletableFuture> futures = new ConcurrentHashMap<>();
+    public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 
+    private final ConcurrentMap<Long, CompletableFuture> futures = new ConcurrentHashMap<>();
     private Reactor clientReactor;
     private Reactor serverReactor;
 
@@ -233,17 +234,15 @@ public abstract class AsyncSocket_RpcTest {
         AsyncSocket clientSocket = newClient(serverSocket.getLocalAddress());
 
         AtomicLong callIdGenerator = new AtomicLong();
-        List<LoadGeneratorThread> threads = new ArrayList<>();
+        LoadGeneratorThread[] threads = new LoadGeneratorThread[concurrency];
         int requestPerThread = iterations / concurrency;
         for (int k = 0; k < concurrency; k++) {
             LoadGeneratorThread thread = new LoadGeneratorThread(requestPerThread, payloadSize, callIdGenerator, clientSocket);
-            threads.add(thread);
+            threads[k] = thread;
             thread.start();
         }
 
-        for (LoadGeneratorThread thread : threads) {
-            thread.join();
-        }
+        assertJoinable(testTimeoutMs, threads);
     }
 
     private AsyncSocket newClient(SocketAddress serverAddress) {

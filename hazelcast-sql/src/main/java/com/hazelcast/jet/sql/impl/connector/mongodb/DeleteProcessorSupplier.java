@@ -18,15 +18,14 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.mongodb.WriteMode;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
-import org.bson.BsonType;
-import org.bson.Document;
+import com.mongodb.client.model.DeleteOneModel;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.WriteModel;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -37,30 +36,22 @@ import static java.util.Arrays.asList;
 
 /**
  * ProcessorSupplier that creates {@linkplain WriteMongoP} processors on each instance
- * that will insert given item.
+ * that will delete given item.
  */
-public class InsertProcessorSupplier implements ProcessorSupplier {
+public class DeleteProcessorSupplier implements ProcessorSupplier {
 
     private final String connectionString;
     private final String databaseName;
     private final String collectionName;
-    private final String[] paths;
-    private final WriteMode writeMode;
-    private final QueryDataType[] types;
-    private final BsonType[] externalTypes;
     private transient SupplierEx<MongoClient> clientSupplier;
     private final String dataLinkName;
     private final String idField;
 
-    InsertProcessorSupplier(MongoTable table, WriteMode writeMode) {
+    DeleteProcessorSupplier(MongoTable table) {
         this.connectionString = table.connectionString;
         this.databaseName = table.databaseName;
         this.dataLinkName = table.dataLinkName;
         this.collectionName = table.collectionName;
-        this.paths = table.externalNames();
-        this.types = table.fieldTypes();
-        this.externalTypes = table.externalTypes();
-        this.writeMode = writeMode;
         this.idField = table.primaryKeyExternalName();
     }
 
@@ -76,21 +67,18 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
     public Collection<? extends Processor> get(int count) {
         Processor[] processors = new Processor[count];
 
-        final String idFieldName = idField;
         for (int i = 0; i < count; i++) {
             Processor processor = new WriteMongoP<>(
-                    new WriteMongoParams<Document>()
+                    new WriteMongoParams<>()
                             .setClientSupplier(clientSupplier)
                             .setDataLinkRef(dataLinkName)
                             .setDatabaseName(databaseName)
                             .setCollectionName(collectionName)
-                            .setDocumentType(Document.class)
-                            .setDocumentIdentityFn(doc -> doc.get(idFieldName))
-                            .setDocumentIdentityFieldName(idFieldName)
+                            .setDocumentType(Object.class)
                             .setCommitRetryStrategy(DEFAULT_COMMIT_RETRY_STRATEGY)
                             .setTransactionOptionsSup(() -> DEFAULT_TRANSACTION_OPTION)
                             .setIntermediateMappingFn(this::rowToDoc)
-                            .setWriteMode(writeMode)
+                            .setWriteModelFn(this::delete)
                     );
 
             processors[i] = processor;
@@ -98,23 +86,14 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
         return asList(processors);
     }
 
-    private Document rowToDoc(JetSqlRow row) {
-        Object[] values = row.getValues();
-        Document doc = new Document();
+    private WriteModel<Object> delete(Object pkValue) {
+        return new DeleteOneModel<>(Filters.eq(idField, pkValue));
+    }
 
-        // assuming values is exactly the length of schema
-        for (int i = 0; i < row.getFieldCount(); i++) {
-            String fieldName = paths[i];
-            Object value = values[i];
+    private Object rowToDoc(JetSqlRow row) {
+        assert row.getFieldCount() == 1;
 
-            if (fieldName.equals("_id") && value == null) {
-                continue;
-            }
-            value = ConversionsToBson.convertToBson(value, types[i], externalTypes[i]);
-            doc = doc.append(fieldName, value);
-        }
-
-        return doc;
+        return row.getValues()[0];
     }
 
 }
