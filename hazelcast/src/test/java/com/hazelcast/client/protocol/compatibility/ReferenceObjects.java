@@ -931,5 +931,4 @@ public class ReferenceObjects {
     public static List<PartitioningAttributeConfig> aListOfPartitioningAttributeConfigs = Collections.singletonList(
             new PartitioningAttributeConfig(aString)
     );
-    public static PartitioningAttributeConfig aPartitioningAttributeConfig = new PartitioningAttributeConfig("attr1");
 }
