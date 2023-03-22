@@ -109,15 +109,18 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                     resolvedField.type(),
                     fieldExternalName,
                     false,
+                    resolvedField.externalType(),
                     resolvedField.isPrimaryKey()));
             hasPK |= resolvedField.isPrimaryKey();
         }
 
         if (!containsId) {
             if (isStreaming) {
-                fields.add(0, new MongoTableField("fullDocument._id", OBJECT, "fullDocument._id", true, !hasPK));
+                fields.add(0, new MongoTableField("fullDocument._id", OBJECT, "fullDocument._id",
+                        true, "DOCUMENT", !hasPK));
             } else {
-                fields.add(0, new MongoTableField("_id", OBJECT, "_id", true, !hasPK));
+                fields.add(0, new MongoTableField("_id", OBJECT, "_id", true,
+                        "DOCUMENT", !hasPK));
             }
         }
         return new MongoTable(schemaName, mappingName, databaseName, collectionName, options, this,

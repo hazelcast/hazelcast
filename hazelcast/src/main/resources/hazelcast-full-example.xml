@@ -632,14 +632,14 @@
             all Hazelcast cluster members would be within one network switch/router therefore
             default of 0 is usually sufficient.
 
-        - <alto-socket>:
-            Socket configuration for Alto. In Alto, each eventloop has its own socket.
+        - <tpc-socket>:
+            Socket configuration for TPC. In TPC, each eventloop has its own sockets.
             - <port-range>:
-                Configures the port range available for Alto sockets.
+                Configures the port range available for TPC sockets.
             - <receive-buffer-size-kb>:
-                Configures SO_RCVBUF socket option for Alto sockets.
+                Configures SO_RCVBUF socket option for TPC sockets.
             - <send-buffer-size-kb>:
-                Configures SO_SNDBUF socket option for Alto sockets.
+                Configures SO_SNDBUF socket option for TPC sockets.
     -->
     <network>
         <public-address>11.22.33.44:5555</public-address>
@@ -797,11 +797,11 @@
         -->
         <memcache-protocol enabled="false"/>
 
-        <alto-socket>
+        <tpc-socket>
             <port-range>14000-16000</port-range>
             <receive-buffer-size-kb>256</receive-buffer-size-kb>
             <send-buffer-size-kb>256</send-buffer-size-kb>
-        </alto-socket>
+        </tpc-socket>
     </network>
     <!--
         ===== PARTITION GROUPING CONFIGURATION =====
@@ -3200,14 +3200,14 @@
                 * <keep-interval-seconds>:
                     When keep-alive is true and supported by the platform, sets the number of seconds to wait between keep-alive
                     probes.
-            * <alto-socket>:
-                Socket configuration for Alto. In Alto, each eventloop has its own socket.
+            * <tpc-socket>:
+                Socket configuration for TPC. In TPC, each eventloop has its own sockets.
                 * <port-range>:
-                    Configures the port range available for Alto sockets.
+                    Configures the port range available for TPC sockets.
                 * <receive-buffer-size-kb>:
-                    Configures SO_RCVBUF socket option for Alto sockets.
+                    Configures SO_RCVBUF socket option for TPC sockets.
                 * <send-buffer-size-kb>:
-                    Configures SO_SNDBUF socket option for Alto sockets.
+                    Configures SO_SNDBUF socket option for TPC sockets.
 
         * <rest-server-socket-endpoint-config>:
             Controls access to Hazelcast HTTP REST API.
@@ -3245,7 +3245,7 @@
             * <socket-interceptor>
             * <symmetric-encryption>
             * <socket-options>
-            * <alto-socket>
+            * <tpc-socket>
 
     -->
     <advanced-network enabled="false">
@@ -3388,11 +3388,11 @@
             <public-address>dummy</public-address>
             <!-- If the address should be reused. See NetworkConfig.setReuseAddress for more information. -->
             <reuse-address>true</reuse-address>
-            <alto-socket>
+            <tpc-socket>
                 <port-range>14000-16000</port-range>
                 <receive-buffer-size-kb>256</receive-buffer-size-kb>
                 <send-buffer-size-kb>256</send-buffer-size-kb>
-            </alto-socket>
+            </tpc-socket>
         </member-server-socket-endpoint-config>
         <!-- server socket listening for connections from hazelcast clients -->
         <client-server-socket-endpoint-config>
@@ -3417,11 +3417,11 @@
             <port auto-increment="true" port-count="100">9999</port>
             <public-address>10.10.0.10</public-address>
             <reuse-address>true</reuse-address>
-            <alto-socket>
+            <tpc-socket>
                 <port-range>14000-16000</port-range>
                 <receive-buffer-size-kb>256</receive-buffer-size-kb>
                 <send-buffer-size-kb>256</send-buffer-size-kb>
-            </alto-socket>
+            </tpc-socket>
         </client-server-socket-endpoint-config>
         <!-- create a server socket for REST API -->
         <rest-server-socket-endpoint-config name="internal-server-socket">
@@ -3437,11 +3437,11 @@
                 <endpoint-group name="CLUSTER_WRITE" enabled="false"/>
                 <endpoint-group name="HEALTH_CHECK" enabled="true"/>
             </endpoint-groups>
-            <alto-socket>
+            <tpc-socket>
                 <port-range>14000-16000</port-range>
                 <receive-buffer-size-kb>256</receive-buffer-size-kb>
                 <send-buffer-size-kb>256</send-buffer-size-kb>
-            </alto-socket>
+            </tpc-socket>
         </rest-server-socket-endpoint-config>
         <!-- specify SSL config to be used for outgoing connections -->
         <wan-endpoint-config name="endpoint-tokyo">
@@ -3451,11 +3451,11 @@
                     <property name="foo">bar</property>
                 </properties>
             </ssl>
-            <alto-socket>
+            <tpc-socket>
                 <port-range>14000-16000</port-range>
                 <receive-buffer-size-kb>256</receive-buffer-size-kb>
                 <send-buffer-size-kb>256</send-buffer-size-kb>
-            </alto-socket>
+            </tpc-socket>
         </wan-endpoint-config>
         <wan-endpoint-config name="endpoint-london">
             <symmetric-encryption enabled="true">
@@ -3470,19 +3470,19 @@
                 <interface>192.168.8.101</interface>
                 <interface>10.20.10.100</interface>
             </interfaces>
-            <alto-socket>
+            <tpc-socket>
                 <port-range>14000-16000</port-range>
                 <receive-buffer-size-kb>256</receive-buffer-size-kb>
                 <send-buffer-size-kb>256</send-buffer-size-kb>
-            </alto-socket>
+            </tpc-socket>
         </wan-server-socket-endpoint-config>
         <memcache-server-socket-endpoint-config name="memcache">
             <port auto-increment="false" port-count="10">6000</port>
-            <alto-socket>
+            <tpc-socket>
                 <port-range>14000-16000</port-range>
                 <receive-buffer-size-kb>256</receive-buffer-size-kb>
                 <send-buffer-size-kb>256</send-buffer-size-kb>
-            </alto-socket>
+            </tpc-socket>
         </memcache-server-socket-endpoint-config>
     </advanced-network>
 
@@ -3983,14 +3983,14 @@
     </data-link>
 
     <!--
-    ===== HAZELCAST ALTO CONFIGURATION =====
+    ===== HAZELCAST TPC CONFIGURATION =====
 
-    Hazelcast Alto is the next generation of Hazelcast built with thread per core architecture.
-    It's still being developed and everything is subject to change. Alto is disabled by default.
+    Hazelcast TPC is the next generation of Hazelcast built with thread per core architecture.
+    It's still being developed and everything is subject to change. TPC is disabled by default.
     -->
-    <alto enabled="true">
+    <tpc enabled="true">
         <!-- Configures the number of eventloops. It's equal to available processor count by default. -->
         <eventloop-count>12</eventloop-count>
-    </alto>
+    </tpc>
 
 </hazelcast>

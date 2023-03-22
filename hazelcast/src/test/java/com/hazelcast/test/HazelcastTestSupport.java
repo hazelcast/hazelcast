@@ -66,7 +66,6 @@ import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.function.ThrowingRunnable;
 
-import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -1552,17 +1551,6 @@ public abstract class HazelcastTestSupport {
     // ###################################
     // ########## inner classes ##########
     // ###################################
-
-    public static final class DummyUncheckedHazelcastTestException extends RuntimeException {
-    }
-
-    public static class DummySerializableCallable implements Callable, Serializable {
-
-        @Override
-        public Object call() throws Exception {
-            return null;
-        }
-    }
 
     private interface Latch {
 

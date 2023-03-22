@@ -21,6 +21,8 @@ import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 
+import javax.annotation.Nonnull;
+
 /**
  * The interface provides access to {@link DataLink}s for Jet processors. A Jet
  * processor can obtain a reference to the service via {@link
@@ -50,6 +52,7 @@ public interface DataLinkService {
      * @throws HazelcastException if the requested DataLink doesn't exist, or has
      *     a different type than `clazz`
      */
+    @Nonnull
     <T extends DataLink> T getAndRetainDataLink(String name, Class<T> clazz);
 
 }

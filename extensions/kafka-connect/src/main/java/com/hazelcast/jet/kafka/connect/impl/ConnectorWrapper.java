@@ -103,6 +103,9 @@ public class ConnectorWrapper {
     }
 
     private void requestTaskReconfiguration() {
+        if (taskRunners.isEmpty()) {
+            return;
+        }
         try {
             reconfigurationLock.lock();
             LOGGER.fine("Updating tasks configuration");

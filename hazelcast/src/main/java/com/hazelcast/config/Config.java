@@ -19,7 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
-import com.hazelcast.config.alto.AltoConfig;
+import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.HazelcastInstance;
@@ -224,7 +224,7 @@ public class Config {
     private final Map<String, DataLinkConfig> dataLinkConfigs = new ConcurrentHashMap<>();
 
     // @since 5.3
-    private AltoConfig altoConfig = new AltoConfig();
+    private TpcConfig tpcConfig = new TpcConfig();
 
     public Config() {
     }
@@ -3222,28 +3222,28 @@ public class Config {
     }
 
     /**
-     * Gets the Alto config. Can't return null.
+     * Gets the TpcConfig. Can't return null.
      *
-     * @return the Alto configuration
+     * @return the TpcConfig.
      * @since 5.3
      */
     @Beta
     @Nonnull
-    public AltoConfig getAltoConfig() {
-        return altoConfig;
+    public TpcConfig getTpcConfig() {
+        return tpcConfig;
     }
 
     /**
-     * Sets the Alto config. Can't return null.
+     * Sets the TpcConfig.
      *
-     * @param altoConfig Alto configuration to be set
+     * @param tpcConfig the TpcConfig.
      * @return this config
-     * @throws NullPointerException if altoConfig is null
+     * @throws NullPointerException if tpcConfig is null
      * @since 5.3
      */
     @Beta
-    public @Nonnull Config setAltoConfig(@Nonnull AltoConfig altoConfig) {
-        this.altoConfig = checkNotNull(altoConfig);
+    public @Nonnull Config setTpcConfig(@Nonnull TpcConfig tpcConfig) {
+        this.tpcConfig = checkNotNull(tpcConfig);
         return this;
     }
 
@@ -3311,7 +3311,7 @@ public class Config {
                 + ", deviceConfigs=" + deviceConfigs
                 + ", integrityCheckerConfig=" + integrityCheckerConfig
                 + ", dataLinkConfigs=" + dataLinkConfigs
-                + ", altoConfig=" + altoConfig
+                + ", tpcConfig=" + tpcConfig
                 + '}';
     }
 }

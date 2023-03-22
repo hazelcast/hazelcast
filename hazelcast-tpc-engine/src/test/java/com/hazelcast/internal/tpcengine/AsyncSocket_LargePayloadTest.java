@@ -27,6 +27,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_SNDBUF;
@@ -46,12 +47,12 @@ public abstract class AsyncSocket_LargePayloadTest {
     private Reactor clientReactor;
     private Reactor serverReactor;
 
-    public abstract Reactor newReactor();
+    public abstract ReactorBuilder newReactorBuilder();
 
     @Before
     public void before() {
-        clientReactor = newReactor();
-        serverReactor = newReactor();
+        clientReactor = newReactorBuilder().build().start();
+        serverReactor = newReactorBuilder().build().start();
     }
 
     @After
@@ -191,13 +192,11 @@ public abstract class AsyncSocket_LargePayloadTest {
     }
 
     public void test(int payloadSize, int concurrency) throws InterruptedException {
-        SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
-
-        AsyncServerSocket serverSocket = newServer(serverAddress);
+        AsyncServerSocket serverSocket = newServer();
 
         CountDownLatch completionLatch = new CountDownLatch(concurrency);
 
-        AsyncSocket clientSocket = newClient(serverAddress, completionLatch);
+        AsyncSocket clientSocket = newClient(serverSocket.getLocalAddress(), completionLatch);
 
         System.out.println("Starting");
 
@@ -214,7 +213,7 @@ public abstract class AsyncSocket_LargePayloadTest {
         }
         clientSocket.flush();
 
-        assertOpenEventually(completionLatch);
+        assertOpenEventually(completionLatch, TimeUnit.MINUTES.toSeconds(4));
     }
 
     private AsyncSocket newClient(SocketAddress serverAddress, CountDownLatch completionLatch) {
@@ -230,7 +229,7 @@ public abstract class AsyncSocket_LargePayloadTest {
         return clientSocket;
     }
 
-    private AsyncServerSocket newServer(SocketAddress serverAddress) {
+    private AsyncServerSocket newServer() {
         AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
                 .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
                 .setAcceptConsumer(acceptRequest -> {
@@ -243,7 +242,7 @@ public abstract class AsyncSocket_LargePayloadTest {
                     socket.start();
                 })
                 .build();
-        serverSocket.bind(serverAddress);
+        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
         return serverSocket;
     }

@@ -55,10 +55,10 @@ public interface ClientConnection extends Connection {
     Map<Long, EventHandler> getEventHandlers();
 
     /**
-     * Returns the Alto channels associated with this connection,
-     * or {@code null}, if the client is not Alto-aware or the
-     * Alto is disabled on the server-side.
+     * Returns the TPC channels associated with this connection,
+     * or {@code null}, if the client is not TPC-aware or the
+     * TPC is disabled on the server-side.
      */
     @Nullable
-    Channel[] getAltoChannels();
+    Channel[] getTpcChannels();
 }
