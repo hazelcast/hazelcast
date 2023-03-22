@@ -19,6 +19,7 @@ package com.hazelcast.jet.kafka.connect.impl;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
@@ -29,6 +30,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import javax.annotation.Nonnull;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,7 +81,10 @@ public class ReadKafkaConnectP extends AbstractProcessor implements DynamicMetri
             return false;
         }
         if (traverser == null) {
+            long start = Timer.nanos();
             List<SourceRecord> sourceRecords = taskRunner.poll();
+            long durationInNanos = Timer.nanosElapsed(start);
+            localKafkaConnectStats.addSourceRecordPollDuration(Duration.ofNanos(durationInNanos));
             localKafkaConnectStats.incrementSourceRecordPoll(sourceRecords.size());
             this.traverser = traverser(sourceRecords)
                     .map(rec -> {

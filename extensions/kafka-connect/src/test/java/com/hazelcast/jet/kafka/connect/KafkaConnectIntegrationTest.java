@@ -177,6 +177,11 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
                 assertThat(sourceRecordPollTotalList).hasSize(localParallelism);
                 assertThat(sourceRecordPollTotalList).allSatisfy(a -> assertThat(a).isGreaterThan(ITEM_COUNT));
             });
+            assertTrueEventually(() -> {
+                List<Long> times = getSourceRecordPollTotalTimes();
+                assertThat(times).hasSize(localParallelism);
+                assertThat(times).allSatisfy(a -> assertThat(a).isNotNegative());
+            });
 
         }
     }
@@ -191,6 +196,12 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
     private static List<Long> getSourceRecordPollTotalList() throws Exception {
         ObjectName objectName = new ObjectName("com.hazelcast:type=Metrics,prefix=kafka.connect,*");
         return getMBeanValues(objectName, "sourceRecordPollTotal");
+    }
+
+
+    private static List<Long> getSourceRecordPollTotalTimes() throws Exception {
+        ObjectName objectName = new ObjectName("com.hazelcast:type=Metrics,prefix=kafka.connect,*");
+        return getMBeanValues(objectName, "sourceRecordPollTotalAvgTime");
     }
 
 

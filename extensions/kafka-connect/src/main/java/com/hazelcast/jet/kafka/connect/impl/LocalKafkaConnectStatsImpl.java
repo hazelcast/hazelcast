@@ -19,9 +19,12 @@ package com.hazelcast.jet.kafka.connect.impl;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.Clock;
 
+import java.time.Duration;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.KAFKA_CONNECT_CREATION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.KAFKA_CONNECT_SOURCE_RECORD_POLL_AVG_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.KAFKA_CONNECT_SOURCE_RECORD_POLL_TOTAL;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
@@ -37,6 +40,12 @@ public class LocalKafkaConnectStatsImpl implements LocalKafkaConnectStats {
     @Probe(name = KAFKA_CONNECT_SOURCE_RECORD_POLL_TOTAL)
     private volatile long sourceRecordPollTotal;
 
+    @Probe(name = KAFKA_CONNECT_SOURCE_RECORD_POLL_AVG_TIME, unit = MS)
+    private volatile long sourceRecordPollAvgTime;
+
+    private final AtomicLong sourceRecordPollTimes = new AtomicLong();
+    private final AtomicLong sourceRecordPollCount = new AtomicLong();
+
     public LocalKafkaConnectStatsImpl() {
         creationTime = Clock.currentTimeMillis();
     }
@@ -51,6 +60,12 @@ public class LocalKafkaConnectStatsImpl implements LocalKafkaConnectStats {
      */
     public void incrementSourceRecordPoll(long amount) {
         sourceRecordPollTotalUpdater.addAndGet(this, amount);
+    }
+
+    public void addSourceRecordPollDuration(Duration duration) {
+        long times = sourceRecordPollTimes.addAndGet(duration.toMillis());
+        long count = sourceRecordPollCount.incrementAndGet();
+        sourceRecordPollAvgTime = times / count;
     }
 
     public long getSourceRecordPollTotal() {
