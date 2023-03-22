@@ -112,19 +112,7 @@ public final class MongoUtilities {
             return null;
         }
 
-        return new BsonTimestamp((int) time.toEpochSecond(ZoneOffset.UTC), 0);
-    }
-
-    /**
-     * Converts given bson timest1amp to unix epoch.
-     */
-    @Nullable
-    public static BsonDateTime localDateTimeToBsonDateTime(@Nullable LocalDateTime time) {
-        if (time == null) {
-            return null;
-        }
-
-        return new BsonDateTime(time.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
+        return new BsonTimestamp((int) time.atZone(systemDefault()).withZoneSameInstant(UTC).toEpochSecond(), 0);
     }
 
     /**

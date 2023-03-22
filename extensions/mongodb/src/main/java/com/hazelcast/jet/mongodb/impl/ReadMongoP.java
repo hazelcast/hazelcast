@@ -58,7 +58,6 @@ import static com.hazelcast.jet.Traversers.singleton;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
-import static com.hazelcast.jet.mongodb.impl.MongoUtilities.bsonDateTimeToLocalDateTime;
 import static com.hazelcast.jet.mongodb.impl.MongoUtilities.partitionAggregate;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.sort;

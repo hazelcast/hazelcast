@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class MongoUtilitiesTest {
 
     @Test
-    public void converts_bson_timestamp() {
+    public void converts_bsonTimestamp_to_localDateTime() {
         //given
         long timeMillis = System.currentTimeMillis();
         LocalDateTime sourceDT = LocalDateTime.ofInstant(Instant.ofEpochMilli(timeMillis), systemDefault());
@@ -43,7 +43,7 @@ public class MongoUtilitiesTest {
     }
 
     @Test
-    public void converts_bson_datetime() {
+    public void converts_bsonDateTime_to_localDateTime() {
         // given
         long timeMillis = System.currentTimeMillis();
         LocalDateTime sourceDT = LocalDateTime.ofInstant(Instant.ofEpochMilli(timeMillis), systemDefault());
@@ -56,4 +56,17 @@ public class MongoUtilitiesTest {
         assertThat(dt).isEqualTo(sourceDT);
     }
 
+    @Test
+    public void converts_localDateTime_to_bsonTimestamp() {
+        // given
+        long timeMillis = System.currentTimeMillis();
+        LocalDateTime sourceDT = LocalDateTime.ofInstant(Instant.ofEpochMilli(timeMillis), systemDefault());
+
+        // when
+        BsonTimestamp ts = MongoUtilities.localDateTimeToTimestamp(sourceDT);
+        LocalDateTime dt = MongoUtilities.bsonTimestampToLocalDateTime(ts);
+
+        // then
+        assertThat(dt).isEqualToIgnoringNanos(sourceDT);
+    }
 }
