@@ -48,12 +48,14 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.test.Accessors.getPartitionService;
 import static java.lang.String.format;
@@ -231,182 +233,51 @@ public class NearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void testNearCacheStatsWithReadOnlyProcessor_executeOnKey() {
-        int mapSize = 1000;
-        String mapName = randomMapName();
-
-        Config config = getConfig();
-        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(true));
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance[] instances = factory.newInstances(config);
-
-        // populate map
-        IMap<Integer, Integer> map = instances[0].getMap(mapName);
-        populateMap(map, mapSize);
-
-        // populate Near Cache
-        populateNearCache(map, mapSize);
-
-        NearCacheStats stats = getNearCacheStats(map);
-
-        // make some hits
-        populateNearCache(map, mapSize);
-        long invalidationsBefore = stats.getInvalidations();
-        for (int i = 0; i < mapSize; i++) {
-            map.executeOnKey(i, new TestReadOnlyProcessor());
-        }
-        long invalidationsAfter = stats.getInvalidations();
-        assertEquals("There should be no invalidation after getting keys from read only entry processor", invalidationsBefore, invalidationsAfter);
+    public void testMapExecuteOnKey_withReadOnlyProcessor_noInvalidations() {
+        verifyNoInvalidationsWith((map, size) -> {
+            for (int i = 0; i < size; i++) {
+                map.executeOnKey(i, new TestReadOnlyProcessor());
+            }
+        });
     }
 
     @Test
-    public void testNearCacheStatsWithReadOnlyProcessor_executeOnKeys() {
-        int mapSize = 1000;
-        String mapName = randomMapName();
-
-        Config config = getConfig();
-        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(true));
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance[] instances = factory.newInstances(config);
-
-        // populate map
-        IMap<Integer, Integer> map = instances[0].getMap(mapName);
-        populateMap(map, mapSize);
-
-        // populate Near Cache
-        populateNearCache(map, mapSize);
-
-        NearCacheStats stats = getNearCacheStats(map);
-
-        // make some hits
-        populateNearCache(map, mapSize);
-        long invalidationsBefore = stats.getInvalidations();
-        Set<Integer> set = new HashSet<Integer>();
-        for (int i = 0; i < mapSize; i++) {
-            set.add(i);
-        }
-        map.executeOnKeys(set, new TestReadOnlyProcessor());
-        long invalidationsAfter = stats.getInvalidations();
-        assertEquals("There should be no invalidation after getting keys from read only entry processor", invalidationsBefore, invalidationsAfter);
-    }
-
-
-    @Test
-    public void testNearCacheStatsWithReadOnlyProcessor_submitToKey() {
-        int mapSize = 1000;
-        String mapName = randomMapName();
-
-        Config config = getConfig();
-        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(true));
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance[] instances = factory.newInstances(config);
-
-        // populate map
-        IMap<Integer, Integer> map = instances[0].getMap(mapName);
-        populateMap(map, mapSize);
-
-        // populate Near Cache
-        populateNearCache(map, mapSize);
-
-        NearCacheStats stats = getNearCacheStats(map);
-
-        // make some hits
-        populateNearCache(map, mapSize);
-
-        long invalidationsBefore = stats.getInvalidations();
-        for (int i = 0; i < mapSize; i++) {
-            map.submitToKey(i, new TestReadOnlyProcessor());
-        }
-        long invalidationsAfter = stats.getInvalidations();
-        assertEquals("There should be no invalidation after getting keys from read only entry processor", invalidationsBefore, invalidationsAfter);
+    public void testMapExecuteOnKeys_withReadOnlyProcessor_noInvalidations() {
+        verifyNoInvalidationsWith((map, size) -> {
+            Set<Integer> keys = IntStream.range(0, size).boxed().collect(Collectors.toSet());
+            map.executeOnKeys(keys, new TestReadOnlyProcessor());
+        });
     }
 
     @Test
-    public void testNearCacheStatsWithReadOnlyProcessor_submitToKeys() {
-        int mapSize = 1000;
-        String mapName = randomMapName();
-
-        Config config = getConfig();
-        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(true));
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance[] instances = factory.newInstances(config);
-
-        // populate map
-        IMap<Integer, Integer> map = instances[0].getMap(mapName);
-        populateMap(map, mapSize);
-
-        // populate Near Cache
-        populateNearCache(map, mapSize);
-
-        NearCacheStats stats = getNearCacheStats(map);
-
-        // make some hits
-        populateNearCache(map, mapSize);
-
-        long invalidationsBefore = stats.getInvalidations();
-        Set<Integer> set = new HashSet<Integer>();
-        for (int i = 0; i < mapSize; i++) {
-            set.add(i);
-        }
-        map.submitToKeys(set, new TestReadOnlyProcessor());
-        long invalidationsAfter = stats.getInvalidations();
-        assertEquals("There should be no invalidation after getting keys from read only entry processor", invalidationsBefore, invalidationsAfter);
+    public void testMapSubmitToKey_withReadOnlyProcessor_noInvalidations() {
+        verifyNoInvalidationsWith((map, size) -> {
+            for (int i = 0; i < size; i++) {
+                map.submitToKey(i, new TestReadOnlyProcessor());
+            }
+        });
     }
 
     @Test
-    public void testNearCacheStatsWithReadOnlyProcessor_executeOnEntriesWithPredicate() {
-        int mapSize = 1000;
-        String mapName = randomMapName();
-
-        Config config = getConfig();
-        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(true));
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance[] instances = factory.newInstances(config);
-
-        IMap<Integer, Integer> map = instances[0].getMap(mapName);
-        for (int i = 0; i < mapSize; i++) {
-            map.put(i, i);
-        }
-
-        populateNearCache(map, mapSize);
-
-        NearCacheStats stats = getNearCacheStats(map);
-
-        long invalidationsBefore = stats.getInvalidations();
-        map.executeOnEntries(new TestReadOnlyProcessor(), Predicates.alwaysTrue());
-        long invalidationsAfter = stats.getInvalidations();
-        assertEquals("There should be no invalidation after getting keys from read only entry processor", invalidationsBefore, invalidationsAfter);
+    public void testMapSubmitToKeys_withReadOnlyProcessor_noInvalidations() {
+        verifyNoInvalidationsWith((map, size) -> {
+            Set<Integer> keys = IntStream.range(0, size).boxed().collect(Collectors.toSet());
+            map.submitToKeys(keys, new TestReadOnlyProcessor());
+        });
     }
 
     @Test
-    public void testNearCacheStatsWithReadOnlyProcessor_executeOnEntriesWithoutPredicate() {
-        int mapSize = 1000;
-        String mapName = randomMapName();
+    public void testMapExecuteOnEntriesWithPredicate_withReadOnlyProcessor_noInvalidations() {
+        verifyNoInvalidationsWith((map, size) -> {
+            map.executeOnEntries(new TestReadOnlyProcessor(), Predicates.alwaysTrue());
+        });
+    }
 
-        Config config = getConfig();
-        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(true));
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance[] instances = factory.newInstances(config);
-
-        IMap<Integer, Integer> map = instances[0].getMap(mapName);
-        for (int i = 0; i < mapSize; i++) {
-            map.put(i, i);
-        }
-
-        populateNearCache(map, mapSize);
-
-        NearCacheStats stats = getNearCacheStats(map);
-
-        long invalidationsBefore = stats.getInvalidations();
-        map.executeOnEntries(new TestReadOnlyProcessor());
-        long invalidationsAfter = stats.getInvalidations();
-        assertEquals("There should be no invalidation after getting keys from read only entry processor", invalidationsBefore, invalidationsAfter);
+    @Test
+    public void testMapExecuteOnEntriesWithoutPredicate_withReadOnlyProcessor_noInvalidations() {
+        verifyNoInvalidationsWith((map, size) -> {
+            map.executeOnEntries(new TestReadOnlyProcessor());
+        });
     }
 
     @Test
@@ -1089,5 +960,31 @@ public class NearCacheTest extends NearCacheTestSupport {
 
         // 5. assert number of entries in client Near Cache
         assertEquals(mapSize, ((NearCachedMapProxyImpl) nearCachedMap).getNearCache().size());
+    }
+
+    private void verifyNoInvalidationsWith(BiConsumer<IMap<Integer, Integer>, Integer> operation) {
+        String mapName = randomMapName();
+
+        Config config = getConfig();
+        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(true));
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance[] instances = factory.newInstances(config);
+
+        IMap<Integer, Integer> map = instances[0].getMap(mapName);
+
+        int entryCount = 100;
+
+        populateMap(map, entryCount);
+        populateNearCache(map, entryCount);
+
+        NearCacheStats stats = getNearCacheStats(map);
+
+        long invalidationsBefore = stats.getInvalidations();
+
+        operation.accept(map, entryCount);
+
+        long invalidationsAfter = stats.getInvalidations();
+        assertEquals(invalidationsBefore, invalidationsAfter);
     }
 }
