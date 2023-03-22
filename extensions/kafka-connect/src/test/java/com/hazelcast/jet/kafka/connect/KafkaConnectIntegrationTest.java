@@ -45,14 +45,18 @@ import java.lang.management.ManagementFactory;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.kafka.connect.KafkaConnectSources.connect;
 import static com.hazelcast.test.OverridePropertyRule.set;
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -77,7 +81,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         randomProperties.setProperty("quickstart", "users");
 
         Pipeline pipeline = Pipeline.create();
-        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties))
+        StreamStage<String> streamStage = pipeline.readFrom(connect(randomProperties))
                 .withoutTimestamps()
                 .setLocalParallelism(1)
                 .map(record -> Values.convertToString(record.valueSchema(), record.value()));
@@ -109,7 +113,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
 
 
     private static <T> List<T> getMBeanValues(ObjectName objectName, String attribute) throws Exception {
-        return (List<T>) getMBeans(objectName).stream().map(i -> getAttribute(i, attribute)).collect(Collectors.toList());
+        return (List<T>) getMBeans(objectName).stream().map(i -> getAttribute(i, attribute)).collect(toList());
     }
 
     @NotNull
@@ -137,15 +141,21 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         randomProperties.setProperty("quickstart", "orders");
 
         Pipeline pipeline = Pipeline.create();
-        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties))
+        StreamStage<Map.Entry<String, String>> streamStage = pipeline.readFrom(connect(randomProperties))
                 .withoutTimestamps()
                 .setLocalParallelism(localParallelism)
-                .map(record -> Values.convertToString(record.valueSchema(), record.value()) + ", task.id: "
-                        + record.headers().lastWithName("task.id").value());
+                .map(record -> entry(record.headers().lastWithName("task.id").value().toString(),
+                        Values.convertToString(record.valueSchema(), record.value()))
+                );
         streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
-                        list -> assertEquals(localParallelism * ITEM_COUNT, list.size())));
+                        list -> {
+                            Map<String, List<String>> recordsByTaskId = entriesToMap(list);
+                            assertThat(recordsByTaskId).allSatisfy((taskId, records) ->
+                                    assertThat(records.size()).isGreaterThan(ITEM_COUNT)
+                            );
+                        }));
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
@@ -171,6 +181,13 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         }
     }
 
+    @NotNull
+    private static Map<String, List<String>> entriesToMap(List<Map.Entry<String, String>> list) {
+        return list.stream()
+                .collect(Collectors.groupingBy(Map.Entry::getKey,
+                        Collectors.mapping(Map.Entry::getValue, toList())));
+    }
+
     private static List<Long> getSourceRecordPollTotalList() throws Exception {
         ObjectName objectName = new ObjectName("com.hazelcast:type=Metrics,prefix=kafka.connect,*");
         return getMBeanValues(objectName, "sourceRecordPollTotal");
@@ -188,7 +205,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         randomProperties.setProperty("quickstart", "users");
 
         Pipeline pipeline = Pipeline.create();
-        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties))
+        StreamStage<String> streamStage = pipeline.readFrom(connect(randomProperties))
                 .withoutTimestamps()
                 .setLocalParallelism(localParallelism)
                 .map(record -> Values.convertToString(record.valueSchema(), record.value()) + ", task.id: "
