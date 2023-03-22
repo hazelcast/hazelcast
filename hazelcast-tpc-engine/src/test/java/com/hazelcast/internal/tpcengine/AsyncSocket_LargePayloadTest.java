@@ -27,11 +27,11 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_SNDBUF;
 import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.TCP_NODELAY;
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertOpenEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
@@ -43,6 +43,7 @@ public abstract class AsyncSocket_LargePayloadTest {
     // use small buffers to cause a lot of network scheduling overhead (and shake down problems)
     public static final int SOCKET_BUFFER_SIZE = 16 * 1024;
     public int iterations = 20;
+    public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 
     private Reactor clientReactor;
     private Reactor serverReactor;
@@ -213,7 +214,7 @@ public abstract class AsyncSocket_LargePayloadTest {
         }
         clientSocket.flush();
 
-        assertOpenEventually(completionLatch, TimeUnit.MINUTES.toSeconds(4));
+        assertOpenEventually(completionLatch, testTimeoutMs);
     }
 
     private AsyncSocket newClient(SocketAddress serverAddress, CountDownLatch completionLatch) {
