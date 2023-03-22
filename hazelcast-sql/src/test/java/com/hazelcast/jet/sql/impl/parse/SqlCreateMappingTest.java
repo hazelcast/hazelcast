@@ -46,7 +46,7 @@ public class SqlCreateMappingTest {
         );
 
         String sql = SqlCreateMapping.unparse(mapping);
-        assertThat(sql).isEqualTo("CREATE OR REPLACE MAPPING \"hazelcast\".\"public\".\"name\" " +
+        assertThat(sql).isEqualTo("CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"name\" " +
                 "EXTERNAL NAME \"external-name\" (" + LE +
                 "  \"field1\" VARCHAR EXTERNAL NAME \"__key.field1\"," + LE +
                 "  \"field2\" INTEGER EXTERNAL NAME \"this.field2\"" + LE +
@@ -72,7 +72,7 @@ public class SqlCreateMappingTest {
         );
 
         String sql = SqlCreateMapping.unparse(mapping);
-        assertThat(sql).isEqualTo("CREATE OR REPLACE MAPPING \"hazelcast\".\"public\".\"na\"\"me\" " +
+        assertThat(sql).isEqualTo("CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"na\"\"me\" " +
                 "EXTERNAL NAME \"external\"\"name\" (" + LE +
                 "  \"fi\"\"eld\" VARCHAR EXTERNAL NAME \"__key\"\"field\"" + LE +
                 ")" + LE +
