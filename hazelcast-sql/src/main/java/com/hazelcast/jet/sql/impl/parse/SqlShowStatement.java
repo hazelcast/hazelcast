@@ -40,6 +40,7 @@ public class SqlShowStatement extends SqlCall {
     public static final SqlSpecialOperator SHOW_VIEWS = new SqlSpecialOperator("SHOW VIEWS", SqlKind.OTHER);
     public static final SqlSpecialOperator SHOW_JOBS = new SqlSpecialOperator("SHOW JOBS", SqlKind.OTHER);
     public static final SqlSpecialOperator SHOW_TYPES = new SqlSpecialOperator("SHOW TYPES", SqlKind.OTHER);
+    public static final SqlSpecialOperator SHOW_DATALINKS = new SqlSpecialOperator("SHOW DATA LINKS", SqlKind.OTHER);
     public static final SqlSpecialOperator SHOW_RESOURCES = new SqlSpecialOperator("SHOW RESOURCES FOR", SqlKind.OTHER);
 
     private final ShowStatementTarget target;
@@ -102,6 +103,7 @@ public class SqlShowStatement extends SqlCall {
         VIEWS(SHOW_VIEWS),
         JOBS(SHOW_JOBS),
         TYPES(SHOW_TYPES),
+        DATALINKS(SHOW_DATALINKS),
         RESOURCES(SHOW_RESOURCES);
 
         private final SqlSpecialOperator operator;

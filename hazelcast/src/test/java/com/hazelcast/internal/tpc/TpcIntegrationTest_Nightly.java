@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine;
+package com.hazelcast.internal.tpc;
 
-import java.util.function.Consumer;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
-/**
- * Contains an accept request when a socket connects to the {@link AsyncServerSocket}. Is
- * processed by setting the {@link AsyncServerSocketBuilder#setAcceptConsumer(Consumer)}.
- * <p/>
- * Currently it is just a dumb placeholder so that we can pass the appropriate resource
- * (e.g. the accepted SocketChannel) to the constructor of the AsyncSocket in a typesafe
- * manner.
- */
-public interface AcceptRequest extends AutoCloseable {
-
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(NightlyTest.class)
+public class TpcIntegrationTest_Nightly extends TpcIntegrationTest {
+    public TpcIntegrationTest_Nightly() {
+        iterations = 10_000;
+    }
 }

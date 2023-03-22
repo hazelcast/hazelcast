@@ -17,16 +17,20 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.bson.BsonType;
 
 import java.util.Objects;
 
 class MongoTableField extends TableField {
     final String externalName;
+    final BsonType externalType;
     final boolean primaryKey;
 
-    MongoTableField(String name, QueryDataType type, String externalName, boolean hidden, boolean primaryKey) {
+    MongoTableField(String name, QueryDataType type, String externalName, boolean hidden,
+                    String externalType, boolean primaryKey) {
         super(name, type, hidden);
         this.externalName = externalName;
+        this.externalType = externalType == null ? null : BsonType.valueOf(externalType);
         this.primaryKey = primaryKey;
     }
 
@@ -36,6 +40,10 @@ class MongoTableField extends TableField {
 
     public boolean isPrimaryKey() {
         return primaryKey;
+    }
+
+    public BsonType getExternalType() {
+        return externalType;
     }
 
     @Override
@@ -50,11 +58,13 @@ class MongoTableField extends TableField {
             return false;
         }
         MongoTableField that = (MongoTableField) o;
-        return primaryKey == that.primaryKey && Objects.equals(externalName, that.externalName);
+        return primaryKey == that.primaryKey
+                && Objects.equals(externalName, that.externalName)
+                && Objects.equals(externalType, that.externalType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), externalName, primaryKey);
+        return Objects.hash(super.hashCode(), externalName, primaryKey, externalType);
     }
 }

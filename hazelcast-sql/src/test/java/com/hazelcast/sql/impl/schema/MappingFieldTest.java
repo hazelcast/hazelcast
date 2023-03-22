@@ -37,7 +37,7 @@ public class MappingFieldTest {
 
     @Test
     public void test_serialization() {
-        MappingField original = new MappingField("field-name", QueryDataType.INT, "field-external-name");
+        MappingField original = new MappingField("field-name", QueryDataType.INT, "field-external-name", "someType");
 
         // when
         MappingField serialized = SERIALIZATION_SERVICE.toObject(SERIALIZATION_SERVICE.toData(original));

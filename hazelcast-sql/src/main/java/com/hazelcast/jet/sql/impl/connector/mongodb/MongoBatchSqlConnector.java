@@ -86,4 +86,14 @@ public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
         );
     }
 
+    @Nonnull
+    @Override
+    public Vertex deleteProcessor(@Nonnull DagBuildContext context) {
+        MongoTable table = context.getTable();
+
+        return context.getDag().newUniqueVertex(
+                "Delete(" + table.getSqlName() + ")",
+                new DeleteProcessorSupplier(table)
+        );
+    }
 }
