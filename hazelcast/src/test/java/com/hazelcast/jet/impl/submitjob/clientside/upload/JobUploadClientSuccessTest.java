@@ -44,13 +44,17 @@ import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.List;
+import java.util.TreeSet;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadClientFailureTest.containsName;
 import static com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadClientFailureTest.getJarPath;
 import static com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadClientFailureTest.jarDoesNotExistInTempDirectory;
 import static junit.framework.TestCase.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -60,7 +64,7 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
     @After
     public void resetSingleton() {
         // Reset the singleton after the test
-        HazelcastBootstrap.resetSupplier();
+        HazelcastBootstrap.resetRemembered();
     }
 
     @Test
@@ -175,23 +179,33 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
 
         ExecutorService executorService = Executors.newFixedThreadPool(10);
 
+        // Shared client for ExecutorService threads
+        HazelcastInstance client = createHazelcastClient();
+        JetClientInstanceImpl jetService = (JetClientInstanceImpl) client.getJet();
+
+        ConcurrentSkipListSet<String> submittedJobNames = new ConcurrentSkipListSet<>();
         int jobLimit = 50;
         for (int index = 0; index < jobLimit; index++) {
+            int value = index;
             executorService.submit(() -> {
-                HazelcastInstance client = createHazelcastClient();
-                JetClientInstanceImpl jetService = (JetClientInstanceImpl) client.getJet();
-
+                String jobName = "job-" + value;
                 SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnClient()
-                        .setJarPath(getJarPath());
+                        .setJarPath(getJarPath())
+                                .setJobName(jobName);
 
                 jetService.submitJobFromJar(submitJobParameters);
-                client.shutdown();
+                submittedJobNames.add(jobName);
             });
         }
-
-        HazelcastInstance client = createHazelcastClient();
-        JetService jetService = client.getJet();
         assertEqualsEventually(() -> jetService.getJobs().size(), jobLimit);
+
+        assertTrueEventually(() -> {
+            TreeSet<String> jobNames = jetService.getJobs().stream()
+                    .map(Job::getName)
+                    .collect(Collectors.toCollection(TreeSet::new));
+
+            assertThat(jobNames).containsAll(submittedJobNames);
+        });
     }
 
     @Test

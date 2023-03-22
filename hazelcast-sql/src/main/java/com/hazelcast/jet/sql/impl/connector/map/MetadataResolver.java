@@ -58,7 +58,9 @@ public class MetadataResolver implements IMapResolver {
 
         boolean hd = container.getMapConfig().getInMemoryFormat() == InMemoryFormat.NATIVE;
         Metadata metadata = hd ? resolveFromHd(container) : resolveFromHeap(iMapName, context);
-        return metadata == null ? null : new Mapping(iMapName, iMapName, TYPE_NAME, metadata.fields(), metadata.options());
+        return metadata == null
+                ? null
+                : new Mapping(iMapName, iMapName, null, TYPE_NAME, null, metadata.fields(), metadata.options());
     }
 
     @Nullable

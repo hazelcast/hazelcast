@@ -131,7 +131,7 @@
           },
           "public-address": "dummy",
           "reuse-address": true,
-          "alto-socket": {
+          "tpc-socket": {
             "port-range": 14000,
             "receive-buffer-size-kb": "256",
             "send-buffer-size-kb": "256"
@@ -168,7 +168,7 @@
           },
           "public-address": "10.10.0.10",
           "reuse-address": true,
-          "alto-socket": {
+          "tpc-socket": {
             "port-range": 14000,
             "receive-buffer-size-kb": "256",
             "send-buffer-size-kb": "256"
@@ -202,7 +202,7 @@
               "enabled": true
             }
           },
-          "alto-socket": {
+          "tpc-socket": {
             "port-range": 14000,
             "receive-buffer-size-kb": "256",
             "send-buffer-size-kb": "256"
@@ -217,7 +217,7 @@
                 "foo": "bar"
               }
             },
-            "alto-socket": {
+            "tpc-socket": {
               "port-range": 14000,
               "receive-buffer-size-kb": "256",
               "send-buffer-size-kb": "256"
@@ -231,7 +231,7 @@
               "password": "thepassword",
               "iteration-count": 1000
             },
-            "alto-socket": {
+            "tpc-socket": {
               "port-range": 14000,
               "receive-buffer-size-kb": "256",
               "send-buffer-size-kb": "256"
@@ -246,7 +246,7 @@
               "10.20.10.100"
             ]
           },
-          "alto-socket": {
+          "tpc-socket": {
             "port-range": 14000,
             "receive-buffer-size-kb": "256",
             "send-buffer-size-kb": "256"
@@ -259,7 +259,7 @@
             "port-count": 10,
             "port": 6000
           },
-          "alto-socket": {
+          "tpc-socket": {
             "port-range": 14000,
             "receive-buffer-size-kb": "256",
             "send-buffer-size-kb": "256"
@@ -277,26 +277,26 @@
         "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config",
         "causingExceptions": [
           {
-            "schemaLocation": "#/definitions/AltoSocketConfig",
-            "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-tokyo/alto-socket",
+            "schemaLocation": "#/definitions/TpcSocketConfig",
+            "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-tokyo/tpc-socket",
             "causingExceptions": [
               {
-                "schemaLocation": "#/definitions/AltoSocketConfig/properties/send-buffer-size-kb",
-                "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-tokyo/alto-socket/send-buffer-size-kb",
+                "schemaLocation": "#/definitions/TpcSocketConfig/properties/send-buffer-size-kb",
+                "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-tokyo/tpc-socket/send-buffer-size-kb",
                 "causingExceptions": [],
                 "keyword": "type",
                 "message": "expected type: Integer, found: String"
               },
               {
-                "schemaLocation": "#/definitions/AltoSocketConfig/properties/port-range",
-                "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-tokyo/alto-socket/port-range",
+                "schemaLocation": "#/definitions/TpcSocketConfig/properties/port-range",
+                "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-tokyo/tpc-socket/port-range",
                 "causingExceptions": [],
                 "keyword": "type",
                 "message": "expected type: String, found: Integer"
               },
               {
-                "schemaLocation": "#/definitions/AltoSocketConfig/properties/receive-buffer-size-kb",
-                "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-tokyo/alto-socket/receive-buffer-size-kb",
+                "schemaLocation": "#/definitions/TpcSocketConfig/properties/receive-buffer-size-kb",
+                "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-tokyo/tpc-socket/receive-buffer-size-kb",
                 "causingExceptions": [],
                 "keyword": "type",
                 "message": "expected type: Integer, found: String"
@@ -305,26 +305,26 @@
             "message": "3 schema violations found"
           },
           {
-            "schemaLocation": "#/definitions/AltoSocketConfig",
-            "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-london/alto-socket",
+            "schemaLocation": "#/definitions/TpcSocketConfig",
+            "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-london/tpc-socket",
             "causingExceptions": [
               {
-                "schemaLocation": "#/definitions/AltoSocketConfig/properties/send-buffer-size-kb",
-                "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-london/alto-socket/send-buffer-size-kb",
+                "schemaLocation": "#/definitions/TpcSocketConfig/properties/send-buffer-size-kb",
+                "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-london/tpc-socket/send-buffer-size-kb",
                 "causingExceptions": [],
                 "keyword": "type",
                 "message": "expected type: Integer, found: String"
               },
               {
-                "schemaLocation": "#/definitions/AltoSocketConfig/properties/port-range",
-                "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-london/alto-socket/port-range",
+                "schemaLocation": "#/definitions/TpcSocketConfig/properties/port-range",
+                "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-london/tpc-socket/port-range",
                 "causingExceptions": [],
                 "keyword": "type",
                 "message": "expected type: String, found: Integer"
               },
               {
-                "schemaLocation": "#/definitions/AltoSocketConfig/properties/receive-buffer-size-kb",
-                "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-london/alto-socket/receive-buffer-size-kb",
+                "schemaLocation": "#/definitions/TpcSocketConfig/properties/receive-buffer-size-kb",
+                "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-london/tpc-socket/receive-buffer-size-kb",
                 "causingExceptions": [],
                 "keyword": "type",
                 "message": "expected type: Integer, found: String"
@@ -339,26 +339,26 @@
         "schemaLocation": "#/definitions/SocketEndpointConfig",
         "pointerToViolation": "#/hazelcast/advanced-network/member-server-socket-endpoint-config",
         "causingExceptions": [{
-          "schemaLocation": "#/definitions/AltoSocketConfig",
-          "pointerToViolation": "#/hazelcast/advanced-network/member-server-socket-endpoint-config/alto-socket",
+          "schemaLocation": "#/definitions/TpcSocketConfig",
+          "pointerToViolation": "#/hazelcast/advanced-network/member-server-socket-endpoint-config/tpc-socket",
           "causingExceptions": [
             {
-              "schemaLocation": "#/definitions/AltoSocketConfig/properties/send-buffer-size-kb",
-              "pointerToViolation": "#/hazelcast/advanced-network/member-server-socket-endpoint-config/alto-socket/send-buffer-size-kb",
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/send-buffer-size-kb",
+              "pointerToViolation": "#/hazelcast/advanced-network/member-server-socket-endpoint-config/tpc-socket/send-buffer-size-kb",
               "causingExceptions": [],
               "keyword": "type",
               "message": "expected type: Integer, found: String"
             },
             {
-              "schemaLocation": "#/definitions/AltoSocketConfig/properties/port-range",
-              "pointerToViolation": "#/hazelcast/advanced-network/member-server-socket-endpoint-config/alto-socket/port-range",
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/port-range",
+              "pointerToViolation": "#/hazelcast/advanced-network/member-server-socket-endpoint-config/tpc-socket/port-range",
               "causingExceptions": [],
               "keyword": "type",
               "message": "expected type: String, found: Integer"
             },
             {
-              "schemaLocation": "#/definitions/AltoSocketConfig/properties/receive-buffer-size-kb",
-              "pointerToViolation": "#/hazelcast/advanced-network/member-server-socket-endpoint-config/alto-socket/receive-buffer-size-kb",
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/receive-buffer-size-kb",
+              "pointerToViolation": "#/hazelcast/advanced-network/member-server-socket-endpoint-config/tpc-socket/receive-buffer-size-kb",
               "causingExceptions": [],
               "keyword": "type",
               "message": "expected type: Integer, found: String"
@@ -373,26 +373,26 @@
         "schemaLocation": "#/definitions/SocketEndpointConfig",
         "pointerToViolation": "#/hazelcast/advanced-network/memcache-server-socket-endpoint-config",
         "causingExceptions": [{
-          "schemaLocation": "#/definitions/AltoSocketConfig",
-          "pointerToViolation": "#/hazelcast/advanced-network/memcache-server-socket-endpoint-config/alto-socket",
+          "schemaLocation": "#/definitions/TpcSocketConfig",
+          "pointerToViolation": "#/hazelcast/advanced-network/memcache-server-socket-endpoint-config/tpc-socket",
           "causingExceptions": [
             {
-              "schemaLocation": "#/definitions/AltoSocketConfig/properties/send-buffer-size-kb",
-              "pointerToViolation": "#/hazelcast/advanced-network/memcache-server-socket-endpoint-config/alto-socket/send-buffer-size-kb",
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/send-buffer-size-kb",
+              "pointerToViolation": "#/hazelcast/advanced-network/memcache-server-socket-endpoint-config/tpc-socket/send-buffer-size-kb",
               "causingExceptions": [],
               "keyword": "type",
               "message": "expected type: Integer, found: String"
             },
             {
-              "schemaLocation": "#/definitions/AltoSocketConfig/properties/port-range",
-              "pointerToViolation": "#/hazelcast/advanced-network/memcache-server-socket-endpoint-config/alto-socket/port-range",
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/port-range",
+              "pointerToViolation": "#/hazelcast/advanced-network/memcache-server-socket-endpoint-config/tpc-socket/port-range",
               "causingExceptions": [],
               "keyword": "type",
               "message": "expected type: String, found: Integer"
             },
             {
-              "schemaLocation": "#/definitions/AltoSocketConfig/properties/receive-buffer-size-kb",
-              "pointerToViolation": "#/hazelcast/advanced-network/memcache-server-socket-endpoint-config/alto-socket/receive-buffer-size-kb",
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/receive-buffer-size-kb",
+              "pointerToViolation": "#/hazelcast/advanced-network/memcache-server-socket-endpoint-config/tpc-socket/receive-buffer-size-kb",
               "causingExceptions": [],
               "keyword": "type",
               "message": "expected type: Integer, found: String"
@@ -407,26 +407,26 @@
         "schemaLocation": "#/definitions/SocketEndpointConfig",
         "pointerToViolation": "#/hazelcast/advanced-network/client-server-socket-endpoint-config",
         "causingExceptions": [{
-          "schemaLocation": "#/definitions/AltoSocketConfig",
-          "pointerToViolation": "#/hazelcast/advanced-network/client-server-socket-endpoint-config/alto-socket",
+          "schemaLocation": "#/definitions/TpcSocketConfig",
+          "pointerToViolation": "#/hazelcast/advanced-network/client-server-socket-endpoint-config/tpc-socket",
           "causingExceptions": [
             {
-              "schemaLocation": "#/definitions/AltoSocketConfig/properties/send-buffer-size-kb",
-              "pointerToViolation": "#/hazelcast/advanced-network/client-server-socket-endpoint-config/alto-socket/send-buffer-size-kb",
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/send-buffer-size-kb",
+              "pointerToViolation": "#/hazelcast/advanced-network/client-server-socket-endpoint-config/tpc-socket/send-buffer-size-kb",
               "causingExceptions": [],
               "keyword": "type",
               "message": "expected type: Integer, found: String"
             },
             {
-              "schemaLocation": "#/definitions/AltoSocketConfig/properties/port-range",
-              "pointerToViolation": "#/hazelcast/advanced-network/client-server-socket-endpoint-config/alto-socket/port-range",
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/port-range",
+              "pointerToViolation": "#/hazelcast/advanced-network/client-server-socket-endpoint-config/tpc-socket/port-range",
               "causingExceptions": [],
               "keyword": "type",
               "message": "expected type: String, found: Integer"
             },
             {
-              "schemaLocation": "#/definitions/AltoSocketConfig/properties/receive-buffer-size-kb",
-              "pointerToViolation": "#/hazelcast/advanced-network/client-server-socket-endpoint-config/alto-socket/receive-buffer-size-kb",
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/receive-buffer-size-kb",
+              "pointerToViolation": "#/hazelcast/advanced-network/client-server-socket-endpoint-config/tpc-socket/receive-buffer-size-kb",
               "causingExceptions": [],
               "keyword": "type",
               "message": "expected type: Integer, found: String"
@@ -441,26 +441,26 @@
         "schemaLocation": "#/definitions/SocketEndpointConfig",
         "pointerToViolation": "#/hazelcast/advanced-network/wan-server-socket-endpoint-config",
         "causingExceptions": [{
-          "schemaLocation": "#/definitions/AltoSocketConfig",
-          "pointerToViolation": "#/hazelcast/advanced-network/wan-server-socket-endpoint-config/alto-socket",
+          "schemaLocation": "#/definitions/TpcSocketConfig",
+          "pointerToViolation": "#/hazelcast/advanced-network/wan-server-socket-endpoint-config/tpc-socket",
           "causingExceptions": [
             {
-              "schemaLocation": "#/definitions/AltoSocketConfig/properties/send-buffer-size-kb",
-              "pointerToViolation": "#/hazelcast/advanced-network/wan-server-socket-endpoint-config/alto-socket/send-buffer-size-kb",
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/send-buffer-size-kb",
+              "pointerToViolation": "#/hazelcast/advanced-network/wan-server-socket-endpoint-config/tpc-socket/send-buffer-size-kb",
               "causingExceptions": [],
               "keyword": "type",
               "message": "expected type: Integer, found: String"
             },
             {
-              "schemaLocation": "#/definitions/AltoSocketConfig/properties/port-range",
-              "pointerToViolation": "#/hazelcast/advanced-network/wan-server-socket-endpoint-config/alto-socket/port-range",
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/port-range",
+              "pointerToViolation": "#/hazelcast/advanced-network/wan-server-socket-endpoint-config/tpc-socket/port-range",
               "causingExceptions": [],
               "keyword": "type",
               "message": "expected type: String, found: Integer"
             },
             {
-              "schemaLocation": "#/definitions/AltoSocketConfig/properties/receive-buffer-size-kb",
-              "pointerToViolation": "#/hazelcast/advanced-network/wan-server-socket-endpoint-config/alto-socket/receive-buffer-size-kb",
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/receive-buffer-size-kb",
+              "pointerToViolation": "#/hazelcast/advanced-network/wan-server-socket-endpoint-config/tpc-socket/receive-buffer-size-kb",
               "causingExceptions": [],
               "keyword": "type",
               "message": "expected type: Integer, found: String"
@@ -478,26 +478,26 @@
           "schemaLocation": "#/definitions/SocketEndpointConfig",
           "pointerToViolation": "#/hazelcast/advanced-network/rest-server-socket-endpoint-config",
           "causingExceptions": [{
-            "schemaLocation": "#/definitions/AltoSocketConfig",
-            "pointerToViolation": "#/hazelcast/advanced-network/rest-server-socket-endpoint-config/alto-socket",
+            "schemaLocation": "#/definitions/TpcSocketConfig",
+            "pointerToViolation": "#/hazelcast/advanced-network/rest-server-socket-endpoint-config/tpc-socket",
             "causingExceptions": [
               {
-                "schemaLocation": "#/definitions/AltoSocketConfig/properties/send-buffer-size-kb",
-                "pointerToViolation": "#/hazelcast/advanced-network/rest-server-socket-endpoint-config/alto-socket/send-buffer-size-kb",
+                "schemaLocation": "#/definitions/TpcSocketConfig/properties/send-buffer-size-kb",
+                "pointerToViolation": "#/hazelcast/advanced-network/rest-server-socket-endpoint-config/tpc-socket/send-buffer-size-kb",
                 "causingExceptions": [],
                 "keyword": "type",
                 "message": "expected type: Integer, found: String"
               },
               {
-                "schemaLocation": "#/definitions/AltoSocketConfig/properties/port-range",
-                "pointerToViolation": "#/hazelcast/advanced-network/rest-server-socket-endpoint-config/alto-socket/port-range",
+                "schemaLocation": "#/definitions/TpcSocketConfig/properties/port-range",
+                "pointerToViolation": "#/hazelcast/advanced-network/rest-server-socket-endpoint-config/tpc-socket/port-range",
                 "causingExceptions": [],
                 "keyword": "type",
                 "message": "expected type: String, found: Integer"
               },
               {
-                "schemaLocation": "#/definitions/AltoSocketConfig/properties/receive-buffer-size-kb",
-                "pointerToViolation": "#/hazelcast/advanced-network/rest-server-socket-endpoint-config/alto-socket/receive-buffer-size-kb",
+                "schemaLocation": "#/definitions/TpcSocketConfig/properties/receive-buffer-size-kb",
+                "pointerToViolation": "#/hazelcast/advanced-network/rest-server-socket-endpoint-config/tpc-socket/receive-buffer-size-kb",
                 "causingExceptions": [],
                 "keyword": "type",
                 "message": "expected type: Integer, found: String"

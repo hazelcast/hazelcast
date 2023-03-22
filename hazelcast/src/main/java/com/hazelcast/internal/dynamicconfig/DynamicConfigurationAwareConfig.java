@@ -59,7 +59,7 @@ import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.config.alto.AltoConfig;
+import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
@@ -1259,13 +1259,13 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     @Nonnull
-    public AltoConfig getAltoConfig() {
-        return staticConfig.getAltoConfig();
+    public TpcConfig getTpcConfig() {
+        return staticConfig.getTpcConfig();
     }
 
     @Nonnull
     @Override
-    public Config setAltoConfig(@Nonnull AltoConfig altoConfig) {
+    public Config setTpcConfig(@Nonnull TpcConfig tpcConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 }

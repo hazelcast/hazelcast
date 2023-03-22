@@ -48,7 +48,7 @@
                 <xs:element name="metrics" type="metrics" minOccurs="0"/>
                 <xs:element name="instance-tracking" type="instance-tracking" minOccurs="0"/>
                 <xs:element name="sql" type="sql" minOccurs="0"/>
-                <xs:element name="alto" type="alto" minOccurs="0"/>
+                <xs:element name="tpc" type="tpc" minOccurs="0"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" default="default"/>
         </xs:complexType>
@@ -1188,11 +1188,11 @@
         </xs:restriction>
     </xs:simpleType>
 
-    <xs:complexType name="alto">
+    <xs:complexType name="tpc">
         <xs:annotation>
             <xs:documentation>
-                Configures the client for Alto, which is the next generation Hazelcast that
-                uses thread-per-core model. Alto-aware clients will maintain connections to
+                Configures the client for TPC, which is the next generation Hazelcast that
+                uses thread-per-core model. TPC-aware clients will maintain connections to
                 all cores of all cluster members. The client will route partition-specific
                 invocations to the correct core of the correct member in the best effort
                 basis.
@@ -1203,7 +1203,7 @@
         <xs:attribute name="enabled" type="xs:boolean" use="required">
             <xs:annotation>
                 <xs:documentation>
-                    Enables or disables the Alto-aware mode.
+                    Enables or disables the TPC-aware mode.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

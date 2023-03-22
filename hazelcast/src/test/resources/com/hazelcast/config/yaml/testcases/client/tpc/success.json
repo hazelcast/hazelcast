@@ -1,0 +1,10 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "tpc": {
+        "enabled": true
+      }
+    }
+  },
+  "error": null
+}

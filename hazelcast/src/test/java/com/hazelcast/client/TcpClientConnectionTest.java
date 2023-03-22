@@ -40,8 +40,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -262,5 +264,13 @@ public class TcpClientConnectionTest extends ClientTestSupport {
         clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         makeSureConnectedToServers(client, memberCount);
+    }
+
+    public static class DummySerializableCallable implements Callable, Serializable {
+
+        @Override
+        public Object call() throws Exception {
+            return null;
+        }
     }
 }

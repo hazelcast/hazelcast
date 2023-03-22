@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.tpcengine;
 
+import com.hazelcast.internal.tpcengine.util.CloseUtil;
 import org.junit.After;
 import org.junit.Test;
 
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertCompletesEventually;
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertTrueEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
 import static junit.framework.TestCase.assertNotNull;
@@ -34,6 +36,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 
 public abstract class AsyncServerSocketTest {
@@ -117,9 +120,7 @@ public abstract class AsyncServerSocketTest {
                 })
                 .build();
 
-        SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
-
-        assertThrows(IllegalArgumentException.class, () -> socket.bind(local, -1));
+        assertThrows(IllegalArgumentException.class, () -> socket.bind(new InetSocketAddress("127.0.0.1", 0), -1));
     }
 
     @Test
@@ -149,9 +150,8 @@ public abstract class AsyncServerSocketTest {
                 })
                 .build();
 
-        SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
-        socket.bind(local);
-        assertThrows(UncheckedIOException.class, () -> socket.bind(local));
+        socket.bind(new InetSocketAddress("127.0.0.1", 0));
+        assertThrows(UncheckedIOException.class, () -> socket.bind(new InetSocketAddress("127.0.0.1", 0)));
 
         socket.close();
     }
@@ -168,8 +168,7 @@ public abstract class AsyncServerSocketTest {
                 })
                 .build();
 
-        SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
-        serverSocket.bind(serverAddress);
+        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
 
         int clients = 5;
@@ -179,11 +178,57 @@ public abstract class AsyncServerSocketTest {
                     .build();
             clientSocket.start();
 
-            CompletableFuture<Void> connect = clientSocket.connect(serverAddress);
+            CompletableFuture<Void> connect = clientSocket.connect(serverSocket.getLocalAddress());
             assertCompletesEventually(connect);
         }
 
         assertEquals(clients, serverSocket.metrics.accepted());
+    }
+
+    @Test
+    public void test_accept_withException() {
+        Reactor reactor = newReactor();
+        AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
+                .setAcceptConsumer(acceptRequest -> {
+                    throw new RuntimeException();
+                })
+                .build();
+
+        SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
+        serverSocket.bind(serverAddress);
+        serverSocket.start();
+
+        AsyncSocket clientSocket = reactor.newAsyncSocketBuilder()
+                .setReadHandler(new DevNullReadHandler())
+                .build();
+        clientSocket.start();
+
+        CompletableFuture<Void> connect = clientSocket.connect(serverAddress);
+        assertCompletesEventually(connect);
+        assertTrueEventually(() -> assertTrue(clientSocket.isClosed()));
+    }
+
+    @Test
+    public void test_acceptWithExplicitClose() {
+        Reactor reactor = newReactor();
+        SocketAddress serverAddress;
+        try (AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
+                .setAcceptConsumer(CloseUtil::closeQuietly)
+                .build()) {
+
+            serverAddress = new InetSocketAddress("127.0.0.1", 5000);
+            serverSocket.bind(serverAddress);
+            serverSocket.start();
+        }
+
+        AsyncSocket clientSocket = reactor.newAsyncSocketBuilder()
+                .setReadHandler(new DevNullReadHandler())
+                .build();
+        clientSocket.start();
+
+        CompletableFuture<Void> connect = clientSocket.connect(serverAddress);
+        assertCompletesEventually(connect);
+        assertTrueEventually(() -> assertTrue(clientSocket.isClosed()));
     }
 
     @Test

@@ -24,6 +24,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.logging.ILogger;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
@@ -111,7 +112,14 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
         return dl != null && dl.source == CONFIG;
     }
 
-    private DataLinkConfig toConfig(String name, String type, Map<String, String> options) {
+    @Override
+    public boolean existsSqlDataLink(String name) {
+        DataLinkEntry dl = dataLinks.get(name);
+        return dl != null && dl.source == SQL;
+    }
+
+    // package-private for testing purposes
+    DataLinkConfig toConfig(String name, String type, Map<String, String> options) {
         Properties properties = new Properties();
         properties.putAll(options);
         return new DataLinkConfig(name)
@@ -168,6 +176,7 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
     }
 
     @Override
+    @Nonnull
     public <T extends DataLink> T getAndRetainDataLink(String name, Class<T> clazz) {
         DataLinkEntry dataLink = dataLinks.computeIfPresent(name, (k, v) -> {
             if (!clazz.isInstance(v.instance)) {
@@ -193,6 +202,10 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
             v.instance.release();
             return null;
         });
+    }
+
+    public Map<String, DataLinkEntry> getDataLinks() {
+        return dataLinks;
     }
 
     @Override

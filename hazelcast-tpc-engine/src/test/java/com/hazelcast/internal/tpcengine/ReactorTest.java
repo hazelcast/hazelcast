@@ -20,7 +20,6 @@ import org.junit.After;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -193,8 +192,7 @@ public abstract class ReactorTest {
                 })
                 .build();
 
-        SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
-        serverSocket.bind(local);
+        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
 
         reactor.shutdown();
@@ -210,8 +208,7 @@ public abstract class ReactorTest {
                 })
                 .build();
 
-        SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
-        serverSocket.bind(serverAddress);
+        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
 
         Reactor clientReactor = newReactor();
@@ -224,7 +221,7 @@ public abstract class ReactorTest {
                 })
                 .build();
         clientSocket.start();
-        clientSocket.connect(serverAddress);
+        clientSocket.connect(serverSocket.getLocalAddress());
 
         clientReactor.shutdown();
         assertTrueEventually(() -> assertTrue(clientSocket.isClosed()));

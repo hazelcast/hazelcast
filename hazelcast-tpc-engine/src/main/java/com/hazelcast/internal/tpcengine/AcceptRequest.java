@@ -26,6 +26,6 @@ import java.util.function.Consumer;
  * (e.g. the accepted SocketChannel) to the constructor of the AsyncSocket in a typesafe
  * manner.
  */
-public interface AcceptRequest {
+public interface AcceptRequest extends AutoCloseable {
 
 }

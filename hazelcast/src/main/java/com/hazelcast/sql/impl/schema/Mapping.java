@@ -16,9 +16,11 @@
 
 package com.hazelcast.sql.impl.schema;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import java.io.IOException;
@@ -34,11 +36,13 @@ import java.util.Objects;
  * represent a mapping.
  */
 @SuppressWarnings("JavadocReference")
-public class Mapping implements IdentifiedDataSerializable {
+public class Mapping implements IdentifiedDataSerializable, Versioned {
 
     private String name;
     private String externalName;
-    private String type;
+    private String dataLink;
+    private String connectorType;
+    private String objectType;
     private List<MappingField> mappingFields;
     private Map<String, String> options;
 
@@ -48,13 +52,18 @@ public class Mapping implements IdentifiedDataSerializable {
     public Mapping(
             String name,
             String externalName,
-            String type,
+            String dataLink,
+            String connectorType,
+            String objectType,
             List<MappingField> fields,
             Map<String, String> options
     ) {
+        assert connectorType == null || dataLink == null;
         this.name = name;
         this.externalName = externalName;
-        this.type = type;
+        this.dataLink = dataLink;
+        this.connectorType = connectorType;
+        this.objectType = objectType;
         this.mappingFields = fields;
         this.options = options;
     }
@@ -67,8 +76,16 @@ public class Mapping implements IdentifiedDataSerializable {
         return externalName;
     }
 
-    public String type() {
-        return type;
+    public String connectorType() {
+        return connectorType;
+    }
+
+    public String dataLink() {
+        return dataLink;
+    }
+
+    public String objectType() {
+        return objectType;
     }
 
     public List<MappingField> fields() {
@@ -93,7 +110,11 @@ public class Mapping implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
         out.writeString(externalName);
-        out.writeString(type);
+        out.writeString(connectorType);
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_3)) {
+            out.writeString(dataLink);
+            out.writeString(objectType);
+        }
         out.writeObject(mappingFields);
         out.writeObject(options);
     }
@@ -102,7 +123,11 @@ public class Mapping implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
         externalName = in.readString();
-        type = in.readString();
+        connectorType = in.readString();
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_3)) {
+            dataLink = in.readString();
+            objectType = in.readString();
+        }
         mappingFields = in.readObject();
         options = in.readObject();
     }
@@ -118,13 +143,15 @@ public class Mapping implements IdentifiedDataSerializable {
         Mapping mapping = (Mapping) o;
         return Objects.equals(name, mapping.name)
                 && Objects.equals(externalName, mapping.externalName)
-                && Objects.equals(type, mapping.type)
+                && Objects.equals(dataLink, mapping.dataLink)
+                && Objects.equals(connectorType, mapping.connectorType)
+                && Objects.equals(objectType, mapping.objectType)
                 && Objects.equals(mappingFields, mapping.mappingFields)
                 && Objects.equals(options, mapping.options);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, externalName, type, mappingFields, options);
+        return Objects.hash(name, externalName, dataLink, connectorType, objectType, mappingFields, options);
     }
 }

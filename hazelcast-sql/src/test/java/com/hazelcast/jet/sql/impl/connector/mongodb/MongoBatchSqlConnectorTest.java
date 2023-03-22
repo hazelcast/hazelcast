@@ -20,7 +20,6 @@ import com.hazelcast.logging.LogListener;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.mongodb.MongoBulkWriteException;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import org.bson.Document;
@@ -81,6 +80,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
         collection.insertOne(new Document("firstName", "Han").append("lastName", "Solo").append("jedi", false));
         collection.insertOne(new Document("firstName", "Anakin").append("lastName", "Skywalker").append("jedi", true));
+        collection.insertOne(new Document("firstName", "Rey").append("jedi", true));
 
         execute("CREATE MAPPING " + collectionName
                 + " ("
@@ -97,11 +97,12 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
 
         String force = forceTwoSteps ? " and cast(jedi as varchar) = 'true' " : "";
         assertRowsAnyOrder("select firstName, lastName from " + collectionName
-                        + " where lastName = ? and jedi=true" + force,
+                        + " where (lastName = ? or lastName is null) and jedi=true" + force,
                 singletonList("Skywalker"),
                 asList(
                         new Row("Luke", "Skywalker"),
-                        new Row("Anakin", "Skywalker")
+                        new Row("Anakin", "Skywalker"),
+                        new Row("Rey", null)
                 )
         );
         assertEquals(forceTwoSteps, projectAndFilterFound.get());
@@ -224,7 +225,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
 
     public void testInsertsIntoMongo(boolean includeId, String sql, Object... args) {
         MongoCollection<Document> collection = database.getCollection(collectionName);
-        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", "true"));
+        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
 
         createMapping(includeId);
 
@@ -268,7 +269,6 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         createMapping(true);
         assertThatThrownBy(() -> execute("insert into " + collectionName + " (id, firstName, jedi) values (?, ?, ?)",
                 insertedId, "yolo", false))
-                .hasRootCauseInstanceOf(MongoBulkWriteException.class)
                 .hasMessageContaining("E11000 duplicate key error collection");
     }
 
@@ -400,6 +400,27 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         assertEquals("Leia", item.getString("firstName"));
         assertEquals("Organa", item.getString("lastName"));
         assertEquals(true, item.getBoolean("jedi"));
+    }
+
+    @Test
+    public void deletes_inserted_item() {
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        ObjectId objectId = ObjectId.get();
+        collection.insertOne(new Document("_id", objectId).append("firstName", "temp").append("lastName", "temp")
+                                                          .append("jedi", true));
+        collection.insertOne(new Document("_id", ObjectId.get()).append("firstName", "temp2").append("lastName", "temp2")
+                                                          .append("jedi", true));
+        collection.insertOne(new Document("_id", ObjectId.get()).append("firstName", "temp3").append("lastName", "temp3")
+                                                          .append("jedi", true));
+
+        createMapping(true);
+
+        execute("delete from " + collectionName + " where id = ?", objectId);
+        ArrayList<Document> list = collection.find().into(new ArrayList<>());
+        assertThat(list).hasSize(2);
+        execute("delete from " + collectionName);
+        list = collection.find().into(new ArrayList<>());
+        assertThat(list).isEmpty();
     }
 
     private void createMapping(boolean includeIdInMapping) {
