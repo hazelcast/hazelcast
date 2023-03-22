@@ -16,15 +16,15 @@
 
 package com.hazelcast.instance.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.impl.DefaultAddressPicker.AddressDefinition;
 import com.hazelcast.instance.impl.DefaultAddressPicker.InterfaceDefinition;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.ChangeLoggingRule;
@@ -46,13 +46,12 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
-import java.util.Properties;
 
 import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV4_STACK;
 import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV6_ADDRESSES;
+import static com.hazelcast.internal.util.AddressUtil.getAddressHolder;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static com.hazelcast.test.OverridePropertyRule.set;
-import static com.hazelcast.internal.util.AddressUtil.getAddressHolder;
 import static java.net.InetAddress.getByName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
