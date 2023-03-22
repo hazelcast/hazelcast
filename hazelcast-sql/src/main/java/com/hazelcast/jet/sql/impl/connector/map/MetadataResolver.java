@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.impl.util.Util;
@@ -26,8 +25,6 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.query.impl.InternalIndex;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.Mapping;
@@ -56,8 +53,7 @@ public class MetadataResolver implements IMapResolver {
             return null;
         }
 
-        boolean hd = container.getMapConfig().getInMemoryFormat() == InMemoryFormat.NATIVE;
-        Metadata metadata = hd ? resolveFromHd(container) : resolveFromHeap(iMapName, context);
+        Metadata metadata = resolveFromContents(iMapName, context);
         return metadata == null
                 ? null
                 : new Mapping(iMapName, iMapName, null, TYPE_NAME, null, metadata.fields(), metadata.options());
@@ -65,29 +61,7 @@ public class MetadataResolver implements IMapResolver {
 
     @Nullable
     @SuppressWarnings("rawtypes")
-    private Metadata resolveFromHd(MapContainer container) {
-        if (container.getIndexes() == null) {
-            return null;
-        }
-
-        InternalIndex[] indexes = container.getIndexes().getIndexes();
-        if (indexes == null || indexes.length == 0) {
-            return null;
-        }
-
-        InternalIndex index = indexes[0];
-        Iterator<QueryableEntry> entryIterator = index.getSqlRecordIterator(false);
-        if (!entryIterator.hasNext()) {
-            return null;
-        }
-
-        QueryableEntry entry = entryIterator.next();
-        return resolveMetadata(entry.getKey(), entry.getValue());
-    }
-
-    @Nullable
-    @SuppressWarnings("rawtypes")
-    private Metadata resolveFromHeap(String name, MapServiceContext context) {
+    private Metadata resolveFromContents(String name, MapServiceContext context) {
         for (PartitionContainer partitionContainer : context.getPartitionContainers()) {
             RecordStore<?> recordStore = partitionContainer.getExistingRecordStore(name);
             if (recordStore == null) {

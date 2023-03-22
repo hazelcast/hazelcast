@@ -73,6 +73,27 @@ public class MCMessageTasksTest extends SqlTestSupport {
         assertStartsWith("CREATE MAPPING \"" + name + "\"", response);
     }
 
+    @Test
+    public void test_sqlMappingDdl_emptyMap() throws Exception {
+        String name = randomMapName();
+        instance().getMap(name).clear();
+
+        ClientInvocation invocation = new ClientInvocation(
+                getClientImpl(),
+                SqlMappingDdlCodec.encodeRequest(name),
+                null
+        );
+
+        ClientDelegatingFuture<String> future = new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                getClientImpl().getSerializationService(),
+                SqlMappingDdlCodec::decodeResponse
+        );
+
+        String response = future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
+        assertNull(response);
+    }
+
     private HazelcastClientInstanceImpl getClientImpl() {
         return ((HazelcastClientProxy) client()).client;
     }
