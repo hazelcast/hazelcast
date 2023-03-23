@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.mongodb.WriteMode;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
-import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nonnull;
@@ -94,7 +93,11 @@ public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
 
     @Nonnull
     @Override
-    public Vertex deleteProcessor(@Nonnull DagBuildContext context) {
+    public Vertex deleteProcessor(
+            @Nonnull DagBuildContext context,
+            @Nullable HazelcastRexNode predicate,
+            boolean hasInput
+    ) {
         MongoTable table = context.getTable();
 
         return context.getDag().newUniqueVertex(
