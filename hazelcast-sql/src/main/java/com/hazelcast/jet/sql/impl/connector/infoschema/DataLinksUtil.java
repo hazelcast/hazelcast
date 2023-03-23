@@ -20,7 +20,7 @@ import com.hazelcast.datalink.JdbcDataLink;
 
 import java.util.Locale;
 
-public class DataLinksUtil {
+public final class DataLinksUtil {
     public static final String DUMMY_CONNECTOR_TYPE = "com.hazelcast.datalink.impl.DataLinkTestUtil$DummyDataLink";
     public static final String JDBC_CONNECTOR_TYPE = "JDBC";
     public static final String MONGO_CONNECTOR_TYPE = "MONGO";
@@ -45,8 +45,8 @@ public class DataLinksUtil {
             case MONGO_CONNECTOR_TYPE:
             case KAFKA_CONNECTOR_TYPE:
                 throw new UnsupportedOperationException("Data link " + type + " is not yet supported");
-
+            default:
+                throw new UnsupportedOperationException("Data link " + type + " is not supported");
         }
-        throw new AssertionError("Unreachable");
     }
 }
