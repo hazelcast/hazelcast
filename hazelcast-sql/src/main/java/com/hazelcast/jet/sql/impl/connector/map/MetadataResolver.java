@@ -24,14 +24,18 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.Mapping;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
@@ -67,50 +71,91 @@ public class MetadataResolver implements IMapResolver {
     }
 
     @Nullable
-    @SuppressWarnings("rawtypes")
     private Metadata resolveFromContents(String name, MapServiceContext context) {
         for (PartitionContainer partitionContainer : context.getPartitionContainers()) {
             RecordStore<?> recordStore = partitionContainer.getExistingRecordStore(name);
-            if (recordStore == null) {
-                continue;
-            }
-
-            // some storage engines (Tiered Storage) require beforeOperation invocation
-            // before using the record store.
-            recordStore.beforeOperation();
-            try {
-                Iterator<Entry<Data, Record>> recordStoreIterator = recordStore.iterator();
-                if (!recordStoreIterator.hasNext()) {
-                    continue;
-                }
-
-                Entry<Data, Record> entry = recordStoreIterator.next();
-                return resolveMetadata(entry.getKey(), entry.getValue().getValue());
-            } finally {
-                recordStore.afterOperation();
+            Metadata resolved = resolveFromContentsRecordStore(recordStore);
+            if (resolved != null) {
+                return resolved;
             }
         }
         return null;
     }
 
     private Metadata resolveFromContentsHd(String name, MapServiceContext context) {
-        MapProxyImpl<?, ?> map = (MapProxyImpl<?, ?>) nodeEngine.getHazelcastInstance().getMap(name);
-
         // Iterate only over local partitions.
         // MC will invoke this operation on each member until it finds some data.
         for (PartitionContainer partitionContainer : context.getPartitionContainers()) {
-            // HD access must be from partition threads. Iterator provides just that.
-            Iterator<? extends Entry<?, ?>> partitionIterator =
-                    map.iterator(1, partitionContainer.getPartitionId(), true);
-
-            if (!partitionIterator.hasNext()) {
-                continue;
+            // HD access must be from partition threads.
+            GetAnyMetadataOperation op = new GetAnyMetadataOperation(name);
+            Metadata resolved = invoke(op, partitionContainer.getPartitionId());
+            if (resolved != null) {
+                return resolved;
             }
-
-            Entry<?, ?> entry = partitionIterator.next();
-            return resolveMetadata(entry.getKey(), entry.getValue());
         }
         return null;
+    }
+
+    private class GetAnyMetadataOperation extends Operation {
+        private final String mapName;
+
+        private GetAnyMetadataOperation(String mapName) {
+            this.mapName = mapName;
+        }
+
+        @Override
+        public void run() throws Exception {
+            MapService service = getNodeEngine().getService(MapService.SERVICE_NAME);
+            MapServiceContext context = service.getMapServiceContext();
+            RecordStore<?> recordStore = context.getExistingRecordStore(getPartitionId(), mapName);
+            // can return null, but that is fine
+            sendResponse(resolveFromContentsRecordStore(recordStore));
+        }
+
+        @Override
+        public boolean returnsResponse() {
+            return false;
+        }
+
+        @Override
+        protected void writeInternal(ObjectDataOutput out) throws IOException {
+            throw new UnsupportedOperationException("This operation is invoked only locally");
+        }
+
+        @Override
+        protected void readInternal(ObjectDataInput in) throws IOException {
+            throw new UnsupportedOperationException("This operation is invoked only locally");
+        }
+    }
+
+    private <T extends Metadata> T invoke(Operation operation, int partitionId) {
+        final InvocationFuture<T> future =
+                nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
+        return future.joinInternal();
+    }
+
+
+    @Nullable
+    @SuppressWarnings("rawtypes")
+    private Metadata resolveFromContentsRecordStore(RecordStore<?> recordStore) {
+        if (recordStore == null) {
+            return null;
+        }
+
+        // some storage engines (Tiered Storage) require beforeOperation invocation
+        // before using the record store.
+        recordStore.beforeOperation();
+        try {
+            Iterator<Entry<Data, Record>> recordStoreIterator = recordStore.iterator();
+            if (!recordStoreIterator.hasNext()) {
+                return null;
+            }
+
+            Entry<Data, Record> entry = recordStoreIterator.next();
+            return resolveMetadata(entry.getKey(), entry.getValue().getValue());
+        } finally {
+            recordStore.afterOperation();
+        }
     }
 
     @Nullable
