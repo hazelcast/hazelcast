@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.mongodb.WriteMode;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
+import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nonnull;
@@ -94,7 +95,7 @@ public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
     @Override
     public boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
         // TODO return true for supported expressions
-        return false;
+        return super.supportsExpression(expression);
     }
 
     @Override

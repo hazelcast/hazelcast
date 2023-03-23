@@ -300,7 +300,7 @@ public class JdbcSqlConnector implements SqlConnector {
     @Override
     public boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
         // TODO return true for supported expressions
-        return false;
+        return SqlConnector.super.supportsExpression(expression);
     }
 
     @Override
