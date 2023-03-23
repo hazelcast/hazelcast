@@ -56,7 +56,7 @@ public class UnsafeSessionAwareSemaphoreClientBasicTest extends UnsafeSessionAwa
 
     @Override
     protected AbstractProxySessionManager getSessionManager(HazelcastInstance instance) {
-        return (((HazelcastClientProxy) client).client).getProxySessionManager();
+        return (((HazelcastClientProxy) client).target()).getProxySessionManager();
     }
 
     @Override

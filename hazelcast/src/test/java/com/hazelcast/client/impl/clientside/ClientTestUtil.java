@@ -36,7 +36,7 @@ public final class ClientTestUtil {
     public static HazelcastClientInstanceImpl getHazelcastClientInstanceImpl(HazelcastInstance hz) {
         HazelcastClientInstanceImpl impl = null;
         if (hz instanceof HazelcastClientProxy) {
-            impl = ((HazelcastClientProxy) hz).client;
+            impl = ((HazelcastClientProxy) hz).target();
         } else if (hz instanceof HazelcastClientInstanceImpl) {
             impl = (HazelcastClientInstanceImpl) hz;
         }

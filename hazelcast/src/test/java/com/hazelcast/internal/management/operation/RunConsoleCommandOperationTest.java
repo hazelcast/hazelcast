@@ -52,7 +52,7 @@ public class RunConsoleCommandOperationTest extends HazelcastTestSupport {
         Config config = smallInstanceConfig();
         config.getManagementCenterConfig().setConsoleEnabled(true);
         hz = factory.newHazelcastInstance(config);
-        client = ((HazelcastClientProxy) factory.newHazelcastClient()).client;
+        client = ((HazelcastClientProxy) factory.newHazelcastClient()).target();
     }
 
     @After

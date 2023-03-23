@@ -301,7 +301,7 @@ public class TestHazelcastInstanceFactory {
         if (inst instanceof HazelcastInstanceImpl) {
             return ((HazelcastInstanceImpl) inst).node.isMaster();
         } else if (inst instanceof HazelcastInstanceProxy) {
-            return ((HazelcastInstanceProxy) inst).getOriginal().node.isMaster();
+            return ((HazelcastInstanceProxy) inst).getTarget().node.isMaster();
         } else {
             throw new IllegalArgumentException("This method can be called only member"
                     + " instances such as HazelcastInstanceImpl and HazelcastInstanceProxy.");

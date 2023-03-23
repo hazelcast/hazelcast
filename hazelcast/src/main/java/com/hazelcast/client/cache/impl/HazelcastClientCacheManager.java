@@ -64,7 +64,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
          * by this cache manager itself.
          */
         if (hazelcastInstance instanceof HazelcastClientProxy) {
-            client = ((HazelcastClientProxy) hazelcastInstance).client;
+            client = ((HazelcastClientProxy) hazelcastInstance).target();
         } else {
             client = ((HazelcastClientInstanceImpl) hazelcastInstance);
         }

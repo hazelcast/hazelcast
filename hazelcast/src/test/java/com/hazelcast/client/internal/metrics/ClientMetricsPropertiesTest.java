@@ -74,7 +74,7 @@ public class ClientMetricsPropertiesTest extends HazelcastTestSupport {
         assertEquals(24, metricsConfig.getCollectionFrequencySeconds());
 
         // verify that the overridden config is used
-        ClientMetricsConfig metricsConfigUsed = client.client.getClientStatisticsService().getMetricsConfig();
+        ClientMetricsConfig metricsConfigUsed = client.target().getClientStatisticsService().getMetricsConfig();
         assertSame(originalMetricsConfig, metricsConfigUsed);
     }
 
@@ -98,7 +98,7 @@ public class ClientMetricsPropertiesTest extends HazelcastTestSupport {
         assertEquals(defaultConfig.getCollectionFrequencySeconds(), metricsConfig.getCollectionFrequencySeconds());
 
         // verify that the overridden config is used
-        ClientMetricsConfig metricsConfigUsed = client.client.getClientStatisticsService().getMetricsConfig();
+        ClientMetricsConfig metricsConfigUsed = client.target().getClientStatisticsService().getMetricsConfig();
         assertSame(originalMetricsConfig, metricsConfigUsed);
     }
 
@@ -115,7 +115,7 @@ public class ClientMetricsPropertiesTest extends HazelcastTestSupport {
         assertEquals(24, originalMetricsConfig.getCollectionFrequencySeconds());
 
         // verify that the overridden config is used
-        ClientMetricsConfig metricsConfigUsed = client.client.getClientStatisticsService().getMetricsConfig();
+        ClientMetricsConfig metricsConfigUsed = client.target().getClientStatisticsService().getMetricsConfig();
         assertSame(originalMetricsConfig, metricsConfigUsed);
     }
 
@@ -137,13 +137,13 @@ public class ClientMetricsPropertiesTest extends HazelcastTestSupport {
         assertEquals(defaultConfig.getCollectionFrequencySeconds(), originalMetricsConfig.getCollectionFrequencySeconds());
 
         // verify that the overridden config is used
-        ClientMetricsConfig metricsConfigUsed = client.client.getClientStatisticsService().getMetricsConfig();
+        ClientMetricsConfig metricsConfigUsed = client.target().getClientStatisticsService().getMetricsConfig();
         assertSame(originalMetricsConfig, metricsConfigUsed);
     }
 
     @Test
     public void testDebugMetricsSysPropNotSet() {
-        MetricsRegistry metricsRegistry = createClient().client.getMetricsRegistry();
+        MetricsRegistry metricsRegistry = createClient().target().getMetricsRegistry();
 
         assertEquals(INFO, metricsRegistry.minimumLevel());
     }
@@ -151,7 +151,7 @@ public class ClientMetricsPropertiesTest extends HazelcastTestSupport {
     @Test
     public void testDebugMetricsSysPropDisabled() {
         System.setProperty(ClientProperty.METRICS_DEBUG.getName(), "false");
-        MetricsRegistry metricsRegistry = createClient().client.getMetricsRegistry();
+        MetricsRegistry metricsRegistry = createClient().target().getMetricsRegistry();
 
         assertEquals(INFO, metricsRegistry.minimumLevel());
     }
@@ -159,7 +159,7 @@ public class ClientMetricsPropertiesTest extends HazelcastTestSupport {
     @Test
     public void testDebugMetricsSysPropEnabled() {
         System.setProperty(ClientProperty.METRICS_DEBUG.getName(), "true");
-        MetricsRegistry metricsRegistry = createClient().client.getMetricsRegistry();
+        MetricsRegistry metricsRegistry = createClient().target().getMetricsRegistry();
 
         assertEquals(DEBUG, metricsRegistry.minimumLevel());
     }

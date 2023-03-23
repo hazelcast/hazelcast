@@ -424,7 +424,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         @Override
         @Nonnull
         public List<Processor> get(int count) {
-            int remotePartitionCount = client.client.getClientPartitionService().getPartitionCount();
+            int remotePartitionCount = client.target().getClientPartitionService().getPartitionCount();
 
             return IntStream.range(0, count)
                     .mapToObj(i -> {

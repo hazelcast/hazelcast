@@ -95,7 +95,7 @@ public class ProcessorClassLoaderCleanupTest extends JetTestSupport {
         assertJobStatusEventually(job, JobStatus.RUNNING);
 
         JetServiceBackend jetServiceBackend =
-                ((HazelcastInstanceProxy) member).getOriginal().node.getNodeEngine().getService(JetServiceBackend.SERVICE_NAME);
+                ((HazelcastInstanceProxy) member).getTarget().node.getNodeEngine().getService(JetServiceBackend.SERVICE_NAME);
         JobClassLoaderService jobClassLoaderService = jetServiceBackend.getJobClassLoaderService();
 
         ChildFirstClassLoader classLoader = (ChildFirstClassLoader) jobClassLoaderService.getProcessorClassLoader(job.getId(), source.name());

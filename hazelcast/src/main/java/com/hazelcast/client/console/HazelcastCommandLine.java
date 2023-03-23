@@ -611,7 +611,7 @@ public class HazelcastCommandLine implements Runnable {
 
     protected static HazelcastClientInstanceImpl getHazelcastClientInstanceImpl(HazelcastInstance client) {
         if (client instanceof HazelcastClientProxy) {
-            return ((HazelcastClientProxy) client).client;
+            return ((HazelcastClientProxy) client).target();
         } else if (client instanceof HazelcastClientInstanceImpl) {
             return ((HazelcastClientInstanceImpl) client);
         } else {

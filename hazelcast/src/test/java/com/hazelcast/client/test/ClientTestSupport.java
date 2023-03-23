@@ -84,7 +84,7 @@ public class ClientTestSupport extends HazelcastTestSupport {
             return (HazelcastClientInstanceImpl) client;
         }
         HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
-        return clientProxy.client;
+        return clientProxy.target();
     }
 
     public static void makeSureDisconnectedFromServer(final HazelcastInstance client, UUID memberUUID) {

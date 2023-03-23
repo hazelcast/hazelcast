@@ -77,14 +77,14 @@ public class FencedLockClientBasicTest extends FencedLockBasicTest {
 
         assertTrueEventually(() -> {
             HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
-            ClientProxySessionManager proxySessionManager = clientProxy.client.getProxySessionManager();
+            ClientProxySessionManager proxySessionManager = clientProxy.target().getProxySessionManager();
             assertEquals(NO_SESSION_ID, proxySessionManager.getSession((RaftGroupId) lock.getGroupId()));
         });
     }
 
     @Override
     protected AbstractProxySessionManager getSessionManager(HazelcastInstance instance) {
-        return (((HazelcastClientProxy) client).client).getProxySessionManager();
+        return (((HazelcastClientProxy) client).target()).getProxySessionManager();
     }
 
 }

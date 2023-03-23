@@ -61,7 +61,7 @@ public class SingleProtocolHandlerRegressionTest extends HazelcastTestSupport {
     @Repeat(50)
     public void testWrongProtocolRegressionTest() {
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(createMemberEndpointConfig());
-        ServerConnectionManager connectionManager = ((HazelcastInstanceProxy) instance).getOriginal().node
+        ServerConnectionManager connectionManager = ((HazelcastInstanceProxy) instance).getTarget().node
                 .getServer().getConnectionManager(CLIENT);
         // Get address of the client endpoint
         InetAddress address = instance.getCluster().getLocalMember().getSocketAddress(CLIENT).getAddress();

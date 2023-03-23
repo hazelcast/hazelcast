@@ -54,7 +54,7 @@ public class TestHazelcastFactoryTest extends HazelcastTestSupport {
     @Test
     public void no_leaking_client_after_shutdown() {
         HazelcastInstance client = factory.newHazelcastClient();
-        HazelcastClientInstanceImpl clientInstanceImpl = ((HazelcastClientProxy) client).client;
+        HazelcastClientInstanceImpl clientInstanceImpl = ((HazelcastClientProxy) client).target();
 
         client.getLifecycleService().shutdown();
 
@@ -64,7 +64,7 @@ public class TestHazelcastFactoryTest extends HazelcastTestSupport {
     @Test
     public void no_leaking_client_after_terminate() {
         HazelcastInstance client = factory.newHazelcastClient();
-        HazelcastClientInstanceImpl clientInstanceImpl = ((HazelcastClientProxy) client).client;
+        HazelcastClientInstanceImpl clientInstanceImpl = ((HazelcastClientProxy) client).target();
 
         client.getLifecycleService().terminate();
 
@@ -75,8 +75,8 @@ public class TestHazelcastFactoryTest extends HazelcastTestSupport {
     public void no_leaking_client_after_shutdownAll() {
         HazelcastInstance client1 = factory.newHazelcastClient();
         HazelcastInstance client2 = factory.newHazelcastClient();
-        HazelcastClientInstanceImpl clientInstanceImpl1 = ((HazelcastClientProxy) client1).client;
-        HazelcastClientInstanceImpl clientInstanceImpl2 = ((HazelcastClientProxy) client2).client;
+        HazelcastClientInstanceImpl clientInstanceImpl1 = ((HazelcastClientProxy) client1).target();
+        HazelcastClientInstanceImpl clientInstanceImpl2 = ((HazelcastClientProxy) client2).target();
 
         factory.shutdownAll();
 
@@ -88,8 +88,8 @@ public class TestHazelcastFactoryTest extends HazelcastTestSupport {
     public void no_leaking_client_after_terminateAll() {
         HazelcastInstance client1 = factory.newHazelcastClient();
         HazelcastInstance client2 = factory.newHazelcastClient();
-        HazelcastClientInstanceImpl clientInstanceImpl1 = ((HazelcastClientProxy) client1).client;
-        HazelcastClientInstanceImpl clientInstanceImpl2 = ((HazelcastClientProxy) client2).client;
+        HazelcastClientInstanceImpl clientInstanceImpl1 = ((HazelcastClientProxy) client1).target();
+        HazelcastClientInstanceImpl clientInstanceImpl2 = ((HazelcastClientProxy) client2).target();
 
         factory.terminateAll();
 

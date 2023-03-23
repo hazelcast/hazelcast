@@ -61,7 +61,7 @@ public class SessionAwareSemaphoreClientBasicTest extends SessionAwareSemaphoreB
 
     @Override
     protected AbstractProxySessionManager getSessionManager(HazelcastInstance instance) {
-        return (((HazelcastClientProxy) instance).client).getProxySessionManager();
+        return (((HazelcastClientProxy) instance).target()).getProxySessionManager();
     }
 
     @Override
@@ -78,7 +78,7 @@ public class SessionAwareSemaphoreClientBasicTest extends SessionAwareSemaphoreB
         final int drainPermits = semaphore.drainPermits();
 
         HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
-        ClientProxySessionManager proxySessionManager = clientProxy.client.getProxySessionManager();
+        ClientProxySessionManager proxySessionManager = clientProxy.target().getProxySessionManager();
         SessionAwareSemaphoreProxy proxy = (SessionAwareSemaphoreProxy) semaphore;
         RaftGroupId groupId = (RaftGroupId) proxy.getGroupId();
         final long session = proxySessionManager.getSession(groupId);

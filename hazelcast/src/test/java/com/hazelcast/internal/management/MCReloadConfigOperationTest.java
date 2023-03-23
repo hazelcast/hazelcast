@@ -33,7 +33,7 @@ public class MCReloadConfigOperationTest
     public void test()
             throws ExecutionException, InterruptedException {
         ClientInvocation inv = new ClientInvocation(
-                ((HazelcastClientProxy) client).client,
+                ((HazelcastClientProxy) client).target(),
                 MCReloadConfigCodec.encodeRequest(),
                 null
         );

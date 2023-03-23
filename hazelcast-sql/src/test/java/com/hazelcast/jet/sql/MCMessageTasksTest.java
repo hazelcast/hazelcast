@@ -134,7 +134,7 @@ public class MCMessageTasksTest extends SqlTestSupport {
     }
 
     private HazelcastClientInstanceImpl getClientImpl() {
-        return ((HazelcastClientProxy) client()).client;
+        return ((HazelcastClientProxy) client()).getTarget();
     }
 
     private String getMappingDdl(String name, String partitionKey) throws InterruptedException, ExecutionException, TimeoutException {

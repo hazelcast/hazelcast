@@ -211,7 +211,7 @@ public class CacheClearTest extends CacheTestSupport {
 
     private void registerInvalidationListener(CacheEventListener cacheEventListener, String name) {
         HazelcastInstanceProxy hzInstance = (HazelcastInstanceProxy) this.hazelcastInstance;
-        hzInstance.getOriginal().node.getNodeEngine().getEventService()
+        hzInstance.getTarget().node.getNodeEngine().getEventService()
                 .registerListener(ICacheService.SERVICE_NAME, name, cacheEventListener);
     }
 }

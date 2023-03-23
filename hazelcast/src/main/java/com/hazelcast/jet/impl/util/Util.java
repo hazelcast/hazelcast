@@ -744,7 +744,7 @@ public final class Util {
         if (instance instanceof HazelcastInstanceImpl) {
             return ((HazelcastInstanceImpl) instance);
         } else if (instance instanceof HazelcastInstanceProxy) {
-            return ((HazelcastInstanceProxy) instance).getOriginal();
+            return ((HazelcastInstanceProxy) instance).getTarget();
         } else {
             throw new IllegalArgumentException("This method can be called only with member" +
                     " instances such as HazelcastInstanceImpl and HazelcastInstanceProxy, but not " + instance.getClass());

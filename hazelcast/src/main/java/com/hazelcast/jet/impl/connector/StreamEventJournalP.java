@@ -408,7 +408,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             HazelcastInstance client = createRemoteClient(context, dataConnectionName, clientXml);
             try {
                 HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
-                remotePartitionCount = clientProxy.client.getClientPartitionService().getPartitionCount();
+                remotePartitionCount = clientProxy.target().getClientPartitionService().getPartitionCount();
             } finally {
                 client.shutdown();
             }

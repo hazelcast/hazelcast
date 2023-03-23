@@ -178,7 +178,7 @@ public class AttributePartitioningStrategyIntegrationTest extends SimpleTestInCl
         }
 
         return Arrays.stream(instances())
-                .filter(instance -> ((HazelcastInstanceProxy) instance).getOriginal().node.address
+                .filter(instance -> ((HazelcastInstanceProxy) instance).getTarget().node.address
                         .equals(partition.getOwner().getAddress()))
                 .findFirst()
                 .orElseThrow(() -> new HazelcastException("Can not find partition owner"));

@@ -85,7 +85,7 @@ public class HazelcastDataConnection extends DataConnectionBase {
             this.proxy = new ConcurrentMemoizingSupplier<>(() -> {
                 HazelcastClientProxy hazelcastClientProxy = (HazelcastClientProxy) HazelcastClient
                         .newHazelcastClient(clientConfig);
-                return new HazelcastClientProxy(hazelcastClientProxy.client) {
+                return new HazelcastClientProxy(hazelcastClientProxy.getTarget()) {
                     @Override
                     public void shutdown() {
                         release();
@@ -161,7 +161,7 @@ public class HazelcastDataConnection extends DataConnectionBase {
             HazelcastClientProxy rememberedProxy = proxy.remembered();
             if (rememberedProxy != null) {
                 // the proxy has overridden shutdown method, need to close real client
-                rememberedProxy.client.shutdown();
+                rememberedProxy.getTarget().shutdown();
             }
             proxy = null;
         }

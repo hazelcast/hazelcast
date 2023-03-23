@@ -174,7 +174,7 @@ public abstract class AbstractUpdateMapP<T, K, V> extends AsyncHazelcastWriterP 
                 partitioningStrategy = ((MapProxyImpl<K, ?>) map).getPartitionStrategy();
             } else {
                 HazelcastClientProxy clientProxy = (HazelcastClientProxy) instance;
-                ClientPartitionService clientPartitionService = clientProxy.client.getClientPartitionService();
+                ClientPartitionService clientPartitionService = clientProxy.target().getClientPartitionService();
                 partitionCount = clientPartitionService.getPartitionCount();
                 partitionIdFn = clientPartitionService::getPartitionId;
                 serializationService = clientProxy.getSerializationService();

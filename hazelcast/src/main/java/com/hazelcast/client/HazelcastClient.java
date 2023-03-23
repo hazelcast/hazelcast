@@ -320,11 +320,11 @@ public final class HazelcastClient {
         for (InstanceFuture<HazelcastClientProxy> future : CLIENTS.values()) {
             try {
                 HazelcastClientProxy proxy = future.get();
-                HazelcastClientInstanceImpl client = proxy.client;
+                HazelcastClientInstanceImpl client = proxy.target();
                 if (client == null) {
                     continue;
                 }
-                proxy.client = null;
+                proxy.target(null);
                 client.shutdown();
             } catch (Throwable ignored) {
                 EmptyStatement.ignore(ignored);
@@ -342,11 +342,11 @@ public final class HazelcastClient {
     public static void shutdown(HazelcastInstance instance) {
         if (instance instanceof HazelcastClientProxy) {
             final HazelcastClientProxy proxy = (HazelcastClientProxy) instance;
-            HazelcastClientInstanceImpl client = proxy.client;
+            HazelcastClientInstanceImpl client = proxy.target();
             if (client == null) {
                 return;
             }
-            proxy.client = null;
+            proxy.target(null);
             CLIENTS.remove(client.getName());
 
             try {
@@ -371,11 +371,11 @@ public final class HazelcastClient {
         }
 
         HazelcastClientProxy proxy = future.get();
-        HazelcastClientInstanceImpl client = proxy.client;
+        HazelcastClientInstanceImpl client = proxy.target();
         if (client == null) {
             return;
         }
-        proxy.client = null;
+        proxy.target(null);
         try {
             client.shutdown();
         } catch (Throwable ignored) {

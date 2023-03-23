@@ -67,7 +67,7 @@ public class UnsafeFencedLockClientBasicTest extends UnsafeFencedLockBasicTest {
 
     @Override
     protected AbstractProxySessionManager getSessionManager(HazelcastInstance instance) {
-        return (((HazelcastClientProxy) client).client).getProxySessionManager();
+        return (((HazelcastClientProxy) client).target()).getProxySessionManager();
     }
 
 }

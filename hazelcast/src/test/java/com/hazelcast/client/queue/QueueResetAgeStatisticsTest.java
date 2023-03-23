@@ -52,7 +52,7 @@ public class QueueResetAgeStatisticsTest
     @Before
     public void setup() {
         member = hazelcastFactory.newHazelcastInstance();
-        client = ((HazelcastClientProxy) hazelcastFactory.newHazelcastClient()).client;
+        client = ((HazelcastClientProxy) hazelcastFactory.newHazelcastClient()).target();
     }
 
     @Test

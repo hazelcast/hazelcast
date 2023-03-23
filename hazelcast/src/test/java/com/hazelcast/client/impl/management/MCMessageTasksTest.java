@@ -140,7 +140,7 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
     public void testChangeClusterVersionMessageTask() throws Exception {
         ClientMessage clientMessage = MCChangeClusterVersionCodec.encodeRequest((byte) 8, (byte) 10);
         String expectedExceptionMsg = "Node's codebase version "
-                + ((HazelcastInstanceProxy) member).getOriginal().node.getVersion()
+                + ((HazelcastInstanceProxy) member).getTarget().node.getVersion()
                 + " is incompatible with the requested cluster version 8.10";
         assertFailure(clientMessage, VersionMismatchException.class, expectedExceptionMsg);
     }
@@ -501,6 +501,6 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
     }
 
     private HazelcastClientInstanceImpl getClientImpl() {
-        return ((HazelcastClientProxy) client).client;
+        return ((HazelcastClientProxy) client).target();
     }
 }

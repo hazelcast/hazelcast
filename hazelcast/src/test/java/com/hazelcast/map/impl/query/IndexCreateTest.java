@@ -183,7 +183,7 @@ public class IndexCreateTest extends HazelcastTestSupport {
         List<HazelcastInstanceProxy> members = handler.initialize(hazelcastFactory, indexConfigs);
 
         for (HazelcastInstanceProxy member : members) {
-            MapService service = member.getOriginal().node.nodeEngine.getService(MapService.SERVICE_NAME);
+            MapService service = member.getTarget().node.nodeEngine.getService(MapService.SERVICE_NAME);
             MapServiceContext mapServiceContext = service.getMapServiceContext();
             MapContainer mapContainer = mapServiceContext.getMapContainer(MAP_NAME);
 

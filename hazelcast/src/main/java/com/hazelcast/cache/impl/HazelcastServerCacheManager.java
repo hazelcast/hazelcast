@@ -75,7 +75,7 @@ public class HazelcastServerCacheManager extends AbstractHazelcastCacheManager {
          * by this cache manager itself.
          */
         if (hazelcastInstance instanceof HazelcastInstanceProxy) {
-            instance = ((HazelcastInstanceProxy) hazelcastInstance).getOriginal();
+            instance = ((HazelcastInstanceProxy) hazelcastInstance).getTarget();
         } else {
             instance = (HazelcastInstanceImpl) hazelcastInstance;
         }
