@@ -68,13 +68,20 @@ public class MetadataResolver implements IMapResolver {
                 continue;
             }
 
-            Iterator<Entry<Data, Record>> recordStoreIterator = recordStore.iterator();
-            if (!recordStoreIterator.hasNext()) {
-                continue;
-            }
+            // some storage engines (Tiered Storage) require beforeOperation invocation
+            // before using the record store.
+            recordStore.beforeOperation();
+            try {
+                Iterator<Entry<Data, Record>> recordStoreIterator = recordStore.iterator();
+                if (!recordStoreIterator.hasNext()) {
+                    continue;
+                }
 
-            Entry<Data, Record> entry = recordStoreIterator.next();
-            return resolveMetadata(entry.getKey(), entry.getValue().getValue());
+                Entry<Data, Record> entry = recordStoreIterator.next();
+                return resolveMetadata(entry.getKey(), entry.getValue().getValue());
+            } finally {
+                recordStore.afterOperation();
+            }
         }
         return null;
     }
