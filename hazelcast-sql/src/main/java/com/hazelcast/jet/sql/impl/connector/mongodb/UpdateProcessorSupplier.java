@@ -23,12 +23,14 @@ import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOneModel;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.model.WriteModel;
+import org.bson.BsonType;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -41,7 +43,6 @@ import java.util.List;
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_COMMIT_RETRY_STRATEGY;
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_TRANSACTION_OPTION;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
-import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.wrap;
 import static java.util.Arrays.asList;
 
 /**
@@ -56,6 +57,8 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     private final List<String> fieldNames;
     private final List<? extends Serializable> updates;
     private final String dataLinkName;
+    private final QueryDataType pkType;
+    private final BsonType pkExternalType;
     private ExpressionEvalContext evalContext;
     private transient SupplierEx<MongoClient> clientSupplier;
     private final String pkExternalName;
@@ -65,6 +68,9 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
         this.dataLinkName = table.dataLinkName;
         this.databaseName = table.databaseName;
         this.collectionName = table.collectionName;
+
+        this.pkType = table.pkType();
+        this.pkExternalType = table.pkExternalType();
 
         // update-specific
         this.fieldNames = fieldNames;
@@ -137,7 +143,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
 
         Document doc = new Document();
         Object value = values[0];
-        doc.append(pkExternalName, wrap(value, v -> v));
+        doc.append(pkExternalName, ConversionsToBson.convertToBson(value, pkType, pkExternalType));
 
         return doc;
     }

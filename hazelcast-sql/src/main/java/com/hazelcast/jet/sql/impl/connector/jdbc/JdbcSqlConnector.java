@@ -107,7 +107,7 @@ public class JdbcSqlConnector implements SqlConnector {
                         throw new IllegalStateException("Could not resolve field with external name " + f.externalName());
                     }
                     validateType(f, dbField);
-                    MappingField mappingField = new MappingField(f.name(), f.type(), f.externalName());
+                    MappingField mappingField = new MappingField(f.name(), f.type(), f.externalName(), dbField.columnTypeName);
                     mappingField.setPrimaryKey(dbField.primaryKey);
                     resolvedFields.add(mappingField);
                 } else {

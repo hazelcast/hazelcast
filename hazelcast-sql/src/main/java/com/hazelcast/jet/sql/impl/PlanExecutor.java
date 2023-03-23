@@ -23,6 +23,7 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.datalink.impl.DataLinkServiceImpl;
 import com.hazelcast.datalink.DataLink;
 import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -381,6 +382,11 @@ public class PlanExecutor {
                 break;
             case TYPES:
                 rows = catalog.getTypeNames().stream();
+                break;
+            case DATALINKS:
+                InternalDataLinkService service = nodeEngine.getDataLinkService();
+                DataLinkServiceImpl dataLinkService = (DataLinkServiceImpl) service;
+                rows = dataLinkService.getDataLinks().keySet().stream();
                 break;
             case RESOURCES:
                 return executeShowResources(plan.getDataLinkName());

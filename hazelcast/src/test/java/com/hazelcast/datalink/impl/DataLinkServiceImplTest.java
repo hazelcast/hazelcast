@@ -120,9 +120,9 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
                         .setProperty("customProperty", "new value")
         );
 
-        assertThat(dataLinkViaService.isClosed())
-                .describedAs("DataLink should have been closed when replaced by DataLink from dynamic config")
-                .isTrue();
+        assertTrueEventually(() -> assertThat(dataLinkViaService.isClosed())
+                    .describedAs("DataLink should have been closed when replaced by DataLink from dynamic config")
+                    .isTrue());
 
         DataLink dataLink = dataLinkService.getAndRetainDataLink(TEST_VIA_SERVICE_CONFIG, DummyDataLink.class);
 
