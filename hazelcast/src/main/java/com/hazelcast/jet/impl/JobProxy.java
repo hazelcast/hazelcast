@@ -237,7 +237,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     @Override
-    public UUID addStatusListener(@Nonnull JobStatusListener listener) {
+    protected UUID doAddStatusListener(JobStatusListener listener) {
         checkJobStatusListenerSupported(container());
         JobEventService jobEventService = container().getService(JobEventService.SERVICE_NAME);
         return jobEventService.addEventListener(getId(), listener);

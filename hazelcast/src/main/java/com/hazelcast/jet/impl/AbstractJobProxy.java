@@ -21,6 +21,7 @@ import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.JobStatusListener;
 import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobNotFoundException;
@@ -35,6 +36,7 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -294,6 +296,33 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         }
     }
 
+    /**
+     * @implNote Listeners added to a job after it completes will not be removed automatically
+     * since the job has already produced a terminal event. In order to make auto-deregistration
+     * race-free, it is not allowed to add listeners to completed jobs. Checking whether the job
+     * status is terminal before adding the listener will not work since they are not atomic.
+     * Delegating the listener registration to the job coordinator requires locking the master
+     * context, converting the registration operation to an event callback with the same
+     * orderKey as job status events, and restoring Registration#listener during deserialization.
+     * The fastest and simplest solution is to assume optimistically that the job is still
+     * running and remove the listener if it turns out be completed.
+     */
+    @Override
+    public UUID addStatusListener(@Nonnull JobStatusListener listener) {
+        UUID registrationId = doAddStatusListener(listener);
+        String error;
+        try {
+            JobStatus status = getStatus();
+            error = status.isTerminal() ? "Cannot add status listener to a " + status + " job" : null;
+        } catch (JobNotFoundException ignored) {
+            error = "Job is not found";
+        }
+        if (error != null && removeStatusListener(registrationId)) {
+            throw new IllegalStateException(error);
+        }
+        return registrationId;
+    }
+
     @Override
     public String toString() {
         return "Job{id=" + getIdString()
@@ -335,6 +364,8 @@ public abstract class AbstractJobProxy<C, M> implements Job {
      * reflect the changes); otherwise, the operation fails.
      */
     protected abstract JobConfig doUpdateJobConfig(DeltaJobConfig deltaConfig);
+
+    protected abstract UUID doAddStatusListener(JobStatusListener listener);
 
     /**
      * Return the ID of the coordinator - the master member for normal jobs and

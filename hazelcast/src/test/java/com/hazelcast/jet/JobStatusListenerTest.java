@@ -57,13 +57,14 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
+import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.spi.impl.eventservice.impl.EventServiceTest.getEventService;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -210,6 +211,20 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    public void testListenerLateRegistration() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(batchSource())
+                .writeTo(Sinks.noop());
+
+        Job job = instance.get().getJet().newJob(p);
+        advance(job.getId(), 1);
+        jobIdString = job.getIdString();
+        job.join();
+        assertThatThrownBy(() -> job.addStatusListener(e -> { }))
+                .hasMessage("Cannot add status listener to a COMPLETED job");
+    }
+
+    @Test
     public void testLightListener_waitForCompletion() {
         testLightListener(batchSource(),
                 Job::join,
@@ -252,6 +267,20 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
                 });
     }
 
+    @Test
+    public void testLightListenerLateRegistration() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(batchSource())
+                .writeTo(Sinks.noop());
+
+        Job job = instance.get().getJet().newLightJob(p);
+        advance(job.getId(), 1);
+        jobIdString = job.getIdString();
+        assertJobStatusEventually(job, COMPLETED);
+        assertThatThrownBy(() -> job.addStatusListener(e -> { }))
+                .hasMessage("Cannot add status listener to a COMPLETED job");
+    }
+
     @After
     public void testListenerDeregistration_onCompletion() {
         assertHasNoListenerEventually(jobIdString, registrationId);
@@ -261,8 +290,9 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         assertTrueEventually(() -> {
             assertTrue(Arrays.stream(instances()).allMatch(hz ->
                     getEventService(hz).getRegistrations(JobEventService.SERVICE_NAME, jobIdString).isEmpty()));
-            assertFalse(((ClientListenerServiceImpl) getHazelcastClientInstanceImpl(client()).getListenerService())
-                    .getRegistrations().containsKey(registrationId));
+            assertTrue(registrationId == null
+                    || !((ClientListenerServiceImpl) getHazelcastClientInstanceImpl(client()).getListenerService())
+                        .getRegistrations().containsKey(registrationId));
         });
     }
 
