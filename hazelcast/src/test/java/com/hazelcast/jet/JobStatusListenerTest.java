@@ -238,7 +238,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
                         failure = e.getCause();
                     }
                     assertNotNull(failure);
-                    assertIterableEqualsEventually(listener.log,
+                    assertEqualsEventually(listener.log,
                             "Jet: RUNNING -> FAILED (" + failure + ")");
                 });
     }
@@ -317,12 +317,17 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     protected void testLightListener(Object source, Consumer<Job> test, String log) {
         testLightListener(source, (job, listener) -> {
             test.accept(job);
-            assertIterableEqualsEventually(listener.log, log);
+            assertEqualsEventually(listener.log, log);
         });
     }
 
-    protected static void assertIterableEqualsEventually(Iterable<?> actual, Object... expected) {
-        assertTrueEventually(() -> assertIterableEquals(actual, expected));
+    @SafeVarargs
+    protected static <T> void assertEqualsEventually(List<T> actual, T... expected) {
+        assertTrueEventually(() -> {
+            List<T> actualCopy = new ArrayList<>(actual);
+            assertEquals("length", actualCopy.size(), expected.length);
+            assertEquals(actualCopy, asList(expected));
+        });
     }
 
     @SafeVarargs
