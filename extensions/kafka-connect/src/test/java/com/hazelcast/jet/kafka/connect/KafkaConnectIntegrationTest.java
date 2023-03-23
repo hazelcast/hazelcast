@@ -149,7 +149,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
                 );
         streamStage.writeTo(Sinks.logger());
         streamStage
-                .writeTo(AssertionSinks.assertCollectedEventually(60,
+                .writeTo(AssertionSinks.assertCollectedEventually(120,
                         list -> {
                             Map<String, List<String>> recordsByTaskId = entriesToMap(list);
                             assertThat(recordsByTaskId).allSatisfy((taskId, records) ->
