@@ -152,7 +152,11 @@ public class QueryStateRegistryUpdater {
 
         private void checkDataLinksConsistency() {
             if (dataLinkConsistencyChecker.isInitialized()) {
-                dataLinkConsistencyChecker.check();
+                try {
+                    dataLinkConsistencyChecker.check();
+                } catch (Throwable t) {
+                    // ignore any exception
+                }
             } else {
                 if (nodeServiceProvider.getMap(JetServiceBackend.SQL_CATALOG_MAP_NAME) == null) {
                     return;
