@@ -46,7 +46,6 @@ import org.bson.conversions.Bson;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.Closeable;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -64,8 +63,6 @@ import static com.mongodb.client.model.Aggregates.sort;
 import static com.mongodb.client.model.Filters.gt;
 import static com.mongodb.client.model.Sorts.ascending;
 import static com.mongodb.client.model.changestream.FullDocument.UPDATE_LOOKUP;
-import static java.time.ZoneId.systemDefault;
-import static java.time.ZoneOffset.UTC;
 
 /**
  * Processor for reading from MongoDB
@@ -452,8 +449,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
         private long clusterTime(ChangeStreamDocument<Document> changeStreamDocument) {
             BsonDateTime time = changeStreamDocument.getWallTime();
-            return time == null ? System.currentTimeMillis() :
-                    Instant.ofEpochMilli(time.getValue()).atZone(UTC).withZoneSameInstant(systemDefault()).toInstant().toEpochMilli();
+            return time == null ? System.currentTimeMillis() : time.getValue();
         }
 
         @Nullable
