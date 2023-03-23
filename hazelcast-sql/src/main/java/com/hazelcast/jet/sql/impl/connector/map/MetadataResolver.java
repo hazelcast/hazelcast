@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.impl.util.Util;
@@ -23,6 +24,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -53,7 +55,12 @@ public class MetadataResolver implements IMapResolver {
             return null;
         }
 
-        Metadata metadata = resolveFromContents(iMapName, context);
+        boolean hd = container.getMapConfig().getInMemoryFormat() == InMemoryFormat.NATIVE
+                && !container.getMapConfig().getTieredStoreConfig().isEnabled();
+
+        Metadata metadata = hd
+                ? resolveFromContentsHd(iMapName, context)
+                : resolveFromContents(iMapName, context);
         return metadata == null
                 ? null
                 : new Mapping(iMapName, iMapName, null, TYPE_NAME, null, metadata.fields(), metadata.options());
@@ -82,6 +89,26 @@ public class MetadataResolver implements IMapResolver {
             } finally {
                 recordStore.afterOperation();
             }
+        }
+        return null;
+    }
+
+    private Metadata resolveFromContentsHd(String name, MapServiceContext context) {
+        MapProxyImpl<?, ?> map = (MapProxyImpl<?, ?>) nodeEngine.getHazelcastInstance().getMap(name);
+
+        // Iterate only over local partitions.
+        // MC will invoke this operation on each member until it finds some data.
+        for (PartitionContainer partitionContainer : context.getPartitionContainers()) {
+            // HD access must be from partition threads. Iterator provides just that.
+            Iterator<? extends Entry<?, ?>> partitionIterator =
+                    map.iterator(1, partitionContainer.getPartitionId(), true);
+
+            if (!partitionIterator.hasNext()) {
+                continue;
+            }
+
+            Entry<?, ?> entry = partitionIterator.next();
+            return resolveMetadata(entry.getKey(), entry.getValue());
         }
         return null;
     }
