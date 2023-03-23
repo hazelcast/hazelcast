@@ -1253,7 +1253,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public V computeIfPresent(@Nonnull K key,
                               @Nonnull BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        checkNotNull(key, NULL_BIFUNCTION_IS_NOT_ALLOWED);
+        checkNotNull(remappingFunction, NULL_BIFUNCTION_IS_NOT_ALLOWED);
 
         if (SerializationUtil.isClassStaticAndSerializable(remappingFunction)
                 && isClusterVersionGreaterOrEqual(Versions.V4_1)) {
@@ -1333,7 +1333,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     public V compute(@Nonnull K key, @Nonnull BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        checkNotNull(key, NULL_BIFUNCTION_IS_NOT_ALLOWED);
+        checkNotNull(remappingFunction, NULL_BIFUNCTION_IS_NOT_ALLOWED);
 
         if (SerializationUtil.isClassStaticAndSerializable(remappingFunction)
                 && isClusterVersionGreaterOrEqual(Versions.V4_1)) {
