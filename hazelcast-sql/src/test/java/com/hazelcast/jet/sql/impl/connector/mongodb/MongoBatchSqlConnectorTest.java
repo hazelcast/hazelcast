@@ -117,7 +117,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
     }
 
     @Test
-    public void readWithTypeCoertion() {
+    public void readWithTypeCoercion() {
         MongoCollection<Document> collection = database.getCollection(collectionName);
         collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", "true"));
 
@@ -296,6 +296,37 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         testUpdatesMongo(true,
                 "update " + collectionName + " set firstName = ?, lastName = ?, jedi=? " +
                         "where firstName = ?", "Han", "Solo", false, "temp");
+    }
+
+    @Test
+    public void updatesMongo_pkNotFirst() {
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
+
+        execute("CREATE MAPPING " + collectionName
+                + " ("
+                + " firstName VARCHAR, "
+                + " id OBJECT external name _id, "
+                + " lastName VARCHAR, "
+                + " jedi BOOLEAN "
+                + ") "
+                + "TYPE MongoDB "
+                + "OPTIONS ("
+                + "    'connectionString' = '" + mongoContainer.getConnectionString() + "', "
+                + "    'database' = '" +  databaseName + "', "
+                + "    'collection' = '" + collectionName + "' "
+                + ")");
+
+        execute("update " + collectionName + " set firstName = lastName, lastName = ?, jedi=? " +
+                        "where firstName = ?", "Solo", false, "temp");
+
+        ArrayList<Document> list = collection.find()
+                                             .into(new ArrayList<>());
+        assertEquals(1, list.size());
+        Document item = list.get(0);
+        assertEquals("temp", item.getString("firstName"));
+        assertEquals("Solo", item.getString("lastName"));
+        assertEquals(false, item.getBoolean("jedi"));
     }
 
     public void testUpdatesMongo(boolean includeIdInMapping, String sql, Object... args) {
