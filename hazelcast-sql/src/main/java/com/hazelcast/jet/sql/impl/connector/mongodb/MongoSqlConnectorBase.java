@@ -28,6 +28,7 @@ import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
+import jdk.internal.util.xml.impl.Input;
 import org.apache.calcite.rex.RexNode;
 import org.bson.BsonDocument;
 import org.bson.BsonTimestamp;
@@ -170,9 +171,13 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             DagBuildContext context,
             RexToMongoVisitor visitor
     ) {
+        // todo other cases?
+        MongoTable table = context.getTable();
+        String[] externalNames = table.externalNames();
         List<String> fields = projectionNodes.stream()
                 .map(e -> e.unwrap(RexNode.class).accept(visitor))
-                .map(p -> (String) p)
+                .map(p -> (InputRef) p)
+                .map(p -> externalNames[p.getInputIndex()])
                 .collect(toList());
 
         if (fields.isEmpty()) {

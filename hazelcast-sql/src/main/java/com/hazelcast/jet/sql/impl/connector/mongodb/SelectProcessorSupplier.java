@@ -107,7 +107,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         ArrayList<Bson> aggregates = new ArrayList<>();
 
         if (this.predicate != null) {
-            Bson filterWithParams = ParameterReplacer.replacePlaceholders(predicate, evalContext);
+            Bson filterWithParams = PlaceholderReplacer.replacePlaceholders(predicate, evalContext, null);
             aggregates.add(match(filterWithParams.toBsonDocument()));
         }
         Bson proj = include(this.projection);

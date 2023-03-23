@@ -52,7 +52,7 @@ final class RexToMongoVisitor implements RexVisitor<Object> {
     @Override
     public Object visitInputRef(RexInputRef inputRef) {
         int index = inputRef.getIndex();
-        return fields[index];
+        return new InputRef(index);
     }
 
     @Override

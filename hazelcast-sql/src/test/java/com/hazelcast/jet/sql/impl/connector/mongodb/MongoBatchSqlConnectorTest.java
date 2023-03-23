@@ -282,6 +282,13 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
     }
 
     @Test
+    public void updatesMongo_whereWithReference() {
+        testUpdatesMongo(true,
+                "update " + collectionName + " set firstName = ?, lastName = ?, jedi=? " +
+                        "where firstName = lastName", "Han", "Solo", false);
+    }
+
+    @Test
     public void updatesMongo_pkNotFirst() {
         MongoCollection<Document> collection = database.getCollection(collectionName);
         collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
@@ -296,8 +303,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                 + "TYPE MongoDB "
                 + "OPTIONS ("
                 + "    'connectionString' = '" + mongoContainer.getConnectionString() + "', "
-                + "    'database' = '" +  databaseName + "', "
-                + "    'collection' = '" + collectionName + "' "
+                + "    'database' = '" +  databaseName + "' "
                 + ")");
 
         execute("update " + collectionName + " set firstName = lastName, lastName = ?, jedi=? " +

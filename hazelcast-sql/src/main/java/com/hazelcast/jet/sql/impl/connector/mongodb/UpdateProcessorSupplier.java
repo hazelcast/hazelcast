@@ -18,19 +18,18 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.mongodb.WriteMode;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Field;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOneModel;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.model.WriteModel;
-import org.bson.BsonType;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -44,6 +43,7 @@ import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_COMMIT_RETRY_ST
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_TRANSACTION_OPTION;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 import static java.util.Arrays.asList;
+import static java.util.Objects.requireNonNull;
 
 /**
  * ProcessorSupplier that creates {@linkplain WriteMongoP} processors on each instance,
@@ -54,26 +54,21 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     private final String connectionString;
     private final String databaseName;
     private final String collectionName;
-    private final List<String> fieldNames;
+    private final List<String> updatedFieldNames;
     private final List<? extends Serializable> updates;
     private final String dataLinkName;
-    private final QueryDataType pkType;
-    private final BsonType pkExternalType;
     private ExpressionEvalContext evalContext;
     private transient SupplierEx<MongoClient> clientSupplier;
     private final String pkExternalName;
 
-    UpdateProcessorSupplier(MongoTable table, List<String> fieldNames, List<? extends Serializable> updates) {
+    UpdateProcessorSupplier(MongoTable table, List<String> updatedFieldNames, List<? extends Serializable> updates) {
         this.connectionString = table.connectionString;
         this.dataLinkName = table.dataLinkName;
         this.databaseName = table.databaseName;
         this.collectionName = table.collectionName;
 
-        this.pkType = table.pkType();
-        this.pkExternalType = table.pkExternalType();
-
         // update-specific
-        this.fieldNames = fieldNames;
+        this.updatedFieldNames = updatedFieldNames;
         this.updates = updates;
         this.pkExternalName = table.primaryKeyExternalName();
     }
@@ -91,7 +86,6 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     public Collection<? extends Processor> get(int count) {
         Processor[] processors = new Processor[count];
 
-        final String idFieldName = pkExternalName;
         for (int i = 0; i < count; i++) {
             Processor processor = new WriteMongoP<>(
                     new WriteMongoParams<Document>()
@@ -100,12 +94,9 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
                             .setDatabaseName(databaseName)
                             .setCollectionName(collectionName)
                             .setDocumentType(Document.class)
-                            .setDocumentIdentityFn(doc -> doc.get(idFieldName))
-                            .setDocumentIdentityFieldName(idFieldName)
                             .setCommitRetryStrategy(DEFAULT_COMMIT_RETRY_STRATEGY)
                             .setTransactionOptionsSup(() -> DEFAULT_TRANSACTION_OPTION)
                             .setIntermediateMappingFn(this::rowToUpdateDoc)
-                            .setWriteMode(WriteMode.UPDATE_ONLY)
                             .setWriteModelFn(this::write)
             );
 
@@ -114,38 +105,42 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
         return asList(processors);
     }
 
-    private WriteModel<Document> write(Document row) {
-        List<Bson> updateToPerform = new ArrayList<>();
-        for (int i = 0; i < fieldNames.size(); i++) {
-            String fieldName = fieldNames.get(i);
-            Object updateExpr = updates.get(i);
-            if (updateExpr instanceof Bson) {
-                Document document = Document.parse(((Bson) updateExpr)
-                                            .toBsonDocument(Document.class, defaultCodecRegistry()).toJson());
-                ParameterReplacer.replacePlaceholders(document, evalContext);
-                updateExpr = document;
-            } else if (updateExpr instanceof DynamicParameter) {
-                updateExpr = evalContext.getArgument(((DynamicParameter) updateExpr).getIndex());
-            }
-
-            updateToPerform.add(Updates.set(fieldName, updateExpr));
-        }
-
-        Bson filter = Filters.eq(pkExternalName, row.get(pkExternalName));
-        return new UpdateOneModel<>(filter, updateToPerform);
+    @SuppressWarnings("unchecked")
+    private WriteModel<Document> write(Document update) {
+        List<? extends Bson> updates = requireNonNull(update.get("update", List.class), "updateList");
+        Bson filter = requireNonNull(update.get("filter", Bson.class));
+        return new UpdateOneModel<>(filter, updates);
     }
 
     /**
-     * Row parameter contains values for PK fields.
+     * Row parameter contains values for PK fields, values of input before update, values of input after update.
      */
     private Document rowToUpdateDoc(JetSqlRow row) {
         Object[] values = row.getValues();
 
-        Document doc = new Document();
-        Object value = values[0];
-        doc.append(pkExternalName, ConversionsToBson.convertToBson(value, pkType, pkExternalType));
+        Object pkValue = values[0];
 
-        return doc;
+        List<Bson> updateToPerform = new ArrayList<>();
+        for (int i = 0; i < updatedFieldNames.size(); i++) {
+            String fieldName = updatedFieldNames.get(i);
+            Object updateExpr = updates.get(i);
+            if (updateExpr instanceof Bson) {
+                Document document = Document.parse(((Bson) updateExpr)
+                        .toBsonDocument(Document.class, defaultCodecRegistry()).toJson());
+                PlaceholderReplacer.replacePlaceholders(document, evalContext, row);
+                updateExpr = document;
+                updateToPerform.add(Aggregates.set(new Field<>(fieldName, updateExpr)));
+            } else if (updateExpr instanceof DynamicParameter) {
+                updateExpr = evalContext.getArgument(((DynamicParameter) updateExpr).getIndex());
+                updateToPerform.add(Updates.set(fieldName, updateExpr));
+            } else if (updateExpr instanceof InputRef) {
+                int index = ((InputRef) updateExpr).getInputIndex();
+                updateToPerform.add(Aggregates.set(new Field<>(fieldName, row.get(index))));
+            }
+        }
+
+        Bson filter = Filters.eq(pkExternalName, pkValue);
+        return new Document("filter", filter).append("update", updateToPerform);
     }
 
 }

@@ -17,36 +17,42 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.jet.core.ProcessorSupplier.Context;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import java.util.List;
 import java.util.Map.Entry;
 
-final class ParameterReplacer {
+final class PlaceholderReplacer {
 
-    private ParameterReplacer() {
+    private PlaceholderReplacer() {
     }
 
     /**
-     * Searches for nodes in Document with two properties: "objectType" = "DynamicParameter" and
-     * index, that will be resolved as dynamic parameter index.
-     *
+     * Searches for nodes in Document with two properties: "objectType" = "DynamicParameter" or "InputRef" and
+     * index, that will be resolved as dynamic parameter index or input ref index.
+     * <p>
      * Not all parameters are known at query planning stage, some are
      * visible only in {@link com.hazelcast.jet.core.ProcessorSupplier#init(Context)} method. That's why
      * we must postpone the argument matching.
      * We cannot though transport {@linkplain org.apache.calcite.rex.RexNode} over the network, as it's not serializable,
      * so we are binding everything we can in the connector and leave dynamic parameters for this method on PS side.
+     *
+     * <p>
+     * Similar restrictions are visible in case of input references - input reference value is known
+     * during query execution.
      */
-    static Bson replacePlaceholders(Document doc, ExpressionEvalContext evalContext) {
+    static Bson replacePlaceholders(Document doc, ExpressionEvalContext evalContext, JetSqlRow inputRow) {
         assert DynamicParameter.parse(doc) == null;
+        assert InputRef.parse(doc) == null;
         for (Entry<String, Object> entry : doc.entrySet()) {
             Object entryValue = entry.getValue();
 
             if (entryValue instanceof List) {
                 for (Object val : (List<?>) entryValue) {
                    if (val instanceof Document) {
-                       replacePlaceholders((Document) val, evalContext);
+                       replacePlaceholders((Document) val, evalContext, inputRow);
                    }
                 }
 
@@ -56,7 +62,12 @@ final class ParameterReplacer {
                 if (param != null) {
                     entry.setValue(evalContext.getArgument(param.getIndex()));
                 } else {
-                    replacePlaceholders(value, evalContext);
+                    InputRef ref = InputRef.parse(value);
+                    if (ref != null) {
+                        entry.setValue(inputRow.get(ref.getInputIndex()));
+                    } else {
+                        replacePlaceholders(value, evalContext, inputRow);
+                    }
                 }
             }
         }
