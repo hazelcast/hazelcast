@@ -29,7 +29,10 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
+import org.apache.calcite.rex.RexDynamicParam;
 import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexLiteral;
+import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -363,7 +366,7 @@ public interface SqlConnector {
      *     <li><b>hasInput == false:</b> There will be no input to the
      *     processor. The processor is supposed to update all rows matching the
      *     given `predicate`. If the `predicate` is null, it's supposed to
-     *     delete all rows.
+     *     delete all rows. The `expressions` have no input references.
      *
      *     <li><b>hasInput == true:</b> The processor is supposed to delete all
      *     rows with primary keys it receives on the input. In this mode the
@@ -371,8 +374,15 @@ public interface SqlConnector {
      *     the {@link #getPrimaryKey(Table)} method. If {@link
      *     #dmlSupportsPredicates()} returned false, or if {@link
      *     #supportsExpression} always returns false, `hasInput` is always true.
+     *     The `expressions` might contain input references. The input's first
+     *     columns are the primary key values, the rest are values that might be
+     *     referenced by expressions.
      *
      * </ol>
+     *
+     * @param fieldNames The names of fields to update
+     * @param expressions The expressions to assign to each field. Has the same
+     *     length as {@code fieldNames}.
      */
     @Nonnull
     default Vertex updateProcessor(
@@ -427,15 +437,23 @@ public interface SqlConnector {
      * Returns whether the given `expression` is supported by the processors
      * this connector returns. If it returns true, then this expression will be
      * passed as a projection or predicate to the other vertex-generating
-     * methods. Otherwise, the projection will be simple input references, and
-     * the predicate will be always-true or null.
+     * methods.
      * <p>
-     * The default implementation returns false.
+     * The connector must be able to handle {@link RexInputRef} expressions,
+     * such expressions will never be passed to this method. It is also
+     * recommended to support {@link RexDynamicParam} and {@link RexLiteral} for
+     * simpler execution plans.
+     * <p>
+     * If an expression is unsupported, for scans a projection will be added
+     * after the scan vertex. For DML, it will disable the use no-input mode.
+     * Instead, a scan and filtering will be generated.
+     * <p>
+     * The default implementation returns true for {@link RexDynamicParam}.
      *
      * @return true, iff the given expression can be evaluated remotely
      */
     default boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
-        return false;
+        return expression.unwrap(RexNode.class) instanceof RexDynamicParam;
     }
 
     /**

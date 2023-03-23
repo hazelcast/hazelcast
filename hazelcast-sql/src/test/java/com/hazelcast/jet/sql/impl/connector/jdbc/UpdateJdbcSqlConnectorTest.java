@@ -389,6 +389,30 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
+    public void updateTableWithReverseColumnOrder2() throws Exception {
+        createTable(tableName, "name VARCHAR(10)", "id VARCHAR(10) PRIMARY KEY");
+        executeJdbc("INSERT INTO " + tableName + " VALUES('name-0', 'id-0')");
+        executeJdbc("INSERT INTO " + tableName + " VALUES('name-1', 'id-1')");
+        execute(
+                "CREATE MAPPING " + tableName + " ("
+                        + " name VARCHAR, "
+                        + " id VARCHAR "
+                        + ") "
+                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
+                        + "OPTIONS ( "
+                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
+                        + ")"
+        );
+
+        execute("UPDATE " + tableName + " SET name = id WHERE id = 'id-0'");
+
+        assertJdbcRowsAnyOrder(tableName,
+                new Row("id-0", "id-0"),
+                new Row("name-1", "id-1")
+        );
+    }
+
+    @Test
     public void updateMappingWithResolvedFields() throws Exception {
         createTable(tableName);
         insertItems(tableName, 1);

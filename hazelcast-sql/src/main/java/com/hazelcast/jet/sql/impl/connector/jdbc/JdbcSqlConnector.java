@@ -318,8 +318,8 @@ public class JdbcSqlConnector implements SqlConnector {
             @Nullable HazelcastRexNode predicate,
             boolean hasInput
     ) {
-        // TODO use the predicate
         assert predicate == null;
+        assert hasInput;
         JdbcTable table = context.getTable();
 
         List<String> pkFields = getPrimaryKey(context.getTable())
