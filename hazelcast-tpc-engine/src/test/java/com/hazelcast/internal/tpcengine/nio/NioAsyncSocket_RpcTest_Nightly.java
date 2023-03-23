@@ -20,10 +20,13 @@ package com.hazelcast.internal.tpcengine.nio;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.experimental.categories.Category;
 
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.ASSERT_TRUE_EVENTUALLY_TIMEOUT_NIGHTLY;
+
 @Category(NightlyTest.class)
 public class NioAsyncSocket_RpcTest_Nightly extends NioAsyncSocket_RpcTest {
 
     public NioAsyncSocket_RpcTest_Nightly() {
         iterations = 20000;
+        testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT_NIGHTLY;
     }
 }

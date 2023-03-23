@@ -55,7 +55,7 @@ public abstract class MongoSqlTest extends SqlTestSupport {
         assumeDockerEnabled();
         mongoContainer.start();
 
-        initialize(1, null);
+        initialize(2, null);
         sqlService = instance().getSql();
         mongoClient = MongoClients.create(mongoContainer.getConnectionString());
         databaseName = randomName();

@@ -29,4 +29,9 @@ class NioAcceptRequest implements AcceptRequest {
     NioAcceptRequest(SocketChannel socketChannel) {
         this.socketChannel = checkNotNull(socketChannel, "socketChannel");
     }
+
+    @Override
+    public void close() throws Exception {
+        socketChannel.close();
+    }
 }

@@ -779,6 +779,8 @@ SqlShowStatement SqlShowStatement() :
     |
         <TYPES> { target = ShowStatementTarget.TYPES; }
     |
+        <DATA> <LINKS> { target = ShowStatementTarget.DATALINKS; }
+    |
         <RESOURCES> <FOR> { dataLinkName = CompoundIdentifier(); target = ShowStatementTarget.RESOURCES; }
     )
     {
