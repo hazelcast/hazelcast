@@ -15,8 +15,6 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.logging.LogListener;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -29,8 +27,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -44,37 +40,26 @@ import static org.junit.Assert.assertEquals;
 public class MongoBatchSqlConnectorTest extends MongoSqlTest {
 
     @Test
-    public void readsFromMongo_withId_twoSteps() {
+    public void readsFromMongo_withId_withUnsupportedExpr() {
        readsFromMongo(true, true);
     }
 
     @Test
-    public void readsFromMongo_withId_oneStep() {
+    public void readsFromMongo_withId_withoutUnsupportedExpr() {
        readsFromMongo(true, false);
     }
 
     @Test
-    public void readsFromMongo_withoutId_twoSteps() {
+    public void readsFromMongo_withoutId_withUnsupportedExpr() {
        readsFromMongo(false, true);
     }
     @Test
-    public void readsFromMongo_withoutId_oneStep() {
+    public void readsFromMongo_withoutId_withoutUnsupportedExpr() {
        readsFromMongo(false, false);
     }
 
-    public void readsFromMongo(boolean includeIdInMapping, boolean forceTwoSteps) {
+    public void readsFromMongo(boolean includeIdInMapping, boolean useUnsupportedExpression) {
         final String connectionString = mongoContainer.getConnectionString();
-
-        AtomicBoolean projectAndFilterFound = new AtomicBoolean(false);
-        LogListener lookForProjectAndFilterStep = log -> {
-            String message = log.getLogRecord().getMessage();
-            if (message.contains("ProjectAndFilter")) {
-                projectAndFilterFound.set(true);
-            }
-        };
-        for (HazelcastInstance instance : instances()) {
-            instance.getLoggingService().addLogListener(Level.FINE, lookForProjectAndFilterStep);
-        }
 
         MongoCollection<Document> collection = database.getCollection(collectionName);
         collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
@@ -95,7 +80,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                 + "    'database' = '" +  databaseName + "' "
                 + ")");
 
-        String force = forceTwoSteps ? " and cast(jedi as varchar) = 'true' " : "";
+        String force = useUnsupportedExpression ? " and cast(jedi as varchar) = 'true' " : "";
         assertRowsAnyOrder("select firstName, lastName from " + collectionName
                         + " where (lastName = ? or lastName is null) and jedi=true" + force,
                 singletonList("Skywalker"),
@@ -105,12 +90,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                         new Row("Rey", null)
                 )
         );
-        assertEquals(forceTwoSteps, projectAndFilterFound.get());
-        for (HazelcastInstance instance : instances()) {
-            instance.getLoggingService().removeLogListener(lookForProjectAndFilterStep);
-        }
     }
-
 
     protected void execute(String sql, Object... arguments) {
         sqlService.execute(sql, arguments).close();
@@ -217,6 +197,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         testInsertsIntoMongo(true, "insert into " + collectionName + "(jedi, firstName, lastName) values (?, 'Han', ?)",
                 false, "Solo");
     }
+
     @Test
     public void insertsIntoMongo_hardcoded_withoutId() {
         testInsertsIntoMongo(false, "insert into " + collectionName + "(jedi, firstName, lastName) " +
@@ -278,6 +259,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                 "update " + collectionName + " set firstName = 'Han', lastName = 'Solo', jedi=false " +
                         "where jedi=true or firstName = 'Han'");
     }
+
     @Test
     public void updatesMongo_setParametrized() {
         testUpdatesMongo(true,
@@ -291,6 +273,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                 "update " + collectionName + " set firstName = 'Han', lastName = 'Solo', jedi=false " +
                         "where jedi=true or firstName = ?", "Han");
     }
+
     @Test
     public void updatesMongo_allParametrized() {
         testUpdatesMongo(true,
@@ -469,5 +452,4 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                 + "    'collection' = '" + collectionName + "' "
                 + ")");
     }
-
 }
