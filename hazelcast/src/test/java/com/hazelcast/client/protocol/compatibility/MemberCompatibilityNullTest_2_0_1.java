@@ -6543,6 +6543,7 @@ public class MemberCompatibilityNullTest_2_0_1 {
         assertFalse(parameters.isPerEntryStatsEnabledExists);
         assertFalse(parameters.isDataPersistenceConfigExists);
         assertFalse(parameters.isTieredStoreConfigExists);
+        assertFalse(parameters.isPartitioningAttributeConfigsExists);
     }
 
     @Test
