@@ -32,6 +32,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 public class SqlDataLinkStatementTest extends SqlTestSupport {
+    private String lineSeparator = System.lineSeparator();
     private InternalDataLinkService[] dataLinkServices;
 
     @BeforeClass
@@ -117,7 +118,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         assertThatThrownBy(() ->
                 instance().getSql().execute("CREATE DATA LINK " + dlName))
                 .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Was expecting one of:\n    \"TYPE\" ...");
+                .hasMessageContaining("Was expecting one of:" + lineSeparator + "    \"TYPE\" ...");
     }
 
     @Test
