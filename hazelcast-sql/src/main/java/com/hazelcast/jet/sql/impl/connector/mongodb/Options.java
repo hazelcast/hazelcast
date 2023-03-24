@@ -56,7 +56,7 @@ final class Options {
                 } catch (DateTimeParseException ex) {
                     throw QueryException.error("Invalid startAt value: '" + startAtValue + "'. This property should" +
                             " be have value of: a) 'now' b) time in epoch milliseconds or c)" +
-                            " ISO-formatted instant in UTC timezone.");
+                            " ISO-formatted instant in UTC timezone, like '2023-03-24T15:31:00Z'.");
                 }
             }
         }
