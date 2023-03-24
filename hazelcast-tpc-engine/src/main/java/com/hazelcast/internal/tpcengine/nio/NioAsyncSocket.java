@@ -69,8 +69,8 @@ public final class NioAsyncSocket extends AsyncSocket {
     // only accessed from eventloop thread
     private boolean started;
     // only accessed from eventloop thread
-    private boolean connect;
-    private CompletableFuture<Void> connectFuture;
+    private boolean connecting;
+    private volatile CompletableFuture<Void> connectFuture;
 
     NioAsyncSocket(NioAsyncSocketBuilder builder) {
         super(builder.clientSide);
@@ -218,17 +218,33 @@ public final class NioAsyncSocket extends AsyncSocket {
                 throw new IllegalStateException(this + " can't connect when socket not yet started");
             }
 
-            if (connect) {
+            if (connecting) {
                 throw new IllegalStateException(this + " is already trying to connect");
             }
-            connect = true;
+            connecting = true;
             connectFuture = future;
             key.interestOps(key.interestOps() | OP_CONNECT);
-            socketChannel.connect(address);
+            if (socketChannel.connect(address)) {
+                // We got lucky, the connection was immediately established which can
+                // happen with local connections.
+                onConnectFinished();
+            }
         } catch (Throwable e) {
             future.completeExceptionally(e);
             throw sneakyThrow(e);
         }
+    }
+
+    private void onConnectFinished() throws IOException {
+        remoteAddress = socketChannel.getRemoteAddress();
+        localAddress = socketChannel.getLocalAddress();
+        if (logger.isInfoEnabled()) {
+            logger.info("Connection established " + NioAsyncSocket.this);
+        }
+
+        key.interestOps(key.interestOps() | OP_READ);
+        connectFuture.complete(null);
+        connectFuture = null;
     }
 
     @SuppressWarnings("java:S1135")
@@ -425,20 +441,15 @@ public final class NioAsyncSocket extends AsyncSocket {
 
         private void handleConnect() {
             try {
-                socketChannel.finishConnect();
-                remoteAddress = socketChannel.getRemoteAddress();
-                localAddress = socketChannel.getLocalAddress();
-                if (logger.isInfoEnabled()) {
-                    logger.info("Connection established " + NioAsyncSocket.this);
+                if (!socketChannel.finishConnect()) {
+                    throw new IllegalStateException();
                 }
-
-                key.interestOps(key.interestOps() | OP_READ);
-                connectFuture.complete(null);
+                onConnectFinished();
             } catch (Throwable e) {
-                connectFuture.completeExceptionally(e);
+                if (connectFuture != null) {
+                    connectFuture.completeExceptionally(e);
+                }
                 throw sneakyThrow(e);
-            } finally {
-                connectFuture = null;
             }
         }
     }

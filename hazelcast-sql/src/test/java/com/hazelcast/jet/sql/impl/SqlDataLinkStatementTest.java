@@ -58,7 +58,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
             DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
             assertThat(dataLink).isNotNull();
             assertThat(dataLink.getConfig().getClassName()).isEqualTo(DummyDataLink.class.getName());
-            assertThat(dataLink.getConfig().getProperties().get("b")).isEqualTo("c");
+            assertThat(dataLink.getConfig().getProperties()).containsEntry("b", "c");
         }
     }
 
@@ -117,7 +117,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         assertThatThrownBy(() ->
                 instance().getSql().execute("CREATE DATA LINK " + dlName))
                 .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Was expecting one of:\n    \"TYPE\" ...");
+                .hasMessageContaining("Was expecting one of:" + System.lineSeparator() + "    \"TYPE\" ...");
     }
 
     @Test
@@ -140,7 +140,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
                 instance().getSql().execute("CREATE DATA LINK " + dlName
                         + " TYPE \"" + DummyDataLink.class.getName() + "\" "))
                 .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Was expecting:\n    \"OPTIONS\" ...");
+                .hasMessageContaining("Was expecting:" + System.lineSeparator() + "    \"OPTIONS\" ...");
     }
 
     @Test

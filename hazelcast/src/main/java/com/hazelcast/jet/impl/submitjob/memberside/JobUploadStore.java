@@ -79,7 +79,6 @@ public class JobUploadStore {
         JobUploadStatus jobUploadStatus = jobMap.computeIfAbsent(parameterObject.getSessionId(),
                 key -> new JobUploadStatus(parameterObject));
         jobUploadStatus.createNewTemporaryFile();
-
     }
 
     /**
