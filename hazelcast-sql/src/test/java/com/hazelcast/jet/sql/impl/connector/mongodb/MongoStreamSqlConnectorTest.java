@@ -113,6 +113,7 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
         MongoClient mongoClient = MongoClients.create(connectionString);
         MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
         collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
+        long currentTimeMillis = System.currentTimeMillis();
 
         execute("CREATE MAPPING " + tableName
                 + " ("
@@ -127,11 +128,12 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
                 + "OPTIONS ("
                 + "    'connectionString' = '" + connectionString + "', "
                 + "    'database' = '" + databaseName + "', "
-                + "    'startAt' = 'now' "
+                + "    'startAt' = '" + currentTimeMillis + "' "
                 + ")");
 
         spawn(() -> {
             assertTrueEventually(() -> assertEquals(1, instance().getJet().getJobs().size()));
+            sleep(200);
             collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
             sleep(200);
             collection.insertOne(new Document("firstName", "Han").append("lastName", "Solo").append("jedi", false));

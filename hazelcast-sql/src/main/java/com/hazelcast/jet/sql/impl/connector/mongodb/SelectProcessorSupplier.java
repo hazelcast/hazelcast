@@ -168,7 +168,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         Object[] row = new Object[projection.size()];
 
         for (ProjectionData entry : projection) {
-            Object fromDoc = doc.get(entry.externalName);
+            Object fromDoc = doc.get(entry.externalName.replaceFirst("fullDocument.", ""));
             int index = entry.index;
             if (entry.type != null) {
                 row[index] = ConversionsFromBson.convertFromBson(fromDoc, entry.type);
