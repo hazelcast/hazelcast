@@ -16,37 +16,29 @@
 
 package com.hazelcast.jet.sql.impl.connector.infoschema;
 
-import com.hazelcast.datalink.JdbcDataLink;
-
-import java.util.Locale;
+import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 
 public final class DataLinksUtil {
-    public static final String DUMMY_CONNECTOR_TYPE = "com.hazelcast.datalink.impl.DataLinkTestUtil$DummyDataLink";
-    public static final String JDBC_CONNECTOR_TYPE = "JDBC";
-    public static final String MONGO_CONNECTOR_TYPE = "MONGO";
-    public static final String KAFKA_CONNECTOR_TYPE = "KAFKA";
+    public static final String DUMMY_DATA_LINK_TYPE = "com.hazelcast.datalink.impl.DataLinkTestUtil$DummyDataLink";
 
     private DataLinksUtil() {
     }
 
-    public static Class<?> dataLinkConnectorTypeToClass(String connectorType) {
-        // For testing purposes
-        if (connectorType.equals(DUMMY_CONNECTOR_TYPE)) {
+    public static Class<?> dataLinkConnectorTypeToClass(SqlConnectorCache connectorCache, String connectorType) {
+        // Note : DUMMY_DATA_LINK_TYPE exists only for testing purposes.
+        // Implementor have an intent not to expose dummy data link in syntax,
+        // so there is a special case when we use simple dummy data link to test
+        // correctness of SQL data link support. Dummy data link exists only in
+        // test environment, an attempt to use it in real environment just return
+        // a usual exception.
+        if (connectorType.equals(DUMMY_DATA_LINK_TYPE)) {
             try {
-                return Class.forName(DUMMY_CONNECTOR_TYPE);
+                return Class.forName(DUMMY_DATA_LINK_TYPE);
             } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
+                throw new UnsupportedOperationException("Data link class is not " +
+                        "available for connector type" + DUMMY_DATA_LINK_TYPE);
             }
         }
-        String type = connectorType.toUpperCase(Locale.ROOT);
-        switch (type) {
-            case JDBC_CONNECTOR_TYPE:
-                return JdbcDataLink.class;
-            case MONGO_CONNECTOR_TYPE:
-            case KAFKA_CONNECTOR_TYPE:
-                throw new UnsupportedOperationException("Data link " + type + " is not yet supported");
-            default:
-                throw new UnsupportedOperationException("Data link " + type + " is not supported");
-        }
+        return connectorCache.forType(connectorType).dataLinkClass();
     }
 }

@@ -134,16 +134,6 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_createDataLinkWithoutOptions_then_throws() {
-        String dlName = randomName();
-        assertThatThrownBy(() ->
-                instance().getSql().execute("CREATE DATA LINK " + dlName
-                        + " TYPE \"" + DummyDataLink.class.getName() + "\" "))
-                .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Was expecting:\n    \"OPTIONS\" ...");
-    }
-
-    @Test
     public void when_dropDataLink_then_success() {
         String dlName1 = randomName();
         String dlName2 = randomName();

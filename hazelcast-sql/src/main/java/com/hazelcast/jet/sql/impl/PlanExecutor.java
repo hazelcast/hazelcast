@@ -23,8 +23,8 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.impl.DataLinkServiceImpl;
 import com.hazelcast.datalink.DataLink;
+import com.hazelcast.datalink.impl.DataLinkServiceImpl;
 import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
@@ -59,6 +59,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.schema.DataLinksResolver;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.TypeDefinitionColumn;
@@ -141,6 +142,7 @@ public class PlanExecutor {
 
     private final TableResolverImpl catalog;
     private final DataLinksResolver dataLinksCatalog;
+    private final SqlConnectorCache connectorCache;
     private final HazelcastInstance hazelcastInstance;
     private final NodeEngine nodeEngine;
     private final QueryResultRegistry resultRegistry;
@@ -151,15 +153,17 @@ public class PlanExecutor {
     private final AtomicLong directIMapQueriesExecuted = new AtomicLong();
 
     public PlanExecutor(
+            NodeEngine nodeEngine,
             TableResolverImpl catalog,
             DataLinksResolver dataLinksResolver,
-            NodeEngine nodeEngine,
+            SqlConnectorCache connectorCache,
             QueryResultRegistry resultRegistry
     ) {
-        this.catalog = catalog;
-        this.dataLinksCatalog = dataLinksResolver;
         this.nodeEngine = nodeEngine;
         this.hazelcastInstance = nodeEngine.getHazelcastInstance();
+        this.catalog = catalog;
+        this.dataLinksCatalog = dataLinksResolver;
+        this.connectorCache = connectorCache;
         this.resultRegistry = resultRegistry;
 
         logger = nodeEngine.getLogger(getClass());
@@ -185,7 +189,7 @@ public class PlanExecutor {
         boolean added = dataLinksCatalog.createDataLink(
                 new DataLinkCatalogEntry(
                         plan.name(),
-                        dataLinkConnectorTypeToClass(plan.type()).getName(),
+                        dataLinkConnectorTypeToClass(connectorCache, plan.type()).getName(),
                         plan.options()),
                 plan.isReplace(),
                 plan.ifNotExists());

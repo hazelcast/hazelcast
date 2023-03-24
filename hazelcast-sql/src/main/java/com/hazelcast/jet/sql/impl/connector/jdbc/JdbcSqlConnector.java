@@ -71,6 +71,11 @@ public class JdbcSqlConnector implements SqlConnector {
     }
 
     @Override
+    public Class<JdbcDataLink> dataLinkClass() {
+        return JdbcDataLink.class;
+    }
+
+    @Override
     public boolean isStream() {
         return false;
     }

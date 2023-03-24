@@ -26,6 +26,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
+import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlResult;
@@ -84,7 +85,12 @@ public class PlanExecutorTest extends SimpleTestInClusterSupport {
         MockitoAnnotations.openMocks(this);
         given(job.getFuture()).willReturn(new CompletableFuture<>());
         given(nodeEngine.getHazelcastInstance()).willReturn(hazelcastInstance);
-        planExecutor = new PlanExecutor(catalog, null, nodeEngine, mock(QueryResultRegistry.class));
+        planExecutor = new PlanExecutor(
+                nodeEngine,
+                catalog,
+                null,
+                new SqlConnectorCache(nodeEngine),
+                mock(QueryResultRegistry.class));
     }
 
     @Test

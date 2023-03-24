@@ -188,6 +188,14 @@ public interface SqlConnector {
     String typeName();
 
     /**
+     * Return a class for connector's data link.
+     */
+    default Class<?> dataLinkClass() {
+        throw new UnsupportedOperationException("Data link class is not " +
+                "available for connector type" + typeName());
+    }
+
+    /**
      * Returns {@code true}, if {@link #fullScanReader} is an unbounded source.
      */
     boolean isStream();
