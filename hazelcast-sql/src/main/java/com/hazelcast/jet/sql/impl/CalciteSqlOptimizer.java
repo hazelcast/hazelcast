@@ -213,7 +213,7 @@ import static java.util.stream.Collectors.toList;
 public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private final NodeEngine nodeEngine;
-    private SqlConnectorCache connectorCache;
+    private final SqlConnectorCache connectorCache;
 
     private final IMapResolver iMapResolver;
     private final List<TableResolver> tableResolvers;

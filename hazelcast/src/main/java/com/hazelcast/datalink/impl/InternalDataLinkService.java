@@ -90,6 +90,13 @@ public interface InternalDataLinkService extends DataLinkService {
     String typeForDataLink(String name);
 
     /**
+     * Return class implementing DataLink of given type.
+     * @param type type of the DataLink
+     * @return DataLink implementation class
+     */
+    Class<? extends DataLink> classForDataLinkType(String type);
+
+    /**
      * Close this DataLinkService, should be called only on member shutdown.
      */
     void shutdown();

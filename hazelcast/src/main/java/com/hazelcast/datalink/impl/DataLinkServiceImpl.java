@@ -176,6 +176,15 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
     }
 
     @Override
+    public Class<? extends DataLink> classForDataLinkType(String type) {
+        Class<? extends DataLink> dataLinkClass = typeToDataLinkClass.get(type);
+        if (dataLinkClass == null) {
+            throw new HazelcastException("DataLink type '" + type + "' is not known");
+        }
+        return dataLinkClass;
+    }
+
+    @Override
     @Nonnull
     public <T extends DataLink> T getAndRetainDataLink(String name, Class<T> clazz) {
         DataLinkEntry dataLink = dataLinks.computeIfPresent(name, (k, v) -> {

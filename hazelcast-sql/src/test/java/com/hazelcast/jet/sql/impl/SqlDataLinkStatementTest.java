@@ -51,7 +51,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
     public void when_createDataLink_then_success() {
         String dlName = randomName();
         instance().getSql().execute("CREATE DATA LINK " + dlName
-                + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                + " TYPE \"DUMMY\" "
                 + " OPTIONS ('b' = 'c')");
 
         for (InternalDataLinkService dataLinkService : dataLinkServices) {
@@ -67,7 +67,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         String dlName = randomName();
         assertThatThrownBy(() ->
                 instance().getSql().execute("CREATE DATA LINK hazelcast.yyy." + dlName
-                        + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                        + " TYPE \"DUMMY\" "
                         + " OPTIONS ('b' = 'c')"))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessageContaining("The data link must be created in the \"public\" schema");
@@ -77,7 +77,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
     public void when_createDataLinkIfAlreadyExists_then_throws() {
         String dlName = randomName();
         instance().getSql().execute("CREATE DATA LINK " + dlName
-                + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                + " TYPE \"DUMMY\" "
                 + " OPTIONS ('b' = 'c')");
 
         for (InternalDataLinkService dataLinkService : dataLinkServices) {
@@ -87,7 +87,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
 
         assertThatThrownBy(() ->
                 instance().getSql().execute("CREATE DATA LINK " + dlName
-                        + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                        + " TYPE \"DUMMY\" "
                         + " OPTIONS ('b' = 'c')"))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessageContaining("Data link already exists: " + dlName);
@@ -105,7 +105,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
 
         assertThatThrownBy(() ->
                 instance().getSql().execute("CREATE DATA LINK " + dlName
-                        + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                        + " TYPE \"DUMMY\" "
                         + " OPTIONS ('b' = 'c')"))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessageContaining("Cannot replace a data link created from configuration");
@@ -125,7 +125,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         String dlName = randomName();
         createMapping(dlName, int.class, int.class);
         instance().getSql().execute("CREATE DATA LINK " + dlName
-                + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                + " TYPE \"DUMMY\" "
                 + " OPTIONS ('b' = 'c')");
         for (InternalDataLinkService dataLinkService : dataLinkServices) {
             DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
@@ -139,10 +139,10 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         String dlName2 = randomName();
 
         instance().getSql().execute("CREATE DATA LINK " + dlName1
-                + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                + " TYPE \"DUMMY\" "
                 + " OPTIONS ('b' = 'c')");
         instance().getSql().execute("CREATE DATA LINK " + dlName2
-                + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                + " TYPE \"DUMMY\" "
                 + " OPTIONS ('b' = 'c')");
 
         instance().getSql().execute("DROP DATA LINK " + dlName1);
@@ -197,11 +197,11 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
     public void when_createIfNotExists_then_notOverwritten() {
         String dlName = randomName();
         instance().getSql().execute("CREATE DATA LINK " + dlName
-                + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                + " TYPE \"DUMMY\" "
                 + " OPTIONS ('b' = 'c')");
 
         instance().getSql().execute("CREATE DATA LINK IF NOT EXISTS " + dlName
-                + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                + " TYPE \"DUMMY\" "
                 + " OPTIONS ('d' = 'e')");
 
         for (InternalDataLinkService dataLinkService : dataLinkServices) {
