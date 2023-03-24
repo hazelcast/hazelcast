@@ -44,6 +44,7 @@ import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class UnifiedNetworkIntegrationTest {
     @Rule
     public ExpectedException expect = ExpectedException.none();
@@ -54,7 +55,6 @@ public class UnifiedNetworkIntegrationTest {
     }
 
     @Test
-    @Category(QuickTest.class)
     public void testKeepAliveSocketOptions() throws Throwable {
         assumeKeepAlivePerSocketOptionsSupported();
         Config config = getConfig();
@@ -84,7 +84,6 @@ public class UnifiedNetworkIntegrationTest {
     }
 
     @Test
-    @Category(QuickTest.class)
     public void testKeepAliveSocketOptions_whenNotSupported() throws Throwable {
         assumeKeepAlivePerSocketOptionsNotSupported();
         // ensure that even though options are configured and setting them fails, no exceptions are thrown
