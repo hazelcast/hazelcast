@@ -450,8 +450,6 @@ public final class NioAsyncSocket extends AsyncSocket {
                     connectFuture.completeExceptionally(e);
                 }
                 throw sneakyThrow(e);
-            } finally {
-                connectFuture = null;
             }
         }
     }
