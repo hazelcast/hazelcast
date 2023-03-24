@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.datalink.impl.DataLinkConsistencyChecker;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.sql.impl.NodeServiceProvider;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
@@ -36,6 +37,8 @@ public class QueryStateRegistryUpdater {
     private final QueryClientStateRegistry clientStateRegistry;
     private final PlanCacheChecker planCacheChecker;
     private final DataLinkConsistencyChecker dataLinkConsistencyChecker;
+
+    private final ILogger logger;
 
     /**
      * "volatile" instead of "final" only to allow for value change from unit tests.
@@ -64,6 +67,7 @@ public class QueryStateRegistryUpdater {
         this.planCacheChecker = planCacheChecker;
         this.dataLinkConsistencyChecker = dataLinkConsistencyChecker;
         this.stateCheckFrequency = stateCheckFrequency;
+        this.logger = nodeServiceProvider.getLogger(getClass());
 
         worker = new Worker(instanceName);
     }
@@ -155,7 +159,7 @@ public class QueryStateRegistryUpdater {
                 try {
                     dataLinkConsistencyChecker.check();
                 } catch (Throwable t) {
-                    // ignore any exception
+                    logger.warning(t);
                 }
             } else {
                 if (nodeServiceProvider.getMap(JetServiceBackend.SQL_CATALOG_MAP_NAME) == null) {

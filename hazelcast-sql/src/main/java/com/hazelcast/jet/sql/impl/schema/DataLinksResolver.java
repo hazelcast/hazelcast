@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.schema;
 import com.hazelcast.datalink.impl.DataLinkServiceImpl;
 import com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource;
 import com.hazelcast.datalink.impl.InternalDataLinkService;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.sql.impl.connector.infoschema.DataLinksTable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.Table;
@@ -51,7 +52,7 @@ public class DataLinksResolver implements TableResolver {
     private final DataLinkServiceImpl dataLinkService;
 
     public DataLinksResolver(InternalDataLinkService dataLinkService, DataLinkStorage dataLinkStorage) {
-        assert dataLinkService instanceof DataLinkServiceImpl;
+        Preconditions.checkInstanceOf(DataLinkServiceImpl.class, dataLinkService);
         this.dataLinkService = (DataLinkServiceImpl) dataLinkService;
         this.dataLinkStorage = dataLinkStorage;
     }

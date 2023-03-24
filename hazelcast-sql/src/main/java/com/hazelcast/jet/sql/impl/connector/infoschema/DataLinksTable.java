@@ -63,7 +63,7 @@ public class DataLinksTable extends InfoSchemaTable {
                     dl.name(),
                     dl.type(),
                     uncheckCall(() -> JsonUtil.toJson(dl.options())),
-                    dl.source()
+                    dl.source().name()
             };
             rows.add(row);
         }

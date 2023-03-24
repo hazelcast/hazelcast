@@ -29,8 +29,6 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource.CONFIG;
-import static com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource.SQL;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
@@ -130,8 +128,8 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
         assertRowsAnyOrder(
                 "SELECT * FROM information_schema.datalinks",
                 asList(
-                        new Row("hazelcast", "public", "s_dl", type, "{}", SQL),
-                        new Row("hazelcast", "public", "c_dl", type, "{}", CONFIG)
+                        new Row("hazelcast", "public", "s_dl", type, "{}", "SQL"),
+                        new Row("hazelcast", "public", "c_dl", type, "{}", "CONFIG")
                 )
         );
     }
