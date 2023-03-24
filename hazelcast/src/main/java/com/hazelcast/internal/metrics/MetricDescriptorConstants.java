@@ -701,12 +701,12 @@ public final class MetricDescriptorConstants {
     public static final String WAN_QUEUE_FILL_PERCENT = "queueFillPercent";
     // ===[/WAN]========================================================
 
-    // ===[TOPIC]=======================================================
+    // ===[KAFKA-CONNECT]=======================================================
     public static final String KAFKA_CONNECT_PREFIX = "kafka.connect";
     public static final String KAFKA_CONNECT_CREATION_TIME = "creationTime";
     public static final String KAFKA_CONNECT_SOURCE_RECORD_POLL_TOTAL = "sourceRecordPollTotal";
     public static final String KAFKA_CONNECT_SOURCE_RECORD_POLL_AVG_TIME = "sourceRecordPollTotalAvgTime";
-    // ===[/TOPIC]=======================================================
+    // ===[/KAFKA-CONNECT]=======================================================
 
     public static final String GENERAL_DISCRIMINATOR_NAME = "name";
 
