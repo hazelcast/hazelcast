@@ -35,7 +35,6 @@ import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.Mapping;
 
 import javax.annotation.Nullable;
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
@@ -74,7 +73,7 @@ public class MetadataResolver implements IMapResolver {
     private Metadata resolveFromContents(String name, MapServiceContext context) {
         for (PartitionContainer partitionContainer : context.getPartitionContainers()) {
             RecordStore<?> recordStore = partitionContainer.getExistingRecordStore(name);
-            Metadata resolved = resolveFromContentsRecordStore(recordStore);
+            Metadata resolved = resolveFromContentsRecordStore(nodeEngine, recordStore);
             if (resolved != null) {
                 return resolved;
             }
@@ -96,7 +95,7 @@ public class MetadataResolver implements IMapResolver {
         return null;
     }
 
-    private class GetAnyMetadataOperation extends Operation {
+    private static final class GetAnyMetadataOperation extends Operation {
         private final String mapName;
 
         private GetAnyMetadataOperation(String mapName) {
@@ -104,12 +103,12 @@ public class MetadataResolver implements IMapResolver {
         }
 
         @Override
-        public void run() throws Exception {
+        public void run() {
             MapService service = getNodeEngine().getService(MapService.SERVICE_NAME);
             MapServiceContext context = service.getMapServiceContext();
             RecordStore<?> recordStore = context.getExistingRecordStore(getPartitionId(), mapName);
             // can return null, but that is fine
-            sendResponse(resolveFromContentsRecordStore(recordStore));
+            sendResponse(resolveFromContentsRecordStore(getNodeEngine(), recordStore));
         }
 
         @Override
@@ -118,12 +117,12 @@ public class MetadataResolver implements IMapResolver {
         }
 
         @Override
-        protected void writeInternal(ObjectDataOutput out) throws IOException {
+        protected void writeInternal(ObjectDataOutput out) {
             throw new UnsupportedOperationException("This operation is invoked only locally");
         }
 
         @Override
-        protected void readInternal(ObjectDataInput in) throws IOException {
+        protected void readInternal(ObjectDataInput in) {
             throw new UnsupportedOperationException("This operation is invoked only locally");
         }
     }
@@ -137,7 +136,7 @@ public class MetadataResolver implements IMapResolver {
 
     @Nullable
     @SuppressWarnings("rawtypes")
-    private Metadata resolveFromContentsRecordStore(RecordStore<?> recordStore) {
+    private static Metadata resolveFromContentsRecordStore(NodeEngine nodeEngine, RecordStore<?> recordStore) {
         if (recordStore == null) {
             return null;
         }
@@ -152,16 +151,18 @@ public class MetadataResolver implements IMapResolver {
             }
 
             Entry<Data, Record> entry = recordStoreIterator.next();
-            return resolveMetadata(entry.getKey(), entry.getValue().getValue());
+            return resolveMetadata(nodeEngine, entry.getKey(), entry.getValue().getValue());
         } finally {
             recordStore.afterOperation();
         }
     }
 
     @Nullable
-    private Metadata resolveMetadata(Object key, Object value) {
+    private static Metadata resolveMetadata(NodeEngine nodeEngine, Object key, Object value) {
         InternalSerializationService ss = Util.getSerializationService(nodeEngine.getHazelcastInstance());
 
+        // we need access to serialized key and value data to resolve serialization format
+        // (compact, portable, generic, etc).
         Metadata keyMetadata = SampleMetadataResolver.resolve(ss, key, true);
         Metadata valueMetadata = SampleMetadataResolver.resolve(ss, value, false);
         return (keyMetadata != null && valueMetadata != null) ? keyMetadata.merge(valueMetadata) : null;
