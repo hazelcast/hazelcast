@@ -845,6 +845,23 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMapEntryProcessorPartitionAwareSameMap() {
+        String mapName1 = "default";
+
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = getConfig();
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        IMap<Integer, Integer> map = instance1.getMap(mapName1);
+        map.put(1, 1);
+
+        PartitionAwareTestEntryProcessor entryProcessor = new PartitionAwareTestEntryProcessor(mapName1);
+        assertNull(map.executeOnKey(1, entryProcessor));
+        assertEquals(1, instance2.getMap(mapName1).get(1));
+    }
+
+    @Test
     public void testInstanceAwareness_onOwnerAndBackup() {
         Config cfg = getConfig();
         cfg.getMapConfig(MAP_NAME).setReadBackupData(true);
