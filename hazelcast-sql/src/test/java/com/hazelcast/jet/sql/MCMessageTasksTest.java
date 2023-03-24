@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.protocol.codec.SqlMappingDdlCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.config.Config;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -40,8 +39,6 @@ public class MCMessageTasksTest extends SqlTestSupport {
 
     @BeforeClass
     public static void setUpClass() {
-        Config config = smallInstanceConfig();
-
         initializeWithClient(1, null, null);
     }
 
@@ -62,7 +59,7 @@ public class MCMessageTasksTest extends SqlTestSupport {
                 .contains("'keyFormat' = 'java'")
                 .contains("'valueFormat' = 'java'");
 
-        instance().getSql().execute(response);
+        instance().getSql().execute(response).close();
         assertThat(instance().getSql().execute("SELECT * FROM \"" + name + "\"")).hasSize(1);
     }
 
@@ -76,7 +73,7 @@ public class MCMessageTasksTest extends SqlTestSupport {
                 .startsWith("CREATE MAPPING \"" + name + "\"")
                 .contains("'keyFormat' = 'portable'");
 
-        instance().getSql().execute(response);
+        instance().getSql().execute(response).close();
         assertThat(instance().getSql().execute("SELECT * FROM \"" + name + "\"")).hasSize(1);
     }
 
@@ -90,7 +87,7 @@ public class MCMessageTasksTest extends SqlTestSupport {
                 .startsWith("CREATE MAPPING \"" + name + "\"")
                 .contains("'valueFormat' = 'portable'");
 
-        instance().getSql().execute(response);
+        instance().getSql().execute(response).close();
         assertThat(instance().getSql().execute("SELECT * FROM \"" + name + "\"")).hasSize(1);
     }
 
@@ -120,8 +117,7 @@ public class MCMessageTasksTest extends SqlTestSupport {
                 SqlMappingDdlCodec::decodeResponse
         );
 
-        String response = future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-        return response;
+        return future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
     }
 
     private static final int PORTABLE_FACTORY_ID = 1;
