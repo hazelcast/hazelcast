@@ -95,7 +95,7 @@ public class UnifiedNetworkIntegrationTest {
         assertClusterSizeEventually(2, hz);
     }
 
-    private Config getConfig() {
+    protected Config getConfig() {
         Config config = smallInstanceConfig();
         config.setProperty(ClusterProperty.SOCKET_KEEP_IDLE.getName(), "5");
         config.setProperty(ClusterProperty.SOCKET_KEEP_INTERVAL.getName(), "1");
