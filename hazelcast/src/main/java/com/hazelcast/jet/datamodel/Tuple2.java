@@ -34,6 +34,8 @@ import static java.util.Objects.requireNonNull;
  * @since Jet 3.0
  */
 public final class Tuple2<E0, E1> implements Map.Entry<E0, E1>, Serializable {
+
+    private static final long serialVersionUID = 1L;
     private final E0 f0;
     private final E1 f1;
 

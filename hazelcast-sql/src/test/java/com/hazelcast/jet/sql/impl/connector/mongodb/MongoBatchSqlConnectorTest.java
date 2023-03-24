@@ -288,6 +288,23 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                         "where firstName = lastName", "Han", "Solo", false);
     }
 
+    public void testUpdatesMongo(boolean includeIdInMapping, String sql, Object... args) {
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp")
+                                                              .append("counter", 1).append("jedi", true));
+
+        createMapping(includeIdInMapping);
+
+        execute(sql, args);
+
+        ArrayList<Document> list = collection.find().into(new ArrayList<>());
+        assertThat(list).hasSize(1);
+        Document item = list.get(0);
+        assertEquals("Han", item.getString("firstName"));
+        assertEquals("Solo", item.getString("lastName"));
+        assertEquals(false, item.getBoolean("jedi"));
+    }
+
     @Test
     public void updatesMongo_pkNotFirst() {
         MongoCollection<Document> collection = database.getCollection(collectionName);
@@ -313,26 +330,57 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                                              .into(new ArrayList<>());
         assertEquals(1, list.size());
         Document item = list.get(0);
+        assertEquals("Solo", item.getString("lastName"));
+        assertEquals(false, item.getBoolean("jedi"));
+        assertEquals("temp", item.getString("firstName"));
+    }
+
+    @Test
+    public void updatesMongo_mutipleRows() {
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
+        collection.insertOne(new Document("firstName", "temp2").append("lastName", "temp2").append("jedi", true));
+
+        createMapping(false);
+
+        execute("update " + collectionName + " set firstName = lastName, lastName = ?, jedi=? " +
+                        "where firstName = ?", "Solo", false, "temp");
+
+        ArrayList<Document> list = collection.find(Filters.eq("firstName", "temp"))
+                                             .into(new ArrayList<>());
+        assertEquals(1, list.size());
+        Document item = list.get(0);
         assertEquals("temp", item.getString("firstName"));
         assertEquals("Solo", item.getString("lastName"));
         assertEquals(false, item.getBoolean("jedi"));
+
+        list = collection.find(Filters.eq("lastName", "temp2"))
+                                             .into(new ArrayList<>());
+        assertThat(list).hasSize(1);
     }
 
-    public void testUpdatesMongo(boolean includeIdInMapping, String sql, Object... args) {
+    @Test
+    public void updatesMongo_mutipleRows_unsupportedExpr() {
         MongoCollection<Document> collection = database.getCollection(collectionName);
-        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp")
-                          .append("counter", 1).append("jedi", true));
+        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
+        collection.insertOne(new Document("firstName", "temp2").append("lastName", "temp2").append("jedi", false));
 
-        createMapping(includeIdInMapping);
+        createMapping(false);
 
-        execute(sql, args);
+        execute("update " + collectionName + " set firstName = lastName, lastName = ?, jedi=? " +
+                        "where cast(jedi as varchar) = ?", "Solo", false, "true");
 
-        ArrayList<Document> list = collection.find().into(new ArrayList<>());
-        assertThat(list).hasSize(1);
+        ArrayList<Document> list = collection.find(Filters.eq("firstName", "temp"))
+                                             .into(new ArrayList<>());
+        assertEquals(1, list.size());
         Document item = list.get(0);
-        assertEquals("Han", item.getString("firstName"));
+        assertEquals("temp", item.getString("firstName"));
         assertEquals("Solo", item.getString("lastName"));
         assertEquals(false, item.getBoolean("jedi"));
+
+        list = collection.find(Filters.eq("lastName", "temp2"))
+                                             .into(new ArrayList<>());
+        assertThat(list).hasSize(1);
     }
 
     @Test
