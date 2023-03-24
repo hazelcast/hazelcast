@@ -15,6 +15,7 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.bson.BsonTimestamp;
@@ -30,6 +31,7 @@ import java.time.temporal.ChronoUnit;
 import static java.time.ZoneOffset.UTC;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
+import static org.junit.Assert.assertThrows;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
@@ -78,6 +80,21 @@ public class OptionsTest {
         // then
         LocalDateTime instant = LocalDateTime.ofEpochSecond(startAt.getTime(), 0, UTC);
         assertThat(instant).isEqualToIgnoringNanos(timeDate);
+    }
+
+    @Test
+    public void throws_at_invalid_dateTimeString() {
+        // given
+        long time = System.currentTimeMillis();
+        LocalDateTime timeDate = LocalDateTime.ofEpochSecond(time / 1000, 0, UTC);
+        String dateAsString = timeDate.format(DateTimeFormatter.ISO_DATE_TIME) + "BLABLABLA";
+
+        // when
+        QueryException queryException = assertThrows(QueryException.class, () ->
+                Options.startAt(ImmutableMap.of(Options.START_AT_OPTION, dateAsString)));
+
+        // then
+        assertThat(queryException).hasMessageContaining("Invalid startAt value:");
     }
 
 }
