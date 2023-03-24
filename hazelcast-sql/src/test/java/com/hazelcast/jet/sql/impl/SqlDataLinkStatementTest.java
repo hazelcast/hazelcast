@@ -140,7 +140,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
                 instance().getSql().execute("CREATE DATA LINK " + dlName
                         + " TYPE \"" + DummyDataLink.class.getName() + "\" "))
                 .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Was expecting:\n    \"OPTIONS\" ...");
+                .hasMessageContaining("Was expecting:" + System.lineSeparator() + "    \"OPTIONS\" ...");
     }
 
     @Test
