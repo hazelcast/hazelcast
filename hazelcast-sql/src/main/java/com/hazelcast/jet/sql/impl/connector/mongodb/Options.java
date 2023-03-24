@@ -42,7 +42,8 @@ final class Options {
     static BsonTimestamp startAt(Map<String, String> options) {
         String startAtValue = options.get(START_AT_OPTION);
         if (isNullOrEmpty(startAtValue)) {
-            throw QueryException.error("startAt property is required for MongoDB stream");
+            throw QueryException.error("startAt property is required for MongoDB stream. Possible values:" +
+                    "'now', a long value indicating epoch milliseconds or ISO-formatted datetime");
         }
         if ("now".equalsIgnoreCase(startAtValue)) {
             return MongoUtilities.bsonTimestampFromTimeMillis(System.currentTimeMillis());
