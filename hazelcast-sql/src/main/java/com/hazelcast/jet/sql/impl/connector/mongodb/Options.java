@@ -23,6 +23,7 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import org.bson.BsonTimestamp;
 
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.Map;
 import java.util.function.Predicate;
 
@@ -50,7 +51,13 @@ final class Options {
             try {
                 return MongoUtilities.bsonTimestampFromTimeMillis(Long.parseLong(startAtValue));
             } catch (NumberFormatException e) {
-                return MongoUtilities.bsonTimestampFromTimeMillis(Instant.parse(startAtValue).toEpochMilli());
+                try {
+                    return MongoUtilities.bsonTimestampFromTimeMillis(Instant.parse(startAtValue).toEpochMilli());
+                } catch (DateTimeParseException ex) {
+                    throw QueryException.error("Invalid startAt value: '" + startAtValue + "'. This property should" +
+                            " be have value of: a) 'now' b) time in epoch milliseconds or c)" +
+                            " ISO-formatted instant in UTC timezone.");
+                }
             }
         }
     }
