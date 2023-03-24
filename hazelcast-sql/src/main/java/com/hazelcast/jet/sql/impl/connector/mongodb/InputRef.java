@@ -21,38 +21,43 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Class used to mark a place in Mongo filter/projection, that will be replaced with dynamic parameter.
- *
- * Serialized form is a string matching {@linkplain #PATTERN}.
+ * Reference to some input value.
  */
-public class DynamicParameter implements DynamicallyReplacedPlaceholder {
+public class InputRef implements DynamicallyReplacedPlaceholder {
 
-    private static final Pattern PATTERN = Pattern.compile("<!DynamicParameter\\((\\d+)\\)!>");
-    private final int index;
+    private static final Pattern PATTERN = Pattern.compile("<!InputRef\\((\\d+)\\)!>");
 
-    public DynamicParameter(int index) {
-        this.index = index;
+    private final int inputIndex;
+
+    public InputRef(int inputIndex) {
+        this.inputIndex = inputIndex;
     }
 
-    public int getIndex() {
-        return index;
+    public int getInputIndex() {
+        return inputIndex;
     }
 
     @Nonnull
-    @Override
     public String asString() {
-        return "<!DynamicParameter(" + index + ")!>";
+        return "<!InputRef(" + inputIndex + ")!>";
     }
 
-    public static DynamicParameter matches(Object o) {
+    public static InputRef match(Object o) {
         if (o instanceof String) {
             Matcher matcher = PATTERN.matcher((String) o);
             if (matcher.matches()) {
-                return new DynamicParameter(Integer.parseInt(matcher.group(1)));
+                return new InputRef(Integer.parseInt(matcher.group(1)));
             }
         }
 
         return null;
+    }
+    public static boolean matches(Object o) {
+        if (o instanceof String) {
+            Matcher matcher = PATTERN.matcher((String) o);
+            return matcher.matches();
+        }
+        return false;
     }
 
     @Override
@@ -60,20 +65,20 @@ public class DynamicParameter implements DynamicallyReplacedPlaceholder {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof DynamicParameter)) {
+        if (!(o instanceof InputRef)) {
             return false;
         }
-        DynamicParameter that = (DynamicParameter) o;
-        return index == that.index;
+        InputRef inputRef = (InputRef) o;
+        return inputIndex == inputRef.inputIndex;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(index);
+        return Objects.hash(inputIndex);
     }
 
     @Override
     public String toString() {
-        return "DynamicParameter(" + index + ')';
+        return "InputRef(" + inputIndex + ')';
     }
 }

@@ -30,6 +30,8 @@ import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Projections;
 import org.apache.calcite.rex.RexNode;
 import org.bson.BsonDocument;
 import org.bson.BsonTimestamp;
@@ -45,8 +47,10 @@ import java.util.Map;
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.mongodb.impl.Mappers.bsonDocumentToDocument;
+import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
+import static com.mongodb.client.model.Projections.include;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
@@ -136,10 +140,10 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
         MongoTable table = context.getTable();
 
-        RexToMongoVisitor visitor = new RexToMongoVisitor(table.externalNames());
+        RexToMongoVisitor visitor = new RexToMongoVisitor();
 
         TranslationResult<Document> filter = translateFilter(predicate, visitor);
-        TranslationResult<List<String>> projections = translateProjections(projection, context, visitor);
+        TranslationResult<List<ProjectionData>> projections = translateProjections(projection, context, visitor);
 
         // if not all filters are pushed down, then we cannot push down projection
         // because later filters may use those fields
@@ -181,43 +185,50 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         }
         return sourceVertex;
     }
+    private static Document translateFilter(HazelcastRexNode filterNode, RexToMongoVisitor visitor) {
+        if (filterNode == null) {
+            return null;
+        }
+        Object result = filterNode.unwrap(RexNode.class).accept(visitor);
+        boolean isBson = result instanceof Bson;
+        assert isBson || result instanceof InputRef;
 
-    private static TranslationResult<Document> translateFilter(HazelcastRexNode filterNode, RexToMongoVisitor visitor) {
-        try {
-            if (filterNode == null) {
-                return new TranslationResult<>(null, true);
-            }
-            Object result = filterNode.unwrap(RexNode.class).accept(visitor);
-            assert result instanceof Bson;
-
-            BsonDocument expression = ((Bson) result).toBsonDocument(BsonDocument.class, defaultCodecRegistry());
-            return new TranslationResult<>(bsonDocumentToDocument(expression), true);
-        } catch (Throwable t) {
-            return new TranslationResult<>(null, false);
+        if (isBson) {
+            return bsonToDocument((Bson) result);
+        } else {
+            InputRef placeholder = (InputRef) result;
+            return bsonDocumentToDocument(Filters.eq(placeholder.asString(), true)
+                                                 .toBsonDocument(BsonDocument.class, defaultCodecRegistry()));
         }
     }
 
-    private static TranslationResult<List<String>> translateProjections(List<HazelcastRexNode> projectionNodes,
-                                                                        DagBuildContext context,
-                                                                        RexToMongoVisitor visitor) {
-        try {
-            List<String> fields = projectionNodes.stream()
-                                          .map(e -> e.unwrap(RexNode.class).accept(visitor))
-                                          .filter(proj -> proj instanceof String)
-                                          .map(p -> (String) p)
-                                          .collect(toList());
+    private static TranslationResult<List<ProjectionData>> translateProjections(
+            List<HazelcastRexNode> projectionNodes,
+            DagBuildContext context,
+            RexToMongoVisitor visitor
+    ) {
+        List<ProjectionData> projection = new ArrayList<>();
 
-            if (fields.isEmpty()) {
-                throw new IllegalArgumentException("Projection list cannot be empty");
+        MongoTable table = context.getTable();
+        String[] externalNames = table.externalNames();
+        for (int i = 0; i < projectionNodes.size(); i++) {
+            Object translated = projectionNodes.get(i).unwrap(RexNode.class).accept(visitor);
+            InputRef ref = InputRef.match(translated);
+            if (ref != null) {
+                String externalName = externalNames[ref.getInputIndex()];
+                Document projectionExpr = bsonToDocument(include(externalNames));
+                projection.add(new ProjectionData(externalName, projectionExpr, i, table.fieldType(externalName)));
+            } else {
+                Document projectionExpr = new Document("projected_value_" + i, new Document("$literal", translated));
+                projection.add(new ProjectionData("projected_value_" + i, projectionExpr, i, null));
             }
-            if (fields.size() != projectionNodes.size()) {
-                return new TranslationResult<>(allFieldsExternalNames(context.getTable()), false);
-            }
-
-            return new TranslationResult<>(fields, true);
-        } catch (Throwable t) {
-            return new TranslationResult<>(allFieldsExternalNames(context.getTable()), false);
         }
+
+        if (projection.isEmpty()) {
+            throw new IllegalArgumentException("Projection list cannot be empty");
+        }
+
+        return projection;
     }
 
     private static List<String> allFieldsExternalNames(MongoTable table) {

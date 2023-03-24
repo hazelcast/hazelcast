@@ -29,6 +29,7 @@ import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
+import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 
@@ -100,5 +101,14 @@ public final class Mappers {
         DocumentCodec codec = new DocumentCodec();
         DecoderContext decoderContext = DecoderContext.builder().build();
         return codec.decode(new BsonDocumentReader(bsonDocument), decoderContext);
+    }
+
+    /**
+     * Converts given {@link Bson} to {@link Document}.
+     */
+    @Nonnull
+    public static Document bsonToDocument(@Nonnull Bson bson) {
+        BsonDocument document = bson.toBsonDocument(BsonDocument.class, INSTANCE.pojoCodecRegistry);
+        return bsonDocumentToDocument(document);
     }
 }

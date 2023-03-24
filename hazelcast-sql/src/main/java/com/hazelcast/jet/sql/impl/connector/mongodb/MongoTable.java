@@ -172,6 +172,16 @@ class MongoTable extends JetTable {
         return types;
     }
 
+    QueryDataType fieldType(String externalName) {
+        for (TableField f : getFields()) {
+            MongoTableField mongoTableField = (MongoTableField) f;
+            if (mongoTableField.getExternalName().equals(externalName)) {
+                return mongoTableField.getType();
+            }
+        }
+        throw new IllegalArgumentException("unknown column " + externalName);
+    }
+
     @Override
     public String toString() {
         return "MongoTable{" +

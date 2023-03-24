@@ -64,26 +64,56 @@ public final class RexToMongo {
 
             case EQUALS:
                 assert operands[0] instanceof String;
+                if (operands[1] instanceof String) {
+                    if (InputRef.matches(operands[1])) {
+                        return Filters.expr(operands[0] + " === " + operands[1]);
+                    }
+                }
                 return Filters.eq((String) operands[0], operands[1]);
 
             case NOT_EQUALS:
                 assert operands[0] instanceof String;
+                if (operands[1] instanceof String) {
+                    if (InputRef.matches(operands[1])) {
+                        return Filters.expr(operands[0] + " !== " + operands[1]);
+                    }
+                }
                 return Filters.ne((String) operands[0], operands[1]);
 
             case GREATER_THAN:
                 assert operands[0] instanceof String;
+                if (operands[1] instanceof String) {
+                    if (InputRef.matches(operands[1])) {
+                        return Filters.expr(operands[0] + " > " + operands[1]);
+                    }
+                }
                 return Filters.gt((String) operands[0], operands[1]);
 
             case GREATER_THAN_OR_EQUAL:
                 assert operands[0] instanceof String;
+                if (operands[1] instanceof String) {
+                    if (InputRef.matches(operands[1])) {
+                        return Filters.expr(operands[0] + " >= " + operands[1]);
+                    }
+                }
                 return Filters.gte((String) operands[0], operands[1]);
 
             case LESS_THAN:
                 assert operands[0] instanceof String;
+                if (operands[1] instanceof String) {
+                    if (InputRef.matches(operands[1])) {
+                        return Filters.expr(operands[0] + " < " + operands[1]);
+                    }
+                }
                 return Filters.lt((String) operands[0], operands[1]);
 
             case LESS_THAN_OR_EQUAL:
                 assert operands[0] instanceof String;
+                if (operands[1] instanceof String) {
+                    if (InputRef.matches(operands[1])) {
+                        return Filters.expr(operands[0] + " <= " + operands[1]);
+                    }
+                }
                 return Filters.lte((String) operands[0], operands[1]);
 
             case IS_TRUE:
