@@ -105,7 +105,9 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
             assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
                     + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
             assertTrueEventually(() -> {
-                Long sourceRecordPollTotal = (Long) getSourceRecordPollTotalList().get(0);
+                List<Long> pollTotalList = getSourceRecordPollTotalList();
+                assertThat(pollTotalList).isNotEmpty();
+                Long sourceRecordPollTotal = pollTotalList.get(0);
                 assertThat(sourceRecordPollTotal).isGreaterThan(ITEM_COUNT);
             });
         }
