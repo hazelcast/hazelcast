@@ -147,7 +147,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     /**
      * For the client side, the jar is uploaded to a random cluster member and then this member runs the main method to
      * start the job.
-     * The jar should have a main method that submits a job to Pipeline with {@link #newJob(Pipeline)} or
+     * The jar should have a main method that submits a job with {@link #newJob(Pipeline)} or
      * {@link #newLightJob(Pipeline)} methods
      * <p>
      * The upload operation is performed in parts to avoid OOM exceptions on the client and member.
@@ -183,7 +183,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
             // Send only job metadata
             logFine(getLogger(), "Submitting JobMetaData for jarPath: %s", jarPath);
             sendJobMetaDataForExecute(jobExecuteCall, submitJobParameters);
-            logFine(getLogger(), "executeJobFromJar for jarPath: %s finished successfully",
+            logFine(getLogger(), "Job execution from jar '%s' finished successfully",
                     jarPath);
         } catch (Exception exception) {
             sneakyThrow(exception);
@@ -203,7 +203,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
             // Then send job parts
             sendJobMultipart(jobUploadCall, jarPath);
-            logFine(getLogger(), "uploadJobFromJar for jarPath: %s finished successfully",
+            logFine(getLogger(), "Job upload from jar '%s' finished successfully",
                     jarPath);
         } catch (IOException | NoSuchAlgorithmException exception) {
             sneakyThrow(exception);
