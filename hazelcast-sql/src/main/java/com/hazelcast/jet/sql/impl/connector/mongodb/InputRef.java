@@ -15,26 +15,19 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-import org.bson.Document;
-
-import java.io.Serializable;
-import java.util.List;
+import javax.annotation.Nonnull;
 import java.util.Objects;
-import java.util.Set;
-
-import static java.util.Arrays.asList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Reference to some input value.
  */
-public class InputRef implements Serializable {
+public class InputRef implements DynamicallyReplacedPlaceholder {
 
-    private static final List<String> NODES = asList("inputIndex", "objectType");
-    private static final String INPUT_REF_DISCRIMINATOR = "DynamicParameter";
+    private static final Pattern PATTERN = Pattern.compile("<!InputRef\\((\\d+)\\)!>");
 
     private final int inputIndex;
-
-    private final String objectType = INPUT_REF_DISCRIMINATOR;
 
     public InputRef(int inputIndex) {
         this.inputIndex = inputIndex;
@@ -44,37 +37,27 @@ public class InputRef implements Serializable {
         return inputIndex;
     }
 
-    /**
-     * Returns object type of InputRef, always {@link #INPUT_REF_DISCRIMINATOR}.
-     */
-    public String getObjectType() {
-        return objectType;
+    @Nonnull
+    public String asString() {
+        return "<!InputRef(" + inputIndex + ")!>";
     }
 
-    /**
-     * Parses given document and check if it follows the structure of this marking object:
-     * <ul>
-     *     <li>Two keys</li>
-     *     <li>Keys have name as in {@linkplain #NODES}</li>
-     *     <li>objectType key has value {@linkplain #INPUT_REF_DISCRIMINATOR}</li>
-     *     <li>Index key has integer value</li>
-     * </ul>
-     *
-     * If all the critera are met, it will return a new {@linkplain InputRef} object
-     * with {@linkplain #getInputIndex()} equal to the value of {@code index} key.
-     *
-     *  Returns {@code null} if given document does not follow the required structure.
-     */
-    public static InputRef parse(Document doc) {
-        Set<String> keySet = doc.keySet();
-        if (keySet.size() == 2 && keySet.containsAll(NODES)) {
-            Object objectType = doc.get("objectType");
-            assert objectType instanceof String;
-            if (INPUT_REF_DISCRIMINATOR.equals(objectType)) {
-                return new InputRef(doc.getInteger("inputIndex"));
+    public static InputRef match(Object o) {
+        if (o instanceof String) {
+            Matcher matcher = PATTERN.matcher((String) o);
+            if (matcher.matches()) {
+                return new InputRef(Integer.parseInt(matcher.group(1)));
             }
         }
+
         return null;
+    }
+    public static boolean matches(Object o) {
+        if (o instanceof String) {
+            Matcher matcher = PATTERN.matcher((String) o);
+            return matcher.matches();
+        }
+        return false;
     }
 
     @Override
@@ -91,7 +74,7 @@ public class InputRef implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(inputIndex, objectType);
+        return Objects.hash(inputIndex);
     }
 
     @Override

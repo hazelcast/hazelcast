@@ -16,10 +16,8 @@
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 
-import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
-import com.hazelcast.sql.impl.extract.QueryTarget;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
@@ -95,6 +93,17 @@ class MongoTable extends JetTable {
                           .findFirst()
                           .orElseThrow(() -> new IllegalArgumentException("field " + name + " does not exist"));
     }
+    public int getFieldIndexByExternalName(String name) {
+        int index = 0;
+        for (TableField f : getFields()) {
+            MongoTableField mongoTableField = (MongoTableField) f;
+            if (mongoTableField.getExternalName().equals(name)) {
+                return index;
+            }
+            index++;
+        }
+        return -1;
+    }
 
     String[] externalNames() {
         return externalNames;
@@ -103,33 +112,18 @@ class MongoTable extends JetTable {
     QueryDataType[] fieldTypes() {
         return fieldTypes;
     }
+    QueryDataType fieldType(String externalName) {
+        for (TableField f : getFields()) {
+            MongoTableField mongoTableField = (MongoTableField) f;
+            if (mongoTableField.getExternalName().equals(externalName)) {
+                return mongoTableField.getType();
+            }
+        }
+        throw new IllegalArgumentException("unknown column " + externalName);
+    }
 
     public BsonType[] externalTypes() {
         return fieldExternalTypes;
-    }
-
-    QueryDataType pkType() {
-        List<QueryDataType> list = getFields().stream()
-                                       .filter(field -> ((MongoTableField) field).isPrimaryKey())
-                                       .map(TableField::getType)
-                                       .collect(toList());
-        checkState(list.size() == 1, "there should be exactly 1 primary key, got: " + list);
-        return list.get(0);
-    }
-    BsonType pkExternalType() {
-        List<BsonType> list = getFields().stream()
-                                       .filter(field -> ((MongoTableField) field).isPrimaryKey())
-                                       .map(field -> ((MongoTableField) field).getExternalType())
-                                       .collect(toList());
-        checkState(list.size() == 1, "there should be exactly 1 primary key, got: " + list);
-        return list.get(0);
-    }
-
-    SupplierEx<QueryTarget> queryTargetSupplier() {
-        List<String> fields = getFields().stream()
-                                          .map(f -> ((MongoTableField) f).externalName)
-                                          .collect(toList());
-        return () -> new DocumentQueryTarget(fields);
     }
 
     @Override
@@ -157,19 +151,6 @@ class MongoTable extends JetTable {
                                      .collect(toList());
         checkState(list.size() == 1, "there should be exactly 1 primary key, got: " + list);
         return list.get(0);
-    }
-
-    /**
-     * Returns an array of data types with order the same as the order of fields in the projection.
-     */
-    @Nonnull
-    QueryDataType[] resolveColumnTypes(@Nonnull List<String> requestedProjection) {
-        QueryDataType[] types = new QueryDataType[requestedProjection.size()];
-        int i = 0;
-        for (String column : requestedProjection) {
-            types[i++] = getFieldByExternalName(column).getType();
-        }
-        return types;
     }
 
     @Override

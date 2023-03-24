@@ -256,7 +256,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
     @Test
     public void updatesMongo_allHardcoded() {
         testUpdatesMongo(true,
-                "update " + collectionName + " set firstName = 'Han', lastName = 'Solo', jedi=false " +
+                "update " + collectionName + " set firstName = 'Han', jedi=false, lastName='Solo' " +
                         "where jedi=true or firstName = 'Han'");
     }
 
@@ -320,15 +320,15 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
 
     public void testUpdatesMongo(boolean includeIdInMapping, String sql, Object... args) {
         MongoCollection<Document> collection = database.getCollection(collectionName);
-        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
+        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp")
+                          .append("counter", 1).append("jedi", true));
 
         createMapping(includeIdInMapping);
 
         execute(sql, args);
 
-        ArrayList<Document> list = collection.find(Filters.eq("firstName", "Han"))
-                                             .into(new ArrayList<>());
-        assertEquals(1, list.size());
+        ArrayList<Document> list = collection.find().into(new ArrayList<>());
+        assertThat(list).hasSize(1);
         Document item = list.get(0);
         assertEquals("Han", item.getString("firstName"));
         assertEquals("Solo", item.getString("lastName"));
@@ -345,7 +345,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
 
         execute("update " + collectionName + " set lastName = 'Solo' where firstName = 'NOT_EXIST'");
 
-        ArrayList<Document> list = collection.find(Filters.eq("firstName", "temp"))
+        ArrayList<Document> list = collection.find()
                                              .into(new ArrayList<>());
         assertEquals(1, list.size());
         Document item = list.get(0);

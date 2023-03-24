@@ -130,13 +130,25 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
                 PlaceholderReplacer.replacePlaceholders(document, evalContext, row);
                 updateExpr = document;
                 updateToPerform.add(Aggregates.set(new Field<>(fieldName, updateExpr)));
-            } else if (updateExpr instanceof DynamicParameter) {
-                updateExpr = evalContext.getArgument(((DynamicParameter) updateExpr).getIndex());
-                updateToPerform.add(Updates.set(fieldName, updateExpr));
-            } else if (updateExpr instanceof InputRef) {
-                int index = ((InputRef) updateExpr).getInputIndex();
-                updateToPerform.add(Aggregates.set(new Field<>(fieldName, row.get(index))));
+            } else if (updateExpr instanceof String) {
+                DynamicParameter parameter = DynamicParameter.matches(updateExpr);
+                if (parameter != null) {
+                    updateExpr = evalContext.getArgument(parameter.getIndex());
+                    updateToPerform.add(Updates.set(fieldName, updateExpr));
+                } else {
+                    InputRef ref = InputRef.match(updateExpr);
+                    if (ref != null) {
+                        int index = ref.getInputIndex();
+                        updateToPerform.add(Aggregates.set(new Field<>(fieldName, row.get(index))));
+                    } else {
+                        updateToPerform.add(Aggregates.set(new Field<>(fieldName, updateExpr)));
+                    }
+                }
+            } else {
+                updateToPerform.add(Aggregates.set(new Field<>(fieldName, updateExpr)));
             }
+
+
         }
 
         Bson filter = Filters.eq(pkExternalName, pkValue);

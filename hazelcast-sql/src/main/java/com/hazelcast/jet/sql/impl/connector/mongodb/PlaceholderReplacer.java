@@ -19,8 +19,8 @@ import com.hazelcast.jet.core.ProcessorSupplier.Context;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import org.bson.Document;
-import org.bson.conversions.Bson;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -29,9 +29,14 @@ final class PlaceholderReplacer {
     private PlaceholderReplacer() {
     }
 
+    static Document replacePlaceholders(Document doc, ExpressionEvalContext evalContext, JetSqlRow inputRow) {
+        Object[] values = inputRow.getValues();
+        return replacePlaceholders(doc, evalContext, values);
+    }
+
     /**
-     * Searches for nodes in Document with two properties: "objectType" = "DynamicParameter" or "InputRef" and
-     * index, that will be resolved as dynamic parameter index or input ref index.
+     * Searches for nodes in Document that are strings matching pattern of {@code <!SomePlaceholder(params)!>}.
+     *
      * <p>
      * Not all parameters are known at query planning stage, some are
      * visible only in {@link com.hazelcast.jet.core.ProcessorSupplier#init(Context)} method. That's why
@@ -43,34 +48,49 @@ final class PlaceholderReplacer {
      * Similar restrictions are visible in case of input references - input reference value is known
      * during query execution.
      */
-    static Bson replacePlaceholders(Document doc, ExpressionEvalContext evalContext, JetSqlRow inputRow) {
-        assert DynamicParameter.parse(doc) == null;
-        assert InputRef.parse(doc) == null;
+    static Document replacePlaceholders(Document doc, ExpressionEvalContext evalContext, Object[] inputRow) {
+        Document result = new Document();
         for (Entry<String, Object> entry : doc.entrySet()) {
+            String entryKey = entry.getKey();
             Object entryValue = entry.getValue();
 
-            if (entryValue instanceof List) {
-                for (Object val : (List<?>) entryValue) {
-                   if (val instanceof Document) {
-                       replacePlaceholders((Document) val, evalContext, inputRow);
-                   }
-                }
-
-            } else if (entryValue instanceof Document) {
-                Document value = (Document) entryValue;
-                DynamicParameter param = DynamicParameter.parse(value);
-                if (param != null) {
-                    entry.setValue(evalContext.getArgument(param.getIndex()));
-                } else {
-                    InputRef ref = InputRef.parse(value);
-                    if (ref != null) {
-                        entry.setValue(inputRow.get(ref.getInputIndex()));
-                    } else {
-                        replacePlaceholders(value, evalContext, inputRow);
-                    }
-                }
+            entryKey = replace(entryKey, evalContext, inputRow);
+            if (entryValue instanceof String) {
+               entryValue = replace((String) entryValue, evalContext, inputRow);
             }
+
+            if (entryValue instanceof List) {
+                List<Object> newValues = new ArrayList<>();
+                for (Object val : (List<?>) entryValue) {
+                    Object v = val;
+                   if (val instanceof Document) {
+                       v = replacePlaceholders((Document) val, evalContext, inputRow);
+                   } else if (val instanceof String) {
+                       v = replace((String) val, evalContext, inputRow);
+                   }
+                   newValues.add(v);
+                }
+                entryValue = newValues;
+            } else if (entryValue instanceof Document) {
+                entryValue = replacePlaceholders((Document) entryValue, evalContext, inputRow);
+            }
+
+            result.append(entryKey, entryValue);
         }
-        return doc;
+        assert result.size() == doc.size() : "result size should match input size";
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T replace(T entryKey, ExpressionEvalContext evalContext, Object[] inputRow) {
+        DynamicParameter dynamicParameter = DynamicParameter.matches(entryKey);
+        if (dynamicParameter != null) {
+            entryKey = (T) evalContext.getArgument(dynamicParameter.getIndex());
+        }
+        InputRef ref = InputRef.match(entryKey);
+        if (ref != null) {
+            entryKey = (T) inputRow[ref.getInputIndex()];
+        }
+        return entryKey;
     }
 }

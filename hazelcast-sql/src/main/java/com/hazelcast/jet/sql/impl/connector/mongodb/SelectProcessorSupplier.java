@@ -17,6 +17,7 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -24,7 +25,6 @@ import com.hazelcast.jet.mongodb.impl.ReadMongoP;
 import com.hazelcast.jet.mongodb.impl.ReadMongoParams;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
@@ -36,8 +36,6 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hazelcast.jet.mongodb.impl.MongoUtilities.bsonDateTimeToLocalDateTime;
@@ -46,28 +44,30 @@ import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.project;
 import static com.mongodb.client.model.Projections.excludeId;
 import static com.mongodb.client.model.Projections.fields;
-import static com.mongodb.client.model.Projections.include;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 
 /**
  * ProcessorSupplier that creates {@linkplain com.hazelcast.jet.mongodb.impl.ReadMongoP} processors on each instance.
  */
 public class SelectProcessorSupplier implements ProcessorSupplier {
-
     private transient SupplierEx<? extends MongoClient> clientSupplier;
     private final String databaseName;
     private final String collectionName;
     private final boolean stream;
     private final FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
     private final Document predicate;
-    private final List<String> projection;
+    private final List<ProjectionData> projection;
+    private final String[] externalNames;
+
     private final Long startAt;
     private final String connectionString;
     private final String dataLinkName;
     private transient ExpressionEvalContext evalContext;
-    private final QueryDataType[] types;
 
-    SelectProcessorSupplier(MongoTable table, Document predicate, List<String> projection, BsonTimestamp startAt, boolean stream,
+    SelectProcessorSupplier(MongoTable table, Document predicate,
+                            List<ProjectionData> projection,
+                            BsonTimestamp startAt, boolean stream,
                             FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
         checkArgument(projection != null && !projection.isEmpty(), "projection cannot be empty");
 
@@ -80,16 +80,18 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         this.startAt = startAt == null ? null : startAt.getValue();
         this.stream = stream;
         this.eventTimePolicyProvider = eventTimePolicyProvider;
-        this.types = table.resolveColumnTypes(projection);
+
+        externalNames = table.externalNames();
     }
 
-
-    SelectProcessorSupplier(MongoTable table, Document predicate, List<String> projection, BsonTimestamp startAt,
+    SelectProcessorSupplier(MongoTable table, Document predicate,
+                            List<ProjectionData> projection, BsonTimestamp startAt,
                             FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
         this(table, predicate, projection, startAt, true, eventTimePolicyProvider);
     }
 
-    SelectProcessorSupplier(MongoTable table, Document predicate, List<String> projection) {
+    SelectProcessorSupplier(MongoTable table, Document predicate,
+                            List<ProjectionData> projection) {
         this(table, predicate, projection, null, false, null);
     }
 
@@ -107,11 +109,13 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         ArrayList<Bson> aggregates = new ArrayList<>();
 
         if (this.predicate != null) {
-            Bson filterWithParams = PlaceholderReplacer.replacePlaceholders(predicate, evalContext, null);
+            JetSqlRow rowWithColumns = new JetSqlRow(new DefaultSerializationServiceBuilder().build(), externalNames);
+            Bson filterWithParams = PlaceholderReplacer.replacePlaceholders(predicate, evalContext, rowWithColumns);
             aggregates.add(match(filterWithParams.toBsonDocument()));
         }
-        Bson proj = include(this.projection);
-        if (!projection.contains("_id") && !stream) {
+        Bson proj = fields(projection.stream().map(p -> p.projectionExpr).collect(toList()));
+        List<String> projectedNames = projection.stream().map(p -> p.externalName).collect(toList());
+        if (!projectedNames.contains("_id") && !stream) {
             aggregates.add(project(fields(excludeId(), proj)));
         } else {
             aggregates.add(project(proj));
@@ -145,10 +149,13 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
     private JetSqlRow convertDocToRow(Document doc) {
         Object[] row = new Object[projection.size()];
 
-        for (Map.Entry<String, Object> value : doc.entrySet()) {
-            int index = indexInProjection(value.getKey());
-            if (index != -1) {
-                row[index] = ConversionsFromBson.convertFromBson(value.getValue(), types[index]);
+        for (ProjectionData entry : projection) {
+            Object fromDoc = doc.get(entry.externalName);
+            int index = entry.index;
+            if (entry.type != null) {
+                row[index] = ConversionsFromBson.convertFromBson(fromDoc, entry.type);
+            } else {
+                row[index] = fromDoc;
             }
         }
 
@@ -160,12 +167,14 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         requireNonNull(doc, "Document is empty");
         Object[] row = new Object[projection.size()];
 
-        for (Entry<String, Object> entry : doc.entrySet()) {
-            int index = indexInProjection(entry.getKey());
-            if (index == -1) {
-                continue;
+        for (ProjectionData entry : projection) {
+            Object fromDoc = doc.get(entry.externalName);
+            int index = entry.index;
+            if (entry.type != null) {
+                row[index] = ConversionsFromBson.convertFromBson(fromDoc, entry.type);
+            } else {
+                row[index] = fromDoc;
             }
-            row[index] = ConversionsFromBson.convertFromBson(entry.getValue(), types[index]);
         }
         addIfInProjection(changeStreamDocument.getOperationType().getValue(), "operationType", row);
         addIfInProjection(changeStreamDocument.getResumeToken().toString(), "resumeToken", row);
@@ -185,10 +194,8 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
     }
 
     private int indexInProjection(String columnName) {
-        int index = projection.indexOf(columnName);
-        if (index == -1) {
-            index = projection.indexOf("fullDocument." + columnName);
-        }
-        return index;
+        return projection.stream().filter(p -> p.externalName.equals(columnName))
+                         .map(p -> p.index)
+                         .findAny().orElse(-1);
     }
 }

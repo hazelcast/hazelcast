@@ -65,7 +65,7 @@ public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
             boolean hasInput
     ) {
         MongoTable table = context.getTable();
-        RexToMongoVisitor visitor = new RexToMongoVisitor(table.externalNames());
+        RexToMongoVisitor visitor = new RexToMongoVisitor();
         List<? extends Serializable> updates = expressions.stream()
                                                           .map(e -> e.unwrap(RexNode.class).accept(visitor))
                                                           .map(doc -> {
@@ -104,17 +104,5 @@ public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
                 "Delete(" + table.getSqlName() + ")",
                 new DeleteProcessorSupplier(table)
         );
-    }
-
-    @Override
-    public boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
-        // TODO return true for supported expressions
-        return super.supportsExpression(expression);
-    }
-
-    @Override
-    public boolean dmlSupportsPredicates() {
-        // TODO remove this method
-        return false;
     }
 }
