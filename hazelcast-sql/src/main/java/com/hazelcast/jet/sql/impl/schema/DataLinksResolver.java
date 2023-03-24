@@ -79,6 +79,10 @@ public class DataLinksResolver implements TableResolver {
         }
     }
 
+    public DataLinkStorage getDataLinkStorage() {
+        return dataLinkStorage;
+    }
+
     @Nonnull
     @Override
     public List<List<String>> getDefaultSearchPaths() {
@@ -90,6 +94,14 @@ public class DataLinksResolver implements TableResolver {
     public List<Table> getTables() {
         List<Table> tables = new ArrayList<>();
 
+        ADDITIONAL_TABLE_PRODUCERS.forEach(
+                producer -> tables.add(producer.apply(getAllDataLinkEntries(dataLinkService, dataLinkStorage))));
+        return tables;
+    }
+
+    public static List<DataLinkCatalogEntry> getAllDataLinkEntries(
+            DataLinkServiceImpl dataLinkService,
+            DataLinkStorage dataLinkStorage) {
         // Collect config-originated data links
         List<DataLinkCatalogEntry> dataLinks = dataLinkService.getConfigCreatedDataLinks()
                 .stream()
@@ -99,10 +111,7 @@ public class DataLinksResolver implements TableResolver {
         // And supplement them with data links from sql catalog.
         // Note: __sql.catalog is the only source of truth for SQL-originated data links.
         dataLinks.addAll(dataLinkStorage.dataLinks());
-
-        ADDITIONAL_TABLE_PRODUCERS.forEach(
-                producer -> tables.add(producer.apply(dataLinks)));
-        return tables;
+        return dataLinks;
     }
 
     @Override
