@@ -39,6 +39,7 @@ import static org.junit.Assert.assertNull;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlDataLinkStatementTest extends SqlTestSupport {
+    private String lineSeparator = System.lineSeparator();
     private InternalDataLinkService[] dataLinkServices;
 
     @BeforeClass
@@ -158,6 +159,19 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
                 + " TYPE \"" + DummyDataLink.class.getName() + "\" "
                 + " NOT SHARED "
                 + " OPTIONS ('b' = 'c')");
+        for (InternalDataLinkService dataLinkService : dataLinkServices) {
+            DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
+            assertThat(dataLink).isNotNull();
+        }
+    }
+
+    @Test
+    public void when_createDataLinkWithoutOptions_then_success() {
+        String dlName = randomName();
+
+        instance().getSql().execute("CREATE DATA LINK " + dlName
+                + " TYPE \"" + DummyDataLink.class.getName() + "\" SHARED ");
+
         for (InternalDataLinkService dataLinkService : dataLinkServices) {
             DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
             assertThat(dataLink).isNotNull();

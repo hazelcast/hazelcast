@@ -94,7 +94,7 @@ public class AllTypesSelectInsertedMongoSqlConnectorTest extends MongoSqlTest {
                 {11, "double", "DOUBLE", 1.8, 1.8},
                 {12, "date", "DATE", LocalDate.of(2022, 12, 30), LocalDate.of(2022, 12, 30)},
                 {13, "timestamp", "TIMESTAMP",
-                        localDateTimeToTimestamp(dateTimeUtc.toLocalDateTime()),
+                        localDateTimeToTimestamp(dateTimeUtc.withZoneSameInstant(systemDefault()).toLocalDateTime()),
                         dateTimeUtc.withZoneSameInstant(systemDefault()).toLocalDateTime()
                 },
                 {14, "objectId", "OBJECT", EXAMPLE_OBJECT_ID, EXAMPLE_OBJECT_ID },

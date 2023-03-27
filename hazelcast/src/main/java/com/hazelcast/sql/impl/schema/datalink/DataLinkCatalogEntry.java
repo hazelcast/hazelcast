@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.schema.datalink;
 
+import com.hazelcast.datalink.DataLink;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -25,6 +26,8 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource;
+
 /**
  * SQL schema POJO class.
  */
@@ -33,8 +36,17 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
     private String type;
     private boolean shared;
     private Map<String, String> options;
+    private DataLinkSource source;
 
     public DataLinkCatalogEntry() {
+    }
+
+    public DataLinkCatalogEntry(DataLink dataLink, DataLinkSource source) {
+        this.name = dataLink.getName();
+        this.type = dataLink.getConfig().getClassName();
+        this.shared = dataLink.getConfig().isShared();
+        this.options = dataLink.options();
+        this.source = source;
     }
 
     public DataLinkCatalogEntry(String name, String type, boolean shared, Map<String, String> options) {
@@ -42,34 +54,32 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
         this.type = type;
         this.shared = shared;
         this.options = options;
+        this.source = DataLinkSource.SQL;
     }
 
-    public String getName() {
+    public DataLinkCatalogEntry(String name, String type, Map<String, String> options, DataLinkSource source) {
+        this.name = name;
+        this.type = type;
+    }
+
+    public String name() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getType() {
+    public String type() {
         return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
     }
 
     public boolean isShared() {
         return shared;
     }
 
-    public Map<String, String> getOptions() {
+    public Map<String, String> options() {
         return options;
     }
 
-    public void setOptions(Map<String, String> options) {
-        this.options = options;
+    public DataLinkSource source() {
+        return source;
     }
 
     @Override
@@ -78,6 +88,7 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
         type = in.readString();
         shared = in.readBoolean();
         options = in.readObject();
+        source = in.readObject();
     }
 
     @Override
@@ -86,6 +97,7 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
         out.writeString(type);
         out.writeBoolean(shared);
         out.writeObject(options);
+        out.writeObject(source);
     }
 
     @Override
@@ -107,7 +119,7 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
             return false;
         }
         DataLinkCatalogEntry e = (DataLinkCatalogEntry) o;
-        return name.equals(e.name) && type.equals(e.type) && options.equals(e.options);
+        return name.equals(e.name) && type.equals(e.type) && options.equals(e.options) && source.equals(e.source);
     }
 
     @Override

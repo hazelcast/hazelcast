@@ -24,7 +24,7 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.schema.datalink.DataLinkCatalogEntry;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -43,7 +43,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DataLinkConsistencyCheckerTest extends SimpleTestInClusterSupport {
 
@@ -70,7 +70,9 @@ public class DataLinkConsistencyCheckerTest extends SimpleTestInClusterSupport {
 
     @After
     public void tearDown() throws Exception {
-        linkService.removeDataLink(name);
+        if (linkService.existsSqlDataLink(name)) {
+            linkService.removeDataLink(name);
+        }
     }
 
     @Test
@@ -128,5 +130,22 @@ public class DataLinkConsistencyCheckerTest extends SimpleTestInClusterSupport {
 
         // then
         assertFalse(linkService.existsSqlDataLink(name));
+    }
+
+    @Test
+    public void test_dynamicConfigOriginatedDataLinkWasAddedToDataLinkService() {
+        // given : data link was created by SQL
+        sqlCatalog.put(
+                QueryUtils.wrapDataLinkKey(name),
+                new DataLinkCatalogEntry(name, type, false, Collections.emptyMap()));
+        linkService.createConfigDataLink(new DataLinkConfig(name).setClassName(type));
+        assertTrueEventually(() -> linkService.existsConfigDataLink(name));
+
+        // when
+        dataLinkConsistencyChecker.check();
+
+        // then-2 - dynamic config has higher priority, and __sql.catalog should NOT contain old version
+        assertFalse(linkService.existsSqlDataLink(name));
+        assertFalse(sqlCatalog.containsKey(QueryUtils.wrapDataLinkKey(name)));
     }
 }
