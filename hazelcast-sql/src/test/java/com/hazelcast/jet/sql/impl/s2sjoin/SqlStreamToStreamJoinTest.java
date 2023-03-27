@@ -55,7 +55,8 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
         // missing both bounds
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM v v1 JOIN v v2 ON 1=2"))
                 .hasMessageContaining("A stream-to-stream join must have a join condition constraining the maximum difference " +
-                        "between time values of the joined tables in both directions");
+                        "between time values of the joined tables in both directions")
+                .hasMessageContaining("Time columns on the left side: [a], time columns on the right side: [a]");
 
         // missing one bound
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM v v1 JOIN v v2 ON v1.a >= v2.a"))

@@ -113,8 +113,6 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
     public void test_datalinks() {
         // given
         String type = DataLinkTestUtil.DummyDataLink.class.getName();
-        String wrappedType = "\"" + type + "\"";
-
         // create config-originated data link
         getNodeEngineImpl(instance()).getDataLinkService().createConfigDataLink(
                 new DataLinkConfig()
@@ -123,7 +121,7 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
         );
 
         // create SQL-originated data link
-        sqlService.execute("CREATE DATA LINK s_dl TYPE " + wrappedType + " SHARED");
+        sqlService.execute("CREATE DATA LINK s_dl TYPE DUMMY SHARED");
 
         assertRowsAnyOrder(
                 "SELECT * FROM information_schema.datalinks",

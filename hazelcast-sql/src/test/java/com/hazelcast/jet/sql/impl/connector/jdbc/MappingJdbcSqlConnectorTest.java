@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
@@ -244,7 +243,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         Map<String, String> options = new HashMap<>();
         options.put("jdbcUrl", dbConnectionUrl);
 
-        createDataLink(instance(), dlName, JdbcDataLink.class.getName(), false, options);
+        createDataLink(instance(), dlName, "JDBC", false, options);
         InternalDataLinkService dlService = getNodeEngineImpl(instance()).getDataLinkService();
         assertThat(dlService.existsSqlDataLink(dlName)).isTrue();
 
