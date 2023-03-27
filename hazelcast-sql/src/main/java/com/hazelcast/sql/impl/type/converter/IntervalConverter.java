@@ -25,7 +25,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_DAY_SECON
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_YEAR_MONTH;
 
 @SerializableByConvention
-    public class IntervalConverter extends Converter {
+public class IntervalConverter extends Converter {
 
     public static final IntervalConverter YEAR_MONTH = new IntervalConverter(
         ID_INTERVAL_YEAR_MONTH,

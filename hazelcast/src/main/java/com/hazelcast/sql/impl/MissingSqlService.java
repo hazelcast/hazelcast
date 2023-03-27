@@ -96,7 +96,7 @@ public class MissingSqlService implements InternalSqlService {
         throw new HazelcastSqlException(
                 localMemberId,
                 SqlErrorCode.GENERIC,
-                "Cannot execute SQL query because \"hazelcast-sql\" module is not in the classpath",
+                "Cannot execute SQL query because \"hazelcast-sql\" module is not on the classpath",
                 null,
                 null);
     }

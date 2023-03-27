@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl;
 
-import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
@@ -33,12 +32,9 @@ import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.jet.sql.impl.opt.physical.AggregateAbstractPhysicalRule;
 import com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink;
 import com.hazelcast.jet.sql.impl.validate.UpdateDataLinkOperation;
-import com.hazelcast.map.impl.operation.MapFetchIndexOperation;
-import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOperationResult;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.LazyTarget;
-import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.exec.scan.index.IndexCompositeFilter;
@@ -202,17 +198,11 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_FIELD_ACCESS = 77;
     public static final int EXPRESSION_ROW = 78;
 
-    public static final int MAP_FETCH_INDEX_OPERATION = 80;
-    public static final int INDEX_ITERATION_POINTER = 81;
-    public static final int MAP_FETCH_INDEX_OPERATION_RESULT = 82;
-
     public static final int DATA_LINK = 88;
 
     public static final int UPDATE_DATA_LINK_OPERATION = 89;
 
     public static final int QUERY_DATA_TYPE = 90;
-
-    public static final int QUERY_ID = 91;
 
     public static final int ROW_HEAP = 92;
     public static final int ROW_EMPTY = 93;
@@ -330,15 +320,10 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[SEARCH_PREDICATE] = arg -> new SearchPredicate();
         constructors[EXPRESSION_FIELD_ACCESS] = arg -> new FieldAccessExpression<>();
         constructors[EXPRESSION_ROW] = arg -> new RowExpression();
-        constructors[MAP_FETCH_INDEX_OPERATION] = arg -> new MapFetchIndexOperation();
-        constructors[INDEX_ITERATION_POINTER] = arg -> new IndexIterationPointer();
-        constructors[MAP_FETCH_INDEX_OPERATION_RESULT] = arg -> new MapFetchIndexOperationResult();
 
         constructors[DATA_LINK] = arg -> new DataLinkCatalogEntry();
 
         constructors[QUERY_DATA_TYPE] = arg -> new QueryDataType();
-
-        constructors[QUERY_ID] = arg -> new QueryId();
 
         constructors[ROW_HEAP] = arg -> new HeapRow();
         constructors[ROW_EMPTY] = arg -> EmptyRow.INSTANCE;
