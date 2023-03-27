@@ -135,9 +135,20 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         }
 
         if (!foundLeft || !foundRight) {
+            List<String> leftWatermarkedColumnNames = leftFields.getFieldIndexes().stream()
+                    .map(left.getRowType().getFieldNames()::get)
+                    .collect(Collectors.toList());
+            List<String> rightWatermarkedColumnNames = rightFields.getFieldIndexes().stream()
+                    .map(right.getRowType().getFieldNames()::get)
+                    .collect(Collectors.toList());
+
             call.transformTo(
-                    fail(join, "A stream-to-stream join must have a join condition constraining the maximum " +
-                            "difference between time values of the joined tables in both directions"));
+                    fail(join, String.format(
+                            "A stream-to-stream join must have a join condition constraining the maximum " +
+                            "difference between time values of the joined tables in both directions. " +
+                            "Time columns on the left side: %s, time columns on the right side: %s",
+                            // note that the join can be transposed and sides may not match original query
+                            leftWatermarkedColumnNames, rightWatermarkedColumnNames)));
             return;
         }
 
