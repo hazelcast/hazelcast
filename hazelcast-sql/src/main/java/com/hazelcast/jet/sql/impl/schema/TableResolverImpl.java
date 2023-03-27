@@ -27,6 +27,7 @@ import com.hazelcast.jet.sql.impl.connector.infoschema.ViewsTable;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.schema.BadTable;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
@@ -267,14 +268,20 @@ public class TableResolverImpl implements TableResolver {
 
     private Table toTable(Mapping mapping) {
         SqlConnector connector = connectorCache.forType(mapping.type());
-        return connector.createTable(
-                nodeEngine,
-                SCHEMA_NAME_PUBLIC,
-                mapping.name(),
-                mapping.externalName(),
-                mapping.options(),
-                mapping.fields()
-        );
+        try {
+            return connector.createTable(
+                    nodeEngine,
+                    SCHEMA_NAME_PUBLIC,
+                    mapping.name(),
+                    mapping.externalName(),
+                    mapping.options(),
+                    mapping.fields()
+            );
+        } catch (Throwable e) {
+            // will fail later if invalid table is actually used in a query
+            return new BadTable(SCHEMA_NAME_PUBLIC, mapping.name(),
+                    e instanceof QueryException ? e.getCause() : e);
+        }
     }
 
     private Table toTable(View view) {
