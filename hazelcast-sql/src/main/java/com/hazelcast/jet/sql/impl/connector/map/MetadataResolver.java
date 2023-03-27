@@ -30,6 +30,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.Mapping;
@@ -95,7 +97,8 @@ public class MetadataResolver implements IMapResolver {
         return null;
     }
 
-    private static final class GetAnyMetadataOperation extends Operation {
+    private static final class GetAnyMetadataOperation extends Operation
+            implements ReadonlyOperation, PartitionAwareOperation {
         private final String mapName;
 
         private GetAnyMetadataOperation(String mapName) {
@@ -104,7 +107,7 @@ public class MetadataResolver implements IMapResolver {
 
         @Override
         public void run() {
-            MapService service = getNodeEngine().getService(MapService.SERVICE_NAME);
+            MapService service = getService();
             MapServiceContext context = service.getMapServiceContext();
             RecordStore<?> recordStore = context.getExistingRecordStore(getPartitionId(), mapName);
             // can return null, but that is fine
@@ -127,6 +130,7 @@ public class MetadataResolver implements IMapResolver {
         }
     }
 
+    @Nullable
     private <T extends Metadata> T invoke(Operation operation, int partitionId) {
         final InvocationFuture<T> future =
                 nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
