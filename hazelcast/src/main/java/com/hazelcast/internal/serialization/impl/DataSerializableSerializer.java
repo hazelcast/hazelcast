@@ -17,9 +17,12 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.serialization.DataSerializerHook;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.ServiceLoader;
+import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -29,9 +32,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.TypedDataSerializable;
 import com.hazelcast.nio.serialization.TypedStreamDeserializer;
-import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.internal.util.ServiceLoader;
-import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.version.Version;
 
 import java.io.IOException;
@@ -62,13 +62,17 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
     DataSerializableSerializer(Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
                                ClassLoader classLoader) {
         try {
-            final Iterator<DataSerializerHook> hooks = ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID, classLoader);
+            Iterator<DataSerializerHook> hooks = ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID, classLoader);
             while (hooks.hasNext()) {
                 DataSerializerHook hook = hooks.next();
                 final DataSerializableFactory factory = hook.createFactory();
                 if (factory != null) {
                     register(hook.getFactoryId(), factory);
                 }
+            }
+            hooks = ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID, classLoader);
+            while (hooks.hasNext()) {
+                hooks.next().afterFactoriesCreated(factories);
             }
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

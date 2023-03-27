@@ -23,9 +23,9 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlStatement;
+import com.hazelcast.sql.impl.CoreQueryUtils;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlRowImpl;
@@ -350,7 +350,7 @@ public class SqlClientResult implements SqlResult {
     }
 
     private HazelcastSqlException wrap(Throwable error) {
-        throw QueryUtils.toPublicException(error, service.getClientId());
+        throw CoreQueryUtils.toPublicException(error, service.getClientId());
     }
 
     private static final class State {

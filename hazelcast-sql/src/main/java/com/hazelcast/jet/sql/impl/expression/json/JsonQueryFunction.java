@@ -22,7 +22,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.ConcurrentInitialSetCache;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -46,7 +45,7 @@ import static com.hazelcast.jet.sql.impl.expression.json.JsonPathUtil.serialize;
 import static com.hazelcast.jet.sql.impl.expression.json.JsonPathUtil.wrapToArray;
 
 @SuppressWarnings("checkstyle:MagicNumber")
-public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implements IdentifiedDataSerializable {
+public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> {
     private static final ILogger LOGGER = Logger.getLogger(JsonQueryFunction.class);
     private static final Function<String, JsonPath> COMPILE_FUNCTION = JsonPathUtil::compile;
 
@@ -82,11 +81,6 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         final Expression<?>[] operands = new Expression<?>[]{json, path};
 
         return new JsonQueryFunction(operands, wrapperBehavior, onEmpty, onError);
-    }
-
-    @Override
-    public int getFactoryId() {
-        return JetSqlSerializerHook.F_ID;
     }
 
     @Override
