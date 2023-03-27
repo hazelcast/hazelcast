@@ -77,6 +77,7 @@ import com.hazelcast.sql.impl.expression.predicate.IsTruePredicate;
 import com.hazelcast.sql.impl.expression.predicate.NotPredicate;
 import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
 import com.hazelcast.sql.impl.expression.predicate.SearchPredicate;
+import com.hazelcast.sql.impl.expression.service.GetDdlFunction;
 import com.hazelcast.sql.impl.expression.string.AsciiFunction;
 import com.hazelcast.sql.impl.expression.string.CharLengthFunction;
 import com.hazelcast.sql.impl.expression.string.ConcatFunction;
@@ -197,6 +198,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int SEARCH_PREDICATE = 76;
     public static final int EXPRESSION_FIELD_ACCESS = 77;
     public static final int EXPRESSION_ROW = 78;
+    public static final int EXPRESSION_GET_DDL = 79;
 
     public static final int DATA_LINK = 88;
 
@@ -320,6 +322,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[SEARCH_PREDICATE] = arg -> new SearchPredicate();
         constructors[EXPRESSION_FIELD_ACCESS] = arg -> new FieldAccessExpression<>();
         constructors[EXPRESSION_ROW] = arg -> new RowExpression();
+        constructors[EXPRESSION_GET_DDL] = arg -> new GetDdlFunction();
 
         constructors[DATA_LINK] = arg -> new DataLinkCatalogEntry();
 
