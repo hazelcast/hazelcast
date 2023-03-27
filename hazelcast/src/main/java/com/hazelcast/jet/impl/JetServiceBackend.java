@@ -500,6 +500,11 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
                     jobMetaDataParameterObject.getMainClass(),
                     jobMetaDataParameterObject.getJobParameters()
             );
+            if (logger.isInfoEnabled()) {
+                String message = String.format("executing jar file %s for session %s finished successfully",
+                        jobMetaDataParameterObject.getJarPath(), jobMetaDataParameterObject.getSessionId());
+                logger.info(message);
+            }
         } catch (Exception exception) {
             logger.severe("caught exception when running the jar", exception);
             // Rethrow the exception back to client to notify  that job did not run

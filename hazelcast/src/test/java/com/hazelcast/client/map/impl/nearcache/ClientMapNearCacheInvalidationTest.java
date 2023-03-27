@@ -36,9 +36,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
@@ -52,8 +53,8 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientMapNearCacheInvalidationTest extends ClientTestSupport {
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
-    private String mapName = randomMapName();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final String mapName = randomMapName();
 
     @After
     public void tearDown() {
@@ -167,210 +168,50 @@ public class ClientMapNearCacheInvalidationTest extends ClientTestSupport {
 
     @Test
     public void testMapSubmitToKey_withReadOnlyProcessor_noInvalidations() {
-        Config config = getConfig();
-        configureBatching(config, 10, 1);
-
-        ClientConfig clientConfig = getClientConfig(mapName);
-
-        HazelcastInstance server = factory.newHazelcastInstance(config);
-        factory.newHazelcastInstance(config);
-
-        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
-        makeSureConnectedToServers(client, 2);
-
-        IMap<Integer, Integer> serverMap = server.getMap(mapName);
-        IMap<Integer, Integer> clientMap = client.getMap(mapName);
-
-        int size = 1000;
-
-        // fill serverMap
-        for (int i = 0; i < size; i++) {
-            serverMap.put(i, i);
-        }
-
-        populateNearCache(clientMap, size);
-        NearCacheStats nearCachestats = ((NearCachedClientMapProxy) clientMap).getNearCache().getNearCacheStats();
-        long invalidationsBefore = nearCachestats.getInvalidations();
-        // fill Near Cache on client
-        for (int i = 0; i < size; i++) {
-            clientMap.submitToKey(i, new TestReadOnlyProcessor());
-        }
-
-        long invalidationsAfter = nearCachestats.getInvalidations();
-        assertEquals("There should be no invalidation after getting keys from read only entry processor", invalidationsBefore, invalidationsAfter);
+        verifyNoInvalidationsWith((map, size) -> {
+            for (int i = 0; i < size; i++) {
+                map.submitToKey(i, new TestReadOnlyProcessor());
+            }
+        });
     }
 
     @Test
     public void testMapExecuteOnKey_withReadOnlyProcessor_noInvalidations() {
-        Config config = getConfig();
-        configureBatching(config, 10, 1);
-
-        ClientConfig clientConfig = getClientConfig(mapName);
-
-        HazelcastInstance server = factory.newHazelcastInstance(config);
-        factory.newHazelcastInstance(config);
-
-        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
-        makeSureConnectedToServers(client, 2);
-
-        IMap<Integer, Integer> serverMap = server.getMap(mapName);
-        IMap<Integer, Integer> clientMap = client.getMap(mapName);
-
-        int size = 1000;
-
-        // fill serverMap
-        for (int i = 0; i < size; i++) {
-            serverMap.put(i, i);
-        }
-
-        populateNearCache(clientMap, size);
-        NearCacheStats nearCachestats = ((NearCachedClientMapProxy) clientMap).getNearCache().getNearCacheStats();
-        long invalidationsBefore = nearCachestats.getInvalidations();
-        // fill Near Cache on client
-        for (int i = 0; i < size; i++) {
-            clientMap.executeOnKey(i, new TestReadOnlyProcessor());
-        }
-        long invalidationsAfter = nearCachestats.getInvalidations();
-        assertEquals("There should be no invalidation after getting keys from read only entry processor", invalidationsBefore, invalidationsAfter);
-
+        verifyNoInvalidationsWith((map, size) -> {
+            for (int i = 0; i < size; i++) {
+                map.executeOnKey(i, new TestReadOnlyProcessor());
+            }
+        });
     }
 
     @Test
     public void testMapSubmitToKeys_withReadOnlyProcessor_noInvalidations() {
-        Config config = getConfig();
-        configureBatching(config, 10, 1);
-
-        ClientConfig clientConfig = getClientConfig(mapName);
-
-        HazelcastInstance server = factory.newHazelcastInstance(config);
-        factory.newHazelcastInstance(config);
-
-        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
-        makeSureConnectedToServers(client, 2);
-
-        IMap<Integer, Integer> serverMap = server.getMap(mapName);
-        IMap<Integer, Integer> clientMap = client.getMap(mapName);
-
-        int size = 1000;
-
-        // fill serverMap
-        for (int i = 0; i < size; i++) {
-            serverMap.put(i, i);
-        }
-
-        populateNearCache(clientMap, size);
-        NearCacheStats nearCachestats = ((NearCachedClientMapProxy) clientMap).getNearCache().getNearCacheStats();
-        long invalidationsBefore = nearCachestats.getInvalidations();
-        // fill Near Cache on client
-        Set<Integer> set = new HashSet<Integer>();
-        for (int i = 0; i < size; i++) {
-            set.add(i);
-        }
-        clientMap.submitToKeys(set, new TestReadOnlyProcessor());
-        long invalidationsAfter = nearCachestats.getInvalidations();
-        assertEquals("There should be no invalidation after getting keys from read only entry processor", invalidationsBefore, invalidationsAfter);
+        verifyNoInvalidationsWith((map, size) -> {
+            Set<Integer> keys = IntStream.range(0, size).boxed().collect(Collectors.toSet());
+            map.submitToKeys(keys, new TestReadOnlyProcessor());
+        });
     }
 
     @Test
     public void testMapExecuteOnKeys_withReadOnlyProcessor_noInvalidations() {
-        Config config = getConfig();
-        configureBatching(config, 10, 1);
-
-        ClientConfig clientConfig = getClientConfig(mapName);
-
-        HazelcastInstance server = factory.newHazelcastInstance(config);
-        factory.newHazelcastInstance(config);
-
-        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
-        makeSureConnectedToServers(client, 2);
-
-        IMap<Integer, Integer> serverMap = server.getMap(mapName);
-        IMap<Integer, Integer> clientMap = client.getMap(mapName);
-
-        int size = 1000;
-
-        // fill serverMap
-        for (int i = 0; i < size; i++) {
-            serverMap.put(i, i);
-        }
-
-        populateNearCache(clientMap, size);
-        NearCacheStats nearCachestats = ((NearCachedClientMapProxy) clientMap).getNearCache().getNearCacheStats();
-        long invalidationsBefore = nearCachestats.getInvalidations();
-        // fill Near Cache on client
-        Set<Integer> set = new HashSet<Integer>();
-        for (int i = 0; i < size; i++) {
-            set.add(i);
-        }
-        clientMap.executeOnKeys(set, new TestReadOnlyProcessor());
-        long invalidationsAfter = nearCachestats.getInvalidations();
-        assertEquals("There should be no invalidation after getting keys from read only entry processor", invalidationsBefore, invalidationsAfter);
+        verifyNoInvalidationsWith((map, size) -> {
+            Set<Integer> keys = IntStream.range(0, size).boxed().collect(Collectors.toSet());
+            map.executeOnKeys(keys, new TestReadOnlyProcessor());
+        });
     }
 
     @Test
     public void testMapExecuteOnEntriesWithPredicate_withReadOnlyProcessor_noInvalidations() {
-        Config config = getConfig();
-        configureBatching(config, 10, 1);
-
-        ClientConfig clientConfig = getClientConfig(mapName);
-
-        HazelcastInstance server = factory.newHazelcastInstance(config);
-        factory.newHazelcastInstance(config);
-
-        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
-        makeSureConnectedToServers(client, 2);
-
-        int mapSize = 100;
-
-        IMap<Integer, Integer> map = server.getMap(mapName);
-        IMap<Integer, Integer> clientMap = client.getMap(mapName);
-
-        for (int i = 0; i < mapSize; i++) {
-            map.put(i, i);
-        }
-
-        populateNearCache(map, mapSize);
-        NearCacheStats nearCachestats = ((NearCachedClientMapProxy) clientMap).getNearCache().getNearCacheStats();
-        long invalidationsBefore = nearCachestats.getInvalidations();
-        map.executeOnEntries(new TestReadOnlyProcessor(), Predicates.alwaysTrue());
-        long invalidationsAfter = nearCachestats.getInvalidations();
-        assertEquals("There should be no invalidation after getting keys from read only entry processor", invalidationsBefore, invalidationsAfter);
+        verifyNoInvalidationsWith((map, size) -> {
+            map.executeOnEntries(new TestReadOnlyProcessor(), Predicates.alwaysTrue());
+        });
     }
 
     @Test
     public void testMapExecuteOnEntriesWithoutPredicate_withReadOnlyProcessor_noInvalidations() {
-        Config config = getConfig();
-        configureBatching(config, 10, 1);
-
-        ClientConfig clientConfig = getClientConfig(mapName);
-
-        HazelcastInstance server = factory.newHazelcastInstance(config);
-        factory.newHazelcastInstance(config);
-
-        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
-        makeSureConnectedToServers(client, 2);
-
-        int mapSize = 100;
-
-        IMap<Integer, Integer> map = server.getMap(mapName);
-        IMap<Integer, Integer> clientMap = client.getMap(mapName);
-
-        for (int i = 0; i < mapSize; i++) {
-            map.put(i, i);
-        }
-
-        populateNearCache(map, mapSize);
-        NearCacheStats nearCachestats = ((NearCachedClientMapProxy) clientMap).getNearCache().getNearCacheStats();
-        long invalidationsBefore = nearCachestats.getInvalidations();
-        map.executeOnEntries(new TestReadOnlyProcessor());
-        long invalidationsAfter = nearCachestats.getInvalidations();
-        assertEquals("There should be no invalidation after getting keys from read only entry processor", invalidationsBefore, invalidationsAfter);
-    }
-
-    protected void populateNearCache(Map<Integer, ?> map, int mapSize) {
-        for (int i = 0; i < mapSize; i++) {
-            map.get(i);
-        }
+        verifyNoInvalidationsWith((map, size) -> {
+            map.executeOnEntries(new TestReadOnlyProcessor());
+        });
     }
 
     @Test
@@ -424,10 +265,45 @@ public class ClientMapNearCacheInvalidationTest extends ClientTestSupport {
                     .setInvalidateOnChange(true);
     }
 
+    private void verifyNoInvalidationsWith(BiConsumer<IMap<Integer, Integer>, Integer> operation) {
+        Config config = getConfig();
+
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+
+        ClientConfig clientConfig = getClientConfig(mapName);
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+
+        makeSureConnectedToServers(client, 2);
+
+        int size = 100;
+
+        IMap<Integer, Integer> map = client.getMap(mapName);
+
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+            map.get(i);
+        }
+
+        long invalidationsBefore = getInvalidationsFrom(map);
+
+        operation.accept(map, size);
+
+        assertTrueAllTheTime(() -> {
+            long invalidationsAfter = getInvalidationsFrom(map);
+            assertEquals(invalidationsBefore, invalidationsAfter);
+        }, 3);
+    }
+
     private static void configureBatching(Config config, int batchSize, int period) {
         config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), "true");
         config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), valueOf(batchSize));
         config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), valueOf(period));
+    }
+
+    private static long getInvalidationsFrom(IMap<Integer, Integer> map) {
+        NearCacheStats stats = ((NearCachedClientMapProxy<Integer, Integer>) map).getNearCache().getNearCacheStats();
+        return stats.getInvalidations();
     }
 
     private static void assertNearCacheSizeEventually(final IMap map, final int nearCacheSize) {

@@ -114,6 +114,9 @@ public class AddMapConfigMessageTask
         if (parameters.isTieredStoreConfigExists) {
             config.setTieredStoreConfig(parameters.tieredStoreConfig);
         }
+        if (parameters.isPartitioningAttributeConfigsExists) {
+            config.setPartitioningAttributeConfigs(parameters.partitioningAttributeConfigs);
+        }
         return config;
     }
 

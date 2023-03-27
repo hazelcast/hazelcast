@@ -40,6 +40,8 @@ import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
+import com.hazelcast.client.impl.protocol.codec.ExperimentalAuthenticationCodec;
+import com.hazelcast.client.impl.protocol.codec.ExperimentalAuthenticationCustomCodec;
 import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
@@ -659,7 +661,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
         address = translate(address);
         TcpClientConnection connection = createSocketConnection(address);
-        ClientAuthenticationCodec.ResponseParameters response = authenticateOnCluster(connection);
+        AuthenticationResponse response = authenticateOnCluster(connection);
         return onAuthenticated(connection, response, switchingToNextCluster);
     }
 
@@ -672,7 +674,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
         Address address = translate(member);
         connection = createSocketConnection(address);
-        ClientAuthenticationCodec.ResponseParameters response = authenticateOnCluster(connection);
+        AuthenticationResponse response = authenticateOnCluster(connection);
         return onAuthenticated(connection, response, switchingToNextCluster);
     }
 
@@ -788,7 +790,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             bindSocketToPort(socket);
             Channel channel = networking.register(channelInitializer, socketChannel, true);
 
-            channel.addCloseListener(new TPCChannelCloseListener(client));
+            channel.addCloseListener(new TpcChannelCloseListener(client));
 
             ConcurrentMap attributeMap = channel.attributeMap();
             attributeMap.put(Address.class, address);
@@ -964,12 +966,12 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         return firstConnection;
     }
 
-    private ClientAuthenticationCodec.ResponseParameters authenticateOnCluster(TcpClientConnection connection) {
+    private AuthenticationResponse authenticateOnCluster(TcpClientConnection connection) {
         Address memberAddress = connection.getInitAddress();
         ClientMessage request = encodeAuthenticationRequest(memberAddress);
         ClientInvocationFuture future = new ClientInvocation(client, request, null, connection).invokeUrgent();
         try {
-            return ClientAuthenticationCodec.decodeResponse(future.get(authenticationTimeout, MILLISECONDS));
+            return AuthenticationResponse.from(future.get(authenticationTimeout, MILLISECONDS));
         } catch (Exception e) {
             connection.close("Failed to authenticate connection", e);
             throw rethrow(e);
@@ -982,21 +984,21 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
      * connection to the given member.
      */
     private TcpClientConnection onAuthenticated(TcpClientConnection connection,
-                                                ClientAuthenticationCodec.ResponseParameters response,
+                                                AuthenticationResponse response,
                                                 boolean switchingToNextCluster) {
         synchronized (clientStateMutex) {
             checkAuthenticationResponse(connection, response);
-            connection.setRemoteAddress(response.address);
-            connection.setRemoteUuid(response.memberUuid);
-            connection.setClusterUuid(response.clusterId);
+            connection.setRemoteAddress(response.getAddress());
+            connection.setRemoteUuid(response.getMemberUuid());
+            connection.setClusterUuid(response.getClusterId());
 
-            TcpClientConnection existingConnection = activeConnections.get(response.memberUuid);
+            TcpClientConnection existingConnection = activeConnections.get(response.getMemberUuid());
             if (existingConnection != null) {
-                connection.close("Duplicate connection to same member with uuid : " + response.memberUuid, null);
+                connection.close("Duplicate connection to same member with uuid : " + response.getMemberUuid(), null);
                 return existingConnection;
             }
 
-            UUID newClusterId = response.clusterId;
+            UUID newClusterId = response.getClusterId();
             if (logger.isFineEnabled()) {
                 logger.fine("Checking the cluster: " + newClusterId + ", current cluster: " + this.clusterId);
             }
@@ -1013,13 +1015,13 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             }
             checkClientState(connection, switchingToNextCluster);
 
-            List<Integer> tpcPorts = response.altoPorts;
+            List<Integer> tpcPorts = response.getTpcPorts();
             if (isTpcAwareClient && tpcPorts != null && !tpcPorts.isEmpty()) {
                 connectTpcPorts(connection, tpcPorts);
             }
 
             boolean connectionsEmpty = activeConnections.isEmpty();
-            activeConnections.put(response.memberUuid, connection);
+            activeConnections.put(response.getMemberUuid(), connection);
 
             if (connectionsEmpty) {
                 // The first connection that opens a connection to the new cluster should set `clusterId`.
@@ -1059,8 +1061,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 }
             }
 
-            logger.info("Authenticated with server " + response.address + ":" + response.memberUuid
-                    + ", server version: " + response.serverHazelcastVersion
+            logger.info("Authenticated with server " + response.getAddress() + ":" + response.getMemberUuid()
+                    + ", server version: " + response.getServerHazelcastVersion()
                     + ", local address: " + connection.getLocalSocketAddress());
 
             fireConnectionEvent(connection, true);
@@ -1103,9 +1105,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
      * closes the connection and throws exception if the authentication needs to be cancelled.
      */
     private void checkAuthenticationResponse(TcpClientConnection connection,
-                                             ClientAuthenticationCodec.ResponseParameters response) {
-        AuthenticationStatus authenticationStatus = AuthenticationStatus.getById(response.status);
-        if (failoverConfigProvided && !response.failoverSupported) {
+                                             AuthenticationResponse response) {
+        AuthenticationStatus authenticationStatus = AuthenticationStatus.getById(response.getStatus());
+        if (failoverConfigProvided && !response.isFailoverSupported()) {
             logger.warning("Cluster does not support failover. This feature is available in Hazelcast Enterprise");
             authenticationStatus = NOT_ALLOWED_IN_CLUSTER;
         }
@@ -1133,12 +1135,12 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 throw exception;
         }
         ClientPartitionServiceImpl partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
-        if (!partitionService.checkAndSetPartitionCount(response.partitionCount)) {
+        if (!partitionService.checkAndSetPartitionCount(response.getPartitionCount())) {
             ClientNotAllowedInClusterException exception =
                     new ClientNotAllowedInClusterException("Client can not work with this cluster"
                             + " because it has a different partition count. "
                             + "Expected partition count: " + partitionService.getPartitionCount()
-                            + ", Member partition count: " + response.partitionCount);
+                            + ", Member partition count: " + response.getPartitionCount());
             connection.close("Failed to authenticate connection", exception);
             throw exception;
         }
@@ -1176,7 +1178,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
     private ClientMessage encodeAuthenticationRequest(Address toAddress) {
         InternalSerializationService ss = client.getSerializationService();
-        byte serializationVersion = ss.getVersion();
+        String clientVersion = BuildInfoProvider.getBuildInfo().getVersion();
 
         CandidateClusterContext currentContext = clusterDiscoveryService.current();
         Credentials credentials = currentContext.getCredentialsFactory().newCredentials(toAddress);
@@ -1184,10 +1186,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         currentCredentials = credentials;
 
         if (credentials instanceof PasswordCredentials) {
-            PasswordCredentials cr = (PasswordCredentials) credentials;
-            return ClientAuthenticationCodec
-                    .encodeRequest(clusterName, cr.getName(), cr.getPassword(), clientUuid, connectionType,
-                            serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(), labels);
+            return encodePasswordCredentialsRequest(clusterName, (PasswordCredentials) credentials,
+                    ss.getVersion(), clientVersion);
         } else {
             byte[] secretBytes;
             if (credentials instanceof TokenCredentials) {
@@ -1195,8 +1195,36 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             } else {
                 secretBytes = ss.toDataWithSchema(credentials).toByteArray();
             }
-            return ClientAuthenticationCustomCodec.encodeRequest(clusterName, secretBytes, clientUuid, connectionType,
-                    serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(), labels);
+
+            return encodeCustomCredentialsRequest(clusterName, secretBytes, ss.getVersion(), clientVersion);
+        }
+    }
+
+    private ClientMessage encodePasswordCredentialsRequest(String clusterName,
+                                                           PasswordCredentials credentials,
+                                                           byte serializationVersion,
+                                                           String clientVersion) {
+        if (isTpcAwareClient) {
+            return ExperimentalAuthenticationCodec.encodeRequest(clusterName, credentials.getName(),
+                    credentials.getPassword(), clientUuid, connectionType, serializationVersion,
+                    clientVersion, client.getName(), labels);
+        } else {
+            return ClientAuthenticationCodec.encodeRequest(clusterName, credentials.getName(),
+                    credentials.getPassword(), clientUuid, connectionType, serializationVersion,
+                    clientVersion, client.getName(), labels);
+        }
+    }
+
+    private ClientMessage encodeCustomCredentialsRequest(String clusterName,
+                                                         byte[] secretBytes,
+                                                         byte serializationVersion,
+                                                         String clientVersion) {
+        if (isTpcAwareClient) {
+            return ExperimentalAuthenticationCustomCodec.encodeRequest(clusterName, secretBytes, clientUuid,
+                    connectionType, serializationVersion, clientVersion, client.getName(), labels);
+        } else {
+            return ClientAuthenticationCustomCodec.encodeRequest(clusterName, secretBytes, clientUuid,
+                    connectionType, serializationVersion, clientVersion, client.getName(), labels);
         }
     }
 
