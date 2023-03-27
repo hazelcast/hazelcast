@@ -32,6 +32,7 @@ import org.apache.calcite.sql.pretty.SqlPrettyWriter;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 
+import javax.annotation.Nonnull;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,9 +60,9 @@ public class SqlCreateDataLink extends SqlCreate {
             SqlParserPos pos,
             boolean replace,
             boolean ifNotExists,
-            SqlIdentifier name,
-            SqlIdentifier type,
-            SqlNodeList options) {
+            @Nonnull SqlIdentifier name,
+            @Nonnull SqlIdentifier type,
+            @Nonnull SqlNodeList options) {
         super(CREATE_DATA_LINK, pos, replace, ifNotExists);
         this.name = name;
         this.type = type;

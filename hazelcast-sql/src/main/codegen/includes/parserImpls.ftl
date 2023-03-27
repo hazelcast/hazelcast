@@ -99,6 +99,7 @@ SqlCreate SqlCreateDataLink(Span span, boolean replace) :
         <OPTIONS>
         sqlOptions = SqlOptions()
     ]
+
     {
         return new SqlCreateDataLink(
             startPos.plus(getPos()),

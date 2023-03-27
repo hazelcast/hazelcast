@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.schema.datalink;
 
+import com.hazelcast.datalink.DataLink;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateDataLink;
 import com.hazelcast.nio.ObjectDataInput;
@@ -27,6 +28,8 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource;
+
 /**
  * The value in catalog map for data links.
  */
@@ -34,38 +37,46 @@ public class DataLinkCatalogEntry implements SqlCatalogObject {
     private String name;
     private String type;
     private Map<String, String> options;
+    private DataLinkSource source;
 
     public DataLinkCatalogEntry() {
+    }
+
+    public DataLinkCatalogEntry(DataLink dataLink, DataLinkSource source) {
+        this.name = dataLink.getName();
+        this.type = dataLink.getConfig().getClassName();
+        this.options = dataLink.options();
+        this.source = source;
     }
 
     public DataLinkCatalogEntry(String name, String type, Map<String, String> options) {
         this.name = name;
         this.type = type;
         this.options = options;
+        this.source = DataLinkSource.SQL;
     }
 
-    public String getName() {
+    public DataLinkCatalogEntry(String name, String type, Map<String, String> options, DataLinkSource source) {
+        this.name = name;
+        this.type = type;
+        this.options = options;
+        this.source = source;
+    }
+
+    public String name() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getType() {
+    public String type() {
         return type;
     }
 
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public Map<String, String> getOptions() {
+    public Map<String, String> options() {
         return options;
     }
 
-    public void setOptions(Map<String, String> options) {
-        this.options = options;
+    public DataLinkSource source() {
+        return source;
     }
 
     @Override
@@ -73,6 +84,7 @@ public class DataLinkCatalogEntry implements SqlCatalogObject {
         name = in.readString();
         type = in.readString();
         options = in.readObject();
+        source = in.readObject();
     }
 
     @Override
@@ -80,6 +92,7 @@ public class DataLinkCatalogEntry implements SqlCatalogObject {
         out.writeString(name);
         out.writeString(type);
         out.writeObject(options);
+        out.writeObject(source);
     }
 
     @Override
@@ -101,7 +114,7 @@ public class DataLinkCatalogEntry implements SqlCatalogObject {
             return false;
         }
         DataLinkCatalogEntry e = (DataLinkCatalogEntry) o;
-        return name.equals(e.name) && type.equals(e.type) && options.equals(e.options);
+        return name.equals(e.name) && type.equals(e.type) && options.equals(e.options) && source.equals(e.source);
     }
 
     @Override

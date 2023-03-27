@@ -148,9 +148,12 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_createDataLinkWithoutOptions_then_noError() {
+    public void when_createDataLinkWithoutOptions_then_success() {
         String dlName = randomName();
-        instance().getSql().execute("CREATE DATA LINK " + dlName + " TYPE \"" + DummyDataLink.class.getName() + "\"");
+
+        instance().getSql().execute("CREATE DATA LINK " + dlName
+                + " TYPE \"" + DummyDataLink.class.getName() + "\" ");
+
         for (InternalDataLinkService dataLinkService : dataLinkServices) {
             DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
             assertThat(dataLink).isNotNull();

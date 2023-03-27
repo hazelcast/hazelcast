@@ -387,7 +387,9 @@ public class PlanExecutor {
             case DATALINKS:
                 InternalDataLinkService service = nodeEngine.getDataLinkService();
                 DataLinkServiceImpl dataLinkService = (DataLinkServiceImpl) service;
-                rows = dataLinkService.getDataLinks().keySet().stream();
+                rows = DataLinksResolver.getAllDataLinkEntries(dataLinkService, dataLinksCatalog.getDataLinkStorage())
+                        .stream()
+                        .map(DataLinkCatalogEntry::name);
                 break;
             case RESOURCES:
                 return executeShowResources(plan.getDataLinkName());
