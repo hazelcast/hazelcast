@@ -82,7 +82,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("data-link-name must be set");
+                .hasMessageContaining("Missing option : 'data-link-name' must be set");
     }
 
     @Test
@@ -243,7 +243,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         Map<String, String> options = new HashMap<>();
         options.put("jdbcUrl", dbConnectionUrl);
 
-        createDataLink(instance(), dlName, "JDBC", options);
+        createDataLink(instance(), dlName, "JDBC", false, options);
         InternalDataLinkService dlService = getNodeEngineImpl(instance()).getDataLinkService();
         assertThat(dlService.existsSqlDataLink(dlName)).isTrue();
 

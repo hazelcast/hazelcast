@@ -65,8 +65,7 @@ public class ShowDataLinksSqlTest extends SqlTestSupport {
         // create data links via SQL
         List<String> dlNames = IntStream.range(0, 5).mapToObj(i -> "hazelcast.public.dl" + i).collect(toList());
         for (String dlName : dlNames) {
-            instance().getSql().execute(
-                    "CREATE DATA LINK " + dlName  + " TYPE DUMMY OPTIONS ('b' = 'c')");
+            instance().getSql().execute("CREATE DATA LINK " + dlName  + " TYPE DUMMY SHARED OPTIONS ('b' = 'c')");
         }
 
         dlNames.add(0, "dl");

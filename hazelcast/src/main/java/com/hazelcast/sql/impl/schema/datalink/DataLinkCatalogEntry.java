@@ -34,6 +34,7 @@ import static com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource;
 public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
     private String name;
     private String type;
+    private boolean shared;
     private Map<String, String> options;
     private DataLinkSource source;
 
@@ -43,13 +44,15 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
     public DataLinkCatalogEntry(DataLink dataLink, DataLinkSource source) {
         this.name = dataLink.getName();
         this.type = dataLink.getConfig().getClassName();
+        this.shared = dataLink.getConfig().isShared();
         this.options = dataLink.options();
         this.source = source;
     }
 
-    public DataLinkCatalogEntry(String name, String type, Map<String, String> options) {
+    public DataLinkCatalogEntry(String name, String type, boolean shared, Map<String, String> options) {
         this.name = name;
         this.type = type;
+        this.shared = shared;
         this.options = options;
         this.source = DataLinkSource.SQL;
     }
@@ -57,8 +60,6 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
     public DataLinkCatalogEntry(String name, String type, Map<String, String> options, DataLinkSource source) {
         this.name = name;
         this.type = type;
-        this.options = options;
-        this.source = source;
     }
 
     public String name() {
@@ -67,6 +68,10 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
 
     public String type() {
         return type;
+    }
+
+    public boolean isShared() {
+        return shared;
     }
 
     public Map<String, String> options() {
@@ -81,6 +86,7 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
         type = in.readString();
+        shared = in.readBoolean();
         options = in.readObject();
         source = in.readObject();
     }
@@ -89,6 +95,7 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
         out.writeString(type);
+        out.writeBoolean(shared);
         out.writeObject(options);
         out.writeObject(source);
     }

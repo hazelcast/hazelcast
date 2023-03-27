@@ -189,6 +189,7 @@ public class PlanExecutor {
                 new DataLinkCatalogEntry(
                         plan.name(),
                         dlService.classForDataLinkType(plan.type()).getName(),
+                        plan.shared(),
                         plan.options()),
                 plan.isReplace(),
                 plan.ifNotExists());

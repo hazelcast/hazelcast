@@ -132,7 +132,7 @@ public class JdbcSqlConnector implements SqlConnector {
     ) {
         String dataLinkRef = requireNonNull(
                 options.get(OPTION_DATA_LINK_NAME),
-                OPTION_DATA_LINK_NAME + " must be set"
+                "Missing option : '" + OPTION_DATA_LINK_NAME + "' must be set"
         );
         JdbcDataLink dataLink = getAndRetainDataLink(nodeEngine, dataLinkRef);
         try (Connection connection = dataLink.getConnection()) {
