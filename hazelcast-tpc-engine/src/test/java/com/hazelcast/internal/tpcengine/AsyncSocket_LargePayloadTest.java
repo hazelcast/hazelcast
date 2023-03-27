@@ -27,6 +27,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_SNDBUF;
@@ -45,6 +46,8 @@ public abstract class AsyncSocket_LargePayloadTest {
     public int iterations = 20;
     public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 
+    private final AtomicLong iteration = new AtomicLong();
+    private final PrintAtomicLongThread debugThread = new PrintAtomicLongThread(iteration);
     private Reactor clientReactor;
     private Reactor serverReactor;
 
@@ -54,12 +57,14 @@ public abstract class AsyncSocket_LargePayloadTest {
     public void before() {
         clientReactor = newReactorBuilder().build().start();
         serverReactor = newReactorBuilder().build().start();
+        debugThread.start();
     }
 
     @After
     public void after() throws InterruptedException {
         terminate(clientReactor);
         terminate(serverReactor);
+        debugThread.shutdown();
     }
 
     @Test
@@ -234,13 +239,13 @@ public abstract class AsyncSocket_LargePayloadTest {
         AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
                 .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
                 .setAcceptConsumer(acceptRequest -> {
-                    AsyncSocketBuilder channelBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest);
-                    channelBuilder.set(TCP_NODELAY, true);
-                    channelBuilder.set(SO_SNDBUF, SOCKET_BUFFER_SIZE);
-                    channelBuilder.set(SO_RCVBUF, SOCKET_BUFFER_SIZE);
-                    channelBuilder.setReadHandler(new ServerReadHandler());
-                    AsyncSocket socket = channelBuilder.build();
-                    socket.start();
+                    serverReactor.newAsyncSocketBuilder(acceptRequest)
+                            .set(TCP_NODELAY, true)
+                            .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
+                            .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
+                            .setReadHandler(new ServerReadHandler())
+                            .build()
+                            .start();
                 })
                 .build();
         serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
@@ -275,10 +280,6 @@ public abstract class AsyncSocket_LargePayloadTest {
                     break;
                 }
 
-                if (round % 100 == 0) {
-                    System.out.println("server round:" + round);
-                }
-
                 upcast(payloadBuffer).flip();
                 IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
                 responseBuf.writeInt(payloadSize);
@@ -293,7 +294,7 @@ public abstract class AsyncSocket_LargePayloadTest {
         }
     }
 
-    private static class ClientReadHandler extends ReadHandler {
+    private class ClientReadHandler extends ReadHandler {
         private final CountDownLatch latch;
         private ByteBuffer payloadBuffer;
         private long round;
@@ -329,10 +330,7 @@ public abstract class AsyncSocket_LargePayloadTest {
                     break;
                 }
                 upcast(payloadBuffer).flip();
-
-                if (round % 100 == 0) {
-                    System.out.println("client round:" + round);
-                }
+                iteration.incrementAndGet();
 
                 if (round == 0) {
                     latch.countDown();
@@ -350,4 +348,5 @@ public abstract class AsyncSocket_LargePayloadTest {
             }
         }
     }
+
 }

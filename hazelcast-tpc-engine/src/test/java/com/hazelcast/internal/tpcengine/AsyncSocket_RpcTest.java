@@ -54,6 +54,8 @@ public abstract class AsyncSocket_RpcTest {
     public static final int SOCKET_BUFFER_SIZE = 16 * 1024;
     public int iterations = 200;
     public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
+    private final AtomicLong iteration = new AtomicLong();
+    private final PrintAtomicLongThread debugThread = new PrintAtomicLongThread(iteration);
 
     private final ConcurrentMap<Long, CompletableFuture> futures = new ConcurrentHashMap<>();
     private Reactor clientReactor;
@@ -65,12 +67,14 @@ public abstract class AsyncSocket_RpcTest {
     public void before() {
         clientReactor = newReactorBuilder().build().start();
         serverReactor = newReactorBuilder().build().start();
+        debugThread.start();
     }
 
     @After
     public void after() throws InterruptedException {
         terminate(clientReactor);
         terminate(serverReactor);
+        debugThread.shutdown();
     }
 
     @Test
@@ -262,13 +266,13 @@ public abstract class AsyncSocket_RpcTest {
         AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
                 .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
                 .setAcceptConsumer(acceptRequest -> {
-                    AsyncSocket socket = serverReactor.newAsyncSocketBuilder(acceptRequest)
+                    serverReactor.newAsyncSocketBuilder(acceptRequest)
                             .set(TCP_NODELAY, true)
                             .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                             .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
                             .setReadHandler(new ServerReadHandler())
-                            .build();
-                    socket.start();
+                            .build()
+                            .start();
                 })
                 .build();
 
@@ -376,6 +380,8 @@ public abstract class AsyncSocket_RpcTest {
                     break;
                 }
                 upcast(payloadBuffer).flip();
+
+                iteration.incrementAndGet();
                 CompletableFuture future = futures.remove(callId);
                 if (future == null) {
                     throw new RuntimeException();
