@@ -18,7 +18,6 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
-import com.hazelcast.jet.impl.processor.SlidingWindowP;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.CheckReturnValue;
@@ -307,9 +306,6 @@ public abstract class AbstractProcessor implements Processor {
      */
     @CheckReturnValue
     protected final boolean tryEmit(int ordinal, @Nonnull Object item) {
-        if (this instanceof SlidingWindowP) {
-            System.err.println(this.toString().substring(33) + " : " + item);
-        }
         return outbox.offer(ordinal, item);
     }
 
