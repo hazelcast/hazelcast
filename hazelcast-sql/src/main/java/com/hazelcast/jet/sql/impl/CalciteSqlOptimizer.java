@@ -214,6 +214,7 @@ import static java.util.stream.Collectors.toList;
 public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private final NodeEngine nodeEngine;
+    private final SqlConnectorCache connectorCache;
 
     private final IMapResolver iMapResolver;
     private final List<TableResolver> tableResolvers;
@@ -225,18 +226,19 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     public CalciteSqlOptimizer(NodeEngine nodeEngine, QueryResultRegistry resultRegistry) {
         this.nodeEngine = nodeEngine;
+        this.connectorCache = new SqlConnectorCache(nodeEngine);
 
         this.iMapResolver = new MetadataResolver(nodeEngine);
         this.relationsStorage = new RelationsStorage(nodeEngine);
         this.dataLinkStorage = new DataLinkStorage(nodeEngine);
 
-        TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine, this.relationsStorage);
+        TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine, this.relationsStorage, this.connectorCache);
         DataLinksResolver dataLinksResolver = dataLinkCatalog(nodeEngine.getDataLinkService(), this.dataLinkStorage);
         this.tableResolvers = Arrays.asList(tableResolverImpl, dataLinksResolver);
         this.planExecutor = new PlanExecutor(
-                tableResolverImpl,
+                nodeEngine, tableResolverImpl,
                 dataLinksResolver,
-                nodeEngine,
+                connectorCache,
                 resultRegistry
         );
 
@@ -245,8 +247,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private static TableResolverImpl mappingCatalog(
             NodeEngine nodeEngine,
-            RelationsStorage relationsStorage) {
-        SqlConnectorCache connectorCache = new SqlConnectorCache(nodeEngine);
+            RelationsStorage relationsStorage,
+            SqlConnectorCache connectorCache) {
         return new TableResolverImpl(nodeEngine, relationsStorage, connectorCache);
     }
 
