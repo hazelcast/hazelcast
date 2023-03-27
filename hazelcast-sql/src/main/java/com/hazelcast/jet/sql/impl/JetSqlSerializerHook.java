@@ -38,9 +38,77 @@ import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOper
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.LazyTarget;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.LazyTarget;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
+import com.hazelcast.sql.impl.exec.scan.index.IndexCompositeFilter;
+import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
+import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
+import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
+import com.hazelcast.sql.impl.expression.CaseExpression;
+import com.hazelcast.sql.impl.expression.CastExpression;
+import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.FieldAccessExpression;
+import com.hazelcast.sql.impl.expression.ParameterExpression;
+import com.hazelcast.sql.impl.expression.RowExpression;
+import com.hazelcast.sql.impl.expression.SargExpression;
+import com.hazelcast.sql.impl.expression.datetime.ExtractFunction;
+import com.hazelcast.sql.impl.expression.datetime.ToCharFunction;
+import com.hazelcast.sql.impl.expression.datetime.ToEpochMillisFunction;
+import com.hazelcast.sql.impl.expression.datetime.ToTimestampTzFunction;
+import com.hazelcast.sql.impl.expression.math.AbsFunction;
+import com.hazelcast.sql.impl.expression.math.DivideFunction;
+import com.hazelcast.sql.impl.expression.math.DoubleBiFunction;
+import com.hazelcast.sql.impl.expression.math.DoubleFunction;
+import com.hazelcast.sql.impl.expression.math.FloorCeilFunction;
+import com.hazelcast.sql.impl.expression.math.MinusFunction;
+import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
+import com.hazelcast.sql.impl.expression.math.PlusFunction;
+import com.hazelcast.sql.impl.expression.math.RandFunction;
+import com.hazelcast.sql.impl.expression.math.RemainderFunction;
+import com.hazelcast.sql.impl.expression.math.RoundTruncateFunction;
+import com.hazelcast.sql.impl.expression.math.SignFunction;
+import com.hazelcast.sql.impl.expression.math.UnaryMinusFunction;
+import com.hazelcast.sql.impl.expression.predicate.AndPredicate;
+import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
+import com.hazelcast.sql.impl.expression.predicate.IsFalsePredicate;
+import com.hazelcast.sql.impl.expression.predicate.IsNotFalsePredicate;
+import com.hazelcast.sql.impl.expression.predicate.IsNotNullPredicate;
+import com.hazelcast.sql.impl.expression.predicate.IsNotTruePredicate;
+import com.hazelcast.sql.impl.expression.predicate.IsNullPredicate;
+import com.hazelcast.sql.impl.expression.predicate.IsTruePredicate;
+import com.hazelcast.sql.impl.expression.predicate.NotPredicate;
+import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
+import com.hazelcast.sql.impl.expression.predicate.SearchPredicate;
+import com.hazelcast.sql.impl.expression.string.AsciiFunction;
+import com.hazelcast.sql.impl.expression.string.CharLengthFunction;
+import com.hazelcast.sql.impl.expression.string.ConcatFunction;
+import com.hazelcast.sql.impl.expression.string.ConcatWSFunction;
+import com.hazelcast.sql.impl.expression.string.InitcapFunction;
+import com.hazelcast.sql.impl.expression.string.LikeFunction;
+import com.hazelcast.sql.impl.expression.string.LowerFunction;
+import com.hazelcast.sql.impl.expression.string.PositionFunction;
+import com.hazelcast.sql.impl.expression.string.ReplaceFunction;
+import com.hazelcast.sql.impl.expression.string.SubstringFunction;
+import com.hazelcast.sql.impl.expression.string.TrimFunction;
+import com.hazelcast.sql.impl.expression.string.UpperFunction;
+import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
+import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.row.EmptyRow;
+import com.hazelcast.sql.impl.row.HeapRow;
+import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.datalink.DataLinkCatalogEntry;
+import com.hazelcast.sql.impl.schema.type.Type;
+import com.hazelcast.sql.impl.schema.view.View;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
+import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
+
+import java.util.Map;
 import com.hazelcast.sql.impl.exec.scan.index.IndexCompositeFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
@@ -202,19 +270,12 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int SEARCH_PREDICATE = 76;
     public static final int EXPRESSION_FIELD_ACCESS = 77;
     public static final int EXPRESSION_ROW = 78;
-    public static final int EXPRESSION_GET_DDL = 79;
-
-    public static final int MAP_FETCH_INDEX_OPERATION = 80;
-    public static final int INDEX_ITERATION_POINTER = 81;
-    public static final int MAP_FETCH_INDEX_OPERATION_RESULT = 82;
 
     public static final int DATA_LINK = 88;
 
     public static final int UPDATE_DATA_LINK_OPERATION = 89;
 
     public static final int QUERY_DATA_TYPE = 90;
-
-    public static final int QUERY_ID = 91;
 
     public static final int ROW_HEAP = 92;
     public static final int ROW_EMPTY = 93;
@@ -332,16 +393,10 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[SEARCH_PREDICATE] = arg -> new SearchPredicate();
         constructors[EXPRESSION_FIELD_ACCESS] = arg -> new FieldAccessExpression<>();
         constructors[EXPRESSION_ROW] = arg -> new RowExpression();
-        constructors[EXPRESSION_GET_DDL] = arg -> new GetDdlFunction();
-        constructors[MAP_FETCH_INDEX_OPERATION] = arg -> new MapFetchIndexOperation();
-        constructors[INDEX_ITERATION_POINTER] = arg -> new IndexIterationPointer();
-        constructors[MAP_FETCH_INDEX_OPERATION_RESULT] = arg -> new MapFetchIndexOperationResult();
 
         constructors[DATA_LINK] = arg -> new DataLinkCatalogEntry();
 
         constructors[QUERY_DATA_TYPE] = arg -> new QueryDataType();
-
-        constructors[QUERY_ID] = arg -> new QueryId();
 
         constructors[ROW_HEAP] = arg -> new HeapRow();
         constructors[ROW_EMPTY] = arg -> EmptyRow.INSTANCE;

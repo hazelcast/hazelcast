@@ -52,10 +52,14 @@ public class CoreSqlTestSupport extends HazelcastTestSupport {
     }
 
     public static <T> T serializeAndCheck(Object original, int expectedClassId) {
+        return serializeAndCheck(original, JetSqlSerializerHook.F_ID, expectedClassId);
+    }
+
+    public static <T> T serializeAndCheck(Object original, int expectedFactoryId, int expectedClassId) {
         assertInstanceOf(IdentifiedDataSerializable.class, original);
         IdentifiedDataSerializable original0 = (IdentifiedDataSerializable) original;
 
-        assertEquals(JetSqlSerializerHook.F_ID, original0.getFactoryId());
+        assertEquals(expectedFactoryId, original0.getFactoryId());
         assertEquals(expectedClassId, original0.getClassId());
 
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();

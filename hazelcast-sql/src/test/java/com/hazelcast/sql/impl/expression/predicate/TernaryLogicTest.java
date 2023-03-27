@@ -26,6 +26,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.sql.impl.expression.ConstantExpression.FALSE;
+import static com.hazelcast.sql.impl.expression.ConstantExpression.NULL;
+import static com.hazelcast.sql.impl.expression.ConstantExpression.TRUE;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 

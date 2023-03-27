@@ -24,6 +24,11 @@ import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
 
 import javax.annotation.Nonnull;
 
+/**
+ * Non-public methods that the `hazelcast` module needs to call in the
+ * implementation in the `hazelcast-sql` module, extending the public {@link
+ * SqlService}.
+ */
 public interface InternalSqlService extends SqlService {
 
     String SERVICE_NAME = "hz:impl:sqlService";

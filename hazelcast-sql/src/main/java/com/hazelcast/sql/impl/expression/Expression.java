@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.expression;
 
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.jet.impl.execution.CooperativeThread;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -85,7 +87,6 @@ public interface Expression<T> extends IdentifiedDataSerializable, Serializable 
     boolean isCooperative();
 
     @Override
-    @PrivateApi
     default int getFactoryId() {
         return JetSqlSerializerHook.F_ID;
     }

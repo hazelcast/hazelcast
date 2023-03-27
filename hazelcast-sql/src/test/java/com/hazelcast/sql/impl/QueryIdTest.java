@@ -73,14 +73,9 @@ public class QueryIdTest extends CoreSqlTestSupport {
     @Test
     public void testSerialization() {
         QueryId original = QueryId.create(UUID.randomUUID());
+        QueryId restored = serializeAndCheck(original, SqlDataSerializerHook.F_ID, SqlDataSerializerHook.QUERY_ID);
 
-        assertInstanceOf(IdentifiedDataSerializable.class, original);
-        IdentifiedDataSerializable original0 = (IdentifiedDataSerializable) original;
-
-        assertEquals(SqlDataSerializerHook.F_ID, original0.getFactoryId());
-        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
-
-        assertEquals(original, ss.toObject(ss.toData(original)));
+        assertEquals(original, restored);
     }
 
     @Test

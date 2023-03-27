@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.iteration.IndexIterationPointer;
