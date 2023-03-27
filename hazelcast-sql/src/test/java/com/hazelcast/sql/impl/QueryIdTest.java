@@ -70,7 +70,7 @@ public class QueryIdTest extends CoreSqlTestSupport {
     @Test
     public void testSerialization() {
         QueryId original = QueryId.create(UUID.randomUUID());
-        QueryId restored = serializeAndCheck(original, SqlDataSerializerHook.QUERY_ID);
+        QueryId restored = serializeAndCheck(original, SqlDataSerializerHook.F_ID, SqlDataSerializerHook.QUERY_ID);
 
         assertEquals(original, restored);
     }
