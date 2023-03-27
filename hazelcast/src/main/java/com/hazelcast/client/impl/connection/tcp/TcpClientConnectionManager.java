@@ -397,13 +397,13 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         clusterDiscoveryService.current().start();
 
         if (asyncStart) {
-            submitConnectToClusterTask();
+            submitConnectToClusterTask(true);
         } else {
             doConnectToCluster();
         }
     }
 
-    private void submitConnectToClusterTask() {
+    private void submitConnectToClusterTask(boolean initialConnection) {
         // called in synchronized(clusterStateMutex)
 
         if (connectToClusterTaskSubmitted) {
@@ -420,10 +420,10 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                             logger.warning("No connection to cluster: " + clusterId);
                         }
 
-                        submitConnectToClusterTask();
+                        submitConnectToClusterTask(initialConnection);
                     }
                 }
-                if (!activeConnections.isEmpty()) {
+                if (initialConnection && !activeConnections.isEmpty()) {
                     // Send state to cluster for async clients in async way.
                     executor.submit(() -> {
                         try {
@@ -883,7 +883,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
         if (client.getLifecycleService().isRunning()) {
             try {
-                submitConnectToClusterTask();
+                submitConnectToClusterTask(false);
             } catch (RejectedExecutionException r) {
                 shutdownWithExternalThread();
             }
