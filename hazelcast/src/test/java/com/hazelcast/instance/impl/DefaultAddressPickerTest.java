@@ -16,15 +16,17 @@
 
 package com.hazelcast.instance.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.impl.DefaultAddressPicker.AddressDefinition;
 import com.hazelcast.instance.impl.DefaultAddressPicker.InterfaceDefinition;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
@@ -47,11 +49,12 @@ import java.util.Enumeration;
 
 import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV4_STACK;
 import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV6_ADDRESSES;
+import static com.hazelcast.internal.util.AddressUtil.getAddressHolder;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static com.hazelcast.test.OverridePropertyRule.set;
-import static com.hazelcast.internal.util.AddressUtil.getAddressHolder;
 import static java.net.InetAddress.getByName;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -96,6 +99,23 @@ public class DefaultAddressPickerTest {
         if (addressPicker != null) {
             IOUtil.closeResource(addressPicker.getServerSocketChannel(null));
         }
+    }
+
+    @Test
+    public void testEndpointConfigFromClusterProperty() {
+        Config config = new Config();
+        config.setProperty(ClusterProperty.SOCKET_KEEP_ALIVE.getName(), "false");
+        config.setProperty(ClusterProperty.SOCKET_KEEP_IDLE.getName(), "30");
+        config.setProperty(ClusterProperty.SOCKET_KEEP_COUNT.getName(), "5");
+        config.setProperty(ClusterProperty.SOCKET_KEEP_INTERVAL.getName(), "6");
+        config.setProperty(ClusterProperty.SOCKET_RECEIVE_BUFFER_SIZE.getName(), "512");
+        HazelcastProperties properties = new HazelcastProperties(config);
+        EndpointConfig endpointConfig = DefaultAddressPicker.endpointConfigFromProperties(properties);
+        assertFalse(endpointConfig.isSocketKeepAlive());
+        assertEquals(30, endpointConfig.getSocketKeepIdleSeconds());
+        assertEquals(5, endpointConfig.getSocketKeepCount());
+        assertEquals(6, endpointConfig.getSocketKeepIntervalSeconds());
+        assertEquals(512, endpointConfig.getSocketRcvBufferSizeKb());
     }
 
     @Test
