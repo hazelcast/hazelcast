@@ -19,11 +19,9 @@ package com.hazelcast.sql.impl.schema.datalink;
 import com.hazelcast.datalink.DataLink;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateDataLink;
-import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.schema.SqlCatalogObject;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;

@@ -16,12 +16,9 @@
 
 package com.hazelcast.sql.impl.expression;
 
-import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.jet.impl.execution.CooperativeThread;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 

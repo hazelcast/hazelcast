@@ -28,7 +28,6 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
-import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
