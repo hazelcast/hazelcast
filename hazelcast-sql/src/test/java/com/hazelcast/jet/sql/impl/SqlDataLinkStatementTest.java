@@ -32,7 +32,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 public class SqlDataLinkStatementTest extends SqlTestSupport {
-    private String lineSeparator = System.lineSeparator();
     private InternalDataLinkService[] dataLinkServices;
 
     @BeforeClass
@@ -138,8 +137,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
     public void when_createDataLinkWithoutOptions_then_success() {
         String dlName = randomName();
 
-        instance().getSql().execute("CREATE DATA LINK " + dlName
-                + " TYPE \"" + DummyDataLink.class.getName() + "\" ");
+        instance().getSql().execute("CREATE DATA LINK " + dlName  + " TYPE DUMMY");
 
         for (InternalDataLinkService dataLinkService : dataLinkServices) {
             DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
