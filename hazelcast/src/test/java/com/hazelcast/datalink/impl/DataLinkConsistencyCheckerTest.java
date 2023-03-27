@@ -76,11 +76,13 @@ public class DataLinkConsistencyCheckerTest extends SimpleTestInClusterSupport {
     @Test
     public void test_missingDataLinkWasAddedToDataLinkService() {
         assertFalse(linkService.existsSqlDataLink(name));
-        sqlCatalog.put(QueryUtils.wrapDataLinkKey(name), new DataLinkCatalogEntry(name, type, Collections.emptyMap()));
+        sqlCatalog.put(
+                QueryUtils.wrapDataLinkKey(name),
+                new DataLinkCatalogEntry(name, type, false, Collections.emptyMap()));
         dataLinkConsistencyChecker.check();
         assertTrue(linkService.existsSqlDataLink(name));
 
-        DataLinkConfig catalogDataLinkConfig = linkService.toConfig(name, type, Collections.emptyMap());
+        DataLinkConfig catalogDataLinkConfig = linkService.toConfig(name, type, false, Collections.emptyMap());
         com.hazelcast.datalink.DataLink dataLink = null;
         try {
             dataLink = linkService.getAndRetainDataLink(name, com.hazelcast.datalink.DataLink.class);
@@ -94,11 +96,11 @@ public class DataLinkConsistencyCheckerTest extends SimpleTestInClusterSupport {
     @Test
     public void test_outdatedDataLinkWasAlteredInDataLinkService() {
         // given
-        linkService.replaceSqlDataLink(name, type, Collections.emptyMap());
+        linkService.replaceSqlDataLink(name, type, false, Collections.emptyMap());
         Map<String, String> alteredOptions = singletonMap("a", "b");
-        sqlCatalog.put(QueryUtils.wrapDataLinkKey(name), new DataLinkCatalogEntry(name, type, alteredOptions));
+        sqlCatalog.put(QueryUtils.wrapDataLinkKey(name), new DataLinkCatalogEntry(name, type, true, alteredOptions));
 
-        DataLinkConfig catalogDataLinkConfig = linkService.toConfig(name, type, alteredOptions);
+        DataLinkConfig catalogDataLinkConfig = linkService.toConfig(name, type, true, alteredOptions);
 
         // when
         dataLinkConsistencyChecker.check();
@@ -117,7 +119,7 @@ public class DataLinkConsistencyCheckerTest extends SimpleTestInClusterSupport {
     @Test
     public void test_outdatedDataLinkWasRemovedFromDataLinkService() {
         // given
-        linkService.replaceSqlDataLink(name, type, Collections.emptyMap());
+        linkService.replaceSqlDataLink(name, type, false, Collections.emptyMap());
         assertTrue(linkService.existsSqlDataLink(name));
         assertFalse(sqlCatalog.containsKey(QueryUtils.wrapDataLinkKey(name)));
 

@@ -51,7 +51,7 @@ public class UpdateDataLinkOperation extends Operation implements IdentifiedData
         DataLinkStorage storage = new DataLinkStorage(getNodeEngine());
         DataLinkCatalogEntry entry = storage.get(dataLinkName);
         if (entry != null) {
-            dlService.replaceSqlDataLink(entry.getName(), entry.getType(), entry.getOptions());
+            dlService.replaceSqlDataLink(entry.getName(), entry.getType(), entry.isShared(), entry.getOptions());
         } else {
             dlService.removeDataLink(dataLinkName);
         }

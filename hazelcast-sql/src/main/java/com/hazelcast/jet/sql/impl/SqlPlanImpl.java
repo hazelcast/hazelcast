@@ -206,6 +206,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final boolean ifNotExists;
         private final String name;
         private final String type;
+        private final boolean shared;
         private final Map<String, String> options;
         private final PlanExecutor planExecutor;
 
@@ -215,6 +216,7 @@ abstract class SqlPlanImpl extends SqlPlan {
                 boolean ifNotExists,
                 String name,
                 String type,
+                boolean shared,
                 Map<String, String> options,
                 PlanExecutor planExecutor
         ) {
@@ -224,6 +226,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.replace = replace;
             this.name = name;
             this.type = type;
+            this.shared = shared;
             this.options = options;
             this.planExecutor = planExecutor;
         }
@@ -242,6 +245,10 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         public String type() {
             return type;
+        }
+
+        public boolean shared() {
+            return shared;
         }
 
         public Map<String, String> options() {

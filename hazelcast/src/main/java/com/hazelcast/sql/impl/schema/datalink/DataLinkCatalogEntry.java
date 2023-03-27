@@ -31,14 +31,16 @@ import java.util.Objects;
 public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
     private String name;
     private String type;
+    private boolean shared;
     private Map<String, String> options;
 
     public DataLinkCatalogEntry() {
     }
 
-    public DataLinkCatalogEntry(String name, String type, Map<String, String> options) {
+    public DataLinkCatalogEntry(String name, String type, boolean shared, Map<String, String> options) {
         this.name = name;
         this.type = type;
+        this.shared = shared;
         this.options = options;
     }
 
@@ -58,6 +60,10 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
         this.type = type;
     }
 
+    public boolean isShared() {
+        return shared;
+    }
+
     public Map<String, String> getOptions() {
         return options;
     }
@@ -70,6 +76,7 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
         type = in.readString();
+        shared = in.readBoolean();
         options = in.readObject();
     }
 
@@ -77,6 +84,7 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
         out.writeString(type);
+        out.writeBoolean(shared);
         out.writeObject(options);
     }
 

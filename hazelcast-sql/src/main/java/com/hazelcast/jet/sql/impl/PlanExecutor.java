@@ -182,7 +182,7 @@ public class PlanExecutor {
             throw new HazelcastException("Cannot replace a data link created from configuration");
         }
         boolean added = dataLinksCatalog.createDataLink(
-                new DataLinkCatalogEntry(plan.name(), plan.type(), plan.options()),
+                new DataLinkCatalogEntry(plan.name(), plan.type(), plan.shared(), plan.options()),
                 plan.isReplace(),
                 plan.ifNotExists());
         if (added) {

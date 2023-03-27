@@ -72,7 +72,7 @@ public class DataLinkConsistencyChecker {
                 continue;
             }
             DataLinkCatalogEntry dl = (DataLinkCatalogEntry) catalogItem;
-            dataLinkService.replaceSqlDataLink(dl.getName(), dl.getType(), dl.getOptions());
+            dataLinkService.replaceSqlDataLink(dl.getName(), dl.getType(), dl.isShared(), dl.getOptions());
         }
 
         for (Map.Entry<String, DataLinkEntry> entry : sqlEntries) {

@@ -45,6 +45,7 @@ public class SqlCreateDataLink extends SqlCreate {
 
     private final SqlIdentifier name;
     private final SqlIdentifier type;
+    private final boolean shared;
     private final SqlNodeList options;
 
     public SqlCreateDataLink(
@@ -53,10 +54,12 @@ public class SqlCreateDataLink extends SqlCreate {
             boolean ifNotExists,
             SqlIdentifier name,
             SqlIdentifier type,
+            boolean shared,
             SqlNodeList options) {
         super(CREATE_DATA_LINK, pos, replace, ifNotExists);
         this.name = name;
         this.type = type;
+        this.shared = shared;
         this.options = options;
     }
 
@@ -66,6 +69,10 @@ public class SqlCreateDataLink extends SqlCreate {
 
     public String type() {
         return type.toString();
+    }
+
+    public boolean shared() {
+        return shared;
     }
 
     public Map<String, String> options() {
@@ -106,6 +113,12 @@ public class SqlCreateDataLink extends SqlCreate {
         writer.newlineAndIndent();
         writer.keyword("TYPE");
         type.unparse(writer, leftPrec, rightPrec);
+
+        writer.newlineAndIndent();
+        if (!shared) {
+            writer.keyword("NOT");
+        }
+        writer.keyword("SHARED");
 
         if (options.size() > 0) {
             writer.newlineAndIndent();
