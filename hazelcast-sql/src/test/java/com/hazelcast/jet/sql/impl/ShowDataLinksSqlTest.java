@@ -67,7 +67,7 @@ public class ShowDataLinksSqlTest extends SqlTestSupport {
         for (String dlName : dlNames) {
             instance().getSql().execute(
                     "CREATE DATA LINK " + dlName
-                            + " TYPE \"" + DataLinkTestUtil.DummyDataLink.class.getName() + "\" "
+                            + " TYPE \"" + DataLinkTestUtil.DummyDataLink.class.getName() + "\" SHARED "
                             + " OPTIONS ('b' = 'c')");
         }
 

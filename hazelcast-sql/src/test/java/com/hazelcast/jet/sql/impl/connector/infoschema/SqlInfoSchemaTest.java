@@ -123,7 +123,7 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
         );
 
         // create SQL-originated data link
-        sqlService.execute("CREATE DATA LINK s_dl TYPE " + wrappedType);
+        sqlService.execute("CREATE DATA LINK s_dl TYPE " + wrappedType + " SHARED");
 
         assertRowsAnyOrder(
                 "SELECT * FROM information_schema.datalinks",

@@ -170,7 +170,7 @@ public class SqlMappingTest extends SqlTestSupport {
     public void when_dataLinkUnknown_then_fail() {
         String dlName = randomName();
         String mappingName = randomName();
-        createDataLink(instance(), dlName, DummyDataLink.class.getName(), emptyMap());
+        createDataLink(instance(), dlName, DummyDataLink.class.getName(), false, emptyMap());
         assertThatThrownBy(() ->
                 instance().getSql().execute("CREATE OR REPLACE MAPPING " + mappingName +
                         " DATA LINK " + dlName + "\nOPTIONS ()"))
