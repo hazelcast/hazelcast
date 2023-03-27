@@ -27,9 +27,8 @@ public class MongoCreateDataLinkSqlTest extends MongoSqlTest {
     @Test
     public void test() {
         String dlName = randomName();
-        instance().getSql().execute("CREATE DATA LINK " + dlName
-                + " TYPE \"" + MongoDataLink.class.getName() + "\" "
-                + options());
+        instance().getSql().execute("CREATE DATA LINK " + dlName + " TYPE MongoDB " + options());
+
 
         DataLink dataLink = getNodeEngineImpl(
                 instance()).getDataLinkService().getAndRetainDataLink(dlName, MongoDataLink.class);

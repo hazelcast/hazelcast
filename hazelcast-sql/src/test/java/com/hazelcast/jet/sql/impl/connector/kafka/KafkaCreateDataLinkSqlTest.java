@@ -48,16 +48,15 @@ public class KafkaCreateDataLinkSqlTest extends SqlTestSupport {
     }
 
     @AfterClass
-    public static void afterClass()  {
+    public static void afterClass() {
+
         kafkaTestSupport.shutdownKafkaCluster();
     }
 
     @Test
     public void test() {
         String dlName = randomName();
-        instance().getSql().execute("CREATE DATA LINK " + dlName
-                + " TYPE \"" + KafkaDataLink.class.getName() + "\" "
-                + options());
+        instance().getSql().execute("CREATE DATA LINK " + dlName + " TYPE Kafka " + options());
 
         DataLink dataLink = getNodeEngineImpl(
                 instance()).getDataLinkService().getAndRetainDataLink(dlName, KafkaDataLink.class);
