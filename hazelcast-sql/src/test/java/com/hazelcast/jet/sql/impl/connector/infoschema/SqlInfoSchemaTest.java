@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.infoschema;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.datalink.impl.DataLinkTestUtil;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
@@ -110,13 +111,26 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
 
     @Test
     public void test_datalinks() {
+        // given
         String type = DataLinkTestUtil.DummyDataLink.class.getName();
         String wrappedType = "\"" + type + "\"";
-        sqlService.execute("CREATE DATA LINK dl TYPE " + wrappedType + " OPTIONS ()");
+
+        // create config-originated data link
+        getNodeEngineImpl(instance()).getDataLinkService().createConfigDataLink(
+                new DataLinkConfig()
+                        .setName("c_dl")
+                        .setClassName(type)
+        );
+
+        // create SQL-originated data link
+        sqlService.execute("CREATE DATA LINK s_dl TYPE " + wrappedType);
 
         assertRowsAnyOrder(
                 "SELECT * FROM information_schema.datalinks",
-                singletonList(new Row("hazelcast", "public", "dl", type, "{}"))
+                asList(
+                        new Row("hazelcast", "public", "s_dl", type, "{}", "SQL"),
+                        new Row("hazelcast", "public", "c_dl", type, "{}", "CONFIG")
+                )
         );
     }
 
