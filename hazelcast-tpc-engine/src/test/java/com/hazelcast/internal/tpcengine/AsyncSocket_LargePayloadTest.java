@@ -47,7 +47,7 @@ public abstract class AsyncSocket_LargePayloadTest {
     public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 
     private final AtomicLong iteration = new AtomicLong();
-    private final PrintAtomicLongThread debugThread = new PrintAtomicLongThread(iteration);
+    private final PrintAtomicLongThread debugThread = new PrintAtomicLongThread("at:", iteration);
     private Reactor clientReactor;
     private Reactor serverReactor;
 

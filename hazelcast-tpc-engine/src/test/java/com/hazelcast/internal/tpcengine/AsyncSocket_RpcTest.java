@@ -55,7 +55,7 @@ public abstract class AsyncSocket_RpcTest {
     public int iterations = 200;
     public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
     private final AtomicLong iteration = new AtomicLong();
-    private final PrintAtomicLongThread debugThread = new PrintAtomicLongThread(iteration);
+    private final PrintAtomicLongThread debugThread = new PrintAtomicLongThread("at:", iteration);
 
     private final ConcurrentMap<Long, CompletableFuture> futures = new ConcurrentHashMap<>();
     private Reactor clientReactor;

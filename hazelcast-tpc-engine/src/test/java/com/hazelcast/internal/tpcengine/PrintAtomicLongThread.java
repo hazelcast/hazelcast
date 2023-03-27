@@ -20,12 +20,14 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class PrintAtomicLongThread extends Thread {
 
+    private final String prefix;
     private volatile boolean stopped = false;
     private final AtomicLong atomicLong;
 
-    public PrintAtomicLongThread(AtomicLong atomicLong) {
+    public PrintAtomicLongThread(String prefix, AtomicLong atomicLong) {
         super("PrintAtomicLongThread");
         this.atomicLong = atomicLong;
+        this.prefix = prefix;
     }
 
     @Override
@@ -37,7 +39,7 @@ public class PrintAtomicLongThread extends Thread {
                 return;
             }
 
-            System.out.println("At round:" + atomicLong);
+            System.out.println(prefix + atomicLong);
         }
     }
 
