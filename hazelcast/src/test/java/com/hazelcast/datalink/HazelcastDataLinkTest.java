@@ -34,6 +34,8 @@ import org.junit.runner.RunWith;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 
@@ -67,7 +69,7 @@ public class HazelcastDataLinkTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void list_resources_should_return_map() throws Exception {
+    public void list_resources_should_return_map() {
         IMap<Integer, String> map = instance.getMap("my_map");
         map.put(42, "42");
 
@@ -80,7 +82,7 @@ public class HazelcastDataLinkTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void list_resources_should_not_return_system_maps() throws Exception {
+    public void list_resources_should_not_return_system_maps() {
         DataLinkConfig dataLinkConfig = sharedDataLinkConfig(clusterName);
 
         hazelcastDataLink = new HazelcastDataLink(dataLinkConfig);
@@ -98,8 +100,10 @@ public class HazelcastDataLinkTest extends HazelcastTestSupport {
         assertThatThrownBy(() -> hazelcastDataLink = new HazelcastDataLink(dataLinkConfig))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessage("HazelcastDataLink with name 'data-link-name' "
-                        + "could not be created, provide either client_xml or client_yml property "
-                        + "with the client configuration.");
+                            + "could not be created, "
+                            + "provide either a file path with client_xml_path or client_yaml_path property "
+                            + "or string content with client_xml or client_yml property "
+                            + "with the client configuration.");
     }
 
     @Test
@@ -114,6 +118,28 @@ public class HazelcastDataLinkTest extends HazelcastTestSupport {
         } finally {
             c1.shutdown();
             c2.shutdown();
+        }
+    }
+
+    @Test
+    public void shared_client_fromfile_should_return_same_instance() {
+        DataLinkConfig dataLinkConfig = sharedDataLinkConfigFromFile(clusterName);
+        hazelcastDataLink = new HazelcastDataLink(dataLinkConfig);
+        HazelcastInstance c1 = hazelcastDataLink.getClient();
+        HazelcastInstance c2 = hazelcastDataLink.getClient();
+
+        try {
+            assertThat(c1).isSameAs(c2);
+        } finally {
+            c1.shutdown();
+            c2.shutdown();
+            // Delete the file at the end of the test
+            try {
+                String filePath = dataLinkConfig.getProperty(HazelcastDataLink.CLIENT_XML_PATH);
+                Files.delete(Paths.get(filePath));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -136,6 +162,7 @@ public class HazelcastDataLinkTest extends HazelcastTestSupport {
         return sharedDataLinkConfig(clusterName)
                 .setShared(false);
     }
+
     @Nonnull
     private static DataLinkConfig sharedDataLinkConfig(String clusterName) {
         DataLinkConfig dataLinkConfig = new DataLinkConfig("data-link-name")
@@ -145,6 +172,24 @@ public class HazelcastDataLinkTest extends HazelcastTestSupport {
             byte[] bytes = readAllBytes(Paths.get("src", "test", "resources", "hazelcast-client-test-external.xml"));
             String xmlString = new String(bytes, StandardCharsets.UTF_8).replace("$CLUSTER_NAME$", clusterName);
             dataLinkConfig.setProperty(HazelcastDataLink.CLIENT_XML, xmlString);
+            return dataLinkConfig;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Nonnull
+    private static DataLinkConfig sharedDataLinkConfigFromFile(String clusterName) {
+        DataLinkConfig dataLinkConfig = new DataLinkConfig("data-link-name")
+                .setClassName(HazelcastDataLink.class.getName())
+                .setShared(true);
+        try {
+            byte[] bytes = readAllBytes(Paths.get("src", "test", "resources", "hazelcast-client-test-external.xml"));
+            String xmlString = new String(bytes, StandardCharsets.UTF_8).replace("$CLUSTER_NAME$", clusterName);
+            Path tempFile = Files.createTempFile("testclient", ".xml");
+            Files.write(tempFile, xmlString.getBytes(StandardCharsets.UTF_8));
+            dataLinkConfig.setProperty(HazelcastDataLink.CLIENT_XML_PATH, tempFile.toString());
+
             return dataLinkConfig;
         } catch (IOException e) {
             throw new RuntimeException(e);

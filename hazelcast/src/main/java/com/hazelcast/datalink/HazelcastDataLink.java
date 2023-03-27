@@ -20,18 +20,15 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.config.DataLinkConfig;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.datalink.impl.HazelcastDataLinkClientConfigBuilder;
+import com.hazelcast.datalink.impl.HazelcastDataLinkFileReader;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.stream.Collectors;
-
-import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
-import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfigFromYaml;
 
 /**
  * Creates a HazelcastInstance that is shared to connect to a remote cluster.
@@ -45,14 +42,24 @@ import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfigFromYaml;
 public class HazelcastDataLink extends DataLinkBase {
 
     /**
-     * The constant to be used as property key for XML
+     * The constant to be used as property key for XML string for connecting to remote cluster
      */
     public static final String CLIENT_XML = "client_xml";
 
     /**
-     * The constant to be used as property key for YAML
+     * The constant to be used as property key for YAML string for connecting to remote cluster
      */
     public static final String CLIENT_YML = "client_yml";
+
+    /**
+     * The constant to be used as property key for XML file path for connecting to remote cluster
+     */
+    public static final String CLIENT_XML_PATH = "client_xml_path";
+
+    /**
+     * The constant to be used as property key for YAML file path for connecting to remote cluster
+     */
+    public static final String CLIENT_YAML_PATH = "client_yaml_path";
 
     private final ClientConfig clientConfig;
 
@@ -66,8 +73,9 @@ public class HazelcastDataLink extends DataLinkBase {
         this.clientConfig = buildClientConfig();
 
         if (dataLinkConfig.isShared()) {
-            HazelcastClientProxy proxy = (HazelcastClientProxy) HazelcastClient.newHazelcastClient(clientConfig);
-            this.proxy = new HazelcastClientProxy(proxy.client) {
+            HazelcastClientProxy hazelcastClientProxy = (HazelcastClientProxy) HazelcastClient
+                    .newHazelcastClient(clientConfig);
+            this.proxy = new HazelcastClientProxy(hazelcastClientProxy.client) {
                 @Override
                 public void shutdown() {
                     release();
@@ -77,25 +85,13 @@ public class HazelcastDataLink extends DataLinkBase {
     }
 
     private ClientConfig buildClientConfig() {
-        ClientConfig clientConfig = null;
-        String clientXml = getConfig().getProperty(CLIENT_XML);
-        if (!StringUtil.isNullOrEmpty(clientXml)) {
-            // Read ClientConfig from XML
-            clientConfig = asClientConfig(clientXml);
-        }
+        DataLinkConfig dataLinkConfig = getConfig();
 
-        String clientYaml = getConfig().getProperty(CLIENT_YML);
-        if (!StringUtil.isNullOrEmpty(clientYaml)) {
-            // Read ClientConfig from Yaml
-            clientConfig = asClientConfigFromYaml(clientYaml);
-        }
+        HazelcastDataLinkFileReader fileReader = new HazelcastDataLinkFileReader();
+        fileReader.readFilePathIfProvided(dataLinkConfig);
 
-        if (clientConfig == null) {
-            throw new HazelcastException("HazelcastDataLink with name '" + getConfig().getName()
-                    + "' could not be created, provide either client_xml or client_yml property "
-                    + "with the client configuration.");
-        }
-        return clientConfig;
+        HazelcastDataLinkClientConfigBuilder configReader = new HazelcastDataLinkClientConfigBuilder();
+        return configReader.buildClientConfig(dataLinkConfig);
     }
 
     @Nonnull
@@ -104,10 +100,10 @@ public class HazelcastDataLink extends DataLinkBase {
         HazelcastInstance instance = getClient();
         try {
             return instance.getDistributedObjects()
-                           .stream()
-                           .filter(o -> o instanceof IMap)
-                           .map(o -> new DataLinkResource("IMap", o.getName()))
-                           .collect(Collectors.toList());
+                    .stream()
+                    .filter(IMap.class::isInstance)
+                    .map(o -> new DataLinkResource("IMap", o.getName()))
+                    .collect(Collectors.toList());
         } finally {
             instance.shutdown();
         }
