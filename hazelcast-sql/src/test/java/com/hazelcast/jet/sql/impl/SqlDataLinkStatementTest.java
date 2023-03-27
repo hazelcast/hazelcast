@@ -148,13 +148,13 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_createDataLinkWithoutOptions_then_throws() {
+    public void when_createDataLinkWithoutOptions_then_noError() {
         String dlName = randomName();
-        assertThatThrownBy(() ->
-                instance().getSql().execute("CREATE DATA LINK " + dlName
-                        + " TYPE \"" + DummyDataLink.class.getName() + "\" "))
-                .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Was expecting:" + System.lineSeparator() + "    \"OPTIONS\" ...");
+        instance().getSql().execute("CREATE DATA LINK " + dlName + " TYPE \"" + DummyDataLink.class.getName() + "\"");
+        for (InternalDataLinkService dataLinkService : dataLinkServices) {
+            DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
+            assertThat(dataLink).isNotNull();
+        }
     }
 
     @Test
