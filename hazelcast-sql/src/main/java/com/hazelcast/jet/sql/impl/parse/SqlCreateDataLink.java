@@ -119,14 +119,15 @@ public class SqlCreateDataLink extends SqlCreate {
         unparseOptions(writer, options);
     }
 
-    public static String unparse(DataLinkCatalogEntry dataLink) {
+    @Nonnull
+    public static String unparse(@Nonnull DataLinkCatalogEntry dataLink) {
         SqlPrettyWriter writer = new SqlPrettyWriter(SqlPrettyWriter.config());
 
         SqlCreateDataLink d = new SqlCreateDataLink(
                 SqlParserPos.ZERO, true, false,
-                identifier(CATALOG, SCHEMA_NAME_PUBLIC, dataLink.getName()),
-                identifier(dataLink.getType()),
-                nodeList(dataLink.getOptions().entrySet(), o -> new SqlOption(
+                identifier(CATALOG, SCHEMA_NAME_PUBLIC, dataLink.name()),
+                identifier(dataLink.type()),
+                nodeList(dataLink.options().entrySet(), o -> new SqlOption(
                         SqlLiteral.createCharString(o.getKey(), SqlParserPos.ZERO),
                         SqlLiteral.createCharString(o.getValue(), SqlParserPos.ZERO),
                         SqlParserPos.ZERO

@@ -42,39 +42,36 @@ public class DataLinkCatalogEntry implements SqlCatalogObject {
     public DataLinkCatalogEntry() {
     }
 
-    public DataLinkCatalogEntry(DataLink dataLink, DataLinkSource source) {
+    public DataLinkCatalogEntry(@Nonnull DataLink dataLink, @Nonnull DataLinkSource source) {
         this.name = dataLink.getName();
         this.type = dataLink.getConfig().getClassName();
         this.options = dataLink.options();
         this.source = source;
     }
 
-    public DataLinkCatalogEntry(String name, String type, Map<String, String> options) {
+    public DataLinkCatalogEntry(@Nonnull String name, @Nonnull String type, @Nonnull Map<String, String> options) {
         this.name = name;
         this.type = type;
         this.options = options;
         this.source = DataLinkSource.SQL;
     }
 
-    public DataLinkCatalogEntry(String name, String type, Map<String, String> options, DataLinkSource source) {
-        this.name = name;
-        this.type = type;
-        this.options = options;
-        this.source = source;
-    }
-
+    @Nonnull
     public String name() {
         return name;
     }
 
+    @Nonnull
     public String type() {
         return type;
     }
 
+    @Nonnull
     public Map<String, String> options() {
         return options;
     }
 
+    @Nonnull
     public DataLinkSource source() {
         return source;
     }
