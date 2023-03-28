@@ -126,8 +126,8 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
         assertRowsAnyOrder(
                 "SELECT * FROM information_schema.datalinks",
                 asList(
-                        new Row("hazelcast", "public", "s_dl", type, "{}", "SQL"),
-                        new Row("hazelcast", "public", "c_dl", type, "{}", "CONFIG")
+                        new Row("hazelcast", "public", "s_dl", type, true, "{}", "SQL"),
+                        new Row("hazelcast", "public", "c_dl", type, true, "{}", "CONFIG")
                 )
         );
     }

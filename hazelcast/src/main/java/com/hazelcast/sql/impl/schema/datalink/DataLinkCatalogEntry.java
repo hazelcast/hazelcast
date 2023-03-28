@@ -60,6 +60,8 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
     public DataLinkCatalogEntry(String name, String type, Map<String, String> options, DataLinkSource source) {
         this.name = name;
         this.type = type;
+        this.options = options;
+        this.source = source;
     }
 
     public String name() {
@@ -119,11 +121,11 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
             return false;
         }
         DataLinkCatalogEntry e = (DataLinkCatalogEntry) o;
-        return name.equals(e.name) && type.equals(e.type) && options.equals(e.options) && source.equals(e.source);
+        return shared == e.shared && name.equals(e.name) && type.equals(e.type) && options.equals(e.options) && source == e.source;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, type, options);
+        return Objects.hash(name, type, shared, options, source);
     }
 }

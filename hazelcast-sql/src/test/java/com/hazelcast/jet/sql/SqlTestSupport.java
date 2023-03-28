@@ -644,7 +644,8 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
             String name,
             String type,
             boolean shared,
-            Map<String, String> options) {
+            Map<String, String> options
+    ) {
         StringBuilder queryBuilder = new StringBuilder()
                 .append("CREATE OR REPLACE DATA LINK ")
                 .append(quoteName(name))
