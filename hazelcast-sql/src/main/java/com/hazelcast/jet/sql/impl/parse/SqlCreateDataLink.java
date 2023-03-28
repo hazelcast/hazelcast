@@ -63,7 +63,7 @@ public class SqlCreateDataLink extends SqlCreate {
             boolean ifNotExists,
             @Nonnull SqlIdentifier name,
             @Nonnull SqlIdentifier type,
-            @Nonnull boolean shared,
+            boolean shared,
             @Nonnull SqlNodeList options) {
         super(CREATE_DATA_LINK, pos, replace, ifNotExists);
         this.name = name;
@@ -140,6 +140,7 @@ public class SqlCreateDataLink extends SqlCreate {
                 SqlParserPos.ZERO, true, false,
                 identifier(CATALOG, SCHEMA_NAME_PUBLIC, dataLink.name()),
                 identifier(dataLink.type()),
+                dataLink.isShared(),
                 nodeList(dataLink.options().entrySet(), o -> new SqlOption(
                         SqlLiteral.createCharString(o.getKey(), SqlParserPos.ZERO),
                         SqlLiteral.createCharString(o.getValue(), SqlParserPos.ZERO),

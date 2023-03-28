@@ -51,19 +51,17 @@ public class DataLinkCatalogEntry implements SqlCatalogObject {
         this.source = source;
     }
 
-    public DataLinkCatalogEntry(@Nonnull String name, @Nonnull String type, boolean shared, @Nonnull Map<String, String> options) {
+    public DataLinkCatalogEntry(
+            @Nonnull String name,
+            @Nonnull String type,
+            boolean shared,
+            @Nonnull Map<String, String> options
+    ) {
         this.name = name;
         this.type = type;
         this.shared = shared;
         this.options = options;
         this.source = DataLinkSource.SQL;
-    }
-
-    public DataLinkCatalogEntry(String name, String type, Map<String, String> options, DataLinkSource source) {
-        this.name = name;
-        this.type = type;
-        this.options = options;
-        this.source = source;
     }
 
     public String name() {

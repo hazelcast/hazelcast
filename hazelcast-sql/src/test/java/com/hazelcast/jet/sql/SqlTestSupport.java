@@ -100,7 +100,6 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-@SuppressWarnings("resource")
 @Category({QuickTest.class, ParallelJVMTest.class})
 public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
@@ -433,6 +432,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         }
         return actualRows;
     }
+
     @Nonnull
     protected static List<Row> allRows(String statement, SqlService sqlService) {
         List<Row> actualRows = new ArrayList<>();
