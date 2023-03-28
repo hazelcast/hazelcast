@@ -805,10 +805,11 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         config.getMapConfig("test").addEntryListenerConfig(listenerConfig);
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
-        factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(2, hz1, hz2);
 
         IMap<Object, Object> map = hz1.getMap("test");
-
         map.put(1, 1);
 
         //Let post join continue only after put happened
