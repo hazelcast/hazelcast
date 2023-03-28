@@ -216,10 +216,6 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
         });
     }
 
-    public Map<String, DataLinkEntry> getDataLinks() {
-        return dataLinks;
-    }
-
     public List<DataLink> getConfigCreatedDataLinks() {
         return dataLinks.values()
                 .stream()

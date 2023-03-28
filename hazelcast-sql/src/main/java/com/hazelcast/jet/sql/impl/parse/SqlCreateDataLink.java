@@ -55,7 +55,7 @@ public class SqlCreateDataLink extends SqlCreate {
             boolean ifNotExists,
             @Nonnull SqlIdentifier name,
             @Nonnull SqlIdentifier type,
-            @Nonnull boolean shared,
+            boolean shared,
             @Nonnull SqlNodeList options) {
         super(CREATE_DATA_LINK, pos, replace, ifNotExists);
         this.name = name;
