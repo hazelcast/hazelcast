@@ -104,8 +104,8 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
     }
 
     @Override
-    public void replaceSqlDataLink(String name, String type, Map<String, String> options) {
-        put(toConfig(name, type, options), SQL);
+    public void replaceSqlDataLink(String name, String type, boolean shared, Map<String, String> options) {
+        put(toConfig(name, type, shared, options), SQL);
     }
 
     @Override
@@ -121,11 +121,12 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
     }
 
     // package-private for testing purposes
-    DataLinkConfig toConfig(String name, String type, Map<String, String> options) {
+    DataLinkConfig toConfig(String name, String type, boolean shared, Map<String, String> options) {
         Properties properties = new Properties();
         properties.putAll(options);
         return new DataLinkConfig(name)
                 .setClassName(type)
+                .setShared(shared)
                 .setProperties(properties);
     }
 
@@ -175,6 +176,15 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
             throw new HazelcastException("DataLink type for class '" + dataLink.getClass() + "' is not known");
         }
         return type;
+    }
+
+    @Override
+    public Class<? extends DataLink> classForDataLinkType(String type) {
+        Class<? extends DataLink> dataLinkClass = typeToDataLinkClass.get(type);
+        if (dataLinkClass == null) {
+            throw new HazelcastException("DataLink type '" + type + "' is not known");
+        }
+        return dataLinkClass;
     }
 
     @Override
