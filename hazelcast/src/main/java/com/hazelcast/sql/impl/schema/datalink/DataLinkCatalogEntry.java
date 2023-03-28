@@ -118,11 +118,12 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
             return false;
         }
         DataLinkCatalogEntry e = (DataLinkCatalogEntry) o;
-        return name.equals(e.name) && type.equals(e.type) && options.equals(e.options) && source.equals(e.source);
+        return shared == e.shared && name.equals(e.name) && type.equals(e.type) && options.equals(e.options)
+                && source == e.source;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, type, options);
+        return Objects.hash(name, type, shared, options, source);
     }
 }

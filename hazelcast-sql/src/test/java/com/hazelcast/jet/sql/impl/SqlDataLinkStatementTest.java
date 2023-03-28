@@ -89,6 +89,22 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_createDefaultSharingDataLink_then_success() {
+        String dlName = randomName();
+        instance().getSql().execute("CREATE DATA LINK " + dlName
+                + " TYPE \"DUMMY\" "
+                + " OPTIONS ('b' = 'c')");
+
+        for (InternalDataLinkService dataLinkService : dataLinkServices) {
+            DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
+            assertThat(dataLink).isNotNull();
+            assertThat(dataLink.getConfig().getClassName()).isEqualTo(DummyDataLink.class.getName());
+            assertThat(dataLink.getConfig().isShared()).isTrue();
+            assertThat(dataLink.getConfig().getProperties()).containsEntry("b", "c");
+        }
+    }
+
+    @Test
     public void when_createDataLinkInWrongNameSpace_then_throws() {
         String dlName = randomName();
         assertThatThrownBy(() ->

@@ -82,7 +82,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Missing option : 'data-link-name' must be set");
+                .hasMessageContaining("Missing option: 'data-link-name' must be set");
     }
 
     @Test
