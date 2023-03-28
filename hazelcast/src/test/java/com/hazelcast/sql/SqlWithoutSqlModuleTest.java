@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -48,7 +49,8 @@ public class SqlWithoutSqlModuleTest extends JetTestSupport {
         HazelcastInstance client = createHazelcastClient();
 
         try {
-            SqlResult sqlResult = client.getSql().execute("SELECT 1");
+            client.getSql().execute("SELECT 1");
+            fail("should have failed");
         } catch (HazelcastSqlException e) {
             assertNotNull(e.getOriginatingMemberId());
             assertEquals(Util.getNodeEngine(inst).getNode().getThisUuid(), e.getOriginatingMemberId());
