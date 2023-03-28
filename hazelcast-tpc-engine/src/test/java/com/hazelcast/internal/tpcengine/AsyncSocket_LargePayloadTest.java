@@ -47,7 +47,7 @@ public abstract class AsyncSocket_LargePayloadTest {
     public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 
     private final AtomicLong iteration = new AtomicLong();
-    private final PrintAtomicLongThread debugThread = new PrintAtomicLongThread("at:", iteration);
+    private final PrintAtomicLongThread printThread = new PrintAtomicLongThread("at:", iteration);
     private Reactor clientReactor;
     private Reactor serverReactor;
 
@@ -57,14 +57,14 @@ public abstract class AsyncSocket_LargePayloadTest {
     public void before() {
         clientReactor = newReactorBuilder().build().start();
         serverReactor = newReactorBuilder().build().start();
-        debugThread.start();
+        printThread.start();
     }
 
     @After
     public void after() throws InterruptedException {
         terminate(clientReactor);
         terminate(serverReactor);
-        debugThread.shutdown();
+        printThread.shutdown();
     }
 
     @Test

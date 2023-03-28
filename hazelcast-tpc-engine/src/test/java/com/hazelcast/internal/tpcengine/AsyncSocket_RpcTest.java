@@ -55,7 +55,7 @@ public abstract class AsyncSocket_RpcTest {
     public int iterations = 200;
     public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
     private final AtomicLong iteration = new AtomicLong();
-    private final PrintAtomicLongThread debugThread = new PrintAtomicLongThread("at:", iteration);
+    private final PrintAtomicLongThread printThread = new PrintAtomicLongThread("at:", iteration);
 
     private final ConcurrentMap<Long, CompletableFuture> futures = new ConcurrentHashMap<>();
     private Reactor clientReactor;
@@ -67,14 +67,14 @@ public abstract class AsyncSocket_RpcTest {
     public void before() {
         clientReactor = newReactorBuilder().build().start();
         serverReactor = newReactorBuilder().build().start();
-        debugThread.start();
+        printThread.start();
     }
 
     @After
     public void after() throws InterruptedException {
         terminate(clientReactor);
         terminate(serverReactor);
-        debugThread.shutdown();
+        printThread.shutdown();
     }
 
     @Test
