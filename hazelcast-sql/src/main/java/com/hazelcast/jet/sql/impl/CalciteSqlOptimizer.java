@@ -236,9 +236,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         DataLinksResolver dataLinksResolver = dataLinkCatalog(nodeEngine.getDataLinkService(), this.dataLinkStorage);
         this.tableResolvers = Arrays.asList(tableResolverImpl, dataLinksResolver);
         this.planExecutor = new PlanExecutor(
-                nodeEngine, tableResolverImpl,
+                nodeEngine,
+                tableResolverImpl,
                 dataLinksResolver,
-                connectorCache,
                 resultRegistry
         );
 

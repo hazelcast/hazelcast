@@ -111,7 +111,6 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
     @Test
     public void test_datalinks() {
         // given
-//        String type = DataLinkTestUtil.DummyDataLink.class.getName();
         String type = "DUMMY";
         // create config-originated data link
         getNodeEngineImpl(instance()).getDataLinkService().createConfigDataLink(
