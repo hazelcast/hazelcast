@@ -39,7 +39,7 @@ public class SqlWithoutSqlModuleTest extends JetTestSupport {
         HazelcastInstance inst = createHazelcastInstance();
         assertThatThrownBy(() -> inst.getSql().execute("SELECT 1"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessage("Cannot execute SQL query because \"hazelcast-sql\" module is not in the classpath");
+                .hasMessage("Cannot execute SQL query because \"hazelcast-sql\" module is not on the classpath");
     }
 
     @Test
