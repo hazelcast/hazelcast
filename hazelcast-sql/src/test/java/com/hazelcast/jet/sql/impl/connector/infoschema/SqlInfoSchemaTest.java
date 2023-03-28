@@ -121,12 +121,16 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
         );
 
         // create SQL-originated data link
-        sqlService.execute("CREATE DATA LINK s_dl TYPE DUMMY SHARED");
+        sqlService.execute("CREATE DATA LINK sql_default_shared_dl TYPE DUMMY");
+        sqlService.execute("CREATE DATA LINK sql_shared_dl TYPE DUMMY SHARED");
+        sqlService.execute("CREATE DATA LINK sql_non_shared_dl TYPE DUMMY NOT SHARED");
 
         assertRowsAnyOrder(
                 "SELECT * FROM information_schema.datalinks",
                 asList(
-                        new Row("hazelcast", "public", "s_dl", type, true, "{}", "SQL"),
+                        new Row("hazelcast", "public", "sql_default_shared_dl", type, true, "{}", "SQL"),
+                        new Row("hazelcast", "public", "sql_shared_dl", type, true, "{}", "SQL"),
+                        new Row("hazelcast", "public", "sql_non_shared_dl", type, false, "{}", "SQL"),
                         new Row("hazelcast", "public", "c_dl", type, true, "{}", "CONFIG")
                 )
         );

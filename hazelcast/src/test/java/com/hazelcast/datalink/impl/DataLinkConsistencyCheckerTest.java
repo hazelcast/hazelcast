@@ -98,7 +98,7 @@ public class DataLinkConsistencyCheckerTest extends SimpleTestInClusterSupport {
     @Test
     public void test_outdatedDataLinkWasAlteredInDataLinkService() {
         // given
-        linkService.replaceSqlDataLink(name, type, true, Collections.emptyMap());
+        linkService.replaceSqlDataLink(name, type, false, Collections.emptyMap());
         Map<String, String> alteredOptions = singletonMap("a", "b");
         sqlCatalog.put(QueryUtils.wrapDataLinkKey(name), new DataLinkCatalogEntry(name, type, true, alteredOptions));
 
