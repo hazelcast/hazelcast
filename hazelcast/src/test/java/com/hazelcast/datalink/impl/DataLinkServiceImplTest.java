@@ -108,6 +108,7 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
         dataLinkService.replaceSqlDataLink(
                 TEST_VIA_SERVICE_CONFIG,
                 DummyDataLink.class.getName(),
+                true,
                 createMap("customProperty", "value")
         );
 
@@ -133,10 +134,39 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void should_replace_shared_sql_data_link() {
+        String name = randomName();
+        String name2 = randomName();
+
+        dataLinkService.replaceSqlDataLink(
+                name,
+                DummyDataLink.class.getName(),
+                false,
+                createMap("customProperty", "value")
+        );
+
+        dataLinkService.replaceSqlDataLink(
+                name2,
+                DummyDataLink.class.getName(),
+                true,
+                createMap("customProperty", "value")
+        );
+
+        DataLink dataLink = dataLinkService.getAndRetainDataLink(name, DummyDataLink.class);
+        assertThat(dataLink.getName()).isEqualTo(name);
+        assertThat(dataLink.getConfig().isShared()).isFalse();
+
+        DataLink dataLink2 = dataLinkService.getAndRetainDataLink(name2, DummyDataLink.class);
+        assertThat(dataLink2.getName()).isEqualTo(name2);
+        assertThat(dataLink2.getConfig().isShared()).isTrue();
+    }
+
+    @Test
     public void new_data_link_is_returned_after_replace() {
         dataLinkService.replaceSqlDataLink(
                 TEST_VIA_SERVICE_CONFIG,
                 DummyDataLink.class.getName(),
+                false,
                 createMap("customProperty", "value")
         );
 
@@ -145,6 +175,7 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
         dataLinkService.replaceSqlDataLink(
                 TEST_VIA_SERVICE_CONFIG,
                 DummyDataLink.class.getName(),
+                false,
                 createMap("customProperty", "new value")
         );
         DummyDataLink newDataLink = dataLinkService.getAndRetainDataLink(TEST_VIA_SERVICE_CONFIG, DummyDataLink.class);
@@ -159,6 +190,7 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
         dataLinkService.replaceSqlDataLink(
                 TEST_VIA_SERVICE_CONFIG,
                 DummyDataLink.class.getName(),
+                false,
                 createMap("customProperty", "value")
         );
 
@@ -168,6 +200,7 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
         dataLinkService.replaceSqlDataLink(
                 TEST_VIA_SERVICE_CONFIG,
                 DummyDataLink.class.getName(),
+                false,
                 createMap("customProperty", "value2")
         );
 
@@ -197,6 +230,7 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
         dataLinkService.replaceSqlDataLink(
                 TEST_VIA_SERVICE_CONFIG,
                 DummyDataLink.class.getName(),
+                false,
                 createMap("customProperty", "value")
         );
 
@@ -219,6 +253,7 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
         assertThatThrownBy(() -> dataLinkService.replaceSqlDataLink(
                 TEST_DYNAMIC_CONFIG, // same name as in config added above
                 DummyDataLink.class.getName(),
+                false,
                 createMap("customProperty", "value")
         )).isInstanceOf(HazelcastException.class)
           .hasMessage("Cannot replace a data link created from configuration");
@@ -260,6 +295,7 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
         dataLinkService.replaceSqlDataLink(
                 TEST_VIA_SERVICE_CONFIG,
                 DummyDataLink.class.getName(),
+                false,
                 createMap("customProperty", "value")
         );
 
@@ -275,6 +311,7 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
         dataLinkService.replaceSqlDataLink(
                 TEST_VIA_SERVICE_CONFIG,
                 DummyDataLink.class.getName(),
+                false,
                 createMap("customProperty", "value")
         );
 
@@ -313,6 +350,7 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
         dataLinkService.replaceSqlDataLink(
                 TEST_VIA_SERVICE_CONFIG,
                 DummyDataLink.class.getName(),
+                false,
                 createMap("customProperty", "value")
         );
 
@@ -327,6 +365,7 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
         dataLinkService.replaceSqlDataLink(
                 TEST_VIA_SERVICE_CONFIG,
                 DummyDataLink.class.getName(),
+                false,
                 createMap("customProperty", "value")
         );
 

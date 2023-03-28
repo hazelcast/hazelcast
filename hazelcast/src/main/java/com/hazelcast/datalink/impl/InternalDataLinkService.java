@@ -50,11 +50,12 @@ public interface InternalDataLinkService extends DataLinkService {
     /**
      * Creates a new or replaces an existing DataLink with the given parameters.
      *
-     * @param name    name of the DataLink
-     * @param type    type of the DataLink
+     * @param name      name of the DataLink
+     * @param type      type of the DataLink
+     * @param shared    is DataLink shared
      * @param options options configuring the DataLink
      */
-    void replaceSqlDataLink(String name, String type, Map<String, String> options);
+    void replaceSqlDataLink(String name, String type, boolean shared, Map<String, String> options);
 
     /**
      * Returns if a {@link DataLink} with given name exists in the config
@@ -78,7 +79,7 @@ public interface InternalDataLinkService extends DataLinkService {
      *
      * @param name name of the DataLink
      * @throws IllegalArgumentException if the DataLink was created through config,
-     *                                  not via {@link #replaceSqlDataLink(String, String, Map)}
+     *                                  not via {@link #replaceSqlDataLink(String, String, boolean, Map)}
      */
     void removeDataLink(String name);
 
@@ -88,6 +89,13 @@ public interface InternalDataLinkService extends DataLinkService {
      * @return type of the data link
      */
     String typeForDataLink(String name);
+
+    /**
+     * Return class implementing DataLink of given type.
+     * @param type type of the DataLink
+     * @return DataLink implementation class
+     */
+    Class<? extends DataLink> classForDataLinkType(String type);
 
     /**
      * Close this DataLinkService, should be called only on member shutdown.

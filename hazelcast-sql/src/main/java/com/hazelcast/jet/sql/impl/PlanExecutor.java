@@ -59,6 +59,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.schema.DataLinksResolver;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.TypeDefinitionColumn;
@@ -141,6 +142,7 @@ public class PlanExecutor {
 
     private final TableResolverImpl catalog;
     private final DataLinksResolver dataLinksCatalog;
+    private final SqlConnectorCache connectorCache;
     private final HazelcastInstance hazelcastInstance;
     private final NodeEngine nodeEngine;
     private final QueryResultRegistry resultRegistry;
@@ -151,15 +153,17 @@ public class PlanExecutor {
     private final AtomicLong directIMapQueriesExecuted = new AtomicLong();
 
     public PlanExecutor(
+            NodeEngine nodeEngine,
             TableResolverImpl catalog,
             DataLinksResolver dataLinksResolver,
-            NodeEngine nodeEngine,
+            SqlConnectorCache connectorCache,
             QueryResultRegistry resultRegistry
     ) {
-        this.catalog = catalog;
-        this.dataLinksCatalog = dataLinksResolver;
         this.nodeEngine = nodeEngine;
         this.hazelcastInstance = nodeEngine.getHazelcastInstance();
+        this.catalog = catalog;
+        this.dataLinksCatalog = dataLinksResolver;
+        this.connectorCache = connectorCache;
         this.resultRegistry = resultRegistry;
 
         logger = nodeEngine.getLogger(getClass());
@@ -183,7 +187,11 @@ public class PlanExecutor {
             throw new HazelcastException("Cannot replace a data link created from configuration");
         }
         boolean added = dataLinksCatalog.createDataLink(
-                new DataLinkCatalogEntry(plan.name(), plan.type(), plan.options()),
+                new DataLinkCatalogEntry(
+                        plan.name(),
+                        dlService.classForDataLinkType(plan.type()).getName(),
+                        plan.shared(),
+                        plan.options()),
                 plan.isReplace(),
                 plan.ifNotExists());
         if (added) {

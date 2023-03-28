@@ -76,7 +76,7 @@ public class DataLinkConsistencyChecker {
                 continue;
             }
 
-            dataLinkService.replaceSqlDataLink(dl.name(), dl.type(), dl.options());
+            dataLinkService.replaceSqlDataLink(dl.name(), dl.type(), dl.isShared(), dl.options());
         }
 
         for (DataLink dataLink : sqlDataLinks) {

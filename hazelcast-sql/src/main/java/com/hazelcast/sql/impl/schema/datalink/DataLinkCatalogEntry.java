@@ -36,6 +36,7 @@ import static com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource;
 public class DataLinkCatalogEntry implements SqlCatalogObject {
     private String name;
     private String type;
+    private boolean shared;
     private Map<String, String> options;
     private DataLinkSource source;
 
@@ -45,18 +46,26 @@ public class DataLinkCatalogEntry implements SqlCatalogObject {
     public DataLinkCatalogEntry(@Nonnull DataLink dataLink, @Nonnull DataLinkSource source) {
         this.name = dataLink.getName();
         this.type = dataLink.getConfig().getClassName();
+        this.shared = dataLink.getConfig().isShared();
         this.options = dataLink.options();
         this.source = source;
     }
 
-    public DataLinkCatalogEntry(@Nonnull String name, @Nonnull String type, @Nonnull Map<String, String> options) {
+    public DataLinkCatalogEntry(@Nonnull String name, @Nonnull String type, boolean shared, @Nonnull Map<String, String> options) {
         this.name = name;
         this.type = type;
+        this.shared = shared;
         this.options = options;
         this.source = DataLinkSource.SQL;
     }
 
-    @Nonnull
+    public DataLinkCatalogEntry(String name, String type, Map<String, String> options, DataLinkSource source) {
+        this.name = name;
+        this.type = type;
+        this.options = options;
+        this.source = source;
+    }
+
     public String name() {
         return name;
     }
@@ -64,6 +73,10 @@ public class DataLinkCatalogEntry implements SqlCatalogObject {
     @Nonnull
     public String type() {
         return type;
+    }
+
+    public boolean isShared() {
+        return shared;
     }
 
     @Nonnull
@@ -80,6 +93,7 @@ public class DataLinkCatalogEntry implements SqlCatalogObject {
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
         type = in.readString();
+        shared = in.readBoolean();
         options = in.readObject();
         source = in.readObject();
     }
@@ -88,6 +102,7 @@ public class DataLinkCatalogEntry implements SqlCatalogObject {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
         out.writeString(type);
+        out.writeBoolean(shared);
         out.writeObject(options);
         out.writeObject(source);
     }

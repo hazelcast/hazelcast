@@ -523,6 +523,7 @@ provide XA data links with a new connector type, JDBC-XA.
 ```sql
 CREATE [OR REPLACE] DATA LINK [IF NOT EXISTS] <name>
 TYPE <connector name>
+[NOT] SHARED
 OPTIONS ( … );
 
 DROP DATA LINK [IF EXISTS] <name>;
