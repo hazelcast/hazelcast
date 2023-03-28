@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.schema.datalink;
 
-import com.hazelcast.datalink.DataLink;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -41,14 +40,6 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
     public DataLinkCatalogEntry() {
     }
 
-    public DataLinkCatalogEntry(DataLink dataLink, DataLinkSource source) {
-        this.name = dataLink.getName();
-        this.type = dataLink.getConfig().getClassName();
-        this.shared = dataLink.getConfig().isShared();
-        this.options = dataLink.options();
-        this.source = source;
-    }
-
     public DataLinkCatalogEntry(String name, String type, boolean shared, Map<String, String> options) {
         this.name = name;
         this.type = type;
@@ -57,9 +48,17 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
         this.source = DataLinkSource.SQL;
     }
 
-    public DataLinkCatalogEntry(String name, String type, Map<String, String> options, DataLinkSource source) {
+    public DataLinkCatalogEntry(
+            String name,
+            String type,
+            boolean shared,
+            Map<String, String> options,
+            DataLinkSource source) {
         this.name = name;
+        this.shared = shared;
         this.type = type;
+        this.options = options;
+        this.source = source;
     }
 
     public String name() {
