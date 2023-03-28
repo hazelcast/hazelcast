@@ -188,7 +188,7 @@ public class PlanExecutor {
         boolean added = dataLinksCatalog.createDataLink(
                 new DataLinkCatalogEntry(
                         plan.name(),
-                        dlService.classForDataLinkType(plan.type()).getName(),
+                        plan.type(),
                         plan.shared(),
                         plan.options()),
                 plan.isReplace(),
