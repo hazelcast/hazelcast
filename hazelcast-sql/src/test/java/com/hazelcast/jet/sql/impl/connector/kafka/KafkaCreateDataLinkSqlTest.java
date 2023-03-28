@@ -62,7 +62,7 @@ public class KafkaCreateDataLinkSqlTest extends SqlTestSupport {
                 instance()).getDataLinkService().getAndRetainDataLink(dlName, KafkaDataLink.class);
 
         assertThat(dataLink).isNotNull();
-        assertThat(dataLink.getConfig().getClassName()).isEqualTo(KafkaDataLink.class.getName());
+        assertThat(dataLink.getConfig().getClassName()).isEqualTo("Kafka");
     }
 
     protected static String options() {
