@@ -33,8 +33,8 @@ import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.UnionPhysicalRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
-import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
+import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -42,7 +42,6 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.RelNode;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -197,7 +196,6 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
         assertThat(rightInputKeys.values().iterator().next().getValue()).isEqualTo((byte) 0);
     }
 
-    @Ignore("Doesn't work with multiple IMPOSE_ORDER(...) calls : https://github.com/hazelcast/hazelcast/issues/21370")
     @Test
     public void when_streamToStreamJoinIsPresent_then_keyWasPropagated() {
         NodeEngine nodeEngine = getNodeEngine(instance());
@@ -219,9 +217,9 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
 
         HazelcastTable table = streamingTable(resolver.getTables().get(0), 1L);
 
-        String sql = " SELECT * FROM TABLE(IMPOSE_ORDER((SELECT * FROM s), DESCRIPTOR(a), 1)) AS s1 " +
-                " JOIN " +
-                " (SELECT * FROM TABLE(IMPOSE_ORDER((SELECT * FROM s), DESCRIPTOR(a), 1))) AS s2 " +
+        String sql = " SELECT * FROM TABLE(IMPOSE_ORDER((SELECT * FROM s1), DESCRIPTOR(a), 1)) "
+                + " JOIN "
+                + "   (SELECT * FROM TABLE(IMPOSE_ORDER((SELECT * FROM s2), DESCRIPTOR(a), 1))) " +
                 " ON s1.a = s2.a";
 
         PhysicalRel optPhysicalRel = optimizePhysical(sql, singletonList(QueryDataType.BIGINT), table).getPhysical();
@@ -240,7 +238,7 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
 
         assertThat(finalOptRel).isInstanceOf(StreamToStreamJoinPhysicalRel.class);
 
-        // Watermark key was propagated to UnionPhysicalRel
+        // Watermark key was propagated to StreamToStreamJoinPhysicalRel
         Map<Integer, MutableByte> map = keysAssigner.getWatermarkedFieldsKey(finalOptRel);
         assertThat(map).isNotNull();
         assertThat(map).isNotEmpty();
