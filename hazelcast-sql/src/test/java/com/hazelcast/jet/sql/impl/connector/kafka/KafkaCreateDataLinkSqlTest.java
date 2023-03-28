@@ -56,7 +56,7 @@ public class KafkaCreateDataLinkSqlTest extends SqlTestSupport {
     @Test
     public void test() {
         String dlName = randomName();
-        instance().getSql().execute("CREATE DATA LINK " + dlName + " TYPE Kafka " + options());
+        instance().getSql().execute("CREATE DATA LINK " + dlName + " TYPE Kafka SHARED " + options());
 
         DataLink dataLink = getNodeEngineImpl(
                 instance()).getDataLinkService().getAndRetainDataLink(dlName, KafkaDataLink.class);
