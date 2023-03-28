@@ -121,7 +121,8 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
             return false;
         }
         DataLinkCatalogEntry e = (DataLinkCatalogEntry) o;
-        return shared == e.shared && name.equals(e.name) && type.equals(e.type) && options.equals(e.options) && source == e.source;
+        return shared == e.shared && name.equals(e.name) && type.equals(e.type) && options.equals(e.options)
+                && source == e.source;
     }
 
     @Override
