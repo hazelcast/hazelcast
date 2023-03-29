@@ -74,6 +74,7 @@ public class KafkaConnectCouchbaseIntegrationTest extends JetTestSupport {
 
     public static final CouchbaseContainer container = new CouchbaseContainer("couchbase/server:7.1.1")
             .withBucket(new BucketDefinition(BUCKET_NAME))
+            .withStartupTimeout(Duration.ofSeconds(120))
             .withFileSystemBind("target/couchbase-logs", "/opt/couchbase/var/lib/couchbase/logs")
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"));
 
