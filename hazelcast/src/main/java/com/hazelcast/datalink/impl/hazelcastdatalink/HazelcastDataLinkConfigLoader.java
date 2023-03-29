@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.datalink.impl;
+package com.hazelcast.datalink.impl.hazelcastdatalink;
 
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastException;
@@ -30,26 +30,29 @@ import java.nio.file.Paths;
 
 import static com.hazelcast.datalink.HazelcastDataLink.CLIENT_XML;
 import static com.hazelcast.datalink.HazelcastDataLink.CLIENT_XML_PATH;
-import static com.hazelcast.datalink.HazelcastDataLink.CLIENT_YAML_PATH;
+import static com.hazelcast.datalink.HazelcastDataLink.CLIENT_YML_PATH;
 import static com.hazelcast.datalink.HazelcastDataLink.CLIENT_YML;
 
-public class HazelcastDataLinkFileReader {
+/**
+ * Loads the DataLinkConfig if file path is provided
+ */
+public class HazelcastDataLinkConfigLoader {
 
-    private static final ILogger LOGGER = Logger.getLogger(HazelcastDataLinkFileReader.class);
+    private static final ILogger LOGGER = Logger.getLogger(HazelcastDataLinkConfigLoader.class);
 
-    public void readFilePathIfProvided(DataLinkConfig dataLinkConfig) {
+    public void loadConfigFromFile(DataLinkConfig dataLinkConfig) {
         String clientXmlPath = dataLinkConfig.getProperty(CLIENT_XML_PATH);
-        if (readFile(dataLinkConfig, clientXmlPath, CLIENT_XML)) {
+        if (loadConfig(dataLinkConfig, clientXmlPath, CLIENT_XML)) {
             LOGGER.info("Successfully read XML file :" + clientXmlPath);
         } else {
-            String clientYamlPath = dataLinkConfig.getProperty(CLIENT_YAML_PATH);
-            if (readFile(dataLinkConfig, clientYamlPath, CLIENT_YML)) {
-                LOGGER.info("Successfully read YAML file :" + clientYamlPath);
+            String clientYmlPath = dataLinkConfig.getProperty(CLIENT_YML_PATH);
+            if (loadConfig(dataLinkConfig, clientYmlPath, CLIENT_YML)) {
+                LOGGER.info("Successfully read YML file :" + clientYmlPath);
             }
         }
     }
 
-    private boolean readFile(DataLinkConfig dataLinkConfig, String filePath, String propertyKey) {
+    private boolean loadConfig(DataLinkConfig dataLinkConfig, String filePath, String propertyKey) {
         boolean result = false;
         if (!StringUtil.isNullOrEmpty(filePath)) {
             String fileContent = readFileContent(filePath);

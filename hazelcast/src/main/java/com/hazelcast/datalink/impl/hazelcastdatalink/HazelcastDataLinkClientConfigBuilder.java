@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.datalink.impl;
+package com.hazelcast.datalink.impl.hazelcastdatalink;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.DataLinkConfig;
@@ -25,6 +25,9 @@ import com.hazelcast.jet.impl.util.ImdgUtil;
 
 public class HazelcastDataLinkClientConfigBuilder {
 
+    /**
+     * Converts the string in the DataLinkConfig to ClientConfig object
+     */
     public ClientConfig buildClientConfig(DataLinkConfig dataLinkConfig) {
 
         String clientXml = dataLinkConfig.getProperty(HazelcastDataLink.CLIENT_XML);
@@ -38,10 +41,8 @@ public class HazelcastDataLinkClientConfigBuilder {
             // Read ClientConfig from Yaml
             return ImdgUtil.asClientConfigFromYaml(clientYaml);
         }
-        throw new HazelcastException("HazelcastDataLink with name '" + dataLinkConfig.getName()
-                                     + "' could not be created, "
-                                     + "provide either a file path with client_xml_path or client_yaml_path property "
-                                     + "or string content with client_xml or client_yml property "
-                                     + "with the client configuration.");
+        throw new HazelcastException("Invalid state. Both XML and YML strings are empty. HazelcastDataLink with name '"
+                                     + dataLinkConfig.getName()
+                                     + "' could not be created");
     }
 }

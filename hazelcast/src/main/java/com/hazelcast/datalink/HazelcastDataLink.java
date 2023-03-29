@@ -21,8 +21,9 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.impl.HazelcastDataLinkClientConfigBuilder;
-import com.hazelcast.datalink.impl.HazelcastDataLinkFileReader;
+import com.hazelcast.datalink.impl.hazelcastdatalink.HazelcastDataLinkClientConfigBuilder;
+import com.hazelcast.datalink.impl.hazelcastdatalink.HazelcastDataLinkConfigLoader;
+import com.hazelcast.datalink.impl.hazelcastdatalink.HazelcastDataLinkConfigValidator;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.annotation.Beta;
 
@@ -59,7 +60,7 @@ public class HazelcastDataLink extends DataLinkBase {
     /**
      * The constant to be used as property key for YAML file path for connecting to remote cluster
      */
-    public static final String CLIENT_YAML_PATH = "client_yaml_path";
+    public static final String CLIENT_YML_PATH = "client_yml_path";
 
     private final ClientConfig clientConfig;
 
@@ -87,11 +88,14 @@ public class HazelcastDataLink extends DataLinkBase {
     private ClientConfig buildClientConfig() {
         DataLinkConfig dataLinkConfig = getConfig();
 
-        HazelcastDataLinkFileReader fileReader = new HazelcastDataLinkFileReader();
-        fileReader.readFilePathIfProvided(dataLinkConfig);
+        HazelcastDataLinkConfigValidator validator = new HazelcastDataLinkConfigValidator();
+        validator.validate(dataLinkConfig);
 
-        HazelcastDataLinkClientConfigBuilder configReader = new HazelcastDataLinkClientConfigBuilder();
-        return configReader.buildClientConfig(dataLinkConfig);
+        HazelcastDataLinkConfigLoader configLoader = new HazelcastDataLinkConfigLoader();
+        configLoader.loadConfigFromFile(dataLinkConfig);
+
+        HazelcastDataLinkClientConfigBuilder configBuilder = new HazelcastDataLinkClientConfigBuilder();
+        return configBuilder.buildClientConfig(dataLinkConfig);
     }
 
     @Nonnull

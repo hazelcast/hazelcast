@@ -100,10 +100,34 @@ public class HazelcastDataLinkTest extends HazelcastTestSupport {
         assertThatThrownBy(() -> hazelcastDataLink = new HazelcastDataLink(dataLinkConfig))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessage("HazelcastDataLink with name 'data-link-name' "
-                            + "could not be created, "
-                            + "provide either a file path with client_xml_path or client_yaml_path property "
-                            + "or string content with client_xml or client_yml property "
-                            + "with the client configuration.");
+                            + "could not be created "
+                            + "provide either a file path with one of "
+                            + "\"client_xml_path\" or \"client_yml_path\" properties "
+                            + "or a string content with one of \"client_xml\" or \"client_yml\" properties "
+                            + "for the client configuration.");
+    }
+
+    @Test
+    public void should_throw_with_empty_filepath() {
+        DataLinkConfig dataLinkConfig = new DataLinkConfig("data-link-name")
+                .setClassName(HazelcastDataLink.class.getName())
+                .setProperty(HazelcastDataLink.CLIENT_YML_PATH, "")
+                .setShared(true);
+
+        assertThatThrownBy(() -> hazelcastDataLink = new HazelcastDataLink(dataLinkConfig))
+                .isInstanceOf(HazelcastException.class);
+    }
+
+    @Test
+    public void should_throw_with_filepath_string() {
+        DataLinkConfig dataLinkConfig = new DataLinkConfig("data-link-name")
+                .setClassName(HazelcastDataLink.class.getName())
+                .setProperty(HazelcastDataLink.CLIENT_YML_PATH, "")
+                .setProperty(HazelcastDataLink.CLIENT_YML, "")
+                .setShared(true);
+
+        assertThatThrownBy(() -> hazelcastDataLink = new HazelcastDataLink(dataLinkConfig))
+                .isInstanceOf(HazelcastException.class);
     }
 
     @Test
@@ -136,9 +160,9 @@ public class HazelcastDataLinkTest extends HazelcastTestSupport {
             // Delete the file at the end of the test
             try {
                 String filePath = dataLinkConfig.getProperty(HazelcastDataLink.CLIENT_XML_PATH);
+                assert filePath != null;
                 Files.delete(Paths.get(filePath));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            } catch (IOException ignored) {
             }
         }
     }
