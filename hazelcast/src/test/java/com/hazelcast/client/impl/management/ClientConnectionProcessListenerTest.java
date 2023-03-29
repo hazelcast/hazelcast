@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
@@ -43,6 +44,7 @@ import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -50,8 +52,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class ClientConnectionProcessListenerTest
-        extends HazelcastTestSupport {
+public class ClientConnectionProcessListenerTest extends HazelcastTestSupport {
 
     @After
     public void tearDown() {
@@ -71,7 +72,7 @@ public class ClientConnectionProcessListenerTest
     }
 
     @Test
-    public void successfulConnection() {
+    public void successfulConnection() throws UnknownHostException {
         String clusterName = getTestMethodName();
         ClientConnectionProcessListener listener = mock(ClientConnectionProcessListener.class);
         ClientConfig clientConfig = newClientConfig()
@@ -81,14 +82,17 @@ public class ClientConnectionProcessListenerTest
 
         HazelcastClient.newHazelcastClient(clientConfig);
 
+        List<Address> expected = asList(
+                new Address("127.0.0.1", 5701),
+                new Address("127.0.0.1", 5702),
+                new Address("127.0.0.1", 5703)
+        );
+
         // Events are fired in a separate executor, it might take a while for
         // the listeners to be notified.
         assertTrueEventually(() -> {
-            verify(listener).possibleAddressesCollected(asList(
-                    new Address("127.0.0.1", 5701),
-                    new Address("127.0.0.1", 5702),
-                    new Address("127.0.0.1", 5703)
-            ));
+            // The order of elements in the arg and expected lists may be different. Use containsAll()
+            verify(listener).possibleAddressesCollected(argThat(arg -> arg.containsAll(expected)));
             verify(listener, atLeastOnce()).attemptingToConnectToAddress(new Address("127.0.0.1", 5701));
             verify(listener).authenticationSuccess(new Address("127.0.0.1", 5701));
             verify(listener).clusterConnectionSucceeded(clusterName);
@@ -186,14 +190,17 @@ public class ClientConnectionProcessListenerTest
         } catch (IllegalStateException e) {
             Address addr = new Address("127.0.0.1", 5701);
 
+            List<Address> expected = asList(
+                    new Address("127.0.0.1", 5701),
+                    new Address("127.0.0.1", 5702),
+                    new Address("127.0.0.1", 5703)
+            );
+
             // Events are fired in a separate executor, it might take a while for
             // the listeners to be notified.
             assertTrueEventually(() -> {
-                verify(listener).possibleAddressesCollected(asList(
-                        new Address("127.0.0.1", 5701),
-                        new Address("127.0.0.1", 5702),
-                        new Address("127.0.0.1", 5703)
-                ));
+                // The order of elements in the arg and expected lists may be different. Use containsAll()
+                verify(listener).possibleAddressesCollected(argThat(arg -> arg.containsAll(expected)));
                 verify(listener).attemptingToConnectToAddress(addr);
                 verify(listener).clientNotAllowedInCluster(addr);
                 verify(listener).clusterConnectionFailed(clusterName);
