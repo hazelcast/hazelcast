@@ -198,25 +198,25 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_FIELD_ACCESS = 77;
     public static final int EXPRESSION_ROW = 78;
 
-    public static final int DATA_LINK = 88;
+    public static final int DATA_LINK = 79;
 
-    public static final int UPDATE_DATA_LINK_OPERATION = 89;
+    public static final int UPDATE_DATA_LINK_OPERATION = 80;
 
-    public static final int QUERY_DATA_TYPE = 90;
+    public static final int QUERY_DATA_TYPE = 81;
 
-    public static final int ROW_HEAP = 92;
-    public static final int ROW_EMPTY = 93;
+    public static final int ROW_HEAP = 82;
+    public static final int ROW_EMPTY = 83;
 
-    public static final int LAZY_TARGET = 94;
+    public static final int LAZY_TARGET = 84;
 
-    public static final int TARGET_DESCRIPTOR_GENERIC = 95;
+    public static final int TARGET_DESCRIPTOR_GENERIC = 85;
 
-    public static final int QUERY_PATH = 96;
+    public static final int QUERY_PATH = 86;
 
-    public static final int INTERVAL_YEAR_MONTH = 97;
-    public static final int INTERVAL_DAY_SECOND = 98;
+    public static final int INTERVAL_YEAR_MONTH = 87;
+    public static final int INTERVAL_DAY_SECOND = 88;
 
-    public static final int QUERY_DATA_TYPE_FIELD = 99;
+    public static final int QUERY_DATA_TYPE_FIELD = 89;
 
 
     public static final int LEN = QUERY_DATA_TYPE_FIELD + 1;
