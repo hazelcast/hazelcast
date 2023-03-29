@@ -29,14 +29,17 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.connect.data.Values;
 import org.jetbrains.annotations.NotNull;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectInstance;
@@ -63,6 +66,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
+@RunWith(HazelcastSerialClassRunner.class)
 public class KafkaConnectIntegrationTest extends JetTestSupport {
     @ClassRule
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
@@ -112,7 +116,6 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
             });
         }
     }
-
 
     private static <T> List<T> getMBeanValues(ObjectName objectName, String attribute) throws Exception {
         return (List<T>) getMBeans(objectName).stream().map(i -> getAttribute(i, attribute)).collect(toList());
@@ -206,7 +209,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         return getMBeanValues(objectName, "sourceRecordPollTotalAvgTime");
     }
 
-
+    @Ignore // https://github.com/hazelcast/hazelcast/issues/24018
     @Test
     public void testSnapshotting() throws Exception {
         int localParallelism = 3;
