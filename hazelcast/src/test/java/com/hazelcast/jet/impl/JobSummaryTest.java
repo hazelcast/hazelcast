@@ -33,7 +33,6 @@ import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -42,6 +41,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -315,7 +315,7 @@ public class JobSummaryTest extends JetTestSupport {
         return (JetClientInstanceImpl) client.getJet();
     }
 
-    @NotNull
+    @Nonnull
     @SuppressWarnings("deprecation")
     private List<JobAndSqlSummary> getJobSummaryList() {
         if (useOldJobSummary) {
