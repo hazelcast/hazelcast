@@ -30,7 +30,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.connect.source.SourceRecord;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -156,7 +155,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
 
     }
 
-    @NotNull
+    @Nonnull
     private static TaskRunner.State stateWithOffset(int value) {
         Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new HashMap<>();
         SourceRecord lastRecord = dummyRecord(value);
