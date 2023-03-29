@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.schema.datalink;
 
-import com.hazelcast.datalink.DataLink;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateDataLink;
 import com.hazelcast.nio.ObjectDataInput;
@@ -43,25 +42,25 @@ public class DataLinkCatalogEntry implements SqlCatalogObject {
     public DataLinkCatalogEntry() {
     }
 
-    public DataLinkCatalogEntry(@Nonnull DataLink dataLink, @Nonnull DataLinkSource source) {
-        this.name = dataLink.getName();
-        this.type = dataLink.getConfig().getClassName();
-        this.shared = dataLink.getConfig().isShared();
-        this.options = dataLink.options();
-        this.source = source;
-    }
-
-    public DataLinkCatalogEntry(
-            @Nonnull String name,
-            @Nonnull String type,
-            boolean shared,
-            @Nonnull Map<String, String> options
-    ) {
+    public DataLinkCatalogEntry(String name, String type, boolean shared, Map<String, String> options) {
         this.name = name;
         this.type = type;
         this.shared = shared;
         this.options = options;
         this.source = DataLinkSource.SQL;
+    }
+
+    public DataLinkCatalogEntry(
+            String name,
+            String type,
+            boolean shared,
+            Map<String, String> options,
+            DataLinkSource source) {
+        this.name = name;
+        this.shared = shared;
+        this.type = type;
+        this.options = options;
+        this.source = source;
     }
 
     public String name() {
@@ -124,12 +123,13 @@ public class DataLinkCatalogEntry implements SqlCatalogObject {
             return false;
         }
         DataLinkCatalogEntry e = (DataLinkCatalogEntry) o;
-        return name.equals(e.name) && type.equals(e.type) && options.equals(e.options) && source.equals(e.source);
+        return shared == e.shared && name.equals(e.name) && type.equals(e.type) && options.equals(e.options)
+                && source == e.source;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, type, options);
+        return Objects.hash(name, type, shared, options, source);
     }
 
     @Nonnull

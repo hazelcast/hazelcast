@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -39,7 +40,7 @@ public class SqlWithoutSqlModuleTest extends JetTestSupport {
         HazelcastInstance inst = createHazelcastInstance();
         assertThatThrownBy(() -> inst.getSql().execute("SELECT 1"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessage("Cannot execute SQL query because \"hazelcast-sql\" module is not in the classpath");
+                .hasMessage("Cannot execute SQL query because \"hazelcast-sql\" module is not on the classpath");
     }
 
     @Test
@@ -48,7 +49,8 @@ public class SqlWithoutSqlModuleTest extends JetTestSupport {
         HazelcastInstance client = createHazelcastClient();
 
         try {
-            SqlResult sqlResult = client.getSql().execute("SELECT 1");
+            client.getSql().execute("SELECT 1");
+            fail("should have failed");
         } catch (HazelcastSqlException e) {
             assertNotNull(e.getOriginatingMemberId());
             assertEquals(Util.getNodeEngine(inst).getNode().getThisUuid(), e.getOriginatingMemberId());

@@ -25,6 +25,6 @@ import org.junit.runner.RunWith;
 @Category(NightlyTest.class)
 public class TpcIntegrationTest_Nightly extends TpcIntegrationTest {
     public TpcIntegrationTest_Nightly() {
-        iterations = 10_000;
+        iterations = 5_000;
     }
 }

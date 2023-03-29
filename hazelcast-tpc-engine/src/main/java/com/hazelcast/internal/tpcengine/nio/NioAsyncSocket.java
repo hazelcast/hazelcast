@@ -42,6 +42,7 @@ import static com.hazelcast.internal.tpcengine.util.BufferUtil.upcast;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
+import static java.lang.Thread.currentThread;
 import static java.nio.channels.SelectionKey.OP_CONNECT;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
@@ -53,7 +54,7 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 public final class NioAsyncSocket extends AsyncSocket {
 
     private final NioAsyncSocketOptions options;
-    private final AtomicReference<Thread> flushThread = new AtomicReference<>();
+    private final AtomicReference<Thread> flushThread = new AtomicReference<>(currentThread());
     private final MpmcArrayQueue<IOBuffer> writeQueue;
     private final Handler handler;
     private final SocketChannel socketChannel;
@@ -75,7 +76,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     NioAsyncSocket(NioAsyncSocketBuilder builder) {
         super(builder.clientSide);
 
-        assert Thread.currentThread() == builder.reactor.eventloopThread();
+        assert currentThread() == builder.reactor.eventloopThread();
 
         try {
             this.reactor = builder.reactor;
@@ -111,7 +112,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     @Override
     public void setReadable(boolean readable) {
-        if (Thread.currentThread() == eventloopThread) {
+        if (currentThread() == eventloopThread) {
             setReadable0(readable);
         } else {
             CompletableFuture future = new CompletableFuture();
@@ -139,7 +140,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     @Override
     public boolean isReadable() {
-        if (Thread.currentThread() == eventloopThread) {
+        if (currentThread() == eventloopThread) {
             return isReadable0();
         } else {
             CompletableFuture<Boolean> future = new CompletableFuture<>();
@@ -160,8 +161,9 @@ public final class NioAsyncSocket extends AsyncSocket {
         return (key.interestOps() & OP_READ) != 0;
     }
 
+    @Override
     public void start() {
-        if (Thread.currentThread() == reactor.eventloopThread()) {
+        if (currentThread() == reactor.eventloopThread()) {
             start0();
         } else {
             CompletableFuture future = new CompletableFuture();
@@ -184,9 +186,13 @@ public final class NioAsyncSocket extends AsyncSocket {
         }
         started = true;
 
+        assert flushThread.get() == reactor.eventloopThread();
+
         if (!clientSide) {
             // on the server side we immediately start reading.
             key.interestOps(key.interestOps() | OP_READ);
+            // and on the server side we can immediately start sending
+            resetFlushed();
         }
     }
 
@@ -199,13 +205,9 @@ public final class NioAsyncSocket extends AsyncSocket {
         }
 
         CompletableFuture<Void> future = new CompletableFuture<>();
-        if (Thread.currentThread() == eventloopThread) {
+        if (currentThread() == eventloopThread) {
             connect0(address, future);
         } else {
-            if (reactor == null) {
-                throw new IllegalStateException("Can't connect, NioAsyncSocket isn't activated.");
-            }
-
             reactor.execute(() -> connect0(address, future));
         }
 
@@ -221,6 +223,9 @@ public final class NioAsyncSocket extends AsyncSocket {
             if (connecting) {
                 throw new IllegalStateException(this + " is already trying to connect");
             }
+
+            assert flushThread.get() == reactor.eventloopThread();
+
             connecting = true;
             connectFuture = future;
             key.interestOps(key.interestOps() | OP_CONNECT);
@@ -236,6 +241,9 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     private void onConnectFinished() throws IOException {
+        assert connecting;
+        assert flushThread.get() == reactor.eventloopThread();
+
         remoteAddress = socketChannel.getRemoteAddress();
         localAddress = socketChannel.getLocalAddress();
         if (logger.isInfoEnabled()) {
@@ -245,12 +253,15 @@ public final class NioAsyncSocket extends AsyncSocket {
         key.interestOps(key.interestOps() | OP_READ);
         connectFuture.complete(null);
         connectFuture = null;
+
+        // From this point on, the socket is willing to send data.
+        resetFlushed();
     }
 
     @SuppressWarnings("java:S1135")
     @Override
     public void flush() {
-        Thread currentThread = Thread.currentThread();
+        Thread currentThread = currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
             if (currentThread == eventloopThread) {
                 localTaskQueue.add(handler);
@@ -273,7 +284,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         flushThread.set(null);
 
         if (!writeQueue.isEmpty()) {
-            if (flushThread.compareAndSet(null, Thread.currentThread())) {
+            if (flushThread.compareAndSet(null, currentThread())) {
                 reactor.offer(handler);
             }
         }
@@ -299,7 +310,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     @Override
     public boolean unsafeWriteAndFlush(IOBuffer buf) {
         Thread currentFlushThread = flushThread.get();
-        Thread currentThread = Thread.currentThread();
+        Thread currentThread = currentThread();
 
         assert currentThread == eventloopThread;
 
@@ -396,17 +407,20 @@ public final class NioAsyncSocket extends AsyncSocket {
             //System.out.println(NioAsyncSocket.this + " bytes read: " + read);
 
             if (read == -1) {
-                throw new EOFException("Remote socket closed!");
-            } else {
-                metrics.incBytesRead(read);
-                upcast(receiveBuffer).flip();
-                readHandler.onRead(receiveBuffer);
-                compactOrClear(receiveBuffer);
+                throw new EOFException("Socket closed by peer");
             }
+
+            metrics.incBytesRead(read);
+            upcast(receiveBuffer).flip();
+            readHandler.onRead(receiveBuffer);
+            compactOrClear(receiveBuffer);
         }
 
         private void handleWrite() throws IOException {
-            assert flushThread.get() != null;
+            // typically this method is called with the flushThread being set.
+            // but in case of cancellation of the key, this method is also
+            // called without the flushThread being set.
+            // So we can't do an assert flushThread!=null.
 
             metrics.incWriteEvents();
 
@@ -439,8 +453,12 @@ public final class NioAsyncSocket extends AsyncSocket {
             }
         }
 
+        // Is called when side of the socket that initiates the connect
+        // gets the event that the connection is completed.
         private void handleConnect() {
             try {
+                assert flushThread.get() != null;
+
                 if (!socketChannel.finishConnect()) {
                     throw new IllegalStateException();
                 }

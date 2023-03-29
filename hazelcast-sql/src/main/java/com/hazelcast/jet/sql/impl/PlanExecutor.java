@@ -59,7 +59,6 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.schema.DataLinksResolver;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.TypeDefinitionColumn;
@@ -142,7 +141,6 @@ public class PlanExecutor {
 
     private final TableResolverImpl catalog;
     private final DataLinksResolver dataLinksCatalog;
-    private final SqlConnectorCache connectorCache;
     private final HazelcastInstance hazelcastInstance;
     private final NodeEngine nodeEngine;
     private final QueryResultRegistry resultRegistry;
@@ -156,14 +154,12 @@ public class PlanExecutor {
             NodeEngine nodeEngine,
             TableResolverImpl catalog,
             DataLinksResolver dataLinksResolver,
-            SqlConnectorCache connectorCache,
             QueryResultRegistry resultRegistry
     ) {
         this.nodeEngine = nodeEngine;
         this.hazelcastInstance = nodeEngine.getHazelcastInstance();
         this.catalog = catalog;
         this.dataLinksCatalog = dataLinksResolver;
-        this.connectorCache = connectorCache;
         this.resultRegistry = resultRegistry;
 
         logger = nodeEngine.getLogger(getClass());
@@ -189,7 +185,7 @@ public class PlanExecutor {
         boolean added = dataLinksCatalog.createDataLink(
                 new DataLinkCatalogEntry(
                         plan.name(),
-                        dlService.classForDataLinkType(plan.type()).getName(),
+                        plan.type(),
                         plan.shared(),
                         plan.options()),
                 plan.isReplace(),
