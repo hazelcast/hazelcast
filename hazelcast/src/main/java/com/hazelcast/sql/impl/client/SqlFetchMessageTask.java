@@ -25,8 +25,6 @@ import com.hazelcast.sql.impl.SqlInternalService;
 import java.security.AccessControlException;
 import java.security.Permission;
 
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
-
 /**
  * SQL query fetch task.
  */
