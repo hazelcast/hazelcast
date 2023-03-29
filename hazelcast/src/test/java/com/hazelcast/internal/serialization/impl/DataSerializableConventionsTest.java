@@ -247,14 +247,20 @@ public class DataSerializableConventionsTest {
      */
     @Test
     public void test_identifiedDataSerializables_areInstancesOfSameClass_whenConstructedFromFactory() throws Exception {
-        Set<Class<? extends DataSerializerHook>> dsHooks = REFLECTIONS.getSubTypesOf(DataSerializerHook.class);
+        Set<Class<? extends DataSerializerHook>> hookClasses = REFLECTIONS.getSubTypesOf(DataSerializerHook.class);
+        Set<DataSerializerHook> hooks = new HashSet<>();
         Map<Integer, DataSerializableFactory> factories = new HashMap<Integer, DataSerializableFactory>();
 
-        for (Class<? extends DataSerializerHook> hookClass : dsHooks) {
+        for (Class<? extends DataSerializerHook> hookClass : hookClasses) {
             DataSerializerHook dsHook = hookClass.newInstance();
             DataSerializableFactory factory = dsHook.createFactory();
             factories.put(dsHook.getFactoryId(), factory);
+            hooks.add(dsHook);
         }
+        for (DataSerializerHook hook : hooks) {
+            hook.afterFactoriesCreated(factories);
+        }
+
 
         Set<Class<? extends IdentifiedDataSerializable>> identifiedDataSerializables = getIDSConcreteClasses();
         for (Class<? extends IdentifiedDataSerializable> klass : identifiedDataSerializables) {
