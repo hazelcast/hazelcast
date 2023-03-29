@@ -431,7 +431,11 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                             windowPolicy,
                             0,
                             aggregateOperation,
-                            resultMapping));
+                            resultMapping,
+                            watermarkKeysAssigner
+                                    .getWatermarkedFieldsKey(rel)
+                                    .get(rel.timestampFieldIndex())
+                                    .getValue()));
             connectInput(rel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
             return vertex;
         } else {
@@ -451,7 +455,11 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                     Processors.combineToSlidingWindowP(
                             windowPolicy,
                             aggregateOperation,
-                            resultMapping));
+                            resultMapping,
+                            watermarkKeysAssigner
+                                    .getWatermarkedFieldsKey(rel)
+                                    .get(rel.timestampFieldIndex())
+                                    .getValue()));
 
             connectInput(rel.getInput(), vertex1, edge -> edge.partitioned(groupKeyFn));
             dag.edge(between(vertex1, vertex2).distributed().partitioned(entryKey()));

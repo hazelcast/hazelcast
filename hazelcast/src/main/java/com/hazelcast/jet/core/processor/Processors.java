@@ -437,6 +437,55 @@ public final class Processors {
     }
 
     /**
+     * Returns a supplier of processors for a vertex that aggregates events
+     * into a sliding window in a single stage (see the {@link Processors
+     * class Javadoc} for an explanation of aggregation stages). The vertex
+     * groups items by the grouping key (as obtained from the given
+     * key-extracting function) and by <em>frame</em>, which is a range of
+     * timestamps equal to the sliding step. It emits sliding window results
+     * labeled with the timestamp denoting the window's end time (the exclusive
+     * upper bound of the timestamps belonging to the window).
+     * <p>
+     * The vertex accepts input from one or more inbound edges. The type of
+     * items may be different on each edge. For each edge a separate key
+     * extracting function must be supplied and the aggregate operation must
+     * contain a separate accumulation function for each edge.
+     * <p>
+     * When the vertex receives a watermark with a given {@code wmVal}, it
+     * emits the result of aggregation for all the positions of the sliding
+     * window with {@code windowTimestamp <= wmVal}. It computes the window
+     * result by combining the partial results of the frames belonging to it
+     * and finally applying the {@code finish} aggregation primitive. After this
+     * it deletes from storage all the frames that trail behind the emitted
+     * windows. In the output there is one item per key per window position.
+     * <p>
+     * <i>Behavior on job restart</i><br>
+     * This processor saves its state to snapshot. After restart, it can
+     * continue accumulating where it left off.
+     * <p>
+     * After a restart in at-least-once mode, watermarks are allowed to go back
+     * in time. If such a watermark is received, some windows that were emitted
+     * in previous execution will be re-emitted. These windows might miss
+     * events as some of them had already been evicted before the snapshot was
+     * done in previous execution.
+     */
+    @Nonnull
+    public static <K, A, R, OUT> SupplierEx<Processor> aggregateToSlidingWindowP(
+            @Nonnull List<FunctionEx<?, ? extends K>> keyFns,
+            @Nonnull List<ToLongFunctionEx<?>> timestampFns,
+            @Nonnull TimestampKind timestampKind,
+            @Nonnull SlidingWindowPolicy winPolicy,
+            long earlyResultsPeriod,
+            @Nonnull AggregateOperation<A, ? extends R> aggrOp,
+            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn,
+            byte windowWatermarkKey
+    ) {
+        return aggregateByKeyAndWindowP(
+                keyFns, timestampFns, timestampKind, winPolicy, earlyResultsPeriod, aggrOp, mapToOutputFn, true,
+                windowWatermarkKey);
+    }
+
+    /**
      * Returns a supplier of processors for the first-stage vertex in a
      * two-stage sliding window aggregation setup (see the {@link Processors
      * class Javadoc} for an explanation of aggregation stages). The vertex

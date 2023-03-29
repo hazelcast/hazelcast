@@ -29,6 +29,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.DropLateItemsPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowAggregatePhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.UnionPhysicalRel;
@@ -245,6 +246,84 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
         assertThat(map).isNotEmpty();
         assertThat(map.get(0)).isNotNull();
         assertThat(map.get(0).getValue()).isEqualTo((byte) 0);
+    }
+
+    @Test
+    public void when_s2sJoinWithWindowAggregationIsPresent_then_keyWasPropagated() {
+        NodeEngine nodeEngine = getNodeEngine(instance());
+        TableResolverImpl resolver = new TableResolverImpl(
+                nodeEngine,
+                new RelationsStorage(nodeEngine),
+                new SqlConnectorCache(nodeEngine));
+
+        String stream = "s";
+        TestStreamSqlConnector.create(
+                instance().getSql(),
+                stream,
+                singletonList("a"),
+                singletonList(BIGINT),
+                row(1L)
+        );
+
+        assertInstanceOf(TestAbstractSqlConnector.TestTable.class, resolver.getTables().get(0));
+
+        HazelcastTable table = streamingTable(resolver.getTables().get(0), 1L);
+
+        String sql = "SELECT * FROM " +
+                "( SELECT window_end, AVG(a) AS price FROM " +
+                "    TABLE(HOP((SELECT * FROM TABLE(IMPOSE_ORDER(TABLE s, DESCRIPTOR(a), 1))), DESCRIPTOR(a), 4, 1))" +
+                "    GROUP BY window_end, a) s1" +
+                "  RIGHT JOIN " +
+                "( SELECT window_end, AVG(a) AS price FROM " +
+                "    TABLE(HOP((SELECT * FROM TABLE(IMPOSE_ORDER(TABLE s, DESCRIPTOR(a), 1))), DESCRIPTOR(a), 4, 1))" +
+                "    GROUP BY window_end, a) s2" +
+                " ON s1.window_end = s2.window_end";
+
+        PhysicalRel optPhysicalRel = optimizePhysical(sql, singletonList(QueryDataType.BIGINT), table).getPhysical();
+
+        assertPlan(optPhysicalRel, plan(
+                planRow(0, CalcPhysicalRel.class),
+                planRow(1, StreamToStreamJoinPhysicalRel.class),
+                planRow(2, SlidingWindowAggregatePhysicalRel.class),
+                planRow(3, CalcPhysicalRel.class),
+                planRow(4, FullScanPhysicalRel.class),
+                planRow(2, SlidingWindowAggregatePhysicalRel.class),
+                planRow(3, CalcPhysicalRel.class),
+                planRow(4, FullScanPhysicalRel.class)
+        ));
+
+        assertThat(OptUtils.isUnbounded(optPhysicalRel)).isTrue();
+        PhysicalRel finalOptRel = CalciteSqlOptimizer.postOptimizationRewrites(optPhysicalRel);
+
+        WatermarkKeysAssigner keysAssigner = new WatermarkKeysAssigner(finalOptRel);
+        keysAssigner.assignWatermarkKeys();
+
+        // Watermark key was propagated to StreamToStreamJoinPhysicalRel
+        Map<Integer, MutableByte> map = keysAssigner.getWatermarkedFieldsKey(finalOptRel);
+        assertThat(map).isNotNull();
+        assertThat(map).isNotEmpty();
+        assertThat(map.size()).isEqualTo(2);
+        assertThat(map.get(0)).isNotNull();
+        assertThat(map.get(0).getValue()).isEqualTo((byte) 0);
+        assertThat(map.get(2)).isNotNull();
+        assertThat(map.get(2).getValue()).isEqualTo((byte) 1);
+
+        // Test also checks watermark keys are different in left and right SlidingWindowAggregatePhysicalRel:
+        SlidingWindowAggregatePhysicalRel leftAgg = (SlidingWindowAggregatePhysicalRel) finalOptRel.getInput(0).getInput(0);
+        SlidingWindowAggregatePhysicalRel rightAgg = (SlidingWindowAggregatePhysicalRel) finalOptRel.getInput(0).getInput(1);
+        Map<Integer, MutableByte> leftAggMap = keysAssigner.getWatermarkedFieldsKey(leftAgg);
+        Map<Integer, MutableByte> rightAggMap = keysAssigner.getWatermarkedFieldsKey(rightAgg);
+
+        assertThat(leftAggMap).isNotNull();
+        assertThat(rightAggMap).isNotNull();
+
+        assertThat(leftAggMap.size()).isOne();
+        assertThat(rightAggMap.size()).isOne();
+
+        // Here we need to ensure that watermark keys are different.
+        // These keys are assigning in CreateTopLevelDagVisitor#onSlidingWindowAggregate
+        assertThat(leftAggMap.get(0).getValue()).isEqualTo((byte) 0);
+        assertThat(rightAggMap.get(0).getValue()).isEqualTo((byte) 1);
     }
 
     @Test
