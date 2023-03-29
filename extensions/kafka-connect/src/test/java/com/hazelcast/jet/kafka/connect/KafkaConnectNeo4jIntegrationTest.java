@@ -25,8 +25,6 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -42,7 +40,10 @@ import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Neo4jContainer;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.net.URL;
@@ -61,9 +62,12 @@ import static org.junit.Assert.fail;
 public class KafkaConnectNeo4jIntegrationTest extends JetTestSupport {
     @ClassRule
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectNeo4jIntegrationTest.class);
+
     public static final Neo4jContainer<?> container = new Neo4jContainer<>(DockerImageName.parse("neo4j:5.5.0"))
-            .withoutAuthentication();
-    private static final ILogger LOGGER = Logger.getLogger(KafkaConnectNeo4jIntegrationTest.class);
+            .withoutAuthentication()
+            .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"));
+
     private static final int ITEM_COUNT = 1_000;
 
     //This is the last JDK8-compatible version of the Neo4j connector
