@@ -217,17 +217,18 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
 
         HazelcastTable table = streamingTable(resolver.getTables().get(0), 1L);
 
-        String sql = " SELECT * FROM TABLE(IMPOSE_ORDER((SELECT * FROM s1), DESCRIPTOR(a), 1)) "
-                + " JOIN "
-                + "   (SELECT * FROM TABLE(IMPOSE_ORDER((SELECT * FROM s2), DESCRIPTOR(a), 1))) " +
+        String sql = "SELECT * FROM " +
+                "(SELECT * FROM TABLE(IMPOSE_ORDER(TABLE s, DESCRIPTOR(a), 1))) s1 " +
+                " INNER JOIN " +
+                "(SELECT * FROM TABLE(IMPOSE_ORDER(TABLE s, DESCRIPTOR(a), 1))) s2 " +
                 " ON s1.a = s2.a";
 
         PhysicalRel optPhysicalRel = optimizePhysical(sql, singletonList(QueryDataType.BIGINT), table).getPhysical();
 
         assertPlan(optPhysicalRel, plan(
                 planRow(0, StreamToStreamJoinPhysicalRel.class),
-                planRow(2, FullScanPhysicalRel.class),
-                planRow(2, FullScanPhysicalRel.class)
+                planRow(1, FullScanPhysicalRel.class),
+                planRow(1, FullScanPhysicalRel.class)
         ));
 
         assertThat(OptUtils.isUnbounded(optPhysicalRel)).isTrue();
