@@ -43,8 +43,8 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.PacketFiltersUtil;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.Repeat;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -260,7 +260,7 @@ public class IndeterminateSnapshotTest {
      * and sometimes it is hard to get correct partition assignment.
      */
     // this test needs mock network
-    @Category({QuickTest.class, ParallelJVMTest.class})
+    @Category({SlowTest.class, ParallelJVMTest.class})
     @RunWith(HazelcastSerialClassRunner.class)
     public static class ReplicationBreakingTests extends IndeterminateSnapshotTestBase {
         // the instance indexes which store the primary and backup copy of the SnapshotValidationRecord
@@ -701,7 +701,7 @@ public class IndeterminateSnapshotTest {
      * test more scenarios. However, tests terminating nodes are also useful as
      * they resemble reality more.
      */
-    @Category({QuickTest.class, ParallelJVMTest.class})
+    @Category({SlowTest.class, ParallelJVMTest.class})
     @RunWith(HazelcastParametrizedRunner.class)
     @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
     public static class SnapshotFailureTests extends IndeterminateSnapshotTestBase {
