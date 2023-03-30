@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.sql.impl.SqlInternalService;
+import com.hazelcast.sql.impl.InternalSqlService;
 
 import java.security.AccessControlException;
 import java.security.Permission;
@@ -36,7 +36,7 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.Re
 
     @Override
     protected Object call() {
-        SqlInternalService service = nodeEngine.getSqlService().getInternalService();
+        InternalSqlService service = nodeEngine.getSqlService();
 
         return service.getClientStateRegistry().fetch(
             parameters.queryId,
@@ -86,7 +86,7 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.Re
 
     @Override
     public String getServiceName() {
-        return SqlInternalService.SERVICE_NAME;
+        return InternalSqlService.SERVICE_NAME;
     }
 
     @Override
