@@ -20,18 +20,28 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
+import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.prepare.Prepare;
+import org.apache.calcite.prepare.Prepare.CatalogReader;
+import org.apache.calcite.rel.AbstractRelNode;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.TableModify;
+import org.apache.calcite.rel.RelWriter;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.SqlKind;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
-import static org.apache.calcite.rel.core.TableModify.Operation.UPDATE;
+public class UpdatePhysicalRel extends AbstractRelNode implements PhysicalRel {
 
-public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
-
+    private final RelOptTable table;
+    private final CatalogReader catalogReader;
+    private final RelNode input;
+    private final List<String> updateColumnList;
+    private final List<RexNode> sourceExpressionList;
+    private final boolean flattened;
     private final RexNode predicate;
 
     UpdatePhysicalRel(
@@ -45,7 +55,13 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
             boolean flattened,
             RexNode predicate
     ) {
-        super(cluster, traitSet, table, catalogReader, input, UPDATE, updateColumnList, sourceExpressionList, flattened);
+        super(cluster, traitSet);
+        this.table = table;
+        this.catalogReader = catalogReader;
+        this.input = input;
+        this.updateColumnList = updateColumnList;
+        this.sourceExpressionList = sourceExpressionList;
+        this.flattened = flattened;
         this.predicate = predicate;
     }
 
@@ -54,8 +70,39 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
         throw new UnsupportedOperationException();
     }
 
+    @Nullable
+    @Override
+    public RelOptTable getTable() {
+        return table;
+    }
+
+    public CatalogReader getCatalogReader() {
+        return catalogReader;
+    }
+
+    public RelNode getInput() {
+        return input;
+    }
+
+    public List<String> getUpdateColumnList() {
+        return updateColumnList;
+    }
+
+    public List<RexNode> getSourceExpressionList() {
+        return sourceExpressionList;
+    }
+
+    public boolean isFlattened() {
+        return flattened;
+    }
+
     public RexNode getPredicate() {
         return predicate;
+    }
+
+    @Override
+    public RelDataType deriveRowType() {
+        return RelOptUtil.createDmlRowType(SqlKind.UPDATE, getCluster().getTypeFactory());
     }
 
     @Override
@@ -76,5 +123,14 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
                 isFlattened(),
                 predicate
         );
+    }
+
+    @Override public RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw)
+                .item("table", table.getQualifiedName())
+                .item("updateColumnList", updateColumnList)
+                .item("sourceExpressionList", sourceExpressionList)
+                .item("flattened", flattened)
+                .itemIf("predicate", predicate, predicate != null);
     }
 }

@@ -178,7 +178,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     @Override
     public Vertex onUpdate(UpdatePhysicalRel rel) {
         // currently it's not possible to have an unbounded UPDATE, but if we do, we'd need this calculation
-        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate((PhysicalRel) rel.getInput());
+        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(rel);
 
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
 
@@ -194,7 +194,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     @Override
     public Vertex onDelete(DeletePhysicalRel rel) {
         // currently it's not possible to have a unbounded DELETE, but if we do, we'd need this calculation
-        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate((PhysicalRel) rel.getInput());
+        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(rel);
 
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
+import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
@@ -38,7 +39,9 @@ import org.immutables.value.Value;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.jet.sql.impl.connector.HazelcastRexNode.wrap;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A rule to match a TableModify[operation=update], with a TableScan as input.
@@ -92,16 +95,18 @@ class UpdateWithScanLogicalRule extends RelRule<RelRule.Config> {
         }
 
         HazelcastTable hzTable = OptUtils.extractHazelcastTable(scan);
-        if (getJetSqlConnector(hzTable.getTarget()).dmlSupportsPredicates()) {
+        SqlConnector connector = getJetSqlConnector(hzTable.getTarget());
+        if (connector.dmlSupportsPredicates()
+                && (hzTable.getFilter() == null || connector.supportsExpression(wrap(hzTable.getFilter())))) {
             // push the predicate down to the UpdateLogicalRel and remove the scan
             UpdateLogicalRel rel = new UpdateLogicalRel(
                     update.getCluster(),
                     OptUtils.toLogicalConvention(update.getTraitSet()),
                     update.getTable(),
                     update.getCatalogReader(),
-                    OptUtils.toLogicalInput(update.getInput()),
-                    update.getUpdateColumnList(),
-                    update.getSourceExpressionList(),
+                    null,
+                    requireNonNull(update.getUpdateColumnList()),
+                    requireNonNull(update.getSourceExpressionList()),
                     update.isFlattened(),
                     hzTable.getFilter()
             );
@@ -117,8 +122,8 @@ class UpdateWithScanLogicalRule extends RelRule<RelRule.Config> {
                 update.getTable(),
                 update.getCatalogReader(),
                 rewriteScan(scan),
-                update.getUpdateColumnList(),
-                update.getSourceExpressionList(),
+                requireNonNull(update.getUpdateColumnList()),
+                requireNonNull(update.getSourceExpressionList()),
                 update.isFlattened(),
                 null
         );

@@ -127,6 +127,9 @@ public final class OptUtils {
      * @return Logical input.
      */
     public static RelNode toPhysicalInput(RelNode rel) {
+        if (rel == null) {
+            return null;
+        }
         return RelOptRule.convert(rel, toPhysicalConvention(rel.getTraitSet()));
     }
 

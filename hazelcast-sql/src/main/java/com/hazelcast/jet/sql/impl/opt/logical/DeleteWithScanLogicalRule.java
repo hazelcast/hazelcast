@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
+import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
@@ -28,10 +29,12 @@ import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rex.RexNode;
 import org.immutables.value.Value;
 
+import static com.hazelcast.jet.sql.impl.connector.HazelcastRexNode.wrap;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 
 /**
- * A rule that matches a TableModify[operation=delete], _with_ a TableScan as an input
+ * A rule that matches a TableModify[operation=delete], _with_ a {@link
+ * TableScan} as an input.
  */
 @Value.Enclosing
 class DeleteWithScanLogicalRule extends RelRule<RelRule.Config> {
@@ -80,14 +83,16 @@ class DeleteWithScanLogicalRule extends RelRule<RelRule.Config> {
         }
 
         HazelcastTable hzTable = OptUtils.extractHazelcastTable(scan);
-        if (getJetSqlConnector(hzTable.getTarget()).dmlSupportsPredicates()) {
+        SqlConnector connector = getJetSqlConnector(hzTable.getTarget());
+        if (connector.dmlSupportsPredicates()
+                && (hzTable.getFilter() == null || connector.supportsExpression(wrap(hzTable.getFilter())))) {
             // push the predicate down to the DeleteLogicalRel and remove the scan
             DeleteLogicalRel rel = new DeleteLogicalRel(
                     delete.getCluster(),
                     OptUtils.toLogicalConvention(delete.getTraitSet()),
                     delete.getTable(),
                     delete.getCatalogReader(),
-                    OptUtils.toLogicalInput(delete.getInput()),
+                    null,
                     delete.isFlattened(),
                     hzTable.getFilter()
             );
