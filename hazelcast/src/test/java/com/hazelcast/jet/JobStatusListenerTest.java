@@ -397,7 +397,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     static class FiniteStreamSource {
         final long periodNanos;
         final long maxSequence;
-        long emitSchedule = Long.MIN_VALUE;
+        long emitSchedule;
         long sequence;
 
         FiniteStreamSource(long period, TimeUnit unit, long maxSequence) {
@@ -407,6 +407,9 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
 
         void fillBuffer(SourceBuffer<Long> buf) {
             long nowNs = System.nanoTime();
+            if (emitSchedule == 0) {
+                emitSchedule = nowNs;
+            }
             if (nowNs >= emitSchedule) {
                 buf.add(sequence++);
                 emitSchedule += periodNanos;
