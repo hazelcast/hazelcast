@@ -19,11 +19,11 @@ package com.hazelcast.jet.sql.impl.processors;
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ToLongFunctionEx;
-import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -47,7 +47,6 @@ import java.util.Map;
 import static com.hazelcast.jet.core.test.TestSupport.in;
 import static com.hazelcast.jet.core.test.TestSupport.out;
 import static com.hazelcast.jet.core.test.TestSupport.processorAssertion;
-import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
 import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinPInnerTest.SAME_ITEMS_ANY_ORDER_EQUIVALENT_WMS;
 import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinPInnerTest.createConditionFromPostponeTimeMap;
 import static java.util.Collections.emptyMap;
@@ -57,7 +56,7 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-public class StreamToStreamJoinPOuterTest extends SimpleTestInClusterSupport {
+public class StreamToStreamJoinPOuterTest extends SqlTestSupport {
 
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));

@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.expression.math;
 
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.math.DoubleFunction;
@@ -161,7 +161,7 @@ public class DoubleFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testSerialization() {
         DoubleFunction original = DoubleFunction.create(ConstantExpression.create(1d, QueryDataType.DOUBLE), COS);
-        DoubleFunction restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_DOUBLE);
+        DoubleFunction restored = serializeAndCheck(original, JetSqlSerializerHook.EXPRESSION_DOUBLE);
 
         checkEquals(original, restored, true);
     }
