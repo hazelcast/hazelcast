@@ -53,6 +53,7 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED_EXPORTING_SNAPSHOT;
+import static com.hazelcast.jet.impl.AbstractJobProxy.cannotAddStatusListener;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.jobNameAndExecutionId;
@@ -189,7 +190,7 @@ public class MasterContext {
         lock();
         try {
             if (jobStatus.isTerminal()) {
-                throw new IllegalStateException("Cannot add status listener to a " + jobStatus + " job");
+                throw cannotAddStatusListener(jobStatus);
             }
             return jobEventService.handleAllRegistrations(jobId, registration).getId();
         } finally {

@@ -306,8 +306,8 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         try {
             return doAddStatusListener(listener);
         } catch (JobNotFoundException ignored) {
-            throw new IllegalStateException("Cannot add status listener to a "
-                    + (future.isCompletedExceptionally() ? FAILED : COMPLETED) + " job");
+            throw cannotAddStatusListener(
+                    future.isCompletedExceptionally() ? FAILED : COMPLETED);
         }
     }
 
@@ -433,6 +433,10 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         if (isLightJob()) {
             throw new UnsupportedOperationException("not supported for light jobs: " + msg);
         }
+    }
+
+    public static IllegalStateException cannotAddStatusListener(JobStatus status) {
+        return new IllegalStateException("Cannot add status listener to a " + status + " job");
     }
 
     private abstract class CallbackBase implements BiConsumer<Void, Throwable> {

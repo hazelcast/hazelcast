@@ -70,6 +70,7 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.impl.AbstractJobProxy.cannotAddStatusListener;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createExecutionPlans;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
@@ -232,8 +233,8 @@ public final class LightMasterContext {
         lock.lock();
         try {
             if (jobCompletionFuture.isDone()) {
-                throw new IllegalStateException("Cannot add status listener to a "
-                        + (jobCompletionFuture.isCompletedExceptionally() ? FAILED : COMPLETED) + " job");
+                throw cannotAddStatusListener(
+                        jobCompletionFuture.isCompletedExceptionally() ? FAILED : COMPLETED);
             }
             return jobEventService.handleAllRegistrations(jobId, registration).getId();
         } finally {

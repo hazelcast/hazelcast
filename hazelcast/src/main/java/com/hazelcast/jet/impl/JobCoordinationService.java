@@ -115,6 +115,7 @@ import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.impl.AbstractJobProxy.cannotAddStatusListener;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.COORDINATOR;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
@@ -859,8 +860,7 @@ public class JobCoordinationService {
         return callWithJob(jobId,
                 masterContext -> masterContext.addStatusListener(registration),
                 jobResult -> {
-                    throw new IllegalStateException("Cannot add status listener to a "
-                            + jobResult.getJobStatus() + " job");
+                    throw cannotAddStatusListener(jobResult.getJobStatus());
                 },
                 jobRecord -> {
                     JobEventService jobEventService = nodeEngine.getService(JobEventService.SERVICE_NAME);
