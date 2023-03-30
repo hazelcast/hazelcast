@@ -116,7 +116,7 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
         getNodeEngineImpl(instance()).getDataLinkService().createConfigDataLink(
                 new DataLinkConfig()
                         .setName("c_dl")
-                        .setClassName(type)
+                        .setType(type)
         );
 
         // create SQL-originated data link

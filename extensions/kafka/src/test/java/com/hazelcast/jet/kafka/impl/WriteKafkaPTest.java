@@ -30,7 +30,6 @@ import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.impl.connector.SinkStressTestUtil;
-import com.hazelcast.jet.kafka.KafkaDataLink;
 import com.hazelcast.jet.kafka.KafkaSinks;
 import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -124,7 +123,7 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
     public void testWriteToTopicWithDataLink() {
         instance().getConfig().addDataLinkConfig(
                 new DataLinkConfig("kafka-data-link")
-                        .setClassName(KafkaDataLink.class.getName())
+                        .setType("Kafka")
                         .setProperties(properties)
         );
         Pipeline p = Pipeline.create();

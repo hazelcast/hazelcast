@@ -78,7 +78,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         config.getCacheConfig(JOURNALED_CACHE_PREFIX + '*').getEventJournalConfig().setEnabled(true);
 
         DataLinkConfig dataLinkConfig = new DataLinkConfig(HZ_CLIENT_EXTERNAL_REF);
-        dataLinkConfig.setClassName(HazelcastDataLink.class.getName());
+        dataLinkConfig.setType("HZ");
 
         // Read XML and set as DataLinkConfig
         String xmlString = readClusterConfig("hazelcast-client-test-external.xml", clusterName);

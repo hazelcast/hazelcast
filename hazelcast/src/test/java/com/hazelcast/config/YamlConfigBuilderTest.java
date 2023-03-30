@@ -4547,13 +4547,13 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "  data-link:\n"
                 + "    mysql-database:\n"
-                + "      class-name: com.hazelcast.datalink.JdbcDataLink\n"
+                + "      type: jdbc\n"
                 + "      properties:\n"
                 + "        jdbcUrl: jdbc:mysql://dummy:3306\n"
                 + "        some.property: dummy-value\n"
                 + "      shared: true\n"
                 + "    other-database:\n"
-                + "      class-name: com.hazelcast.datalink.OtherDataLink\n";
+                + "      type: other\n";
 
         Config config = new InMemoryYamlConfig(yaml);
 
@@ -4562,7 +4562,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertThat(dataLinkConfigs).hasSize(2);
         assertThat(dataLinkConfigs).containsKey("mysql-database");
         DataLinkConfig mysqlDataLinkConfig = dataLinkConfigs.get("mysql-database");
-        assertThat(mysqlDataLinkConfig.getClassName()).isEqualTo("com.hazelcast.datalink.JdbcDataLink");
+        assertThat(mysqlDataLinkConfig.getType()).isEqualTo("jdbc");
         assertThat(mysqlDataLinkConfig.getName()).isEqualTo("mysql-database");
         assertThat(mysqlDataLinkConfig.isShared()).isTrue();
         assertThat(mysqlDataLinkConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
@@ -4570,7 +4570,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertThat(dataLinkConfigs).containsKey("other-database");
         DataLinkConfig otherDataLinkConfig = dataLinkConfigs.get("other-database");
-        assertThat(otherDataLinkConfig.getClassName()).isEqualTo("com.hazelcast.datalink.OtherDataLink");
+        assertThat(otherDataLinkConfig.getType()).isEqualTo("other");
     }
 
     @Override

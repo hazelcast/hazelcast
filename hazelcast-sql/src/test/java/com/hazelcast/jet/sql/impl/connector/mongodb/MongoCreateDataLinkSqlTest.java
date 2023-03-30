@@ -34,6 +34,6 @@ public class MongoCreateDataLinkSqlTest extends MongoSqlTest {
                 instance()).getDataLinkService().getAndRetainDataLink(dlName, MongoDataLink.class);
 
         assertThat(dataLink).isNotNull();
-        assertThat(dataLink.getConfig().getClassName()).isEqualTo("MongoDB");
+        assertThat(dataLink.getConfig().getType()).isEqualTo("MongoDB");
     }
 }

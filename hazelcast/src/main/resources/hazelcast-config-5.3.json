@@ -5023,13 +5023,13 @@
             "type": "string",
             "description": "Name of the data link configuration."
           },
-          "class-name": {
+          "type": {
             "type": "string",
-            "description": "The name of the class implementing DataLink."
+            "description": "The type of the DataLink."
           },
           "shared": {
             "type": "boolean",
-            "description": "If true reuse an instance of JDBC pool or any other storage driver (e.g. kafka client) between jobs or instances of MapStore."
+            "description": "true if an instance of the data link will be shared. Depending on the implementation of the DataLink the shared instance may be single a thread-safe instance, or not thread-safe, but a pooled instance; false when on each usage a new instance of the underlying resource should be created.The default is true."
           },
           "properties": {
             "description": "The \"properties\" used for configuring data link",

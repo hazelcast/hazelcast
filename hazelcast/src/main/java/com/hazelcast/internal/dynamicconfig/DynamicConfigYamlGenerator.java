@@ -675,8 +675,8 @@ public class DynamicConfigYamlGenerator {
         for (DataLinkConfig dataLinkConfig : config.getDataLinkConfigs().values()) {
             Map<String, Object> subConfigAsMap = new LinkedHashMap<>();
 
-            addNonNullToMap(subConfigAsMap, "class-name",
-                    dataLinkConfig.getClassName());
+            addNonNullToMap(subConfigAsMap, "type",
+                    dataLinkConfig.getType());
             addNonNullToMap(subConfigAsMap, "shared",
                     dataLinkConfig.isShared());
             addNonNullToMap(subConfigAsMap, "properties",

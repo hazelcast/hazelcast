@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.datalink;
+package com.hazelcast.datalink.impl;
 
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datalink.impl.ConnectionDelegate;
+import com.hazelcast.datalink.DataLink;
+import com.hazelcast.datalink.DataLinkBase;
+import com.hazelcast.datalink.DataLinkResource;
 import com.hazelcast.spi.annotation.Beta;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -36,8 +38,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 /**
- * TODO move this class to impl package when changing {@link DataLinkConfig#className} to type
- * <p>
  * {@link DataLink} implementation for JDBC.
  * <p>
  * Implementation is based on {@link HikariDataSource}. {@link DataLinkConfig#getProperties()} are passed directly

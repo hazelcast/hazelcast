@@ -19,7 +19,6 @@ package com.hazelcast.jet.kafka.impl;
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.impl.connector.SinkStressTestUtil;
-import com.hazelcast.jet.kafka.KafkaDataLink;
 import com.hazelcast.jet.kafka.KafkaSinks;
 import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.jet.pipeline.Sink;
@@ -116,7 +115,7 @@ public class KafkaDataLinkStressTest extends SimpleTestInClusterSupport {
         instance().getConfig().addDataLinkConfig(
                 new DataLinkConfig(dataLinkName)
                         .setShared(shared)
-                        .setClassName(KafkaDataLink.class.getName())
+                        .setType("Kafka")
                         .setProperties(properties)
         );
     }

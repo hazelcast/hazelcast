@@ -16,7 +16,7 @@
 
 package com.hazelcast.mapstore;
 
-import com.hazelcast.datalink.JdbcDataLink;
+import com.hazelcast.datalink.impl.JdbcDataLink;
 import com.hazelcast.map.MapLoaderLifecycleSupport;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;

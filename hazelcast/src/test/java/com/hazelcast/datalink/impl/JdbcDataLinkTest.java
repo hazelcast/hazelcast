@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.datalink;
+package com.hazelcast.datalink.impl;
 
 import com.hazelcast.config.DataLinkConfig;
-import com.hazelcast.datalink.impl.ConnectionDelegate;
+import com.hazelcast.datalink.DataLinkResource;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -53,9 +53,9 @@ public class JdbcDataLinkTest {
             .setProperty("jdbcUrl", JDBC_URL_SHARED)
             .setShared(true);
 
-    private static final DataLinkConfig NOT_SHARED_DATA_LINK_CONFIG = new DataLinkConfig()
+    private static final DataLinkConfig SINGLE_USE_DATA_LINK_CONFIG = new DataLinkConfig()
             .setName(TEST_CONFIG_NAME)
-            .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataLinkTest.class.getSimpleName() + "_not_shared")
+            .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataLinkTest.class.getSimpleName() + "_single_use")
             .setShared(false);
 
     Connection connection1;
@@ -142,7 +142,7 @@ public class JdbcDataLinkTest {
 
     @Test
     public void should_return_h2_jdbc_connection_when_NOT_shared() throws Exception {
-        jdbcDataLink = new JdbcDataLink(NOT_SHARED_DATA_LINK_CONFIG);
+        jdbcDataLink = new JdbcDataLink(SINGLE_USE_DATA_LINK_CONFIG);
 
         try (Connection connection = jdbcDataLink.getConnection()) {
             assertThat(connection).isInstanceOf(JdbcConnection.class);
