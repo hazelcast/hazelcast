@@ -18,6 +18,7 @@ package com.hazelcast.datalink.impl.hazelcastdatalink;
 
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.util.StringUtil;
 
 import static com.hazelcast.datalink.HazelcastDataLink.CLIENT_XML;
 import static com.hazelcast.datalink.HazelcastDataLink.CLIENT_XML_PATH;
@@ -49,9 +50,6 @@ public class HazelcastDataLinkConfigValidator {
     }
 
     private boolean isSetAfterTrim(String s) {
-        if (s == null) {
-            return false;
-        }
-        return !s.trim().isEmpty();
+        return !StringUtil.isNullOrEmptyAfterTrim(s);
     }
 }
