@@ -25,6 +25,7 @@ import org.junit.Test;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 
+import static com.hazelcast.instance.impl.BootstrappedInstanceProxyFactory.createWithMemberJetProxy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -43,7 +44,7 @@ public class MemberExecuteJarTest {
         when(abstractJetInstance.getHazelcastInstance()).thenReturn(hazelcastInstance);
 
         // Parameter for test
-        BootstrappedInstanceProxy instanceProxy = BootstrappedInstanceProxy.createWithJetProxy(hazelcastInstance);
+        BootstrappedInstanceProxy instanceProxy = createWithMemberJetProxy(hazelcastInstance);
 
         // Parameter for test. Empty main method
         MainMethodFinder mainMethodFinder = new MainMethodFinder();
@@ -65,7 +66,7 @@ public class MemberExecuteJarTest {
         );
 
         BootstrappedJetProxy bootstrappedJetProxy = instanceProxy.getJet();
-        ExecuteJobParameters parameters = bootstrappedJetProxy.getThreadLocalParameters();
+        ExecuteJobParameters parameters = bootstrappedJetProxy.getExecuteJobParameters();
 
         assertThat(parameters.getJarPath()).isEqualTo(jarPath);
         assertThat(parameters.getSnapshotName()).isEqualTo(snapshotName);

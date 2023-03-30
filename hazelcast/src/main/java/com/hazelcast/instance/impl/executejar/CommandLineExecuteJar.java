@@ -43,7 +43,7 @@ import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
 public class CommandLineExecuteJar {
 
-    private static final ILogger LOGGER = Logger.getLogger(CommandLineExecuteJar.class.getName());
+    private static final ILogger LOGGER = Logger.getLogger(CommandLineExecuteJar.class);
 
     // The number of attempts to check if job is starting
     private static final int JOB_START_CHECK_ATTEMPTS = 10;
@@ -92,7 +92,6 @@ public class CommandLineExecuteJar {
             LOGGER.severe("Exception caught while executing the jar :", exception);
             throw exception;
         } finally {
-            instanceProxy.removeThreadLocalParameters();
             try {
                 instanceProxy.shutdown();
             } catch (Exception exception) {
@@ -108,12 +107,16 @@ public class CommandLineExecuteJar {
     private void invokeMain(BootstrappedInstanceProxy instanceProxy, ExecuteJobParameters executeJobParameters,
                             Method mainMethod, List<String> args)
             throws IllegalAccessException, InvocationTargetException {
-        instanceProxy.setThreadLocalParameters(executeJobParameters);
+        try {
+            instanceProxy.setExecuteJobParameters(executeJobParameters);
 
-        String[] jobArgs = args.toArray(new String[0]);
+            String[] jobArgs = args.toArray(new String[0]);
 
-        // upcast args to Object, so it's passed as a single array-typed argument
-        mainMethod.invoke(null, (Object) jobArgs);
+            // upcast args to Object, so it's passed as a single array-typed argument
+            mainMethod.invoke(null, (Object) jobArgs);
+        } finally {
+            instanceProxy.removeExecuteJobParameters();
+        }
     }
 
     private void awaitJobsStartedByJar(BootstrappedInstanceProxy instanceProxy) {

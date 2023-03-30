@@ -41,60 +41,54 @@ import java.util.Map;
 
 /**
  * This class is a stateful proxy that delegates calls to given JetService.
- * The state is about running a jet job, and it stored in a ThreadLocal object
+ * The state is about running a jet job
  */
 @SuppressWarnings({"checkstyle:methodcount"})
-public class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
-    private final AbstractJetInstance<M> jet;
-    private final ThreadLocal<ExecuteJobParameters> executeJobParametersThreadLocal =
-            ThreadLocal.withInitial(ExecuteJobParameters::new);
+public abstract class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
+    private final AbstractJetInstance<M> jetInstance;
 
-    BootstrappedJetProxy(@Nonnull JetService jet) {
-        super(((AbstractJetInstance) jet).getHazelcastInstance());
-        this.jet = (AbstractJetInstance<M>) jet;
+    protected BootstrappedJetProxy(@Nonnull JetService jetService) {
+        super(((AbstractJetInstance) jetService).getHazelcastInstance());
+        this.jetInstance = (AbstractJetInstance<M>) jetService;
     }
 
-    public ExecuteJobParameters getThreadLocalParameters() {
-        return executeJobParametersThreadLocal.get();
-    }
+    public abstract ExecuteJobParameters getExecuteJobParameters();
 
-    public void setThreadLocalParameters(ExecuteJobParameters parameters) {
-        executeJobParametersThreadLocal.set(parameters);
-    }
+    public abstract void setExecuteJobParameters(ExecuteJobParameters executeJobParameters);
 
-    public void removeThreadLocalParameters() {
-        executeJobParametersThreadLocal.remove();
+    public void removeExecuteJobParameters() {
+        // empty
     }
 
     @Nonnull
     @Override
     public String getName() {
-        return jet.getName();
+        return jetInstance.getName();
     }
 
     @Nonnull
     @Override
     public HazelcastInstance getHazelcastInstance() {
-        return jet.getHazelcastInstance();
+        return jetInstance.getHazelcastInstance();
     }
 
     @Nonnull
     @Override
     public Cluster getCluster() {
-        return jet.getCluster();
+        return jetInstance.getCluster();
     }
 
     @Nonnull
     @Override
     public JetConfig getConfig() {
-        return jet.getConfig();
+        return jetInstance.getConfig();
     }
 
     @Nonnull
     @Override
     public Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
         updateJobConfig(config);
-        Job job = jet.newJob(pipeline, config);
+        Job job = jetInstance.newJob(pipeline, config);
         addToSubmittedJobs(job);
         return job;
     }
@@ -103,7 +97,7 @@ public class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
     @Override
     public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
         updateJobConfig(config);
-        Job job = jet.newJob(dag, config);
+        Job job = jetInstance.newJob(dag, config);
         addToSubmittedJobs(job);
         return job;
     }
@@ -112,7 +106,7 @@ public class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
     @Override
     public Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
         updateJobConfig(config);
-        Job job = jet.newJobIfAbsent(pipeline, config);
+        Job job = jetInstance.newJobIfAbsent(pipeline, config);
         addToSubmittedJobs(job);
         return job;
     }
@@ -121,7 +115,7 @@ public class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
     @Override
     public Job newJobIfAbsent(@Nonnull DAG dag, @Nonnull JobConfig config) {
         updateJobConfig(config);
-        Job job = jet.newJobIfAbsent(dag, config);
+        Job job = jetInstance.newJobIfAbsent(dag, config);
         addToSubmittedJobs(job);
         return job;
     }
@@ -129,19 +123,19 @@ public class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
     @Nonnull
     @Override
     public List<Job> getJobs(@Nonnull String name) {
-        return jet.getJobs(name);
+        return jetInstance.getJobs(name);
     }
 
     @Nonnull
     @Override
     public <K, V> IMap<K, V> getMap(@Nonnull String name) {
-        return jet.getMap(name);
+        return jetInstance.getMap(name);
     }
 
     @Nonnull
     @Override
     public <K, V> ReplicatedMap<K, V> getReplicatedMap(@Nonnull String name) {
-        return jet.getReplicatedMap(name);
+        return jetInstance.getReplicatedMap(name);
     }
 
 
@@ -150,68 +144,68 @@ public class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
     @Nonnull
     @Override
     public JetCacheManager getCacheManager() {
-        return jet.getCacheManager();
+        return jetInstance.getCacheManager();
     }
 
     @Nonnull
     @Override
     public <E> IList<E> getList(@Nonnull String name) {
-        return jet.getList(name);
+        return jetInstance.getList(name);
     }
 
     @Nonnull
     @Override
     public <T> ITopic<T> getReliableTopic(@Nonnull String name) {
-        return jet.getReliableTopic(name);
+        return jetInstance.getReliableTopic(name);
     }
 
     @Nonnull
     @Override
     public <T> Observable<T> getObservable(@Nonnull String name) {
-        return jet.getObservable(name);
+        return jetInstance.getObservable(name);
     }
 
     @Override
     public void shutdown() {
-        jet.shutdown();
+        jetInstance.shutdown();
     }
 
     @Override
     public boolean existsDistributedObject(@Nonnull String serviceName, @Nonnull String objectName) {
-        return jet.existsDistributedObject(serviceName, objectName);
+        return jetInstance.existsDistributedObject(serviceName, objectName);
     }
 
     @Override
     public ILogger getLogger() {
-        return jet.getLogger();
+        return jetInstance.getLogger();
     }
 
     @Override
     public Job newJobProxy(long jobId, M lightJobCoordinator) {
-        return jet.newJobProxy(jobId, lightJobCoordinator);
+        return jetInstance.newJobProxy(jobId, lightJobCoordinator);
     }
 
     @Override
     public Job newJobProxy(long jobId, boolean isLightJob, @Nonnull Object jobDefinition, @Nonnull JobConfig config) {
-        return jet.newJobProxy(jobId, isLightJob, jobDefinition, config);
+        return jetInstance.newJobProxy(jobId, isLightJob, jobDefinition, config);
     }
 
     @Override
     public M getMasterId() {
-        return jet.getMasterId();
+        return jetInstance.getMasterId();
     }
 
     @Override
     public Map<M, GetJobIdsOperation.GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId) {
-        return jet.getJobsInt(onlyName, onlyJobId);
+        return jetInstance.getJobsInt(onlyName, onlyJobId);
     }
 
     private void addToSubmittedJobs(@Nonnull Job job) {
-        getThreadLocalParameters().addSubmittedJob(job);
+        getExecuteJobParameters().addSubmittedJob(job);
     }
 
     private void updateJobConfig(JobConfig jobConfig) {
-        ExecuteJobParameters jobParameters = getThreadLocalParameters();
+        ExecuteJobParameters jobParameters = getExecuteJobParameters();
 
         if (jobParameters.hasJarPath()) {
             jobConfig.addJar(jobParameters.getJarPath());

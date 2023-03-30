@@ -18,8 +18,8 @@ package com.hazelcast.instance.impl.executejar;
 
 import com.hazelcast.jet.Job;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ExecuteJobParameters {
 
@@ -29,7 +29,7 @@ public class ExecuteJobParameters {
 
     private String jobName;
 
-    private final ArrayList<Job> submittedJobs = new ArrayList<>();
+    private final CopyOnWriteArrayList<Job> submittedJobs = new CopyOnWriteArrayList<>();
 
     public ExecuteJobParameters() {
     }

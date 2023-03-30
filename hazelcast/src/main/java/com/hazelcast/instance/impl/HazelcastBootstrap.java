@@ -24,8 +24,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.executejar.CommandLineExecuteJar;
 import com.hazelcast.instance.impl.executejar.ExecuteJobParameters;
 import com.hazelcast.instance.impl.executejar.MemberExecuteJar;
-import com.hazelcast.jet.impl.util.JetConsoleLogHandler;
 import com.hazelcast.instance.impl.executejar.ResettableSingleton;
+import com.hazelcast.jet.impl.util.JetConsoleLogHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -42,6 +42,8 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 
+import static com.hazelcast.instance.impl.BootstrappedInstanceProxyFactory.createWithCLIJetProxy;
+import static com.hazelcast.instance.impl.BootstrappedInstanceProxyFactory.createWithMemberJetProxy;
 import static com.hazelcast.spi.properties.ClusterProperty.LOGGING_TYPE;
 
 /**
@@ -60,10 +62,6 @@ public final class HazelcastBootstrap {
 
     private static final ResettableSingleton<BootstrappedInstanceProxy> SINGLETON = new ResettableSingleton<>();
 
-    private static final CommandLineExecuteJar COMMAND_LINE_EXECUTE_JAR = new CommandLineExecuteJar();
-
-    private static final MemberExecuteJar MEMBER_EXECUTE_JAR = new MemberExecuteJar();
-
     private static final ILogger LOGGER = Logger.getLogger(HazelcastBootstrap.class);
 
     private static final AtomicBoolean LOGGING_CONFIGURED = new AtomicBoolean(false);
@@ -75,6 +73,7 @@ public final class HazelcastBootstrap {
     public static void resetRemembered() {
         SINGLETON.resetRemembered();
     }
+
 
     /**
      * This method is designed to be called only from the command line. It does it following<p>
@@ -89,11 +88,15 @@ public final class HazelcastBootstrap {
                                        @Nullable String mainClassName,
                                        @Nonnull List<String> args)
             throws IOException, ClassNotFoundException, InvocationTargetException, IllegalAccessException {
+
+        LOGGER.info("Execute Jar : " + jarPath);
         // Set the singleton, so that it can be accessed within the jar
-        SINGLETON.get(() -> BootstrappedInstanceProxy.createWithJetProxy(supplierOfInstance.get()));
+        SINGLETON.get(() -> createWithCLIJetProxy(supplierOfInstance.get()));
 
         ExecuteJobParameters executeJobParameters = new ExecuteJobParameters(jarPath, snapshotName, jobName);
-        COMMAND_LINE_EXECUTE_JAR.executeJar(SINGLETON, executeJobParameters, mainClassName, args);
+
+        CommandLineExecuteJar commandLineExecuteJar = new CommandLineExecuteJar();
+        commandLineExecuteJar.executeJar(SINGLETON, executeJobParameters, mainClassName, args);
     }
 
     /**
@@ -109,12 +112,13 @@ public final class HazelcastBootstrap {
         // Set the singleton, so that it can be accessed within the jar
         // Do not allow the singleton to be shutdown. Otherwise, the member will shut down
         BootstrappedInstanceProxy hazelcastInstance =
-                SINGLETON.get(() -> BootstrappedInstanceProxy.createWithJetProxy(supplierOfInstance.get())
+                SINGLETON.get(() -> createWithMemberJetProxy(supplierOfInstance.get())
                         .setShutDownAllowed(false));
 
         ExecuteJobParameters executeJobParameters = new ExecuteJobParameters(jarPath, snapshotName, jobName);
 
-        MEMBER_EXECUTE_JAR.executeJar(hazelcastInstance, executeJobParameters, mainClassName, args);
+        MemberExecuteJar memberExecuteJar = new MemberExecuteJar();
+        memberExecuteJar.executeJar(hazelcastInstance, executeJobParameters, mainClassName, args);
     }
 
     /**
@@ -123,7 +127,7 @@ public final class HazelcastBootstrap {
      */
     @Nonnull
     public static synchronized HazelcastInstance getInstance() {
-        return SINGLETON.get(() -> BootstrappedInstanceProxy.createWithJetProxy(createStandaloneInstance()));
+        return SINGLETON.get(() -> createWithCLIJetProxy(createStandaloneInstance()));
     }
 
     private static HazelcastInstance createStandaloneInstance() {
@@ -166,7 +170,7 @@ public final class HazelcastBootstrap {
                         if (handler instanceof ConsoleHandler) {
                             rootLogger.removeHandler(handler);
                             rootLogger.addHandler(new JetConsoleLogHandler());
-                            rootLogger.setLevel(Level.INFO);
+                            rootLogger.setLevel(Level.CONFIG);
                             return;
                         }
                     }
