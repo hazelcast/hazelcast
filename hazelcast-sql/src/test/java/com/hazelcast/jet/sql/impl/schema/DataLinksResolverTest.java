@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
+import com.hazelcast.datalink.impl.DataLinkServiceImpl;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.datalink.DataLinkCatalogEntry;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -41,12 +42,15 @@ public class DataLinksResolverTest {
     private DataLinksResolver dataLinksResolver;
 
     @Mock
+    DataLinkServiceImpl dataLinkService;
+
+    @Mock
     private DataLinkStorage relationsStorage;
 
     @Before
     public void before() {
         MockitoAnnotations.openMocks(this);
-        dataLinksResolver = new DataLinksResolver(relationsStorage);
+        dataLinksResolver = new DataLinksResolver(dataLinkService, relationsStorage);
     }
 
     // region dataLink storage tests
@@ -55,26 +59,26 @@ public class DataLinksResolverTest {
     public void when_createDataLink_then_succeeds() {
         // given
         DataLinkCatalogEntry dataLinkCatalogEntry = dataLink();
-        given(relationsStorage.putIfAbsent(dataLinkCatalogEntry.getName(), dataLinkCatalogEntry)).willReturn(true);
+        given(relationsStorage.putIfAbsent(dataLinkCatalogEntry.name(), dataLinkCatalogEntry)).willReturn(true);
 
         // when
         dataLinksResolver.createDataLink(dataLinkCatalogEntry, false, false);
 
         // then
-        verify(relationsStorage).putIfAbsent(eq(dataLinkCatalogEntry.getName()), isA(DataLinkCatalogEntry.class));
+        verify(relationsStorage).putIfAbsent(eq(dataLinkCatalogEntry.name()), isA(DataLinkCatalogEntry.class));
     }
 
     @Test
     public void when_createsDataLinkIfNotExists_then_succeeds() {
         // given
         DataLinkCatalogEntry dataLinkCatalogEntry = dataLink();
-        given(relationsStorage.putIfAbsent(dataLinkCatalogEntry.getName(), dataLinkCatalogEntry)).willReturn(true);
+        given(relationsStorage.putIfAbsent(dataLinkCatalogEntry.name(), dataLinkCatalogEntry)).willReturn(true);
 
         // when
         dataLinksResolver.createDataLink(dataLinkCatalogEntry, false, true);
 
         // then
-        verify(relationsStorage).putIfAbsent(eq(dataLinkCatalogEntry.getName()), isA(DataLinkCatalogEntry.class));
+        verify(relationsStorage).putIfAbsent(eq(dataLinkCatalogEntry.name()), isA(DataLinkCatalogEntry.class));
     }
 
     @Test
@@ -86,7 +90,7 @@ public class DataLinksResolverTest {
         dataLinksResolver.createDataLink(dataLinkCatalogEntry, true, false);
 
         // then
-        verify(relationsStorage).put(eq(dataLinkCatalogEntry.getName()), isA(DataLinkCatalogEntry.class));
+        verify(relationsStorage).put(eq(dataLinkCatalogEntry.name()), isA(DataLinkCatalogEntry.class));
     }
 
     @Test
@@ -98,20 +102,20 @@ public class DataLinksResolverTest {
         dataLinksResolver.createDataLink(dataLinkCatalogEntry, false, true);
 
         // then
-        verify(relationsStorage).putIfAbsent(eq(dataLinkCatalogEntry.getName()), isA(DataLinkCatalogEntry.class));
+        verify(relationsStorage).putIfAbsent(eq(dataLinkCatalogEntry.name()), isA(DataLinkCatalogEntry.class));
     }
 
     @Test
     public void when_createsDuplicateDataLink_then_throws() {
         // given
         DataLinkCatalogEntry dataLinkCatalogEntry = dataLink();
-        given(relationsStorage.putIfAbsent(eq(dataLinkCatalogEntry.getName()), isA(DataLinkCatalogEntry.class))).willReturn(false);
+        given(relationsStorage.putIfAbsent(eq(dataLinkCatalogEntry.name()), isA(DataLinkCatalogEntry.class))).willReturn(false);
 
         // when
         // then
         assertThatThrownBy(() -> dataLinksResolver.createDataLink(dataLinkCatalogEntry, false, false))
                 .isInstanceOf(QueryException.class)
-                .hasMessageContaining("Data link already exists: " + dataLinkCatalogEntry.getName());
+                .hasMessageContaining("Data link already exists: " + dataLinkCatalogEntry.name());
     }
 
     @Test

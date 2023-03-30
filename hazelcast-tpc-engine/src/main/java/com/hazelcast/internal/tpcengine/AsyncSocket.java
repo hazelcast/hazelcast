@@ -125,7 +125,8 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     public abstract boolean isReadable();
 
     /**
-     * Start the AsyncSocket. The Socket should be started only once.
+     * Start the AsyncSocket by scheduling it on the reactor. The Socket should be
+     * started only once.
      * <p/>
      * Typically you do not want to share this AsyncSocket with other threads till this
      * method is called.
@@ -193,6 +194,8 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
      * Connects asynchronously to some address.
      * <p/>
      * This method is not thread-safe.
+     * <p/>
+     * This method should be called after {@link #start()}.
      *
      * @param address the address to connect to.
      * @return a {@link CompletableFuture}

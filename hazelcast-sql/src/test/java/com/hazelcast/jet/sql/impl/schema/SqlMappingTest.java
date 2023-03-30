@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
-import com.hazelcast.datalink.impl.DataLinkTestUtil.DummyDataLink;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.schema.model.Person;
 import com.hazelcast.sql.HazelcastSqlException;
@@ -170,7 +169,7 @@ public class SqlMappingTest extends SqlTestSupport {
     public void when_dataLinkUnknown_then_fail() {
         String dlName = randomName();
         String mappingName = randomName();
-        createDataLink(instance(), dlName, DummyDataLink.class.getName(), emptyMap());
+        createDataLink(instance(), dlName, "DUMMY", false, emptyMap());
         assertThatThrownBy(() ->
                 instance().getSql().execute("CREATE OR REPLACE MAPPING " + mappingName +
                         " DATA LINK " + dlName + "\nOPTIONS ()"))

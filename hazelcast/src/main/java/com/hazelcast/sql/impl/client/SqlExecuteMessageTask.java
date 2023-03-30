@@ -33,8 +33,6 @@ import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import java.security.AccessControlException;
 import java.security.Permission;
 
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
-
 /**
  * SQL query execute task.
  */
@@ -117,7 +115,9 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         if (!(throwable instanceof Exception)) {
             return super.encodeException(throwable);
         }
-        logFine(logger, "Client SQL error: %s", throwable);
+        if (logger.isFineEnabled()) {
+            logger.fine("Client SQL error: " + throwable, throwable);
+        }
         SqlError error = SqlClientUtils.exceptionToClientError((Exception) throwable, nodeEngine.getLocalMember().getUuid());
 
         return SqlExecuteCodec.encodeResponse(

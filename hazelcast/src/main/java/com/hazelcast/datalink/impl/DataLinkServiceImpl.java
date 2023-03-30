@@ -27,10 +27,12 @@ import com.hazelcast.logging.ILogger;
 import javax.annotation.Nonnull;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinPool;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource.CONFIG;
 import static com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource.SQL;
@@ -102,8 +104,8 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
     }
 
     @Override
-    public void replaceSqlDataLink(String name, String type, Map<String, String> options) {
-        put(toConfig(name, type, options), SQL);
+    public void replaceSqlDataLink(String name, String type, boolean shared, Map<String, String> options) {
+        put(toConfig(name, type, shared, options), SQL);
     }
 
     @Override
@@ -119,11 +121,12 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
     }
 
     // package-private for testing purposes
-    DataLinkConfig toConfig(String name, String type, Map<String, String> options) {
+    DataLinkConfig toConfig(String name, String type, boolean shared, Map<String, String> options) {
         Properties properties = new Properties();
         properties.putAll(options);
         return new DataLinkConfig(name)
                 .setClassName(type)
+                .setShared(shared)
                 .setProperties(properties);
     }
 
@@ -176,6 +179,15 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
     }
 
     @Override
+    public Class<? extends DataLink> classForDataLinkType(String type) {
+        Class<? extends DataLink> dataLinkClass = typeToDataLinkClass.get(type);
+        if (dataLinkClass == null) {
+            throw new HazelcastException("DataLink type '" + type + "' is not known");
+        }
+        return dataLinkClass;
+    }
+
+    @Override
     @Nonnull
     public <T extends DataLink> T getAndRetainDataLink(String name, Class<T> clazz) {
         DataLinkEntry dataLink = dataLinks.computeIfPresent(name, (k, v) -> {
@@ -204,8 +216,20 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
         });
     }
 
-    public Map<String, DataLinkEntry> getDataLinks() {
-        return dataLinks;
+    public List<DataLink> getConfigCreatedDataLinks() {
+        return dataLinks.values()
+                .stream()
+                .filter(dl -> dl.source == CONFIG)
+                .map(dl -> dl.instance)
+                .collect(Collectors.toList());
+    }
+
+    public List<DataLink> getSqlCreatedDataLinks() {
+        return dataLinks.values()
+                .stream()
+                .filter(dl -> dl.source == SQL)
+                .map(dl -> dl.instance)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -221,7 +245,7 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
         }
     }
 
-    enum DataLinkSource {
+    public enum DataLinkSource {
         CONFIG, SQL
     }
 

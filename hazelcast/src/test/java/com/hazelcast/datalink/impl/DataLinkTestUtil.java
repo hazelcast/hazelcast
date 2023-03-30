@@ -25,8 +25,8 @@ import com.hazelcast.datalink.DataLinkResource;
 import com.hazelcast.datalink.JdbcDataLink;
 
 import javax.annotation.Nonnull;
-import java.util.Collections;
-import java.util.List;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Properties;
 
 public final class DataLinkTestUtil {
@@ -73,8 +73,11 @@ public final class DataLinkTestUtil {
 
         @Nonnull
         @Override
-        public List<DataLinkResource> listResources() {
-            return Collections.emptyList();
+        public Collection<DataLinkResource> listResources() {
+            return Arrays.asList(
+                    new DataLinkResource("testType1", "testName1"),
+                    new DataLinkResource("testType2", "testName2")
+            );
         }
 
         @Override

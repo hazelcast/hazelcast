@@ -16,6 +16,10 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
+import com.hazelcast.datalink.impl.DataLinkServiceImpl;
+import com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource;
+import com.hazelcast.datalink.impl.InternalDataLinkService;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.sql.impl.connector.infoschema.DataLinksTable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.Table;
@@ -26,6 +30,7 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_INFORMATION_SCHEMA;
@@ -44,8 +49,11 @@ public class DataLinksResolver implements TableResolver {
     );
 
     private final DataLinkStorage dataLinkStorage;
+    private final DataLinkServiceImpl dataLinkService;
 
-    public DataLinksResolver(DataLinkStorage dataLinkStorage) {
+    public DataLinksResolver(InternalDataLinkService dataLinkService, DataLinkStorage dataLinkStorage) {
+        Preconditions.checkInstanceOf(DataLinkServiceImpl.class, dataLinkService);
+        this.dataLinkService = (DataLinkServiceImpl) dataLinkService;
         this.dataLinkStorage = dataLinkStorage;
     }
 
@@ -54,12 +62,12 @@ public class DataLinksResolver implements TableResolver {
      */
     public boolean createDataLink(DataLinkCatalogEntry dl, boolean replace, boolean ifNotExists) {
         if (replace) {
-            dataLinkStorage.put(dl.getName(), dl);
+            dataLinkStorage.put(dl.name(), dl);
             return true;
         } else {
-            boolean added = dataLinkStorage.putIfAbsent(dl.getName(), dl);
+            boolean added = dataLinkStorage.putIfAbsent(dl.name(), dl);
             if (!added && !ifNotExists) {
-                throw QueryException.error("Data link already exists: " + dl.getName());
+                throw QueryException.error("Data link already exists: " + dl.name());
             }
             return added;
         }
@@ -69,6 +77,10 @@ public class DataLinksResolver implements TableResolver {
         if (!dataLinkStorage.removeDataLink(name) && !ifExists) {
             throw QueryException.error("Data link does not exist: " + name);
         }
+    }
+
+    public DataLinkStorage getDataLinkStorage() {
+        return dataLinkStorage;
     }
 
     @Nonnull
@@ -81,9 +93,30 @@ public class DataLinksResolver implements TableResolver {
     @Override
     public List<Table> getTables() {
         List<Table> tables = new ArrayList<>();
+
         ADDITIONAL_TABLE_PRODUCERS.forEach(
-                producer -> tables.add(producer.apply(dataLinkStorage.dataLinks())));
+                producer -> tables.add(producer.apply(getAllDataLinkEntries(dataLinkService, dataLinkStorage))));
         return tables;
+    }
+
+    public static List<DataLinkCatalogEntry> getAllDataLinkEntries(
+            DataLinkServiceImpl dataLinkService,
+            DataLinkStorage dataLinkStorage) {
+        // Collect config-originated data links
+        List<DataLinkCatalogEntry> dataLinks = dataLinkService.getConfigCreatedDataLinks()
+                .stream()
+                .map(dl -> new DataLinkCatalogEntry(
+                        dl.getName(),
+                        dataLinkService.typeForDataLink(dl.getName()),
+                        dl.getConfig().isShared(),
+                        dl.options(),
+                        DataLinkSource.CONFIG))
+                .collect(Collectors.toList());
+
+        // And supplement them with data links from sql catalog.
+        // Note: __sql.catalog is the only source of truth for SQL-originated data links.
+        dataLinks.addAll(dataLinkStorage.dataLinks());
+        return dataLinks;
     }
 
     @Override

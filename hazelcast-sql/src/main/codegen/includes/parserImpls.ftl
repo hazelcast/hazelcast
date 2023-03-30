@@ -81,9 +81,10 @@ SqlCreate SqlCreateDataLink(Span span, boolean replace) :
 {
     SqlParserPos startPos = span.pos();
     boolean ifNotExists = false;
+    boolean shared = true;
     SqlIdentifier name;
     SqlIdentifier type;
-    SqlNodeList sqlOptions;
+    SqlNodeList sqlOptions = SqlNodeList.EMPTY;
 }
 {
     <DATA> <LINK>
@@ -95,8 +96,19 @@ SqlCreate SqlCreateDataLink(Span span, boolean replace) :
     <TYPE>
     type = SimpleIdentifier()
 
-    <OPTIONS>
-    sqlOptions = SqlOptions()
+    [
+        (
+            <NOT> <SHARED>  { shared = false; }
+            |
+            <SHARED>  { shared = true; }
+        )
+    ]
+
+    [
+        <OPTIONS>
+        sqlOptions = SqlOptions()
+    ]
+
     {
         return new SqlCreateDataLink(
             startPos.plus(getPos()),
@@ -104,6 +116,7 @@ SqlCreate SqlCreateDataLink(Span span, boolean replace) :
             ifNotExists,
             name,
             type,
+            shared,
             sqlOptions
         );
     }

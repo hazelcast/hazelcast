@@ -47,6 +47,7 @@ public class JobUploadStatus {
     // The instant when this object was updated
     protected Instant lastUpdatedTime;
 
+    // Clock used to get Instant
     private final Clock clock;
 
     // Last processed value
@@ -120,7 +121,6 @@ public class JobUploadStatus {
      */
     public JobMetaDataParameterObject processJobMultipart(JobMultiPartParameterObject parameterObject)
             throws IOException, NoSuchAlgorithmException {
-
         // Change the timestamp in the beginning to avoid expiration
         changeLastUpdatedTime();
 
@@ -142,8 +142,8 @@ public class JobUploadStatus {
         }
 
         if (LOGGER.isInfoEnabled()) {
-            String message = String.format("Session : %s total file size %d", parameterObject.getSessionId(),
-                    Files.size(jarPath));
+            String message = String.format("Session : %s jarPath: %s PartNumber: %d/%d Total file size : %d bytes",
+                    parameterObject.getSessionId(), jarPath, currentPart, totalPart, Files.size(jarPath));
             LOGGER.info(message);
         }
 

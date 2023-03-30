@@ -37,7 +37,9 @@ public class DataLinksTable extends InfoSchemaTable {
             new TableField("datalink_schema", QueryDataType.VARCHAR, false),
             new TableField("datalink_name", QueryDataType.VARCHAR, false),
             new TableField("datalink_type", QueryDataType.VARCHAR, false),
-            new TableField("datalink_options", QueryDataType.VARCHAR, false)
+            new TableField("datalink_shared", QueryDataType.BOOLEAN, false),
+            new TableField("datalink_options", QueryDataType.VARCHAR, false),
+            new TableField("datalink_source", QueryDataType.VARCHAR, false)
     );
 
     private final String dataLinkSchema;
@@ -59,9 +61,11 @@ public class DataLinksTable extends InfoSchemaTable {
             Object[] row = new Object[]{
                     catalog(),
                     dataLinkSchema,
-                    dl.getName(),
-                    dl.getType(),
-                    uncheckCall(() -> JsonUtil.toJson(dl.getOptions()))
+                    dl.name(),
+                    dl.type(),
+                    dl.isShared(),
+                    uncheckCall(() -> JsonUtil.toJson(dl.options())),
+                    dl.source().name()
             };
             rows.add(row);
         }

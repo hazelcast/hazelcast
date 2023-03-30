@@ -22,15 +22,22 @@ import com.hazelcast.datalink.DataLink;
 import com.hazelcast.datalink.impl.DataLinkTestUtil.DummyDataLink;
 import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlDataLinkStatementTest extends SqlTestSupport {
     private InternalDataLinkService[] dataLinkServices;
 
@@ -51,14 +58,49 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
     public void when_createDataLink_then_success() {
         String dlName = randomName();
         instance().getSql().execute("CREATE DATA LINK " + dlName
-                + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                + " TYPE DUMMY "
+                + " NOT SHARED "
                 + " OPTIONS ('b' = 'c')");
 
         for (InternalDataLinkService dataLinkService : dataLinkServices) {
             DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
             assertThat(dataLink).isNotNull();
-            assertThat(dataLink.getConfig().getClassName()).isEqualTo(DummyDataLink.class.getName());
-            assertThat(dataLink.getConfig().getProperties().get("b")).isEqualTo("c");
+            assertThat(dataLink.getConfig().getClassName()).isEqualTo("DUMMY");
+            assertThat(dataLink.getConfig().isShared()).isFalse();
+            assertThat(dataLink.getConfig().getProperties()).containsEntry("b", "c");
+        }
+    }
+
+    @Test
+    public void when_createSharedDataLink_then_success() {
+        String dlName = randomName();
+        instance().getSql().execute("CREATE DATA LINK " + dlName
+                + " TYPE \"DUMMY\" "
+                + " SHARED "
+                + " OPTIONS ('b' = 'c')");
+
+        for (InternalDataLinkService dataLinkService : dataLinkServices) {
+            DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
+            assertThat(dataLink).isNotNull();
+            assertThat(dataLink.getConfig().getClassName()).isEqualTo("DUMMY");
+            assertThat(dataLink.getConfig().isShared()).isTrue();
+            assertThat(dataLink.getConfig().getProperties()).containsEntry("b", "c");
+        }
+    }
+
+    @Test
+    public void when_createDefaultSharingDataLink_then_success() {
+        String dlName = randomName();
+        instance().getSql().execute("CREATE DATA LINK " + dlName
+                + " TYPE \"DUMMY\" "
+                + " OPTIONS ('b' = 'c')");
+
+        for (InternalDataLinkService dataLinkService : dataLinkServices) {
+            DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
+            assertThat(dataLink).isNotNull();
+            assertThat(dataLink.getConfig().getClassName()).isEqualTo("DUMMY");
+            assertThat(dataLink.getConfig().isShared()).isTrue();
+            assertThat(dataLink.getConfig().getProperties()).containsEntry("b", "c");
         }
     }
 
@@ -67,7 +109,8 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         String dlName = randomName();
         assertThatThrownBy(() ->
                 instance().getSql().execute("CREATE DATA LINK hazelcast.yyy." + dlName
-                        + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                        + " TYPE \"DUMMY\" "
+                        + " NOT SHARED "
                         + " OPTIONS ('b' = 'c')"))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessageContaining("The data link must be created in the \"public\" schema");
@@ -77,7 +120,8 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
     public void when_createDataLinkIfAlreadyExists_then_throws() {
         String dlName = randomName();
         instance().getSql().execute("CREATE DATA LINK " + dlName
-                + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                + " TYPE \"DUMMY\" "
+                + " NOT SHARED "
                 + " OPTIONS ('b' = 'c')");
 
         for (InternalDataLinkService dataLinkService : dataLinkServices) {
@@ -87,7 +131,8 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
 
         assertThatThrownBy(() ->
                 instance().getSql().execute("CREATE DATA LINK " + dlName
-                        + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                        + " TYPE \"DUMMY\" "
+                        + " NOT SHARED "
                         + " OPTIONS ('b' = 'c')"))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessageContaining("Data link already exists: " + dlName);
@@ -105,7 +150,8 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
 
         assertThatThrownBy(() ->
                 instance().getSql().execute("CREATE DATA LINK " + dlName
-                        + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                        + " TYPE \"DUMMY\" "
+                        + " NOT SHARED "
                         + " OPTIONS ('b' = 'c')"))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessageContaining("Cannot replace a data link created from configuration");
@@ -117,7 +163,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         assertThatThrownBy(() ->
                 instance().getSql().execute("CREATE DATA LINK " + dlName))
                 .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Was expecting one of:\n    \"TYPE\" ...");
+                .hasMessageContaining("Was expecting one of:" + System.lineSeparator() + "    \"TYPE\" ...");
     }
 
     @Test
@@ -125,7 +171,8 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         String dlName = randomName();
         createMapping(dlName, int.class, int.class);
         instance().getSql().execute("CREATE DATA LINK " + dlName
-                + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                + " TYPE \"DUMMY\" "
+                + " NOT SHARED "
                 + " OPTIONS ('b' = 'c')");
         for (InternalDataLinkService dataLinkService : dataLinkServices) {
             DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
@@ -134,13 +181,15 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_createDataLinkWithoutOptions_then_throws() {
+    public void when_createDataLinkWithoutOptions_then_success() {
         String dlName = randomName();
-        assertThatThrownBy(() ->
-                instance().getSql().execute("CREATE DATA LINK " + dlName
-                        + " TYPE \"" + DummyDataLink.class.getName() + "\" "))
-                .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Was expecting:\n    \"OPTIONS\" ...");
+
+        instance().getSql().execute("CREATE DATA LINK " + dlName  + " TYPE DUMMY SHARED");
+
+        for (InternalDataLinkService dataLinkService : dataLinkServices) {
+            DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
+            assertThat(dataLink).isNotNull();
+        }
     }
 
     @Test
@@ -149,10 +198,12 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         String dlName2 = randomName();
 
         instance().getSql().execute("CREATE DATA LINK " + dlName1
-                + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                + " TYPE \"DUMMY\" "
+                + " NOT SHARED "
                 + " OPTIONS ('b' = 'c')");
         instance().getSql().execute("CREATE DATA LINK " + dlName2
-                + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                + " TYPE \"DUMMY\" "
+                + " NOT SHARED "
                 + " OPTIONS ('b' = 'c')");
 
         instance().getSql().execute("DROP DATA LINK " + dlName1);
@@ -207,11 +258,13 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
     public void when_createIfNotExists_then_notOverwritten() {
         String dlName = randomName();
         instance().getSql().execute("CREATE DATA LINK " + dlName
-                + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                + " TYPE \"DUMMY\" "
+                + " NOT SHARED "
                 + " OPTIONS ('b' = 'c')");
 
         instance().getSql().execute("CREATE DATA LINK IF NOT EXISTS " + dlName
-                + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                + " TYPE \"DUMMY\" "
+                + " NOT SHARED "
                 + " OPTIONS ('d' = 'e')");
 
         for (InternalDataLinkService dataLinkService : dataLinkServices) {

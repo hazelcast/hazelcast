@@ -639,12 +639,19 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         sqlService.execute(sb.toString());
     }
 
-    public static void createDataLink(HazelcastInstance instance, String name, String type, Map<String, String> options) {
+    public static void createDataLink(
+            HazelcastInstance instance,
+            String name,
+            String type,
+            boolean shared,
+            Map<String, String> options
+    ) {
         StringBuilder queryBuilder = new StringBuilder()
                 .append("CREATE OR REPLACE DATA LINK ")
                 .append(quoteName(name))
                 .append(" TYPE ")
                 .append(quoteName(type))
+                .append(shared ? " SHARED " : " NOT SHARED ")
                 .append(" OPTIONS (\n");
         for (Map.Entry<String, String> entry : options.entrySet()) {
             queryBuilder.append("'").append(entry.getKey()).append("'")

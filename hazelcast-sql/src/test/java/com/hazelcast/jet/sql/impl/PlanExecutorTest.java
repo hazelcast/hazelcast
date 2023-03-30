@@ -84,7 +84,11 @@ public class PlanExecutorTest extends SimpleTestInClusterSupport {
         MockitoAnnotations.openMocks(this);
         given(job.getFuture()).willReturn(new CompletableFuture<>());
         given(nodeEngine.getHazelcastInstance()).willReturn(hazelcastInstance);
-        planExecutor = new PlanExecutor(catalog, null, nodeEngine, mock(QueryResultRegistry.class));
+        planExecutor = new PlanExecutor(
+                nodeEngine,
+                catalog,
+                null,
+                mock(QueryResultRegistry.class));
     }
 
     @Test

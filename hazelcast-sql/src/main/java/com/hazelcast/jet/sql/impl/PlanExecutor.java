@@ -23,8 +23,8 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.impl.DataLinkServiceImpl;
 import com.hazelcast.datalink.DataLink;
+import com.hazelcast.datalink.impl.DataLinkServiceImpl;
 import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
@@ -150,15 +150,15 @@ public class PlanExecutor {
     private final AtomicLong directIMapQueriesExecuted = new AtomicLong();
 
     public PlanExecutor(
+            NodeEngine nodeEngine,
             TableResolverImpl catalog,
             DataLinksResolver dataLinksResolver,
-            NodeEngine nodeEngine,
             QueryResultRegistry resultRegistry
     ) {
-        this.catalog = catalog;
-        this.dataLinksCatalog = dataLinksResolver;
         this.nodeEngine = nodeEngine;
         this.hazelcastInstance = nodeEngine.getHazelcastInstance();
+        this.catalog = catalog;
+        this.dataLinksCatalog = dataLinksResolver;
         this.resultRegistry = resultRegistry;
 
         logger = nodeEngine.getLogger(getClass());
@@ -182,7 +182,11 @@ public class PlanExecutor {
             throw new HazelcastException("Cannot replace a data link created from configuration");
         }
         boolean added = dataLinksCatalog.createDataLink(
-                new DataLinkCatalogEntry(plan.name(), plan.type(), plan.options()),
+                new DataLinkCatalogEntry(
+                        plan.name(),
+                        plan.type(),
+                        plan.shared(),
+                        plan.options()),
                 plan.isReplace(),
                 plan.ifNotExists());
         if (added) {
@@ -386,7 +390,9 @@ public class PlanExecutor {
             case DATALINKS:
                 InternalDataLinkService service = nodeEngine.getDataLinkService();
                 DataLinkServiceImpl dataLinkService = (DataLinkServiceImpl) service;
-                rows = dataLinkService.getDataLinks().keySet().stream();
+                rows = DataLinksResolver.getAllDataLinkEntries(dataLinkService, dataLinksCatalog.getDataLinkStorage())
+                        .stream()
+                        .map(DataLinkCatalogEntry::name);
                 break;
             case RESOURCES:
                 return executeShowResources(plan.getDataLinkName());

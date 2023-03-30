@@ -93,6 +93,7 @@ public final class KafkaConnectSources {
 
                             @Override
                             public void init(@Nonnull Context context) {
+                                properties.put("tasks.max", Integer.toString(context.localParallelism()));
                                 this.connectorWrapper = new ConnectorWrapper(properties);
                             }
 

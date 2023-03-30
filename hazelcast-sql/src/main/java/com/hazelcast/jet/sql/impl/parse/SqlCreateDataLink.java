@@ -29,6 +29,7 @@ import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 
+import javax.annotation.Nonnull;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,18 +46,21 @@ public class SqlCreateDataLink extends SqlCreate {
 
     private final SqlIdentifier name;
     private final SqlIdentifier type;
+    private final boolean shared;
     private final SqlNodeList options;
 
     public SqlCreateDataLink(
             SqlParserPos pos,
             boolean replace,
             boolean ifNotExists,
-            SqlIdentifier name,
-            SqlIdentifier type,
-            SqlNodeList options) {
+            @Nonnull SqlIdentifier name,
+            @Nonnull SqlIdentifier type,
+            boolean shared,
+            @Nonnull SqlNodeList options) {
         super(CREATE_DATA_LINK, pos, replace, ifNotExists);
         this.name = name;
         this.type = type;
+        this.shared = shared;
         this.options = options;
     }
 
@@ -66,6 +70,10 @@ public class SqlCreateDataLink extends SqlCreate {
 
     public String type() {
         return type.toString();
+    }
+
+    public boolean shared() {
+        return shared;
     }
 
     public Map<String, String> options() {
@@ -106,6 +114,12 @@ public class SqlCreateDataLink extends SqlCreate {
         writer.newlineAndIndent();
         writer.keyword("TYPE");
         type.unparse(writer, leftPrec, rightPrec);
+
+        writer.newlineAndIndent();
+        if (!shared) {
+            writer.keyword("NOT");
+        }
+        writer.keyword("SHARED");
 
         if (options.size() > 0) {
             writer.newlineAndIndent();

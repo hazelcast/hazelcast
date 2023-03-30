@@ -147,14 +147,14 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     /**
      * For the client side, the jar is uploaded to a random cluster member and then this member runs the main method to
      * start the job.
-     * The jar should have a main method that submits a Pipeline with {@link #newJob(Pipeline)} or
+     * The jar should have a main method that submits a job with {@link #newJob(Pipeline)} or
      * {@link #newLightJob(Pipeline)} methods
      * <p>
      * The upload operation is performed in parts to avoid OOM exceptions on the client and member.
      * For Java clients the part size is controlled by {@link com.hazelcast.client.properties.ClientProperty#JOB_UPLOAD_PART_SIZE}
      * property
      * <p>
-     * Limitations for the client side jobs:
+     * Limitations for the member side jobs:
      * <ul>
      *     <li>The job can only access resources on the member or cluster. This is different from the jobs submitted from
      *     the hz-cli tool. A job submitted from hz-cli tool creates a local HazelcastInstance on the client JVM and
@@ -183,6 +183,8 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
             // Send only job metadata
             logFine(getLogger(), "Submitting JobMetaData for jarPath: %s", jarPath);
             sendJobMetaDataForExecute(jobExecuteCall, submitJobParameters);
+            logFine(getLogger(), "Job execution from jar '%s' finished successfully",
+                    jarPath);
         } catch (Exception exception) {
             sneakyThrow(exception);
         }
@@ -201,6 +203,8 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
             // Then send job parts
             sendJobMultipart(jobUploadCall, jarPath);
+            logFine(getLogger(), "Job upload from jar '%s' finished successfully",
+                    jarPath);
         } catch (IOException | NoSuchAlgorithmException exception) {
             sneakyThrow(exception);
         }
@@ -209,7 +213,6 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     // This method is public for testing purposes.
     public JobUploadCall initializeJobUploadCall(Path jarPath)
             throws IOException, NoSuchAlgorithmException {
-
         JobUploadCall jobUploadCall = new JobUploadCall();
         jobUploadCall.initializeJobUploadCall(client, jarPath);
 
@@ -217,7 +220,6 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     }
 
     public JobExecuteCall initializeJobExecuteCall(Path jarPath) {
-
         JobExecuteCall jobExecuteCall = new JobExecuteCall();
         jobExecuteCall.initializeJobExecuteCall(client, jarPath);
 
@@ -255,8 +257,6 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
     private void sendJobMultipart(JobUploadCall jobUploadCall, Path jarPath)
             throws IOException, NoSuchAlgorithmException {
-
-
         File file = jarPath.toFile();
 
         byte[] partBuffer = jobUploadCall.allocatePartBuffer();
@@ -277,8 +277,8 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                         currentPartNumber,
                         jobUploadCall.getTotalParts(), dataToSend, bytesRead, sha256Hex);
 
-                logFine(getLogger(), "Submitting Job Part for jarPath: %s PartNumber %d",
-                        jarPath, currentPartNumber);
+                logFine(getLogger(), "Submitting Job Part for jarPath: %s PartNumber %d/%d",
+                        jarPath, currentPartNumber, jobUploadCall.getTotalParts());
 
                 invokeRequestNoRetryOnRandom(jobUploadCall.getMemberUuid(), jobMultipartRequest);
             }

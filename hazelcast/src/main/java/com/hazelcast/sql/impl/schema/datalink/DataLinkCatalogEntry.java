@@ -25,59 +25,78 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource;
+
 /**
  * SQL schema POJO class.
  */
 public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
     private String name;
     private String type;
+    private boolean shared;
     private Map<String, String> options;
+    private DataLinkSource source;
 
     public DataLinkCatalogEntry() {
     }
 
-    public DataLinkCatalogEntry(String name, String type, Map<String, String> options) {
+    public DataLinkCatalogEntry(String name, String type, boolean shared, Map<String, String> options) {
         this.name = name;
         this.type = type;
+        this.shared = shared;
         this.options = options;
+        this.source = DataLinkSource.SQL;
     }
 
-    public String getName() {
+    public DataLinkCatalogEntry(
+            String name,
+            String type,
+            boolean shared,
+            Map<String, String> options,
+            DataLinkSource source) {
+        this.name = name;
+        this.shared = shared;
+        this.type = type;
+        this.options = options;
+        this.source = source;
+    }
+
+    public String name() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getType() {
+    public String type() {
         return type;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public boolean isShared() {
+        return shared;
     }
 
-    public Map<String, String> getOptions() {
+    public Map<String, String> options() {
         return options;
     }
 
-    public void setOptions(Map<String, String> options) {
-        this.options = options;
+    public DataLinkSource source() {
+        return source;
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
         type = in.readString();
+        shared = in.readBoolean();
         options = in.readObject();
+        source = in.readObject();
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
         out.writeString(type);
+        out.writeBoolean(shared);
         out.writeObject(options);
+        out.writeObject(source);
     }
 
     @Override
@@ -99,11 +118,12 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
             return false;
         }
         DataLinkCatalogEntry e = (DataLinkCatalogEntry) o;
-        return name.equals(e.name) && type.equals(e.type) && options.equals(e.options);
+        return shared == e.shared && name.equals(e.name) && type.equals(e.type) && options.equals(e.options)
+                && source == e.source;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, type, options);
+        return Objects.hash(name, type, shared, options, source);
     }
 }
