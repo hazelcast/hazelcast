@@ -44,6 +44,8 @@ public class GetDdlFunction extends TriExpression<String> {
 
     @Override
     public String eval(Row row, ExpressionEvalContext context) {
+        CooperativeThread.checkNonCooperative();
+
         String namespace = asVarchar(operand1, row, context);
         if (namespace == null) {
             throw QueryException.error("Namespace must not be null for GET_DDL");
@@ -87,7 +89,6 @@ public class GetDdlFunction extends TriExpression<String> {
 
     @Override
     public boolean isCooperative() {
-        CooperativeThread.checkNonCooperative();
         return false;
     }
 
