@@ -46,7 +46,6 @@ public final class RowProjectorProcessorSupplier implements ProcessorSupplier, I
 
     private transient ExpressionEvalContext evalContext;
     private transient Extractors extractors;
-    private boolean isCooperative;
 
     @SuppressWarnings("unused")
     public RowProjectorProcessorSupplier() {
