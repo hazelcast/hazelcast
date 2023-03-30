@@ -39,7 +39,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -326,10 +326,8 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         map.destroy();
 
         Row row = new Row("__map-store." + tableName);
-        List<Row> rows = Arrays.asList(row);
-        assertTrueEventually(() -> {
-            assertDoesNotContainRow(client, "SHOW MAPPINGS", rows);
-        }, 5);
+        List<Row> rows = Collections.singletonList(row);
+        assertTrueEventually(() -> assertDoesNotContainRow(client, "SHOW MAPPINGS", rows), 5);
     }
 
     @Test
@@ -350,7 +348,10 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         // shutdown the member - this will call destroy on the MapStore on this member,
         // which should not drop the mapping in this case
         hz3.shutdown();
-        assertClusterSizeEventually(2, instance());
+        // Ensure that members have detected hz3 has shut down
+        assertClusterSizeEventually(2, instances());
+        // Ensure that the client has detected hz3 has shut down
+        assertClusterSizeEventually(2, client);
 
         // The new item should still be loadable via the mapping
         executeJdbc("INSERT INTO " + tableName + " VALUES(1000, 'name-1000')");
