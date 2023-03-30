@@ -125,8 +125,13 @@ public class UpdatePhysicalRel extends AbstractRelNode implements PhysicalRel {
         );
     }
 
-    @Override public RelWriter explainTerms(RelWriter pw) {
-        return super.explainTerms(pw)
+    @Override
+    public RelWriter explainTerms(RelWriter pw) {
+        RelWriter w = super.explainTerms(pw);
+        if (input != null) {
+            w.input("input", getInput());
+        }
+        return w
                 .item("table", table.getQualifiedName())
                 .item("updateColumnList", updateColumnList)
                 .item("sourceExpressionList", sourceExpressionList)

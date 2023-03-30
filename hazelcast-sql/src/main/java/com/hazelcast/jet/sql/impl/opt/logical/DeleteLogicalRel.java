@@ -108,6 +108,14 @@ public class DeleteLogicalRel extends AbstractRelNode implements LogicalRel {
 
     @Override
     public RelWriter explainTerms(RelWriter pw) {
-        return super.explainTerms(pw);
+        RelWriter w = super.explainTerms(pw);
+        if (input != null) {
+            w.input("input", getInput());
+        }
+        return w
+                .item("table", table.getQualifiedName())
+                .item("flattened", flattened)
+                .itemIf("predicate", predicate, predicate != null);
+
     }
 }
