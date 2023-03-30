@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.schema;
 
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.config.Config;
-import com.hazelcast.datalink.impl.DataLinkTestUtil;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.QueryException;
@@ -91,7 +90,7 @@ public class GetDdlTest extends SqlTestSupport {
     @Test
     public void when_queryDataLinkFromDatalinkNamespace_then_success() {
         String createDLQuery = "CREATE OR REPLACE DATA LINK \"hazelcast\".\"public\".\"dl\"\n"
-                + "TYPE \"" + DataLinkTestUtil.DummyDataLink.class.getName() + "\"";
+                + "TYPE \"DUMMY\"\nSHARED";
 
         instance().getSql().execute(createDLQuery);
         assertRowsAnyOrder("SELECT GET_DDL('datalink', 'dl')", ImmutableList.of(new Row(createDLQuery)));
