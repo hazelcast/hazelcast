@@ -180,6 +180,8 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
     private final InternalSerializationService serializationService;
     private final int eventSyncFrequency;
 
+    private final ConcurrentMap<UUID, Object> listenerCache = new ConcurrentHashMap<>();
+
     public EventServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
@@ -421,6 +423,22 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
                 }
             }
         }
+    }
+
+    public void cacheListener(Registration registration) {
+        listenerCache.put(registration.getId(), registration.getListener());
+    }
+
+    public void handleLocalRegistration(Registration registration) {
+        registration.setListener(listenerCache.remove(registration.getId()));
+        EventServiceSegment segment = getSegment(registration.getServiceName(), true);
+        segment.addRegistration(registration.getTopic(), registration);
+    }
+
+    public EventRegistration handleAllRegistrations(Registration registration, int orderKey) {
+        ClusterService clusterService = nodeEngine.getClusterService();
+        Supplier<Operation> op = new RegistrationOperationSupplier(registration, orderKey, clusterService);
+        return getValue(invokeOnAllMembers(registration, op));
     }
 
     public StripedExecutor getEventExecutor() {

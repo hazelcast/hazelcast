@@ -93,6 +93,11 @@ public class ClientListenerServiceImpl
     @Nonnull
     @Override
     public UUID registerListener(final ListenerMessageCodec codec, final EventHandler handler) {
+        return registerListener(codec, handler, null);
+    }
+
+    @Nonnull
+    public UUID registerListener(final ListenerMessageCodec codec, final EventHandler handler, final UUID id) {
         //This method should not be called from registrationExecutor
         assert (!Thread.currentThread().getName().contains("eventRegistration"));
 
@@ -102,7 +107,9 @@ public class ClientListenerServiceImpl
 
             ClientListenerRegistration registration = new ClientListenerRegistration(handler, codec);
             registrations.put(userRegistrationId, registration);
-            Collection<ClientConnection> connections = clientConnectionManager.getActiveConnections();
+            Collection<ClientConnection> connections = id == null
+                    ? clientConnectionManager.getActiveConnections()
+                    : Collections.singleton(clientConnectionManager.getConnection(id));
             for (ClientConnection connection : connections) {
                 try {
                     invoke(registration, connection);

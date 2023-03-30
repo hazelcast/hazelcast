@@ -16,28 +16,33 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.JobStatusEvent;
 import com.hazelcast.jet.JobStatusListener;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
-import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
+import com.hazelcast.spi.impl.eventservice.impl.Registration;
+import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.jet.Util.idToString;
 
 public class JobEventService implements EventPublishingService<JobStatusEvent, JobStatusListener> {
     public static final String SERVICE_NAME = "hz:impl:jobEventService";
 
-    private final EventService eventService;
+    private final EventServiceImpl eventService;
+    private final Address address;
 
     public JobEventService(NodeEngine nodeEngine) {
-        eventService = nodeEngine.getEventService();
+        eventService = (EventServiceImpl) nodeEngine.getEventService();
+        address = nodeEngine.getThisAddress();
     }
 
     @Override
@@ -54,17 +59,20 @@ public class JobEventService implements EventPublishingService<JobStatusEvent, J
         }
     }
 
-    public UUID addLocalEventListener(long jobId, JobStatusListener listener) {
-        return eventService.registerLocalListener(SERVICE_NAME, idToString(jobId), listener).getId();
-    }
-
     public UUID addEventListener(long jobId, JobStatusListener listener) {
         return eventService.registerListener(SERVICE_NAME, idToString(jobId), listener).getId();
     }
 
-    public CompletableFuture<UUID> addEventListenerAsync(long jobId, JobStatusListener listener) {
-        return eventService.registerListenerAsync(SERVICE_NAME, idToString(jobId), listener)
-                .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
+    public Registration prepareRegistration(long jobId, JobStatusListener listener, boolean localOnly) {
+        UUID registrationId = UuidUtil.newUnsecureUUID();
+        Registration registration = new Registration(registrationId, SERVICE_NAME, idToString(jobId),
+                TrueEventFilter.INSTANCE, address, listener, localOnly);
+        eventService.cacheListener(registration);
+        return registration;
+    }
+
+    public EventRegistration handleAllRegistrations(long jobId, Registration registration) {
+        return eventService.handleAllRegistrations(registration, (int) jobId);
     }
 
     public boolean removeEventListener(long jobId, UUID id) {

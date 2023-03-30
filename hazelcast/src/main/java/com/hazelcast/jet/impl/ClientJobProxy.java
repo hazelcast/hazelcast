@@ -258,10 +258,14 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     @Override
     protected UUID doAddStatusListener(JobStatusListener listener) {
         requireNonNull(listener, "Listener cannot be null");
-        ClientJobStatusEventHandler handler = new ClientJobStatusEventHandler(listener);
-        handler.registrationId = container().getListenerService().registerListener(
-                createJobStatusListenerCodec(getId()), handler);
-        return handler.registrationId;
+        try {
+            ClientJobStatusEventHandler handler = new ClientJobStatusEventHandler(listener);
+            handler.registrationId = ((ClientListenerServiceImpl) container().getListenerService())
+                    .registerListener(createJobStatusListenerCodec(getId()), handler, coordinatorId());
+            return handler.registrationId;
+        } catch (Throwable t) {
+            throw rethrow(t.getCause());
+        }
     }
 
     @Override
@@ -273,7 +277,7 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
         return new ListenerMessageCodec() {
             @Override
             public ClientMessage encodeAddRequest(boolean localOnly) {
-                return JetAddJobStatusListenerCodec.encodeRequest(jobId, localOnly);
+                return JetAddJobStatusListenerCodec.encodeRequest(jobId, isLightJob(), localOnly);
             }
 
             @Override

@@ -85,6 +85,10 @@ public class Registration implements EventRegistration {
         return listener;
     }
 
+    public void setListener(Object listener) {
+        this.listener = listener;
+    }
+
     // Registration equals() and hashCode() relies on the ID field only,
     // because the registration ID is unique in the cluster
     @Override

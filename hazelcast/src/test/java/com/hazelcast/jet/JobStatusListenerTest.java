@@ -57,7 +57,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
-import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.spi.impl.eventservice.impl.EventServiceTest.getEventService;
@@ -276,7 +275,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         Job job = instance.get().getJet().newLightJob(p);
         advance(job.getId(), 1);
         jobIdString = job.getIdString();
-        assertJobStatusEventually(job, COMPLETED);
+        job.join();
         assertThatThrownBy(() -> job.addStatusListener(e -> { }))
                 .hasMessage("Cannot add status listener to a COMPLETED job");
     }
@@ -312,7 +311,11 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     }
 
     protected void testLightListener(Object source, BiConsumer<Job, JobStatusLogger> test) {
-        testListener(source, JetService::newLightJob, test);
+        testListener(source, (jet, p) -> {
+            Job job = jet.newLightJob(p);
+            assertJobVisible(instance.get(), job, job.getIdString());
+            return job;
+        }, test);
     }
 
     protected void testLightListener(Object source, Consumer<Job> test, String log) {

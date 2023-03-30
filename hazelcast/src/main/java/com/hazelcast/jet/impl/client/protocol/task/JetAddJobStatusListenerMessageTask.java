@@ -24,9 +24,11 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.JobStatusEvent;
 import com.hazelcast.jet.JobStatusListener;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobEventService;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.JobPermission;
+import com.hazelcast.spi.impl.eventservice.impl.Registration;
 
 import java.security.Permission;
 import java.util.UUID;
@@ -34,7 +36,6 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.JobProxy.checkJobStatusListenerSupported;
-import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
 public class JetAddJobStatusListenerMessageTask extends AbstractAddListenerMessageTask<RequestParameters> {
 
@@ -45,12 +46,13 @@ public class JetAddJobStatusListenerMessageTask extends AbstractAddListenerMessa
     @Override
     protected CompletableFuture<UUID> processInternal() {
         checkJobStatusListenerSupported(nodeEngine);
-        JobEventService jobEventService = getService(JobEventService.SERVICE_NAME);
         long jobId = parameters.jobId;
-        JobStatusListener listener = new ClientJobStatusListener();
-        return parameters.localOnly
-                ? newCompletedFuture(jobEventService.addLocalEventListener(jobId, listener))
-                : jobEventService.addEventListenerAsync(jobId, listener);
+        JobEventService jobEventService = nodeEngine.getService(JobEventService.SERVICE_NAME);
+        Registration registration = jobEventService.prepareRegistration(
+                jobId, new ClientJobStatusListener(), parameters.localOnly);
+        JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
+        return jetServiceBackend.getJobCoordinationService().addJobStatusListener(
+                jobId, parameters.isLightJob, registration);
     }
 
     @Override

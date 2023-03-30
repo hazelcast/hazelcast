@@ -67,6 +67,7 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.impl.Registration;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.version.Version;
@@ -840,6 +841,32 @@ public class JobCoordinationService {
                 },
                 null
         );
+    }
+
+    /**
+     * Applies the specified listener registration if the job is not completed/failed.
+     * Otherwise, an {@link IllegalStateException} is thrown by the returned future.
+     */
+    public CompletableFuture<UUID> addJobStatusListener(long jobId, boolean isLightJob, Registration registration) {
+        if (isLightJob) {
+            Object mc = lightMasterContexts.get(jobId);
+            if (mc == null || mc == UNINITIALIZED_LIGHT_JOB_MARKER) {
+                throw new JobNotFoundException(jobId);
+            } else {
+                return completedFuture(((LightMasterContext) mc).addStatusListener(registration));
+            }
+        }
+        return callWithJob(jobId,
+                masterContext -> masterContext.addStatusListener(registration),
+                jobResult -> {
+                    throw new IllegalStateException("Cannot add status listener to a "
+                            + jobResult.getJobStatus() + " job");
+                },
+                jobRecord -> {
+                    JobEventService jobEventService = nodeEngine.getService(JobEventService.SERVICE_NAME);
+                    return jobEventService.handleAllRegistrations(jobId, registration).getId();
+                },
+                null);
     }
 
     /**

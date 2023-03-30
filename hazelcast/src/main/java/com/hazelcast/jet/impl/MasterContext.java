@@ -28,6 +28,7 @@ import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.impl.Registration;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
@@ -35,6 +36,7 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -178,6 +180,18 @@ public class MasterContext {
             deltaConfig.applyTo(jobConfig());
             jobRepository.updateJobRecord(jobRecord);
             return jobConfig();
+        } finally {
+            unlock();
+        }
+    }
+
+    public UUID addStatusListener(Registration registration) {
+        lock();
+        try {
+            if (jobStatus.isTerminal()) {
+                throw new IllegalStateException("Cannot add status listener to a " + jobStatus + " job");
+            }
+            return jobEventService.handleAllRegistrations(jobId, registration).getId();
         } finally {
             unlock();
         }
