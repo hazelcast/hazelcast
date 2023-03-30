@@ -303,7 +303,13 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         IMap<Integer, Person> map = client.getMap(tableName);
         map.loadAll(false);
 
-        execute("DROP MAPPING \"__map-store." + tableName + "\"");
+        String mappingName = "__map-store." + tableName;
+        execute("DROP MAPPING \"" + mappingName + "\"");
+
+        // DROP MAPPING is executed asynchronously. Ensure that it has finished
+        Row row = new Row(mappingName);
+        List<Row> rows = Collections.singletonList(row);
+        assertTrueEventually(() -> assertDoesNotContainRow(client, "SHOW MAPPINGS", rows), 30);
 
         String message = "did you forget to CREATE MAPPING?";
         Person person = new Person(42, "name-42");
