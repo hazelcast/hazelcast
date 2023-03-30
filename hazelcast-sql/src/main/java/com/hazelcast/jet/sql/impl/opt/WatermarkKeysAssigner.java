@@ -160,6 +160,8 @@ public class WatermarkKeysAssigner {
 
                 relToWmKeyMapping.put(union, intersection);
             } else if (node instanceof StreamToStreamJoinPhysicalRel) {
+                // Stream to Stream JOIN forwards watermarks
+                // from both inputs and offsets right input indices.
                 StreamToStreamJoinPhysicalRel join = (StreamToStreamJoinPhysicalRel) node;
                 Map<Integer, MutableByte> leftWmKeyMapping = relToWmKeyMapping.get(join.getLeft());
                 if (leftWmKeyMapping == null) {
@@ -189,11 +191,13 @@ public class WatermarkKeysAssigner {
                 relToWmKeyMapping.put(node, refByteMap);
 
             } else if (node instanceof SlidingWindowAggregatePhysicalRel) {
+                // SlidingWindowAggregatePhysicalRel propagates watermarks for `window_end` field only.
                 SlidingWindowAggregatePhysicalRel swAgg = (SlidingWindowAggregatePhysicalRel) node;
                 Map<Integer, MutableByte> inputWmKeys = relToWmKeyMapping.get(swAgg.getInput());
                 if (inputWmKeys == null) {
                     return;
                 }
+
                 MutableByte inputTimestampKey = inputWmKeys.get(swAgg.timestampFieldIndex());
                 if (inputTimestampKey == null) {
                     return;
@@ -237,6 +241,18 @@ public class WatermarkKeysAssigner {
                 // watermark is not preserved for other rels -- break the chain.
                 return;
             }
+        }
+
+        byte findLocalMaximumWmKey() {
+            byte max = Byte.MIN_VALUE;
+            for (Map<Integer, MutableByte> m : relToWmKeyMapping.values()) {
+                for (MutableByte b : m.values()) {
+                    if (b.getValue() > max) {
+                        max = b.getValue();
+                    }
+                }
+            }
+            return max;
         }
     }
 }
