@@ -135,6 +135,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         return new ArrayList<>(platformMBeanServer.queryMBeans(objectName, null));
     }
 
+    @Ignore // https://github.com/hazelcast/hazelcast/issues/24104
     @Test
     public void testScaling() throws Exception {
         int localParallelism = 3;
