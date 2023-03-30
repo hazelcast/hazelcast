@@ -38,7 +38,7 @@ public final class DataLinkTestUtil {
         properties.put("jdbcUrl", jdbcUrl);
         DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName(name)
-                .setType(JdbcDataLink.class.getName())
+                .setType("jdbc")
                 .setProperties(properties);
         config.getDataLinkConfigs().put(name, dataLinkConfig);
     }

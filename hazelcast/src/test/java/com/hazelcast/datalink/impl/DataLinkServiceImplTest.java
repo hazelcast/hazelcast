@@ -140,14 +140,14 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
 
         dataLinkService.replaceSqlDataLink(
                 name,
-                DummyDataLink.class.getName(),
+                DUMMY_DATA_LINK_TYPE,
                 false,
                 createMap("customProperty", "value")
         );
 
         dataLinkService.replaceSqlDataLink(
                 name2,
-                DummyDataLink.class.getName(),
+                DUMMY_DATA_LINK_TYPE,
                 true,
                 createMap("customProperty", "value")
         );
@@ -271,7 +271,7 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
         assertThatThrownBy(() -> hazelcastInstanceFactory.newHazelcastInstance(wrongConfig))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessage("Data link 'data-link-name' misconfigured: "
-                        + "unknown type 'non-existing-type-name' not found");
+                        + "unknown type 'non-existing-type-name'");
     }
 
     @Test
