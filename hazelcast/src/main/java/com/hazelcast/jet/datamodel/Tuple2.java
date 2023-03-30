@@ -89,7 +89,7 @@ public final class Tuple2<E0, E1> implements Map.Entry<E0, E1>, Serializable {
     }
 
     /**
-     * Returns the value of the field 0, throwing if it's null.
+     * Returns the value of the f0, throwing if it's null.
      */
     @Nonnull
     public E0 requiredF0() {
@@ -97,11 +97,11 @@ public final class Tuple2<E0, E1> implements Map.Entry<E0, E1>, Serializable {
     }
 
     /**
-     * Returns the value of the field 1.
+     * Returns the value of the f1, throwing if it's null..
      */
     @Nonnull
     public E1 requiredF1() {
-        return requireNonNull(f1, "f0 must not be null");
+        return requireNonNull(f1, "f1 must not be null");
     }
 
     @Override

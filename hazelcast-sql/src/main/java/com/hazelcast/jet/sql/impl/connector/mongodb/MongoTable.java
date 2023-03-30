@@ -86,25 +86,6 @@ class MongoTable extends JetTable {
         throw new IllegalArgumentException("field " + name + " does not exist");
     }
 
-    public MongoTableField getFieldByExternalName(String name) {
-        return getFields().stream()
-                          .map(f -> (MongoTableField) f)
-                          .filter(f -> f.getExternalName().equals(name))
-                          .findFirst()
-                          .orElseThrow(() -> new IllegalArgumentException("field " + name + " does not exist"));
-    }
-    public int getFieldIndexByExternalName(String name) {
-        int index = 0;
-        for (TableField f : getFields()) {
-            MongoTableField mongoTableField = (MongoTableField) f;
-            if (mongoTableField.getExternalName().equals(name)) {
-                return index;
-            }
-            index++;
-        }
-        return -1;
-    }
-
     String[] externalNames() {
         return externalNames;
     }
@@ -112,6 +93,7 @@ class MongoTable extends JetTable {
     QueryDataType[] fieldTypes() {
         return fieldTypes;
     }
+
     QueryDataType fieldType(String externalName) {
         for (TableField f : getFields()) {
             MongoTableField mongoTableField = (MongoTableField) f;
@@ -119,7 +101,7 @@ class MongoTable extends JetTable {
                 return mongoTableField.getType();
             }
         }
-        throw new IllegalArgumentException("unknown column " + externalName);
+        throw new IllegalArgumentException("Unknown column: " + externalName);
     }
 
     public BsonType[] externalTypes() {

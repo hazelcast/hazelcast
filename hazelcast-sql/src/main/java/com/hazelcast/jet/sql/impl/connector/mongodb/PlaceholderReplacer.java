@@ -15,6 +15,7 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier.Context;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -38,15 +39,14 @@ final class PlaceholderReplacer {
      * Searches for nodes in Document that are strings matching pattern of {@code <!SomePlaceholder(params)!>}.
      *
      * <p>
-     * Not all parameters are known at query planning stage, some are
-     * visible only in {@link com.hazelcast.jet.core.ProcessorSupplier#init(Context)} method. That's why
-     * we must postpone the argument matching.
-     * We cannot though transport {@linkplain org.apache.calcite.rex.RexNode} over the network, as it's not serializable,
-     * so we are binding everything we can in the connector and leave dynamic parameters for this method on PS side.
+     * Parameters are not known at query planning stage, they are
+     * visible only in {@link ProcessorSupplier#init(Context)} method. That's why
+     * we must use placeholders for the dynamic parameters, because we cannot transfer {@linkplain org.apache.calcite.rex.RexNode}
+     * over the network, as it's not serializable.
      *
      * <p>
-     * Similar restrictions are visible in case of input references - input reference value is known
-     * during query execution.
+     * Similar restrictions are in the case of input references - input reference value is known only to the processor
+     * receiving the input rows during job execution.
      */
     static Document replacePlaceholders(Document doc, ExpressionEvalContext evalContext, Object[] inputRow) {
         Document result = new Document();

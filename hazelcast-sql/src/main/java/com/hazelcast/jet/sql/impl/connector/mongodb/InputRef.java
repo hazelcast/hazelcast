@@ -21,7 +21,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Reference to some input value.
+ * Placeholder for a reference to a field from the input row.
  */
 public class InputRef implements DynamicallyReplacedPlaceholder {
 
