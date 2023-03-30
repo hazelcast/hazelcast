@@ -198,7 +198,6 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int SEARCH_PREDICATE = 76;
     public static final int EXPRESSION_FIELD_ACCESS = 77;
     public static final int EXPRESSION_ROW = 78;
-    public static final int EXPRESSION_GET_DDL = 79;
 
     public static final int DATA_LINK = 79;
 
@@ -220,8 +219,9 @@ public class JetSqlSerializerHook implements DataSerializerHook {
 
     public static final int QUERY_DATA_TYPE_FIELD = 89;
 
+    public static final int EXPRESSION_GET_DDL = 90;
 
-    public static final int LEN = QUERY_DATA_TYPE_FIELD + 1;
+    public static final int LEN = EXPRESSION_GET_DDL + 1;
 
     @Override
     public int getFactoryId() {
@@ -322,7 +322,6 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[SEARCH_PREDICATE] = arg -> new SearchPredicate();
         constructors[EXPRESSION_FIELD_ACCESS] = arg -> new FieldAccessExpression<>();
         constructors[EXPRESSION_ROW] = arg -> new RowExpression();
-        constructors[EXPRESSION_GET_DDL] = arg -> new GetDdlFunction();
 
         constructors[DATA_LINK] = arg -> new DataLinkCatalogEntry();
 
@@ -341,6 +340,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[INTERVAL_DAY_SECOND] = arg -> new SqlDaySecondInterval();
 
         constructors[QUERY_DATA_TYPE_FIELD] = arg -> new QueryDataType.QueryDataTypeField();
+        constructors[EXPRESSION_GET_DDL] = arg -> new GetDdlFunction();
 
         return new ArrayDataSerializableFactory(constructors);
     }
