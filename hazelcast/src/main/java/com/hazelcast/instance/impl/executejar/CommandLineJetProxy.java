@@ -18,8 +18,6 @@ package com.hazelcast.instance.impl.executejar;
 
 import com.hazelcast.instance.impl.BootstrappedJetProxy;
 import com.hazelcast.jet.JetService;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 
 import javax.annotation.Nonnull;
 
@@ -27,8 +25,6 @@ import javax.annotation.Nonnull;
  * The state is about running a jet job, and it stored in a local member
  */
 public class CommandLineJetProxy<M> extends BootstrappedJetProxy<M> {
-
-    private static final ILogger LOGGER = Logger.getLogger(CommandLineJetProxy.class);
 
     private ExecuteJobParameters executeJobParameters;
 
@@ -43,7 +39,6 @@ public class CommandLineJetProxy<M> extends BootstrappedJetProxy<M> {
 
     @Override
     public void setExecuteJobParameters(ExecuteJobParameters executeJobParameters) {
-        LOGGER.info("setExecuteJobParameters is called");
         this.executeJobParameters = executeJobParameters;
     }
 }
