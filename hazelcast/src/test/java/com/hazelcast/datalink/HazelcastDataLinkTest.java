@@ -110,7 +110,7 @@ public class HazelcastDataLinkTest extends HazelcastTestSupport {
     @Test
     public void should_throw_with_empty_filepath() {
         DataLinkConfig dataLinkConfig = new DataLinkConfig("data-link-name")
-                .setClassName(HazelcastDataLink.class.getName())
+                .setType(HazelcastDataLink.class.getName())
                 .setProperty(HazelcastDataLink.CLIENT_YML_PATH, "")
                 .setShared(true);
 
@@ -121,7 +121,7 @@ public class HazelcastDataLinkTest extends HazelcastTestSupport {
     @Test
     public void should_throw_with_filepath_string() {
         DataLinkConfig dataLinkConfig = new DataLinkConfig("data-link-name")
-                .setClassName(HazelcastDataLink.class.getName())
+                .setType(HazelcastDataLink.class.getName())
                 .setProperty(HazelcastDataLink.CLIENT_YML_PATH, "")
                 .setProperty(HazelcastDataLink.CLIENT_YML, "")
                 .setShared(true);
@@ -205,7 +205,7 @@ public class HazelcastDataLinkTest extends HazelcastTestSupport {
     @Nonnull
     private static DataLinkConfig sharedDataLinkConfigFromFile(String clusterName) {
         DataLinkConfig dataLinkConfig = new DataLinkConfig("data-link-name")
-                .setClassName(HazelcastDataLink.class.getName())
+                .setType(HazelcastDataLink.class.getName())
                 .setShared(true);
         try {
             byte[] bytes = readAllBytes(Paths.get("src", "test", "resources", "hazelcast-client-test-external.xml"));
