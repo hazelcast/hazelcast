@@ -64,6 +64,7 @@ import static org.mockito.Mockito.doAnswer;
 public class JobUploadClientFailureTest extends JetTestSupport {
 
     private static final String SIMPLE_JAR = "simplejob-1.0.0.jar";
+    private static final String PARALLEL_JAR = "paralleljob-1.0.0.jar";
     private static final String NO_MANIFEST_SIMPLE_JAR = "nomanifestsimplejob-1.0.0.jar";
 
     @After
@@ -352,6 +353,10 @@ public class JobUploadClientFailureTest extends JetTestSupport {
     */
     public static Path getJarPath() {
         return getPath(SIMPLE_JAR);
+    }
+
+    public static Path getParalleJarPath() {
+        return getPath(PARALLEL_JAR);
     }
 
     static Path copyJar(String newJarPath) throws IOException {

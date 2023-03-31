@@ -201,7 +201,8 @@ public abstract class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
     }
 
     private void addToSubmittedJobs(@Nonnull Job job) {
-        getExecuteJobParameters().addSubmittedJob(job);
+        ExecuteJobParameters executeJobParameters = getExecuteJobParameters();
+        executeJobParameters.addSubmittedJob(job);
     }
 
     private void updateJobConfig(JobConfig jobConfig) {

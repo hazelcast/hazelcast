@@ -88,11 +88,8 @@ public final class HazelcastBootstrap {
                                        @Nullable String mainClassName,
                                        @Nonnull List<String> args)
             throws IOException, ClassNotFoundException, InvocationTargetException, IllegalAccessException {
-
-        LOGGER.info("Execute Jar : " + jarPath);
         // Set the singleton, so that it can be accessed within the jar
         SINGLETON.get(() -> createWithCLIJetProxy(supplierOfInstance.get()));
-
         ExecuteJobParameters executeJobParameters = new ExecuteJobParameters(jarPath, snapshotName, jobName);
 
         CommandLineExecuteJar commandLineExecuteJar = new CommandLineExecuteJar();
