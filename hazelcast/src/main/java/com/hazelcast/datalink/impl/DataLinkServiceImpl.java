@@ -28,6 +28,7 @@ import javax.annotation.Nonnull;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -65,7 +66,7 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
                     DataLinkRegistration.class.getName(),
                     classLoader
             ).forEachRemaining(registration -> {
-                typeToDataLinkClass.put(registration.type(), registration.clazz());
+                typeToDataLinkClass.put(registration.type().toLowerCase(Locale.ROOT), registration.clazz());
                 dataLinkClassToType.put(registration.clazz(), registration.type());
             });
         } catch (Exception e) {
@@ -125,21 +126,19 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
         Properties properties = new Properties();
         properties.putAll(options);
         return new DataLinkConfig(name)
-                .setClassName(type)
+                .setType(type)
                 .setShared(shared)
                 .setProperties(properties);
     }
 
     private DataLink createDataLinkInstance(DataLinkConfig config) {
         logger.finest("Creating '" + config.getName() + "' data link");
-        String type = config.getClassName();
+        String type = config.getType();
         try {
-            Class<? extends DataLink> dataLinkClass;
-            if (typeToDataLinkClass.containsKey(type)) {
-                dataLinkClass = typeToDataLinkClass.get(type);
-            } else {
-                // TODO get rid of this branch when change className -> type in config
-                dataLinkClass = getDataLinkClass(type);
+            Class<? extends DataLink> dataLinkClass = typeToDataLinkClass.get(type.toLowerCase(Locale.ROOT));
+            if (dataLinkClass == null) {
+                throw new HazelcastException("Data link '" + config.getName() + "' misconfigured: "
+                        + "unknown type '" + type + "'");
             }
             Constructor<? extends DataLink> constructor = dataLinkClass.getConstructor(DataLinkConfig.class);
             return constructor.newInstance(config);
@@ -147,21 +146,8 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
             throw new HazelcastException("Data link '" + config.getName() + "' misconfigured: "
                     + "'" + type + "' must implement '"
                     + DataLink.class.getName() + "'", e);
-
-        } catch (ClassNotFoundException e) {
-            throw new HazelcastException("Data link '" + config.getName() + "' misconfigured: "
-                    + "class '" + type + "' not found", e);
         } catch (Exception e) {
             throw rethrow(e);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T> Class<T> getDataLinkClass(String className) throws ClassNotFoundException {
-        if (classLoader != null) {
-            return (Class<T>) classLoader.loadClass(className);
-        } else {
-            return (Class<T>) DataLinkServiceImpl.class.getClassLoader().loadClass(className);
         }
     }
 
@@ -218,18 +204,18 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
 
     public List<DataLink> getConfigCreatedDataLinks() {
         return dataLinks.values()
-                .stream()
-                .filter(dl -> dl.source == CONFIG)
-                .map(dl -> dl.instance)
-                .collect(Collectors.toList());
+                        .stream()
+                        .filter(dl -> dl.source == CONFIG)
+                        .map(dl -> dl.instance)
+                        .collect(Collectors.toList());
     }
 
     public List<DataLink> getSqlCreatedDataLinks() {
         return dataLinks.values()
-                .stream()
-                .filter(dl -> dl.source == SQL)
-                .map(dl -> dl.instance)
-                .collect(Collectors.toList());
+                        .stream()
+                        .filter(dl -> dl.source == SQL)
+                        .map(dl -> dl.instance)
+                        .collect(Collectors.toList());
     }
 
     @Override

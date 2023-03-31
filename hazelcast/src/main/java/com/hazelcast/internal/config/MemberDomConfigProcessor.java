@@ -3495,8 +3495,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     protected void handleDataLink(Node node, DataLinkConfig dataLinkConfig) {
         for (Node child : childElements(node)) {
             String childName = cleanNodeName(child);
-            if (matches("class-name", childName)) {
-                dataLinkConfig.setClassName(getTextContent(child));
+            if (matches("type", childName)) {
+                dataLinkConfig.setType(getTextContent(child));
             } else if (matches("properties", childName)) {
                 fillProperties(child, dataLinkConfig.getProperties());
             } else if (matches("shared", childName)) {

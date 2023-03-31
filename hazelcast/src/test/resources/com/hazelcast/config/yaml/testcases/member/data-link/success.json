@@ -3,7 +3,7 @@
     "hazelcast": {
       "data-link": {
         "mysql-database": {
-          "class-name": "com.hazelcast.datalink.JdbcDataLink",
+          "type": "jdbc",
           "properties": {
             "jdbcUrl": "jdbc:mysql://dummy:3306"
           },

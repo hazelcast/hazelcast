@@ -53,7 +53,7 @@ public class KafkaDataLinkTest {
     }
 
     @AfterClass
-    public static void afterClass()  {
+    public static void afterClass() {
         kafkaTestSupport.shutdownKafkaCluster();
     }
 
@@ -173,7 +173,7 @@ public class KafkaDataLinkTest {
 
     private KafkaDataLink createKafkaDataLink(KafkaTestSupport kafkaTestSupport) {
         DataLinkConfig config = new DataLinkConfig("kafka-data-link")
-                .setClassName(KafkaDataLink.class.getName())
+                .setType("Kafka")
                 .setShared(true)
                 .setProperties(properties(kafkaTestSupport));
 
@@ -182,7 +182,7 @@ public class KafkaDataLinkTest {
 
     private KafkaDataLink createNonSharedKafkaDataLink() {
         DataLinkConfig config = new DataLinkConfig("kafka-data-link")
-                .setClassName(KafkaDataLink.class.getName())
+                .setType("Kafka")
                 .setShared(false)
                 .setProperties(properties(kafkaTestSupport));
 

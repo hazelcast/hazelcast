@@ -3,7 +3,7 @@
     "hazelcast": {
       "data-link": {
         "mysql-database": {
-          "class-name": 123,
+          "type": 123,
           "properties": [
             "jdbc:mysql://dummy:3306"
           ],
@@ -17,8 +17,8 @@
     "pointerToViolation": "#/hazelcast/data-link/mysql-database",
     "causingExceptions": [
       {
-        "schemaLocation": "#/definitions/DataLinkConfig/additionalProperties/properties/class-name",
-        "pointerToViolation": "#/hazelcast/data-link/mysql-database/class-name",
+        "schemaLocation": "#/definitions/DataLinkConfig/additionalProperties/properties/type",
+        "pointerToViolation": "#/hazelcast/data-link/mysql-database/type",
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: String, found: Integer"

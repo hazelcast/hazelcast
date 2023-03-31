@@ -20,7 +20,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.JdbcDataLink;
+import com.hazelcast.datalink.impl.JdbcDataLink;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;

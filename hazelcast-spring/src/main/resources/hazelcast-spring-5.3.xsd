@@ -6269,18 +6269,22 @@
 
     <xs:complexType name="data-link">
         <xs:all>
-            <xs:element name="class-name" type="xs:string">
+            <xs:element name="type" type="xs:string">
                 <xs:annotation>
                     <xs:documentation>
-                        The name of the class implementing DataLink.
+                        The type of the DataLink.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="shared" type="xs:boolean" minOccurs="0" default="true">
                 <xs:annotation>
                     <xs:documentation>
-                        If true reuse an instance of JDBC pool or any other storage driver (e.g. kafka client) between jobs or
-                        instances of MapStore.
+                        True if an instance of the data link will be shared.
+                        Depending on the implementation of the DataLink the shared instance may be
+                        single a thread-safe instance, or not thread-safe, but a pooled instance.
+                        False when on each usage a new instance of the underlying resource
+                        should be created.
+                        The default is true.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

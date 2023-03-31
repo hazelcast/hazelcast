@@ -29,13 +29,13 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExp
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
@@ -67,7 +67,6 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.impl.DataLinkTestUtil.DummyDataLink;
 import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
@@ -683,7 +682,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         properties.setProperty("prop2", "val2");
         DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName("some-name")
-                .setClassName(DummyDataLink.class.getName())
+                .setType("dummy")
                 .setProperties(properties);
 
 

@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.config.DataLinkConfig;
-import com.hazelcast.datalink.impl.DataLinkTestUtil;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -59,7 +58,7 @@ public class ShowDataLinksSqlTest extends SqlTestSupport {
         // create data links via CONFIG
         getNodeEngineImpl(instance()).getDataLinkService().createConfigDataLink(
                 new DataLinkConfig("dl")
-                        .setClassName(DataLinkTestUtil.DummyDataLink.class.getName())
+                        .setType("dummy")
         );
 
         // create data links via SQL
