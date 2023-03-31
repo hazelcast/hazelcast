@@ -21,6 +21,7 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.executejar.ExecuteJobParameters;
 import com.hazelcast.jet.JetCacheManager;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Observable;
@@ -31,6 +32,7 @@ import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.topic.ITopic;
@@ -45,6 +47,9 @@ import java.util.Map;
  */
 @SuppressWarnings({"checkstyle:methodcount"})
 public abstract class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
+
+    private static final ILogger LOGGER = Logger.getLogger(BootstrappedInstanceProxy.class);
+
     private final AbstractJetInstance<M> jetInstance;
 
     protected BootstrappedJetProxy(@Nonnull JetService jetService) {
@@ -217,6 +222,15 @@ public abstract class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
             if (jobParameters.hasJobName()) {
                 jobConfig.setName(jobParameters.getJobName());
             }
+        } else {
+            String message = "The jet job has been started from a thread that is different from the one that called "
+                             + "the main method. \n"
+                             + "The job could not be found in the ThreadLocal and the job will not start.\n"
+                             + "If you still want to start job in a different thread, then you need to set the parameters "
+                             + "of the JobConfig in that thread\n"
+                             + "JobConfig\n  .addJar(...)\n  .setInitialSnapshotName(...)\n  .setName(...); ";
+            LOGGER.severe(message);
+            throw new JetException(message);
         }
     }
 }

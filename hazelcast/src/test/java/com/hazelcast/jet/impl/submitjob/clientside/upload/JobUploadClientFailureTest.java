@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.impl.HazelcastBootstrap;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.config.JetConfig;
@@ -181,6 +182,21 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         assertThrows(JetException.class, () -> jetService.submitJobFromJar(submitJobParameters));
     }
 
+
+    @Test
+    public void test_jarUpload_with_parallel_jobs() {
+        createCluster();
+
+        JetClientInstanceImpl jetService = getClientJetService();
+
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnClient()
+                .setJarPath(getParalleJarPath())
+                .setJobName("parallel_job");
+
+        jetService.submitJobFromJar(submitJobParameters);
+
+        assertJobIsNotRunning(jetService);
+    }
 
     @Test
     public void test_jar_isDeleted() throws IOException {
@@ -416,5 +432,10 @@ public class JobUploadClientFailureTest extends JetTestSupport {
 
     public static boolean containsName(List<Job> list, String name) {
         return list.stream().anyMatch(job -> Objects.equals(job.getName(), name));
+    }
+
+    private static void assertJobIsNotRunning(JetService jetService) {
+        // Assert job size
+        assertEqualsEventually(() -> jetService.getJobs().size(), 0);
     }
 }
