@@ -18,7 +18,6 @@ package com.hazelcast.datalink.impl;
 
 import com.hazelcast.datalink.DataLink;
 import com.hazelcast.datalink.DataLinkRegistration;
-import com.hazelcast.datalink.JdbcDataLink;
 
 /**
  * Registration for {@link JdbcDataLink}

@@ -94,7 +94,7 @@ public class HazelcastDataLinkTest extends HazelcastTestSupport {
     @Test
     public void should_throw_with_missing_config() {
         DataLinkConfig dataLinkConfig = new DataLinkConfig("data-link-name")
-                .setClassName(HazelcastDataLink.class.getName())
+                .setType("hz")
                 .setShared(true);
 
         assertThatThrownBy(() -> hazelcastDataLink = new HazelcastDataLink(dataLinkConfig))
@@ -190,7 +190,7 @@ public class HazelcastDataLinkTest extends HazelcastTestSupport {
     @Nonnull
     private static DataLinkConfig sharedDataLinkConfig(String clusterName) {
         DataLinkConfig dataLinkConfig = new DataLinkConfig("data-link-name")
-                .setClassName(HazelcastDataLink.class.getName())
+                .setType("HZ")
                 .setShared(true);
         try {
             byte[] bytes = readAllBytes(Paths.get("src", "test", "resources", "hazelcast-client-test-external.xml"));

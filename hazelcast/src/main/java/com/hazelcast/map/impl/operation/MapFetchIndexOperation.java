@@ -47,7 +47,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
-import static com.hazelcast.map.impl.MapDataSerializerHook.MAP_FETCH_INDEX_OPERATION;
 
 /**
  * Operation for fetching map entries from an index. It will only return
@@ -354,7 +353,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
     @Override
     public int getClassId() {
-        return MAP_FETCH_INDEX_OPERATION;
+        return MapDataSerializerHook.MAP_FETCH_INDEX_OPERATION;
     }
 
     public static final class MapFetchIndexOperationResult implements IdentifiedDataSerializable {

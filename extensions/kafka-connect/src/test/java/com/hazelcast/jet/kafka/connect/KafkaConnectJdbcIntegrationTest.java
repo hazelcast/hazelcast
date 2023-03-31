@@ -26,6 +26,7 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
@@ -35,7 +36,11 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 
 import java.net.URL;
 import java.sql.Connection;
@@ -52,16 +57,21 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
-    public static final String USERNAME = "mysql";
-    public static final String PASSWORD = "mysql";
-
-    public static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:5.7.34")
-            .withUsername(USERNAME).withPassword(PASSWORD);
-
     @ClassRule
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
+
+    public static final String USERNAME = "mysql";
+    public static final String PASSWORD = "mysql";
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectJdbcIntegrationTest.class);
+
+    private static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:5.7.34")
+            .withUsername(USERNAME).withPassword(PASSWORD)
+            .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"));
+
+
 
     private static final int ITEM_COUNT = 1_000;
 

@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datalink.JdbcDataLink;
+import com.hazelcast.datalink.impl.JdbcDataLink;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -132,7 +132,7 @@ public class JdbcSqlConnector implements SqlConnector {
     ) {
         String dataLinkRef = requireNonNull(
                 options.get(OPTION_DATA_LINK_NAME),
-                OPTION_DATA_LINK_NAME + " must be set"
+                "Missing option: '" + OPTION_DATA_LINK_NAME + "' must be set"
         );
         JdbcDataLink dataLink = getAndRetainDataLink(nodeEngine, dataLinkRef);
         try (Connection connection = dataLink.getConnection()) {

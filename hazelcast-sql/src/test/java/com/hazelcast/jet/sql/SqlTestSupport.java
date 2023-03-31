@@ -26,6 +26,7 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestSupport;
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -39,8 +40,8 @@ import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.ResultIterator;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlInternalService;
+import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.plan.cache.PlanCache;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -467,7 +468,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
         IdentifiedDataSerializable original0 = (IdentifiedDataSerializable) original;
 
-        assertEquals(SqlDataSerializerHook.F_ID, original0.getFactoryId());
+        assertEquals(JetSqlSerializerHook.F_ID, original0.getFactoryId());
         assertEquals(expectedClassId, original0.getClassId());
 
         return serialize(original);
@@ -639,12 +640,19 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         sqlService.execute(sb.toString());
     }
 
-    public static void createDataLink(HazelcastInstance instance, String name, String type, Map<String, String> options) {
+    public static void createDataLink(
+            HazelcastInstance instance,
+            String name,
+            String type,
+            boolean shared,
+            Map<String, String> options
+    ) {
         StringBuilder queryBuilder = new StringBuilder()
                 .append("CREATE OR REPLACE DATA LINK ")
                 .append(quoteName(name))
                 .append(" TYPE ")
                 .append(quoteName(type))
+                .append(shared ? " SHARED " : " NOT SHARED ")
                 .append(" OPTIONS (\n");
         for (Map.Entry<String, String> entry : options.entrySet()) {
             queryBuilder.append("'").append(entry.getKey()).append("'")
@@ -707,12 +715,16 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
                 : "/non/existing/path";
     }
 
+    public static SqlServiceImpl sqlServiceImpl(HazelcastInstance instance) {
+        return (SqlServiceImpl) instance.getSql();
+    }
+
     public static SqlInternalService sqlInternalService(HazelcastInstance instance) {
-        return nodeEngine(instance).getSqlService().getInternalService();
+        return sqlServiceImpl(instance).getInternalService();
     }
 
     public static PlanCache planCache(HazelcastInstance instance) {
-        return nodeEngine(instance).getSqlService().getPlanCache();
+        return sqlServiceImpl(instance).getPlanCache();
     }
 
     public static MapContainer mapContainer(IMap<?, ?> map) {

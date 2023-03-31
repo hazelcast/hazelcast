@@ -45,7 +45,7 @@ public class AddDataLinkConfigMessageTask
     @Override
     protected IdentifiedDataSerializable getConfig() {
         DataLinkConfig config = new DataLinkConfig(parameters.name);
-        config.setClassName(parameters.className);
+        config.setType(parameters.type);
         config.setShared(parameters.shared);
         config.setProperties(PropertiesUtil.fromMap(parameters.properties));
         return config;

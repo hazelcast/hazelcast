@@ -23,6 +23,7 @@ import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.IMap;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
@@ -266,7 +267,7 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
         }
     }
 
-    public static class SilentOperation extends Operation {
+    public static class SilentOperation extends Operation implements AllowedDuringPassiveState {
 
         static final String EXECUTION_STARTED = "execution-started";
 

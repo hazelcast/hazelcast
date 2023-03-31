@@ -17,11 +17,13 @@
 package com.hazelcast.jet.kafka.connect;
 
 import com.hazelcast.jet.pipeline.StreamSource;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.Properties;
 
@@ -29,6 +31,7 @@ import static com.hazelcast.jet.kafka.connect.KafkaConnectSources.connect;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class KafkaConnectSourcesTest {
 

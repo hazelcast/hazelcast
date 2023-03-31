@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.connector.infoschema;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataLinkConfig;
-import com.hazelcast.datalink.impl.DataLinkTestUtil;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.sql.SqlService;
@@ -112,24 +111,26 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
     @Test
     public void test_datalinks() {
         // given
-        String type = DataLinkTestUtil.DummyDataLink.class.getName();
-        String wrappedType = "\"" + type + "\"";
-
+        String type = "DUMMY";
         // create config-originated data link
         getNodeEngineImpl(instance()).getDataLinkService().createConfigDataLink(
                 new DataLinkConfig()
                         .setName("c_dl")
-                        .setClassName(type)
+                        .setType(type)
         );
 
         // create SQL-originated data link
-        sqlService.execute("CREATE DATA LINK s_dl TYPE " + wrappedType);
+        sqlService.execute("CREATE DATA LINK sql_default_shared_dl TYPE DUMMY");
+        sqlService.execute("CREATE DATA LINK sql_shared_dl TYPE DUMMY SHARED");
+        sqlService.execute("CREATE DATA LINK sql_non_shared_dl TYPE DUMMY NOT SHARED");
 
         assertRowsAnyOrder(
                 "SELECT * FROM information_schema.datalinks",
                 asList(
-                        new Row("hazelcast", "public", "s_dl", type, "{}", "SQL"),
-                        new Row("hazelcast", "public", "c_dl", type, "{}", "CONFIG")
+                        new Row("hazelcast", "public", "sql_default_shared_dl", type, true, "{}", "SQL"),
+                        new Row("hazelcast", "public", "sql_shared_dl", type, true, "{}", "SQL"),
+                        new Row("hazelcast", "public", "sql_non_shared_dl", type, false, "{}", "SQL"),
+                        new Row("hazelcast", "public", "c_dl", type, true, "{}", "CONFIG")
                 )
         );
     }

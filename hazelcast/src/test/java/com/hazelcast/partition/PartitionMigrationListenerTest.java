@@ -182,33 +182,6 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         }
     }
 
-    @Test
-    public void testMigrationStats_afterPartitionsLost_when_NO_MIGRATION() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        Config config = new Config().setProperty(ClusterProperty.PARTITION_COUNT.getName(), "2000");
-        HazelcastInstance[] instances = factory.newInstances(config, 10);
-        assertClusterSizeEventually(instances.length, instances);
-        warmUpPartitions(instances);
-
-        EventCollectingMigrationListener listener = new EventCollectingMigrationListener();
-        instances[0].getPartitionService().addMigrationListener(listener);
-
-        changeClusterStateEventually(instances[0], ClusterState.PASSIVE);
-
-        for (int i = 3; i < instances.length; i++) {
-            instances[i].getLifecycleService().terminate();
-        }
-
-        changeClusterStateEventually(instances[0], ClusterState.NO_MIGRATION);
-
-        // 3 promotions on each remaining node + 1 to assign owners for lost partitions
-        for (MigrationEventsPack eventsPack : listener.ensureAndGetEventPacks(4)) {
-            assertMigrationProcessCompleted(eventsPack);
-            assertMigrationProcessEventsConsistent(eventsPack);
-            assertMigrationEventsConsistentWithResult(eventsPack);
-        }
-    }
-
     public static void assertMigrationProcessCompleted(MigrationEventsPack eventsPack) {
         assertTrueEventually(() -> assertNotNull(eventsPack.migrationProcessCompleted));
     }

@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.expression.string;
 
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.string.ReplaceFunction;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -115,7 +115,7 @@ public class ReplaceFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testSerialization() {
         ReplaceFunction f = createFunction("xyz", "x", "X");
-        ReplaceFunction deserialized = serializeAndCheck(f, SqlDataSerializerHook.EXPRESSION_REPLACE);
+        ReplaceFunction deserialized = serializeAndCheck(f, JetSqlSerializerHook.EXPRESSION_REPLACE);
 
         checkEquals(f, deserialized, true);
     }
