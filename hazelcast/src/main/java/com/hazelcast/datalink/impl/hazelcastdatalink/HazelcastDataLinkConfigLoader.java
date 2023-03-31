@@ -40,16 +40,20 @@ public class HazelcastDataLinkConfigLoader {
 
     private static final ILogger LOGGER = Logger.getLogger(HazelcastDataLinkConfigLoader.class);
 
-    public void loadConfigFromFile(DataLinkConfig dataLinkConfig) {
+    public DataLinkConfig loadConfigFromFile(DataLinkConfig dataLinkConfig) {
+        // Make a copy to preserve the original configuration
+        DataLinkConfig loadedDataLinkConfig = new DataLinkConfig(dataLinkConfig);
+
         String clientXmlPath = dataLinkConfig.getProperty(CLIENT_XML_PATH);
-        if (loadConfig(dataLinkConfig, clientXmlPath, CLIENT_XML)) {
+        if (loadConfig(loadedDataLinkConfig, clientXmlPath, CLIENT_XML)) {
             LOGGER.info("Successfully read XML file :" + clientXmlPath);
         } else {
             String clientYmlPath = dataLinkConfig.getProperty(CLIENT_YML_PATH);
-            if (loadConfig(dataLinkConfig, clientYmlPath, CLIENT_YML)) {
+            if (loadConfig(loadedDataLinkConfig, clientYmlPath, CLIENT_YML)) {
                 LOGGER.info("Successfully read YML file :" + clientYmlPath);
             }
         }
+        return loadedDataLinkConfig;
     }
 
     private boolean loadConfig(DataLinkConfig dataLinkConfig, String filePath, String propertyKey) {

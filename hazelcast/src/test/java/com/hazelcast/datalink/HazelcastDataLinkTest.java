@@ -100,7 +100,7 @@ public class HazelcastDataLinkTest extends HazelcastTestSupport {
         assertThatThrownBy(() -> hazelcastDataLink = new HazelcastDataLink(dataLinkConfig))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessage("HazelcastDataLink with name 'data-link-name' "
-                            + "could not be created "
+                            + "could not be created, "
                             + "provide either a file path with one of "
                             + "\"client_xml_path\" or \"client_yml_path\" properties "
                             + "or a string content with one of \"client_xml\" or \"client_yml\" properties "

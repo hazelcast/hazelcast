@@ -30,7 +30,7 @@ public class HazelcastDataLinkConfigValidator {
         int numberOfSetItems = getNumberOfSetItems(dataLinkConfig, CLIENT_XML_PATH, CLIENT_YML_PATH, CLIENT_XML, CLIENT_YML);
         if (numberOfSetItems != 1) {
             throw new HazelcastException("HazelcastDataLink with name '" + dataLinkConfig.getName()
-                                         + "' could not be created "
+                                         + "' could not be created, "
                                          + "provide either a file path with one of "
                                          + "\"client_xml_path\" or \"client_yml_path\" properties "
                                          + "or a string content with one of \"client_xml\" or \"client_yml\" properties "

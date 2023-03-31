@@ -86,16 +86,19 @@ public class HazelcastDataLink extends DataLinkBase {
     }
 
     private ClientConfig buildClientConfig() {
-        DataLinkConfig dataLinkConfig = getConfig();
-
-        HazelcastDataLinkConfigValidator validator = new HazelcastDataLinkConfigValidator();
-        validator.validate(dataLinkConfig);
+        validateConfiguration();
 
         HazelcastDataLinkConfigLoader configLoader = new HazelcastDataLinkConfigLoader();
-        configLoader.loadConfigFromFile(dataLinkConfig);
+        DataLinkConfig dataLinkConfig = configLoader.loadConfigFromFile(getConfig());
 
         HazelcastDataLinkClientConfigBuilder configBuilder = new HazelcastDataLinkClientConfigBuilder();
         return configBuilder.buildClientConfig(dataLinkConfig);
+    }
+
+    private void validateConfiguration() {
+        HazelcastDataLinkConfigValidator validator = new HazelcastDataLinkConfigValidator();
+        DataLinkConfig dataLinkConfig = getConfig();
+        validator.validate(dataLinkConfig);
     }
 
     @Nonnull
