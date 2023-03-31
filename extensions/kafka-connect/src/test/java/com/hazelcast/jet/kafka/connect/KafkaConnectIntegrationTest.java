@@ -67,7 +67,6 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-@RunWith(HazelcastSerialClassRunner.class)
 public class KafkaConnectIntegrationTest extends JetTestSupport {
     @ClassRule
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
