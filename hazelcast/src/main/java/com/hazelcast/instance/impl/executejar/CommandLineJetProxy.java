@@ -32,6 +32,10 @@ public class CommandLineJetProxy<M> extends BootstrappedJetProxy<M> {
         super(jetService);
     }
 
+    public boolean hasExecuteJobParameters() {
+        return getExecuteJobParameters() != null;
+    }
+
     @Override
     public ExecuteJobParameters getExecuteJobParameters() {
         return executeJobParameters;

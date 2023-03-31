@@ -48,7 +48,7 @@ import java.util.Map;
 @SuppressWarnings({"checkstyle:methodcount"})
 public abstract class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
 
-    private static final ILogger LOGGER = Logger.getLogger(BootstrappedInstanceProxy.class);
+    private static final ILogger LOGGER = Logger.getLogger(BootstrappedJetProxy.class);
 
     private final AbstractJetInstance<M> jetInstance;
 
@@ -56,6 +56,8 @@ public abstract class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
         super(((AbstractJetInstance) jetService).getHazelcastInstance());
         this.jetInstance = (AbstractJetInstance<M>) jetService;
     }
+
+    public abstract boolean hasExecuteJobParameters();
 
     public abstract ExecuteJobParameters getExecuteJobParameters();
 
@@ -206,31 +208,35 @@ public abstract class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
     }
 
     private void addToSubmittedJobs(@Nonnull Job job) {
-        ExecuteJobParameters executeJobParameters = getExecuteJobParameters();
-        executeJobParameters.addSubmittedJob(job);
+        if (hasExecuteJobParameters()) {
+            ExecuteJobParameters executeJobParameters = getExecuteJobParameters();
+            executeJobParameters.addSubmittedJob(job);
+        }
     }
 
     private void updateJobConfig(JobConfig jobConfig) {
-        ExecuteJobParameters jobParameters = getExecuteJobParameters();
+        if (hasExecuteJobParameters()) {
+            ExecuteJobParameters jobParameters = getExecuteJobParameters();
 
-        if (jobParameters.hasJarPath()) {
-            jobConfig.addJar(jobParameters.getJarPath());
+            if (jobParameters.hasJarPath()) {
+                jobConfig.addJar(jobParameters.getJarPath());
 
-            if (jobParameters.hasSnapshotName()) {
-                jobConfig.setInitialSnapshotName(jobParameters.getSnapshotName());
+                if (jobParameters.hasSnapshotName()) {
+                    jobConfig.setInitialSnapshotName(jobParameters.getSnapshotName());
+                }
+                if (jobParameters.hasJobName()) {
+                    jobConfig.setName(jobParameters.getJobName());
+                }
+            } else {
+                String message = "The jet job has been started from a thread that is different from the one that called "
+                                 + "the main method. \n"
+                                 + "The job could not be found in the ThreadLocal and the job will not start.\n"
+                                 + "If you still want to start job in a different thread, then you need to set the parameters "
+                                 + "of the JobConfig in that thread\n"
+                                 + "JobConfig\n  .addJar(...)\n  .setInitialSnapshotName(...)\n  .setName(...); ";
+                LOGGER.severe(message);
+                throw new JetException(message);
             }
-            if (jobParameters.hasJobName()) {
-                jobConfig.setName(jobParameters.getJobName());
-            }
-        } else {
-            String message = "The jet job has been started from a thread that is different from the one that called "
-                             + "the main method. \n"
-                             + "The job could not be found in the ThreadLocal and the job will not start.\n"
-                             + "If you still want to start job in a different thread, then you need to set the parameters "
-                             + "of the JobConfig in that thread\n"
-                             + "JobConfig\n  .addJar(...)\n  .setInitialSnapshotName(...)\n  .setName(...); ";
-            LOGGER.severe(message);
-            throw new JetException(message);
         }
     }
 }
