@@ -449,7 +449,10 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                             singletonList(timestampFn),
                             TimestampKind.EVENT,
                             windowPolicy,
-                            aggregateOperation));
+                            aggregateOperation,
+                            watermarkedFieldsKeys.isEmpty()
+                                    ? (byte) 0
+                                    : watermarkedFieldsKeys.get(rel.watermarkedFields().findFirst()).getValue()));
 
             Vertex vertex2 = dag.newUniqueVertex(
                     "Sliding-Window-CombineByKey",

@@ -242,17 +242,5 @@ public class WatermarkKeysAssigner {
                 return;
             }
         }
-
-        byte findLocalMaximumWmKey() {
-            byte max = Byte.MIN_VALUE;
-            for (Map<Integer, MutableByte> m : relToWmKeyMapping.values()) {
-                for (MutableByte b : m.values()) {
-                    if (b.getValue() > max) {
-                        max = b.getValue();
-                    }
-                }
-            }
-            return max;
-        }
     }
 }
