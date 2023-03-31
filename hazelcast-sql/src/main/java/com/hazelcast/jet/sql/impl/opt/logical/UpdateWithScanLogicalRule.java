@@ -45,6 +45,8 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * A rule to match a TableModify[operation=update], with a TableScan as input.
+ * <p>
+ * For an overall description, see {@link UpdateNoScanLogicalRule}.
  */
 @Value.Enclosing
 class UpdateWithScanLogicalRule extends RelRule<RelRule.Config> {

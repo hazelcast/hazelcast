@@ -81,8 +81,7 @@ public final class LogicalRules {
                 InsertLogicalRule.INSTANCE,
                 SinkLogicalRule.INSTANCE,
                 UpdateWithScanLogicalRule.INSTANCE,
-                UpdateWithValuesLogicalRule.INSTANCE,
-                UpdateOtherLogicalRule.INSTANCE,
+                UpdateNoScanLogicalRule.INSTANCE,
                 DeleteWithScanLogicalRule.INSTANCE,
                 DeleteNoScanLogicalRule.INSTANCE,
 

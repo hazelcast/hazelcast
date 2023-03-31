@@ -28,6 +28,8 @@ import org.immutables.value.Value;
 /**
  * A rule that matches a TableModify[operation=delete] with an input other than
  * a {@link TableScan} (that's handled by {@link DeleteWithScanLogicalRule}).
+ * <p>
+ * For an overall description, see {@link UpdateNoScanLogicalRule}.
  */
 @Value.Enclosing
 class DeleteNoScanLogicalRule extends RelRule<RelRule.Config> {

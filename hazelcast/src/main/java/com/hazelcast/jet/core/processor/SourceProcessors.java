@@ -117,7 +117,7 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link Sources#mapJournal(String, JournalInitialPosition)} )}.
+     * {@link Sources#mapJournal(String, JournalInitialPosition)}.
      */
     @Nonnull
     public static <K, V> ProcessorMetaSupplier streamMapP(

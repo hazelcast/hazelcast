@@ -35,6 +35,8 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlCon
 /**
  * A rule that matches a TableModify[operation=delete], _with_ a {@link
  * TableScan} as an input.
+ * <p>
+ * For an overall description, see {@link UpdateNoScanLogicalRule}.
  */
 @Value.Enclosing
 class DeleteWithScanLogicalRule extends RelRule<RelRule.Config> {
