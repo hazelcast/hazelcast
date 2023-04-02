@@ -51,6 +51,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -266,17 +267,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     }
 
     protected void testListener(JobConfig config, Object source, BiConsumer<Job, JobStatusLogger> test) {
-        Pipeline p = Pipeline.create();
-        (source instanceof BatchSource
-                    ? p.readFrom((BatchSource<?>) source)
-                    : p.readFrom((StreamSource<?>) source).withoutTimestamps())
-                .writeTo(Sinks.noop());
-
-        Job job = instance.get().getJet().newJob(p, config);
-        JobStatusLogger listener = new JobStatusLogger(job);
-        jobIdString = job.getIdString();
-        registrationId = listener.registrationId;
-        test.accept(job, listener);
+        testListener(source, (jet, p) -> jet.newJob(p, config), test);
     }
 
     protected void testListener(Object source, BiConsumer<Job, JobStatusLogger> test) {
@@ -291,17 +282,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     }
 
     protected void testLightListener(Object source, BiConsumer<Job, JobStatusLogger> test) {
-        Pipeline p = Pipeline.create();
-        (source instanceof BatchSource
-                    ? p.readFrom((BatchSource<?>) source)
-                    : p.readFrom((StreamSource<?>) source).withoutTimestamps())
-                .writeTo(Sinks.noop());
-
-        Job job = instance.get().getJet().newLightJob(p);
-        JobStatusLogger listener = new JobStatusLogger(job);
-        jobIdString = job.getIdString();
-        registrationId = listener.registrationId;
-        test.accept(job, listener);
+        testListener(source, JetService::newLightJob, test);
     }
 
     protected void testLightListener(Object source, Consumer<Job> test, String log) {
@@ -309,6 +290,21 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
             test.accept(job);
             assertEqualsEventually(listener.log, log);
         });
+    }
+
+    private void testListener(Object source, BiFunction<JetService, Pipeline, Job> submit,
+                              BiConsumer<Job, JobStatusLogger> test) {
+        Pipeline p = Pipeline.create();
+        (source instanceof BatchSource
+                    ? p.readFrom((BatchSource<?>) source)
+                    : p.readFrom((StreamSource<?>) source).withoutTimestamps())
+                .writeTo(Sinks.noop());
+
+        Job job = submit.apply(instance.get().getJet(), p);
+        JobStatusLogger listener = new JobStatusLogger(job);
+        jobIdString = job.getIdString();
+        registrationId = listener.registrationId;
+        test.accept(job, listener);
     }
 
     @SafeVarargs
