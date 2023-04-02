@@ -18,8 +18,10 @@ package com.hazelcast.jet;
 
 import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.impl.JobEventService;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -27,7 +29,7 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
 import com.hazelcast.jet.pipeline.StreamSource;
-import com.hazelcast.jet.pipeline.test.TestSources;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -48,7 +50,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -59,7 +60,6 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.spi.impl.eventservice.impl.EventServiceTest.getEventService;
 import static java.util.Arrays.asList;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -71,7 +71,8 @@ import static org.junit.Assert.assertTrue;
 @Category(SlowTest.class)
 public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     private static final Function<String, String> SIMPLIFY = log -> log.replaceAll("(?<=\\().*: ", "");
-    private static final String MAP_NAME = "runCount";
+    private static final String ADVANCE_MAP_NAME = "advanceCount";
+    private static final String RUN_MAP_NAME = "runCount";
 
     @Parameters(name = "{0}")
     public static Iterable<Object[]> parameters() {
@@ -85,20 +86,14 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         return new Object[] {name, supplier};
     }
 
-    /**
-     * Used to generate unique job ids to be used inside jobs, e.g. sinks,
-     * since it is not easy to access the context.
-     */
-    private static int nextJobId;
-
     @Parameter(0)
     public String mode;
 
     @Parameter(1)
     public Supplier<HazelcastInstance> instance;
 
-    private String jobIdString;
-    private UUID registrationId;
+    protected String jobIdString;
+    protected UUID registrationId;
 
     @BeforeClass
     public static void setup() {
@@ -107,7 +102,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
 
     @Test
     public void testListener_waitForCompletion() {
-        testListener(finiteStream(1, SECONDS, 2),
+        testListener(batchSource(),
                 Job::join,
                 "Jet: NOT_RUNNING -> STARTING",
                 "Jet: STARTING -> RUNNING",
@@ -116,7 +111,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
 
     @Test
     public void testListener_suspend_resume_restart_cancelJob() {
-        testListener(TestSources.itemStream(1, (t, s) -> s),
+        testListener(streamSource(),
                 (job, listener) -> {
                     assertJobStatusEventually(job, RUNNING);
                     job.suspend();
@@ -142,7 +137,9 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
 
     @Test
     public void testListener_jobFails() {
-        testListener(TestSources.itemStream(1, (t, s) -> 1 / (2 - s)),
+        testListener(batchSource(r -> {
+                    throw new JetException("mock error");
+                }),
                 (job, listener) -> {
                     Throwable failure = null;
                     try {
@@ -161,13 +158,9 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     @Test
     public void testListener_restartOnException() {
         testListener(new JobConfig().setAutoScaling(true),
-                TestSources.itemStream(1,
-                        (t, s) -> {
-                            if (s == 2) {
-                                throw new RestartableException();
-                            }
-                            return s;
-                        }),
+                streamSource(r -> {
+                    throw new RestartableException();
+                }),
                 (job, listener) -> {
                     assertEqualsEventually(listener::runCount, 2);
                     cancelAndJoin(job);
@@ -184,7 +177,9 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     @Test
     public void testListener_suspendOnFailure() {
         testListener(new JobConfig().setSuspendOnFailure(true),
-                TestSources.itemStream(1, (t, s) -> 1 / (2 - s)),
+                batchSource(r -> {
+                    throw new JetException("mock error");
+                }),
                 (job, listener) -> {
                     assertJobStatusEventually(job, SUSPENDED);
                     String[] failure = new String[1];
@@ -201,7 +196,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
 
     @Test
     public void testListenerDeregistration() {
-        testListener(TestSources.itemStream(1, (t, s) -> s),
+        testListener(streamSource(),
                 (job, listener) -> {
                     assertJobStatusEventually(job, RUNNING);
                     listener.deregister();
@@ -215,21 +210,23 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
 
     @Test
     public void testLightListener_waitForCompletion() {
-        testLightListener(finiteStream(1, SECONDS, 2),
+        testLightListener(batchSource(),
                 Job::join,
                 "Jet: RUNNING -> COMPLETED");
     }
 
     @Test
     public void testLightListener_cancelJob() {
-        testLightListener(TestSources.itemStream(1, (t, s) -> s),
+        testLightListener(streamSource(),
                 Job::cancel,
                 "User: RUNNING -> FAILED (Cancel)");
     }
 
     @Test
     public void testLightListener_jobFails() {
-        testLightListener(TestSources.itemStream(1, (t, s) -> 1 / (2 - s)),
+        testLightListener(batchSource(r -> {
+                    throw new JetException("mock error");
+                }),
                 (job, listener) -> {
                     Throwable failure = null;
                     try {
@@ -245,7 +242,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
 
     @Test
     public void testLightListenerDeregistration() {
-        testLightListener(TestSources.itemStream(1, (t, s) -> s),
+        testLightListener(streamSource(),
                 (job, listener) -> {
                     listener.deregister();
                     job.cancel();
@@ -268,22 +265,15 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         });
     }
 
-    /**
-     * @param source A {@link BatchSource BatchSource&lt;Long&gt;} or {@link StreamSource
-     *        StreamSource&lt;Long&gt;} where the first element is {@code 0L}, which is used
-     *        to increment the {@linkplain JobStatusLogger#runCount run count} of the job.
-     */
     protected void testListener(JobConfig config, Object source, BiConsumer<Job, JobStatusLogger> test) {
         Pipeline p = Pipeline.create();
-        int jobId = nextJobId++;
         (source instanceof BatchSource
-                    ? p.readFrom((BatchSource<Long>) source)
-                    : p.readFrom((StreamSource<Long>) source).withoutTimestamps())
-                .writeTo(Sinks.<Long, Integer, Integer>mapWithUpdating(
-                        MAP_NAME, s -> jobId, (i, s) -> s == 0 ? (i == null ? 0 : i) + 1 : i));
+                    ? p.readFrom((BatchSource<?>) source)
+                    : p.readFrom((StreamSource<?>) source).withoutTimestamps())
+                .writeTo(Sinks.noop());
 
         Job job = instance.get().getJet().newJob(p, config);
-        JobStatusLogger listener = new JobStatusLogger(job, jobId);
+        JobStatusLogger listener = new JobStatusLogger(job);
         jobIdString = job.getIdString();
         registrationId = listener.registrationId;
         test.accept(job, listener);
@@ -308,7 +298,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
                 .writeTo(Sinks.noop());
 
         Job job = instance.get().getJet().newLightJob(p);
-        JobStatusLogger listener = new JobStatusLogger(job, -1);
+        JobStatusLogger listener = new JobStatusLogger(job);
         jobIdString = job.getIdString();
         registrationId = listener.registrationId;
         test.accept(job, listener);
@@ -344,13 +334,12 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         public final List<String> log = Collections.synchronizedList(new ArrayList<>());
         public final UUID registrationId;
         final Job job;
-        final int jobId;
         Thread originalThread;
 
-        JobStatusLogger(Job job, int jobId) {
+        public JobStatusLogger(Job job) {
             this.job = job;
-            this.jobId = jobId;
             registrationId = job.addStatusListener(this);
+            advance(1);
         }
 
         @Override
@@ -377,43 +366,73 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
          * {@link HazelcastTestSupport#assertEqualsEventually assertEqualsEventually(listener::runCount,
          * lastRunCount + 1)} can be used.
          */
-        int runCount() {
-            Integer count = (Integer) instance.get().getMap(MAP_NAME).get(jobId);
-            return count == null ? 0 : count;
+        public int runCount() {
+            return (int) instance.get().getMap(RUN_MAP_NAME).getOrDefault(job.getId(), 0);
         }
 
-        void deregister() {
+        public void advance(int count) {
+            JobStatusListenerTest.this.advance(job.getId(), count);
+        }
+
+        public void deregister() {
             job.removeStatusListener(registrationId);
         }
     }
 
-    protected static BatchSource<Long> finiteStream(long period, TimeUnit unit, long maxSequence) {
-        return SourceBuilder.batch("finiteStream",
-                        ctx -> new FiniteStreamSource(period, unit, maxSequence))
-                .fillBufferFn(FiniteStreamSource::fillBuffer)
+    protected void advance(long jobId, int count) {
+        instance.get().getMap(ADVANCE_MAP_NAME).put(jobId, count);
+    }
+
+    protected static BatchSource<Integer> batchSource() {
+        return batchSource(r -> { });
+    }
+
+    protected static BatchSource<Integer> batchSource(ConsumerEx<Integer> action) {
+        return SourceBuilder.batch("batchSource",
+                        ctx -> new TestSource(ctx, action, false))
+                .fillBufferFn(TestSource::fillBuffer)
                 .build();
     }
 
-    static class FiniteStreamSource {
-        final long periodNanos;
-        final long maxSequence;
-        long emitSchedule;
-        long sequence;
+    protected static BatchSource<Integer> streamSource() {
+        return streamSource(r -> { });
+    }
 
-        FiniteStreamSource(long period, TimeUnit unit, long maxSequence) {
-            periodNanos = unit.toNanos(period);
-            this.maxSequence = maxSequence;
+    protected static BatchSource<Integer> streamSource(ConsumerEx<Integer> action) {
+        return SourceBuilder.batch("streamSource",
+                        ctx -> new TestSource(ctx, action, true))
+                .fillBufferFn(TestSource::fillBuffer)
+                .build();
+    }
+
+    static class TestSource {
+        final Runnable incrementRunCount;
+        final Supplier<Boolean> advance;
+        final ConsumerEx<Integer> action;
+        final boolean streaming;
+        final int currentRun;
+        boolean firstRun = true;
+
+        TestSource(Context ctx, ConsumerEx<Integer> action, boolean streaming) {
+            IMap<Long, Integer> runCount = ctx.hazelcastInstance().getMap(RUN_MAP_NAME);
+            IMap<Long, Integer> allowedRunCount = ctx.hazelcastInstance().getMap(ADVANCE_MAP_NAME);
+            long jobId = ctx.jobId();
+            currentRun = runCount.getOrDefault(jobId, 0) + 1;
+            incrementRunCount = () -> runCount.compute(jobId, (id, count) -> count == null ? 1 : count + 1);
+            advance = () -> allowedRunCount.getOrDefault(jobId, 0) >= currentRun;
+            this.action = action;
+            this.streaming = streaming;
         }
 
-        void fillBuffer(SourceBuffer<Long> buf) {
-            long nowNs = System.nanoTime();
-            if (emitSchedule == 0) {
-                emitSchedule = nowNs;
+        void fillBuffer(SourceBuffer<Integer> buf) {
+            if (firstRun) {
+                incrementRunCount.run();
+                firstRun = false;
             }
-            if (nowNs >= emitSchedule) {
-                buf.add(sequence++);
-                emitSchedule += periodNanos;
-                if (sequence > maxSequence) {
+            if (advance.get()) {
+                action.accept(currentRun);
+                buf.add(currentRun);
+                if (!streaming) {
                     buf.close();
                 }
             }
