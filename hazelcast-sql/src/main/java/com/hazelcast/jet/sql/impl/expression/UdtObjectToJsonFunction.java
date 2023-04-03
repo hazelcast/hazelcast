@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.expression;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.expression.json.JsonCreationUtil;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.getters.EvictableGetterCache;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.getters.GetterCache;
@@ -38,7 +37,7 @@ import java.util.Set;
 
 import static java.util.Collections.newSetFromMap;
 
-public class UdtObjectToJsonFunction extends UniExpressionWithType<HazelcastJsonValue> implements IdentifiedDataSerializable {
+public class UdtObjectToJsonFunction extends UniExpressionWithType<HazelcastJsonValue> {
     // Unlike FieldAccessExpression UdtToJson function typically works with many classes and all of their fields
     private static final int MAX_CLASS_COUNT = 64;
     private static final int MAX_GETTER_PER_CLASS_COUNT = 100;
@@ -103,11 +102,6 @@ public class UdtObjectToJsonFunction extends UniExpressionWithType<HazelcastJson
                 convert(fieldValue, subFieldValue, field.getDataType(), seenObjects, extractors);
             }
         }
-    }
-
-    @Override
-    public int getFactoryId() {
-        return JetSqlSerializerHook.F_ID;
     }
 
     @Override

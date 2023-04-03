@@ -6822,7 +6822,7 @@ public class MemberCompatibilityNullTest_2_6 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         DynamicConfigAddDataLinkConfigCodec.RequestParameters parameters = DynamicConfigAddDataLinkConfigCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
-        assertTrue(isEqual(aString, parameters.className));
+        assertTrue(isEqual(aString, parameters.type));
         assertTrue(isEqual(aBoolean, parameters.shared));
         assertTrue(isEqual(aMapOfStringToString, parameters.properties));
     }

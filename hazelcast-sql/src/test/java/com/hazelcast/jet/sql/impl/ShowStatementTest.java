@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataLinkConfig;
-import com.hazelcast.datalink.impl.DataLinkTestUtil;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.TestProcessors;
@@ -61,7 +60,7 @@ public class ShowStatementTest extends SqlTestSupport {
         final Config config = smallInstanceConfig();
         config.getDataLinkConfigs().put(DATA_LINK_NAME, new DataLinkConfig()
                 .setName(DATA_LINK_NAME)
-                .setClassName(DataLinkTestUtil.DummyDataLink.class.getName()));
+                .setType("dummy"));
         initialize(2, config);
     }
 

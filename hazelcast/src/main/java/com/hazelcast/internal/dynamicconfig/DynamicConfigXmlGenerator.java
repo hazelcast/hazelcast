@@ -407,7 +407,7 @@ public final class DynamicConfigXmlGenerator {
     public static void dataLinkXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, Config config) {
         for (DataLinkConfig dataLinkConfig : config.getDataLinkConfigs().values()) {
             gen.open("data-link", "name", dataLinkConfig.getName())
-                    .node("class-name", dataLinkConfig.getClassName())
+                    .node("type", dataLinkConfig.getType())
                     .node("shared", dataLinkConfig.isShared())
                     .appendProperties(dataLinkConfig.getProperties())
                     .close();

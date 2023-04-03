@@ -46,14 +46,15 @@ public class SqlCreateMappingTest {
         );
 
         String sql = SqlCreateMapping.unparse(mapping);
-        assertThat(sql).isEqualTo("CREATE MAPPING \"name\" EXTERNAL NAME \"external-name\" (" + LE +
+        assertThat(sql).isEqualTo("CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"name\" " +
+                "EXTERNAL NAME \"external-name\" (" + LE +
                 "  \"field1\" VARCHAR EXTERNAL NAME \"__key.field1\"," + LE +
                 "  \"field2\" INTEGER EXTERNAL NAME \"this.field2\"" + LE +
                 ")" + LE +
-                "TYPE Type" + LE +
+                "TYPE \"Type\"" + LE +
                 "OPTIONS (" + LE +
-                "  'key1' = 'value1'," + LE +
-                "  'key2' = 'value2'" + LE +
+                "  'key1'='value1'," + LE +
+                "  'key2'='value2'" + LE +
                 ")"
         );
     }
@@ -71,12 +72,13 @@ public class SqlCreateMappingTest {
         );
 
         String sql = SqlCreateMapping.unparse(mapping);
-        assertThat(sql).isEqualTo("CREATE MAPPING \"na\"\"me\" EXTERNAL NAME \"external\"\"name\" (" + LE +
+        assertThat(sql).isEqualTo("CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"na\"\"me\" " +
+                "EXTERNAL NAME \"external\"\"name\" (" + LE +
                 "  \"fi\"\"eld\" VARCHAR EXTERNAL NAME \"__key\"\"field\"" + LE +
                 ")" + LE +
-                "TYPE Type" + LE +
+                "TYPE \"Type\"" + LE +
                 "OPTIONS (" + LE +
-                "  'ke''y' = 'val''ue'" + LE +
+                "  'ke''y'='val''ue'" + LE +
                 ")"
         );
     }

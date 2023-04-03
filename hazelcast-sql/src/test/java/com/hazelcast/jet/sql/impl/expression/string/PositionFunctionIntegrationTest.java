@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.expression.string;
 
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.string.PositionFunction;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -141,12 +141,12 @@ public class PositionFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void test_serialization() {
         PositionFunction f = createFunctionWithoutStart("AB", "ABCD");
-        PositionFunction deserialized = serializeAndCheck(f, SqlDataSerializerHook.EXPRESSION_POSITION);
+        PositionFunction deserialized = serializeAndCheck(f, JetSqlSerializerHook.EXPRESSION_POSITION);
 
         checkEquals(f, deserialized, true);
 
         f = createFunction("AB", "ABCD", 2);
-        deserialized = serializeAndCheck(f, SqlDataSerializerHook.EXPRESSION_POSITION);
+        deserialized = serializeAndCheck(f, JetSqlSerializerHook.EXPRESSION_POSITION);
 
         checkEquals(f, deserialized, true);
     }

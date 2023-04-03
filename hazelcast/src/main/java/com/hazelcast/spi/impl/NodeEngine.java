@@ -39,7 +39,7 @@ import com.hazelcast.spi.impl.tenantcontrol.impl.TenantControlServiceImpl;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
-import com.hazelcast.sql.impl.SqlServiceImpl;
+import com.hazelcast.sql.impl.InternalSqlService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.wan.impl.WanReplicationService;
@@ -86,7 +86,7 @@ public interface NodeEngine {
 
     SplitBrainProtectionService getSplitBrainProtectionService();
 
-    SqlServiceImpl getSqlService();
+    InternalSqlService getSqlService();
 
     /**
      * Return a service for accessing data links

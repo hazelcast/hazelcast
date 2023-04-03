@@ -4521,7 +4521,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testDataLinkConfigs() {
         String xml = HAZELCAST_START_TAG
                 + "    <data-link name=\"mysql-database\">\n"
-                + "        <class-name>com.hazelcast.datalink.JdbcDataLink</class-name>\n"
+                + "        <type>jdbc</type>\n"
                 + "        <properties>\n"
                 + "            <property name=\"jdbcUrl\">jdbc:mysql://dummy:3306</property>\n"
                 + "            <property name=\"some.property\">dummy-value</property>\n"
@@ -4529,7 +4529,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      <shared>true</shared>\n"
                 + "    </data-link>"
                 + "    <data-link name=\"other-database\">\n"
-                + "        <class-name>com.hazelcast.datalink.OtherDataLink</class-name>\n"
+                + "        <type>other</type>\n"
                 + "    </data-link>"
                 + HAZELCAST_END_TAG;
 
@@ -4538,7 +4538,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertThat(dataLinkConfigs).hasSize(2);
         assertThat(dataLinkConfigs).containsKey("mysql-database");
         DataLinkConfig mysqlDataLinkConfig = dataLinkConfigs.get("mysql-database");
-        assertThat(mysqlDataLinkConfig.getClassName()).isEqualTo("com.hazelcast.datalink.JdbcDataLink");
+        assertThat(mysqlDataLinkConfig.getType()).isEqualTo("jdbc");
         assertThat(mysqlDataLinkConfig.getName()).isEqualTo("mysql-database");
         assertThat(mysqlDataLinkConfig.isShared()).isTrue();
         assertThat(mysqlDataLinkConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
@@ -4546,7 +4546,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertThat(dataLinkConfigs).containsKey("other-database");
         DataLinkConfig otherDataLinkConfig = dataLinkConfigs.get("other-database");
-        assertThat(otherDataLinkConfig.getClassName()).isEqualTo("com.hazelcast.datalink.OtherDataLink");
+        assertThat(otherDataLinkConfig.getType()).isEqualTo("other");
     }
 
     @Override

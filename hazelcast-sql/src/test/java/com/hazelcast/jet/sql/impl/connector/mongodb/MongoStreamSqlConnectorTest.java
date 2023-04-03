@@ -52,6 +52,7 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
     public void readsFromMongo_withoutId_withUnsupportedExpr() {
        testReadsFromMongo(false, true);
     }
+
     @Test
     public void readsFromMongo_withoutId_withoutUnsupportedExpr() {
        testReadsFromMongo(false, false);

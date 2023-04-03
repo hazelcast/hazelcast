@@ -21,7 +21,6 @@ import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
-import com.hazelcast.jet.mongodb.datalink.MongoDataLink;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
@@ -47,11 +46,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
-
-import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 
 public abstract class AbstractMongoTest extends SimpleTestInClusterSupport {
     static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "6.0.3");
@@ -87,7 +85,7 @@ public abstract class AbstractMongoTest extends SimpleTestInClusterSupport {
         Config config = new Config();
         config.addMapConfig(new MapConfig("*").setEventJournalConfig(new EventJournalConfig().setEnabled(true)));
         config.addDataLinkConfig(new DataLinkConfig("mongoDB")
-                .setClassName(MongoDataLink.class.getName())
+                .setType("MongoDB")
                 .setName("mongoDB")
                 .setShared(true)
                 .setProperty("connectionString", mongoContainer.getConnectionString())

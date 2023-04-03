@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a data link configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("1e7005adb3f59f14f481996e94b1b8a6")
+@Generated("0709b39b7d61ace399cfe453a9c440d1")
 public final class DynamicConfigAddDataLinkConfigCodec {
     //hex: 0x1B1100
     public static final int REQUEST_MESSAGE_TYPE = 1773824;
@@ -60,13 +60,17 @@ public final class DynamicConfigAddDataLinkConfigCodec {
         public java.lang.String name;
 
         /**
-         * Name for the DataLinkFactory implementation class.
+         * Type of the DataLink as specified in the DataLinkRegistration.
          */
-        public java.lang.String className;
+        public java.lang.String type;
 
         /**
-         * {@code true} if an instance of the data link will be reused. {@code false} when on each usage
-         * the data link instance should be created. The default it {@code true}.
+         * {@code true} if an instance of the data link will be shared. 
+         * Depending on the implementation of the DataLink the shared instance may be 
+         * single a thread-safe instance, or not thread-safe, but a pooled instance. 
+         * {@code false} when on each usage a new instance of the underlying resource
+         * should be created.
+         * The default is {@code true}.
          */
         public boolean shared;
 
@@ -76,7 +80,7 @@ public final class DynamicConfigAddDataLinkConfigCodec {
         public java.util.Map<java.lang.String, java.lang.String> properties;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String className, boolean shared, java.util.Map<java.lang.String, java.lang.String> properties) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String type, boolean shared, java.util.Map<java.lang.String, java.lang.String> properties) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("DynamicConfig.AddDataLinkConfig");
@@ -86,7 +90,7 @@ public final class DynamicConfigAddDataLinkConfigCodec {
         encodeBoolean(initialFrame.content, REQUEST_SHARED_FIELD_OFFSET, shared);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        StringCodec.encode(clientMessage, className);
+        StringCodec.encode(clientMessage, type);
         MapCodec.encode(clientMessage, properties, StringCodec::encode, StringCodec::encode);
         return clientMessage;
     }
@@ -97,7 +101,7 @@ public final class DynamicConfigAddDataLinkConfigCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         request.shared = decodeBoolean(initialFrame.content, REQUEST_SHARED_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
-        request.className = StringCodec.decode(iterator);
+        request.type = StringCodec.decode(iterator);
         request.properties = MapCodec.decode(iterator, StringCodec::decode, StringCodec::decode);
         return request;
     }

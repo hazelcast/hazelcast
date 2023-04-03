@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.function.PredicateEx;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -42,16 +41,6 @@ import java.util.stream.Stream;
 public final class ExpressionUtil {
 
     private ExpressionUtil() {
-    }
-
-    public static PredicateEx<JetSqlRow> filterFn(
-            @Nonnull Expression<Boolean> predicate,
-            @Nonnull ExpressionEvalContext context
-    ) {
-        return row0 -> {
-            Row row = row0.getRow();
-            return Boolean.TRUE.equals(evaluate(predicate, row, context));
-        };
     }
 
     public static ComparatorEx<JetSqlRow> comparisonFn(
