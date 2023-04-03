@@ -57,6 +57,7 @@ class MongoConnection implements Closeable {
 
     private MongoClient mongoClient;
     private MongoDataLink dataLink;
+    private Exception lastException = null;
 
     MongoConnection(SupplierEx<? extends MongoClient> clientSupplier, DataLinkRef dataLinkRef,
                     Consumer<MongoClient> afterConnection) {
@@ -81,6 +82,8 @@ class MongoConnection implements Closeable {
                     mongoClient = clientSupplier.get();
                     afterConnection.accept(mongoClient);
                     connectionRetryTracker.reset();
+
+                    lastException = null;
                     return true;
                 } catch (MongoCommandException e) {
                     BsonArray codes = codes(e);
@@ -89,14 +92,16 @@ class MongoConnection implements Closeable {
                     }
                     logger.warning("Could not connect to MongoDB", e);
                     connectionRetryTracker.attemptFailed();
+                    lastException = e;
                     return false;
                 } catch (Exception e) {
+                    lastException = e;
                     logger.warning("Could not connect to MongoDB", e);
                     connectionRetryTracker.attemptFailed();
                     return false;
                 }
             } else {
-                throw new JetException("cannot connect to MongoDB");
+                throw new JetException("cannot connect to MongoDB", lastException);
             }
         } else {
             return true;
