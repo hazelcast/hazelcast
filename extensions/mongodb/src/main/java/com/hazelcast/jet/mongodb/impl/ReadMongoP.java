@@ -138,7 +138,9 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        connection.reconnectIfNecessary();
+        if (!connection.reconnectIfNecessary()) {
+            return false;
+        }
         if (traverser == null) {
             this.traverser = reader.nextChunkTraverser()
                                    .onFirstNull(() -> traverser = null);

@@ -319,7 +319,7 @@ public class MongoSinkTest extends AbstractMongoTest {
             fail();
         } catch (CompletionException e) {
             assertTrue(e.getCause() instanceof JetException);
-            assertContains(e.getMessage(), "cannot connect to MongoDB");
+            assertContains(e.getCause().getMessage(), "Cannot connect to MongoDB");
         }
     }
 
