@@ -149,6 +149,13 @@
         <cpe>cpe:/a:json-java_project:json-java</cpe>
     </suppress>
     <suppress>
+       <notes><![CDATA[
+       False positive - accessors-smart incorrectly identified as json-smart.
+       ]]></notes>
+       <packageUrl regex="true">^pkg:maven/net\.minidev/accessors\-smart@.*$</packageUrl>
+       <cpe>cpe:/a:json-smart_project:json-smart</cpe>
+    </suppress>
+    <suppress>
         <notes><![CDATA[
         False positive - json-path incorrectly identified as json-java.
         ]]></notes>
@@ -175,5 +182,12 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client\-gson@.*$</packageUrl>
         <cpe>cpe:/a:json-java_project:json-java</cpe>
+    </suppress>
+    <suppress>
+       <notes><![CDATA[
+       False positive - google-http-client-jackson2 incorrectly identified as json-java.
+       ]]></notes>
+       <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client\-jackson2@.*$</packageUrl>
+       <cpe>cpe:/a:json-java_project:json-java</cpe>
     </suppress>
 </suppressions>
