@@ -59,7 +59,7 @@ class MongoConnection implements Closeable {
 
     private MongoClient mongoClient;
     private MongoDataLink dataLink;
-    private Exception lastException = null;
+    private Exception lastException;
 
     MongoConnection(SupplierEx<? extends MongoClient> clientSupplier, DataLinkRef dataLinkRef,
                     Consumer<MongoClient> afterConnection) {
@@ -80,6 +80,9 @@ class MongoConnection implements Closeable {
     boolean reconnectIfNecessary() {
         if (mongoClient != null) {
             return true;
+        }
+        if (connectionRetryTracker.needsToWait()) {
+            return false;
         }
         if (connectionRetryTracker.shouldTryAgain()) {
             try {
@@ -105,7 +108,7 @@ class MongoConnection implements Closeable {
                         + willRetryMessage(), e);
                 connectionRetryTracker.attemptFailed();
                 return false;
-            } catch(Exception e) {
+            } catch (Exception e) {
                 throw new JetException("Cannot connect to MongoDB, seems to be non-transient error", e);
             }
         } else {
