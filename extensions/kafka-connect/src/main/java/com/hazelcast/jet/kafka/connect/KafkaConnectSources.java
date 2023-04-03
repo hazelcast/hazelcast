@@ -76,7 +76,7 @@ public final class KafkaConnectSources {
     @Beta
     public static StreamSource<SourceRecord> connect(@Nonnull Properties properties) {
         Preconditions.checkRequiredProperty(properties, "name");
-        String name = properties.getProperty("name");
+        String name = "kafkaConnectSource(" + properties.getProperty("name") + ")";
 
         //fail fast, required by lazy-initialized KafkaConnectSource
         checkRequiredProperty(properties, "connector.class");
