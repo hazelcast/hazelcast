@@ -57,7 +57,7 @@ public class MemberExecuteJarTest {
 
         ExecuteJobParameters executeJobParameters = new ExecuteJobParameters(jarPath, snapshotName, jobName);
 
-        // Test that invokeMain sets thread local values in BootstrappedInstanceProxy
+        // Test that invokeMain removes thread local values in BootstrappedInstanceProxy
         MemberExecuteJar memberExecuteJar = new MemberExecuteJar();
         memberExecuteJar.invokeMain(instanceProxy,
                 executeJobParameters,
@@ -68,8 +68,8 @@ public class MemberExecuteJarTest {
         BootstrappedJetProxy bootstrappedJetProxy = instanceProxy.getJet();
         ExecuteJobParameters parameters = bootstrappedJetProxy.getExecuteJobParameters();
 
-        assertThat(parameters.getJarPath()).isEqualTo(jarPath);
-        assertThat(parameters.getSnapshotName()).isEqualTo(snapshotName);
-        assertThat(parameters.getJobName()).isEqualTo(jobName);
+        assertThat(parameters.getJarPath()).isNull();
+        assertThat(parameters.getSnapshotName()).isNull();
+        assertThat(parameters.getJobName()).isNull();
     }
 }
