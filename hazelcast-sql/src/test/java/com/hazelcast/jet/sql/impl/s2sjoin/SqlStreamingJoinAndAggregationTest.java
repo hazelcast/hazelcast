@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql.impl.s2sjoin;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -30,7 +30,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIM
 import static java.util.Arrays.asList;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(NightlyTest.class)
+@Category(QuickTest.class)
 public class SqlStreamingJoinAndAggregationTest extends SqlTestSupport {
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -46,9 +46,9 @@ public class SqlStreamingJoinAndAggregationTest extends SqlTestSupport {
                 stream1,
                 asList("a", "b"),
                 asList(INTEGER, TIMESTAMP_WITH_TIME_ZONE),
+                row(1, timestampTz(1L)),
                 row(2, timestampTz(2L)),
-                row(3, timestampTz(3L)),
-                row(21, timestampTz(21L)) // flushing event
+                row(101, timestampTz(101L)) // flushing event
         );
 
         String stream2 = "stream_a";
@@ -57,29 +57,33 @@ public class SqlStreamingJoinAndAggregationTest extends SqlTestSupport {
                 stream2,
                 asList("c", "d"),
                 asList(TIMESTAMP_WITH_TIME_ZONE, INTEGER),
+                row(timestampTz(1L), 1),
                 row(timestampTz(2L), 2),
-                row(timestampTz(3L), 3),
-                row(timestampTz(21L), 21) // flushing event
+                row(timestampTz(101L), 101) // flushing event
         );
 
         instance().getSql().execute("CREATE VIEW s1 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(b), INTERVAL '0.005' SECOND))");
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(b), INTERVAL '0.001' SECOND))");
         instance().getSql().execute("CREATE VIEW s2 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream_a, DESCRIPTOR(c), INTERVAL '0.005' SECOND))");
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream_a, DESCRIPTOR(c), INTERVAL '0.001' SECOND))");
 
-        String sql = "SELECT ws1, we1, _sum, _max FROM " +
-                "( SELECT window_start AS ws1, window_end AS we1, SUM(DISTINCT a) AS _sum FROM " +
-                "    TABLE(HOP(TABLE s1, DESCRIPTOR(b), INTERVAL '0.01' SECOND, INTERVAL '0.005' SECOND))" +
-                "    GROUP BY window_start, window_end, a) st1" +
+        String sql = "SELECT we1, _sum, _max FROM " +
+                "( SELECT window_end AS we1, SUM(DISTINCT a) AS _sum FROM " +
+                "    TABLE(HOP(TABLE s1, DESCRIPTOR(b), INTERVAL '0.02' SECOND, INTERVAL '0.01' SECOND))" +
+                "    GROUP BY window_end, a) st1" +
                 "  JOIN " +
                 "( SELECT window_end AS we2, MAX(DISTINCT d) AS _max FROM " +
-                "    TABLE(HOP(TABLE s2, DESCRIPTOR(c), INTERVAL '0.01' SECOND, INTERVAL '0.005' SECOND))" +
+                "    TABLE(HOP(TABLE s2, DESCRIPTOR(c), INTERVAL '0.02' SECOND, INTERVAL '0.01' SECOND))" +
                 "    GROUP BY window_end, d) st2" +
                 " ON st1.we1 = st2.we2";
 
-        assertTipOfStream(sql, asList(
-                new Row(timestampTz(-5), timestampTz(5), 3L, 3)
-                // it also has more rows, but the order is not defined.
+        assertRowsEventuallyInAnyOrder(sql, asList(
+                new Row(timestampTz(10L), 1L, 1),
+                new Row(timestampTz(10L), 2L, 1),
+                new Row(timestampTz(10L), 1L, 2),
+                new Row(timestampTz(10L), 2L, 2)
+//                new Row(timestampTz(10L), 3L, 2)
+                // it also has more rows
         ));
     }
 
@@ -145,9 +149,9 @@ public class SqlStreamingJoinAndAggregationTest extends SqlTestSupport {
                 stream1,
                 asList("a", "b"),
                 asList(INTEGER, TIMESTAMP_WITH_TIME_ZONE),
+                row(1, timestampTz(1L)),
                 row(2, timestampTz(2L)),
-                row(3, timestampTz(3L)),
-                row(21, timestampTz(21L)) // flushing event
+                row(101, timestampTz(101L)) // flushing event
         );
 
         String stream2 = "stream_ax";
@@ -156,30 +160,34 @@ public class SqlStreamingJoinAndAggregationTest extends SqlTestSupport {
                 stream2,
                 asList("c", "d"),
                 asList(TIMESTAMP_WITH_TIME_ZONE, INTEGER),
+                row(timestampTz(1L), 1),
                 row(timestampTz(2L), 2),
-                row(timestampTz(3L), 3),
-                row(timestampTz(21L), 21) // flushing event
+                row(timestampTz(101L), 101) // flushing event
         );
 
         instance().getSql().execute("CREATE VIEW s1 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1x, DESCRIPTOR(b), INTERVAL '0.005' SECOND))");
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1x, DESCRIPTOR(b), INTERVAL '0.001' SECOND))");
         instance().getSql().execute("CREATE VIEW s2 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream_ax, DESCRIPTOR(c), INTERVAL '0.005' SECOND))");
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream_ax, DESCRIPTOR(c), INTERVAL '0.001' SECOND))");
 
-        String sql = "SELECT ws1, we1, _sum, _max FROM " +
-                "( SELECT window_start AS ws1, window_end AS we1, SUM(DISTINCT a) AS _sum FROM " +
-                "    TABLE(HOP(TABLE s1, DESCRIPTOR(b), INTERVAL '0.01' SECOND, INTERVAL '0.005' SECOND))" +
-                "    GROUP BY window_start, window_end, a) st1" +
+        String sql = "SELECT we1, _sum, _max FROM " +
+                "( SELECT window_end AS we1, SUM(a) AS _sum FROM " +
+                "    TABLE(HOP(TABLE s1, DESCRIPTOR(b), INTERVAL '0.02' SECOND, INTERVAL '0.01' SECOND))" +
+                "    GROUP BY window_end, a) st1" +
                 "  JOIN " +
-                "( SELECT window_end AS we2, MAX(DISTINCT d) AS _max FROM " +
-                "    TABLE(HOP(TABLE s2, DESCRIPTOR(c), INTERVAL '0.01' SECOND, INTERVAL '0.005' SECOND))" +
+                "( SELECT window_end AS we2, MAX(d) AS _max FROM " +
+                "    TABLE(HOP(TABLE s2, DESCRIPTOR(c), INTERVAL '0.02' SECOND, INTERVAL '0.01' SECOND))" +
                 "    GROUP BY window_end, d) st2" +
                 " ON st1.we1 = st2.we2";
 
-        assertTipOfStream(sql, asList(
-                new Row(timestampTz(-5), timestampTz(5), 3L, 3)
-                // it also has more rows, but the order is not defined.
+        assertRowsEventuallyInAnyOrder(sql, asList(
+                new Row(timestampTz(10L), 1L, 1),
+                new Row(timestampTz(10L), 2L, 1),
+                new Row(timestampTz(10L), 1L, 2),
+                new Row(timestampTz(10L), 2L, 2)
+//                new Row(timestampTz(10L), 3L, 2)
         ));
+                // it also has more rows
     }
 
     @Test

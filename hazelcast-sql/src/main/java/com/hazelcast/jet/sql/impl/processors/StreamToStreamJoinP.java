@@ -276,7 +276,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark) {
-        System.err.println("WATERMARK IN : " + watermark + ", ordinal " + ordinal);
         if (!pendingOutput.isEmpty()) {
             return processPendingOutput();
         }
