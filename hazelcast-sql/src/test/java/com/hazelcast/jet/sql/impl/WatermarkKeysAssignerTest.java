@@ -240,7 +240,7 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
 
         assertThat(finalOptRel).isInstanceOf(StreamToStreamJoinPhysicalRel.class);
 
-        // Watermark key was propagated to StreamToStreamJoinPhysicalRel
+        // Watermark key was propagated to StreamToStreamJoinPhysicalRel.
         Map<Integer, MutableByte> map = keysAssigner.getWatermarkedFieldsKey(finalOptRel);
         assertThat(map).isNotNull();
         assertThat(map).isNotEmpty();
