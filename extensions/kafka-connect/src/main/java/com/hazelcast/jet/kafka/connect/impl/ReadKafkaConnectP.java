@@ -26,15 +26,22 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.KAFKA_CONNECT_PREFIX;
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
@@ -172,4 +179,32 @@ public class ReadKafkaConnectP extends AbstractProcessor implements DynamicMetri
         provide(descriptor, context, KAFKA_CONNECT_PREFIX, getStats());
     }
 
+    public static ProcessorSupplier processSupplier(@Nonnull Properties properties,
+                                                    EventTimePolicy<? super SourceRecord> eventTimePolicy) {
+        return new ProcessorSupplier() {
+            private transient ConnectorWrapper connectorWrapper;
+
+            @Override
+            public void init(@Nonnull Context context) {
+                properties.put("tasks.max", Integer.toString(context.localParallelism()));
+                this.connectorWrapper = new ConnectorWrapper(properties);
+            }
+
+            @Override
+            public void close(@Nullable Throwable error) {
+                if (connectorWrapper != null) {
+                    connectorWrapper.stop();
+                }
+            }
+
+            @Nonnull
+            @Override
+            public Collection<? extends Processor> get(int count) {
+                return IntStream.range(0, count)
+                        .mapToObj(i -> new ReadKafkaConnectP(connectorWrapper, eventTimePolicy))
+                        .collect(Collectors.toList());
+            }
+
+        };
+    }
 }
