@@ -104,7 +104,7 @@ public class MongoSinkTest extends AbstractMongoTest {
 
         toAddSource.merge(alreadyExistingSource).setLocalParallelism(4)
                    .rebalance(doc -> doc.get("key")).setLocalParallelism(4)
-                   .writeTo(mongodb(SINK_NAME, connectionString, defaultDatabase(), testName.getMethodName()))
+                   .writeTo(mongodb(connectionString, defaultDatabase(), testName.getMethodName()))
                    .setLocalParallelism(2);
 
         JobConfig config = new JobConfig().setProcessingGuarantee(processingGuarantee).setSnapshotIntervalMillis(500);
@@ -133,7 +133,7 @@ public class MongoSinkTest extends AbstractMongoTest {
 
         toAddSource.merge(alreadyExistingSource).setLocalParallelism(4)
                    .rebalance(doc -> doc.get("key")).setLocalParallelism(4)
-                   .writeTo(mongodb(SINK_NAME, dataLinkRef("mongoDB"), defaultDatabase(), testName.getMethodName()))
+                   .writeTo(mongodb(dataLinkRef("mongoDB"), defaultDatabase(), testName.getMethodName()))
                    .setLocalParallelism(2);
 
         JobConfig config = new JobConfig().setProcessingGuarantee(processingGuarantee).setSnapshotIntervalMillis(500);
@@ -155,7 +155,7 @@ public class MongoSinkTest extends AbstractMongoTest {
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(newEntries(mapToInsert))
                 .withIngestionTimestamps()
-                .writeTo(builder(SINK_NAME, Doc.class, () -> createClient(connectionString))
+                .writeTo(builder(Doc.class, () -> createClient(connectionString))
                         .identifyDocumentBy("key", o -> o.key)
                         .into(i -> defaultDatabase, i -> "col_" + (i.key % 2))
                         .withCustomReplaceOptions(opt -> opt.upsert(true))
@@ -194,7 +194,7 @@ public class MongoSinkTest extends AbstractMongoTest {
                     item.key *= 10;
                     return item;
                 })
-                .writeTo(builder(SINK_NAME, Doc.class, () -> createClient(connectionString))
+                .writeTo(builder(Doc.class, () -> createClient(connectionString))
                         .identifyDocumentBy("_id", o -> o.id)
                         .into(defaultDatabase, testName.getMethodName())
                         .withCustomReplaceOptions(opt -> opt.upsert(true))
@@ -304,7 +304,7 @@ public class MongoSinkTest extends AbstractMongoTest {
         String defaultDatabase = defaultDatabase();
         String collectionName = testName.getMethodName();
         Sink<Document> sink = MongoSinks
-                .builder(SINK_NAME, Document.class, () -> mongoClient("non-existing-server", 0))
+                .builder(Document.class, () -> mongoClient("non-existing-server", 0))
                 .into(defaultDatabase, collectionName)
                 .identifyDocumentBy("_id", (doc) -> doc.get("_id"))
                 .build();

@@ -87,6 +87,21 @@ public final class MongoSourceBuilder {
      * documents in a collection and emits the items as a string by transforming
      * each item to json.
      *
+     * @param clientSupplier a function that creates MongoDB client
+     */
+    @Nonnull
+    public static MongoSourceBuilder.Batch<Document> batch(@Nonnull SupplierEx<? extends MongoClient> clientSupplier) {
+        return batch("MongoBatchSource", clientSupplier);
+    }
+
+    /**
+     * Returns a builder object that offers a step-by-step fluent API to build
+     * a custom MongoDB {@link BatchSource} for the Pipeline API.
+     * <p>
+     * Here's an example that builds a simple source which queries all the
+     * documents in a collection and emits the items as a string by transforming
+     * each item to json.
+     *
      * @param name               a descriptive name for the source (diagnostic purposes)
      * @param dataLinkRef a link to some mongo data link
      */
@@ -96,6 +111,21 @@ public final class MongoSourceBuilder {
             @Nonnull DataLinkRef dataLinkRef
             ) {
         return new Batch<>(name, dataLinkRef);
+    }
+
+    /**
+     * Returns a builder object that offers a step-by-step fluent API to build
+     * a custom MongoDB {@link BatchSource} for the Pipeline API.
+     * <p>
+     * Here's an example that builds a simple source which queries all the
+     * documents in a collection and emits the items as a string by transforming
+     * each item to json.
+     *
+     * @param dataLinkRef a link to some mongo data link
+     */
+    @Nonnull
+    public static MongoSourceBuilder.Batch<Document> batch(@Nonnull DataLinkRef dataLinkRef) {
+        return new Batch<>("MongoBatchSource(" + dataLinkRef.getName() + ")", dataLinkRef);
     }
 
     /**
@@ -122,6 +152,22 @@ public final class MongoSourceBuilder {
      * Returns a builder object that offers a step-by-step fluent API to build
      * a custom MongoDB {@link StreamSource} for the Pipeline API.
      * <p>
+     * The created source will not be distributed, a single processor instance
+     * will be created on an arbitrary member. The source provides native
+     * timestamps using {@link ChangeStreamDocument#getClusterTime()} and fault
+     * tolerance using {@link ChangeStreamDocument#getResumeToken()}.
+     *
+     * @param clientSupplier a function that creates MongoDB client
+     */
+    @Nonnull
+    public static MongoSourceBuilder.Stream<Document> stream(@Nonnull SupplierEx<? extends MongoClient> clientSupplier) {
+        return stream("MongoStreamSource", clientSupplier);
+    }
+
+    /**
+     * Returns a builder object that offers a step-by-step fluent API to build
+     * a custom MongoDB {@link StreamSource} for the Pipeline API.
+     * <p>
      * The source provides native timestamps using {@link ChangeStreamDocument#getWallTime()} and fault
      * tolerance using {@link ChangeStreamDocument#getResumeToken()}.
      *
@@ -134,6 +180,22 @@ public final class MongoSourceBuilder {
             @Nonnull DataLinkRef dataLinkRef
     ) {
         return new Stream<>(name, dataLinkRef);
+    }
+
+    /**
+     * Returns a builder object that offers a step-by-step fluent API to build
+     * a custom MongoDB {@link StreamSource} for the Pipeline API.
+     * <p>
+     * The source provides native timestamps using {@link ChangeStreamDocument#getWallTime()} and fault
+     * tolerance using {@link ChangeStreamDocument#getResumeToken()}.
+     *
+     * @param dataLinkRef a link to some mongo data link
+     */
+    @Nonnull
+    public static MongoSourceBuilder.Stream<Document> stream(
+            @Nonnull DataLinkRef dataLinkRef
+    ) {
+        return stream("MongoStreamSource(" + dataLinkRef.getName() + ")", dataLinkRef);
     }
 
     private abstract static class Base<T> {

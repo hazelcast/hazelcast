@@ -127,7 +127,7 @@ public class MongoSinkResilienceTest extends SimpleTestInClusterSupport {
                         .append("key", doc.getKey())
                         .append("other", "" + doc.getValue())
                 ).setLocalParallelism(2)
-                .writeTo(MongoSinks.builder("mongoSink", Document.class, () -> mongoClient(connectionString))
+                .writeTo(MongoSinks.builder(Document.class, () -> mongoClient(connectionString))
                                    .into(databaseName, collectionName)
                                    .preferredLocalParallelism(2)
                                    .build());
@@ -195,7 +195,7 @@ public class MongoSinkResilienceTest extends SimpleTestInClusterSupport {
                         .append("key", doc.getKey())
                         .append("value", doc.getValue())
                 ).setLocalParallelism(2)
-                .writeTo(MongoSinks.builder("mongoSink", Document.class, () -> mongoClient(connectionViaToxi))
+                .writeTo(MongoSinks.builder(Document.class, () -> mongoClient(connectionViaToxi))
                                    .into(databaseName, collectionName)
                                    .preferredLocalParallelism(2)
                                    .build());

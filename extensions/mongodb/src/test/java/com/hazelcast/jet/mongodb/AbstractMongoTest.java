@@ -54,9 +54,6 @@ import static org.junit.Assert.assertEquals;
 public abstract class AbstractMongoTest extends SimpleTestInClusterSupport {
     static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "6.0.3");
 
-    static final String SOURCE_NAME = "source";
-    static final String SINK_NAME = "sink";
-
     static MongoClient mongo;
     static BsonTimestamp startAtOperationTime;
 

@@ -89,7 +89,7 @@ public class MongoSourceTest extends AbstractMongoTest {
         insertDocuments();
 
         Pipeline pipeline = Pipeline.create();
-        pipeline.readFrom(batch(SOURCE_NAME, connectionString, defaultDatabase(), testName.getMethodName(), null, null))
+        pipeline.readFrom(batch(connectionString, defaultDatabase(), testName.getMethodName(), null, null))
                 .setLocalParallelism(2)
                 .writeTo(Sinks.list(list));
 
@@ -107,7 +107,7 @@ public class MongoSourceTest extends AbstractMongoTest {
 
         Pipeline pipeline = Pipeline.create();
         DataLinkRef link = DataLinkRef.dataLinkRef("mongoDB");
-        pipeline.readFrom(batch(SOURCE_NAME, link, defaultDatabase(), testName.getMethodName(), null, null))
+        pipeline.readFrom(batch(link, defaultDatabase(), testName.getMethodName(), null, null))
                 .setLocalParallelism(2)
                 .writeTo(Sinks.list(list));
 
@@ -126,7 +126,7 @@ public class MongoSourceTest extends AbstractMongoTest {
         insertDocuments();
 
         Pipeline pipeline = Pipeline.create();
-        Batch<?> sourceBuilder = batch(SOURCE_NAME, () -> mongoClient(connectionString))
+        Batch<?> sourceBuilder = batch(() -> mongoClient(connectionString))
                                                .database(defaultDatabase())
                                                .collection(testName.getMethodName())
                                                .sort(ascending("key"));
@@ -152,7 +152,7 @@ public class MongoSourceTest extends AbstractMongoTest {
 
         Pipeline pipeline = Pipeline.create();
         String connectionString = mongoContainer.getConnectionString();
-        Batch<?> sourceBuilder = batch(SOURCE_NAME, () -> mongoClient(connectionString))
+        Batch<?> sourceBuilder = batch(() -> mongoClient(connectionString))
                 .database(defaultDatabase());
         sourceBuilder = batchFilters(sourceBuilder);
         pipeline.readFrom(sourceBuilder.build())
@@ -198,7 +198,7 @@ public class MongoSourceTest extends AbstractMongoTest {
         String connectionString = mongoContainer.getConnectionString();
 
         Pipeline pipeline = Pipeline.create();
-        pipeline.readFrom(MongoSources.stream(SOURCE_NAME, connectionString, defaultDatabase(), methodName, null, null))
+        pipeline.readFrom(MongoSources.stream(connectionString, defaultDatabase(), methodName, null, null))
                 .withNativeTimestamps(0)
                 .setLocalParallelism(1)
                 .writeTo(Sinks.list(list));
@@ -219,7 +219,7 @@ public class MongoSourceTest extends AbstractMongoTest {
     public void testStreamOneCollection() {
         IList<Object> list = instance().getList(testName.getMethodName());
         String connectionString = mongoContainer.getConnectionString();
-        Stream<?> sourceBuilder = MongoSources.stream(SOURCE_NAME, () -> mongoClient(connectionString))
+        Stream<?> sourceBuilder = MongoSources.stream("customName", () -> mongoClient(connectionString))
                                               .database(defaultDatabase())
                                               .collection(testName.getMethodName(), Document.class);
         sourceBuilder = streamFilters(sourceBuilder);
@@ -252,7 +252,7 @@ public class MongoSourceTest extends AbstractMongoTest {
         String connectionString = mongoContainer.getConnectionString();
 
         Stream<?> builder = MongoSourceBuilder
-                .stream(SOURCE_NAME, () -> MongoClients.create(connectionString))
+                .stream(() -> MongoClients.create(connectionString))
                 .database(defaultDatabase());
         builder = streamFilters(builder);
 
@@ -291,7 +291,7 @@ public class MongoSourceTest extends AbstractMongoTest {
 
         String connectionString = mongoContainer.getConnectionString();
 
-        Stream<?> builder = MongoSourceBuilder.stream(SOURCE_NAME, () -> MongoClients.create(connectionString));
+        Stream<?> builder = MongoSourceBuilder.stream(() -> MongoClients.create(connectionString));
         builder = streamFilters(builder);
 
         Pipeline pipeline = Pipeline.create();
