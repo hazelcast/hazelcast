@@ -70,7 +70,7 @@ public class MCMessageTasksTest extends SqlTestSupport {
         );
 
         String response = future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-        assertStartsWith("CREATE MAPPING \"" + name + "\"", response);
+        assertStartsWith("CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"" + name + "\"", response);
     }
 
     private HazelcastClientInstanceImpl getClientImpl() {

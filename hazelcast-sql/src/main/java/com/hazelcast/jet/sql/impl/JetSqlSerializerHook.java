@@ -77,6 +77,7 @@ import com.hazelcast.sql.impl.expression.predicate.IsTruePredicate;
 import com.hazelcast.sql.impl.expression.predicate.NotPredicate;
 import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
 import com.hazelcast.sql.impl.expression.predicate.SearchPredicate;
+import com.hazelcast.sql.impl.expression.service.GetDdlFunction;
 import com.hazelcast.sql.impl.expression.string.AsciiFunction;
 import com.hazelcast.sql.impl.expression.string.CharLengthFunction;
 import com.hazelcast.sql.impl.expression.string.ConcatFunction;
@@ -218,8 +219,9 @@ public class JetSqlSerializerHook implements DataSerializerHook {
 
     public static final int QUERY_DATA_TYPE_FIELD = 89;
 
+    public static final int EXPRESSION_GET_DDL = 90;
 
-    public static final int LEN = QUERY_DATA_TYPE_FIELD + 1;
+    public static final int LEN = EXPRESSION_GET_DDL + 1;
 
     @Override
     public int getFactoryId() {
@@ -338,6 +340,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[INTERVAL_DAY_SECOND] = arg -> new SqlDaySecondInterval();
 
         constructors[QUERY_DATA_TYPE_FIELD] = arg -> new QueryDataType.QueryDataTypeField();
+        constructors[EXPRESSION_GET_DDL] = arg -> new GetDdlFunction();
 
         return new ArrayDataSerializableFactory(constructors);
     }

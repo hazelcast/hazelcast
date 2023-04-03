@@ -331,14 +331,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
     @Override
     public int hashCode() {
-        // TODO: proper hashcode
-        if (converter.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
-            return 31 * converter.getId();
-        } else if (converter.getTypeFamily().equals(QueryDataTypeFamily.ROW)) {
-            return 31 * converter.getId();
-        } else {
-            return 31 * converter.getId();
-        }
+        return 251 * converter.getId();
     }
 
     @Override
@@ -354,13 +347,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
         QueryDataType type = (QueryDataType) o;
 
-        if (converter.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
-            return converter.getId() == type.converter.getId();
-        } else if (converter.getTypeFamily().equals(QueryDataTypeFamily.ROW)) {
-            return converter.getId() == type.converter.getId();
-        } else {
-            return converter.getId() == type.converter.getId();
-        }
+        return converter.getId() == type.converter.getId();
     }
 
     @Override
@@ -376,7 +363,8 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         private String name;
         private QueryDataType dataType;
 
-        public QueryDataTypeField() { }
+        public QueryDataTypeField() {
+        }
 
         public QueryDataTypeField(final String name, final QueryDataType dataType) {
             this.name = name;

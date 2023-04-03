@@ -135,4 +135,9 @@ public class FieldAccessExpression<T> implements Expression<T> {
     public QueryDataType getType() {
         return type;
     }
+
+    @Override
+    public boolean isCooperative() {
+        return ref.isCooperative();
+    }
 }

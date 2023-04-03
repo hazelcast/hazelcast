@@ -150,6 +150,7 @@ public class StreamToStreamJoinPInnerTest extends SqlTestSupport {
         ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1, true));
 
         TestSupport.verifyProcessor(processorSupplier)
+                .hazelcastInstance(instance())
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
                 .expectExactOutput(
                         in(wm(0L, (byte) 1)),
@@ -241,6 +242,7 @@ public class StreamToStreamJoinPInnerTest extends SqlTestSupport {
         TestSupport.verifyProcessor(supplier)
                 .hazelcastInstance(instance())
                 .outputChecker(SAME_ITEMS_ANY_ORDER_EQUIVALENT_WMS)
+                .hazelcastInstance(instance())
                 .expectExactOutput(
                         in(0, jetRow(12L, 10L)),
                         in(1, jetRow(12L, 10L)),
@@ -310,6 +312,7 @@ public class StreamToStreamJoinPInnerTest extends SqlTestSupport {
         ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(2, 1, true, 1, 2));
 
         TestSupport.verifyProcessor(processorSupplier)
+                .hazelcastInstance(instance())
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
                 .cooperativeTimeout(0) // todo remove
                 .expectExactOutput(
@@ -359,6 +362,7 @@ public class StreamToStreamJoinPInnerTest extends SqlTestSupport {
         ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1, true));
 
         TestSupport.verifyProcessor(processorSupplier)
+                .hazelcastInstance(instance())
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
                 .expectExactOutput(
                         in(0, jetRow(0L)),
@@ -449,7 +453,7 @@ public class StreamToStreamJoinPInnerTest extends SqlTestSupport {
     }
 
     private SupplierEx<Processor> createProcessor(int leftColumnCount, int rightColumnCount, boolean assumeEquiJoin,
-            int... wmKeyToColumnIndex) {
+                                                  int... wmKeyToColumnIndex) {
         Expression<Boolean> condition = createConditionFromPostponeTimeMap(postponeTimeMap, wmKeyToColumnIndex);
         int[] equiJoinIndices = new int[assumeEquiJoin ? 1 : 0];
         JetJoinInfo joinInfo = new JetJoinInfo(INNER, equiJoinIndices, equiJoinIndices, condition, condition);

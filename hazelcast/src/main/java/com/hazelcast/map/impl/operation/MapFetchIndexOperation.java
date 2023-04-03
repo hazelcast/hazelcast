@@ -352,6 +352,11 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
     }
 
     @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
     public int getClassId() {
         return MapDataSerializerHook.MAP_FETCH_INDEX_OPERATION;
     }

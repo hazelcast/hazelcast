@@ -18,18 +18,20 @@ package com.hazelcast.sql.impl.schema.view;
 
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateView;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.schema.SqlCatalogObject;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
-public class View implements IdentifiedDataSerializable, Versioned {
+public class View implements Versioned, SqlCatalogObject {
 
     private String name;
     private String query;
@@ -40,13 +42,6 @@ public class View implements IdentifiedDataSerializable, Versioned {
     }
 
     public View(String name, String query, List<String> columnNames, List<QueryDataType> columnTypes) {
-        this.name = name;
-        this.query = query;
-        this.viewColumnNames = columnNames;
-        this.viewColumnTypes = columnTypes;
-    }
-
-    public View(String name, String query, boolean isStream, List<String> columnNames, List<QueryDataType> columnTypes) {
         this.name = name;
         this.query = query;
         this.viewColumnNames = columnNames;
@@ -101,11 +96,6 @@ public class View implements IdentifiedDataSerializable, Versioned {
     }
 
     @Override
-    public int getFactoryId() {
-        return SqlDataSerializerHook.F_ID;
-    }
-
-    @Override
     public int getClassId() {
         return SqlDataSerializerHook.VIEW;
     }
@@ -128,5 +118,11 @@ public class View implements IdentifiedDataSerializable, Versioned {
     @Override
     public int hashCode() {
         return Objects.hash(name, query, viewColumnNames, viewColumnTypes);
+    }
+
+    @Override
+    @Nonnull
+    public String unparse() {
+        return SqlCreateView.unparse(this);
     }
 }

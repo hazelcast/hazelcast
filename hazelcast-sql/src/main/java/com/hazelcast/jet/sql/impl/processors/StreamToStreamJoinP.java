@@ -408,6 +408,11 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         return emitFromTraverserToSnapshot(snapshotTraverser);
     }
 
+    @Override
+    public boolean isCooperative() {
+        return joinInfo.isCooperative();
+    }
+
     /**
      * Increment the `value`. If equal to `max`, set to 0. Returns the new value.
      */

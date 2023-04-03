@@ -17,12 +17,13 @@
 package com.hazelcast.sql.impl.schema;
 
 import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -35,8 +36,7 @@ import java.util.Objects;
  * the internal storage for mappings, and also used internally to
  * represent a mapping.
  */
-@SuppressWarnings("JavadocReference")
-public class Mapping implements IdentifiedDataSerializable, Versioned {
+public class Mapping implements SqlCatalogObject, Versioned {
 
     private String name;
     private String externalName;
@@ -97,11 +97,6 @@ public class Mapping implements IdentifiedDataSerializable, Versioned {
     }
 
     @Override
-    public int getFactoryId() {
-        return SqlDataSerializerHook.F_ID;
-    }
-
-    @Override
     public int getClassId() {
         return SqlDataSerializerHook.MAPPING;
     }
@@ -153,5 +148,11 @@ public class Mapping implements IdentifiedDataSerializable, Versioned {
     @Override
     public int hashCode() {
         return Objects.hash(name, externalName, dataLink, connectorType, objectType, mappingFields, options);
+    }
+
+    @Override
+    @Nonnull
+    public String unparse() {
+        return SqlCreateMapping.unparse(this);
     }
 }

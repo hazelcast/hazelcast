@@ -235,13 +235,21 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
         CONFIG, SQL
     }
 
-    static class DataLinkEntry {
-        final DataLink instance;
-        final DataLinkSource source;
+    public static class DataLinkEntry {
+        private final DataLink instance;
+        private final DataLinkSource source;
 
         DataLinkEntry(DataLink instance, DataLinkSource source) {
             this.instance = instance;
             this.source = source;
+        }
+
+        public DataLink getInstance() {
+            return instance;
+        }
+
+        public DataLinkSource getSource() {
+            return source;
         }
     }
 }

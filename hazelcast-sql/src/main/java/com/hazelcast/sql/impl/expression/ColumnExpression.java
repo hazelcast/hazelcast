@@ -141,4 +141,9 @@ public final class ColumnExpression<T> implements Expression<T> {
     public String toString() {
         return "$" + index;
     }
+
+    @Override
+    public boolean isCooperative() {
+        return true;
+    }
 }

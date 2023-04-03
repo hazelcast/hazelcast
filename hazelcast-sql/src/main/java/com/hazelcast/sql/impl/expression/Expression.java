@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.expression;
 
+import com.hazelcast.jet.impl.execution.CooperativeThread;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.row.Row;
@@ -48,7 +49,7 @@ public interface Expression<T> extends IdentifiedDataSerializable, Serializable 
     /**
      * Evaluates this expression.
      *
-     * @param row the row to evaluate this expression on
+     * @param row     the row to evaluate this expression on
      * @param context the expression evaluation context
      * @return the result produced by the evaluation
      */
@@ -58,8 +59,8 @@ public interface Expression<T> extends IdentifiedDataSerializable, Serializable 
      * Evaluates this expression. By default, this method ignores useLazyDeserialization parameter,
      * i.e, expression that uses the default implementation won't use lazy deserialization.
      *
-     * @param row the row to evaluate this expression on
-     * @param context the expression evaluation context
+     * @param row                    the row to evaluate this expression on
+     * @param context                the expression evaluation context
      * @param useLazyDeserialization whether to use lazy deserialization
      * @return the result produced by the evaluation
      */
@@ -71,6 +72,16 @@ public interface Expression<T> extends IdentifiedDataSerializable, Serializable 
      * @return the return query data type of this expression.
      */
     QueryDataType getType();
+
+    /**
+     * Returns a boolean flag whether this expression is allowed to be evaluated
+     * in cooperative processor.
+     * <p>
+     * Expressions returning false directly (i.e. not because their operands
+     * return false) should call {@link
+     * CooperativeThread#checkNonCooperative()}.
+     */
+    boolean isCooperative();
 
     @Override
     default int getFactoryId() {

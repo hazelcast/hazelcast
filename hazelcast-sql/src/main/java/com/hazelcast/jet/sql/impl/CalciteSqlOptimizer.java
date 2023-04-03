@@ -394,7 +394,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 planKey,
                 sqlCreateDataLink.getReplace(),
                 sqlCreateDataLink.ifNotExists,
-                sqlCreateDataLink.name(),
+                sqlCreateDataLink.nameWithoutSchema(),
                 sqlCreateDataLink.type(),
                 sqlCreateDataLink.shared(),
                 sqlCreateDataLink.options(),

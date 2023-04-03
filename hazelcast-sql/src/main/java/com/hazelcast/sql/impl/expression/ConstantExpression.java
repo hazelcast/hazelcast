@@ -125,4 +125,8 @@ public final class ConstantExpression<T> implements Expression<T> {
         return "ConstantExpression{type=" + type + ", value=" + value + '}';
     }
 
+    @Override
+    public boolean isCooperative() {
+        return true;
+    }
 }

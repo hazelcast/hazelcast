@@ -17,10 +17,12 @@
 package com.hazelcast.sql.impl.schema.datalink;
 
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateDataLink;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.schema.SqlCatalogObject;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
@@ -28,9 +30,9 @@ import java.util.Objects;
 import static com.hazelcast.datalink.impl.DataLinkServiceImpl.DataLinkSource;
 
 /**
- * SQL schema POJO class.
+ * The value in catalog map for data links.
  */
-public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
+public class DataLinkCatalogEntry implements SqlCatalogObject {
     private String name;
     private String type;
     private boolean shared;
@@ -65,6 +67,7 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
         return name;
     }
 
+    @Nonnull
     public String type() {
         return type;
     }
@@ -73,10 +76,12 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
         return shared;
     }
 
+    @Nonnull
     public Map<String, String> options() {
         return options;
     }
 
+    @Nonnull
     public DataLinkSource source() {
         return source;
     }
@@ -125,5 +130,11 @@ public class DataLinkCatalogEntry implements IdentifiedDataSerializable {
     @Override
     public int hashCode() {
         return Objects.hash(name, type, shared, options, source);
+    }
+
+    @Nonnull
+    @Override
+    public String unparse() {
+        return SqlCreateDataLink.unparse(this);
     }
 }
