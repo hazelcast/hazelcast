@@ -80,6 +80,7 @@ public abstract class TriExpression<T> implements Expression<T> {
         return result;
     }
 
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     @Override
     public boolean isCooperative() {
         return operand1 == null || operand1.isCooperative()
