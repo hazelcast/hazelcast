@@ -167,7 +167,7 @@ public final class HazelcastBootstrap {
                         if (handler instanceof ConsoleHandler) {
                             rootLogger.removeHandler(handler);
                             rootLogger.addHandler(new JetConsoleLogHandler());
-                            rootLogger.setLevel(Level.CONFIG);
+                            rootLogger.setLevel(Level.INFO);
                             return;
                         }
                     }
