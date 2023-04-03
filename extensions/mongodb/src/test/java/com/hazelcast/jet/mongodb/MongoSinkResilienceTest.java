@@ -58,7 +58,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.mongodb.AbstractMongoTest.TEST_MONGO_VERSION;
-import static com.hazelcast.jet.mongodb.AbstractMongoTest.mongo;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static eu.rekawek.toxiproxy.model.ToxicDirection.DOWNSTREAM;

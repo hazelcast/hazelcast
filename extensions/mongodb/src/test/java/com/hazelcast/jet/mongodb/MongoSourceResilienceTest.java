@@ -60,7 +60,6 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.mongodb.AbstractMongoTest.TEST_MONGO_VERSION;
-import static com.hazelcast.jet.mongodb.AbstractMongoTest.mongo;
 import static com.hazelcast.jet.pipeline.Sinks.map;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static eu.rekawek.toxiproxy.model.ToxicDirection.DOWNSTREAM;

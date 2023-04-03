@@ -50,7 +50,6 @@ import static com.hazelcast.jet.mongodb.impl.Mappers.streamToClass;
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.gte;
-import static com.mongodb.client.model.Projections.computedSearchMeta;
 import static com.mongodb.client.model.Projections.include;
 import static com.mongodb.client.model.Sorts.ascending;
 import static java.util.Arrays.asList;

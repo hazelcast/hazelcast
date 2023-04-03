@@ -20,6 +20,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Field;
 import com.mongodb.client.model.Filters;
+import com.mongodb.connection.ClusterDescription;
 import org.bson.BsonArray;
 import org.bson.BsonDateTime;
 import org.bson.BsonString;
@@ -159,6 +160,7 @@ public final class MongoUtilities {
                 return;
             }
         }
-        throw new JetException("Database " + databaseName + " does not exist in cluster " + client.getClusterDescription());
+        ClusterDescription clusterDescription = client.getClusterDescription();
+        throw new JetException("Database " + databaseName + " does not exist in cluster " + clusterDescription);
     }
 }
