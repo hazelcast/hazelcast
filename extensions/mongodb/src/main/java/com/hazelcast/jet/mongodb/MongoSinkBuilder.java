@@ -21,6 +21,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.mongodb.MongoSourceBuilder.Batch;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
 import com.hazelcast.jet.pipeline.DataLinkRef;
@@ -230,6 +231,19 @@ public final class MongoSinkBuilder<T> {
     @Nonnull
     public MongoSinkBuilder<T> writeMode(@Nonnull WriteMode writeMode) {
         params.setWriteMode(writeMode);
+        return this;
+    }
+
+    /**
+     * If {@code true}, the lack of database or collection will cause an error.
+     * If {@code false}, database and collection will be automatically created.
+     * Default value is {@code true}.
+     *
+     * @param throwOnNonExisting if exception should be thrown when database or collection does not exist.
+     */
+    @Nonnull
+    public MongoSinkBuilder<T> throwOnNonExisting(boolean throwOnNonExisting) {
+        params.setThrowOnNonExisting(throwOnNonExisting);
         return this;
     }
 

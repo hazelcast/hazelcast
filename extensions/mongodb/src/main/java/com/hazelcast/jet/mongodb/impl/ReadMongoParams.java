@@ -49,6 +49,7 @@ public class ReadMongoParams<I> implements Serializable {
     Long startAtTimestamp;
     EventTimePolicy<? super I> eventTimePolicy;
     BiFunctionEx<ChangeStreamDocument<Document>, Long, I> mapStreamFn;
+    boolean throwOnNonExisting = true;
 
     public ReadMongoParams(boolean stream) {
         this.stream = stream;
@@ -163,6 +164,15 @@ public class ReadMongoParams<I> implements Serializable {
 
     public ReadMongoParams<I> addAggregate(@Nonnull Bson doc) {
         this.aggregates.add(doc);
+        return this;
+    }
+
+    public boolean isThrowOnNonExisting() {
+        return throwOnNonExisting;
+    }
+
+    public ReadMongoParams<I> setThrowOnNonExisting(boolean throwOnNonExisting) {
+        this.throwOnNonExisting = throwOnNonExisting;
         return this;
     }
 }

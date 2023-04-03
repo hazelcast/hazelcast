@@ -157,6 +157,7 @@ public class MongoSinkTest extends AbstractMongoTest {
                 .withIngestionTimestamps()
                 .writeTo(builder(Doc.class, () -> createClient(connectionString))
                         .identifyDocumentBy("key", o -> o.key)
+                        .throwOnNonExisting(false)
                         .into(i -> defaultDatabase, i -> "col_" + (i.key % 2))
                         .withCustomReplaceOptions(opt -> opt.upsert(true))
                         .writeMode(INSERT_ONLY)

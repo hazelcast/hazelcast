@@ -175,10 +175,11 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
         this.transactionOptionsSup = params.transactionOptionsSup;
 
         if (params.databaseName != null) {
-            this.collectionPicker = new ConstantCollectionPicker<>(params.databaseName, params.collectionName);
+            this.collectionPicker = new ConstantCollectionPicker<>(params.throwOnNonExisting, params.databaseName,
+                    params.collectionName);
         } else {
-            this.collectionPicker = new FunctionalCollectionPicker<>(params.databaseNameSelectFn,
-                    params.collectionNameSelectFn);
+            this.collectionPicker = new FunctionalCollectionPicker<>(params.throwOnNonExisting,
+                    params.databaseNameSelectFn, params.collectionNameSelectFn);
         }
         this.intermediateMappingFn = params.getIntermediateMappingFn();
         this.writeMode = params.getWriteMode();
@@ -565,8 +566,8 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
 
         private final MongoCollectionKey key;
 
-        private ConstantCollectionPicker(String databaseName, String collectionName) {
-            this.key = new MongoCollectionKey(databaseName, collectionName);
+        private ConstantCollectionPicker(boolean throwOnNonExisting, String databaseName, String collectionName) {
+            this.key = new MongoCollectionKey(throwOnNonExisting, databaseName, collectionName);
         }
 
 
@@ -581,9 +582,14 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
 
         private final FunctionEx<I, String> databaseNameSelectFn;
         private final FunctionEx<I, String> collectionNameSelectFn;
+        private final boolean throwOnNonExisting;
 
-        private FunctionalCollectionPicker(FunctionEx<I, String> databaseNameSelectFn,
-                                           FunctionEx<I, String> collectionNameSelectFn) {
+        private FunctionalCollectionPicker(
+                boolean throwOnNonExisting,
+                FunctionEx<I, String> databaseNameSelectFn,
+                FunctionEx<I, String> collectionNameSelectFn
+        ) {
+            this.throwOnNonExisting = throwOnNonExisting;
             this.databaseNameSelectFn = databaseNameSelectFn;
             this.collectionNameSelectFn = collectionNameSelectFn;
         }
@@ -593,7 +599,7 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
         public MongoCollectionKey pick(I item) {
             String databaseName = databaseNameSelectFn.apply(item);
             String collectionName = collectionNameSelectFn.apply(item);
-            return new MongoCollectionKey(databaseName, collectionName);
+            return new MongoCollectionKey(throwOnNonExisting, databaseName, collectionName);
         }
 
     }
@@ -601,8 +607,10 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
     private static final class MongoCollectionKey {
         private final @Nonnull String collectionName;
         private final @Nonnull String databaseName;
+        private final boolean throwOnNonExisting;
 
-        MongoCollectionKey(@Nonnull String databaseName, @Nonnull String collectionName) {
+        MongoCollectionKey(boolean throwOnNonExisting, @Nonnull String databaseName, @Nonnull String collectionName) {
+            this.throwOnNonExisting = throwOnNonExisting;
             this.collectionName = collectionName;
             this.databaseName = databaseName;
         }
@@ -634,9 +642,13 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
 
         @Nonnull
         public <I> MongoCollection<I> get(MongoClient mongoClient, Class<I> documentType) {
-            checkDatabaseExists(mongoClient, databaseName);
+            if (throwOnNonExisting) {
+                checkDatabaseExists(mongoClient, databaseName);
+            }
             MongoDatabase database = mongoClient.getDatabase(databaseName);
-            checkCollectionExists(database, collectionName);
+            if (throwOnNonExisting) {
+                checkCollectionExists(database, collectionName);
+            }
             return database.getCollection(collectionName, documentType)
                            .withCodecRegistry(defaultCodecRegistry());
         }

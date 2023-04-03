@@ -251,6 +251,19 @@ public final class MongoSourceBuilder {
         }
 
         /**
+         * If {@code true}, the lack of database or collection will cause an error.
+         * If {@code false}, database and collection will be automatically created.
+         * Default value is {@code true}.
+         *
+         * @param throwOnNonExisting if exception should be thrown when database or collection does not exist.
+         */
+        @Nonnull
+        public Batch<T> throwOnNonExisting(boolean throwOnNonExisting) {
+            params.setThrowOnNonExisting(throwOnNonExisting);
+            return this;
+        }
+
+        /**
          * Adds a projection aggregate. Example use:
          * <pre>{@code
          * import static com.mongodb.client.model.Projections.include;
@@ -432,6 +445,19 @@ public final class MongoSourceBuilder {
             this.params.setDataLinkRef(dataLinkRef);
             this.params.setMapStreamFn(
                     (BiFunctionEx<ChangeStreamDocument<Document>, Long, T>) streamToClass(Document.class));
+        }
+
+        /**
+         * If {@code true}, the lack of database or collection will cause an error.
+         * If {@code false}, database and collection will be automatically created.
+         * Default value is {@code true}.
+         *
+         * @param throwOnNonExisting if exception should be thrown when database or collection does not exist.
+         */
+        @Nonnull
+        public Stream<T> throwOnNonExisting(boolean throwOnNonExisting) {
+            params.setThrowOnNonExisting(throwOnNonExisting);
+            return this;
         }
 
         /**

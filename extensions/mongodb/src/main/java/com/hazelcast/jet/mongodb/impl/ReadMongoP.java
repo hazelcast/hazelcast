@@ -84,6 +84,7 @@ import static com.mongodb.client.model.changestream.FullDocument.UPDATE_LOOKUP;
 public class ReadMongoP<I> extends AbstractProcessor {
 
     private static final int BATCH_SIZE = 1000;
+    private final boolean throwOnNonExisting;
     private ILogger logger;
 
     private int totalParallelism;
@@ -110,6 +111,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
         }
         this.connection = new MongoConnection(params.clientSupplier, params.dataLinkRef, client -> reader.connect(client,
                 snapshotsEnabled));
+        this.throwOnNonExisting = params.isThrowOnNonExisting();
     }
 
     @Override
@@ -240,7 +242,9 @@ public class ReadMongoP<I> extends AbstractProcessor {
             try {
                 logger.fine("(Re)connecting to MongoDB");
                 if (databaseName != null) {
-                    checkDatabaseExists(newClient, databaseName);
+                    if (throwOnNonExisting) {
+                        checkDatabaseExists(newClient, databaseName);
+                    }
                     this.database = newClient.getDatabase(databaseName);
                 }
                 if (collectionName != null) {
@@ -249,7 +253,9 @@ public class ReadMongoP<I> extends AbstractProcessor {
                     //noinspection ConstantValue false warn by intellij
                     checkState(database != null, "database " + databaseName + " does not exists");
 
-                    checkCollectionExists(database, collectionName);
+                    if (throwOnNonExisting) {
+                        checkCollectionExists(database, collectionName);
+                    }
                     this.collection = database.getCollection(collectionName);
                 }
 

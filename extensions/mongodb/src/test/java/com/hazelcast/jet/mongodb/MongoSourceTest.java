@@ -46,6 +46,7 @@ import java.util.Set;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.mongodb.MongoSources.batch;
+import static com.hazelcast.jet.mongodb.MongoSources.stream;
 import static com.hazelcast.jet.mongodb.impl.Mappers.streamToClass;
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
@@ -198,7 +199,7 @@ public class MongoSourceTest extends AbstractMongoTest {
         String connectionString = mongoContainer.getConnectionString();
 
         Pipeline pipeline = Pipeline.create();
-        pipeline.readFrom(MongoSources.stream(connectionString, defaultDatabase(), collectionName, null, null))
+        pipeline.readFrom(stream(connectionString, defaultDatabase(), collectionName, null, null))
                 .withNativeTimestamps(0)
                 .setLocalParallelism(1)
                 .writeTo(Sinks.list(list));
@@ -221,7 +222,7 @@ public class MongoSourceTest extends AbstractMongoTest {
 
         IList<Object> list = instance().getList(collectionName);
         String connectionString = mongoContainer.getConnectionString();
-        Stream<?> sourceBuilder = MongoSources.stream("customName", () -> mongoClient(connectionString))
+        Stream<?> sourceBuilder = stream("customName", () -> mongoClient(connectionString))
                                               .database(defaultDatabase())
                                               .collection(collectionName, Document.class);
         sourceBuilder = streamFilters(sourceBuilder);
