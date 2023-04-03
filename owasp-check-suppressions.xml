@@ -111,7 +111,7 @@
         <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client\-gson@.*$</packageUrl>
         <cpe>cpe:/a:google:gson</cpe>
     </suppress>
-        <suppress>
+    <suppress>
         <notes><![CDATA[
         False positive - snakeyaml incorrectly identified as go-yaml project.
         ]]></notes>
