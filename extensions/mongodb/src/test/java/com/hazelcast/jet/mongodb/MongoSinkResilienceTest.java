@@ -58,6 +58,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.mongodb.AbstractMongoTest.TEST_MONGO_VERSION;
+import static com.hazelcast.jet.mongodb.AbstractMongoTest.mongo;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static eu.rekawek.toxiproxy.model.ToxicDirection.DOWNSTREAM;
@@ -118,6 +119,9 @@ public class MongoSinkResilienceTest extends SimpleTestInClusterSupport {
         final String databaseName = "shutdownTest";
         final String collectionName = "testStream_whenServerDown";
         final String connectionString = mongoContainer.getConnectionString();
+        try (MongoClient mongoClient = MongoClients.create(connectionString)) {
+            mongoClient.getDatabase(databaseName).createCollection(collectionName);
+        }
         IMap<Integer, Integer> sourceMap = hz.getMap(testName.getMethodName());
 
         Pipeline pipeline = Pipeline.create();
@@ -182,9 +186,12 @@ public class MongoSinkResilienceTest extends SimpleTestInClusterSupport {
         final ToxiproxyClient toxiproxyClient = new ToxiproxyClient(toxi.getHost(), toxi.getControlPort());
         final Proxy proxy = toxiproxyClient.createProxy("mongo", "0.0.0.0:8670", "mongo:27017");
 
+        final String connectionViaToxi = "mongodb://" + toxi.getHost() + ":" + toxi.getMappedPort(8670);
         final String databaseName = "networkCutoff";
         final String collectionName = "testNetworkCutoff";
-        final String connectionViaToxi = "mongodb://" + toxi.getHost() + ":" + toxi.getMappedPort(8670);
+        try (MongoClient mongoClient = MongoClients.create(connectionViaToxi)) {
+            mongoClient.getDatabase(databaseName).createCollection(collectionName);
+        }
 
         IMap<Integer, Integer> sourceMap = hz.getMap(testName.getMethodName());
 

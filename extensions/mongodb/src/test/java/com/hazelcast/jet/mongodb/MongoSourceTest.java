@@ -50,6 +50,7 @@ import static com.hazelcast.jet.mongodb.impl.Mappers.streamToClass;
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.gte;
+import static com.mongodb.client.model.Projections.computedSearchMeta;
 import static com.mongodb.client.model.Projections.include;
 import static com.mongodb.client.model.Sorts.ascending;
 import static java.util.Arrays.asList;
@@ -193,12 +194,12 @@ public class MongoSourceTest extends AbstractMongoTest {
 
     @Test
     public void testStreamSimple() {
-        String methodName = testName.getMethodName();
-        IList<Object> list = instance().getList(methodName);
+        String collectionName = testName.getMethodName();
+        IList<Object> list = instance().getList(collectionName);
         String connectionString = mongoContainer.getConnectionString();
 
         Pipeline pipeline = Pipeline.create();
-        pipeline.readFrom(MongoSources.stream(connectionString, defaultDatabase(), methodName, null, null))
+        pipeline.readFrom(MongoSources.stream(connectionString, defaultDatabase(), collectionName, null, null))
                 .withNativeTimestamps(0)
                 .setLocalParallelism(1)
                 .writeTo(Sinks.list(list));
@@ -217,11 +218,13 @@ public class MongoSourceTest extends AbstractMongoTest {
 
     @Test
     public void testStreamOneCollection() {
-        IList<Object> list = instance().getList(testName.getMethodName());
+        String collectionName = testName.getMethodName();
+
+        IList<Object> list = instance().getList(collectionName);
         String connectionString = mongoContainer.getConnectionString();
         Stream<?> sourceBuilder = MongoSources.stream("customName", () -> mongoClient(connectionString))
                                               .database(defaultDatabase())
-                                              .collection(testName.getMethodName(), Document.class);
+                                              .collection(collectionName, Document.class);
         sourceBuilder = streamFilters(sourceBuilder);
 
         Pipeline pipeline = Pipeline.create();
@@ -247,7 +250,8 @@ public class MongoSourceTest extends AbstractMongoTest {
 
     @Test
     public void testStream_whenWatchDatabase() {
-        IList<Object> list = instance().getList(testName.getMethodName());
+        String collectionName = testName.getMethodName();
+        IList<Object> list = instance().getList(collectionName);
 
         String connectionString = mongoContainer.getConnectionString();
 
@@ -287,7 +291,8 @@ public class MongoSourceTest extends AbstractMongoTest {
 
     @Test
     public void testStream_whenWatchAll() {
-        IList<Object> list = instance().getList(testName.getMethodName());
+        String collectionName = testName.getMethodName();
+        IList<Object> list = instance().getList(collectionName);
 
         String connectionString = mongoContainer.getConnectionString();
 

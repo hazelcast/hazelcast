@@ -145,7 +145,7 @@ public class MongoSinkTest extends AbstractMongoTest {
     }
 
     @Test
-        public void test_withStreamAsInput_insert() {
+    public void test_withStreamAsInput_insert() {
         final String connectionString = mongoContainer.getConnectionString();
         final String defaultDatabase = defaultDatabase();
         IMap<Long, Doc> mapToInsert = instance().getMap("toInsert");
@@ -162,6 +162,9 @@ public class MongoSinkTest extends AbstractMongoTest {
                         .writeMode(INSERT_ONLY)
                         .build()
                 );
+
+        mongo.getDatabase(defaultDatabase).createCollection("col_0");
+        mongo.getDatabase(defaultDatabase).createCollection("col_1");
 
         JobConfig config = new JobConfig().setProcessingGuarantee(processingGuarantee).setSnapshotIntervalMillis(200);
         instance().getJet().newJob(pipeline, config);

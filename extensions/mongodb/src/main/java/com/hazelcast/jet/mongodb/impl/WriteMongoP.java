@@ -41,6 +41,7 @@ import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.ClientSession;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.ReplaceOptions;
@@ -69,6 +70,8 @@ import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.checkCollectionExists;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.checkDatabaseExists;
 import static com.hazelcast.jet.retry.IntervalFunction.exponentialBackoffWithCap;
 import static com.mongodb.MongoException.TRANSIENT_TRANSACTION_ERROR_LABEL;
 import static com.mongodb.client.model.Filters.eq;
@@ -631,9 +634,11 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
 
         @Nonnull
         public <I> MongoCollection<I> get(MongoClient mongoClient, Class<I> documentType) {
-            return mongoClient.getDatabase(databaseName)
-                              .getCollection(collectionName, documentType)
-                              .withCodecRegistry(defaultCodecRegistry());
+            checkDatabaseExists(mongoClient, databaseName);
+            MongoDatabase database = mongoClient.getDatabase(databaseName);
+            checkCollectionExists(database, collectionName);
+            return database.getCollection(collectionName, documentType)
+                           .withCodecRegistry(defaultCodecRegistry());
         }
     }
 

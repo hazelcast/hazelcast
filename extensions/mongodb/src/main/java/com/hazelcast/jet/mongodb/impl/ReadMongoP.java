@@ -57,6 +57,8 @@ import static com.hazelcast.jet.Traversers.singleton;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.checkCollectionExists;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.checkDatabaseExists;
 import static com.hazelcast.jet.mongodb.impl.MongoUtilities.partitionAggregate;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.sort;
@@ -238,6 +240,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
             try {
                 logger.fine("(Re)connecting to MongoDB");
                 if (databaseName != null) {
+                    checkDatabaseExists(newClient, databaseName);
                     this.database = newClient.getDatabase(databaseName);
                 }
                 if (collectionName != null) {
@@ -245,6 +248,8 @@ public class ReadMongoP<I> extends AbstractProcessor {
                             " is specified");
                     //noinspection ConstantValue false warn by intellij
                     checkState(database != null, "database " + databaseName + " does not exists");
+
+                    checkCollectionExists(database, collectionName);
                     this.collection = database.getCollection(collectionName);
                 }
 

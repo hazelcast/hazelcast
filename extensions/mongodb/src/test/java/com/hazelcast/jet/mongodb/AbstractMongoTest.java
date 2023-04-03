@@ -33,6 +33,7 @@ import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.TestName;
@@ -89,6 +90,11 @@ public abstract class AbstractMongoTest extends SimpleTestInClusterSupport {
         );
         config.getJetConfig().setEnabled(true);
         initialize(2, config);
+    }
+
+    @Before
+    public void createDefaultCollection() {
+        mongo.getDatabase(defaultDatabase()).createCollection(testName.getMethodName());
     }
 
     @After

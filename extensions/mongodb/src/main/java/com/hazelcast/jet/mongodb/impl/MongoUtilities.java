@@ -15,6 +15,9 @@
  */
 package com.hazelcast.jet.mongodb.impl;
 
+import com.hazelcast.jet.JetException;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Field;
 import com.mongodb.client.model.Filters;
 import org.bson.BsonArray;
@@ -139,5 +142,23 @@ public final class MongoUtilities {
                             .atZone(UTC)
                             .withZoneSameInstant(systemDefault())
                             .toLocalDateTime();
+    }
+
+    static void checkCollectionExists(MongoDatabase database, String collectionName) {
+        for (String name : database.listCollectionNames()) {
+            if (name.equals(collectionName)) {
+                return;
+            }
+        }
+        throw new JetException("Collection " + collectionName + " in database " + database.getName() + " does not exist");
+    }
+
+    static void checkDatabaseExists(MongoClient client, String databaseName) {
+        for (String name : client.listDatabaseNames()) {
+            if (name.equals(databaseName)) {
+                return;
+            }
+        }
+        throw new JetException("Database " + databaseName + " does not exist in cluster " + client.getClusterDescription());
     }
 }
