@@ -77,6 +77,6 @@ public abstract class UniExpression<T> implements Expression<T> {
 
     @Override
     public boolean isCooperative() {
-        return operand.isCooperative();
+        return operand == null || operand.isCooperative();
     }
 }

@@ -82,6 +82,8 @@ public abstract class TriExpression<T> implements Expression<T> {
 
     @Override
     public boolean isCooperative() {
-        return operand1.isCooperative() && operand2.isCooperative() && operand3.isCooperative();
+        return operand1 == null || operand1.isCooperative()
+                && operand2 == null || operand2.isCooperative()
+                && operand3 == null || operand3.isCooperative();
     }
 }
