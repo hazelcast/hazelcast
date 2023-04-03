@@ -70,20 +70,15 @@ public class SqlStreamingJoinAndAggregationTest extends SqlTestSupport {
         String sql = "SELECT we1, _sum, _max FROM " +
                 "( SELECT window_end AS we1, SUM(DISTINCT a) AS _sum FROM " +
                 "    TABLE(HOP(TABLE s1, DESCRIPTOR(b), INTERVAL '0.02' SECOND, INTERVAL '0.01' SECOND))" +
-                "    GROUP BY window_end, a) st1" +
+                "    GROUP BY window_end) st1" +
                 "  JOIN " +
                 "( SELECT window_end AS we2, MAX(DISTINCT d) AS _max FROM " +
                 "    TABLE(HOP(TABLE s2, DESCRIPTOR(c), INTERVAL '0.02' SECOND, INTERVAL '0.01' SECOND))" +
-                "    GROUP BY window_end, d) st2" +
+                "    GROUP BY window_end) st2" +
                 " ON st1.we1 = st2.we2";
 
         assertRowsEventuallyInAnyOrder(sql, asList(
-                new Row(timestampTz(10L), 1L, 1),
-                new Row(timestampTz(10L), 2L, 1),
-                new Row(timestampTz(10L), 1L, 2),
-                new Row(timestampTz(10L), 2L, 2)
-//                new Row(timestampTz(10L), 3L, 2)
-                // it also has more rows
+                new Row(timestampTz(10L), 3L, 2)
         ));
     }
 
@@ -124,19 +119,17 @@ public class SqlStreamingJoinAndAggregationTest extends SqlTestSupport {
         String sql = "SELECT we1, sum1, max2 FROM " +
                 "( SELECT window_end AS we1, SUM(DISTINCT a) AS sum1 FROM " +
                 "    TABLE(TUMBLE(TABLE s1, DESCRIPTOR(b), INTERVAL '0.003' SECOND))" +
-                "    GROUP BY window_end, a) st1" +
+                "    GROUP BY window_end) st1" +
                 "  JOIN " +
                 "( SELECT window_end AS we2, MAX(DISTINCT d) AS max2 FROM " +
                 "    TABLE(TUMBLE(TABLE s2, DESCRIPTOR(c), INTERVAL '0.003' SECOND))" +
-                "    GROUP BY window_end, d) st2" +
+                "    GROUP BY window_end) st2" +
                 " ON st1.we1 = st2.we2";
 
         assertRowsEventuallyInAnyOrder(sql,
                 asList(
-                        new Row(timestampTz(3), 1L, 0),
                         new Row(timestampTz(3), 1L, 2),
-                        new Row(timestampTz(6), 3L, 4),
-                        new Row(timestampTz(6), 5L, 4))
+                        new Row(timestampTz(6), 8L, 4))
         );
     }
 
@@ -173,21 +166,17 @@ public class SqlStreamingJoinAndAggregationTest extends SqlTestSupport {
         String sql = "SELECT we1, _sum, _max FROM " +
                 "( SELECT window_end AS we1, SUM(a) AS _sum FROM " +
                 "    TABLE(HOP(TABLE s1, DESCRIPTOR(b), INTERVAL '0.02' SECOND, INTERVAL '0.01' SECOND))" +
-                "    GROUP BY window_end, a) st1" +
+                "    GROUP BY window_end) st1" +
                 "  JOIN " +
                 "( SELECT window_end AS we2, MAX(d) AS _max FROM " +
                 "    TABLE(HOP(TABLE s2, DESCRIPTOR(c), INTERVAL '0.02' SECOND, INTERVAL '0.01' SECOND))" +
-                "    GROUP BY window_end, d) st2" +
+                "    GROUP BY window_end) st2" +
                 " ON st1.we1 = st2.we2";
 
         assertRowsEventuallyInAnyOrder(sql, asList(
-                new Row(timestampTz(10L), 1L, 1),
-                new Row(timestampTz(10L), 2L, 1),
-                new Row(timestampTz(10L), 1L, 2),
-                new Row(timestampTz(10L), 2L, 2)
-//                new Row(timestampTz(10L), 3L, 2)
+                new Row(timestampTz(10L), 3L, 2),
+                new Row(timestampTz(20L), 3L, 2)
         ));
-                // it also has more rows
     }
 
     @Test
@@ -227,20 +216,17 @@ public class SqlStreamingJoinAndAggregationTest extends SqlTestSupport {
         String sql = "SELECT we1, sum1, max2 FROM " +
                 "( SELECT window_end AS we1, SUM(a) AS sum1 FROM " +
                 "    TABLE(TUMBLE(TABLE s1, DESCRIPTOR(b), INTERVAL '0.003' SECOND))" +
-                "    GROUP BY window_end, a) st1" +
+                "    GROUP BY window_end) st1" +
                 "  JOIN " +
                 "( SELECT window_end AS we2, MAX(d) AS max2 FROM " +
                 "    TABLE(TUMBLE(TABLE s2, DESCRIPTOR(c), INTERVAL '0.003' SECOND))" +
-                "    GROUP BY window_end, d) st2" +
+                "    GROUP BY window_end) st2" +
                 " ON st1.we1 = st2.we2";
 
         assertRowsEventuallyInAnyOrder(sql,
                 asList(
-                        new Row(timestampTz(3), 1L, 0),
                         new Row(timestampTz(3), 1L, 2),
-                        new Row(timestampTz(6), 3L, 4),
-                        new Row(timestampTz(6), 5L, 4),
-                        new Row(timestampTz(9), 5L, 6)
-                ));
+                        new Row(timestampTz(6), 8L, 4))
+        );
     }
 }
