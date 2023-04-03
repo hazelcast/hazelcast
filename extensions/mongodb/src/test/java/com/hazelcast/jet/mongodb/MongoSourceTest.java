@@ -130,7 +130,8 @@ public class MongoSourceTest extends AbstractMongoTest {
         Batch<?> sourceBuilder = batch(() -> mongoClient(connectionString))
                                                .database(defaultDatabase())
                                                .collection(testName.getMethodName())
-                                               .sort(ascending("key"));
+                                               .sort(ascending("key"))
+                                               .throwOnNonExisting(false);
         sourceBuilder = batchFilters(sourceBuilder);
         pipeline.readFrom(sourceBuilder.build())
                 .setLocalParallelism(2)
