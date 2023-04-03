@@ -198,11 +198,11 @@ public class DelegatingAddressPickerTest {
         return config;
     }
 
-    private void assertAddressBetweenPorts(Address expected, Address actual, NetworkConfig networkConfig) {
+    static void assertAddressBetweenPorts(Address expected, Address actual, NetworkConfig networkConfig) {
        assertAddressBetweenPorts(expected, actual, networkConfig.isPortAutoIncrement(), networkConfig.getPortCount());
     }
 
-    private void assertAddressBetweenPorts(Address expected, Address actual, boolean isPortAutoIncrement, int portCount) {
+    static void assertAddressBetweenPorts(Address expected, Address actual, boolean isPortAutoIncrement, int portCount) {
         int beginPort = expected.getPort();
         int endPort = beginPort;
 

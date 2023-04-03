@@ -17,6 +17,7 @@
 package com.hazelcast.instance.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.impl.DefaultAddressPicker.AddressDefinition;
 import com.hazelcast.instance.impl.DefaultAddressPicker.InterfaceDefinition;
@@ -47,6 +48,7 @@ import java.util.Enumeration;
 
 import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV4_STACK;
 import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV6_ADDRESSES;
+import static com.hazelcast.instance.impl.DelegatingAddressPickerTest.assertAddressBetweenPorts;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static com.hazelcast.internal.util.AddressUtil.getAddressHolder;
@@ -74,8 +76,8 @@ public class DefaultAddressPickerTest {
     @Rule
     public final OverridePropertyRule ruleSysPropPreferIpv6Addresses = clear(PREFER_IPV6_ADDRESSES);
 
-    private ILogger logger = Logger.getLogger(AddressPicker.class);
-    private Config config = new Config();
+    private final ILogger logger = Logger.getLogger(AddressPicker.class);
+    private final Config config = new Config();
     private AddressPicker addressPicker;
     private InetAddress loopback;
 
@@ -241,15 +243,18 @@ public class DefaultAddressPickerTest {
     }
 
     private void testPublicAddress(String host, int port) throws Exception {
-        config.getNetworkConfig().setPublicAddress(port < 0 ? host : (host + ":" + port));
+        NetworkConfig networkConfig = config.getNetworkConfig();
+        networkConfig.setPublicAddress(port < 0 ? host : (host + ":" + port));
         addressPicker = new DefaultAddressPicker(config, logger);
         addressPicker.pickAddress();
 
         if (port < 0) {
-            port = config.getNetworkConfig().getPort();
+            port = networkConfig.getPort();
         }
 
-        assertEquals(new Address(host, port), addressPicker.getPublicAddress(null));
+        Address expected = new Address(host, port);
+        Address actual = addressPicker.getPublicAddress(null);
+        assertAddressBetweenPorts(expected, actual, networkConfig);
     }
 
     @Test
