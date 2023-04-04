@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import com.mongodb.client.model.DeleteManyModel;
 import com.mongodb.client.model.DeleteOneModel;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.WriteModel;
@@ -105,7 +106,7 @@ public class DeleteProcessorSupplier implements ProcessorSupplier {
                                 .setDatabaseName(databaseName)
                                 .setCollectionName(collectionName)
                                 .setDocumentType(Document.class),
-                        () -> new DeleteOneModel<>(predicateWithReplacements)
+                        () -> new DeleteManyModel<>(predicateWithReplacements)
                 );
 
             }

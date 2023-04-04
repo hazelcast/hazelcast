@@ -186,7 +186,9 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         Vertex vertex = getJetSqlConnector(table).updateProcessor(
                 dagBuildContext, rel.getUpdateColumnList(), wrap(rel.getSourceExpressionList()),
                 wrap(rel.getPredicate()), rel.getInput() != null);
-        connectInput(rel.getInput(), vertex, null);
+        if (rel.getInput() != null) {
+            connectInput(rel.getInput(), vertex, null);
+        }
         return vertex;
     }
 

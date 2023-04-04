@@ -15,13 +15,11 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.mongodb.WriteMode;
 import com.hazelcast.jet.mongodb.impl.Mappers;
-import com.hazelcast.jet.mongodb.impl.MongoUtilities;
-import com.hazelcast.jet.mongodb.impl.Mappers;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
+import com.mongodb.client.model.Filters;
 import org.apache.calcite.rex.RexNode;
 import org.bson.conversions.Bson;
 
@@ -29,7 +27,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.List;
-import java.util.Objects;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 import static java.util.stream.Collectors.toList;
@@ -87,8 +84,9 @@ public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
                     new UpdateProcessorSupplier(table, fieldNames, updates, null)
             );
         } else {
-            Objects.requireNonNull(predicate);
-            Object predicateRaw = predicate.unwrap(RexNode.class).accept(visitor);
+            Object predicateRaw = predicate == null
+                    ? Filters.empty()
+                    : predicate.unwrap(RexNode.class).accept(visitor);
             Serializable translated = predicateRaw instanceof Bson
                     ? Mappers.bsonToDocument((Bson) predicateRaw)
                     : (Serializable) predicateRaw;
@@ -128,7 +126,9 @@ public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
                     new DeleteProcessorSupplier(table, null)
             );
         } else {
-            Object predicateTranslated = predicate.unwrap(RexNode.class).accept(new RexToMongoVisitor());
+            Object predicateTranslated = predicate == null
+                    ? Filters.empty()
+                    : predicate.unwrap(RexNode.class).accept(new RexToMongoVisitor());
             Serializable predicateToSend;
             if (predicateTranslated instanceof Bson) {
                 predicateToSend = Mappers.bsonToDocument((Bson) predicateTranslated);
