@@ -31,17 +31,24 @@ import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.ExceptionRecorder;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import org.example.Person;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.rules.TestName;
+import org.junit.runner.RunWith;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -52,7 +59,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class})
 public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
+
+    @Rule
+    public TestName testName = new TestName();
 
     private static Config memberConfig;
     private String tableName;
@@ -84,7 +96,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
     @Before
     public void setUp() throws Exception {
-        tableName = randomTableName();
+        tableName = testName.getMethodName().toLowerCase(Locale.ROOT);
         createTable(tableName);
         insertItems(tableName, 1);
 
