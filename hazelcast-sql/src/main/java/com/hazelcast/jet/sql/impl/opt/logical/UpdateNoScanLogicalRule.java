@@ -120,7 +120,7 @@ class UpdateNoScanLogicalRule extends RelRule<RelRule.Config> {
 
     @Value.Immutable
     interface Config extends RelRule.Config {
-        RelRule.Config DEFAULT = ImmutableUpdateOtherLogicalRule.Config.builder()
+        RelRule.Config DEFAULT = ImmutableUpdateNoScanLogicalRule.Config.builder()
                 .description(UpdateNoScanLogicalRule.class.getSimpleName())
                 .operandSupplier(b0 -> b0.operand(TableModifyLogicalRel.class)
                         .predicate(TableModify::isUpdate)
