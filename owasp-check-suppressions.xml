@@ -141,6 +141,13 @@
         <cpe>cpe:/a:json-java_project:json-java</cpe>
     </suppress>
     <suppress>
+       <notes><![CDATA[
+       False positive - accessors-smart incorrectly identified as json-smart.
+       ]]></notes>
+       <packageUrl regex="true">^pkg:maven/net\.minidev/accessors\-smart@.*$</packageUrl>
+       <cpe>cpe:/a:json-smart_project:json-smart</cpe>
+    </suppress>
+    <suppress>
         <notes><![CDATA[
         False positive - json version 20230227 have already fix for listed CVE.
         ]]></notes>
