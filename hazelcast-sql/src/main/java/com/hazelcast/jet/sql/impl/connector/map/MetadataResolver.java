@@ -26,19 +26,19 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
-import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
-import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.Mapping;
 
 import javax.annotation.Nullable;
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector.TYPE_NAME;
 
@@ -84,59 +84,58 @@ public class MetadataResolver implements IMapResolver {
     }
 
     private Metadata resolveFromContentsHd(String name, MapServiceContext context) {
-        // Iterate only over local partitions.
+        // Iterate only over local partitions (owned and backups)
         // MC will invoke this operation on each member until it finds some data.
+
         for (PartitionContainer partitionContainer : context.getPartitionContainers()) {
             // HD access must be from partition threads.
-            GetAnyMetadataOperation op = new GetAnyMetadataOperation(name);
-            Metadata resolved = invoke(op, partitionContainer.getPartitionId());
-            if (resolved != null) {
-                return resolved;
+            GetAnyMetadataRunnable partitionTask = new GetAnyMetadataRunnable(context, name,
+                    partitionContainer.getPartitionId());
+            nodeEngine.getOperationService().execute(partitionTask);
+            if (partitionTask.getResult() != null) {
+                return partitionTask.getResult();
             }
         }
         return null;
     }
 
-    private static final class GetAnyMetadataOperation extends Operation
-            implements ReadonlyOperation, PartitionAwareOperation {
+    private static final class GetAnyMetadataRunnable implements PartitionSpecificRunnable {
+        public static final int TIMEOUT = 5;
+        private final MapServiceContext context;
         private final String mapName;
+        private final int partitionId;
+        private final CompletableFuture<Metadata> result = new CompletableFuture<>();
 
-        private GetAnyMetadataOperation(String mapName) {
+        GetAnyMetadataRunnable(MapServiceContext context, String mapName, int partitionId) {
+            this.context = context;
             this.mapName = mapName;
+            this.partitionId = partitionId;
         }
 
         @Override
         public void run() {
-            MapService service = getService();
-            MapServiceContext context = service.getMapServiceContext();
             RecordStore<?> recordStore = context.getExistingRecordStore(getPartitionId(), mapName);
             // can return null, but that is fine
-            sendResponse(resolveFromContentsRecordStore(getNodeEngine(), recordStore));
+            result.complete(resolveFromContentsRecordStore(context.getNodeEngine(), recordStore));
         }
 
         @Override
-        public boolean returnsResponse() {
-            return false;
+        public int getPartitionId() {
+            return partitionId;
         }
 
-        @Override
-        protected void writeInternal(ObjectDataOutput out) {
-            throw new UnsupportedOperationException("This operation is invoked only locally");
-        }
-
-        @Override
-        protected void readInternal(ObjectDataInput in) {
-            throw new UnsupportedOperationException("This operation is invoked only locally");
+        public Metadata getResult() {
+            try {
+                return result.get(TIMEOUT, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                // null is allowed response
+                return null;
+            } catch (ExecutionException | TimeoutException e) {
+                throw new HazelcastSqlException("Cannot get sample data from map", e);
+            }
         }
     }
-
-    @Nullable
-    private <T extends Metadata> T invoke(Operation operation, int partitionId) {
-        final InvocationFuture<T> future =
-                nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
-        return future.joinInternal();
-    }
-
 
     @Nullable
     @SuppressWarnings("rawtypes")

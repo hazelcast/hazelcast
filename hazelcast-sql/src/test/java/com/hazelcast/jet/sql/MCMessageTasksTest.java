@@ -21,9 +21,11 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.protocol.codec.SqlMappingDdlCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.config.Config;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.partition.PartitionAware;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -39,21 +41,29 @@ public class MCMessageTasksTest extends SqlTestSupport {
 
     @BeforeClass
     public static void setUpClass() {
-        initializeWithClient(1, null, null);
+        initializeWithClient(2, createConfig(smallInstanceConfig()), null);
+    }
+
+    protected static Config createConfig(Config baseConfig) {
+        // disable backups so tests that want to ensure that there is no data in given member are easier
+        baseConfig.getMapConfig("default").setBackupCount(0);
+        return baseConfig;
     }
 
     @Test
     public void test_sqlMappingDdl_nonExistingMap() throws Exception {
-        String response = getMappingDdl(randomMapName());
+        warmUpPartitions();
+        String response = getMappingDdl(randomMapName(), null);
         assertNull(response);
     }
 
     @Test
     public void test_sqlMappingDdl_existingMap() throws Exception {
         String name = randomMapName();
-        instance().getMap(name).put(1, "value-1");
+        String key = generateKeyOwnedBy(instance());
+        instance().getMap(name).put(key, "value-1");
 
-        String response = getMappingDdl(name);
+        String response = getMappingDdl(name, key);
         assertThat(response)
                 .startsWith("CREATE MAPPING \"" + name + "\"")
                 .contains("'keyFormat' = 'java'")
@@ -64,11 +74,26 @@ public class MCMessageTasksTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_sqlMappingDdl_existingMapDifferentPartition() throws Exception {
+        warmUpPartitions(instances());
+
+        String name = randomMapName();
+        String key = generateKeyOwnedBy(instance());
+        instance().getMap(name).put(key, "value-1");
+
+        String someKey = generateKeyNotOwnedBy(instance());
+
+        String response = getMappingDdl(name, someKey);
+        assertThat(response).isNull();
+    }
+
+    @Test
     public void test_sqlMappingDdl_existingMapPortableKey() throws Exception {
         String name = randomMapName();
-        instance().getMap(name).put(new PortableKeyPojo(1), "some value");
+        String key = generateKeyOwnedBy(instance());
+        instance().getMap(name).put(new PortableKeyPojo(key), key);
 
-        String response = getMappingDdl(name);
+        String response = getMappingDdl(name, key);
         assertThat(response)
                 .startsWith("CREATE MAPPING \"" + name + "\"")
                 .contains("'keyFormat' = 'portable'");
@@ -80,9 +105,10 @@ public class MCMessageTasksTest extends SqlTestSupport {
     @Test
     public void test_sqlMappingDdl_existingMapPortableValue() throws Exception {
         String name = randomMapName();
-        instance().getMap(name).put(1, new PortableKeyPojo(2));
+        String key = generateKeyOwnedBy(instance());
+        instance().getMap(name).put(key, new PortableKeyPojo(key));
 
-        String response = getMappingDdl(name);
+        String response = getMappingDdl(name, key);
         assertThat(response)
                 .startsWith("CREATE MAPPING \"" + name + "\"")
                 .contains("'valueFormat' = 'portable'");
@@ -96,7 +122,7 @@ public class MCMessageTasksTest extends SqlTestSupport {
         String name = randomMapName();
         instance().getMap(name).clear();
 
-        String response = getMappingDdl(name);
+        String response = getMappingDdl(name, null);
         assertNull(response);
     }
 
@@ -104,11 +130,18 @@ public class MCMessageTasksTest extends SqlTestSupport {
         return ((HazelcastClientProxy) client()).client;
     }
 
-    private String getMappingDdl(String name) throws InterruptedException, ExecutionException, TimeoutException {
+    private String getMappingDdl(String name, String partitionKey) throws InterruptedException, ExecutionException, TimeoutException {
+        // ensure that client knows owners of all partitions before sending message.
+        // if the partition owner is not known, message will not be sent.
+        assertTrueEventually(() -> client().getPartitionService().getPartitions()
+                .forEach(p -> assertThat(p.getOwner()).isNotNull()));
+
         ClientInvocation invocation = new ClientInvocation(
                 getClientImpl(),
                 SqlMappingDdlCodec.encodeRequest(name),
-                null
+                null,
+                // send message to specific node
+                partitionKey != null ? getPartitionId(instance(), partitionKey) : -1
         );
 
         ClientDelegatingFuture<String> future = new ClientDelegatingFuture<>(
@@ -122,10 +155,10 @@ public class MCMessageTasksTest extends SqlTestSupport {
 
     private static final int PORTABLE_FACTORY_ID = 1;
     private static final int PORTABLE_KEY_CLASS_ID = 2;
-    private static class PortableKeyPojo implements Portable {
-        private long key;
+    private static class PortableKeyPojo implements Portable, PartitionAware<String> {
+        private String key;
 
-        private PortableKeyPojo(long value) {
+        private PortableKeyPojo(String value) {
             this.key = value;
         }
 
@@ -141,12 +174,17 @@ public class MCMessageTasksTest extends SqlTestSupport {
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeLong("key_p", key);
+            writer.writeString("key_p", key);
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            key = reader.readLong("key_p");
+            key = reader.readString("key_p");
+        }
+
+        @Override
+        public String getPartitionKey() {
+            return key;
         }
     }
 }
