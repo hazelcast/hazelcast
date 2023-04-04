@@ -109,6 +109,7 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         HazelcastInstance steadyMember = bounceMemberRule.getSteadyMember();
         final IMap<Integer, ListHolder> map = steadyMember.getMap(MAP_NAME);
         while (iteration < ITERATIONS) {
+            System.out.println(String.format("Iteration %d of %d", iteration + 1, ITERATIONS));
             IncrementProcessor processor = new IncrementProcessor(iteration);
             expected.add(iteration);
             for (int i = 0; i < ENTRIES; ++i) {
