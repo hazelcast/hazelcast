@@ -23,7 +23,6 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
-import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.mongodb.impl.CursorTraverser.EmptyItem;
 import com.hazelcast.logging.ILogger;
