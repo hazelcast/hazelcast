@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.partition.PartitionAware;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -44,6 +45,15 @@ public class MCMessageTasksTest extends SqlTestSupport {
         initializeWithClient(2, createConfig(smallInstanceConfig()), null);
     }
 
+    @Before
+    public void setup() {
+        warmUpPartitions(instances());
+        // ensure that client knows owners of all partitions before sending message.
+        // if the partition owner is not known, message would not be sent.
+        warmUpPartitions(client());
+    }
+
+
     protected static Config createConfig(Config baseConfig) {
         // disable backups so tests that want to ensure that there is no data in given member are easier
         baseConfig.getMapConfig("default").setBackupCount(0);
@@ -52,7 +62,6 @@ public class MCMessageTasksTest extends SqlTestSupport {
 
     @Test
     public void test_sqlMappingDdl_nonExistingMap() throws Exception {
-        warmUpPartitions();
         String response = getMappingDdl(randomMapName(), null);
         assertNull(response);
     }
@@ -75,8 +84,6 @@ public class MCMessageTasksTest extends SqlTestSupport {
 
     @Test
     public void test_sqlMappingDdl_existingMapDifferentPartition() throws Exception {
-        warmUpPartitions(instances());
-
         String name = randomMapName();
         String key = generateKeyOwnedBy(instance());
         instance().getMap(name).put(key, "value-1");
@@ -131,11 +138,6 @@ public class MCMessageTasksTest extends SqlTestSupport {
     }
 
     private String getMappingDdl(String name, String partitionKey) throws InterruptedException, ExecutionException, TimeoutException {
-        // ensure that client knows owners of all partitions before sending message.
-        // if the partition owner is not known, message will not be sent.
-        assertTrueEventually(() -> client().getPartitionService().getPartitions()
-                .forEach(p -> assertThat(p.getOwner()).isNotNull()));
-
         ClientInvocation invocation = new ClientInvocation(
                 getClientImpl(),
                 SqlMappingDdlCodec.encodeRequest(name),
