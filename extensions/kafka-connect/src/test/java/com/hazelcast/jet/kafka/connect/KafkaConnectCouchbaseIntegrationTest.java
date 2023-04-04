@@ -71,11 +71,9 @@ public class KafkaConnectCouchbaseIntegrationTest extends JetTestSupport {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectCouchbaseIntegrationTest.class);
 
     private static final String BUCKET_NAME = "mybucket";
-
     public static final CouchbaseContainer container = new CouchbaseContainer("couchbase/server:7.1.1")
             .withBucket(new BucketDefinition(BUCKET_NAME))
             .withStartupTimeout(Duration.ofSeconds(120))
-            .withFileSystemBind("target/couchbase-logs", "/opt/couchbase/var/lib/couchbase/logs")
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"));
 
 
@@ -83,6 +81,8 @@ public class KafkaConnectCouchbaseIntegrationTest extends JetTestSupport {
 
     private static final String CONNECTOR_URL = "https://repository.hazelcast.com/download"
             + "/tests/couchbase-kafka-connect-couchbase-4.1.11.zip";
+    private static final String COUCHBASE_LOGS_IN_CONTAINER = "/opt/couchbase/var/lib/couchbase/logs";
+    private static final String COUCHBASE_LOGS_FILE = "couchbase-logs.tar.gz";
 
     @BeforeClass
     public static void setUpDocker() {
@@ -91,8 +91,11 @@ public class KafkaConnectCouchbaseIntegrationTest extends JetTestSupport {
     }
 
     @AfterClass
-    public static void afterAll() {
+    public static void afterAll() throws Exception {
         if (container != null) {
+            container.execInContainer("tar", "-czvf", "/tmp/" + COUCHBASE_LOGS_FILE, COUCHBASE_LOGS_IN_CONTAINER);
+            container.copyFileFromContainer("/tmp/" + COUCHBASE_LOGS_FILE,
+                    "target/" + COUCHBASE_LOGS_FILE);
             container.stop();
         }
     }
