@@ -28,7 +28,6 @@ import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableScan;
-import org.apache.calcite.rel.core.Values;
 import org.apache.calcite.sql.SqlUpdate;
 import org.immutables.value.Value;
 
@@ -121,13 +120,13 @@ class UpdateNoScanLogicalRule extends RelRule<RelRule.Config> {
     @Value.Immutable
     interface Config extends RelRule.Config {
         RelRule.Config DEFAULT = ImmutableUpdateNoScanLogicalRule.Config.builder()
-                .description(UpdateNoScanLogicalRule.class.getSimpleName())
-                .operandSupplier(b0 -> b0.operand(TableModifyLogicalRel.class)
-                        .predicate(TableModify::isUpdate)
-                        .inputs(b1 -> b1.operand(RelNode.class)
-                                .predicate(r -> !(r instanceof Values) && !(r instanceof TableScan))
-                                .noInputs())
-                ).build();
+                                                                        .description(UpdateNoScanLogicalRule.class.getSimpleName())
+                                                                        .operandSupplier(b0 -> b0.operand(TableModifyLogicalRel.class)
+                                                                                                 .predicate(TableModify::isUpdate)
+                                                                                                 .inputs(b1 -> b1.operand(RelNode.class)
+                                                                                                                 .predicate(r -> !(r instanceof TableScan))
+                                                                                                                 .noInputs())
+                                                                        ).build();
 
         @Override
         default RelOptRule toRule() {
@@ -141,7 +140,7 @@ class UpdateNoScanLogicalRule extends RelRule<RelRule.Config> {
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        TableModifyLogicalRel update = call.rel(0);
+        TableModify update = call.rel(0);
         RelNode input = call.rel(1);
 
         UpdateLogicalRel rel = new UpdateLogicalRel(

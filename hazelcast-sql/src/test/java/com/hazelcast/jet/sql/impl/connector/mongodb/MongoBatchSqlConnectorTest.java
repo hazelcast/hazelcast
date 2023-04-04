@@ -491,6 +491,20 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         assertThat(list).isEmpty();
     }
 
+    @Test
+    public void deletes_unsupportedExpr() {
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        ObjectId objectId = ObjectId.get();
+        collection.insertOne(new Document("_id", objectId).append("firstName", "temp").append("lastName", "temp")
+                                                          .append("jedi", true));
+
+        createMapping(false);
+
+        execute("delete from " + collectionName + " where cast(jedi as varchar) = ?", "true");
+        ArrayList<Document> list = collection.find().into(new ArrayList<>());
+        assertThat(list).hasSize(0);
+    }
+
     private void createMapping(boolean includeIdInMapping) {
         execute("CREATE MAPPING " + collectionName
                 + " ("
