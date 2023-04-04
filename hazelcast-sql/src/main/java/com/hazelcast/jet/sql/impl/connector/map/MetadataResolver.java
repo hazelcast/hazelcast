@@ -88,12 +88,15 @@ public class MetadataResolver implements IMapResolver {
         // MC will invoke this operation on each member until it finds some data.
 
         for (PartitionContainer partitionContainer : context.getPartitionContainers()) {
-            // HD access must be from partition threads.
+            // HD access must be from partition threads
             GetAnyMetadataRunnable partitionTask = new GetAnyMetadataRunnable(context, name,
                     partitionContainer.getPartitionId());
-            nodeEngine.getOperationService().execute(partitionTask);
-            if (partitionTask.getResult() != null) {
-                return partitionTask.getResult();
+            if (partitionTask.hasRecordStore()) {
+                // Enqueue task only for partitions which may have some data
+                nodeEngine.getOperationService().execute(partitionTask);
+                if (partitionTask.getResult() != null) {
+                    return partitionTask.getResult();
+                }
             }
         }
         return null;
@@ -102,19 +105,23 @@ public class MetadataResolver implements IMapResolver {
     private static final class GetAnyMetadataRunnable implements PartitionSpecificRunnable {
         public static final int TIMEOUT = 5;
         private final MapServiceContext context;
-        private final String mapName;
         private final int partitionId;
+        private final RecordStore<?> recordStore;
         private final CompletableFuture<Metadata> result = new CompletableFuture<>();
 
         GetAnyMetadataRunnable(MapServiceContext context, String mapName, int partitionId) {
             this.context = context;
-            this.mapName = mapName;
             this.partitionId = partitionId;
+            recordStore = context.getExistingRecordStore(getPartitionId(), mapName);
+        }
+
+        public boolean hasRecordStore() {
+            return recordStore != null;
         }
 
         @Override
         public void run() {
-            RecordStore<?> recordStore = context.getExistingRecordStore(getPartitionId(), mapName);
+            assert !result.isDone() : "This runnable can be executed once";
             // can return null, but that is fine
             result.complete(resolveFromContentsRecordStore(context.getNodeEngine(), recordStore));
         }
