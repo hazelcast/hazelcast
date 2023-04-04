@@ -77,7 +77,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         createTable("schema1." + tableName);
 
         String mappingName = "mapping_" + randomName();
-        createMapping("schema1\".\"" + tableName, mappingName);
+        createMapping("\"schema1\".\"" + tableName + '\"', mappingName);
 
         assertRowsAnyOrder("SHOW MAPPINGS",
                 newArrayList(new Row(mappingName))

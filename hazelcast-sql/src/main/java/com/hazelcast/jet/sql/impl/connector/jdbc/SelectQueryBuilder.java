@@ -16,65 +16,58 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.rel.rel2sql.SqlImplementor.SimpleContext;
 import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParserPos;
 
+import java.util.Iterator;
 import java.util.List;
 
-import static java.util.stream.Collectors.joining;
+class SelectQueryBuilder extends AbstractQueryBuilder {
 
-class SelectQueryBuilder {
-
-    private final String query;
+    private final SimpleContext simpleContext;
     private final ParamCollectingVisitor paramCollectingVisitor = new ParamCollectingVisitor();
 
     @SuppressWarnings("ExecutableStatementCount")
-    SelectQueryBuilder(Table table0, RexNode filter, List<RexNode> projects) {
-        JdbcTable table = (JdbcTable) table0;
-        SqlDialect dialect = table.sqlDialect();
+    SelectQueryBuilder(JdbcTable jdbcTable, RexNode filter, List<RexNode> projects) {
+        super(jdbcTable);
 
-        SimpleContext simpleContext = new SimpleContext(dialect, value -> {
-            JdbcTableField field = table.getField(value);
+        simpleContext = new SimpleContext(dialect, value -> {
+            JdbcTableField field = jdbcTable.getField(value);
             return new SqlIdentifier(field.externalName(), SqlParserPos.ZERO);
         });
 
-        String predicateFragment = null;
-        if (filter != null) {
-            SqlNode sqlNode = simpleContext.toSql(null, filter);
-            sqlNode.accept(paramCollectingVisitor);
-            predicateFragment = sqlNode.toSqlString(dialect).toString();
-        }
-
-        String projectionFragment = null;
-        if (!projects.isEmpty()) {
-            projectionFragment = projects.stream()
-                                         .map(proj -> simpleContext.toSql(null, proj).toSqlString(dialect).toString())
-                                         .collect(joining(","));
-        }
-
         StringBuilder sb = new StringBuilder();
         sb.append("SELECT ");
-        if (projectionFragment != null) {
-            sb.append(projectionFragment);
+        if (!projects.isEmpty()) {
+            appendProjection(sb, projects);
         } else {
             sb.append("*");
         }
-        sb.append(" FROM ")
-          .append(table.getExternalName()[0]);
-        if (predicateFragment != null) {
+        sb.append(" FROM ");
+        dialect.quoteIdentifier(sb, jdbcTable.getExternalNameList());
+        if (filter != null) {
+            SqlNode sqlNode = simpleContext.toSql(null, filter);
+            sqlNode.accept(paramCollectingVisitor);
+            String predicateFragment = sqlNode.toSqlString(dialect).toString();
+
             sb.append(" WHERE ")
               .append(predicateFragment);
         }
         query = sb.toString();
     }
 
-    String query() {
-        return query;
+    private void appendProjection(StringBuilder sb, List<RexNode> projects) {
+        Iterator<RexNode> it = projects.iterator();
+        while (it.hasNext()) {
+            RexNode node = it.next();
+            sb.append(simpleContext.toSql(null, node).toSqlString(dialect).toString());
+            if (it.hasNext()) {
+                sb.append(',');
+            }
+        }
     }
 
     int[] parameterPositions() {

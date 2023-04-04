@@ -32,7 +32,7 @@ import org.mockito.MockitoAnnotations;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -56,34 +56,38 @@ public class PostgresUpsertQueryBuilderTest {
     }
 
     @Test
-    public void testGetInsertClause() {
+    public void testAppendInsertClause() {
         PostgresUpsertQueryBuilder builder = new PostgresUpsertQueryBuilder(jdbcTable);
-        StringBuilder stringBuilder = new StringBuilder();
-        builder.getInsertClause(stringBuilder);
+        StringBuilder sb = new StringBuilder();
+        builder.appendInsertClause(sb);
 
-        String insertClause = stringBuilder.toString();
-        assertEquals("INSERT INTO \"table1\" (\"field1\",\"field2\") ", insertClause);
+        String insertClause = sb.toString();
+        assertThat(insertClause).isEqualTo("INSERT INTO \"table1\" (\"field1\",\"field2\")");
     }
 
     @Test
-    public void testGetValuesClause() {
+    public void testAppendValuesClause() {
         PostgresUpsertQueryBuilder builder = new PostgresUpsertQueryBuilder(jdbcTable);
-        StringBuilder stringBuilder = new StringBuilder();
-        builder.getValuesClause(stringBuilder);
+        StringBuilder sb = new StringBuilder();
+        builder.appendValuesClause(sb);
 
-        String valuesClause = stringBuilder.toString();
-        assertEquals("VALUES (?,?) ", valuesClause);
+        String valuesClause = sb.toString();
+        assertThat(valuesClause).isEqualTo("VALUES (?,?)");
     }
 
     @Test
-    public void testGetOnConflictClause() {
+    public void testAppendOnConflictClause() {
         PostgresUpsertQueryBuilder builder = new PostgresUpsertQueryBuilder(jdbcTable);
-        StringBuilder stringBuilder = new StringBuilder();
-        builder.getOnConflictClause(stringBuilder);
+        StringBuilder sb = new StringBuilder();
+        builder.appendOnConflictClause(sb);
 
-        String valuesClause = stringBuilder.toString();
-        assertEquals("ON CONFLICT (\"pk1\",\"pk2\") " +
-                "DO UPDATE SET \"field1\" = EXCLUDED.\"field1\",\"field2\" = EXCLUDED.\"field2\"", valuesClause);
+        String valuesClause = sb.toString();
+        assertThat(valuesClause).isEqualTo(
+                "ON CONFLICT (\"pk1\",\"pk2\") " +
+                        "DO UPDATE SET " +
+                        "\"field1\" = EXCLUDED.\"field1\"," +
+                        "\"field2\" = EXCLUDED.\"field2\""
+        );
     }
 
     @Test
@@ -92,6 +96,6 @@ public class PostgresUpsertQueryBuilderTest {
         String result = builder.query();
         String expected = "INSERT INTO \"table1\" (\"field1\",\"field2\") VALUES (?,?) ON CONFLICT (\"pk1\",\"pk2\") " +
                 "DO UPDATE SET \"field1\" = EXCLUDED.\"field1\",\"field2\" = EXCLUDED.\"field2\"";
-        assertEquals(expected, result);
+        assertThat(result).isEqualTo(expected);
     }
 }

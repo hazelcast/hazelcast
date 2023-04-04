@@ -16,69 +16,54 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc.mysql;
 
+import com.hazelcast.jet.sql.impl.connector.jdbc.AbstractQueryBuilder;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcTable;
-import org.apache.calcite.sql.SqlDialect;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Iterator;
 
 /**
  * Builder for upsert statement
  */
-public class MySQLUpsertQueryBuilder {
-
-    private final String query;
-
-    private final String quotedTableName;
-    private final List<String> quotedColumnNames;
+public class MySQLUpsertQueryBuilder extends AbstractQueryBuilder {
 
     public MySQLUpsertQueryBuilder(JdbcTable jdbcTable) {
-        SqlDialect sqlDialect = jdbcTable.sqlDialect();
+        super(jdbcTable);
 
-        // Quote identifiers
-        quotedTableName = sqlDialect.quoteIdentifier(new StringBuilder(), jdbcTable.getExternalNameList()).toString();
-        quotedColumnNames = jdbcTable.dbFieldNames()
-                .stream()
-                .map(sqlDialect::quoteIdentifier)
-                .collect(Collectors.toList());
+        StringBuilder sb = new StringBuilder();
 
-        StringBuilder stringBuilder = new StringBuilder();
+        appendInsertClause(sb);
+        sb.append(' ');
+        appendValuesClause(sb);
+        sb.append(' ');
+        appendOnDuplicateClause(sb);
 
-        getInsertClause(stringBuilder);
-        getValuesClause(stringBuilder);
-        getOnDuplicateClause(stringBuilder);
-
-        query = stringBuilder.toString();
+        query = sb.toString();
     }
 
-    void getInsertClause(StringBuilder stringBuilder) {
-        stringBuilder.append("INSERT INTO ")
-                .append(quotedTableName)
-                .append(" (")
-                .append(String.join(",", quotedColumnNames))
-                .append(") ");
+    void appendInsertClause(StringBuilder sb) {
+        sb.append("INSERT INTO ");
+        dialect.quoteIdentifier(sb, jdbcTable.getExternalNameList());
+        sb.append(' ');
+        appendFieldNames(sb, jdbcTable.dbFieldNames());
     }
 
-    void getValuesClause(StringBuilder stringBuilder) {
-        String values = quotedColumnNames.stream()
-                .map(dbFieldName -> "?")
-                .collect(Collectors.joining(","));
-
-        stringBuilder.append("VALUES (").append(values).append(") ");
+    void appendValuesClause(StringBuilder sb) {
+        sb.append("VALUES ");
+        appendValues(sb, jdbcTable.dbFieldNames().size());
     }
 
-    void getOnDuplicateClause(StringBuilder stringBuilder) {
-        String values = quotedColumnNames.stream()
-                .map(dbFieldName -> dbFieldName + " = VALUES(" + dbFieldName + ")")
-                .collect(Collectors.joining(","));
-
-        stringBuilder.append("ON DUPLICATE KEY UPDATE ").append(values);
-    }
-
-    /**
-     * Returns the built upsert statement
-     */
-    public String query() {
-        return query;
+    void appendOnDuplicateClause(StringBuilder sb) {
+        sb.append("ON DUPLICATE KEY UPDATE ");
+        Iterator<String> it = jdbcTable.dbFieldNames().iterator();
+        while (it.hasNext()) {
+            String dbFieldName = it.next();
+            dialect.quoteIdentifier(sb, dbFieldName);
+            sb.append(" = VALUES(");
+            dialect.quoteIdentifier(sb, dbFieldName);
+            sb.append(')');
+            if (it.hasNext()) {
+                sb.append(',');
+            }
+        }
     }
 }
