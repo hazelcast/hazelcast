@@ -201,7 +201,9 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         dagBuildContext.setRel(rel);
         Vertex vertex = getJetSqlConnector(table).deleteProcessor(dagBuildContext,
                 wrap(rel.getPredicate()), rel.getInput() != null);
-        connectInput(rel.getInput(), vertex, null);
+        if (rel.getInput() != null) {
+            connectInput(rel.getInput(), vertex, null);
+        }
         return vertex;
     }
 

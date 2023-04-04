@@ -42,7 +42,6 @@ import org.example.PersonWithId;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -180,14 +179,14 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    @Ignore("no delete support yet")
     public void testRemove() {
         HazelcastInstance client = client();
         IMap<Integer, PersonWithId> map = client.getMap(tableName);
 
         assertThat(database.getCollection(tableName).countDocuments()).isEqualTo(1);
 
-        map.remove(0);
+        Integer key = map.keySet().iterator().next();
+        map.remove(key);
 
         assertThat(database.getCollection(tableName).countDocuments()).isZero();
     }

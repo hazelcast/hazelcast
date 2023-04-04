@@ -15,16 +15,23 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.mongodb.WriteMode;
+import com.hazelcast.jet.mongodb.impl.Mappers;
+import com.hazelcast.jet.mongodb.impl.MongoUtilities;
+import com.hazelcast.jet.mongodb.impl.Mappers;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import org.apache.calcite.rex.RexNode;
+import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Objects;
 
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -74,10 +81,25 @@ public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
                                                           })
                                                           .collect(toList());
 
-        return context.getDag().newUniqueVertex(
-                "Update(" + table.getSqlName() + ")",
-                new UpdateProcessorSupplier(table, fieldNames, updates)
-        );
+        if (hasInput) {
+            return context.getDag().newUniqueVertex(
+                    "Update(" + table.getSqlName() + ")",
+                    new UpdateProcessorSupplier(table, fieldNames, updates, null)
+            );
+        } else {
+            Objects.requireNonNull(predicate);
+            Object predicateRaw = predicate.unwrap(RexNode.class).accept(visitor);
+            Serializable translated = predicateRaw instanceof Bson
+                    ? Mappers.bsonToDocument((Bson) predicateRaw)
+                    : (Serializable) predicateRaw;
+
+            return context.getDag().newUniqueVertex(
+                    "Update(" + table.getSqlName() + ")",
+                    forceTotalParallelismOne(
+                        new UpdateProcessorSupplier(table, fieldNames, updates, translated)
+                    )
+            );
+        }
     }
 
     @Nonnull
@@ -100,9 +122,25 @@ public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
     ) {
         MongoTable table = context.getTable();
 
-        return context.getDag().newUniqueVertex(
-                "Delete(" + table.getSqlName() + ")",
-                new DeleteProcessorSupplier(table)
-        );
+        if (hasInput) {
+            return context.getDag().newUniqueVertex(
+                    "Delete(" + table.getSqlName() + ")",
+                    new DeleteProcessorSupplier(table, null)
+            );
+        } else {
+            Object predicateTranslated = predicate.unwrap(RexNode.class).accept(new RexToMongoVisitor());
+            Serializable predicateToSend;
+            if (predicateTranslated instanceof Bson) {
+                predicateToSend = Mappers.bsonToDocument((Bson) predicateTranslated);
+            } else {
+                assert predicateTranslated instanceof Serializable;
+                predicateToSend = (Serializable) predicateTranslated;
+            }
+
+            return context.getDag().newUniqueVertex(
+                    "Delete(" + table.getSqlName() + ")",
+                    forceTotalParallelismOne(new DeleteProcessorSupplier(table, predicateToSend))
+            );
+        }
     }
 }

@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.mongodb.impl.UpdateMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -27,8 +28,8 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Field;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.UpdateManyModel;
 import com.mongodb.client.model.UpdateOneModel;
-import com.mongodb.client.model.Updates;
 import com.mongodb.client.model.WriteModel;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -42,7 +43,9 @@ import java.util.List;
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_COMMIT_RETRY_STRATEGY;
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_TRANSACTION_OPTION;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
+import static com.hazelcast.jet.sql.impl.connector.mongodb.DynamicallyReplacedPlaceholder.replacePlaceholdersInPredicate;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -57,11 +60,15 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     private final List<String> updatedFieldNames;
     private final List<? extends Serializable> updates;
     private final String dataLinkName;
+    private final String[] externalNames;
     private ExpressionEvalContext evalContext;
     private transient SupplierEx<MongoClient> clientSupplier;
     private final String pkExternalName;
+    private final Serializable predicate;
 
-    UpdateProcessorSupplier(MongoTable table, List<String> updatedFieldNames, List<? extends Serializable> updates) {
+    UpdateProcessorSupplier(MongoTable table, List<String> updatedFieldNames,
+                            List<? extends Serializable> updates,
+                            Serializable predicate) {
         this.connectionString = table.connectionString;
         this.dataLinkName = table.dataLinkName;
         this.databaseName = table.databaseName;
@@ -71,6 +78,9 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
         this.updatedFieldNames = updatedFieldNames;
         this.updates = updates;
         this.pkExternalName = table.primaryKeyExternalName();
+        this.predicate = predicate;
+
+        externalNames = table.externalNames();
     }
 
     @Override
@@ -85,6 +95,24 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     @Override
     public Collection<? extends Processor> get(int count) {
         Processor[] processors = new Processor[count];
+
+        if (predicate != null) {
+            Document predicateWithReplacements = replacePlaceholdersInPredicate(predicate, externalNames, evalContext);
+            for (int i = 0; i < count; i++) {
+                Processor processor = new UpdateMongoP<>(
+                        new WriteMongoParams<Document>()
+                                .setClientSupplier(clientSupplier)
+                                .setDataLinkRef(dataLinkName)
+                                .setDatabaseName(databaseName)
+                                .setCollectionName(collectionName)
+                                .setDocumentType(Document.class),
+                        writeModel(predicateWithReplacements)
+                );
+
+                processors[i] = processor;
+            }
+            return asList(processors);
+        }
 
         for (int i = 0; i < count; i++) {
             Processor processor = new WriteMongoP<>(
@@ -105,9 +133,17 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
         return asList(processors);
     }
 
-    @SuppressWarnings("unchecked")
+    private SupplierEx<WriteModel<Document>> writeModel(Document predicate) {
+        return () -> {
+            Document values = valuesToUpdateDoc(externalNames);
+            List<Bson> pipeline = singletonList(values.get("update", Bson.class));
+            WriteModel<Document> doc = new UpdateManyModel<>(predicate, pipeline);
+            return doc;
+        };
+    }
+
     private WriteModel<Document> write(Document update) {
-        List<? extends Bson> updates = requireNonNull(update.get("update", List.class), "updateList");
+        Bson updates = requireNonNull(update.get("update", Bson.class), "updateList");
         Bson filter = requireNonNull(update.get("filter", Bson.class));
         return new UpdateOneModel<>(filter, updates);
     }
@@ -117,42 +153,37 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
      */
     private Document rowToUpdateDoc(JetSqlRow row) {
         Object[] values = row.getValues();
+        return valuesToUpdateDoc(values);
+    }
 
+    /**
+     * Row parameter contains values for PK fields, values of input before update, values of input after update.
+     */
+    private Document valuesToUpdateDoc(Object[] values) {
         Object pkValue = values[0];
 
-        List<Bson> updateToPerform = new ArrayList<>();
+        List<Field<?>> updateToPerform = new ArrayList<>();
         for (int i = 0; i < updatedFieldNames.size(); i++) {
             String fieldName = updatedFieldNames.get(i);
             Object updateExpr = updates.get(i);
             if (updateExpr instanceof Bson) {
                 Document document = Document.parse(((Bson) updateExpr)
                         .toBsonDocument(Document.class, defaultCodecRegistry()).toJson());
-                PlaceholderReplacer.replacePlaceholders(document, evalContext, row);
+                PlaceholderReplacer.replacePlaceholders(document, evalContext, values);
                 updateExpr = document;
-                updateToPerform.add(Aggregates.set(new Field<>(fieldName, updateExpr)));
+                updateToPerform.add(new Field<>(fieldName, updateExpr));
             } else if (updateExpr instanceof String) {
-                DynamicParameter parameter = DynamicParameter.matches(updateExpr);
-                if (parameter != null) {
-                    updateExpr = evalContext.getArgument(parameter.getIndex());
-                    updateToPerform.add(Updates.set(fieldName, updateExpr));
-                } else {
-                    InputRef ref = InputRef.match(updateExpr);
-                    if (ref != null) {
-                        int index = ref.getInputIndex();
-                        updateToPerform.add(Aggregates.set(new Field<>(fieldName, row.get(index))));
-                    } else {
-                        updateToPerform.add(Aggregates.set(new Field<>(fieldName, updateExpr)));
-                    }
-                }
+                String expr = (String) updateExpr;
+                Object withReplacements = PlaceholderReplacer.replace(expr, evalContext, externalNames, false);
+                updateToPerform.add(new Field<>(fieldName, withReplacements));
             } else {
-                updateToPerform.add(Aggregates.set(new Field<>(fieldName, updateExpr)));
+                updateToPerform.add(new Field<>(fieldName, updateExpr));
             }
-
-
         }
 
         Bson filter = Filters.eq(pkExternalName, pkValue);
-        return new Document("filter", filter).append("update", updateToPerform);
+        Bson update = Aggregates.set(updateToPerform);
+        return new Document("filter", filter)
+                .append("update", update);
     }
-
 }

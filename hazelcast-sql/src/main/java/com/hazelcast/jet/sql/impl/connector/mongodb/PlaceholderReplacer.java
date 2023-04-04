@@ -54,9 +54,9 @@ final class PlaceholderReplacer {
             String entryKey = entry.getKey();
             Object entryValue = entry.getValue();
 
-            entryKey = replace(entryKey, evalContext, inputRow);
+            entryKey = (String) replace(entryKey, evalContext, inputRow, true);
             if (entryValue instanceof String) {
-               entryValue = replace((String) entryValue, evalContext, inputRow);
+               entryValue = replace((String) entryValue, evalContext, inputRow, false);
             }
 
             if (entryValue instanceof List) {
@@ -66,7 +66,7 @@ final class PlaceholderReplacer {
                    if (val instanceof Document) {
                        v = replacePlaceholders((Document) val, evalContext, inputRow);
                    } else if (val instanceof String) {
-                       v = replace((String) val, evalContext, inputRow);
+                       v = replace((String) val, evalContext, inputRow, false);
                    }
                    newValues.add(v);
                 }
@@ -81,15 +81,19 @@ final class PlaceholderReplacer {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
-    private static <T> T replace(T entryKey, ExpressionEvalContext evalContext, Object[] inputRow) {
+    static Object replace(String entryKey, ExpressionEvalContext evalContext, Object[] inputRow, boolean key) {
         DynamicParameter dynamicParameter = DynamicParameter.matches(entryKey);
         if (dynamicParameter != null) {
-            entryKey = (T) evalContext.getArgument(dynamicParameter.getIndex());
+            Object arg = evalContext.getArgument(dynamicParameter.getIndex());
+            assert !key || arg instanceof String : "keys must be Strings";
+            return arg;
         }
         InputRef ref = InputRef.match(entryKey);
         if (ref != null) {
-            entryKey = (T) inputRow[ref.getInputIndex()];
+            String prefix = key
+                    ? ""
+                    : "$";
+            return prefix + inputRow[ref.getInputIndex()];
         }
         return entryKey;
     }

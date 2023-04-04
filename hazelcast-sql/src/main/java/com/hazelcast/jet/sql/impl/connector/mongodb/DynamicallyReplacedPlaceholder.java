@@ -15,8 +15,16 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Filters;
+import org.bson.Document;
+import org.bson.conversions.Bson;
+
 import javax.annotation.Nonnull;
 import java.io.Serializable;
+
+import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
 
 /**
  * A placeholder that will be replaced during query execution.
@@ -28,5 +36,23 @@ public interface DynamicallyReplacedPlaceholder extends Serializable {
      */
     @Nonnull
     String asString();
+
+    static Document replacePlaceholdersInPredicate(Object predicate, String[] externalNames,
+                                                   ExpressionEvalContext evalContext) {
+        if (predicate instanceof String) {
+            InputRef ref = InputRef.match(predicate);
+            if (ref != null) {
+                int index = ref.getInputIndex();
+                String colName = externalNames[index];
+                return bsonToDocument(Aggregates.match(Filters.eq(colName, true)));
+            } else {
+                throw new UnsupportedOperationException("unknown predicate " + predicate);
+            }
+        } else if (predicate instanceof Document) {
+            return PlaceholderReplacer.replacePlaceholders((Document) predicate, evalContext, externalNames);
+        }
+        assert predicate instanceof Bson;
+        return bsonToDocument((Bson) predicate);
+    }
 
 }
