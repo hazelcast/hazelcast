@@ -129,7 +129,8 @@ public class SqlStreamingJoinAndAggregationTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(sql,
                 asList(
                         new Row(timestampTz(3), 1L, 2),
-                        new Row(timestampTz(6), 8L, 4))
+                        new Row(timestampTz(6), 8L, 4),
+                        new Row(timestampTz(9), 5L, 6))
         );
     }
 
@@ -226,7 +227,8 @@ public class SqlStreamingJoinAndAggregationTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(sql,
                 asList(
                         new Row(timestampTz(3), 1L, 2),
-                        new Row(timestampTz(6), 8L, 4))
+                        new Row(timestampTz(6), 8L, 4),
+                        new Row(timestampTz(9), 5L, 6))
         );
     }
 }
