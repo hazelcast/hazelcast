@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
+import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.datamodel.Tuple2;
@@ -213,6 +214,7 @@ import static java.util.stream.Collectors.toList;
 public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private final NodeEngine nodeEngine;
+    private final SqlConnectorCache connectorCache;
 
     private final IMapResolver iMapResolver;
     private final List<TableResolver> tableResolvers;
@@ -224,18 +226,19 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     public CalciteSqlOptimizer(NodeEngine nodeEngine, QueryResultRegistry resultRegistry) {
         this.nodeEngine = nodeEngine;
+        this.connectorCache = new SqlConnectorCache(nodeEngine);
 
         this.iMapResolver = new MetadataResolver(nodeEngine);
         this.relationsStorage = new RelationsStorage(nodeEngine);
         this.dataLinkStorage = new DataLinkStorage(nodeEngine);
 
-        TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine, this.relationsStorage);
-        DataLinksResolver dataLinksResolver = dataLinkCatalog(this.dataLinkStorage);
+        TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine, this.relationsStorage, this.connectorCache);
+        DataLinksResolver dataLinksResolver = dataLinkCatalog(nodeEngine.getDataLinkService(), this.dataLinkStorage);
         this.tableResolvers = Arrays.asList(tableResolverImpl, dataLinksResolver);
         this.planExecutor = new PlanExecutor(
+                nodeEngine,
                 tableResolverImpl,
                 dataLinksResolver,
-                nodeEngine,
                 resultRegistry
         );
 
@@ -244,13 +247,13 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private static TableResolverImpl mappingCatalog(
             NodeEngine nodeEngine,
-            RelationsStorage relationsStorage) {
-        SqlConnectorCache connectorCache = new SqlConnectorCache(nodeEngine);
+            RelationsStorage relationsStorage,
+            SqlConnectorCache connectorCache) {
         return new TableResolverImpl(nodeEngine, relationsStorage, connectorCache);
     }
 
-    private static DataLinksResolver dataLinkCatalog(DataLinkStorage storage) {
-        return new DataLinksResolver(storage);
+    private static DataLinksResolver dataLinkCatalog(InternalDataLinkService dataLinkService, DataLinkStorage storage) {
+        return new DataLinksResolver(dataLinkService, storage);
     }
 
     @Nullable
@@ -391,8 +394,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 planKey,
                 sqlCreateDataLink.getReplace(),
                 sqlCreateDataLink.ifNotExists,
-                sqlCreateDataLink.name(),
+                sqlCreateDataLink.nameWithoutSchema(),
                 sqlCreateDataLink.type(),
+                sqlCreateDataLink.shared(),
                 sqlCreateDataLink.options(),
                 planExecutor
         );

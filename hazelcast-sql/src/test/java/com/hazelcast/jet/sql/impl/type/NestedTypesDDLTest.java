@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.type;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
 import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -45,7 +44,7 @@ public class NestedTypesDDLTest extends SqlTestSupport {
                 .setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
 
         initialize(2, config);
-        storage = ((CalciteSqlOptimizer) getNodeEngineImpl(instance()).getSqlService().getOptimizer()).relationsStorage();
+        storage = sqlServiceImpl(instance()).getOptimizer().relationsStorage();
     }
 
     @Test

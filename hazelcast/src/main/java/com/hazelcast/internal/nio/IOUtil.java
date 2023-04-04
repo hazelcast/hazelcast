@@ -103,6 +103,12 @@ public final class IOUtil {
     private static final AtomicBoolean TCP_KEEPINTERVAL_WARNING = new AtomicBoolean();
     private static final ILogger LOGGER = Logger.getLogger(IOUtil.class);
     private static final Random RANDOM = new Random();
+    private static final String TCP_KEEP_WARNING = "Ignoring %s. It seems your JDK does not support "
+            + "jdk.net.ExtendedSocketOptions on this OS. Try upgrading to the latest JDK or check with your JDK vendor."
+            + "Alternatively, on Linux, configure %s in the kernel "
+            + "(affecting default keep-alive configuration for all sockets): "
+            + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
+            + "If this isn't dealt with, idle connections could be closed prematurely.";
 
     private IOUtil() {
     }
@@ -920,12 +926,7 @@ public final class IOUtil {
     public static void setKeepCount(NetworkChannel socketChannel, Integer value, ILogger logger) throws IOException {
         if (!supportsKeepAliveOptions(socketChannel)) {
             if (TCP_KEEPCOUNT_WARNING.compareAndSet(false, true)) {
-                logger.warning("Ignoring TCP_KEEPCOUNT. "
-                        + "Please upgrade to the latest Java 8 release or Java 11+ to allow setting keep-alive count. "
-                        + "Alternatively, on Linux, configure tcp_keepalive_probes in the kernel "
-                        + "(affecting default keep-alive configuration for all sockets): "
-                        + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
-                        + "If this isn't dealt with, idle connections could be closed prematurely.");
+                logger.warning(String.format(TCP_KEEP_WARNING, "TCP_KEEPCOUNT", "tcp_keepalive_probes"));
             }
         } else {
             setOptionIfNotDefault(socketChannel, JDK_NET_TCP_KEEPCOUNT, value, EndpointConfig.DEFAULT_SOCKET_KEEP_COUNT);
@@ -935,12 +936,7 @@ public final class IOUtil {
     public static void setKeepIdle(NetworkChannel socketChannel, Integer value, ILogger logger) throws IOException {
         if (!supportsKeepAliveOptions(socketChannel)) {
             if (TCP_KEEPIDLE_WARNING.compareAndSet(false, true)) {
-                logger.warning("Ignoring TCP_KEEPIDLE. "
-                        + "Please upgrade to the latest Java 8 release or Java 11+ to allow setting keep-alive idle time."
-                        + "Alternatively, on Linux, configure tcp_keepalive_time in the kernel "
-                        + "(affecting default keep-alive configuration for all sockets): "
-                        + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
-                        + "If this isn't dealt with, idle connections could be closed prematurely.");
+                logger.warning(String.format(TCP_KEEP_WARNING, "TCP_KEEPIDLE", "tcp_keepalive_time"));
             }
         } else {
             setOptionIfNotDefault(socketChannel, JDK_NET_TCP_KEEPIDLE, value, EndpointConfig.DEFAULT_SOCKET_KEEP_IDLE_SECONDS);
@@ -950,12 +946,7 @@ public final class IOUtil {
     public static void setKeepInterval(NetworkChannel socketChannel, Integer value, ILogger logger) throws IOException {
         if (!supportsKeepAliveOptions(socketChannel)) {
             if (TCP_KEEPINTERVAL_WARNING.compareAndSet(false, true)) {
-                logger.warning("Ignoring TCP_KEEPINTERVAL. "
-                        + "Please upgrade to the latest Java 8 release or Java 11+ to allow setting keep-alive interval."
-                        + "Alternatively, on Linux, configure tcp_keepalive_intvl in the kernel "
-                        + "(affecting default keep-alive configuration for all sockets): "
-                        + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
-                        + "If this isn't dealt with, idle connections could be closed prematurely.");
+                logger.warning(String.format(TCP_KEEP_WARNING, "TCP_KEEPINTERVAL", "tcp_keepalive_intvl"));
             }
         } else {
             setOptionIfNotDefault(socketChannel, JDK_NET_TCP_KEEPINTERVAL, value,

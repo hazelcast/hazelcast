@@ -74,7 +74,7 @@ public class MongoDataLink extends DataLinkBase {
     /**
      * Returns an instance of {@link MongoClient}.
      *
-     * If client is {@linkplain DataLinkConfig#isShared() shared} and there will be still some usages of given client,
+     * If client is {@linkplain DataLinkConfig#isShared()}  shared} and there will be still some usages of given client,
      * the {@linkplain MongoClient#close()} method won't take an effect.
      */
     @Nonnull
@@ -143,7 +143,7 @@ public class MongoDataLink extends DataLinkBase {
         dataLinkConfig.setName(name);
         dataLinkConfig.setShared(true);
         dataLinkConfig.setProperty(CONNECTION_STRING_PROPERTY, connectionString);
-        dataLinkConfig.setClassName(MongoDataLink.class.getName());
+        dataLinkConfig.setType("MongoDB");
         return dataLinkConfig;
     }
 }

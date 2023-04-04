@@ -1132,7 +1132,7 @@
             </hz:auditlog>
             <hz:integrity-checker enabled="false"/>
             <hz:data-link name="${datalink.name}">
-                <hz:class-name>com.hazelcast.datalink.impl.DataLinkTestUtil$DummyDataLink</hz:class-name>
+                <hz:type>dummy</hz:type>
                 <hz:properties>
                     <hz:property name="jdbcUrl">${datalink.url}</hz:property>
                 </hz:properties>

@@ -68,10 +68,11 @@ public final class RowProjectorProcessorSupplier implements ProcessorSupplier, I
         for (int i = 0; i < count; i++) {
             ResettableSingletonTraverser<JetSqlRow> traverser = new ResettableSingletonTraverser<>();
             KvRowProjector projector = projectorSupplier.get(evalContext, extractors);
-            Processor processor = new TransformP<LazyMapEntry<Object, Object>, JetSqlRow>(entry -> {
+            TransformP<LazyMapEntry<Object, Object>, JetSqlRow> processor = new TransformP<>(entry -> {
                 traverser.accept(projector.project(entry.getKeyData(), entry.getValueData()));
                 return traverser;
             });
+            processor.setCooperative(projector.isCooperative());
             processors.add(processor);
         }
         return processors;

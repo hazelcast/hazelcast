@@ -1223,7 +1223,7 @@ public class ConfigXmlGenerator {
                             "name",
                             dataLinkConfig.getName()
                     )
-                    .node("class-name", dataLinkConfig.getClassName())
+                    .node("type", dataLinkConfig.getType())
                     .node("shared", dataLinkConfig.isShared())
                     .appendProperties(dataLinkConfig.getProperties())
                     .close();

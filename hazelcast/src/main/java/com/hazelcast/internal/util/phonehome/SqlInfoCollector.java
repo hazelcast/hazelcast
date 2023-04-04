@@ -17,7 +17,7 @@
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.sql.impl.SqlServiceImpl;
+import com.hazelcast.sql.impl.InternalSqlService;
 
 import java.util.function.BiConsumer;
 
@@ -28,7 +28,7 @@ public class SqlInfoCollector implements MetricsCollector {
 
     @Override
     public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
-        SqlServiceImpl sqlService = node.getNodeEngine().getSqlService();
+        InternalSqlService sqlService = node.getNodeEngine().getSqlService();
 
         long sqlQueriesSubmittedCount = sqlService.getSqlQueriesSubmittedCount();
         metricsConsumer.accept(SQL_QUERIES_SUBMITTED, String.valueOf(sqlQueriesSubmittedCount));

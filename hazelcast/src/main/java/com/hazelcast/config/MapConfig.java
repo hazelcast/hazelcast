@@ -37,6 +37,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeN
 import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
+import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
@@ -827,6 +828,8 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
     }
 
     public MapConfig setPartitioningAttributeConfigs(final List<PartitioningAttributeConfig> partitioningAttributeConfigs) {
+        checkNoNullInside(partitioningAttributeConfigs,
+                "PartitioningAttributeConfig elements can not be null");
         this.partitioningAttributeConfigs = partitioningAttributeConfigs;
         return this;
     }

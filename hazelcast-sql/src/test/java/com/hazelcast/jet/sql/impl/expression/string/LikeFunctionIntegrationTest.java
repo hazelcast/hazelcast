@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.expression.string;
 
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.string.LikeFunction;
@@ -237,7 +237,7 @@ public class LikeFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testSerialization() {
         LikeFunction original = LikeFunction.create(CONST_1, CONST_2, CONST_3, negated);
-        LikeFunction restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_LIKE);
+        LikeFunction restored = serializeAndCheck(original, JetSqlSerializerHook.EXPRESSION_LIKE);
 
         checkEquals(original, restored, true);
     }

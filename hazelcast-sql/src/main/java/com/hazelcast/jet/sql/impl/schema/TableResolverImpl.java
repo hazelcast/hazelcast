@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql.impl.schema;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.datalink.DataLink;
-import com.hazelcast.datalink.JdbcDataLink;
+import com.hazelcast.datalink.impl.JdbcDataLink;
 import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;

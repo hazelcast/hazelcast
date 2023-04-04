@@ -74,9 +74,9 @@ public class MCMessageTasksTest extends SqlTestSupport {
 
         String response = getMappingDdl(name, key);
         assertThat(response)
-                .startsWith("CREATE MAPPING \"" + name + "\"")
-                .contains("'keyFormat' = 'java'")
-                .contains("'valueFormat' = 'java'");
+                .startsWith("CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"" + name + "\"")
+                .containsIgnoringWhitespaces("'keyFormat' = 'java'")
+                .containsIgnoringWhitespaces("'valueFormat' = 'java'");
 
         instance().getSql().execute(response).close();
         assertThat(instance().getSql().execute("SELECT * FROM \"" + name + "\"")).hasSize(1);
@@ -102,8 +102,8 @@ public class MCMessageTasksTest extends SqlTestSupport {
 
         String response = getMappingDdl(name, key);
         assertThat(response)
-                .startsWith("CREATE MAPPING \"" + name + "\"")
-                .contains("'keyFormat' = 'portable'");
+                .startsWith("CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"" + name + "\"")
+                .containsIgnoringWhitespaces("'keyFormat' = 'portable'");
 
         instance().getSql().execute(response).close();
         assertThat(instance().getSql().execute("SELECT * FROM \"" + name + "\"")).hasSize(1);
@@ -117,8 +117,8 @@ public class MCMessageTasksTest extends SqlTestSupport {
 
         String response = getMappingDdl(name, key);
         assertThat(response)
-                .startsWith("CREATE MAPPING \"" + name + "\"")
-                .contains("'valueFormat' = 'portable'");
+                .startsWith("CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"" + name + "\"")
+                .containsIgnoringWhitespaces("'valueFormat' = 'portable'");
 
         instance().getSql().execute(response).close();
         assertThat(instance().getSql().execute("SELECT * FROM \"" + name + "\"")).hasSize(1);

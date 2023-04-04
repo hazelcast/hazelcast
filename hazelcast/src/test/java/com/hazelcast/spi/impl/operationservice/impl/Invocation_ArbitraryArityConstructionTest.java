@@ -94,10 +94,13 @@ public class Invocation_ArbitraryArityConstructionTest extends HazelcastTestSupp
         assertEquals(RESPONSE, f1.join());
         assertThrows(CompletionException.class, f2::join);
 
-        // This isn't ideal, but I don't see a good way for us to get results
-        // of anyOf future. So this test is here to document the behavior.
-        assertThrows(AssertionError.class, () -> assertEquals(RESPONSE, anyOf.join()));
-        assertEquals(RESPONSE, getSerializationService(local).<NormalResponse>toObject(anyOf.join()).getValue());
+        try {
+            // response being in the serialized form is a limitation not a requirement
+            assertEquals(RESPONSE, getSerializationService(local).<NormalResponse>toObject(anyOf.join()).getValue());
+            // reaching here is normal, anyOf completed via f1
+        } catch (CompletionException ignore) {
+            // reaching here is also normal, anyOf completed via f2
+        }
     }
 
     @Test

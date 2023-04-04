@@ -22,11 +22,10 @@ import com.hazelcast.datalink.DataLink;
 import com.hazelcast.datalink.DataLinkBase;
 import com.hazelcast.datalink.DataLinkRegistration;
 import com.hazelcast.datalink.DataLinkResource;
-import com.hazelcast.datalink.JdbcDataLink;
 
 import javax.annotation.Nonnull;
-import java.util.Collections;
-import java.util.List;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Properties;
 
 public final class DataLinkTestUtil {
@@ -39,7 +38,7 @@ public final class DataLinkTestUtil {
         properties.put("jdbcUrl", jdbcUrl);
         DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName(name)
-                .setClassName(JdbcDataLink.class.getName())
+                .setType("jdbc")
                 .setProperties(properties);
         config.getDataLinkConfigs().put(name, dataLinkConfig);
     }
@@ -51,7 +50,7 @@ public final class DataLinkTestUtil {
         properties.put("password", password);
         DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName(name)
-                .setClassName(JdbcDataLink.class.getName())
+                .setType("jdbc")
                 .setProperties(properties);
         config.getDataLinkConfigs().put(name, dataLinkConfig);
     }
@@ -59,7 +58,7 @@ public final class DataLinkTestUtil {
     public static void configureDummyDataLink(String name, Config config) {
         DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName(name)
-                .setClassName(DummyDataLink.class.getName());
+                .setType("dummy");
         config.getDataLinkConfigs().put(name, dataLinkConfig);
     }
 
@@ -73,8 +72,11 @@ public final class DataLinkTestUtil {
 
         @Nonnull
         @Override
-        public List<DataLinkResource> listResources() {
-            return Collections.emptyList();
+        public Collection<DataLinkResource> listResources() {
+            return Arrays.asList(
+                    new DataLinkResource("testType1", "testName1"),
+                    new DataLinkResource("testType2", "testName2")
+            );
         }
 
         @Override
