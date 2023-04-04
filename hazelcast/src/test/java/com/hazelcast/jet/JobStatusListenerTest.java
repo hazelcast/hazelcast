@@ -211,16 +211,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
 
     @Test
     public void testListenerLateRegistration() {
-        Pipeline p = Pipeline.create();
-        p.readFrom(batchSource())
-                .writeTo(Sinks.noop());
-
-        Job job = instance.get().getJet().newJob(p);
-        advance(job.getId(), 1);
-        jobIdString = job.getIdString();
-        job.join();
-        assertThatThrownBy(() -> job.addStatusListener(e -> { }))
-                .hasMessage("Cannot add status listener to a COMPLETED job");
+        testListenerLateRegistration(JetService::newJob);
     }
 
     @Test
@@ -268,11 +259,15 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
 
     @Test
     public void testLightListenerLateRegistration() {
+        testListenerLateRegistration(JetService::newLightJob);
+    }
+
+    private void testListenerLateRegistration(BiFunction<JetService, Pipeline, Job> submit) {
         Pipeline p = Pipeline.create();
         p.readFrom(batchSource())
                 .writeTo(Sinks.noop());
 
-        Job job = instance.get().getJet().newLightJob(p);
+        Job job = submit.apply(instance.get().getJet(), p);
         advance(job.getId(), 1);
         jobIdString = job.getIdString();
         job.join();
