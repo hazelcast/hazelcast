@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt;
 
 import com.hazelcast.internal.util.MutableByte;
+import com.hazelcast.jet.impl.processor.SlidingWindowP;
 import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.DropLateItemsPhysicalRel;
@@ -60,6 +61,19 @@ public class WatermarkKeysAssigner {
 
     public void assignWatermarkKeys() {
         visitor.go(root);
+    }
+
+    /**
+     *  Special method to extract input's watermark key for {@link SlidingWindowAggregatePhysicalRel}.
+     *  We need it, because {@link SlidingWindowP} operates on input watermark key, which may not be
+     *  calculated in {@link WatermarkKeysAssigner} due to nature of its algorithm : it calculates how
+     *  watermarks are propagated from scans to root relations. Sometimes  {@link SlidingWindowAggregatePhysicalRel}
+     *  may break watermark key propagation chain, but we still need a watermark key for {@link SlidingWindowP}.
+     */
+    public byte getInputWatermarkKey(SlidingWindowAggregatePhysicalRel swaRel) {
+        Map<Integer, MutableByte> inputWmMap = visitor.getRelToWmKeyMapping().get(swaRel.getInput());
+        assert !inputWmMap.isEmpty() : "Input rel for SlidingWindowAggregate must contain watermarked field";
+        return inputWmMap.values().iterator().next().getValue();
     }
 
     public Map<Integer, MutableByte> getWatermarkedFieldsKey(RelNode node) {

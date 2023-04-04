@@ -433,14 +433,17 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                             0,
                             aggregateOperation,
                             resultMapping,
-                            // Note : resulting project may not have any watermarked field
                             watermarkedFieldsKeys.isEmpty()
-                                    ? (byte) 0
+                                    ? watermarkKeysAssigner.getInputWatermarkKey(rel)
                                     : watermarkedFieldsKeys.get(rel.watermarkedFields().findFirst()).getValue()));
             connectInput(rel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
             return vertex;
         } else {
             assert rel.numStages() == 2;
+
+            byte watermarkKey = watermarkedFieldsKeys.isEmpty()
+                    ? watermarkKeysAssigner.getInputWatermarkKey(rel)
+                    : watermarkedFieldsKeys.get(rel.watermarkedFields().findFirst()).getValue();
 
             Vertex vertex1 = dag.newUniqueVertex(
                     "Sliding-Window-AccumulateByKey",
@@ -450,9 +453,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                             TimestampKind.EVENT,
                             windowPolicy,
                             aggregateOperation,
-                            watermarkedFieldsKeys.isEmpty()
-                                    ? (byte) 0
-                                    : watermarkedFieldsKeys.get(rel.watermarkedFields().findFirst()).getValue()));
+                            watermarkKey));
 
             Vertex vertex2 = dag.newUniqueVertex(
                     "Sliding-Window-CombineByKey",
@@ -460,10 +461,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                             windowPolicy,
                             aggregateOperation,
                             resultMapping,
-                            // Note : resulting project may not have any watermarked field
-                            watermarkedFieldsKeys.isEmpty()
-                                    ? (byte) 0
-                                    : watermarkedFieldsKeys.get(rel.watermarkedFields().findFirst()).getValue()));
+                            watermarkKey));
 
             connectInput(rel.getInput(), vertex1, edge -> edge.partitioned(groupKeyFn));
             dag.edge(between(vertex1, vertex2).distributed().partitioned(entryKey()));

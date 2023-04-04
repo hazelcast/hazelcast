@@ -538,6 +538,60 @@ public final class Processors {
     }
 
     /**
+     * Returns a supplier of processors for the first-stage vertex in a
+     * two-stage sliding window aggregation setup (see the {@link Processors
+     * class Javadoc} for an explanation of aggregation stages). The vertex
+     * groups items by the grouping key (as obtained from the given
+     * key-extracting function) and by <em>frame</em>, which is a range of
+     * timestamps equal to the sliding step. It applies the {@link
+     * AggregateOperation1#accumulateFn() accumulate} aggregation primitive to
+     * each key-frame group.
+     * <p>
+     * The frame is identified by the timestamp denoting its end time (equal to
+     * the exclusive upper bound of its timestamp range). {@link
+     * SlidingWindowPolicy#higherFrameTs(long)} maps the event timestamp to the
+     * timestamp of the frame it belongs to.
+     * <p>
+     * The vertex accepts input from one or more inbound edges. The type of
+     * items may be different on each edge. For each edge a separate key
+     * extracting function must be supplied and the aggregate operation must
+     * contain a separate accumulation function for each edge.
+     * <p>
+     * When the processor receives a keyed watermark with a given {@code wmVal}, it
+     * emits the current accumulated state of all frames with {@code
+     * timestamp <= wmVal} and deletes these frames from its storage. In the
+     * output there is one item per key per frame.
+     * <p>
+     * When a state snapshot is requested, the state is flushed to second-stage
+     * processor and nothing is saved to snapshot.
+     *
+     * @param <K> type of the grouping key
+     * @param <A> type of accumulator returned from {@code aggrOp.
+     *            createAccumulatorFn()}
+     */
+    @Nonnull
+    public static <K, A> SupplierEx<Processor> accumulateByFrameP(
+            @Nonnull List<FunctionEx<?, ? extends K>> keyFns,
+            @Nonnull List<ToLongFunctionEx<?>> timestampFns,
+            @Nonnull TimestampKind timestampKind,
+            @Nonnull SlidingWindowPolicy winPolicy,
+            @Nonnull AggregateOperation<A, ?> aggrOp,
+            byte watermarkKey
+    ) {
+        return aggregateByKeyAndWindowP(
+                keyFns,
+                timestampFns,
+                timestampKind,
+                winPolicy.toTumblingByFrame(),
+                0L,
+                aggrOp.withIdentityFinish(),
+                KeyedWindowResult::new,
+                false,
+                watermarkKey
+        );
+    }
+
+    /**
      * Returns a supplier of processors for the second-stage vertex in a
      * two-stage sliding window aggregation setup (see the {@link Processors
      * class Javadoc} for an explanation of aggregation stages). Each

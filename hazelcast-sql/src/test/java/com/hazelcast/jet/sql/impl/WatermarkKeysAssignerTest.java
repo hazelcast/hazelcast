@@ -214,8 +214,6 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
                 row(1L)
         );
 
-        assertInstanceOf(TestAbstractSqlConnector.TestTable.class, resolver.getTables().get(0));
-
         HazelcastTable table = streamingTable(resolver.getTables().get(0), 1L);
 
         String sql = "SELECT * FROM " +
@@ -264,8 +262,6 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
                 singletonList(BIGINT),
                 row(1L)
         );
-
-        assertInstanceOf(TestAbstractSqlConnector.TestTable.class, resolver.getTables().get(0));
 
         HazelcastTable table = streamingTable(resolver.getTables().get(0), 1L);
 
@@ -324,6 +320,149 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
         // These keys are assigning in CreateTopLevelDagVisitor#onSlidingWindowAggregate
         assertThat(leftAggMap.get(0).getValue()).isEqualTo((byte) 0);
         assertThat(rightAggMap.get(0).getValue()).isEqualTo((byte) 1);
+    }
+
+    @Test
+    public void when_slidingWindowAggregationIsPresent_andWindowEndProjects_then_keyWasPropagated() {
+        NodeEngine nodeEngine = getNodeEngine(instance());
+        TableResolverImpl resolver = new TableResolverImpl(
+                nodeEngine,
+                new RelationsStorage(nodeEngine),
+                new SqlConnectorCache(nodeEngine));
+
+        String stream = "s";
+        TestStreamSqlConnector.create(
+                instance().getSql(),
+                stream,
+                singletonList("a"),
+                singletonList(BIGINT),
+                row(1L)
+        );
+
+        HazelcastTable table = streamingTable(resolver.getTables().get(0), 1L);
+
+        String sql = "SELECT window_end, AVG(a) AS price FROM " +
+                "     TABLE(HOP((SELECT * FROM TABLE(IMPOSE_ORDER(TABLE s, DESCRIPTOR(a), 1))), DESCRIPTOR(a), 4, 1))" +
+                "     GROUP BY window_end";
+
+        PhysicalRel optPhysicalRel = optimizePhysical(sql, singletonList(QueryDataType.BIGINT), table).getPhysical();
+
+        assertPlan(optPhysicalRel, plan(
+                planRow(0, SlidingWindowAggregatePhysicalRel.class),
+                planRow(1, CalcPhysicalRel.class),
+                planRow(2, FullScanPhysicalRel.class)
+        ));
+
+        assertThat(OptUtils.isUnbounded(optPhysicalRel)).isTrue();
+        PhysicalRel finalOptRel = CalciteSqlOptimizer.postOptimizationRewrites(optPhysicalRel);
+
+        WatermarkKeysAssigner keysAssigner = new WatermarkKeysAssigner(finalOptRel);
+        keysAssigner.assignWatermarkKeys();
+
+        // Correct key was propagated to SlidingWindowAggregatePhysicalRel
+        SlidingWindowAggregatePhysicalRel swaRel = (SlidingWindowAggregatePhysicalRel) finalOptRel;
+        Map<Integer, MutableByte> rootKeyMap = keysAssigner.getWatermarkedFieldsKey(finalOptRel);
+        assertThat(rootKeyMap).isNotEmpty();
+        assertThat(rootKeyMap.get(swaRel.watermarkedFields().findFirst()).getValue()).isEqualTo((byte) 0);
+    }
+
+    @Test
+    public void when_slidingWindowAggregationIsPresent_andWindowEndDoesNotProject_then_keyWasNotPropagated() {
+        NodeEngine nodeEngine = getNodeEngine(instance());
+        TableResolverImpl resolver = new TableResolverImpl(
+                nodeEngine,
+                new RelationsStorage(nodeEngine),
+                new SqlConnectorCache(nodeEngine));
+
+        String stream = "s";
+        TestStreamSqlConnector.create(
+                instance().getSql(),
+                stream,
+                singletonList("a"),
+                singletonList(BIGINT),
+                row(1L)
+        );
+
+        HazelcastTable table = streamingTable(resolver.getTables().get(0), 1L);
+
+        String sql = "SELECT window_start, AVG(a) AS price FROM " +
+                "     TABLE(HOP((SELECT * FROM TABLE(IMPOSE_ORDER(TABLE s, DESCRIPTOR(a), 1))), DESCRIPTOR(a), 4, 1))" +
+                "     GROUP BY window_start";
+
+        PhysicalRel optPhysicalRel = optimizePhysical(sql, singletonList(QueryDataType.BIGINT), table).getPhysical();
+
+        assertPlan(optPhysicalRel, plan(
+                planRow(0, SlidingWindowAggregatePhysicalRel.class),
+                planRow(1, CalcPhysicalRel.class),
+                planRow(2, FullScanPhysicalRel.class)
+        ));
+
+        assertThat(OptUtils.isUnbounded(optPhysicalRel)).isTrue();
+        PhysicalRel finalOptRel = CalciteSqlOptimizer.postOptimizationRewrites(optPhysicalRel);
+
+        WatermarkKeysAssigner keysAssigner = new WatermarkKeysAssigner(finalOptRel);
+        keysAssigner.assignWatermarkKeys();
+
+        // Key was _NOT_ propagated to SlidingWindowAggregatePhysicalRel
+        assertThat(keysAssigner.getWatermarkedFieldsKey(finalOptRel)).isEmpty();
+    }
+
+    @Test
+    public void when_slidingWindowAggregationsAreUnionized_andWindowEndDoesNotProject_then_keyWasNotPropagated() {
+        NodeEngine nodeEngine = getNodeEngine(instance());
+        TableResolverImpl resolver = new TableResolverImpl(
+                nodeEngine,
+                new RelationsStorage(nodeEngine),
+                new SqlConnectorCache(nodeEngine));
+
+        String stream = "s";
+        TestStreamSqlConnector.create(
+                instance().getSql(),
+                stream,
+                singletonList("a"),
+                singletonList(BIGINT),
+                row(1L)
+        );
+
+        HazelcastTable table = streamingTable(resolver.getTables().get(0), 1L);
+
+        String sql =
+                "(SELECT window_start, AVG(a) AS price FROM " +
+                "     TABLE(HOP((SELECT * FROM TABLE(IMPOSE_ORDER(TABLE s, DESCRIPTOR(a), 1))), DESCRIPTOR(a), 4, 1))" +
+                "     GROUP BY window_start)" +
+                " UNION ALL " +
+                "(SELECT window_start, AVG(a) AS price FROM " +
+                "     TABLE(HOP((SELECT * FROM TABLE(IMPOSE_ORDER(TABLE s, DESCRIPTOR(a), 1))), DESCRIPTOR(a), 4, 1))" +
+                "     GROUP BY window_start)" +
+                " UNION ALL " +
+                "(SELECT window_start, AVG(a) AS price FROM " +
+                "     TABLE(HOP((SELECT * FROM TABLE(IMPOSE_ORDER(TABLE s, DESCRIPTOR(a), 1))), DESCRIPTOR(a), 4, 1))" +
+                "     GROUP BY window_start)" +
+                "";
+
+        PhysicalRel optPhysicalRel = optimizePhysical(sql, singletonList(QueryDataType.BIGINT), table).getPhysical();
+
+        assertPlan(optPhysicalRel, plan(
+                planRow(0, UnionPhysicalRel.class),
+                planRow(1, SlidingWindowAggregatePhysicalRel.class),
+                planRow(2, CalcPhysicalRel.class),
+                planRow(3, FullScanPhysicalRel.class),
+                planRow(1, SlidingWindowAggregatePhysicalRel.class),
+                planRow(2, CalcPhysicalRel.class),
+                planRow(3, FullScanPhysicalRel.class),
+                planRow(1, SlidingWindowAggregatePhysicalRel.class),
+                planRow(2, CalcPhysicalRel.class),
+                planRow(3, FullScanPhysicalRel.class)
+        ));
+
+        assertThat(OptUtils.isUnbounded(optPhysicalRel)).isTrue();
+        PhysicalRel finalOptRel = CalciteSqlOptimizer.postOptimizationRewrites(optPhysicalRel);
+
+        WatermarkKeysAssigner keysAssigner = new WatermarkKeysAssigner(finalOptRel);
+        keysAssigner.assignWatermarkKeys();
+
+        // Key was _NOT_ propagated to UNION
+        assertThat(keysAssigner.getWatermarkedFieldsKey(finalOptRel)).isEmpty();
     }
 
     @Test
