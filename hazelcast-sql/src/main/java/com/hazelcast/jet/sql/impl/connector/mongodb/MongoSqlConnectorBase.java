@@ -18,6 +18,8 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
@@ -149,13 +151,13 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                 : allFieldsExternalNames(table);
         boolean needTwoSteps = !filter.allProceeded || !projections.allProceeded;
 
-        SelectProcessorSupplier supplier;
+        ProcessorMetaSupplier supplier;
         if (isStream()) {
             BsonTimestamp startAt = Options.startAt(table.getOptions());
-            supplier = new SelectProcessorSupplier(table, filter.result, projectionList, startAt,
-                    eventTimePolicyProvider);
+            supplier = wrap(context, new SelectProcessorSupplier(table, filter.result, projectionList, startAt,
+                    eventTimePolicyProvider));
         } else {
-            supplier = new SelectProcessorSupplier(table, filter.result, projectionList);
+            supplier = wrap(context, new SelectProcessorSupplier(table, filter.result, projectionList));
         }
 
         DAG dag = context.getDag();
@@ -180,6 +182,13 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             return vEnd;
         }
         return sourceVertex;
+    }
+
+    protected static ProcessorMetaSupplier wrap(DagBuildContext ctx, ProcessorSupplier supplier) {
+        MongoTable table = ctx.getTable();
+        return table.isForceMongoParallelismOne()
+                ? ProcessorMetaSupplier.forceTotalParallelismOne(supplier)
+                : ProcessorMetaSupplier.of(supplier);
     }
 
     private static TranslationResult<Document> translateFilter(HazelcastRexNode filterNode, RexToMongoVisitor visitor) {

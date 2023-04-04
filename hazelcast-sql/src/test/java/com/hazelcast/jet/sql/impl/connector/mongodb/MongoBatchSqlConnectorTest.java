@@ -31,6 +31,8 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -133,6 +135,56 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                         new Row("Anakin", "Skywalker", true)
                 )
         );
+    }
+    @Test
+    public void readWithOneProcessor() {
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", "true"));
+
+        Pattern parallelismDagPattern = Pattern.compile("\\[localParallelism=(\\d)+]");
+        AtomicBoolean otherFound = new AtomicBoolean(false);
+        LogListener lookForProjectAndFilterStep = log -> {
+            String message = log.getLogRecord().getMessage();
+            Matcher matcher = parallelismDagPattern.matcher(message);
+            if (matcher.find()) {
+                String number = matcher.group(1);
+                if (!"1".equals(number)) {
+                    otherFound.set(true);
+                }
+            }
+        };
+        for (HazelcastInstance instance : instances()) {
+            instance.getLoggingService().addLogListener(Level.FINE, lookForProjectAndFilterStep);
+        }
+
+        execute("CREATE MAPPING " + collectionName
+                + " ("
+                + " id OBJECT external name _id, "
+                + " firstName VARCHAR, "
+                + " lastName VARCHAR, "
+                + " jedi BOOLEAN "
+                + ") "
+                + "TYPE MongoDB "
+                + "OPTIONS ("
+                + "    'connectionString' = '" + mongoContainer.getConnectionString() + "', "
+                + "    'database' = '" +  databaseName + "', "
+                + "    'forceMongoReadParallelismOne' = 'true' "
+                + ")");
+
+        assertRowsAnyOrder("select firstName, lastName, jedi from " + collectionName
+                        + " where lastName = ?",
+                singletonList("Skywalker"),
+                singletonList(
+                        new Row("Luke", "Skywalker", true)
+                )
+        );
+        assertThat(otherFound.get())
+                .describedAs("Not all vertices had local parallelism = 1")
+                .isFalse();
+
+        for (HazelcastInstance instance : instances()) {
+            instance.getLoggingService().removeLogListener(lookForProjectAndFilterStep);
+        }
     }
 
     @Test

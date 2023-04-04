@@ -36,6 +36,8 @@ final class Options {
     static final String DATABASE_NAME_OPTION = "database";
     static final String START_AT_OPTION = "startAt";
     static final String PK_COLUMN = "idColumn";
+    static final String FORCE_PARALLELISM_ONE = "forceMongoReadParallelismOne";
+
     private static final String POSSIBLE_VALUES = "This property should " +
             " have value of: a) 'now' b) time in epoch milliseconds or c) " +
             " ISO-formatted instant in UTC timezone, like '2023-03-24T15:31:00Z'.";

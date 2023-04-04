@@ -96,19 +96,21 @@ public abstract class AbstractMongoTest extends SimpleTestInClusterSupport {
 
     @After
     public void clear() {
-        try (MongoClient mongoClient = MongoClients.create(mongoContainer.getConnectionString())) {
-            for (String databaseName : mongoClient.listDatabaseNames()) {
-                if (databaseName.startsWith("test")) {
-                    MongoDatabase database = mongoClient.getDatabase(databaseName);
-                    database.drop();
+        if (mongoContainer != null) {
+            try (MongoClient mongoClient = MongoClients.create(mongoContainer.getConnectionString())) {
+                for (String databaseName : mongoClient.listDatabaseNames()) {
+                    if (databaseName.startsWith("test")) {
+                        MongoDatabase database = mongoClient.getDatabase(databaseName);
+                        database.drop();
+                    }
                 }
+                List<String> allowedDatabasesLeft = asList("admin", "local", "config", "tech");
+                assertTrueEventually(() -> {
+                    ArrayList<String> databasesLeft = mongoClient.listDatabaseNames().into(new ArrayList<>());
+                    assertEquals(allowedDatabasesLeft.size(), databasesLeft.size());
+                    assertContainsAll(databasesLeft, allowedDatabasesLeft);
+                });
             }
-            List<String> allowedDatabasesLeft = asList("admin", "local", "config", "tech");
-            assertTrueEventually(() -> {
-                ArrayList<String> databasesLeft = mongoClient.listDatabaseNames().into(new ArrayList<>());
-                assertEquals(allowedDatabasesLeft.size(), databasesLeft.size());
-                assertContainsAll(databasesLeft, allowedDatabasesLeft);
-            });
         }
     }
 
