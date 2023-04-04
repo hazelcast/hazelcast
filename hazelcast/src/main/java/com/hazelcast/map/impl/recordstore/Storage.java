@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 
 import javax.annotation.Nonnull;
 import java.util.Iterator;
@@ -35,6 +36,10 @@ import java.util.Map;
  * @param <R> the value type to be put in this storage.
  */
 public interface Storage<K, R> {
+
+    default Step newCompactorStep() {
+        return null;
+    }
 
     void put(K key, R record);
 

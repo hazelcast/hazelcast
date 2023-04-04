@@ -68,6 +68,7 @@ public class State {
     private UUID txnId;
     private UUID ownerUuid;
     private CallerProvenance callerProvenance;
+    private boolean tieredStorageEnabled;
 
     // fields used for inter thread communication
     private volatile boolean blockReads;
@@ -121,7 +122,8 @@ public class State {
                 .setCallerProvenance(state.getCallerProvenance())
                 .setEntryProcessor(state.getEntryProcessor())
                 .setCallerAddress(state.getCallerAddress())
-                .setPartitionId(state.getPartitionId());
+                .setPartitionId(state.getPartitionId())
+                .setTieredStorageEnabled(state.isTieredStorageEnabled());
     }
 
     public RecordStore getRecordStore() {
@@ -499,5 +501,14 @@ public class State {
 
     public boolean isChangeExpiryOnUpdate() {
         return changeExpiryOnUpdate;
+    }
+
+    public boolean isTieredStorageEnabled() {
+        return tieredStorageEnabled;
+    }
+
+    public State setTieredStorageEnabled(boolean tieredStorageEnabled) {
+        this.tieredStorageEnabled = tieredStorageEnabled;
+        return this;
     }
 }

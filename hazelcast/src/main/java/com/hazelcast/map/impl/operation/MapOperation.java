@@ -84,6 +84,7 @@ public abstract class MapOperation extends AbstractNamedOperation
     protected transient boolean createRecordStoreOnDemand = true;
     protected transient boolean disposeDeferredBlocks = true;
 
+    private transient boolean tieredStoreEnabled;
     private transient boolean mapStoreOffloadEnabled;
     private transient boolean canPublishWanEvent;
     private transient boolean operationCreatedOnPartitionThread = ThreadUtil.isRunningOnPartitionThread();
@@ -130,6 +131,18 @@ public abstract class MapOperation extends AbstractNamedOperation
                 && getStartingStep() != null
                 && !mapConfig.getTieredStoreConfig().isEnabled();
 
+        tieredStoreEnabled = recordStore != null
+                && getStartingStep() != null
+                && mapConfig.getTieredStoreConfig().isEnabled();
+
+        if (mapStoreOffloadEnabled) {
+            assert !tieredStoreEnabled;
+        }
+
+        if (tieredStoreEnabled) {
+            assert !mapStoreOffloadEnabled;
+        }
+
         assertNativeMapOnPartitionThread();
 
         innerBeforeRun();
@@ -170,6 +183,11 @@ public abstract class MapOperation extends AbstractNamedOperation
             return offloadOperation();
         }
 
+        if (tieredStoreEnabled) {
+            assert recordStore != null;
+            return offloadOperation();
+        }
+
         run();
         return returnsResponse() ? RESPONSE : VOID;
     }
@@ -195,7 +213,9 @@ public abstract class MapOperation extends AbstractNamedOperation
                 .setPartitionId(getPartitionId())
                 .setCallerAddress(getCallerAddress())
                 .setCallerProvenance(getCallerProvenance())
-                .setDisableWanReplicationEvent(disableWanReplicationEvent());
+                .setDisableWanReplicationEvent(disableWanReplicationEvent())
+                .setTieredStorageEnabled(mapContainer.getMapConfig()
+                        .getTieredStoreConfig().isEnabled());
     }
 
     protected void runInternal() {
@@ -218,7 +238,7 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     @Override
     public final void afterRun() throws Exception {
-        if (mapStoreOffloadEnabled) {
+        if (mapStoreOffloadEnabled || tieredStoreEnabled) {
             return;
         }
         afterRunInternal();

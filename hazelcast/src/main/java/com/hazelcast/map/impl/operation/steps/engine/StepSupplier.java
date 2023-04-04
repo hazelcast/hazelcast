@@ -140,6 +140,8 @@ public class StepSupplier implements Supplier<Runnable> {
         boolean metWithPreconditions = true;
         try {
             try {
+                state.getRecordStore().beforeOperation();
+
                 if (runningOnPartitionThread && state.getThrowable() == null) {
                     metWithPreconditions = metWithPreconditions();
                 }
@@ -153,6 +155,8 @@ public class StepSupplier implements Supplier<Runnable> {
                 rerunWithForcedEviction(() -> {
                     step.runStep(state);
                 });
+            } finally {
+                state.getRecordStore().afterOperation();
             }
         } catch (Throwable throwable) {
             if (runningOnPartitionThread) {
