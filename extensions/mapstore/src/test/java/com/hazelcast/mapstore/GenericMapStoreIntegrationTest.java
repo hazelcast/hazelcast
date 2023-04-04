@@ -63,10 +63,10 @@ import static org.assertj.core.util.Lists.newArrayList;
 @Category({QuickTest.class})
 public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
+    private static Config memberConfig;
     @Rule
     public TestName testName = new TestName();
 
-    private static Config memberConfig;
     private String tableName;
 
     @BeforeClass
