@@ -25,6 +25,7 @@ import org.junit.Test;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 
+import static com.hazelcast.instance.impl.BootstrappedInstanceProxyFactory.createWithMemberJetProxy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -43,7 +44,7 @@ public class MemberExecuteJarTest {
         when(abstractJetInstance.getHazelcastInstance()).thenReturn(hazelcastInstance);
 
         // Parameter for test
-        BootstrappedInstanceProxy instanceProxy = BootstrappedInstanceProxy.createWithJetProxy(hazelcastInstance);
+        BootstrappedInstanceProxy instanceProxy = createWithMemberJetProxy(hazelcastInstance);
 
         // Parameter for test. Empty main method
         MainMethodFinder mainMethodFinder = new MainMethodFinder();
@@ -56,7 +57,7 @@ public class MemberExecuteJarTest {
 
         ExecuteJobParameters executeJobParameters = new ExecuteJobParameters(jarPath, snapshotName, jobName);
 
-        // Test that invokeMain sets thread local values in BootstrappedInstanceProxy
+        // Test that invokeMain removes thread local values in BootstrappedInstanceProxy
         MemberExecuteJar memberExecuteJar = new MemberExecuteJar();
         memberExecuteJar.invokeMain(instanceProxy,
                 executeJobParameters,
@@ -65,10 +66,10 @@ public class MemberExecuteJarTest {
         );
 
         BootstrappedJetProxy bootstrappedJetProxy = instanceProxy.getJet();
-        ExecuteJobParameters parameters = bootstrappedJetProxy.getThreadLocalParameters();
+        ExecuteJobParameters parameters = bootstrappedJetProxy.getExecuteJobParameters();
 
-        assertThat(parameters.getJarPath()).isEqualTo(jarPath);
-        assertThat(parameters.getSnapshotName()).isEqualTo(snapshotName);
-        assertThat(parameters.getJobName()).isEqualTo(jobName);
+        assertThat(parameters.getJarPath()).isNull();
+        assertThat(parameters.getSnapshotName()).isNull();
+        assertThat(parameters.getJobName()).isNull();
     }
 }
