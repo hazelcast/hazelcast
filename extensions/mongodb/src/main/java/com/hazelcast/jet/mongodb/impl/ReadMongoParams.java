@@ -22,7 +22,6 @@ import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
-import org.bson.BsonDocument;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -35,8 +34,7 @@ import java.util.List;
 
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
-import static com.hazelcast.jet.mongodb.impl.Mappers.bsonDocumentToDocument;
-import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
+import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
 import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
@@ -105,8 +103,7 @@ public class ReadMongoParams<I> implements Serializable {
     public ReadMongoParams<I> setAggregates(@Nonnull List<Bson> aggregates) {
         List<Document> aggregateDocs = new ArrayList<>();
         for (Bson aggregate : aggregates) {
-            aggregateDocs.add(bsonDocumentToDocument(
-                    aggregate.toBsonDocument(BsonDocument.class, defaultCodecRegistry())));
+            aggregateDocs.add(bsonToDocument(aggregate));
         }
         this.aggregates = aggregateDocs;
         return this;
@@ -171,7 +168,7 @@ public class ReadMongoParams<I> implements Serializable {
     }
 
     public ReadMongoParams<I> addAggregate(@Nonnull Bson doc) {
-        this.aggregates.add(bsonDocumentToDocument(doc.toBsonDocument(BsonDocument.class, defaultCodecRegistry())));
+        this.aggregates.add(bsonToDocument(doc));
         return this;
     }
 
