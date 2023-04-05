@@ -129,6 +129,7 @@ public class ReadKafkaConnectP extends AbstractProcessor implements DynamicMetri
         return broadcastKey("snapshot-" + processorIndex);
     }
 
+    @Override
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         boolean forThisProcessor = snapshotKey().equals(key);
         if (forThisProcessor) {
