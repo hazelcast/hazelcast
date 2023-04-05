@@ -15,7 +15,6 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.LogListener;
 import com.hazelcast.map.IMap;

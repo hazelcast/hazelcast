@@ -160,7 +160,10 @@ class FieldResolver {
         }
     }
 
-    Map<String, DocumentField> readFields(String[] externalNames, String dataLinkName, Map<String, String> options, boolean stream) {
+    Map<String, DocumentField> readFields(String[] externalNames,
+                                          String dataLinkName,
+                                          Map<String, String> options,
+                                          boolean stream) {
         String collectionName = externalNames[0]; // TODO HZ-2260
         Map<String, DocumentField> fields = new HashMap<>();
         Tuple2<MongoClient, MongoDataLink> connect = connect(dataLinkName, options);
