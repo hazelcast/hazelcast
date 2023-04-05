@@ -37,6 +37,7 @@ import java.util.Properties;
 
 import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_NAME;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -81,6 +82,12 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
     @Nonnull
     protected static String randomTableName() {
         return "table_" + randomName();
+    }
+
+    protected String quote(String... parts) {
+        return Arrays.stream(parts)
+                     .map(part -> '\"' + part.replaceAll("\"", "\"\"") + '\"')
+                     .collect(joining("."));
     }
 
     /**
@@ -149,7 +156,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
     protected static void createMapping(String tableName, String mappingName) {
         execute(
                 "CREATE MAPPING \"" + mappingName + "\""
-                        + " EXTERNAL NAME \"" + tableName + "\""
+                        + " EXTERNAL NAME " + tableName + " "
                         + " ("
                         + " id INT, "
                         + " name VARCHAR "

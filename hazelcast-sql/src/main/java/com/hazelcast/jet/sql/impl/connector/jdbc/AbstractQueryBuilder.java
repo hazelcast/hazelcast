@@ -18,42 +18,48 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import org.apache.calcite.sql.SqlDialect;
 
-import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
-class InsertQueryBuilder {
+public class AbstractQueryBuilder {
 
-    private final String query;
+    protected final JdbcTable jdbcTable;
+    protected final SqlDialect dialect;
+    protected String query;
 
-    InsertQueryBuilder(JdbcTable jdbcTable) {
-        SqlDialect dialect = jdbcTable.sqlDialect();
+    public AbstractQueryBuilder(JdbcTable jdbcTable) {
+        this.jdbcTable = jdbcTable;
+        this.dialect = jdbcTable.sqlDialect();
+    }
 
-        StringBuilder sb = new StringBuilder()
-                .append("INSERT INTO ");
-        dialect.quoteIdentifier(sb, Arrays.asList(jdbcTable.getExternalName()));
-        sb.append(" ( ");
-        Iterator<String> it = jdbcTable.dbFieldNames().iterator();
+    protected void appendFieldNames(StringBuilder sb, List<String> fieldNames) {
+        sb.append('(');
+        Iterator<String> it = fieldNames.iterator();
         while (it.hasNext()) {
-            String dbFieldName = it.next();
-            dialect.quoteIdentifier(sb, dbFieldName);
+            String fieldName = it.next();
+            dialect.quoteIdentifier(sb, fieldName);
             if (it.hasNext()) {
                 sb.append(',');
             }
         }
-        sb.append(" ) ")
-          .append(" VALUES (");
+        sb.append(')');
+    }
 
-        for (int i = 0; i < jdbcTable.dbFieldNames().size(); i++) {
+    protected void appendValues(StringBuilder sb, int count) {
+        sb.append('(');
+        for (int i = 0; i < count; i++) {
             sb.append('?');
-            if (i < (jdbcTable.dbFieldNames().size() - 1)) {
-                sb.append(", ");
+            if (i < (count - 1)) {
+                sb.append(',');
             }
         }
         sb.append(')');
-        query = sb.toString();
     }
 
-    String query() {
+    /**
+     * Returns the built upsert statement
+     */
+    public String query() {
         return query;
     }
 }

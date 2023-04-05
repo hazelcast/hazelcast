@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.mapstore.mysql;
+package com.hazelcast.jet.sql.impl.connector.jdbc.mysql;
 
-import com.hazelcast.mapstore.GenericMapStoreTest;
+import com.hazelcast.jet.sql.impl.connector.jdbc.SchemaJdbcConnectorTest;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
@@ -27,11 +26,11 @@ import java.util.Arrays;
 
 import static java.util.stream.Collectors.joining;
 
-@Category({NightlyTest.class, ParallelJVMTest.class})
-public class MySQLGenericMapStoreTest extends GenericMapStoreTest {
+@Category(NightlyTest.class)
+public class MySQLSchemaJdbcSqlConnectorTest extends SchemaJdbcConnectorTest {
 
     @BeforeClass
-    public static void beforeClass()  {
+    public static void beforeClass() {
         initialize(new MySQLDatabaseProvider());
     }
 

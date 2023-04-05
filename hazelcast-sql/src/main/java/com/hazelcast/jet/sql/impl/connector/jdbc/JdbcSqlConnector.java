@@ -271,13 +271,13 @@ public class JdbcSqlConnector implements SqlConnector {
         if (eventTimePolicyProvider != null) {
             throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
         }
-        JdbcTable table = (JdbcTable) context.getTable();
+        JdbcTable table = context.getTable();
 
         List<RexNode> projections = Util.toList(projection, n -> n.unwrap(RexNode.class));
         RexNode filter = predicate == null ? null : predicate.unwrap(RexNode.class);
         SelectQueryBuilder builder = new SelectQueryBuilder(context.getTable(), filter, projections);
         return context.getDag().newUniqueVertex(
-                "Select(" + table.getExternalName() + ")",
+                "Select(" + table.getExternalNameList() + ")",
                 ProcessorMetaSupplier.forceTotalParallelismOne(
                         new SelectProcessorSupplier(
                                 table.getDataLinkName(),
@@ -290,11 +290,11 @@ public class JdbcSqlConnector implements SqlConnector {
     @Nonnull
     @Override
     public VertexWithInputConfig insertProcessor(@Nonnull DagBuildContext context) {
-        JdbcTable table = (JdbcTable) context.getTable();
+        JdbcTable table = context.getTable();
 
-        InsertQueryBuilder builder = new InsertQueryBuilder(table.getExternalName()[0], table.dbFieldNames());
+        InsertQueryBuilder builder = new InsertQueryBuilder(table);
         return new VertexWithInputConfig(context.getDag().newUniqueVertex(
-                "Insert(" + table.getExternalName() + ")",
+                "Insert(" + table.getExternalNameList() + ")",
                 new InsertProcessorSupplier(
                         table.getDataLinkName(),
                         builder.query(),
@@ -317,7 +317,7 @@ public class JdbcSqlConnector implements SqlConnector {
             @Nonnull List<String> fieldNames,
             @Nonnull List<HazelcastRexNode> expressions
     ) {
-        JdbcTable table = (JdbcTable) context.getTable();
+        JdbcTable table = context.getTable();
 
         List<String> pkFields = getPrimaryKey(context.getTable())
                 .stream()
@@ -328,7 +328,7 @@ public class JdbcSqlConnector implements SqlConnector {
         UpdateQueryBuilder builder = new UpdateQueryBuilder(table, pkFields, fieldNames, projections);
 
         return context.getDag().newUniqueVertex(
-                "Update(" + table.getExternalName() + ")",
+                "Update(" + table.getExternalNameList() + ")",
                 new UpdateProcessorSupplier(
                         table.getDataLinkName(),
                         builder.query(),
@@ -341,16 +341,16 @@ public class JdbcSqlConnector implements SqlConnector {
     @Nonnull
     @Override
     public Vertex deleteProcessor(@Nonnull DagBuildContext context) {
-        JdbcTable table = (JdbcTable) context.getTable();
+        JdbcTable table = context.getTable();
 
         List<String> pkFields = getPrimaryKey(context.getTable())
                 .stream()
                 .map(f -> table.getField(f).externalName())
                 .collect(toList());
 
-        DeleteQueryBuilder builder = new DeleteQueryBuilder(table.getExternalName()[0], pkFields);
+        DeleteQueryBuilder builder = new DeleteQueryBuilder(table, pkFields);
         return context.getDag().newUniqueVertex(
-                "Delete(" + table.getExternalName() + ")",
+                "Delete(" + table.getExternalNameList() + ")",
                 new DeleteProcessorSupplier(
                         table.getDataLinkName(),
                         builder.query(),
@@ -362,7 +362,7 @@ public class JdbcSqlConnector implements SqlConnector {
     @Nonnull
     @Override
     public Vertex sinkProcessor(@Nonnull DagBuildContext context) {
-        JdbcTable jdbcTable = (JdbcTable) context.getTable();
+        JdbcTable jdbcTable = context.getTable();
 
         // If dialect is supported
         if (SupportedDatabases.isDialectSupported(jdbcTable)) {
@@ -371,7 +371,7 @@ public class JdbcSqlConnector implements SqlConnector {
 
             // Create Vertex with the UPSERT statement
             return context.getDag().newUniqueVertex(
-                    "sinkProcessor(" + jdbcTable.getExternalName() + ")",
+                    "sinkProcessor(" + jdbcTable.getExternalNameList() + ")",
                     new UpsertProcessorSupplier(
                             jdbcTable.getDataLinkName(),
                             upsertStatement,

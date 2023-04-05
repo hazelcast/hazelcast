@@ -14,31 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.mapstore.mysql;
+package com.hazelcast.jet.sql.impl.connector.jdbc.postgres;
 
-import com.hazelcast.mapstore.GenericMapStoreTest;
+import com.hazelcast.jet.sql.impl.connector.jdbc.SchemaJdbcConnectorTest;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
+import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
-import java.util.Arrays;
-
-import static java.util.stream.Collectors.joining;
-
-@Category({NightlyTest.class, ParallelJVMTest.class})
-public class MySQLGenericMapStoreTest extends GenericMapStoreTest {
+@Category(NightlyTest.class)
+public class PostgresSchemaJdbcSqlConnectorTest extends SchemaJdbcConnectorTest {
 
     @BeforeClass
-    public static void beforeClass()  {
-        initialize(new MySQLDatabaseProvider());
+    public static void beforeClass() {
+        initialize(new PostgresDatabaseProvider());
     }
 
-    @Override
-    protected String quote(String... parts) {
-        return Arrays.stream(parts)
-                     .map(part -> '`' + part.replaceAll("`", "``") + '`')
-                     .collect(joining("."));
-    }
 }

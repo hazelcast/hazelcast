@@ -25,9 +25,9 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.Arrays;
-import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
+import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 public class MySQLUpsertQueryBuilderTest {
@@ -42,47 +42,51 @@ public class MySQLUpsertQueryBuilderTest {
         MockitoAnnotations.openMocks(this);
 
         when(jdbcTable.getExternalName()).thenReturn(new String[]{"table1"});
-        when(jdbcTable.getExternalNameList()).thenReturn(Collections.singletonList("table1"));
+        when(jdbcTable.getExternalNameList()).thenReturn(singletonList("table1"));
         when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
         when(jdbcTable.sqlDialect()).thenReturn(sqlDialect);
     }
 
     @Test
-    public void testGetInsertClause() {
+    public void appendInsertClause() {
         MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
-        StringBuilder stringBuilder = new StringBuilder();
-        builder.getInsertClause(stringBuilder);
+        StringBuilder sb = new StringBuilder();
+        builder.appendInsertClause(sb);
 
-        String insertClause = stringBuilder.toString();
-        assertEquals("INSERT INTO `table1` (`field1`,`field2`) ", insertClause);
+        String insertClause = sb.toString();
+        assertThat(insertClause).isEqualTo("INSERT INTO `table1` (`field1`,`field2`)");
     }
 
     @Test
-    public void testGetValuesClause() {
+    public void appendValuesClause() {
         MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
-        StringBuilder stringBuilder = new StringBuilder();
-        builder.getValuesClause(stringBuilder);
+        StringBuilder sb = new StringBuilder();
+        builder.appendValuesClause(sb);
 
-        String valuesClause = stringBuilder.toString();
-        assertEquals("VALUES (?,?) ", valuesClause);
+        String valuesClause = sb.toString();
+        assertThat(valuesClause).isEqualTo("VALUES (?,?)");
     }
 
     @Test
-    public void testGetOnDuplicateClause() {
+    public void appendOnDuplicateClause() {
         MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
-        StringBuilder stringBuilder = new StringBuilder();
-        builder.getOnDuplicateClause(stringBuilder);
+        StringBuilder sb = new StringBuilder();
+        builder.appendOnDuplicateClause(sb);
 
-        String valuesClause = stringBuilder.toString();
-        assertEquals("ON DUPLICATE KEY UPDATE `field1` = VALUES(`field1`),`field2` = VALUES(`field2`)",
-                valuesClause);
+        String valuesClause = sb.toString();
+        assertThat(valuesClause).isEqualTo(
+                "ON DUPLICATE KEY UPDATE " +
+                        "`field1` = VALUES(`field1`)," +
+                        "`field2` = VALUES(`field2`)");
     }
 
     @Test
-    public void testQuery() {
+    public void query() {
         MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
         String result = builder.query();
-        assertEquals("INSERT INTO `table1` (`field1`,`field2`) VALUES (?,?) " +
-                     "ON DUPLICATE KEY UPDATE `field1` = VALUES(`field1`),`field2` = VALUES(`field2`)", result);
+        assertThat(result).isEqualTo(
+                "INSERT INTO `table1` (`field1`,`field2`) VALUES (?,?)" +
+                        " ON DUPLICATE KEY UPDATE `field1` = VALUES(`field1`),`field2` = VALUES(`field2`)"
+        );
     }
 }

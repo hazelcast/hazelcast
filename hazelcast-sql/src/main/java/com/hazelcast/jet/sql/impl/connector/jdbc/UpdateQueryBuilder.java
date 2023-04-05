@@ -23,6 +23,7 @@ import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParserPos;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -45,16 +46,17 @@ class UpdateQueryBuilder {
                                        .map(i -> {
                                            SqlNode sqlNode = simpleContext.toSql(null, expressions.get(i));
                                            sqlNode.accept(paramCollectingVisitor);
-                                           // TODO we need to escape double quotes in the external name
-                                           return '\"' + table.getField(fieldNames.get(i)).externalName() + "\" ="
+                                           String externalFieldName = table.getField(fieldNames.get(i)).externalName();
+                                           return dialect.quoteIdentifier(externalFieldName)
+                                                   + "="
                                                    + sqlNode.toSqlString(dialect).toString();
                                        })
                                        .collect(joining(", "));
 
-        String whereClause = pkFields.stream().map(e -> '\"' + e + "\" = ?")
+        String whereClause = pkFields.stream().map(e ->  dialect.quoteIdentifier(e) + " = ?")
                                      .collect(joining(" AND "));
 
-        query = "UPDATE " + table.getExternalName()[0] +
+        query = "UPDATE " + dialect.quoteIdentifier(new StringBuilder(), Arrays.asList(table.getExternalName())) +
                 " SET " + setSqlFragment +
                 " WHERE " + whereClause;
     }

@@ -23,8 +23,6 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.sql.SQLException;
-
 import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_NAME;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -172,26 +170,4 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         );
     }
 
-    @Test
-    @Ignore("Requires https://github.com/hazelcast/hazelcast/pull/23634")
-    public void insertIntoTableNonDefaultSchema() throws SQLException {
-        createTable(alternativeSchemaTable);
-        createMapping(alternativeSchemaTable);
-
-        execute("INSERT INTO \"" + alternativeSchemaTable + "\" VALUES (0, 'name-0')");
-        assertJdbcRowsAnyOrder(alternativeSchemaTable, new Row(0, "name-0"));
-    }
-
-
-    @Test
-    @Ignore("Requires https://github.com/hazelcast/hazelcast/pull/23634")
-    public void insertIntoTableWithExternalNameNonDefaultSchema() throws Exception {
-        createTable(alternativeSchemaTable);
-        String mappingName = "mapping_" + randomName();
-        createMapping(alternativeSchemaTable, mappingName);
-
-        execute("INSERT INTO " + mappingName + " VALUES (0, 'name-0')");
-
-        assertJdbcRowsAnyOrder(alternativeSchemaTable, new Row(0, "name-0"));
-    }
 }
