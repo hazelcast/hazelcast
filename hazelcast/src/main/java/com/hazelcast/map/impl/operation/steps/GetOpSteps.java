@@ -103,7 +103,7 @@ public enum GetOpSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.SEND_RESPONSE;
+            return UtilSteps.WITH_POSSIBLE_EXTRA_STEP;
         }
     };
 

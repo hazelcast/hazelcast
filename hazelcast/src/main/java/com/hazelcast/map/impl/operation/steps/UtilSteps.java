@@ -37,13 +37,26 @@ public enum UtilSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            return state.getRecordStore().getStorage().newCompactorStep();
+            return null;
+        }
+    },
+
+    WITH_POSSIBLE_EXTRA_STEP() {
+        @Override
+        public void runStep(State state) {
+            // empty intentionally
+        }
+
+        @Override
+        public Step nextStep(State state) {
+            Step step = state.getRecordStore().getStorage().newCompactorStep();
+            return step == null ? UtilSteps.SEND_RESPONSE : step;
         }
     },
 
     HANDLE_ERROR() {
         @Override
-        public void runStep (State state){
+        public void runStep(State state) {
             try {
                 OperationRunnerImpl operationRunner = getPartitionOperationRunner(state);
                 operationRunner.handleOperationError(state.getOperation(), state.getThrowable());
@@ -53,12 +66,10 @@ public enum UtilSteps implements IMapOpStep {
         }
 
         @Override
-        public Step nextStep (State state){
+        public Step nextStep(State state) {
             return null;
         }
-    }
-
-    ;
+    };
 
     public static OperationRunnerImpl getPartitionOperationRunner(State state) {
         MapOperation operation = state.getOperation();
