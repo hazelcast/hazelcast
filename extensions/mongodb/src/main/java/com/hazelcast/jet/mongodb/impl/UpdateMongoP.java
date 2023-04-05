@@ -20,7 +20,6 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.impl.util.Util;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.UpdateManyModel;
 import com.mongodb.client.model.WriteModel;
 
 import javax.annotation.Nonnull;
