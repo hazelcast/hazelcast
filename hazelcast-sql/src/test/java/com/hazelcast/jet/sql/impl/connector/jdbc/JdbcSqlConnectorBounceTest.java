@@ -39,7 +39,6 @@ import java.util.Properties;
 
 import static com.hazelcast.jet.sql.SqlTestSupport.assertRowsAnyOrder;
 import static com.hazelcast.jet.sql.SqlTestSupport.randomName;
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_NAME;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.assertj.core.util.Lists.newArrayList;
@@ -88,10 +87,8 @@ public class JdbcSqlConnectorBounceTest {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
+                        + "DATA LINK " + TEST_DATABASE_REF
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
         );
     }
 

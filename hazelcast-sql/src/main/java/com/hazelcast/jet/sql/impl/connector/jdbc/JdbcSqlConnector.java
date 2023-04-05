@@ -82,14 +82,17 @@ public class JdbcSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName
-    ) {
+            @Nonnull String[] externalName,
+            @Nullable String dataLinkName) {
+        if (dataLinkName == null) {
+            throw QueryException.error("You must provide data link when using the Jdbc connector");
+        }
         if (externalName.length == 0 || externalName.length > 3) {
             throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
                     + ", external name for Jdbc must have either 1, 2 or 3 components (catalog, schema and relation)");
         }
         ExternalJdbcTableName externalTableName = new ExternalJdbcTableName(externalName);
-        Map<String, DbField> dbFields = readDbFields(nodeEngine, options, externalTableName);
+        Map<String, DbField> dbFields = readDbFields(nodeEngine, dataLinkName, externalTableName);
 
         List<MappingField> resolvedFields = new ArrayList<>();
         if (userFields.isEmpty()) {
@@ -133,14 +136,10 @@ public class JdbcSqlConnector implements SqlConnector {
 
     private Map<String, DbField> readDbFields(
             NodeEngine nodeEngine,
-            Map<String, String> options,
+            String dataLinkName,
             ExternalJdbcTableName externalTableName
     ) {
-        String dataLinkRef = requireNonNull(
-                options.get(OPTION_DATA_LINK_NAME),
-                "Missing option: '" + OPTION_DATA_LINK_NAME + "' must be set"
-        );
-        JdbcDataLink dataLink = getAndRetainDataLink(nodeEngine, dataLinkRef);
+        JdbcDataLink dataLink = getAndRetainDataLink(nodeEngine, dataLinkName);
         try (Connection connection = dataLink.getConnection()) {
             DatabaseMetaData databaseMetaData = connection.getMetaData();
             Set<String> pkColumns = readPrimaryKeyColumns(externalTableName, databaseMetaData);
@@ -213,9 +212,11 @@ public class JdbcSqlConnector implements SqlConnector {
             @Nonnull String schemaName,
             @Nonnull String mappingName,
             @Nonnull String[] externalName,
+            @Nullable String dataLinkName,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
-    ) {
+            @Nonnull List<MappingField> resolvedFields) {
+        assert dataLinkName != null;
+
         List<TableField> fields = new ArrayList<>(resolvedFields.size());
         for (MappingField resolvedField : resolvedFields) {
             String fieldExternalName = resolvedField.externalName() != null
@@ -229,7 +230,6 @@ public class JdbcSqlConnector implements SqlConnector {
             ));
         }
 
-        String dataLinkName = options.get(OPTION_DATA_LINK_NAME);
         SqlDialect dialect = resolveDialect(nodeEngine, dataLinkName);
 
         return new JdbcTable(

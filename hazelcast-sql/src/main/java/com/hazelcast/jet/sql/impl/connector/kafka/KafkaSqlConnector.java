@@ -86,14 +86,13 @@ public class KafkaSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName
-    ) {
+            @Nonnull String[] externalName,
+            @Nullable String dataLinkName) {
         if (externalName.length > 1) {
             throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
                     + ", external name for Kafka is allowed to have only a single component referencing the topic " +
                     "name");
         }
-
         return METADATA_RESOLVERS.resolveAndValidateFields(userFields, options, nodeEngine);
     }
 
@@ -104,9 +103,9 @@ public class KafkaSqlConnector implements SqlConnector {
             @Nonnull String schemaName,
             @Nonnull String mappingName,
             @Nonnull String[] externalName,
+            @Nullable String dataLinkName,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
-    ) {
+            @Nonnull List<MappingField> resolvedFields) {
         KvMetadata keyMetadata = METADATA_RESOLVERS.resolveMetadata(true, resolvedFields, options, null);
         KvMetadata valueMetadata = METADATA_RESOLVERS.resolveMetadata(false, resolvedFields, options, null);
         List<TableField> fields = concat(keyMetadata.getFields().stream(), valueMetadata.getFields().stream())

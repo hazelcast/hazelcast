@@ -154,7 +154,8 @@ public class TableResolverImpl implements TableResolver {
                 nodeEngine,
                 options,
                 mapping.fields(),
-                mapping.externalName()
+                mapping.externalName(),
+                mapping.dataLink()
         );
 
         return new Mapping(
@@ -314,7 +315,7 @@ public class TableResolverImpl implements TableResolver {
                     SCHEMA_NAME_PUBLIC,
                     mapping.name(),
                     mapping.externalName(),
-                    mapping.options(),
+                    mapping.dataLink(), mapping.options(),
                     mapping.fields()
             );
         } catch (Throwable e) {

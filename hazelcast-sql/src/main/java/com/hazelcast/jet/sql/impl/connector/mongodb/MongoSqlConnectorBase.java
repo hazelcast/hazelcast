@@ -71,8 +71,8 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName
-    ) {
+            @Nonnull String[] externalName,
+            @Nullable String dataLinkName) {
         if (externalName.length > 2) {
             throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
                     + ", external name for Mongo is allowed to have only one component (collection)"
@@ -92,8 +92,8 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
     @Nonnull
     @Override
     public Table createTable(@Nonnull NodeEngine nodeEngine, @Nonnull String schemaName, @Nonnull String mappingName,
-                             @Nonnull String[] externalName, @Nonnull Map<String, String> options,
-                             @Nonnull List<MappingField> resolvedFields) {
+                             @Nonnull String[] externalName, @Nullable String dataLinkName,
+                             @Nonnull Map<String, String> options, @Nonnull List<MappingField> resolvedFields) {
         String collectionName = externalName[0];
         FieldResolver fieldResolver = new FieldResolver(nodeEngine);
         String databaseName = Options.getDatabaseName(nodeEngine, options);
