@@ -39,6 +39,7 @@ import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.jetbrains.annotations.NotNull;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -267,7 +268,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         return getMBeanValues(objectName, "sourceRecordPollTotalAvgTime");
     }
 
-    //    @Ignore // https://github.com/hazelcast/hazelcast/issues/24018
+    @Ignore // https://github.com/hazelcast/hazelcast/issues/24018
     @Test
     public void test_snapshotting() throws Exception {
         int localParallelism = 3;
