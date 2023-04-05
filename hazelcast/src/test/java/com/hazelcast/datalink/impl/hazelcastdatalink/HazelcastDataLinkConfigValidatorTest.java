@@ -27,6 +27,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class HazelcastDataLinkConfigValidatorTest {
 
     @Test
+    public void testValidateNone() {
+        DataLinkConfig dataLinkConfig = new DataLinkConfig();
+
+        HazelcastDataLinkConfigValidator validator = new HazelcastDataLinkConfigValidator();
+
+        assertThatThrownBy(() -> validator.validate(dataLinkConfig))
+                .isInstanceOf(HazelcastException.class);
+    }
+
+    @Test
     public void testValidateEitherStringOrFilePath() {
         DataLinkConfig dataLinkConfig = new DataLinkConfig();
         dataLinkConfig.setProperty(HazelcastDataLink.CLIENT_XML_PATH, "xml_path");

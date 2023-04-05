@@ -89,7 +89,7 @@ public class HazelcastDataLink extends DataLinkBase {
         validateConfiguration();
 
         HazelcastDataLinkConfigLoader configLoader = new HazelcastDataLinkConfigLoader();
-        DataLinkConfig dataLinkConfig = configLoader.loadConfigFromFile(getConfig());
+        DataLinkConfig dataLinkConfig = configLoader.load(getConfig());
 
         HazelcastDataLinkClientConfigBuilder configBuilder = new HazelcastDataLinkClientConfigBuilder();
         return configBuilder.buildClientConfig(dataLinkConfig);

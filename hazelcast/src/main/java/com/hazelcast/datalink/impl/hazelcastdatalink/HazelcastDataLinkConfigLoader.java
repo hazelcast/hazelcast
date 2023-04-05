@@ -40,27 +40,26 @@ public class HazelcastDataLinkConfigLoader {
 
     private static final ILogger LOGGER = Logger.getLogger(HazelcastDataLinkConfigLoader.class);
 
-    public DataLinkConfig loadConfigFromFile(DataLinkConfig dataLinkConfig) {
+    public DataLinkConfig load(DataLinkConfig dataLinkConfig) {
         // Make a copy to preserve the original configuration
         DataLinkConfig loadedDataLinkConfig = new DataLinkConfig(dataLinkConfig);
 
-        String clientXmlPath = dataLinkConfig.getProperty(CLIENT_XML_PATH);
-        if (loadConfig(loadedDataLinkConfig, clientXmlPath, CLIENT_XML)) {
-            LOGGER.info("Successfully read XML file :" + clientXmlPath);
-        } else {
-            String clientYmlPath = dataLinkConfig.getProperty(CLIENT_YML_PATH);
-            if (loadConfig(loadedDataLinkConfig, clientYmlPath, CLIENT_YML)) {
-                LOGGER.info("Successfully read YML file :" + clientYmlPath);
-            }
+        // Try XML file first
+        if (loadConfig(loadedDataLinkConfig, CLIENT_XML_PATH, CLIENT_XML)) {
+            return loadedDataLinkConfig;
         }
+        // Try YML file
+        loadConfig(loadedDataLinkConfig, CLIENT_YML_PATH, CLIENT_YML);
         return loadedDataLinkConfig;
     }
 
-    private boolean loadConfig(DataLinkConfig dataLinkConfig, String filePath, String propertyKey) {
+    private boolean loadConfig(DataLinkConfig dataLinkConfig, String property, String propertyKey) {
         boolean result = false;
+        String filePath = dataLinkConfig.getProperty(property);
         if (!StringUtil.isNullOrEmpty(filePath)) {
             String fileContent = readFileContent(filePath);
             dataLinkConfig.setProperty(propertyKey, fileContent);
+            LOGGER.info("Successfully read file: " + filePath);
             result = true;
         }
         return result;
