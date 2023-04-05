@@ -20,8 +20,6 @@ import com.hazelcast.instance.impl.BootstrappedInstanceProxy;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.JobStatus;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -34,6 +32,8 @@ import java.net.URLClassLoader;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
@@ -43,7 +43,8 @@ import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
 public class CommandLineExecuteJar {
 
-    private static final ILogger LOGGER = Logger.getLogger(CommandLineExecuteJar.class.getName());
+    // Use JUL Logging, not Hazelcast logging
+    private static final Logger LOGGER = Logger.getLogger(CommandLineExecuteJar.class.getName());
 
     // The number of attempts to check if job is starting
     private static final int JOB_START_CHECK_ATTEMPTS = 10;
@@ -77,7 +78,7 @@ public class CommandLineExecuteJar {
 
                 Method mainMethod = ExecuteJarHelper.findMainMethodForJar(classLoader, mainClassName);
 
-                LOGGER.info("Found mainClassName :" + mainClassName + " and main method");
+                LOGGER.info("Found mainClassName :\"" + mainClassName + "\" and main method");
 
                 invokeMain(instanceProxy, executeJobParameters, mainMethod, args);
             }
@@ -86,17 +87,16 @@ public class CommandLineExecuteJar {
 
         } catch (JetException exception) {
             // Only JetException causes exit code. Other exceptions such as ClassNotFound etc. are ignored
-            LOGGER.severe("JetException caught while executing the jar :", exception);
+            LOGGER.log(Level.SEVERE, "JetException caught while executing the jar ", exception);
             exit = true;
         } catch (Exception exception) {
-            LOGGER.severe("Exception caught while executing the jar :", exception);
+            LOGGER.log(Level.SEVERE, "Exception caught while executing the jar ", exception);
             throw exception;
         } finally {
-            instanceProxy.removeThreadLocalParameters();
             try {
                 instanceProxy.shutdown();
             } catch (Exception exception) {
-                LOGGER.severe("Shutdown failed with:", exception);
+                LOGGER.log(Level.SEVERE, "Shutdown failed with:", exception);
             }
             singleton.resetRemembered();
             if (exit) {
@@ -108,18 +108,22 @@ public class CommandLineExecuteJar {
     private void invokeMain(BootstrappedInstanceProxy instanceProxy, ExecuteJobParameters executeJobParameters,
                             Method mainMethod, List<String> args)
             throws IllegalAccessException, InvocationTargetException {
-        instanceProxy.setThreadLocalParameters(executeJobParameters);
+        try {
+            instanceProxy.setExecuteJobParameters(executeJobParameters);
 
-        String[] jobArgs = args.toArray(new String[0]);
+            String[] jobArgs = args.toArray(new String[0]);
 
-        // upcast args to Object, so it's passed as a single array-typed argument
-        mainMethod.invoke(null, (Object) jobArgs);
+            // upcast args to Object, so it's passed as a single array-typed argument
+            mainMethod.invoke(null, (Object) jobArgs);
+        } finally {
+            instanceProxy.removeExecuteJobParameters();
+        }
     }
 
     private void awaitJobsStartedByJar(BootstrappedInstanceProxy instanceProxy) {
         List<Job> submittedJobs = instanceProxy.getSubmittedJobs();
         if (submittedJobs.isEmpty()) {
-            LOGGER.info("The JAR didn't submit any jobs.");
+            LOGGER.severe("The JAR didn't submit any jobs.");
             return;
         }
 
@@ -173,16 +177,16 @@ public class CommandLineExecuteJar {
                     toLocalDateTime(job.getSubmissionTime()),
                     job.getStatus(),
                     toLocalDateTime(System.currentTimeMillis()));
-            LOGGER.info(message);
+            LOGGER.warning(message);
         }
     }
 
     private void logRemainingCount(int startingJobCount) {
         if (startingJobCount == 1) {
-            LOGGER.info("A job is still starting...");
+            LOGGER.warning("A job is still starting...");
         } else if (startingJobCount > 1) {
             String message = String.format("%,d jobs are still starting...%n", startingJobCount);
-            LOGGER.info(message);
+            LOGGER.warning(message);
         }
     }
 }
