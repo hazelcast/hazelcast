@@ -156,7 +156,7 @@ public final class MongoUtilities {
 
     static void checkDatabaseExists(MongoClient client, String databaseName) {
         for (String name : client.listDatabaseNames()) {
-            if (name.equals(databaseName)) {
+            if (name.equalsIgnoreCase(databaseName)) {
                 return;
             }
         }
