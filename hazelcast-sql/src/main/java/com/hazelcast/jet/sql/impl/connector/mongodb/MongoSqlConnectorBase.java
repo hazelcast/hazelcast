@@ -79,7 +79,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                     + " or two components (database and collection)");
         }
         FieldResolver fieldResolver = new FieldResolver(nodeEngine);
-        return fieldResolver.resolveFields(externalName, options, userFields, isStream());
+        return fieldResolver.resolveFields(externalName, dataLinkName, options, userFields, isStream());
     }
 
     @Nonnull
@@ -94,9 +94,9 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
     public Table createTable(@Nonnull NodeEngine nodeEngine, @Nonnull String schemaName, @Nonnull String mappingName,
                              @Nonnull String[] externalName, @Nullable String dataLinkName,
                              @Nonnull Map<String, String> options, @Nonnull List<MappingField> resolvedFields) {
-        String collectionName = externalName[0];
+        String collectionName = externalName[0]; // TODO HZ-2260
         FieldResolver fieldResolver = new FieldResolver(nodeEngine);
-        String databaseName = Options.getDatabaseName(nodeEngine, options);
+        String databaseName = Options.getDatabaseName(nodeEngine, dataLinkName, options);
         ConstantTableStatistics stats = new ConstantTableStatistics(0);
 
         List<TableField> fields = new ArrayList<>(resolvedFields.size());
@@ -129,7 +129,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                         "DOCUMENT", !hasPK));
             }
         }
-        return new MongoTable(schemaName, mappingName, databaseName, collectionName, options, this,
+        return new MongoTable(schemaName, mappingName, databaseName, collectionName, dataLinkName, options, this,
                 fields, stats, isStreaming);
     }
 

@@ -29,6 +29,7 @@ import org.bson.BsonType;
 import org.bson.Document;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +41,6 @@ import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.getBsonType;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.resolveTypeFromJava;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.CONNECTION_STRING_OPTION;
-import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.DATA_LINK_REF_OPTION;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static com.mongodb.client.model.Filters.eq;
 import static java.util.Objects.requireNonNull;
@@ -57,6 +57,7 @@ class FieldResolver {
      * Resolves fields based on the options passed to the connector and schema provided by user (if any).
      *
      * @param externalName external name of the mapping, namely collection name
+     * @param dataLinkName name of data link used to create this mapping
      * @param options      options provided for the connector
      * @param userFields   user-provided field list
      * @return resolved fields - all fields from collection or user provided fields with resolved types
@@ -65,12 +66,13 @@ class FieldResolver {
      */
     List<MappingField> resolveFields(
             @Nonnull String[] externalName,
+            @Nullable String dataLinkName,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
             boolean stream
     ) {
         Predicate<MappingField> pkColumnName = Options.getPkColumnChecker(options, stream);
-        Map<String, DocumentField> dbFields = readFields(externalName, options, stream);
+        Map<String, DocumentField> dbFields = readFields(externalName, dataLinkName, options, stream);
 
         List<MappingField> resolvedFields = new ArrayList<>();
         if (userFields.isEmpty()) {
@@ -158,13 +160,13 @@ class FieldResolver {
         }
     }
 
-    Map<String, DocumentField> readFields(String[] externalName, Map<String, String> options, boolean stream) {
-        String collectionName = externalName[0];
+    Map<String, DocumentField> readFields(String[] externalNames, String dataLinkName, Map<String, String> options, boolean stream) {
+        String collectionName = externalNames[0]; // TODO HZ-2260
         Map<String, DocumentField> fields = new HashMap<>();
-        Tuple2<MongoClient, MongoDataLink> connect = connect(options);
+        Tuple2<MongoClient, MongoDataLink> connect = connect(dataLinkName, options);
         try (MongoClient client = connect.f0()) {
             requireNonNull(client);
-            String databaseName = Options.getDatabaseName(nodeEngine, options);
+            String databaseName = Options.getDatabaseName(nodeEngine, dataLinkName, options);
 
             MongoDatabase database = client.getDatabase(databaseName);
             List<Document> collections = database.listCollections()
@@ -234,10 +236,10 @@ class FieldResolver {
         return returned;
     }
 
-    private Tuple2<MongoClient, MongoDataLink> connect(Map<String, String> options) {
-        if (options.containsKey(DATA_LINK_REF_OPTION)) {
+    private Tuple2<MongoClient, MongoDataLink> connect(String dataLinkName, Map<String, String> options) {
+        if (dataLinkName != null) {
             MongoDataLink link = nodeEngine.getDataLinkService().getAndRetainDataLink(
-                    options.get(DATA_LINK_REF_OPTION),
+                    dataLinkName,
                     MongoDataLink.class);
             return tuple2(link.getClient(), link);
         } else {

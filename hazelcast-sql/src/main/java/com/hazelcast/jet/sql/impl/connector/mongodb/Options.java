@@ -31,7 +31,6 @@ import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 final class Options {
 
-    static final String DATA_LINK_REF_OPTION = "data-link-name";
     static final String CONNECTION_STRING_OPTION = "connectionString";
     static final String DATABASE_NAME_OPTION = "database";
     static final String START_AT_OPTION = "startAt";
@@ -63,14 +62,14 @@ final class Options {
         }
     }
 
-    static String getDatabaseName(NodeEngine nodeEngine, Map<String, String> options) {
+    static String getDatabaseName(NodeEngine nodeEngine, String dataLinkName, Map<String, String> options) {
         String name = options.get(Options.DATABASE_NAME_OPTION);
         if (name != null) {
             return name;
         }
-        if (options.containsKey(DATA_LINK_REF_OPTION)) {
+        if (dataLinkName != null) {
             MongoDataLink link =
-                    nodeEngine.getDataLinkService().getAndRetainDataLink(options.get(DATA_LINK_REF_OPTION), MongoDataLink.class);
+                    nodeEngine.getDataLinkService().getAndRetainDataLink(dataLinkName, MongoDataLink.class);
             try {
                 name = link.getDatabaseName();
                 if (name != null) {

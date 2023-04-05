@@ -15,6 +15,7 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.LogListener;
 import com.hazelcast.map.IMap;
@@ -109,6 +110,27 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         for (HazelcastInstance instance : instances()) {
             instance.getLoggingService().removeLogListener(lookForProjectAndFilterStep);
         }
+    }
+
+    @Test
+    public void readsUsingDataLink() {
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
+        collection.insertOne(new Document("firstName", "Han").append("lastName", "Solo").append("jedi", false));
+        collection.insertOne(new Document("firstName", "Anakin").append("lastName", "Skywalker").append("jedi", true));
+        collection.insertOne(new Document("firstName", "Rey").append("jedi", true));
+
+        execute("CREATE MAPPING " + collectionName
+                + " (firstName VARCHAR, lastName VARCHAR, jedi BOOLEAN) "
+                + "DATA LINK testMongo");
+
+        assertRowsAnyOrder("select firstName, lastName from " + collectionName + " where lastName = ?",
+                singletonList("Skywalker"),
+                asList(
+                        new Row("Luke", "Skywalker"),
+                        new Row("Anakin", "Skywalker")
+                )
+        );
     }
 
 

@@ -19,8 +19,8 @@ package com.hazelcast.jet.sql.impl.schema;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.datalink.DataLink;
-import com.hazelcast.datalink.impl.JdbcDataLink;
 import com.hazelcast.datalink.impl.InternalDataLinkService;
+import com.hazelcast.datalink.impl.JdbcDataLink;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
@@ -173,9 +173,12 @@ public class TableResolverImpl implements TableResolver {
         InternalDataLinkService dataLinkService = nodeEngine.getDataLinkService();
         DataLink dl = dataLinkService.getAndRetainDataLink(dataLink, DataLink.class);
         try {
+            String simpleName = dl.getClass().getSimpleName();
             // TODO: support more
             if (dl instanceof JdbcDataLink) {
                 connector = connectorCache.forType("JDBC");
+            } else if (simpleName.equals("MongoDataLink")) {
+                connector = connectorCache.forType("MongoDB");
             } else {
                 throw QueryException.error("Unknown data link class: " + dl.getClass().getName());
             }
