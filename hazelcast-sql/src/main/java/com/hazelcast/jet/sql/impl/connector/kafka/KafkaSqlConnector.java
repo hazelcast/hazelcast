@@ -22,6 +22,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.kafka.KafkaProcessors;
 import com.hazelcast.jet.kafka.impl.StreamKafkaP;
+import com.hazelcast.jet.pipeline.DataLinkRef;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
@@ -118,6 +119,7 @@ public class KafkaSqlConnector implements SqlConnector {
                 fields,
                 new ConstantTableStatistics(0),
                 externalName[0],
+                dataLinkName,
                 options,
                 keyMetadata.getQueryTargetDescriptor(),
                 keyMetadata.getUpsertTargetDescriptor(),
@@ -142,6 +144,7 @@ public class KafkaSqlConnector implements SqlConnector {
                         StreamKafkaP.PREFERRED_LOCAL_PARALLELISM,
                         new RowProjectorProcessorSupplier(
                                 table.kafkaConsumerProperties(),
+                                table.dataLinkName(),
                                 table.topicName(),
                                 eventTimePolicyProvider,
                                 table.paths(),
@@ -187,13 +190,21 @@ public class KafkaSqlConnector implements SqlConnector {
 
         Vertex vEnd = context.getDag().newUniqueVertex(
                 table.toString(),
-                KafkaProcessors.<Entry<Object, Object>, Object, Object>writeKafkaP(
-                        table.kafkaProducerProperties(),
-                        table.topicName(),
-                        Entry::getKey,
-                        Entry::getValue,
-                        true
-                )
+                table.dataLinkName() == null
+                        ?
+                        KafkaProcessors.<Entry<Object, Object>, Object, Object>writeKafkaP(
+                                table.kafkaProducerProperties(),
+                                table.topicName(),
+                                Entry::getKey,
+                                Entry::getValue,
+                                true)
+                        :
+                        KafkaProcessors.<Entry<Object, Object>, Object, Object>writeKafkaP(
+                                new DataLinkRef(table.dataLinkName()),
+                                table.topicName(),
+                                Entry::getKey,
+                                Entry::getValue,
+                                true)
         );
 
         context.getDag().edge(between(vStart, vEnd));
