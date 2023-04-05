@@ -96,7 +96,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         randomProperties.setProperty("quickstart", "orders");
 
         Pipeline pipeline = Pipeline.create();
-        StreamStage<Order> streamStage = pipeline.readFrom(connect(randomProperties, Order::new))
+        StreamStage<SourceRecord> streamStage = pipeline.readFrom(connect(randomProperties))
                 .withoutTimestamps()
                 .setLocalParallelism(1);
         streamStage.writeTo(Sinks.logger());
