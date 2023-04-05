@@ -34,11 +34,14 @@ import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.connect.data.Values;
+import org.jetbrains.annotations.NotNull;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.management.MBeanServer;
@@ -74,6 +77,8 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
 
     private static final String CONNECTOR_URL = "https://repository.hazelcast.com/download/tests/"
             + "confluentinc-kafka-connect-datagen-0.6.0.zip";
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectIntegrationTest.class);
 
     @Test
     public void testReading() throws Exception {
@@ -135,7 +140,6 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         return new ArrayList<>(platformMBeanServer.queryMBeans(objectName, null));
     }
 
-    @Ignore // https://github.com/hazelcast/hazelcast/issues/24104
     @Test
     public void testScaling() throws Exception {
         int localParallelism = 3;
@@ -153,11 +157,11 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
                 .map(record -> entry(record.headers().lastWithName("task.id").value().toString(),
                         Values.convertToString(record.valueSchema(), record.value()))
                 );
-        streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(120,
                         list -> {
                             Map<String, List<String>> recordsByTaskId = entriesToMap(list);
+                            LOGGER.info("recordsByTaskId = " + countEntriesByTaskId(recordsByTaskId));
                             assertThat(recordsByTaskId).allSatisfy((taskId, records) ->
                                     assertThat(records.size()).isGreaterThan(ITEM_COUNT)
                             );
@@ -190,6 +194,11 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
             });
 
         }
+    }
+
+    @NotNull
+    private static List<Map.Entry<String, Integer>> countEntriesByTaskId(Map<String, List<String>> recordsByTaskId) {
+        return recordsByTaskId.entrySet().stream().map(e -> entry(e.getKey(), e.getValue().size())).collect(toList());
     }
 
     @Nonnull

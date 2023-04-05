@@ -104,7 +104,7 @@ public class MongoSinkTest extends AbstractMongoTest {
 
         toAddSource.merge(alreadyExistingSource).setLocalParallelism(4)
                    .rebalance(doc -> doc.get("key")).setLocalParallelism(4)
-                   .writeTo(mongodb(SINK_NAME, connectionString, defaultDatabase(), testName.getMethodName()))
+                   .writeTo(mongodb(connectionString, defaultDatabase(), testName.getMethodName()))
                    .setLocalParallelism(2);
 
         JobConfig config = new JobConfig().setProcessingGuarantee(processingGuarantee).setSnapshotIntervalMillis(500);
@@ -133,7 +133,7 @@ public class MongoSinkTest extends AbstractMongoTest {
 
         toAddSource.merge(alreadyExistingSource).setLocalParallelism(4)
                    .rebalance(doc -> doc.get("key")).setLocalParallelism(4)
-                   .writeTo(mongodb(SINK_NAME, dataLinkRef("mongoDB"), defaultDatabase(), testName.getMethodName()))
+                   .writeTo(mongodb(dataLinkRef("mongoDB"), defaultDatabase(), testName.getMethodName()))
                    .setLocalParallelism(2);
 
         JobConfig config = new JobConfig().setProcessingGuarantee(processingGuarantee).setSnapshotIntervalMillis(500);
@@ -145,7 +145,7 @@ public class MongoSinkTest extends AbstractMongoTest {
     }
 
     @Test
-        public void test_withStreamAsInput_insert() {
+    public void test_withStreamAsInput_insert() {
         final String connectionString = mongoContainer.getConnectionString();
         final String defaultDatabase = defaultDatabase();
         IMap<Long, Doc> mapToInsert = instance().getMap("toInsert");
@@ -155,13 +155,17 @@ public class MongoSinkTest extends AbstractMongoTest {
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(newEntries(mapToInsert))
                 .withIngestionTimestamps()
-                .writeTo(builder(SINK_NAME, Doc.class, () -> createClient(connectionString))
+                .writeTo(builder(Doc.class, () -> createClient(connectionString))
                         .identifyDocumentBy("key", o -> o.key)
+                        .throwOnNonExisting(false)
                         .into(i -> defaultDatabase, i -> "col_" + (i.key % 2))
                         .withCustomReplaceOptions(opt -> opt.upsert(true))
                         .writeMode(INSERT_ONLY)
                         .build()
                 );
+
+        mongo.getDatabase(defaultDatabase).createCollection("col_0");
+        mongo.getDatabase(defaultDatabase).createCollection("col_1");
 
         JobConfig config = new JobConfig().setProcessingGuarantee(processingGuarantee).setSnapshotIntervalMillis(200);
         instance().getJet().newJob(pipeline, config);
@@ -194,7 +198,7 @@ public class MongoSinkTest extends AbstractMongoTest {
                     item.key *= 10;
                     return item;
                 })
-                .writeTo(builder(SINK_NAME, Doc.class, () -> createClient(connectionString))
+                .writeTo(builder(Doc.class, () -> createClient(connectionString))
                         .identifyDocumentBy("_id", o -> o.id)
                         .into(defaultDatabase, testName.getMethodName())
                         .withCustomReplaceOptions(opt -> opt.upsert(true))
@@ -304,7 +308,7 @@ public class MongoSinkTest extends AbstractMongoTest {
         String defaultDatabase = defaultDatabase();
         String collectionName = testName.getMethodName();
         Sink<Document> sink = MongoSinks
-                .builder(SINK_NAME, Document.class, () -> mongoClient("non-existing-server", 0))
+                .builder(Document.class, () -> mongoClient("non-existing-server", 0))
                 .into(defaultDatabase, collectionName)
                 .identifyDocumentBy("_id", (doc) -> doc.get("_id"))
                 .build();
@@ -319,7 +323,7 @@ public class MongoSinkTest extends AbstractMongoTest {
             fail();
         } catch (CompletionException e) {
             assertTrue(e.getCause() instanceof JetException);
-            assertContains(e.getMessage(), "cannot connect to MongoDB");
+            assertContains(e.getCause().getMessage(), "Cannot connect to MongoDB");
         }
     }
 

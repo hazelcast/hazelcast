@@ -94,7 +94,9 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private long maxProcessorAccumulatedRecords;
 
     private ExpressionEvalContext evalContext;
+    private ProcessingGuarantee processingGuarantee;
     private int processorIndex;
+
     private Iterator<JetSqlRow> iterator;
     private JetSqlRow currItem;
 
@@ -173,6 +175,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         emptyLeftRow = new JetSqlRow(ss, new Object[columnCounts.f0()]);
         emptyRightRow = new JetSqlRow(ss, new Object[columnCounts.f1()]);
         maxProcessorAccumulatedRecords = context.maxProcessorAccumulatedRecords();
+        processingGuarantee = context.processingGuarantee();
         processorIndex = context.globalProcessorIndex();
 
         if (!joinInfo.isEquiJoin()) {
@@ -282,8 +285,9 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
         Byte receivedWmKey = watermark.key();
         assert wmState.containsKey(receivedWmKey) : "unexpected watermark key: " + receivedWmKey;
-        assert lastReceivedWm.get(receivedWmKey) < watermark.timestamp() : "non-monotonic watermark: " + watermark
-                + " when state is " + lastReceivedWm.get(receivedWmKey);
+        assert processingGuarantee != ProcessingGuarantee.EXACTLY_ONCE
+                || lastReceivedWm.get(receivedWmKey) < watermark.timestamp() : "non-monotonic watermark: "
+                + watermark.timestamp() + " when state is " + lastReceivedWm.get(receivedWmKey);
 
         lastReceivedWm.put(receivedWmKey, watermark.timestamp());
 
@@ -584,14 +588,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             this.postponeTimeMap = postponeTimeMap;
             this.leftInputColumnCount = leftInputColumnCount;
             this.rightInputColumnCount = rightInputColumnCount;
-        }
-
-        @Override
-        public void init(@Nonnull Context context) throws Exception {
-            if (!joinInfo.isEquiJoin() && context.processingGuarantee() != ProcessingGuarantee.NONE) {
-                throw new UnsupportedOperationException(
-                        "Non-equi-join fault-tolerant stream-to-stream JOIN is not supported");
-            }
         }
 
         @Nonnull
