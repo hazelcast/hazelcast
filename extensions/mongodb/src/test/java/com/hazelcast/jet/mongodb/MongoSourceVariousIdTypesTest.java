@@ -69,7 +69,7 @@ public class MongoSourceVariousIdTypesTest extends AbstractMongoTest {
         collection.insertOne(new Document("_id", id2));
 
         Pipeline pipeline = Pipeline.create();
-        pipeline.readFrom(batch(SOURCE_NAME, connectionString, defaultDatabase(), testName.getMethodName(), null, null))
+        pipeline.readFrom(batch(connectionString, defaultDatabase(), testName.getMethodName(), null, null))
                 .setLocalParallelism(3)
                 .writeTo(Sinks.list(list));
 
