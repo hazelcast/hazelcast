@@ -25,13 +25,13 @@ public class SqlMappingTest extends MongoSqlTest {
 
     @Test
     public void testExternalNameShouldNotHaveMoreComponents() {
-        assertThatThrownBy(() ->
-                sqlService.execute("CREATE MAPPING col EXTERNAL NAME \"" + databaseName + "\".\"collection\".\"aa\" ("
-                        + "__key INT,"
-                        + "this VARCHAR"
-                        + ") TYPE " + MongoBatchSqlConnector.TYPE_NAME + ' '
-                        + options()
-                ))
+        String query = "CREATE MAPPING col EXTERNAL NAME \"" + databaseName + "\".\"collection\".\"aa\" ("
+                + "__key INT,"
+                + "this VARCHAR"
+                + ") TYPE " + MongoBatchSqlConnector.TYPE_NAME + ' '
+                + options();
+
+        assertThatThrownBy(() -> sqlService.execute(query))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Invalid external name \"" + databaseName + "\".\"collection\".\"aa\"");
     }

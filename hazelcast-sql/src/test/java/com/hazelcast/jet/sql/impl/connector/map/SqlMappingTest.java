@@ -41,18 +41,18 @@ public class SqlMappingTest extends SqlTestSupport {
 
     @Test
     public void testExternalNameShouldNotHaveMoreComponents() {
-        assertThatThrownBy(() ->
-                sqlService.execute("CREATE MAPPING map EXTERNAL NAME \"schema1\".\"mapName\" ("
-                        + "__key INT,"
-                        + "this VARCHAR"
-                        + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ("
-                        + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
-                        + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
-                        + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
-                        + ", '" + OPTION_VALUE_CLASS + "'='" + String.class.getName() + '\''
-                        + ")"
-                ))
+        String query = "CREATE MAPPING map EXTERNAL NAME \"schema1\".\"mapName\" ("
+                + "__key INT,"
+                + "this VARCHAR"
+                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_VALUE_CLASS + "'='" + String.class.getName() + '\''
+                + ")";
+
+        assertThatThrownBy(() -> sqlService.execute(query))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Invalid external name \"schema1\".\"mapName\"");
     }
