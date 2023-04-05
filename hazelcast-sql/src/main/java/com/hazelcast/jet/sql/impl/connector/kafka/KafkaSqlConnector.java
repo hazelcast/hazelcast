@@ -48,7 +48,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.sql.impl.CompoundIdentifierUtil.quoteCompoundIdentifier;
+import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
 

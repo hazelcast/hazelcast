@@ -27,7 +27,7 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
-import static com.hazelcast.sql.impl.CompoundIdentifierUtil.quoteCompoundIdentifier;
+import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static java.util.Arrays.asList;
 
 /**

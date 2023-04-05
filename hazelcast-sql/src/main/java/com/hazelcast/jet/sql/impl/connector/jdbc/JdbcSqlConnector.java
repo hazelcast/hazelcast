@@ -52,7 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.sql.impl.CompoundIdentifierUtil.quoteCompoundIdentifier;
+import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static java.lang.Integer.parseInt;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;

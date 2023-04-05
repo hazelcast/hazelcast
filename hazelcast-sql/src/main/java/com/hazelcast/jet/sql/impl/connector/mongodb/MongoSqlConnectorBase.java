@@ -47,7 +47,7 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.mongodb.impl.Mappers.bsonDocumentToDocument;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
-import static com.hazelcast.sql.impl.CompoundIdentifierUtil.quoteCompoundIdentifier;
+import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
