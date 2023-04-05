@@ -341,7 +341,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenRowAndIdColumn_whenLoadAll_thenReturnGenericRecord() throws Exception {
-        createTable(mapName, quote("person-id") +" INT PRIMARY KEY", "name VARCHAR(100)");
+        createTable(mapName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
         insertItems(mapName, 1);
 
         Properties properties = new Properties();
@@ -376,7 +376,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenRowAndIdColumn_whenLoadAllKeys_thenReturnKeys() throws Exception {
-        createTable(mapName, quote("person-id") +" INT PRIMARY KEY", "name VARCHAR(100)");
+        createTable(mapName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
         insertItems(mapName, 1);
 
         Properties properties = new Properties();
