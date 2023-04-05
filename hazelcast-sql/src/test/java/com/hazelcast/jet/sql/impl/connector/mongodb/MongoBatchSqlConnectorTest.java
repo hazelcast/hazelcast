@@ -136,6 +136,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                 )
         );
     }
+
     @Test
     public void readWithOneProcessor() {
         MongoCollection<Document> collection = database.getCollection(collectionName);
@@ -157,13 +158,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
             instance.getLoggingService().addLogListener(Level.FINE, lookForProjectAndFilterStep);
         }
 
-        execute("CREATE MAPPING " + collectionName
-                + " ("
-                + " id OBJECT external name _id, "
-                + " firstName VARCHAR, "
-                + " lastName VARCHAR, "
-                + " jedi BOOLEAN "
-                + ") "
+        execute("CREATE MAPPING " + collectionName + " (firstName VARCHAR, lastName VARCHAR, jedi BOOLEAN) "
                 + "TYPE MongoDB "
                 + "OPTIONS ("
                 + "    'connectionString' = '" + mongoContainer.getConnectionString() + "', "
@@ -171,15 +166,53 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                 + "    'forceMongoReadParallelismOne' = 'true' "
                 + ")");
 
-        assertRowsAnyOrder("select firstName, lastName, jedi from " + collectionName
-                        + " where lastName = ?",
+        assertRowsAnyOrder("select firstName, lastName, jedi from " + collectionName + " where lastName = ?",
                 singletonList("Skywalker"),
-                singletonList(
-                        new Row("Luke", "Skywalker", true)
-                )
+                singletonList(new Row("Luke", "Skywalker", true))
         );
         assertThat(otherFound.get())
                 .describedAs("Not all vertices had local parallelism = 1")
+                .isFalse();
+
+        for (HazelcastInstance instance : instances()) {
+            instance.getLoggingService().removeLogListener(lookForProjectAndFilterStep);
+        }
+    }
+
+    @Test
+    public void readWithByDefaultInParallel() {
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", "true"));
+
+        Pattern parallelismDagPattern = Pattern.compile("\\[localParallelism=(\\d)+]");
+        AtomicBoolean otherFound = new AtomicBoolean(false);
+        LogListener lookForProjectAndFilterStep = log -> {
+            String message = log.getLogRecord().getMessage();
+            Matcher matcher = parallelismDagPattern.matcher(message);
+            if (matcher.find()) {
+                String number = matcher.group(1);
+                if ("1".equals(number)) {
+                    otherFound.set(true);
+                }
+            }
+        };
+        for (HazelcastInstance instance : instances()) {
+            instance.getLoggingService().addLogListener(Level.FINE, lookForProjectAndFilterStep);
+        }
+
+        execute("CREATE MAPPING " + collectionName + " (firstName VARCHAR, lastName VARCHAR, jedi BOOLEAN) "
+                + "TYPE MongoDB "
+                + "OPTIONS ("
+                + "    'connectionString' = '" + mongoContainer.getConnectionString() + "', "
+                + "    'database' = '" +  databaseName + "'"
+                + ")");
+
+        assertRowsAnyOrder("select firstName, lastName, jedi from " + collectionName + " where lastName = ?",
+                singletonList("Skywalker"),
+                singletonList(new Row("Luke", "Skywalker", true))
+        );
+        assertThat(otherFound.get())
+                .describedAs("By default it should read with higher parallelism")
                 .isFalse();
 
         for (HazelcastInstance instance : instances()) {
