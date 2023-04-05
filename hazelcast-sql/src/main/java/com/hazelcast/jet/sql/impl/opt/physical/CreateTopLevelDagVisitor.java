@@ -422,6 +422,14 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                 rel.outputValueMapping();
 
         Map<Integer, MutableByte> watermarkedFieldsKeys = watermarkKeysAssigner.getWatermarkedFieldsKey(rel);
+        MutableByte mutableWatermarkKey = watermarkedFieldsKeys.isEmpty()
+                ? watermarkKeysAssigner.getInputWatermarkKey(rel)
+                : watermarkedFieldsKeys.get(rel.timestampFieldIndex());
+
+        byte watermarkKey = mutableWatermarkKey != null
+                ? mutableWatermarkKey.getValue()
+                : watermarkedFieldsKeys.get(rel.watermarkedFields().findFirst(rel.getGroupSet())).getValue();
+
         if (rel.numStages() == 1) {
             Vertex vertex = dag.newUniqueVertex(
                     "Sliding-Window-AggregateByKey",
@@ -433,17 +441,11 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                             0,
                             aggregateOperation,
                             resultMapping,
-                            watermarkedFieldsKeys.isEmpty()
-                                    ? watermarkKeysAssigner.getInputWatermarkKey(rel)
-                                    : watermarkedFieldsKeys.get(rel.timestampFieldIndex()).getValue()));
+                            watermarkKey));
             connectInput(rel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
             return vertex;
         } else {
             assert rel.numStages() == 2;
-
-            byte watermarkKey = watermarkedFieldsKeys.isEmpty()
-                    ? watermarkKeysAssigner.getInputWatermarkKey(rel)
-                    : watermarkedFieldsKeys.get(rel.timestampFieldIndex()).getValue();
 
             Vertex vertex1 = dag.newUniqueVertex(
                     "Sliding-Window-AccumulateByKey",

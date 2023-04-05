@@ -71,7 +71,7 @@ public class WatermarkKeysAssigner {
      *  watermarks are propagated from scans to root relations. Sometimes  {@link SlidingWindowAggregatePhysicalRel}
      *  may break watermark key propagation chain, but we still need a watermark key for {@link SlidingWindowP}.
      */
-    public byte getInputWatermarkKey(SlidingWindowAggregatePhysicalRel swaRel) {
+    public MutableByte getInputWatermarkKey(SlidingWindowAggregatePhysicalRel swaRel) {
         Map<Integer, MutableByte> inputWmMap = visitor.getRelToWmKeyMapping().get(swaRel.getInput());
         assert !inputWmMap.isEmpty() : "Input rel for SlidingWindowAggregate must contain watermarked field";
 
@@ -79,9 +79,9 @@ public class WatermarkKeysAssigner {
         WatermarkedFields watermarkedFields = query.extractWatermarkedFields(swaRel.getInput());
         Integer watermarkedIndex = watermarkedFields.findFirst(swaRel.getGroupSet());
         if (watermarkedIndex == null) {
-            return inputWmMap.values().iterator().next().getValue();
+            return inputWmMap.values().iterator().next();
         } else {
-            return inputWmMap.get(watermarkedIndex).getValue();
+            return inputWmMap.get(watermarkedIndex);
         }
     }
 
