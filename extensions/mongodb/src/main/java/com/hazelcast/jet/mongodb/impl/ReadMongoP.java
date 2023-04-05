@@ -104,10 +104,10 @@ public class ReadMongoP<I> extends AbstractProcessor {
             EventTimeMapper<I> eventTimeMapper = new EventTimeMapper<>(params.eventTimePolicy);
             eventTimeMapper.addPartitions(1);
             this.reader = new StreamMongoReader(params.databaseName, params.collectionName, params.mapStreamFn,
-                    params.getStartAtTimestamp(), params.aggregates, eventTimeMapper);
+                    params.getStartAtTimestamp(), params.getAggregates(), eventTimeMapper);
         } else {
             this.reader = new BatchMongoReader(params.databaseName, params.collectionName, params.mapItemFn,
-                    params.aggregates);
+                    params.getAggregates());
         }
         this.connection = new MongoConnection(params.clientSupplier, params.dataLinkRef, client -> reader.connect(client,
                 snapshotsEnabled));
@@ -286,7 +286,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
     private final class BatchMongoReader extends MongoChunkedReader {
         private final FunctionEx<Document, I> mapItemFn;
-        private final List<Bson> aggregates;
+        private final List<Document> aggregates;
         private Traverser<Document> delegate;
         private Object lastKey;
 
@@ -294,7 +294,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
                 String databaseName,
                 String collectionName,
                 FunctionEx<Document, I> mapItemFn,
-                List<Bson> aggregates) {
+                List<Document> aggregates) {
             super(databaseName, collectionName);
             this.mapItemFn = mapItemFn;
             this.aggregates = aggregates;
@@ -389,7 +389,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
     private final class StreamMongoReader extends MongoChunkedReader {
         private final BiFunctionEx<ChangeStreamDocument<Document>, Long, I> mapFn;
         private final BsonTimestamp startTimestamp;
-        private final List<Bson> aggregates;
+        private final List<Document> aggregates;
         private final EventTimeMapper<I> eventTimeMapper;
         private MongoCursor<ChangeStreamDocument<Document>> cursor;
         private BsonDocument resumeToken;
@@ -399,7 +399,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
                 String collectionName,
                 BiFunctionEx<ChangeStreamDocument<Document>, Long, I> mapFn,
                 BsonTimestamp startTimestamp,
-                List<Bson> aggregates,
+                List<Document> aggregates,
                 EventTimeMapper<I> eventTimeMapper
         ) {
             super(databaseName, collectionName);

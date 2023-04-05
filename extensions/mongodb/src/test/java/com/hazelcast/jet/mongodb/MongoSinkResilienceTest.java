@@ -43,7 +43,6 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.containers.Network;
@@ -84,9 +83,6 @@ public class MongoSinkResilienceTest extends SimpleTestInClusterSupport {
     public ToxiproxyContainer toxi = new ToxiproxyContainer("ghcr.io/shopify/toxiproxy:2.5.0")
             .withNetwork(network);
 
-    @Rule
-    public TestName testName = new TestName();
-
     private final Random random = new Random();
 
     @BeforeClass
@@ -121,7 +117,7 @@ public class MongoSinkResilienceTest extends SimpleTestInClusterSupport {
         try (MongoClient mongoClient = MongoClients.create(connectionString)) {
             mongoClient.getDatabase(databaseName).createCollection(collectionName);
         }
-        IMap<Integer, Integer> sourceMap = hz.getMap(testName.getMethodName());
+        IMap<Integer, Integer> sourceMap = hz.getMap(randomName());
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(Sources.mapJournal(sourceMap, START_FROM_OLDEST))
@@ -192,7 +188,7 @@ public class MongoSinkResilienceTest extends SimpleTestInClusterSupport {
             mongoClient.getDatabase(databaseName).createCollection(collectionName);
         }
 
-        IMap<Integer, Integer> sourceMap = hz.getMap(testName.getMethodName());
+        IMap<Integer, Integer> sourceMap = hz.getMap(randomName());
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(Sources.mapJournal(sourceMap, START_FROM_OLDEST))
@@ -240,11 +236,12 @@ public class MongoSinkResilienceTest extends SimpleTestInClusterSupport {
         continueCounting.compareAndSet(true, false);
 
         final String directConnectionString = mongoContainer.getConnectionString();
-        MongoClient directClient = MongoClients.create(directConnectionString);
-        MongoCollection<Document> collection = directClient.getDatabase(databaseName).getCollection(collectionName);
-        assertTrueEventually(() ->
-                assertEquals(counter.get(), collection.countDocuments())
-        );
+        try (MongoClient directClient = MongoClients.create(directConnectionString)) {
+            MongoCollection<Document> collection = directClient.getDatabase(databaseName).getCollection(collectionName);
+            assertTrueEventually(() ->
+                    assertEquals(counter.get(), collection.countDocuments())
+            );
+        }
     }
 
     @Nonnull

@@ -179,16 +179,16 @@ public class MongoSourceTest extends AbstractMongoTest {
 
     private Batch<?> batchFilters(Batch<?> sourceBuilder) {
         if (filter) {
-            sourceBuilder = sourceBuilder.filter(gte("key", FILTERED_BOUND));
+            sourceBuilder.filter(gte("key", FILTERED_BOUND));
         }
         if (projection) {
-            sourceBuilder = sourceBuilder.project(include("val", "testName"));
+            sourceBuilder.project(include("val", "testName"));
         }
         if (sort) {
-            sourceBuilder = sourceBuilder.sort(ascending("val"));
+            sourceBuilder.sort(ascending("val"));
         }
         if (map) {
-            sourceBuilder = sourceBuilder.mapFn(Mappers.toClass(KV.class));
+            sourceBuilder.mapFn(Mappers.toClass(KV.class));
         }
         return sourceBuilder;
     }

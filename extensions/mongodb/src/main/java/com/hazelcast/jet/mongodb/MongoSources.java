@@ -140,7 +140,7 @@ public final class MongoSources {
             @Nullable Bson filter,
             @Nullable Bson projection
     ) {
-        String name = "MongoSource(" + database + "/" + collection + ")";
+        String name = name(database, collection);
         Batch<Document> builder = MongoSourceBuilder
                 .batch(name, () -> MongoClients.create(connectionString))
                 .database(database)
@@ -198,7 +198,7 @@ public final class MongoSources {
             @Nullable Bson filter,
             @Nullable Bson projection
     ) {
-        String name = "MongoSource(" + database + "/" + collection + ")";
+        String name = name(database, collection);
         Batch<Document> builder = MongoSourceBuilder
                 .batch(name, dataLinkRef)
                 .database(database)
@@ -292,7 +292,7 @@ public final class MongoSources {
             @Nullable Document filter,
             @Nullable Document projection
     ) {
-        String name = "MongoSource(" + database + "/" + collection + ")";
+        String name = name(database, collection);
         Stream<Document> builder = MongoSourceBuilder
                 .stream(name, () -> MongoClients.create(connectionString))
                 .database(database)
@@ -306,5 +306,9 @@ public final class MongoSources {
         }
         builder.startAtOperationTime(bsonTimestampFromTimeMillis(System.currentTimeMillis()));
         return builder.build();
+    }
+
+    private static String name(String database, String collection) {
+        return "MongoSource(" + database + "/" + collection + ")";
     }
 }
