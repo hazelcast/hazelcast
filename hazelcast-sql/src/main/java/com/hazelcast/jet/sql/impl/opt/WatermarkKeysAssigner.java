@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.opt;
 
 import com.hazelcast.internal.util.MutableByte;
 import com.hazelcast.jet.impl.processor.SlidingWindowP;
+import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
 import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.DropLateItemsPhysicalRel;
@@ -73,7 +74,15 @@ public class WatermarkKeysAssigner {
     public byte getInputWatermarkKey(SlidingWindowAggregatePhysicalRel swaRel) {
         Map<Integer, MutableByte> inputWmMap = visitor.getRelToWmKeyMapping().get(swaRel.getInput());
         assert !inputWmMap.isEmpty() : "Input rel for SlidingWindowAggregate must contain watermarked field";
-        return inputWmMap.values().iterator().next().getValue();
+
+        HazelcastRelMetadataQuery query = OptUtils.metadataQuery(swaRel.getInput());
+        WatermarkedFields watermarkedFields = query.extractWatermarkedFields(swaRel.getInput());
+        Integer watermarkedIndex = watermarkedFields.findFirst(swaRel.getGroupSet());
+        if (watermarkedIndex == null) {
+            return inputWmMap.values().iterator().next().getValue();
+        } else {
+            return inputWmMap.get(watermarkedIndex).getValue();
+        }
     }
 
     public Map<Integer, MutableByte> getWatermarkedFieldsKey(RelNode node) {
