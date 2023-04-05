@@ -26,6 +26,7 @@ import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.sql.SqlUpdate;
@@ -120,13 +121,19 @@ class UpdateNoScanLogicalRule extends RelRule<RelRule.Config> {
     @Value.Immutable
     interface Config extends RelRule.Config {
         RelRule.Config DEFAULT = ImmutableUpdateNoScanLogicalRule.Config.builder()
-                                                                        .description(UpdateNoScanLogicalRule.class.getSimpleName())
-                                                                        .operandSupplier(b0 -> b0.operand(TableModifyLogicalRel.class)
-                                                                                                 .predicate(TableModify::isUpdate)
-                                                                                                 .inputs(b1 -> b1.operand(RelNode.class)
-                                                                                                                 .predicate(r -> !(r instanceof TableScan))
-                                                                                                                 .noInputs())
-                                                                        ).build();
+                .description(UpdateNoScanLogicalRule.class.getSimpleName())
+                .operandSupplier(b0 -> b0.operand(TableModifyLogicalRel.class)
+                         .predicate(TableModify::isUpdate)
+                         .inputs(b1 -> b1.operand(RelNode.class)
+                                 // TODO: this does not cover all cases
+                                 //  we should have:
+                                 //  1. TableModify
+                                 //  2. TableModify -> TableScan
+                                 //  3. TableModify -> Calc -> TableScan
+                                 //  + maybe even more complex?
+                                 .predicate(r -> !(r instanceof TableScan) && !(r instanceof Calc))
+                                 .noInputs())
+                ).build();
 
         @Override
         default RelOptRule toRule() {

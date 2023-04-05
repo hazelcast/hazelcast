@@ -17,8 +17,8 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
-import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
@@ -551,6 +551,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         );
     }
 
+    @SuppressWarnings("checkstyle:ReturnCount")
     private SqlPlanImpl toPlan(
             PlanKey planKey,
             QueryParameterMetadata parameterMetadata,
