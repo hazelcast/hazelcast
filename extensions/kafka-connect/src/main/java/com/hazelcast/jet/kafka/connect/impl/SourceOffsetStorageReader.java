@@ -40,7 +40,8 @@ class SourceOffsetStorageReader implements OffsetStorageReader {
     public <V> Map<Map<String, V>, Map<String, Object>> offsets(Collection<Map<String, V>> partitions) {
         Map<Map<String, V>, Map<String, Object>> map = new HashMap<>();
         for (Map<String, V> partition : partitions) {
-            Map<String, Object> offset = (Map<String, Object>) state.getPartitionsToOffset().get(partition);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> offset = (Map<String, Object>) state.getOffset(partition);
             map.put(partition, offset);
         }
         return map;

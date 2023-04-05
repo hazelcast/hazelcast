@@ -53,8 +53,8 @@ class State implements Serializable {
         partitionsToOffset.putAll(state.partitionsToOffset);
     }
 
-    Map<Map<String, ?>, Map<String, ?>> getPartitionsToOffset() {
-        return partitionsToOffset;
+    Map<String, ?> getOffset(Map<String, ?> partition) {
+        return partitionsToOffset.get(partition);
     }
 
     @Override
