@@ -60,6 +60,8 @@ public class MetadataResolver implements IMapResolver {
             return null;
         }
 
+        // HD maps must be accessed from correct thread, regular and Tiered Store
+        // maps can be accessed from any thread.
         boolean hd = container.getMapConfig().getInMemoryFormat() == InMemoryFormat.NATIVE
                 && !container.getMapConfig().getTieredStoreConfig().isEnabled();
 
