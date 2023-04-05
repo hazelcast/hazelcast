@@ -435,7 +435,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                             resultMapping,
                             watermarkedFieldsKeys.isEmpty()
                                     ? watermarkKeysAssigner.getInputWatermarkKey(rel)
-                                    : watermarkedFieldsKeys.get(rel.watermarkedFields().findFirst()).getValue()));
+                                    : watermarkedFieldsKeys.get(rel.timestampFieldIndex()).getValue()));
             connectInput(rel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
             return vertex;
         } else {
@@ -443,7 +443,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
             byte watermarkKey = watermarkedFieldsKeys.isEmpty()
                     ? watermarkKeysAssigner.getInputWatermarkKey(rel)
-                    : watermarkedFieldsKeys.get(rel.watermarkedFields().findFirst()).getValue();
+                    : watermarkedFieldsKeys.get(rel.timestampFieldIndex()).getValue();
 
             Vertex vertex1 = dag.newUniqueVertex(
                     "Sliding-Window-AccumulateByKey",

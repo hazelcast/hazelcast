@@ -39,7 +39,7 @@ import static java.util.Arrays.asList;
  * <pre>
  *      byte watermarkKey = watermarkedFieldsKeys.isEmpty()
  *                     ? watermarkKeysAssigner.getInputWatermarkKey(rel)
- *                     : watermarkedFieldsKeys.get(rel.watermarkedFields().findFirst()).getValue();
+ *                     : watermarkedFieldsKeys.get(rel.timestampField()).getValue();
  * </pre>
  * in {@link CreateTopLevelDagVisitor#onSlidingWindowAggregate(SlidingWindowAggregatePhysicalRel)}
  */
